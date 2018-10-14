@@ -5,9 +5,9 @@ VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek.NET", "src\Soulseek.NET\Soulseek.NET.csproj", "{A227094E-25D0-4143-BDC6-4D775961DF0D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soulseek.NET.Tests.Unit", "tests\Soulseek.NET.Tests.Unit\Soulseek.NET.Tests.Unit.csproj", "{A607DAFD-8E94-4C39-A869-94A40CF6464E}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soulseek.NET.Tests.Unit", "tests\Soulseek.NET.Tests.Unit\Soulseek.NET.Tests.Unit.csproj", "{D8129A84-F460-4700-B0D3-2D17AD765119}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soulseek.NET.Tests.Integration", "tests\Soulseek.NET.Tests.Integration\Soulseek.NET.Tests.Integration.csproj", "{0ED8CB41-EFFA-4A78-8B00-F42271325748}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soulseek.NET.Tests.Integration", "tests\Soulseek.NET.Tests.Integration\Soulseek.NET.Tests.Integration.csproj", "{2B914535-2CA9-46B5-8FB1-5FDD5773C750}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -19,14 +19,14 @@ Global
 		{A227094E-25D0-4143-BDC6-4D775961DF0D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{A227094E-25D0-4143-BDC6-4D775961DF0D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{A227094E-25D0-4143-BDC6-4D775961DF0D}.Release|Any CPU.Build.0 = Release|Any CPU
-		{A607DAFD-8E94-4C39-A869-94A40CF6464E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{A607DAFD-8E94-4C39-A869-94A40CF6464E}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{A607DAFD-8E94-4C39-A869-94A40CF6464E}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{A607DAFD-8E94-4C39-A869-94A40CF6464E}.Release|Any CPU.Build.0 = Release|Any CPU
-		{0ED8CB41-EFFA-4A78-8B00-F42271325748}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{0ED8CB41-EFFA-4A78-8B00-F42271325748}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{0ED8CB41-EFFA-4A78-8B00-F42271325748}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{0ED8CB41-EFFA-4A78-8B00-F42271325748}.Release|Any CPU.Build.0 = Release|Any CPU
+		{D8129A84-F460-4700-B0D3-2D17AD765119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{D8129A84-F460-4700-B0D3-2D17AD765119}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{D8129A84-F460-4700-B0D3-2D17AD765119}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{D8129A84-F460-4700-B0D3-2D17AD765119}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2B914535-2CA9-46B5-8FB1-5FDD5773C750}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2B914535-2CA9-46B5-8FB1-5FDD5773C750}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2B914535-2CA9-46B5-8FB1-5FDD5773C750}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2B914535-2CA9-46B5-8FB1-5FDD5773C750}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
