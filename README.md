@@ -1,2 +1,2 @@
-# slsk.NET
+# Soulseek.NET
 A .NET Standard client library for the Soulseek network.
