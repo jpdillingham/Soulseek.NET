@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Message
+﻿namespace Soulseek.NET.Messaging
 {
     public enum MessageCode
     {
