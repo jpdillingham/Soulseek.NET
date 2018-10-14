@@ -2,7 +2,7 @@
 
 namespace Soulseek.NET
 {
-    public class Class1
+    public class Client
     {
     }
 }
