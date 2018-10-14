@@ -9,6 +9,16 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soulseek.NET.Tests.Unit", "
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Soulseek.NET.Tests.Integration", "tests\Soulseek.NET.Tests.Integration\Soulseek.NET.Tests.Integration.csproj", "{2B914535-2CA9-46B5-8FB1-5FDD5773C750}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{753F9370-E445-46A7-9EB7-D4F42AF6581D}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3E85B8C1-9076-4158-898F-2AAA36D25AA6}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{F8F16967-6016-40BD-BFBC-D996A4DC4316}"
+	ProjectSection(SolutionItems) = preProject
+		LICENSE = LICENSE
+		README.md = README.md
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,6 +40,11 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{A227094E-25D0-4143-BDC6-4D775961DF0D} = {753F9370-E445-46A7-9EB7-D4F42AF6581D}
+		{D8129A84-F460-4700-B0D3-2D17AD765119} = {3E85B8C1-9076-4158-898F-2AAA36D25AA6}
+		{2B914535-2CA9-46B5-8FB1-5FDD5773C750} = {3E85B8C1-9076-4158-898F-2AAA36D25AA6}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {AA5CEA4F-9924-4904-A3D7-FE6338CF87A3}
