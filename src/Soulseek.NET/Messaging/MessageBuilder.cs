@@ -5,17 +5,49 @@
 
     public class MessageBuilder
     {
-        private MessageCode Code { get; set; }
-        private IList<IMessageSegment> Segments { get; set; } = new List<IMessageSegment>();
+        private bool initialized = false;
+        private MessageCode code = MessageCode.Unknown;
+        private IList<IMessageSegment> segments = new List<IMessageSegment>();
 
         public Message Build()
         {
-            return new Message(Code, Segments.ToArray());
+            return new Message(code, segments.ToArray());
         }
 
-        public MessageBuilder MessageCode(MessageCode code)
+        public MessageBuilder Code(MessageCode code)
         {
-            Code = code;
+            initialized = true;
+            this.code = code;
+            return this;
+        }
+
+        public MessageBuilder Segment(IMessageSegment segment)
+        {
+            initialized = true;
+            segments.Add(segment);
+            return this;
+        }
+
+        public MessageBuilder Message(Message message)
+        {
+            if (initialized)
+            {
+                // throw
+            }
+
+            code = message.Code;
+            segments = message.Segments.ToList();
+            return this;
+        }
+
+        public MessageBuilder Bytes(byte[] bytes)
+        {
+            if (initialized)
+            {
+                // throw
+            }
+
+            // todo: parse byte array, set code and segments
             return this;
         }
     }

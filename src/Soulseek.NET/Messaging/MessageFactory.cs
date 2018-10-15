@@ -6,12 +6,12 @@
     
     public class MessageFactory
     {
-        public Message GetMessage(byte[] bytes)
+        public Message FromBytes(byte[] bytes)
         {
             var length = GetMessageLength(bytes);
 
             var builder = new MessageBuilder()
-                .MessageCode(GetMessageCode(bytes));
+                .Code(GetMessageCode(bytes));
         }
 
         private int GetMessageLength(byte[] bytes)
