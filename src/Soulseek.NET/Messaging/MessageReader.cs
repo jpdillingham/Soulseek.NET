@@ -1,6 +1,8 @@
 ﻿namespace Soulseek.NET.Messaging
 {
     using System;
+    using System.Linq;
+    using System.Text;
 
     public class MessageReader
     {
@@ -67,7 +69,8 @@
             try
             {
                 length = ReadInteger();
-                var retVal = BitConverter.ToString(Bytes, Position, length);
+                var bytes = Bytes.Skip(Position).Take(length).ToArray();
+                var retVal = Encoding.ASCII.GetString(bytes);
                 Position += length;
                 return retVal;
             }
