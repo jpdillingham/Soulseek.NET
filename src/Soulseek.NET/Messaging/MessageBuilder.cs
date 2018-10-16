@@ -1,54 +1,50 @@
 ﻿namespace Soulseek.NET.Messaging
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text;
 
     public class MessageBuilder
     {
-        private bool initialized = false;
-        private MessageCode code = MessageCode.Unknown;
-        private IList<IMessageSegment> segments = new List<IMessageSegment>();
-
-        public Message Build()
-        {
-            return new Message(code, segments.ToArray());
-        }
+        private List<byte> Bytes { get; set; } = new List<byte>();
 
         public MessageBuilder Code(MessageCode code)
         {
-            initialized = true;
-            this.code = code;
+            Bytes.AddRange(BitConverter.GetBytes((int)code));
             return this;
         }
 
-        public MessageBuilder Segment(IMessageSegment segment)
+        public MessageBuilder Byte(byte value)
         {
-            initialized = true;
-            segments.Add(segment);
+            Bytes.Add(value);
             return this;
         }
 
-        public MessageBuilder Message(Message message)
+        public MessageBuilder Integer(int value)
         {
-            if (initialized)
-            {
-                // throw
-            }
-
-            code = message.Code;
-            segments = message.Segments.ToList();
+            Bytes.AddRange(BitConverter.GetBytes(value));
             return this;
         }
 
-        public MessageBuilder Bytes(byte[] bytes)
+        public MessageBuilder Long(long value)
         {
-            if (initialized)
-            {
-                // throw
-            }
-
-            // todo: parse byte array, set code and segments
+            Bytes.AddRange(BitConverter.GetBytes(value));
             return this;
+        }
+
+        public MessageBuilder String(string value)
+        {
+            Bytes.AddRange(BitConverter.GetBytes(value.Length));
+            Bytes.AddRange(Encoding.ASCII.GetBytes(value));
+            return this;
+        }
+
+        public byte[] Build()
+        {
+            var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count()));
+            withLength.AddRange(Bytes);
+            return withLength.ToArray();
         }
     }
 }
