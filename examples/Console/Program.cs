@@ -45,19 +45,21 @@
                         .Integer(1);
 
                     var message = builder.Build();
-                    var mstr = ByteArrayToHexString(message);
 
-                    Console.WriteLine("Constructed message: " + mstr);
-
-                    byte[] msg = StringToByteArray("48 00 00 00 01 00 00 00 08 00 00 00 75 73 65 72 6e 61 6d 65 08 00 00 00 70 61 73 73 77 6f 72 64 b5 00 00 00 20 00 00 00 64 35 31 63 39 61 37 65 39 33 35 33 37 34 36 61 36 30 32 30 66 39 36 30 32 64 34 35 32 39 32 39 01 00 00 00");
-                    Console.WriteLine($"Check: {ByteArrayToHexString(msg)}");
+                    Console.WriteLine("Constructed message: " + BitConverter.ToString(message));
 
                     // Send the data through the socket.  
-                    int bytesSent = sender.Send(msg);
+                    int bytesSent = sender.Send(message);
 
                     // Receive the response from the remote device.  
                     int bytesRec = sender.Receive(bytes);
-                    Console.WriteLine("Echoed test = {0}", ByteArrayToHexString(bytes));
+                    Console.WriteLine("Echoed test = {0}", BitConverter.ToString(bytes));
+
+                    var reader = new MessageReader(bytes);
+                    Console.WriteLine($"Length: {reader.ReadInteger()}");
+                    Console.WriteLine($"Code: {reader.ReadInteger()}");
+                    Console.WriteLine($"Result: {reader.ReadByte()}");
+                    Console.WriteLine($"Message: {reader.ReadString()}");
 
                     // Release the socket.  
                     sender.Shutdown(SocketShutdown.Both);
