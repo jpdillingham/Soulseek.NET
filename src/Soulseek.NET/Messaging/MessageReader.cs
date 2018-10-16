@@ -6,7 +6,7 @@
 
     public class MessageReader
     {
-        private int Position { get; set; } = 0;
+        private int Position { get; set; } = 8;
         private byte[] Bytes { get; set; }
 
         public MessageReader(byte[] bytes)
@@ -16,8 +16,34 @@
 
         public MessageReader Reset()
         {
-            Position = 0;
+            Position = 8;
             return this;
+        }
+
+        public int Length()
+        {
+            try
+            {
+                var retVal = BitConverter.ToInt32(Bytes, 0);
+                return retVal;
+            }
+            catch (Exception ex)
+            {
+                throw new MessageReadException($"Failed to read the message length.", ex);
+            }
+        }
+
+        public MessageCode Code()
+        {
+            try
+            {
+                var retVal = BitConverter.ToInt32(Bytes, 4);
+                return (MessageCode)retVal;
+            }
+            catch (Exception ex)
+            {
+                throw new MessageReadException($"Failed to read the message code of the message.", ex);
+            }
         }
 
         public int ReadByte()
