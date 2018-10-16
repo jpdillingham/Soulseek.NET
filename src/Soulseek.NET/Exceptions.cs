@@ -3,21 +3,42 @@
     using System;
     using System.Diagnostics.CodeAnalysis;
 
+
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class MessageFormatException : Exception
+    public class MessageException : Exception
     {
-        public MessageFormatException()
+        public MessageException()
             : base()
         {
         }
 
-        public MessageFormatException(string message)
+        public MessageException(string message)
             : base(message)
         {
         }
 
-        public MessageFormatException(string message, Exception innerException)
+        public MessageException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageReadException : MessageException
+    {
+        public MessageReadException()
+            : base()
+        {
+        }
+
+        public MessageReadException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageReadException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
