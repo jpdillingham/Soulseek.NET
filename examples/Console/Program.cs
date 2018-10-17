@@ -12,7 +12,7 @@
             var client = new SoulseekClient();
             client.Connection.ConnectionStateChanged += Client_ServerStateChanged;
 
-            await client.ConnectAsync();
+            client.ConnectAsync();
 
             Console.WriteLine("Enter password:");
 
@@ -22,7 +22,7 @@
                 if (await client.LoginAsync("username", cmd))
                 {
                     Console.WriteLine("Login succeeded");
-                    break;
+                    //break;
                 }
                 else
                 {
