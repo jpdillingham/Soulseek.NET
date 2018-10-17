@@ -2,6 +2,7 @@
 {
     using Soulseek.NET;
     using Soulseek.NET.Messaging;
+    using Soulseek.NET.Tcp;
     using System;
     using System.Linq;
     using System.Net;
@@ -96,22 +97,29 @@
             //StartClient();
 
             var client = new Client();
-            client.ServerStateChanged += Client_ServerStateChanged;
+            client.Connection.ConnectionStateChanged += Client_ServerStateChanged;
 
-            client.Connect();
+            await client.ConnectAsync();
 
-            client.Login("username", "password");
+            //client.Login("username", "password");
 
-            Console.Write("Enter commands.");
+            Console.WriteLine("Enter password:");
 
             while (true)
             {
                 var cmd = Console.ReadLine();
-                client.Login("username", cmd);
+                if (await client.LoginAsync("username", cmd))
+                {
+                    Console.WriteLine("Login succeeded");
+                }
+                else
+                {
+                    Console.WriteLine("Login failed");
+                }
             }
         }
 
-        private static void Client_ServerStateChanged(object sender, ServerStateChangedEventArgs e)
+        private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
             Console.WriteLine($"Server state changed to {e.State}");
         }
