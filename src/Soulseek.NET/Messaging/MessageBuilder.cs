@@ -15,25 +15,25 @@
             return this;
         }
 
-        public MessageBuilder Byte(byte value)
+        public MessageBuilder WriteByte(byte value)
         {
             Bytes.Add(value);
             return this;
         }
 
-        public MessageBuilder Integer(int value)
+        public MessageBuilder WriteInteger(int value)
         {
             Bytes.AddRange(BitConverter.GetBytes(value));
             return this;
         }
 
-        public MessageBuilder Long(long value)
+        public MessageBuilder WriteLong(long value)
         {
             Bytes.AddRange(BitConverter.GetBytes(value));
             return this;
         }
 
-        public MessageBuilder String(string value)
+        public MessageBuilder WriteString(string value)
         {
             Bytes.AddRange(BitConverter.GetBytes(value.Length));
             Bytes.AddRange(Encoding.ASCII.GetBytes(value));
