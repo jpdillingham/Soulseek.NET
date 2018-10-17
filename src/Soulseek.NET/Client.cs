@@ -1,82 +1,33 @@
-﻿using Soulseek.NET.Messaging;
-using System;
-using System.Net;
-using System.Net.Sockets;
-using System.Threading.Tasks;
-
-namespace Soulseek.NET
+﻿namespace Soulseek.NET
 {
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Tcp;
+    using System;
+    using System.Linq;
+    using System.Threading.Tasks;
+
     public class Client
     {
-        private Socket Server { get; set; }
-
-        public string Address { get; private set; }
-        public int Port { get; private set; }
-        public ServerState State { get; private set; } = ServerState.Disconnected;
-
-        public event EventHandler<ServerStateChangedEventArgs> ServerStateChanged;
-
         public Client(string address = "server.slsknet.org", int port = 2242)
         {
             Address = address;
             Port = port;
+
+            Connection = new Connection(Address, Port);
         }
 
-        public void Connect()
+        public event EventHandler<ConnectionStateChangedEventArgs> ServerStateChanged;
+
+        public string Address { get; private set; }
+        public Connection Connection { get; private set; }
+        public int Port { get; private set; }
+
+        public async Task ConnectAsync()
         {
-            var host = Dns.GetHostEntry(Address);
-            var ip = host.AddressList[0];
-
-            Server = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-            Server.Blocking = true;
-
-            ChangeServerState(ServerState.Connecting);
-
-            try
-            {
-                Server.Connect(ip, Port);
-                ChangeServerState(ServerState.Connected);
-                Task.Run(() => Scan());
-            }
-            catch (Exception ex)
-            {
-                ChangeServerState(ServerState.Disconnected);
-                throw new ServerException($"Failed to connect to {Address}:{Port}: {ex.Message}", ex);
-            }
+            await Connection.ConnectAsync();
         }
 
-        public Task Scan()
-        {
-            while (true)
-            {
-                byte[] bytes = new byte[4096];
-                //Server.Blocking = false;
-                int bytesRec = Server.Receive(bytes);
-                //Server.Blocking = true;
-
-                var reader = new MessageReader(bytes);
-                Console.WriteLine($"Length: {reader.Length()}");
-                Console.WriteLine($"Code: {reader.Code()}");
-            }
-        }
-
-        public Task ConnectAsync()
-        {
-            return Task.Run(() => Connect());
-        }
-
-        private void ChangeServerState(ServerState state)
-        {
-            State = state;
-            ServerStateChanged?.Invoke(this, new ServerStateChangedEventArgs() { State = state });
-        }
-
-        //public Task<bool> LoginAsync(string username, string password)
-        //{
-        //    return Task.Run(() => Login(username, password));
-        //}
-
-        public void Login(string username, string password)
+        public async Task<bool> LoginAsync(string username, string password)
         {
             var request = new MessageBuilder()
                 .Code(MessageCode.Login)
@@ -89,21 +40,26 @@ namespace Soulseek.NET
 
             Console.WriteLine($"Logging in as {username}...");
 
-            // Send the data through the socket.  
-            int bytesSent = Server.Send(request);
+            await Connection.WriteAsync(request);
+            var responses = await Connection.ReadAsync();
 
-            //byte[] bytes = new byte[4096];
-            //int bytesRec = Server.Receive(bytes);
+            foreach (var response in responses)
+            {
+                var rdr = new MessageReader(response);
+                Console.WriteLine($"Length: {rdr.Length()}, Code: {rdr.Code()}");
+            }
 
-            //var reader = new MessageReader(bytes);
-            //Console.WriteLine($"Length: {reader.Length()}");
-            //Console.WriteLine($"Code: {reader.Code()}");
+            Console.WriteLine("----------");
+            var reader = new MessageReader(responses.ToArray()[0]);
+            Console.WriteLine($"Length: {reader.Length()}");
+            Console.WriteLine($"Code: {reader.Code()}");
 
-            //var result = reader.ReadByte();
-            //Console.WriteLine($"Result: {result}");
-            //Console.WriteLine($"Message: {reader.ReadString()}");
+            var result = reader.ReadByte();
+            Console.WriteLine($"Result: {result}");
+            Console.WriteLine($"Message: {reader.ReadString()}");
 
-            //return result == 1;
+            var success = result == 1;
+            return success;
         }
     }
 }
