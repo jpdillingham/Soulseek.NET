@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Security.Cryptography;
     using System.Text;
 
     public static class Extensions
@@ -26,6 +27,16 @@
             return Enumerable.Range(0, hex.Length)
                 .Where(x => x % 2 == 0)
                 .Select(x => Convert.ToByte(hex.Substring(x, 2), 16));
+        }
+
+        public static string ToMD5Hash(this string str)
+        {
+            using (MD5 md5 = MD5.Create())
+            {
+                byte[] inputBytes = Encoding.ASCII.GetBytes(str);
+                byte[] hashBytes = md5.ComputeHash(inputBytes);
+                return Encoding.ASCII.GetString(hashBytes);
+            }
         }
     }
 }
