@@ -1,14 +1,18 @@
 ﻿namespace Console
 {
+    using Soulseek.NET;
     using Soulseek.NET.Messaging;
     using System;
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
     using System.Text;
+    using System.Threading.Tasks;
 
     class Program
     {
+        public static object AsyncContext { get; private set; }
+
         public static void StartClient()
         {
             // Data buffer for incoming data.  
@@ -86,10 +90,25 @@
             }
         }
 
-        public static int Main(String[] args)
+
+        static async Task Main(string[] args)
         {
-            StartClient();
-            return 0;
+            //StartClient();
+
+            var client = new Client();
+            client.ServerStateChanged += Client_ServerStateChanged;
+
+            client.Connect();
+
+            await client.LoginAsync("username", "password");
+
+            Console.Write("Press any key to exit.");
+            Console.ReadKey();
+        }
+
+        private static void Client_ServerStateChanged(object sender, ServerStateChangedEventArgs e)
+        {
+            Console.WriteLine($"Server state changed to {e.State}");
         }
     }
 }
