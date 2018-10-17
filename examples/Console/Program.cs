@@ -35,16 +35,16 @@
 
                     // Encode the data string into a byte array.  
 
-                    var builder = new MessageBuilder();
-                    builder
+                    var writer = new MessageBuilder();
+                    writer
                         .Code(MessageCode.Login)
-                        .String("username")
-                        .String("password")
-                        .Integer(181)
-                        .String("d51c9a7e9353746a6020f9602d452929")
-                        .Integer(1);
+                        .WriteString("username")
+                        .WriteString("password")
+                        .WriteInteger(181)
+                        .WriteString("d51c9a7e9353746a6020f9602d452929")
+                        .WriteInteger(1);
 
-                    var message = builder.Build();
+                    var message = writer.Build();
 
                     Console.WriteLine("Constructed message: " + BitConverter.ToString(message));
 
@@ -56,8 +56,8 @@
                     Console.WriteLine("Echoed test = {0}", BitConverter.ToString(bytes));
 
                     var reader = new MessageReader(bytes);
-                    Console.WriteLine($"Length: {reader.ReadInteger()}");
-                    Console.WriteLine($"Code: {reader.ReadInteger()}");
+                    Console.WriteLine($"Length: {reader.Length()}");
+                    Console.WriteLine($"Code: {reader.Code()}");
                     Console.WriteLine($"Result: {reader.ReadByte()}");
                     Console.WriteLine($"Message: {reader.ReadString()}");
 
