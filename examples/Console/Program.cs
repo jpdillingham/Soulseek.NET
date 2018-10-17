@@ -100,10 +100,15 @@
 
             client.Connect();
 
-            await client.LoginAsync("username", "password");
+            client.Login("username", "password");
 
-            Console.Write("Press any key to exit.");
-            Console.ReadKey();
+            Console.Write("Enter commands.");
+
+            while (true)
+            {
+                var cmd = Console.ReadLine();
+                client.Login("username", cmd);
+            }
         }
 
         private static void Client_ServerStateChanged(object sender, ServerStateChangedEventArgs e)

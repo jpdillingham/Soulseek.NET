@@ -28,6 +28,7 @@ namespace Soulseek.NET
             var ip = host.AddressList[0];
 
             Server = new Socket(ip.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+            Server.Blocking = true;
 
             ChangeServerState(ServerState.Connecting);
 
@@ -35,11 +36,27 @@ namespace Soulseek.NET
             {
                 Server.Connect(ip, Port);
                 ChangeServerState(ServerState.Connected);
+                Task.Run(() => Scan());
             }
             catch (Exception ex)
             {
                 ChangeServerState(ServerState.Disconnected);
                 throw new ServerException($"Failed to connect to {Address}:{Port}: {ex.Message}", ex);
+            }
+        }
+
+        public Task Scan()
+        {
+            while (true)
+            {
+                byte[] bytes = new byte[4096];
+                //Server.Blocking = false;
+                int bytesRec = Server.Receive(bytes);
+                //Server.Blocking = true;
+
+                var reader = new MessageReader(bytes);
+                Console.WriteLine($"Length: {reader.Length()}");
+                Console.WriteLine($"Code: {reader.Code()}");
             }
         }
 
@@ -54,12 +71,12 @@ namespace Soulseek.NET
             ServerStateChanged?.Invoke(this, new ServerStateChangedEventArgs() { State = state });
         }
 
-        public Task<bool> LoginAsync(string username, string password)
-        {
-            return Task.Run(() => Login(username, password));
-        }
+        //public Task<bool> LoginAsync(string username, string password)
+        //{
+        //    return Task.Run(() => Login(username, password));
+        //}
 
-        public bool Login(string username, string password)
+        public void Login(string username, string password)
         {
             var request = new MessageBuilder()
                 .Code(MessageCode.Login)
@@ -75,18 +92,18 @@ namespace Soulseek.NET
             // Send the data through the socket.  
             int bytesSent = Server.Send(request);
 
-            byte[] bytes = new byte[4096];
-            int bytesRec = Server.Receive(bytes);
+            //byte[] bytes = new byte[4096];
+            //int bytesRec = Server.Receive(bytes);
 
-            var reader = new MessageReader(bytes);
-            Console.WriteLine($"Length: {reader.Length()}");
-            Console.WriteLine($"Code: {reader.Code()}");
+            //var reader = new MessageReader(bytes);
+            //Console.WriteLine($"Length: {reader.Length()}");
+            //Console.WriteLine($"Code: {reader.Code()}");
 
-            var result = reader.ReadByte();
-            Console.WriteLine($"Result: {result}");
-            Console.WriteLine($"Message: {reader.ReadString()}");
+            //var result = reader.ReadByte();
+            //Console.WriteLine($"Result: {result}");
+            //Console.WriteLine($"Message: {reader.ReadString()}");
 
-            return result == 1;
+            //return result == 1;
         }
     }
 }
