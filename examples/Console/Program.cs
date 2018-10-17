@@ -9,7 +9,7 @@
     {
         static async Task Main(string[] args)
         {
-            var client = new Client();
+            var client = new SoulseekClient();
             client.Connection.ConnectionStateChanged += Client_ServerStateChanged;
 
             await client.ConnectAsync();

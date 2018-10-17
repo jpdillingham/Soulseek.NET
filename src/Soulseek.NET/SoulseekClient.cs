@@ -6,9 +6,9 @@
     using System.Linq;
     using System.Threading.Tasks;
 
-    public class Client
+    public class SoulseekClient
     {
-        public Client(string address = "server.slsknet.org", int port = 2242)
+        public SoulseekClient(string address = "server.slsknet.org", int port = 2242)
         {
             Address = address;
             Port = port;
