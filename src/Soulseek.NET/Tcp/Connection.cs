@@ -25,7 +25,7 @@
 
         private TcpClient Server { get; set; }
 
-        public async void Connect()
+        public async Task ConnectAsync()
         {
             var ip = Dns.GetHostEntry(Address).AddressList[0];
             Server = new TcpClient();
