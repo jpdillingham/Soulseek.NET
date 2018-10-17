@@ -1,10 +1,12 @@
 ﻿namespace Soulseek.NET.Tcp
 {
+    using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Text;
     using System.Threading.Tasks;
 
     public class Connection
@@ -41,6 +43,50 @@
                 ChangeServerState(ConnectionState.Disconnected);
                 throw new ServerException($"Failed to connect to {Address}:{Port}: {ex.Message}", ex);
             }
+
+            await Task.Run(() => ReadAlways());
+        }
+
+        public async Task ReadAlways()
+        {
+            var responses = new List<byte[]>();
+            var stream = Server.GetStream();
+
+            while (true)
+            {
+                var currentResponse = new List<byte>();
+
+                do
+                {
+                    var buffer = new byte[BufferSize];
+                    var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+
+                    currentResponse.AddRange(buffer.Take(bytesRead));
+                    Console.WriteLine($"Read {bytesRead} bytes");
+                } while (stream.DataAvailable);
+
+                var head = 0;
+
+                while (head < currentResponse.Count())
+                {
+                    var len = BitConverter.ToInt32(currentResponse.ToArray(), head);
+                    var code = BitConverter.ToInt32(currentResponse.ToArray(), head + 4);
+
+                    var dataLen = len - 4;
+                    var data = currentResponse.Skip(head + 8).Take(dataLen).ToArray();
+                    var dataStr = Encoding.ASCII.GetString(data);
+
+                    if (data.Length < dataLen)
+                    {
+                        Console.WriteLine("===========================================================");
+                    }
+
+                    Console.WriteLine($"\nMessage length: {len}, code: {(MessageCode)code}, data: {dataStr}\n");
+                    //Console.WriteLine($"\nMessage length: {len}, code: {(MessageCode)code}\n");
+
+                    head += 4 + len;
+                }
+            }
         }
 
         public async Task<IEnumerable<byte[]>> ReadAsync()
@@ -57,10 +103,12 @@
                 var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
 
                 currentResponse.AddRange(buffer.Take(bytesRead));
+                Console.WriteLine($"Read {bytesRead} bytes");
 
                 if (bytesRead < buffer.Length)
                 {
                     Console.WriteLine("New Message");
+                    Console.WriteLine(Encoding.ASCII.GetString(currentResponse.ToArray()));
                     responses.Add(currentResponse.ToArray());
                     currentResponse = new List<byte>();
                 }
