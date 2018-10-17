@@ -41,25 +41,27 @@
             Console.WriteLine($"Logging in as {username}...");
 
             await Connection.WriteAsync(request);
-            var responses = await Connection.ReadAsync();
+            //var responses = await Connection.ReadAsync();
 
-            foreach (var response in responses)
-            {
-                var rdr = new MessageReader(response);
-                Console.WriteLine($"Length: {rdr.Length()}, Code: {rdr.Code()}");
-            }
+            //foreach (var response in responses)
+            //{
+            //    var rdr = new MessageReader(response);
+            //    Console.WriteLine($"Length: {rdr.Length()}, Code: {rdr.Code()}");
+            //}
 
-            Console.WriteLine("----------");
-            var reader = new MessageReader(responses.ToArray()[0]);
-            Console.WriteLine($"Length: {reader.Length()}");
-            Console.WriteLine($"Code: {reader.Code()}");
+            //Console.WriteLine("----------");
+            //var reader = new MessageReader(responses.ToArray()[0]);
+            //Console.WriteLine($"Length: {reader.Length()}");
+            //Console.WriteLine($"Code: {reader.Code()}");
 
-            var result = reader.ReadByte();
-            Console.WriteLine($"Result: {result}");
-            Console.WriteLine($"Message: {reader.ReadString()}");
+            //var result = reader.ReadByte();
+            //Console.WriteLine($"Result: {result}");
+            //Console.WriteLine($"Message: {reader.ReadString()}");
 
-            var success = result == 1;
-            return success;
+            //var success = result == 1;
+            //return success;
+
+            return true;
         }
     }
 }
