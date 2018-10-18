@@ -14,6 +14,7 @@
             Port = port;
 
             Connection = new Connection(Address, Port);
+            Connection.DataReceived += Connection_DataReceived;
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ServerStateChanged;
@@ -25,6 +26,15 @@
         public async Task ConnectAsync()
         {
             await Connection.ConnectAsync();
+            
+        }
+
+        private void Connection_DataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Console.WriteLine($"Data Received");
+            var reader = new MessageReader(e.Data);
+            Console.WriteLine($"Length: {reader.Length()}");
+            Console.WriteLine($"Code: {reader.Code()}");
         }
 
         public async Task<bool> LoginAsync(string username, string password)
@@ -40,7 +50,7 @@
 
             Console.WriteLine($"Logging in as {username}...");
 
-            await Connection.WriteAsync(request);
+            await Connection.SendAsync(request);
             //var responses = await Connection.ReadAsync();
 
             //foreach (var response in responses)
