@@ -12,6 +12,7 @@
         public int Length => GetLength();
         public MessageCode Code => GetCode();
         public byte[] Payload => GetPayload();
+        public byte[] RawBytes => Bytes;
 
         public MessageReader(byte[] bytes)
         {
@@ -61,6 +62,20 @@
             {
                 var retVal = Bytes[Position];
                 Position += 1;
+                return retVal;
+            }
+            catch (Exception ex)
+            {
+                throw new MessageReadException($"Failed to read a byte from position {Position} of the message.", ex);
+            }
+        }
+
+        public byte[] ReadBytes(int count)
+        {
+            try
+            {
+                var retVal = Bytes.Skip(Position).Take(count).ToArray();
+                Position += count;
                 return retVal;
             }
             catch (Exception ex)
