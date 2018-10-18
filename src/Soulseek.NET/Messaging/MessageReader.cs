@@ -9,6 +9,10 @@
         private int Position { get; set; } = 8;
         private byte[] Bytes { get; set; }
 
+        public int Length => GetLength();
+        public MessageCode Code => GetCode();
+        public byte[] Payload => GetPayload();
+
         public MessageReader(byte[] bytes)
         {
             Bytes = bytes;
@@ -20,7 +24,12 @@
             return this;
         }
 
-        public int Length()
+        private byte[] GetPayload()
+        {
+            return Bytes.Skip(8).ToArray();
+        }
+
+        private int GetLength()
         {
             try
             {
@@ -33,7 +42,7 @@
             }
         }
 
-        public MessageCode Code()
+        private MessageCode GetCode()
         {
             try
             {
