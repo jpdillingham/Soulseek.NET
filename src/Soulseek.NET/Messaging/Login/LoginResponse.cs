@@ -12,9 +12,9 @@ namespace Soulseek.NET.Messaging.Login
             Success = 1,
         }
 
-        public LoginResponseStatus Status { get; set; }
-        public string Message { get; set; }
-        public IPAddress IPAddress { get; set; }
+        public LoginResponseStatus Status { get; }
+        public string Message { get; }
+        public IPAddress IPAddress { get; }
 
         public LoginResponse(byte[] bytes)
         {

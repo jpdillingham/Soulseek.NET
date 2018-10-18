@@ -22,7 +22,7 @@
                 .WriteString(Password)
                 .WriteInteger(Version)
                 .WriteString(Hash)
-                .WriteInteger(1)
+                .WriteInteger(MinorVersion)
                 .Build();
         }
     }
