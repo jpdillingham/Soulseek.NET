@@ -9,11 +9,10 @@
 
     public class Connection : IConnection
     {
-        public Connection(string address = "server.slsknet.org", int port = 2242, int bufferSize = 1024, TcpClient tcpClient = null)
+        public Connection(string address = "server.slsknet.org", int port = 2242, TcpClient tcpClient = null)
         {
             Address = address;
             Port = port;
-            BufferSize = bufferSize;
             TcpClient = tcpClient;
         }
 
@@ -21,7 +20,6 @@
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         public string Address { get; private set; }
-        public int BufferSize { get; private set; }
         public int Port { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
@@ -72,8 +70,18 @@
             ChangeServerState(ConnectionState.Disconnected, message);
         }
 
+        private void CheckConnection()
+        {
+            if (!TcpClient.Connected)
+            {
+                Disconnect($"The server connection was closed unexpectedly.");
+            }
+        }
+
         public async Task SendAsync(byte[] bytes)
         {
+            CheckConnection();
+
             if (State != ConnectionState.Connected)
             {
                 throw new ConnectionStateException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
@@ -110,7 +118,7 @@
                 {
                     do
                     {
-                        var bytes = new byte[BufferSize];
+                        var bytes = new byte[TcpClient.ReceiveBufferSize];
                         var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
 
                         buffer.AddRange(bytes.Take(bytesRead));
