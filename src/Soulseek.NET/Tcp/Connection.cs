@@ -1,138 +1,134 @@
 ﻿namespace Soulseek.NET.Tcp
 {
-    using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
-    using System.Text;
     using System.Threading.Tasks;
 
-    public class Connection
+    public class Connection : IConnection
     {
-        public Connection(string address = "server.slsknet.org", int port = 2242, int bufferSize = 1024)
+        public Connection(string address = "server.slsknet.org", int port = 2242, int bufferSize = 1024, TcpClient tcpClient = null)
         {
             Address = address;
             Port = port;
             BufferSize = bufferSize;
+            TcpClient = tcpClient;
         }
 
-        public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+        public event EventHandler<DataReceivedEventArgs> DataReceived;
+        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         public string Address { get; private set; }
-        public int Port { get; private set; }
         public int BufferSize { get; private set; }
+        public int Port { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
-        private TcpClient Server { get; set; }
+        private TcpClient TcpClient { get; set; }
+        private NetworkStream Stream { get; set; }
 
         public async Task ConnectAsync()
         {
+            if (State != ConnectionState.Disconnected)
+            {
+                throw new ConnectionStateException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
+            }
+
             var ip = Dns.GetHostEntry(Address).AddressList[0];
-            Server = new TcpClient();
 
             try
             {
-                ChangeServerState(ConnectionState.Connecting);
-                await Server.ConnectAsync(ip, Port);
-                ChangeServerState(ConnectionState.Connected);
+                ChangeServerState(ConnectionState.Connecting, $"Connecting to {ip}:{Port}");
+
+                await TcpClient.ConnectAsync(ip, Port);
+                Stream = TcpClient.GetStream();
+
+                ChangeServerState(ConnectionState.Connected, $"Connected to {ip}:{Port}");
             }
             catch (Exception ex)
             {
-                ChangeServerState(ConnectionState.Disconnected);
+                ChangeServerState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
+
                 throw new ServerException($"Failed to connect to {Address}:{Port}: {ex.Message}", ex);
             }
 
-            await Task.Run(() => ReadAlways());
+            Task.Run(() => Read());
         }
 
-        public async Task ReadAlways()
+        public void Disconnect(string message = null)
         {
-            var responses = new List<byte[]>();
-            var stream = Server.GetStream();
-
-            while (true)
+            if (State == ConnectionState.Disconnected || State == ConnectionState.Disconnecting)
             {
-                var currentResponse = new List<byte>();
+                throw new ConnectionStateException($"Invalid attempt to disconnect a disconnected or transitioning connection (current state: {State})");
+            }
 
-                do
-                {
-                    var buffer = new byte[BufferSize];
-                    var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+            ChangeServerState(ConnectionState.Disconnecting, message);
 
-                    currentResponse.AddRange(buffer.Take(bytesRead));
-                    Console.WriteLine($"Read {bytesRead} bytes");
-                } while (stream.DataAvailable);
+            Stream.Close();
+            TcpClient.Close();
+            TcpClient.Dispose();
 
-                var head = 0;
+            ChangeServerState(ConnectionState.Disconnected, message);
+        }
 
-                while (head < currentResponse.Count())
-                {
-                    var len = BitConverter.ToInt32(currentResponse.ToArray(), head);
-                    var code = BitConverter.ToInt32(currentResponse.ToArray(), head + 4);
+        public async Task SendAsync(byte[] bytes)
+        {
+            if (State != ConnectionState.Connected)
+            {
+                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
+            }
 
-                    var dataLen = len - 4;
-                    var data = currentResponse.Skip(head + 8).Take(dataLen).ToArray();
-                    var dataStr = Encoding.ASCII.GetString(data);
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
+            }
 
-                    if (data.Length < dataLen)
-                    {
-                        Console.WriteLine("===========================================================");
-                    }
-
-                    Console.WriteLine($"\nMessage length: {len}, code: {(MessageCode)code}, data: {dataStr}\n");
-                    //Console.WriteLine($"\nMessage length: {len}, code: {(MessageCode)code}\n");
-
-                    head += 4 + len;
-                }
+            try
+            {
+                await Stream.WriteAsync(bytes, 0, bytes.Length);
+            }
+            catch (Exception ex)
+            {
+                Disconnect($"Write Error: {ex.Message}");
             }
         }
 
-        public async Task<IEnumerable<byte[]>> ReadAsync()
-        {
-            var responses = new List<byte[]>();
-            var currentResponse = new List<byte>();
-
-            var stream = Server.GetStream();
-
-            Console.WriteLine("Reading...");
-            do
-            {
-                var buffer = new byte[BufferSize];
-                var bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-
-                currentResponse.AddRange(buffer.Take(bytesRead));
-                Console.WriteLine($"Read {bytesRead} bytes");
-
-                if (bytesRead < buffer.Length)
-                {
-                    Console.WriteLine("New Message");
-                    Console.WriteLine(Encoding.ASCII.GetString(currentResponse.ToArray()));
-                    responses.Add(currentResponse.ToArray());
-                    currentResponse = new List<byte>();
-                }
-            } while (stream.DataAvailable);
-
-            // edge case where bytesRead == buffer.Length
-            if (currentResponse.Count() > 0)
-            {
-                responses.Add(currentResponse.ToArray());
-            }
-
-            return responses;
-        }
-
-        public async Task WriteAsync(byte[] buffer)
-        {
-            var stream = Server.GetStream();
-            await stream.WriteAsync(buffer, 0, buffer.Length);
-        }
-
-        private void ChangeServerState(ConnectionState state)
+        private void ChangeServerState(ConnectionState state, string message)
         {
             State = state;
-            ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs() { State = state });
+            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs() { State = state, Message = message });
+        }
+
+        private async Task Read()
+        {
+            var buffer = new List<byte>();
+
+            try
+            {
+                while (true)
+                {
+                    do
+                    {
+                        var bytes = new byte[BufferSize];
+                        var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
+
+                        buffer.AddRange(bytes.Take(bytesRead));
+
+                        var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
+
+                        if (buffer.Count >= headMessageLength)
+                        {
+                            DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = buffer.Take(headMessageLength).ToArray() });
+                            buffer.RemoveRange(0, headMessageLength);
+                        }
+                    } while (Stream.DataAvailable);
+                }
+            }
+            catch (Exception ex)
+            {
+                Disconnect($"Read Error: {ex.Message}");
+            }
         }
     }
 }
