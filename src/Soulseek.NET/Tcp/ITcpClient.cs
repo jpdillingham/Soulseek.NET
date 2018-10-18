@@ -9,11 +9,8 @@
         bool Connected { get; }
 
         void Close();
-
         Task ConnectAsync(IPAddress ipAddress, int port);
-
         void Dispose();
-
         NetworkStream GetStream();
     }
 }
