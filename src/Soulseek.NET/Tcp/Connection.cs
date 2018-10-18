@@ -9,10 +9,11 @@
 
     public class Connection : IConnection
     {
-        public Connection(string address = "server.slsknet.org", int port = 2242, ITcpClient tcpClient = null)
+        public Connection(string address = "server.slsknet.org", int port = 2242, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
             Address = address;
             Port = port;
+            ReadBufferSize = readBufferSize;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
         }
 
@@ -21,6 +22,7 @@
 
         public string Address { get; private set; }
         public int Port { get; private set; }
+        public int ReadBufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
         private ITcpClient TcpClient { get; set; }
@@ -118,7 +120,7 @@
                 {
                     do
                     {
-                        var bytes = new byte[1024];
+                        var bytes = new byte[ReadBufferSize];
                         var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
 
                         buffer.AddRange(bytes.Take(bytesRead));
