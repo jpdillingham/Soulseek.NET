@@ -5,6 +5,7 @@
     using System.Linq;
     using System.Security.Cryptography;
     using System.Text;
+    using System.Threading.Tasks;
 
     public static class Extensions
     {
@@ -37,6 +38,11 @@
                 byte[] hashBytes = md5.ComputeHash(inputBytes);
                 return Encoding.ASCII.GetString(hashBytes);
             }
+        }
+
+        public static void Forget(this Task task)
+        {
+            task.ContinueWith(t => { });
         }
     }
 }
