@@ -14,10 +14,12 @@
             Port = port;
 
             Connection = new Connection(Address, Port);
-            Connection.DataReceived += Connection_DataReceived;
+            Connection.StateChanged += OnConnectionStateChanged;
+            Connection.DataReceived += OnConnectionDataReceived;
         }
 
-        public event EventHandler<ConnectionStateChangedEventArgs> ServerStateChanged;
+        public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+        public event EventHandler<DataReceivedEventArgs> DataReceived;
 
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
@@ -29,12 +31,20 @@
             
         }
 
-        private void Connection_DataReceived(object sender, DataReceivedEventArgs e)
+        private void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        {
+            Console.WriteLine($"Connection State Changed: {e.State} ({e.Message ?? "Unknown"})");
+            ConnectionStateChanged?.Invoke(this, e);
+        }
+
+        private void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             Console.WriteLine($"Data Received");
             var reader = new MessageReader(e.Data);
-            Console.WriteLine($"Length: {reader.Length()}");
-            Console.WriteLine($"Code: {reader.Code()}");
+            Console.WriteLine($"Length: {reader.Length}");
+            Console.WriteLine($"Code: {reader.Code}");
+
+            DataReceived?.Invoke(this, e);
         }
 
         public async Task<bool> LoginAsync(string username, string password)
