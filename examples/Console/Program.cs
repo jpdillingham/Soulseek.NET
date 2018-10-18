@@ -10,23 +10,31 @@
         static async Task Main(string[] args)
         {
             var client = new SoulseekClient();
-            client.Connection.ConnectionStateChanged += Client_ServerStateChanged;
+            client.Connection.StateChanged += Client_ServerStateChanged;
 
-            client.ConnectAsync();
+            await client.ConnectAsync();
 
             Console.WriteLine("Enter password:");
 
             while (true)
             {
                 var cmd = Console.ReadLine();
-                if (await client.LoginAsync("username", cmd))
+
+                if (cmd == "stop")
                 {
-                    Console.WriteLine("Login succeeded");
-                    //break;
+                    client.Connection.Disconnect("User requested Disconnect");
                 }
                 else
                 {
-                    Console.WriteLine("Login failed");
+                    if (await client.LoginAsync("username", cmd))
+                    {
+                        Console.WriteLine("Login succeeded");
+                        //break;
+                    }
+                    else
+                    {
+                        Console.WriteLine("Login failed");
+                    }
                 }
             }
         }
