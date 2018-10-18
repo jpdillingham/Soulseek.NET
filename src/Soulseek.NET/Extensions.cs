@@ -42,7 +42,7 @@
 
         public static void Forget(this Task task)
         {
-            task.ContinueWith(t => { });
+            task.ContinueWith(t => { throw new Exception($"Thread Error: {t.Exception.Message}", t.Exception); });
         }
     }
 }
