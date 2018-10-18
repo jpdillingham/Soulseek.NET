@@ -9,11 +9,11 @@
 
     public class Connection : IConnection
     {
-        public Connection(string address = "server.slsknet.org", int port = 2242, TcpClient tcpClient = null)
+        public Connection(string address = "server.slsknet.org", int port = 2242, ITcpClient tcpClient = null)
         {
             Address = address;
             Port = port;
-            TcpClient = tcpClient;
+            TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
         }
 
         public event EventHandler<DataReceivedEventArgs> DataReceived;
@@ -23,7 +23,7 @@
         public int Port { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
-        private TcpClient TcpClient { get; set; }
+        private ITcpClient TcpClient { get; set; }
         private NetworkStream Stream { get; set; }
 
         public async Task ConnectAsync()
@@ -51,7 +51,7 @@
                 throw new ServerException($"Failed to connect to {Address}:{Port}: {ex.Message}", ex);
             }
 
-            Task.Run(() => Read());
+            Task.Run(() => Read()).Forget();
         }
 
         public void Disconnect(string message = null)
@@ -118,7 +118,7 @@
                 {
                     do
                     {
-                        var bytes = new byte[TcpClient.ReceiveBufferSize];
+                        var bytes = new byte[1024];
                         var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
 
                         buffer.AddRange(bytes.Take(bytesRead));
