@@ -1,6 +1,6 @@
 ﻿namespace Soulseek.NET.Messaging
 {
-    public interface IMessageMap<T>
+    public interface IMessageResponse<T>
     {
         T MapFrom(Message message);
     }

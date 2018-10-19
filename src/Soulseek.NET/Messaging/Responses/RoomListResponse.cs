@@ -4,8 +4,8 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageMap(MessageCode.RoomList)]
-    public class RoomListResponse : IMessageMap<RoomListResponse>
+    [MessageResponse(MessageCode.RoomList)]
+    public class RoomListResponse : IMessageResponse<RoomListResponse>
     {
         public IEnumerable<Room> Rooms => RoomList;
 

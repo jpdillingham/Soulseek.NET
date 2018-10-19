@@ -3,8 +3,8 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageMap(MessageCode.Login)]
-    public class LoginResponse : IMessageMap<LoginResponse>
+    [MessageResponse(MessageCode.Login)]
+    public class LoginResponse : IMessageResponse<LoginResponse>
     {
         public enum LoginResponseStatus : byte
         {

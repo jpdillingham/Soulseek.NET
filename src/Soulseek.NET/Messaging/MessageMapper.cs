@@ -8,20 +8,20 @@ namespace Soulseek.NET.Messaging
     {
         public object Map(Message message)
         {
-            var map = GetMapForCode(message.Code);
+            var map = GetResponseForCode(message.Code);
             return map;
         }
 
-        private Type GetMapForCode(MessageCode code)
+        private Type GetResponseForCode(MessageCode code)
         {
             return Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => t.IsClass)
-                .Where(t => t.Namespace.Equals(GetType().Namespace + ".Maps"))
+                .Where(t => t.Namespace.Equals(GetType().Namespace + ".Responses"))
                 .Where(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType)
-                    .Any(i => i.GetGenericTypeDefinition() == typeof(IMessageMap<>)))
+                    .Any(i => i.GetGenericTypeDefinition() == typeof(IMessageResponse<>)))
                 .Where(t => t.CustomAttributes
-                    .Where(c => c.AttributeType == typeof(MessageMapAttribute))
+                    .Where(c => c.AttributeType == typeof(MessageResponseAttribute))
                     .Any(c => c.ConstructorArguments
                         .Where(a => a.ArgumentType == typeof(MessageCode))
                         .Select(v => (MessageCode)v.Value)

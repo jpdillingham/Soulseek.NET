@@ -4,8 +4,8 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageMap(MessageCode.PrivilegedUsers)]
-    public class PrivilegedUsersResponse : IMessageMap<PrivilegedUsersResponse>
+    [MessageResponse(MessageCode.PrivilegedUsers)]
+    public class PrivilegedUsersResponse : IMessageResponse<PrivilegedUsersResponse>
     {
         public IEnumerable<string> PrivilegedUsers => PrivilegedUserList;
 
