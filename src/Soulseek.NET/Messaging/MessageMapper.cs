@@ -17,14 +17,16 @@ namespace Soulseek.NET.Messaging
             return Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => t.IsClass)
                 .Where(t => t.Namespace.Equals(GetType().Namespace + ".Maps"))
-                .Where(t => t.IsAssignableFrom(typeof(IMessageMap<>)))
+                .Where(t => t.GetInterfaces()
+                    .Where(i => i.IsGenericType)
+                    .Any(i => i.GetGenericTypeDefinition() == typeof(IMessageMap<>)))
                 .Where(t => t.CustomAttributes
                     .Where(c => c.AttributeType == typeof(MessageMapAttribute))
                     .Any(c => c.ConstructorArguments
                         .Where(a => a.ArgumentType == typeof(MessageCode))
                         .Select(v => (MessageCode)v.Value)
-                        .SingleOrDefault() == code)
-                ).SingleOrDefault();
+                        .SingleOrDefault() == code))
+                .SingleOrDefault();
         }
     }
 }
