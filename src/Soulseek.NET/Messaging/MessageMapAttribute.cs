@@ -4,9 +4,9 @@ namespace Soulseek.NET.Messaging
     using System;
 
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
-    public class MessageAttribute : Attribute
+    public class MessageMapAttribute : Attribute
     {
-        public MessageAttribute(MessageCode code)
+        public MessageMapAttribute(MessageCode code)
         {
             Code = code;
         }

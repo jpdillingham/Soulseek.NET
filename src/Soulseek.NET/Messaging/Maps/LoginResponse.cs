@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Net;
 
-namespace Soulseek.NET.Messaging.Login
+namespace Soulseek.NET.Messaging.Maps
 {
-    [Message(MessageCode.Login)]
-    public class LoginResponse
+    [MessageMap(MessageCode.Login)]
+    public class LoginResponse : IMessageMap<LoginResponse>
     {
         public enum LoginResponseStatus : byte
         {
@@ -12,11 +12,11 @@ namespace Soulseek.NET.Messaging.Login
             Success = 1,
         }
 
-        public LoginResponseStatus Status { get; }
-        public string Message { get; }
-        public IPAddress IPAddress { get; }
+        public LoginResponseStatus Status { get; private set; }
+        public string Message { get; private set; }
+        public IPAddress IPAddress { get; private set; }
 
-        public LoginResponse(Message message)
+        public LoginResponse MapFrom(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -34,6 +34,8 @@ namespace Soulseek.NET.Messaging.Login
                 Array.Reverse(ipBytes);
                 IPAddress = new IPAddress(ipBytes);
             }
+
+            return this;
         }
     }
 }

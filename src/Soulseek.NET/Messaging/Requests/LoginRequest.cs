@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Messaging.Login
+﻿namespace Soulseek.NET.Messaging.Requests
 { 
     public class LoginRequest
     {
