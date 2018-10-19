@@ -4,8 +4,6 @@
     using Soulseek.NET.Messaging.Login;
     using Soulseek.NET.Tcp;
     using System;
-    using System.Linq;
-    using System.Text;
     using System.Threading.Tasks;
 
     public class SoulseekClient
@@ -22,7 +20,6 @@
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
-        public event EventHandler<RawMessageReceivedEventArgs> RawMessageReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         public string Address { get; private set; }
@@ -36,11 +33,11 @@
 
         public async Task<bool> LoginAsync(string username, string password)
         {
-            var request = new LoginRequest(username, password).ToBytes();
+            var request = new LoginRequest(username, password);
 
             Console.WriteLine($"Logging in as {username}...");
 
-            await Connection.SendAsync(request);
+            await Connection.SendAsync(request.ToMessage().ToByteArray());
 
             return true;
         }
@@ -50,23 +47,14 @@
             Console.WriteLine($"Data Received: {e.Data.Length} bytes");
             DataReceived?.Invoke(this, e);
 
-            OnRawMessageReceived(e.Data);
+            OnMessageReceived(new Message(e.Data));
         }
 
-        private void OnRawMessageReceived(byte[] message)
-        {
-            var reader = new MessageReader(message);
-            Console.WriteLine($"Raw Message Recieved; Length: {reader.Length}, Code: {reader.Code}, Data ({reader.Payload.Length}): {Encoding.ASCII.GetString(reader.Payload).ToCharArray().Take(30)} ");
-            RawMessageReceived?.Invoke(this, new RawMessageReceivedEventArgs() { Reader = reader });
-
-            OnMessageReceived(reader.Code, reader.RawBytes);
-        }
-
-        private void OnMessageReceived(MessageCode code, byte[] message)
+        private void OnMessageReceived(Message message)
         {
             var response = new object();
 
-            switch (code)
+            switch (message.Code)
             {
                 case MessageCode.Login:
                     response = new LoginResponse(message);
@@ -76,7 +64,7 @@
                     break;
             }
 
-            MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = code, Response = response });
+            MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = message.Code, Response = response });
 
             if (response is LoginResponse lr)
             {
@@ -85,8 +73,6 @@
                 Console.WriteLine($"IPAddress: {lr.IPAddress}");
             }
         }
-
-
 
         private void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
