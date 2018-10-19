@@ -10,11 +10,15 @@
         public int Length => GetLength();
         public MessageCode Code => GetCode();
         public byte[] Payload => GetPayload();
-        public byte[] RawBytes => Bytes;
 
         public Message(byte[] bytes)
         {
             Bytes = bytes;
+        }
+
+        public byte[] ToByteArray()
+        {
+            return Bytes;
         }
 
         private byte[] GetPayload()
