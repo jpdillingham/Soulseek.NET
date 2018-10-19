@@ -65,6 +65,12 @@
                 case MessageCode.Login:
                     response = new LoginResponse().MapFrom(message);
                     break;
+                case MessageCode.RoomList:
+                    response = new RoomListResponse().MapFrom(message);
+                    break;
+                case MessageCode.PrivilegedUsers:
+                    response = new PrivilegedUsersResponse().MapFrom(message);
+                    break;
                 default:
                     response = null;
                     break;
@@ -77,6 +83,22 @@
                 Console.WriteLine($"Status: {lr.Status}");
                 Console.WriteLine($"Message: {lr.Message}");
                 Console.WriteLine($"IPAddress: {lr.IPAddress}");
+            }
+
+            if (response is RoomListResponse rls)
+            {
+                foreach (var room in rls.Rooms)
+                {
+                    Console.WriteLine($"Room: {room.Name}, Users: {room.UserCount}");
+                }
+            }
+
+            if (response is PrivilegedUsersResponse pu)
+            {
+                foreach (var u in pu.PrivilegedUsers)
+                {
+                    Console.WriteLine($"Privileged User: {u}");
+                }
             }
         }
 
