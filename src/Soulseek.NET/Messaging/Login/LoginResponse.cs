@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Login
 {
-    [MessageResponse(MessageCode.Login)]
+    [Message(MessageCode.Login)]
     public class LoginResponse
     {
         public enum LoginResponseStatus : byte
@@ -16,9 +16,9 @@ namespace Soulseek.NET.Messaging.Login
         public string Message { get; }
         public IPAddress IPAddress { get; }
 
-        public LoginResponse(byte[] bytes)
+        public LoginResponse(Message message)
         {
-            var reader = new MessageReader(bytes);
+            var reader = new MessageReader(message);
 
             if (reader.Code != MessageCode.Login)
             {
