@@ -42,4 +42,24 @@
         {
         }
     }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageBuildException : MessageException
+    {
+        public MessageBuildException()
+            : base()
+        {
+        }
+
+        public MessageBuildException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageBuildException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
