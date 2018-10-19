@@ -1,7 +1,8 @@
 ﻿namespace Soulseek.NET
 {
     using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Login;
+    using Soulseek.NET.Messaging.Maps;
+    using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Tcp;
     using System;
     using System.Threading.Tasks;
@@ -16,6 +17,8 @@
             Connection = new Connection(Address, Port);
             Connection.StateChanged += OnConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
+
+            MessageMapper = new MessageMapper();
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -25,6 +28,8 @@
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
         public int Port { get; private set; }
+
+        private MessageMapper MessageMapper { get; set; }
 
         public async Task ConnectAsync()
         {
@@ -53,11 +58,12 @@
         private void OnMessageReceived(Message message)
         {
             var response = new object();
+            var maps = MessageMapper.Map(message);
 
             switch (message.Code)
             {
                 case MessageCode.Login:
-                    response = new LoginResponse(message);
+                    response = new LoginResponse().MapFrom(message);
                     break;
                 default:
                     response = null;
