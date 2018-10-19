@@ -6,61 +6,34 @@
 
     public class MessageReader
     {
-        private int Position { get; set; } = 8;
-        private byte[] Bytes { get; set; }
+        private int Position { get; set; } = 0;
+        private Message Message { get; set; }
 
-        public int Length => GetLength();
-        public MessageCode Code => GetCode();
-        public byte[] Payload => GetPayload();
-        public byte[] RawBytes => Bytes;
+        public int Length => Message.Length;
+        public MessageCode Code => Message.Code;
+        public byte[] Payload => Message.Payload;
 
-        public MessageReader(byte[] bytes)
+        public MessageReader(Message message)
         {
-            Bytes = bytes;
+            Message = message;
+        }
+        
+        public MessageReader(byte[] bytes)
+            : this(new Message(bytes))
+        {
         }
 
         public MessageReader Reset()
         {
-            Position = 8;
+            Position = 0;
             return this;
-        }
-
-        private byte[] GetPayload()
-        {
-            return Bytes.Skip(8).ToArray();
-        }
-
-        private int GetLength()
-        {
-            try
-            {
-                var retVal = BitConverter.ToInt32(Bytes, 0);
-                return retVal;
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read the message length.", ex);
-            }
-        }
-
-        private MessageCode GetCode()
-        {
-            try
-            {
-                var retVal = BitConverter.ToInt32(Bytes, 4);
-                return (MessageCode)retVal;
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read the message code of the message.", ex);
-            }
         }
 
         public int ReadByte()
         {
             try
             {
-                var retVal = Bytes[Position];
+                var retVal = Payload[Position];
                 Position += 1;
                 return retVal;
             }
@@ -74,7 +47,7 @@
         {
             try
             {
-                var retVal = Bytes.Skip(Position).Take(count).ToArray();
+                var retVal = Payload.Skip(Position).Take(count).ToArray();
                 Position += count;
                 return retVal;
             }
@@ -88,7 +61,7 @@
         {
             try
             {
-                var retVal = BitConverter.ToInt32(Bytes, Position);
+                var retVal = BitConverter.ToInt32(Payload, Position);
                 Position += 4;
                 return retVal;
             }
@@ -102,7 +75,7 @@
         {
             try
             {
-                var retVal = BitConverter.ToInt64(Bytes, Position);
+                var retVal = BitConverter.ToInt64(Payload, Position);
                 Position += 8;
                 return retVal;
             }
@@ -119,7 +92,7 @@
             try
             {
                 length = ReadInteger();
-                var bytes = Bytes.Skip(Position).Take(length).ToArray();
+                var bytes = Payload.Skip(Position).Take(length).ToArray();
                 var retVal = Encoding.ASCII.GetString(bytes);
                 Position += length;
                 return retVal;
