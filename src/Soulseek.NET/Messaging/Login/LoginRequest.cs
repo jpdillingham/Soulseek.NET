@@ -14,7 +14,7 @@
         public string Hash => $"{Username}{Password}".ToMD5Hash();
         public int MinorVersion => 1;
 
-        public byte[] ToBytes()
+        public Message ToMessage()
         {
             return new MessageBuilder()
                 .Code(MessageCode.Login)
