@@ -5,6 +5,7 @@
     using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Tcp;
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
 
     public class SoulseekClient
@@ -30,6 +31,7 @@
         public int Port { get; private set; }
 
         private MessageMapper MessageMapper { get; set; }
+        private List<Connection> PeerConnections { get; set; } = new List<Connection>();
 
         public async Task ConnectAsync()
         {
@@ -62,7 +64,7 @@
             OnMessageReceived(new Message(e.Data));
         }
 
-        private void OnMessageReceived(Message message)
+        private async Task OnMessageReceived(Message message)
         {
             var response = new object();
             var maps = MessageMapper.Map(message);
@@ -83,6 +85,9 @@
                 case MessageCode.ServerConnectToPeer:
                     response = new ConnectToPeerResponse().MapFrom(message);
                     break;
+                case MessageCode.PeerSearchReply:
+                    Console.WriteLine("================================================================================================");
+                    break;
                 default:
                     response = null;
                     break;
@@ -97,26 +102,43 @@
                 Console.WriteLine($"IPAddress: {lr.IPAddress}");
             }
 
-            if (response is RoomListResponse rls)
-            {
-                foreach (var room in rls.Rooms)
-                {
-                    Console.WriteLine($"Room: {room.Name}, Users: {room.UserCount}");
-                }
-            }
+            //if (response is RoomListResponse rls)
+            //{
+            //    foreach (var room in rls.Rooms)
+            //    {
+            //        Console.WriteLine($"Room: {room.Name}, Users: {room.UserCount}");
+            //    }
+            //}
 
-            if (response is PrivilegedUsersResponse pu)
-            {
-                foreach (var u in pu.PrivilegedUsers)
-                {
-                    Console.WriteLine($"Privileged User: {u}");
-                }
-            }
+            //if (response is PrivilegedUsersResponse pu)
+            //{
+            //    foreach (var u in pu.PrivilegedUsers)
+            //    {
+            //        Console.WriteLine($"Privileged User: {u}");
+            //    }
+            //}
 
             if (response is ConnectToPeerResponse c)
             {
-                Console.WriteLine($"Username: {c.Username}, Type: {c.Type}, IP: {c.IPAddress}, Port: {c.Port}, Token: {c.Token}");
+                //Console.WriteLine($"\tUsername: {c.Username}, Type: {c.Type}, IP: {c.IPAddress}, Port: {c.Port}, Token: {c.Token}");
+
+                var connection = new Connection(ConnectionType.Peer, c.IPAddress.ToString(), c.Port);
+                PeerConnections.Add(connection);
+
+                connection.DataReceived += OnConnectionDataReceived;
+                //connection.StateChanged += OnPeerConnectionStateChanged;
+
+                await connection.ConnectAsync();
+                //Console.WriteLine($"\tConnection to {c.Username} opened.");
+
+                var request = new PierceFirewallRequest(c.Token);
+                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
             }
+        }
+
+        private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        {
+            Console.WriteLine($"\tPeer Connection State Changed: {e.State} ({e.Message ?? "Unknown"})");
         }
 
         private void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
