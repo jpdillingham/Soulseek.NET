@@ -3,6 +3,7 @@
     using Soulseek.NET;
     using Soulseek.NET.Tcp;
     using System;
+    using System.Linq;
     using System.Threading.Tasks;
 
     class Program
@@ -14,7 +15,7 @@
 
             await client.ConnectAsync();
 
-            Console.WriteLine("Enter password:");
+            Console.WriteLine("Enter username and password:");
 
             while (true)
             {
@@ -24,9 +25,13 @@
                 {
                     client.Connection.Disconnect("User requested Disconnect");
                 }
+                if (cmd.StartsWith("search"))
+                {
+                    await client.SearchAsync(string.Join(' ', cmd.Split(' ').Skip(1)));
+                }
                 else
                 {
-                    if (await client.LoginAsync("username", cmd))
+                    if (await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]))
                     {
                         Console.WriteLine("Login succeeded");
                         //break;
