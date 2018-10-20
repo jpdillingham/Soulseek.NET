@@ -14,12 +14,6 @@
         {
         }
 
-        public MessageBuilder(MessageCode code)
-            : this()
-        {
-            Code(code);
-        }
-
         public MessageBuilder Code(MessageCode code)
         {
             if (Initialized)
@@ -30,6 +24,19 @@
             Initialized = true;
 
             Bytes.AddRange(BitConverter.GetBytes((int)code));
+            return this;
+        }
+
+        public MessageBuilder Code(byte code)
+        {
+            if (Initialized)
+            {
+                throw new MessageBuildException($"The Message Code may only be set once.");
+            }
+
+            Initialized = true;
+
+            Bytes.Add(code);
             return this;
         }
 
