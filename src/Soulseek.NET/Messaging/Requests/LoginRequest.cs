@@ -17,7 +17,7 @@
         public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.Login)
+                .Code(MessageCode.ServerLogin)
                 .WriteString(Username)
                 .WriteString(Password)
                 .WriteInteger(Version)

@@ -4,7 +4,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageResponse(MessageCode.PrivilegedUsers)]
+    [MessageResponse(MessageCode.ServerPrivilegedUsers)]
     public class PrivilegedUsersResponse : IMessageResponse<PrivilegedUsersResponse>
     {
         public IEnumerable<string> PrivilegedUsers => PrivilegedUserList;
@@ -16,9 +16,9 @@ namespace Soulseek.NET.Messaging.Maps
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.PrivilegedUsers)
+            if (reader.Code != MessageCode.ServerPrivilegedUsers)
             {
-                throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.PrivilegedUsers}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.ServerPrivilegedUsers}, received: {(int)reader.Code}");
             }
 
             PrivilegedUserCount = reader.ReadInteger();

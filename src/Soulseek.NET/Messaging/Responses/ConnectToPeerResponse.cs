@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageResponse(MessageCode.ConnectToPeer)]
+    [MessageResponse(MessageCode.ServerConnectToPeer)]
     public class ConnectToPeerResponse : IMessageResponse<ConnectToPeerResponse>
     {
         public string Username { get; private set; }
@@ -16,9 +16,9 @@ namespace Soulseek.NET.Messaging.Maps
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.ConnectToPeer)
+            if (reader.Code != MessageCode.ServerConnectToPeer)
             {
-                throw new MessageException($"Message Code mismatch creating Connect To Peer response (expected: {(int)MessageCode.ConnectToPeer}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Connect To Peer response (expected: {(int)MessageCode.ServerConnectToPeer}, received: {(int)reader.Code}");
             }
 
             Username = reader.ReadString();

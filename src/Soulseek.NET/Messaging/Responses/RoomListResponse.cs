@@ -4,7 +4,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageResponse(MessageCode.RoomList)]
+    [MessageResponse(MessageCode.ServerRoomList)]
     public class RoomListResponse : IMessageResponse<RoomListResponse>
     {
         public IEnumerable<Room> Rooms => RoomList;
@@ -17,9 +17,9 @@ namespace Soulseek.NET.Messaging.Maps
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.RoomList)
+            if (reader.Code != MessageCode.ServerRoomList)
             {
-                throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.RoomList}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.ServerRoomList}, received: {(int)reader.Code}");
             }
 
             RoomCount = reader.ReadInteger();

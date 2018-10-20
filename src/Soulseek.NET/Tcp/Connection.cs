@@ -9,8 +9,9 @@
 
     public class Connection : IConnection
     {
-        public Connection(string address = "server.slsknet.org", int port = 2242, int readBufferSize = 1024, ITcpClient tcpClient = null)
+        public Connection(ConnectionType type, string address, int port, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
+            Type = type;
             Address = address;
             Port = port;
             ReadBufferSize = readBufferSize;
@@ -20,6 +21,7 @@
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
+        public ConnectionType Type { get; private set; }
         public string Address { get; private set; }
         public int Port { get; private set; }
         public int ReadBufferSize { get; private set; }
@@ -96,6 +98,7 @@
 
             try
             {
+                AddToCode(bytes, 0 - (int)Type);
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
             }
             catch (Exception ex)
@@ -129,7 +132,11 @@
 
                         if (buffer.Count >= headMessageLength)
                         {
-                            DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = buffer.Take(headMessageLength).ToArray() });
+                            var data = buffer.Take(headMessageLength).ToArray();
+
+                            AddToCode(data, (int)Type);
+
+                            DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data });
                             buffer.RemoveRange(0, headMessageLength);
                         }
                     } while (Stream.DataAvailable);
@@ -139,6 +146,14 @@
             {
                 Disconnect($"Read Error: {ex.Message}");
             }
+        }
+
+        private void AddToCode(byte[] messageBytes, int newCode)
+        {
+            var code = BitConverter.ToInt32(messageBytes, 4);
+            var adjustedCode = BitConverter.GetBytes(code + newCode);
+
+            Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
     }
 }

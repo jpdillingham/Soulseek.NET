@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Maps
 {
-    [MessageResponse(MessageCode.Login)]
+    [MessageResponse(MessageCode.ServerLogin)]
     public class LoginResponse : IMessageResponse<LoginResponse>
     {
         public enum LoginResponseStatus : byte
@@ -20,9 +20,9 @@ namespace Soulseek.NET.Messaging.Maps
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.Login)
+            if (reader.Code != MessageCode.ServerLogin)
             {
-                throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.Login}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.ServerLogin}, received: {(int)reader.Code}");
             }
 
             Status = (LoginResponseStatus)reader.ReadByte();

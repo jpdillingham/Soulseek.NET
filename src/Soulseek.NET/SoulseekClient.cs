@@ -14,7 +14,7 @@
             Address = address;
             Port = port;
 
-            Connection = new Connection(Address, Port);
+            Connection = new Connection(ConnectionType.Server, Address, Port);
             Connection.StateChanged += OnConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
 
@@ -71,16 +71,16 @@
 
             switch (message.Code)
             {
-                case MessageCode.Login:
+                case MessageCode.ServerLogin:
                     response = new LoginResponse().MapFrom(message);
                     break;
-                case MessageCode.RoomList:
+                case MessageCode.ServerRoomList:
                     response = new RoomListResponse().MapFrom(message);
                     break;
-                case MessageCode.PrivilegedUsers:
+                case MessageCode.ServerPrivilegedUsers:
                     response = new PrivilegedUsersResponse().MapFrom(message);
                     break;
-                case MessageCode.ConnectToPeer:
+                case MessageCode.ServerConnectToPeer:
                     response = new ConnectToPeerResponse().MapFrom(message);
                     break;
                 default:

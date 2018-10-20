@@ -14,7 +14,7 @@
         public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.FileSearch)
+                .Code(MessageCode.ServerFileSearch)
                 .WriteInteger(Token)
                 .WriteString(SearchText)
                 .Build();
