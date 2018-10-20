@@ -47,6 +47,13 @@
             return true;
         }
 
+        public async Task SearchAsync(string searchText)
+        {
+            var request = new SearchRequest(searchText, 1);
+            Console.WriteLine($"Searching for {searchText}...");
+            await Connection.SendAsync(request.ToMessage().ToByteArray());
+        }
+
         private void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             Console.WriteLine($"Data Received: {e.Data.Length} bytes");
@@ -60,6 +67,8 @@
             var response = new object();
             var maps = MessageMapper.Map(message);
 
+            Console.WriteLine($"Message Received: Code: {message.Code}");
+
             switch (message.Code)
             {
                 case MessageCode.Login:
@@ -70,6 +79,9 @@
                     break;
                 case MessageCode.PrivilegedUsers:
                     response = new PrivilegedUsersResponse().MapFrom(message);
+                    break;
+                case MessageCode.ConnectToPeer:
+                    response = new ConnectToPeerResponse().MapFrom(message);
                     break;
                 default:
                     response = null;
@@ -99,6 +111,11 @@
                 {
                     Console.WriteLine($"Privileged User: {u}");
                 }
+            }
+
+            if (response is ConnectToPeerResponse c)
+            {
+                Console.WriteLine($"Username: {c.Username}, Type: {c.Type}, IP: {c.IPAddress}, Port: {c.Port}, Token: {c.Token}");
             }
         }
 
