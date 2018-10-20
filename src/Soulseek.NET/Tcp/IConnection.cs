@@ -11,6 +11,6 @@ namespace Soulseek.NET.Tcp
 
         Task ConnectAsync();
         void Disconnect(string message = null);
-        Task SendAsync(byte[] bytes);
+        Task SendAsync(byte[] bytes, bool suppressCodeNormalization = false);
     }
 }

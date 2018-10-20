@@ -82,7 +82,7 @@
             }
         }
 
-        public async Task SendAsync(byte[] bytes)
+        public async Task SendAsync(byte[] bytes, bool suppressCodeNormalization = false)
         {
             CheckConnection();
 
@@ -98,7 +98,11 @@
 
             try
             {
-                AddToCode(bytes, 0 - (int)Type);
+                if (!suppressCodeNormalization)
+                {
+                    NormalizeMessageCode(bytes, 0 - (int)Type);
+                }
+
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
             }
             catch (Exception ex)
@@ -126,6 +130,12 @@
                         var bytes = new byte[ReadBufferSize];
                         var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
 
+                        if (bytesRead == 0)
+                        {
+                            //Disconnect($"No data read.");
+                            break;
+                        }
+
                         buffer.AddRange(bytes.Take(bytesRead));
 
                         var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
@@ -134,7 +144,7 @@
                         {
                             var data = buffer.Take(headMessageLength).ToArray();
 
-                            AddToCode(data, (int)Type);
+                            NormalizeMessageCode(data, (int)Type);
 
                             DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data });
                             buffer.RemoveRange(0, headMessageLength);
@@ -148,7 +158,7 @@
             }
         }
 
-        private void AddToCode(byte[] messageBytes, int newCode)
+        private void NormalizeMessageCode(byte[] messageBytes, int newCode)
         {
             var code = BitConverter.ToInt32(messageBytes, 4);
             var adjustedCode = BitConverter.GetBytes(code + newCode);
