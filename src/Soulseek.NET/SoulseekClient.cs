@@ -1,8 +1,8 @@
 ﻿namespace Soulseek.NET
 {
     using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Maps;
     using Soulseek.NET.Messaging.Requests;
+    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Generic;
@@ -31,22 +31,31 @@
         public int Port { get; private set; }
 
         private MessageMapper MessageMapper { get; set; }
+        private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
-
+        
         public async Task ConnectAsync()
         {
             await Connection.ConnectAsync();
         }
 
-        public async Task<bool> LoginAsync(string username, string password)
+        public async Task<LoginResponse> LoginAsync(string username, string password)
         {
             var request = new LoginRequest(username, password);
 
-            Console.WriteLine($"Logging in as {username}...");
+            var login = MessageWaiter.WaitFor(MessageCode.ServerLogin).Task;
+            var roomList = MessageWaiter.WaitFor(MessageCode.ServerRoomList).Task;
+            var privilegedUsers = MessageWaiter.WaitFor(MessageCode.ServerPrivilegedUsers).Task;
 
             await Connection.SendAsync(request.ToMessage().ToByteArray());
 
-            return true;
+            Task.WaitAll(login, roomList, privilegedUsers);
+
+            var response = (LoginResponse)login.Result;
+            response.Rooms = ((RoomListResponse)roomList.Result).Rooms;
+            response.PrivilegedUsers = ((PrivilegedUsersResponse)privilegedUsers.Result).PrivilegedUsers;
+
+            return response;
         }
 
         public async Task SearchAsync(string searchText)
@@ -58,29 +67,28 @@
 
         private void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            Console.WriteLine($"Data Received: {e.Data.Length} bytes");
-            DataReceived?.Invoke(this, e);
-
-            OnMessageReceived(new Message(e.Data));
+            Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
+            Task.Run(() => OnMessageReceived(new Message(e.Data))).Forget();
         }
 
-        private async Task OnMessageReceived(Message message)
+        private async void OnMessageReceived(Message message)
         {
             var response = new object();
             var maps = MessageMapper.Map(message);
-
-            Console.WriteLine($"Message Received: Code: {message.Code}");
 
             switch (message.Code)
             {
                 case MessageCode.ServerLogin:
                     response = new LoginResponse().MapFrom(message);
+                    MessageWaiter.Complete(MessageCode.ServerLogin, response);
                     break;
                 case MessageCode.ServerRoomList:
                     response = new RoomListResponse().MapFrom(message);
+                    MessageWaiter.Complete(MessageCode.ServerRoomList, response);
                     break;
                 case MessageCode.ServerPrivilegedUsers:
                     response = new PrivilegedUsersResponse().MapFrom(message);
+                    MessageWaiter.Complete(MessageCode.ServerPrivilegedUsers, response);
                     break;
                 case MessageCode.ServerConnectToPeer:
                     response = new ConnectToPeerResponse().MapFrom(message);
@@ -89,18 +97,12 @@
                     Console.WriteLine("================================================================================================");
                     break;
                 default:
+                    Console.WriteLine($"Message Received: Code: {message.Code}");
                     response = null;
                     break;
             }
 
             MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = message.Code, Response = response });
-
-            if (response is LoginResponse lr)
-            {
-                Console.WriteLine($"Status: {lr.Status}");
-                Console.WriteLine($"Message: {lr.Message}");
-                Console.WriteLine($"IPAddress: {lr.IPAddress}");
-            }
 
             //if (response is RoomListResponse rls)
             //{
