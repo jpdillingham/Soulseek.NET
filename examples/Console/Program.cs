@@ -1,6 +1,8 @@
 ﻿namespace Console
 {
+    using Newtonsoft.Json;
     using Soulseek.NET;
+    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
     using System.Linq;
@@ -31,9 +33,12 @@
                 }
                 else
                 {
-                    if (await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]))
+                    var r = await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]);
+
+                    if (r.Succeeded)
                     {
                         Console.WriteLine("Login succeeded");
+                        Console.WriteLine(JsonConvert.SerializeObject(r));
                         //break;
                     }
                     else
