@@ -1,20 +1,18 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 
-namespace Soulseek.NET.Messaging.Maps
+namespace Soulseek.NET.Messaging.Responses
 {
     [MessageResponse(MessageCode.ServerLogin)]
     public class LoginResponse : IMessageResponse<LoginResponse>
     {
-        public enum LoginResponseStatus : byte
-        {
-            Failure = 0,
-            Success = 1,
-        }
-
-        public LoginResponseStatus Status { get; private set; }
+        public bool Succeeded { get; private set; }
+        public bool Failed => !Succeeded;
         public string Message { get; private set; }
-        public IPAddress IPAddress { get; private set; }
+        public string IPAddress { get; private set; }
+        public IEnumerable<Room> Rooms { get; set; }
+        public IEnumerable<string> PrivilegedUsers { get; set; }
 
         public LoginResponse MapFrom(Message message)
         {
@@ -25,14 +23,14 @@ namespace Soulseek.NET.Messaging.Maps
                 throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.ServerLogin}, received: {(int)reader.Code}");
             }
 
-            Status = (LoginResponseStatus)reader.ReadByte();
+            Succeeded = reader.ReadByte() == 1;
             Message = reader.ReadString();
 
-            if (Status == LoginResponseStatus.Success)
+            if (Succeeded)
             {
                 var ipBytes = reader.ReadBytes(4);
                 Array.Reverse(ipBytes);
-                IPAddress = new IPAddress(ipBytes);
+                IPAddress = new IPAddress(ipBytes).ToString();
             }
 
             return this;

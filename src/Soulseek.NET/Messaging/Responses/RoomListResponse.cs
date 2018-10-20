@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net;
 
-namespace Soulseek.NET.Messaging.Maps
+namespace Soulseek.NET.Messaging.Responses
 {
     [MessageResponse(MessageCode.ServerRoomList)]
     public class RoomListResponse : IMessageResponse<RoomListResponse>

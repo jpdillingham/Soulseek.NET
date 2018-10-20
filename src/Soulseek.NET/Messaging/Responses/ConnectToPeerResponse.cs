@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Net;
 
-namespace Soulseek.NET.Messaging.Maps
+namespace Soulseek.NET.Messaging.Responses
 {
     [MessageResponse(MessageCode.ServerConnectToPeer)]
     public class ConnectToPeerResponse : IMessageResponse<ConnectToPeerResponse>
