@@ -23,24 +23,23 @@
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        public event EventHandler<MessageReceivedEventArgs> UnknownMessageRecieved;
         public event EventHandler<ResponseReceivedEventArgs> ResponseReceived;
         public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
+        public event EventHandler<MessageReceivedEventArgs> UnknownMessageRecieved;
 
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
-        public int Port { get; private set; }
-
-        public IEnumerable<Room> Rooms { get; private set; }
         public int ParentMinSpeed { get; private set; }
         public int ParentSpeedRatio { get; private set; }
-        public int WishlistInterval { get; private set; }
-        public IEnumerable<string> PrivilegedUsers { get; private set; }
+        public int Port { get; private set; }
 
+        public IEnumerable<string> PrivilegedUsers { get; private set; }
+        public IEnumerable<Room> Rooms { get; private set; }
+        public int WishlistInterval { get; private set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
-        
+
         public async Task ConnectAsync()
         {
             await Connection.ConnectAsync();
@@ -77,55 +76,21 @@
             await Connection.SendAsync(request.ToMessage().ToByteArray());
         }
 
-        private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
-            await HandleMessage(new Message(e.Data));
-        }
+        //private async Task HandleMessage(object response)
+        //{
+        //    if (response is ConnectToPeerResponse connectToPeerResponse)
+        //    {
+        //        await HandleConnectToPeerResponse(connectToPeerResponse);
+        //    }
 
-        private async Task HandleMessage(Message message)
-        {
-            Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
-            
-            if (new MessageMapper().TryMapResponse(message, out var mappedResponse))
-            {
-                MessageWaiter.Complete(message.Code, mappedResponse);
+        //    if (response is PeerSearchReplyResponse peerSearchReplyResponse)
+        //    {
+        //        await HandlePeerSearchReplyResponse(peerSearchReplyResponse);
+        //    }
+        //}
 
-                var eventArgs = new ResponseReceivedEventArgs()
-                {
-                    Message = message,
-                    ResponseType = mappedResponse.GetType(),
-                    Response = mappedResponse,
-                };
-                
-                Task.Run(() => ResponseReceived?.Invoke(this, eventArgs)).Forget();
-            }
-            else
-            {
-                Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
-            }
-
-            if (mappedResponse is ConnectToPeerResponse connectToPeerResponse)
-            {
-                await HandleConnectToPeerResponse(connectToPeerResponse);
-            }
-
-            if (mappedResponse is PeerSearchReplyResponse peerSearchReplyResponse)
-            {
-                await HandlePeerSearchReplyResponse(peerSearchReplyResponse);
-            }
-        }
-
-        private async Task HandlePeerSearchReplyResponse(PeerSearchReplyResponse peerSearchReplyResponse)
-        {
-            if (peerSearchReplyResponse.FileCount > 0)
-            {
-                var eventArgs = new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse };
-                Task.Run(() => SearchResultReceived?.Invoke(this, eventArgs)).Forget();
-            }
-        }
-
-        private async Task HandleConnectToPeerResponse(ConnectToPeerResponse connectToPeerResponse)
+        [MessageHandler(MessageCode.ServerConnectToPeer)]
+        private async Task HandleConnectToPeerResponse(Message message, ConnectToPeerResponse connectToPeerResponse)
         {
             var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port);
             PeerConnections.Add(connection);
@@ -146,15 +111,72 @@
             }
         }
 
+        [MessageHandler(MessageCode.PeerSearchReply)]
+        private async Task HandlePeerSearchReplyResponse(Message message, PeerSearchReplyResponse peerSearchReplyResponse)
+        {
+            if (peerSearchReplyResponse.FileCount > 0)
+            {
+                var eventArgs = new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse };
+                await Task.Run(() => SearchResultReceived?.Invoke(this, eventArgs));
+            }
+        }
+
+        [MessageHandler(MessageCode.ServerLogin)]
+        [MessageHandler(MessageCode.ServerRoomList)]
+        [MessageHandler(MessageCode.ServerPrivilegedUsers)]
+        [MessageHandler(MessageCode.ServerParentMinSpeed)]
+        [MessageHandler(MessageCode.ServerParentSpeedRatio)]
+        [MessageHandler(MessageCode.ServerWishlistInterval)]
+        private async Task HandleIntegerResponse(Message message, object response)
+        {
+            await Task.Run(() => MessageWaiter.Complete(message.Code, response));
+        }
+
+        private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
+            
+            var message = new Message(e.Data);
+            Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
+
+            if (new MessageMapper().TryMapResponse(message, out var response))
+            {
+                MessageWaiter.Complete(message.Code, response);
+
+                var eventArgs = new ResponseReceivedEventArgs()
+                {
+                    Message = message,
+                    ResponseType = response.GetType(),
+                    Response = response,
+                };
+
+                Task.Run(() => ResponseReceived?.Invoke(this, eventArgs)).Forget();
+
+                if (MessageHandler.TryGetHandler(this, message.Code, out var handler))
+                {
+                    Console.WriteLine($"Handler for {message.Code}: {handler.Method.Name}");
+                    await handler.Invoke(this, message, response);
+                }
+                else
+                {
+                    Console.WriteLine($"Failed to find handler for {message.Code}");
+                }
+                //await HandleMessage(response);
+            }
+            else
+            {
+                Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
+            }
+        }
+
+        private async void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        {
+            await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
+        }
+
         private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
             Console.WriteLine($"\tPeer Connection State Changed: {e.State} ({e.Message ?? "Unknown"})");
-        }
-
-        private void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            Console.WriteLine($"Connection State Changed: {e.State} ({e.Message ?? "Unknown"})");
-            ConnectionStateChanged?.Invoke(this, e);
         }
     }
 }
