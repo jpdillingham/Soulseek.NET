@@ -23,6 +23,7 @@
 
         public ConnectionType Type { get; private set; }
         public string Address { get; private set; }
+        public IPAddress IPAddress { get; private set; }
         public int Port { get; private set; }
         public int ReadBufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
@@ -37,22 +38,31 @@
                 throw new ConnectionStateException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
 
-            var ip = Dns.GetHostEntry(Address).AddressList[0];
+            IPAddress ip;
+
+            if (IPAddress.TryParse(Address, out ip))
+            {
+                IPAddress = ip;
+            }
+            else
+            {
+                IPAddress = Dns.GetHostEntry(Address).AddressList[0];
+            }
 
             try
             {
-                ChangeServerState(ConnectionState.Connecting, $"Connecting to {ip}:{Port}");
+                ChangeServerState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
-                await TcpClient.ConnectAsync(ip, Port);
+                await TcpClient.ConnectAsync(IPAddress, Port);
                 Stream = TcpClient.GetStream();
 
-                ChangeServerState(ConnectionState.Connected, $"Connected to {ip}:{Port}");
+                ChangeServerState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
             catch (Exception ex)
             {
                 ChangeServerState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
 
-                throw new ServerException($"Failed to connect to {Address}:{Port}: {ex.Message}", ex);
+                throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
 
             Task.Run(() => Read()).Forget();
