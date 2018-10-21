@@ -6,20 +6,30 @@ namespace Soulseek.NET.Messaging
 {
     public class MessageMapper
     {
-        public object MapResponse(Message message)
+        public bool TryMapResponse(Message message, out object response)
         {
-            var type = GetResponseType(message.Code);
-            var method = type.GetMethod("Map");
-            var response = Activator.CreateInstance(type);
-            method.Invoke(response, new[] { message });
+            try
+            {
+                var type = GetResponseType(message.Code);
+                var method = type.GetMethod("Map");
+                var instance = Activator.CreateInstance(type);
+                method.Invoke(instance, new[] { message });
 
-            return response;
+                response = instance;
+                return true;
+            }
+            catch (Exception)
+            {
+                response = null;
+                return false;
+            }
         }
 
         private Type GetResponseType(MessageCode code)
         {
             return Assembly.GetExecutingAssembly().GetTypes()
                 .Where(t => t.IsClass)
+                .Where(t => t.Namespace != null) // <PrivateImplementationDetails> compiler-generated optimization
                 .Where(t => t.Namespace.Equals(GetType().Namespace + ".Responses"))
                 .Where(t => t.GetInterfaces()
                     .Where(i => i.IsGenericType)
