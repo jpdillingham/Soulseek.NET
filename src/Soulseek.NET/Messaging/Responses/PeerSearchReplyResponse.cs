@@ -4,8 +4,7 @@ using System.Linq;
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    [MessageResponse(MessageCode.PeerSearchReply)]
-    public class PeerSearchReplyResponse : IMessageResponse<PeerSearchReplyResponse>
+    public class PeerSearchReplyResponse
     {
         public string Username { get; private set; }
         public int Ticket { get; private set; }
@@ -17,7 +16,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         private List<File> FileList { get; set; } = new List<File>();
 
-        public PeerSearchReplyResponse Map(Message message)
+        public static PeerSearchReplyResponse Map(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -28,46 +27,52 @@ namespace Soulseek.NET.Messaging.Responses
 
             reader.Decompress();
 
-            Username = reader.ReadString();
-            Ticket = reader.ReadInteger();
-            FileCount = reader.ReadInteger();
+            var response = new PeerSearchReplyResponse
+            {
+                Username = reader.ReadString(),
+                Ticket = reader.ReadInteger(),
+                FileCount = reader.ReadInteger()
+            };
 
             //Console.WriteLine($"User: {Username}, Ticket: {Ticket}, FileCount: {FileCount}");
 
-            for (int i = 0; i < FileCount; i++)
+            for (int i = 0; i < response.FileCount; i++)
             {
                 //Console.WriteLine($"#{i}");
-                var file = new File();
-
-                file.Code = reader.ReadByte();
-                //Console.WriteLine($"Code: {file.Code}");
-                file.Filename = reader.ReadString();
-                //Console.WriteLine($"Filename: {file.Filename}");
-                file.Size = reader.ReadLong();
-                //Console.WriteLine($"Size: {file.Size}");
-                file.Extension = reader.ReadString();
-                //Console.WriteLine($"Ext: {file.Extension}");
-                file.AttributeCount = reader.ReadInteger();
+                var file = new File
+                {
+                    Code = reader.ReadByte(),
+                    //Console.WriteLine($"Code: {file.Code}");
+                    Filename = reader.ReadString(),
+                    //Console.WriteLine($"Filename: {file.Filename}");
+                    Size = reader.ReadLong(),
+                    //Console.WriteLine($"Size: {file.Size}");
+                    Extension = reader.ReadString(),
+                    //Console.WriteLine($"Ext: {file.Extension}");
+                    AttributeCount = reader.ReadInteger()
+                };
                 //Console.WriteLine($"Attributes: {file.AttributeCount}");
 
                 for (int j = 0; j < file.AttributeCount; j++)
                 {
                     //Console.WriteLine($"#{j}");
-                    var attribute = new FileAttribute();
-                    attribute.Type = (FileAttributeType)reader.ReadInteger();
-                    attribute.Value = reader.ReadInteger();
+                    var attribute = new FileAttribute
+                    {
+                        Type = (FileAttributeType)reader.ReadInteger(),
+                        Value = reader.ReadInteger()
+                    };
                     //Console.WriteLine($"Attribute type: {attribute.Type}, value: {attribute.Value}");
                     ((List<FileAttribute>)file.Attributes).Add(attribute);
                 }
 
-                FileList.Add(file);
+                response.FileList.Add(file);
             }
 
-            FreeUploadSlots = reader.ReadByte();
-            UploadSpeed = reader.ReadInteger();
-            InQueue = reader.ReadInteger();
+            response.FreeUploadSlots = reader.ReadByte();
+            response.UploadSpeed = reader.ReadInteger();
+            response.InQueue = reader.ReadInteger();
 
-            return this;
+            return response;
         }
     }
 

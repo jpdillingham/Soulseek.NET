@@ -76,23 +76,10 @@
             await Connection.SendAsync(request.ToMessage().ToByteArray());
         }
 
-        //private async Task HandleMessage(object response)
-        //{
-        //    if (response is ConnectToPeerResponse connectToPeerResponse)
-        //    {
-        //        await HandleConnectToPeerResponse(connectToPeerResponse);
-        //    }
-
-        //    if (response is PeerSearchReplyResponse peerSearchReplyResponse)
-        //    {
-        //        await HandlePeerSearchReplyResponse(peerSearchReplyResponse);
-        //    }
-        //}
-
-        [MessageHandler(MessageCode.ServerConnectToPeer)]
-        private async Task HandleConnectToPeerResponse(Message message, ConnectToPeerResponse connectToPeerResponse)
+        private async Task HandleServerConnectToPeer(Message message)
         {
-            var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port);
+            var response = ServerConnectToPeerResponse.Map(message);
+            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
             PeerConnections.Add(connection);
 
             connection.DataReceived += OnConnectionDataReceived;
@@ -102,34 +89,24 @@
             {
                 await connection.ConnectAsync();
 
-                var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+                var request = new PierceFirewallRequest(response.Token);
                 await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
             }
             catch (ConnectionException ex)
             {
-                Console.WriteLine($"Failed to connect to Peer {connectToPeerResponse.Username}@{connectToPeerResponse.IPAddress}: {ex.Message}");
+                Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
             }
         }
 
-        [MessageHandler(MessageCode.PeerSearchReply)]
-        private async Task HandlePeerSearchReplyResponse(Message message, PeerSearchReplyResponse peerSearchReplyResponse)
+        private async Task HandlePeerSearchReply(Message message)
         {
-            if (peerSearchReplyResponse.FileCount > 0)
+            var response = PeerSearchReplyResponse.Map(message);
+
+            if (response.FileCount > 0)
             {
-                var eventArgs = new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse };
+                var eventArgs = new SearchResultReceivedEventArgs() { Response = response };
                 await Task.Run(() => SearchResultReceived?.Invoke(this, eventArgs));
             }
-        }
-
-        [MessageHandler(MessageCode.ServerLogin)]
-        [MessageHandler(MessageCode.ServerRoomList)]
-        [MessageHandler(MessageCode.ServerPrivilegedUsers)]
-        [MessageHandler(MessageCode.ServerParentMinSpeed)]
-        [MessageHandler(MessageCode.ServerParentSpeedRatio)]
-        [MessageHandler(MessageCode.ServerWishlistInterval)]
-        private async Task HandleIntegerResponse(Message message, object response)
-        {
-            await Task.Run(() => MessageWaiter.Complete(message.Code, response));
         }
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
@@ -139,34 +116,61 @@
             var message = new Message(e.Data);
             Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
 
-            if (new MessageMapper().TryMapResponse(message, out var response))
+            switch (message.Code)
             {
-                MessageWaiter.Complete(message.Code, response);
-
-                var eventArgs = new ResponseReceivedEventArgs()
-                {
-                    Message = message,
-                    ResponseType = response.GetType(),
-                    Response = response,
-                };
-
-                Task.Run(() => ResponseReceived?.Invoke(this, eventArgs)).Forget();
-
-                if (MessageHandler.TryGetHandler(this, message.Code, out var handler))
-                {
-                    Console.WriteLine($"Handler for {message.Code}: {handler.Method.Name}");
-                    await handler.Invoke(this, message, response);
-                }
-                else
-                {
-                    Console.WriteLine($"Failed to find handler for {message.Code}");
-                }
-                //await HandleMessage(response);
+                case MessageCode.ServerParentMinSpeed:
+                case MessageCode.ServerParentSpeedRatio:
+                case MessageCode.ServerWishlistInterval:
+                    MessageWaiter.Complete(message.Code, IntegerResponse.Map(message));
+                    break;
+                case MessageCode.ServerLogin:
+                    MessageWaiter.Complete(message.Code, LoginResponse.Map(message));
+                    break;
+                case MessageCode.ServerRoomList:
+                    MessageWaiter.Complete(message.Code, RoomListResponse.Map(message));
+                    break;
+                case MessageCode.ServerPrivilegedUsers:
+                    MessageWaiter.Complete(message.Code, PrivilegedUsersResponse.Map(message));
+                    break;
+                case MessageCode.PeerSearchReply:
+                    await HandlePeerSearchReply(message);
+                    break;
+                case MessageCode.ServerConnectToPeer:
+                    await HandleServerConnectToPeer(message);
+                    break;
+                default:
+                    Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
+                    break;
             }
-            else
-            {
-                Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
-            }
+
+            //if (new MessageMapper().TryMapResponse(message, out var response))
+            //{
+            //    MessageWaiter.Complete(message.Code, response);
+
+            //    var eventArgs = new ResponseReceivedEventArgs()
+            //    {
+            //        Message = message,
+            //        ResponseType = response.GetType(),
+            //        Response = response,
+            //    };
+
+            //    Task.Run(() => ResponseReceived?.Invoke(this, eventArgs)).Forget();
+
+            //    if (MessageHandler.TryGetHandler(this, message.Code, out var handler))
+            //    {
+            //        Console.WriteLine($"Handler for {message.Code}: {handler.Method.Name}");
+            //        await handler.Invoke(this, message, response);
+            //    }
+            //    else
+            //    {
+            //        Console.WriteLine($"Failed to find handler for {message.Code}");
+            //    }
+            //    //await HandleMessage(response);
+            //}
+            //else
+            //{
+                
+            //}
         }
 
         private async void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
