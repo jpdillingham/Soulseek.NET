@@ -30,8 +30,15 @@
         public Connection Connection { get; private set; }
         public int Port { get; private set; }
 
+        public IEnumerable<Room> Rooms { get; private set; }
+        public int ParentMinSpeed { get; private set; }
+        public int ParentSpeedRatio { get; private set; }
+        public int WishlistInterval { get; private set; }
+        public IEnumerable<string> PrivilegedUsers { get; private set; }
+
         private MessageMapper MessageMapper { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
+
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
         
         public async Task ConnectAsync()
@@ -43,19 +50,24 @@
         {
             var request = new LoginRequest(username, password);
 
-            var login = MessageWaiter.WaitFor(MessageCode.ServerLogin).Task;
-            var roomList = MessageWaiter.WaitFor(MessageCode.ServerRoomList).Task;
-            var privilegedUsers = MessageWaiter.WaitFor(MessageCode.ServerPrivilegedUsers).Task;
+            var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
+            var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
+            var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
+            var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
+            var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
+            var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
 
             await Connection.SendAsync(request.ToMessage().ToByteArray());
 
-            Task.WaitAll(login, roomList, privilegedUsers);
+            Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-            var response = (LoginResponse)login.Result;
-            response.Rooms = ((RoomListResponse)roomList.Result).Rooms;
-            response.PrivilegedUsers = ((PrivilegedUsersResponse)privilegedUsers.Result).PrivilegedUsers;
+            Rooms = ((RoomListResponse)roomList.Result).Rooms;
+            ParentMinSpeed = ((IntegerResponse)parentMinSpeed.Result).Value;
+            ParentSpeedRatio = ((IntegerResponse)parentSpeedRatio.Result).Value;
+            WishlistInterval = ((IntegerResponse)wishlistInterval.Result).Value;
+            PrivilegedUsers = ((PrivilegedUsersResponse)privilegedUsers.Result).PrivilegedUsers;
 
-            return response;
+            return (LoginResponse)login.Result;
         }
 
         public async Task SearchAsync(string searchText)
@@ -67,71 +79,56 @@
 
         private void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
+            Console.WriteLine($"Data Received: {e.Data.Length} bytes");
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
             Task.Run(() => OnMessageReceived(new Message(e.Data))).Forget();
         }
 
         private async void OnMessageReceived(Message message)
         {
-            var response = new object();
-            var maps = MessageMapper.Map(message);
+            Console.WriteLine($"Message Recieved: {message.Code}");
 
-            switch (message.Code)
+            var response = new object();
+            var mappedResponse = MessageMapper.MapResponse(message);
+
+            if (mappedResponse != null)
             {
-                case MessageCode.ServerLogin:
-                    response = new LoginResponse().MapFrom(message);
-                    MessageWaiter.Complete(MessageCode.ServerLogin, response);
-                    break;
-                case MessageCode.ServerRoomList:
-                    response = new RoomListResponse().MapFrom(message);
-                    MessageWaiter.Complete(MessageCode.ServerRoomList, response);
-                    break;
-                case MessageCode.ServerPrivilegedUsers:
-                    response = new PrivilegedUsersResponse().MapFrom(message);
-                    MessageWaiter.Complete(MessageCode.ServerPrivilegedUsers, response);
-                    break;
-                case MessageCode.ServerConnectToPeer:
-                    response = new ConnectToPeerResponse().MapFrom(message);
-                    break;
-                case MessageCode.PeerSearchReply:
-                    Console.WriteLine("================================================================================================");
-                    break;
-                default:
-                    Console.WriteLine($"Message Received: Code: {message.Code}");
-                    response = null;
-                    break;
+                MessageWaiter.Complete(message.Code, mappedResponse);
+            }
+            else
+            {
+                Console.WriteLine($"No Mapping for Code: {message.Code}");
+
+                switch (message.Code)
+                {
+                    case MessageCode.ServerConnectToPeer:
+                        Console.WriteLine("+++++++++++++++++++++++");
+                        response = new ConnectToPeerResponse().Map(message);
+                        break;
+                    case MessageCode.PeerSearchReply:
+                        Console.WriteLine("================================================================================================");
+                        break;
+                    default:
+                        Console.WriteLine($"Message Received: Code: {message.Code}");
+                        response = null;
+                        break;
+                }
             }
 
             MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = message.Code, Response = response });
 
-            //if (response is RoomListResponse rls)
-            //{
-            //    foreach (var room in rls.Rooms)
-            //    {
-            //        Console.WriteLine($"Room: {room.Name}, Users: {room.UserCount}");
-            //    }
-            //}
-
-            //if (response is PrivilegedUsersResponse pu)
-            //{
-            //    foreach (var u in pu.PrivilegedUsers)
-            //    {
-            //        Console.WriteLine($"Privileged User: {u}");
-            //    }
-            //}
-
-            if (response is ConnectToPeerResponse c)
+            if (mappedResponse is ConnectToPeerResponse c)
             {
-                //Console.WriteLine($"\tUsername: {c.Username}, Type: {c.Type}, IP: {c.IPAddress}, Port: {c.Port}, Token: {c.Token}");
+                Console.WriteLine($"\tUsername: {c.Username}, Type: {c.Type}, IP: {c.IPAddress}, Port: {c.Port}, Token: {c.Token}");
 
                 var connection = new Connection(ConnectionType.Peer, c.IPAddress.ToString(), c.Port);
                 PeerConnections.Add(connection);
 
                 connection.DataReceived += OnConnectionDataReceived;
-                //connection.StateChanged += OnPeerConnectionStateChanged;
+                connection.StateChanged += OnPeerConnectionStateChanged;
 
                 await connection.ConnectAsync();
-                //Console.WriteLine($"\tConnection to {c.Username} opened.");
+                Console.WriteLine($"\tConnection to {c.Username} opened.");
 
                 var request = new PierceFirewallRequest(c.Token);
                 await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
