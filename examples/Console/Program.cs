@@ -14,6 +14,7 @@
         {
             var client = new SoulseekClient();
             client.Connection.StateChanged += Client_ServerStateChanged;
+            client.SearchResultReceived += Client_SearchResultReceived;
 
             await client.ConnectAsync();
 
@@ -47,6 +48,11 @@
                     }
                 }
             }
+        }
+
+        private static void Client_SearchResultReceived(object sender, SearchResultReceivedEventArgs e)
+        {
+            Console.WriteLine(JsonConvert.SerializeObject(e));
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
