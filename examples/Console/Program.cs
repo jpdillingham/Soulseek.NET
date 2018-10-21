@@ -2,7 +2,6 @@
 {
     using Newtonsoft.Json;
     using Soulseek.NET;
-    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
     using System.Linq;
