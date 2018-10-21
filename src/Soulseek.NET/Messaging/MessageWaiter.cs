@@ -10,7 +10,7 @@
         private ReaderWriterLockSlim Lock { get; set; } = new ReaderWriterLockSlim();
         private Dictionary<object, Queue<TaskCompletionSource<object>>> Waits { get; set; } = new Dictionary<object, Queue<TaskCompletionSource<object>>>();
 
-        public TaskCompletionSource<object> WaitFor(MessageCode code, object token = null)
+        public TaskCompletionSource<object> Wait(MessageCode code, object token = null)
         {
             var key = GetKey(code, token);
             var wait = new TaskCompletionSource<object>();
