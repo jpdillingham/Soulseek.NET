@@ -1,9 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-
-namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET.Messaging.Responses
 {
+    using System;
+    using System.Net;
+
     [MessageResponse(MessageCode.ServerLogin)]
     public class LoginResponse : IMessageResponse<LoginResponse>
     {
@@ -11,10 +10,8 @@ namespace Soulseek.NET.Messaging.Responses
         public bool Failed => !Succeeded;
         public string Message { get; private set; }
         public string IPAddress { get; private set; }
-        public IEnumerable<Room> Rooms { get; set; }
-        public IEnumerable<string> PrivilegedUsers { get; set; }
 
-        public LoginResponse MapFrom(Message message)
+        public LoginResponse Map(Message message)
         {
             var reader = new MessageReader(message);
 

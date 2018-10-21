@@ -13,7 +13,7 @@ namespace Soulseek.NET.Messaging.Responses
         private int UserCountCount { get; set; }
         private List<Room> RoomList { get; set; } = new List<Room>();
 
-        public RoomListResponse MapFrom(Message message)
+        public RoomListResponse Map(Message message)
         {
             var reader = new MessageReader(message);
 

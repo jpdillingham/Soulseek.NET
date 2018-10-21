@@ -12,7 +12,7 @@ namespace Soulseek.NET.Messaging.Responses
         public int Port { get; private set; }
         public int Token { get; private set; }
 
-        public ConnectToPeerResponse MapFrom(Message message)
+        public ConnectToPeerResponse Map(Message message)
         {
             var reader = new MessageReader(message);
 
