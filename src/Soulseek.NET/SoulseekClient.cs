@@ -6,7 +6,9 @@
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
+    using System.Timers;
 
     public class SoulseekClient
     {
@@ -16,8 +18,21 @@
             Port = port;
 
             Connection = new Connection(ConnectionType.Server, Address, Port);
-            Connection.StateChanged += OnConnectionStateChanged;
+            Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
+
+            PeerConnectionMonitor.Elapsed += PeerConnectionMonitor_Elapsed;
+        }
+
+        private void PeerConnectionMonitor_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            var total = PeerConnections.Count();
+            var connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
+            var connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
+            var disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
+            var disconnected = PeerConnections.Where(c => c.State == ConnectionState.Disconnected).Count();
+
+            Console.WriteLine($"Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}, Disconnected: {disconnected}");
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -39,6 +54,7 @@
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
+        private Timer PeerConnectionMonitor { get; set; } = new Timer(1000);
 
         public async Task ConnectAsync()
         {
@@ -142,45 +158,24 @@
                     Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
                     break;
             }
-
-            //if (new MessageMapper().TryMapResponse(message, out var response))
-            //{
-            //    MessageWaiter.Complete(message.Code, response);
-
-            //    var eventArgs = new ResponseReceivedEventArgs()
-            //    {
-            //        Message = message,
-            //        ResponseType = response.GetType(),
-            //        Response = response,
-            //    };
-
-            //    Task.Run(() => ResponseReceived?.Invoke(this, eventArgs)).Forget();
-
-            //    if (MessageHandler.TryGetHandler(this, message.Code, out var handler))
-            //    {
-            //        Console.WriteLine($"Handler for {message.Code}: {handler.Method.Name}");
-            //        await handler.Invoke(this, message, response);
-            //    }
-            //    else
-            //    {
-            //        Console.WriteLine($"Failed to find handler for {message.Code}");
-            //    }
-            //    //await HandleMessage(response);
-            //}
-            //else
-            //{
-                
-            //}
         }
 
-        private async void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
+            if (e.State == ConnectionState.Connected)
+            {
+                PeerConnectionMonitor.Start();
+            }
+
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
         }
 
         private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            Console.WriteLine($"\tPeer Connection State Changed: {e.State} ({e.Message ?? "Unknown"})");
+            if (e.State == ConnectionState.Disconnected && sender is Connection connection)
+            {
+                PeerConnections.Remove(connection);
+            }
         }
     }
 }
