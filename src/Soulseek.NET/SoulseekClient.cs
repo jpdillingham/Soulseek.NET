@@ -23,6 +23,8 @@
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        public event EventHandler<MessageReceivedEventArgs> UnknownMessageRecieved;
+        public event EventHandler<ResponseReceivedEventArgs> ResponseReceived;
         public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
 
         public string Address { get; private set; }
@@ -75,42 +77,33 @@
             await Connection.SendAsync(request.ToMessage().ToByteArray());
         }
 
-        private void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            //Console.WriteLine($"Data Received: {e.Data.Length} bytes");
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
-            Task.Run(() => OnMessageReceived(new Message(e.Data))).Forget();
+            await HandleMessage(new Message(e.Data));
         }
 
-        private async void OnMessageReceived(Message message)
+        private async Task HandleMessage(Message message)
         {
-            object response = null;
-
+            Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
+            
             if (new MessageMapper().TryMapResponse(message, out var mappedResponse))
             {
                 MessageWaiter.Complete(message.Code, mappedResponse);
+
+                var eventArgs = new ResponseReceivedEventArgs()
+                {
+                    Message = message,
+                    ResponseType = mappedResponse.GetType(),
+                    Response = mappedResponse,
+                };
+                
+                Task.Run(() => ResponseReceived?.Invoke(this, eventArgs)).Forget();
             }
             else
             {
-                Console.WriteLine($"No Mapping for Code: {message.Code}");
-
-                switch (message.Code)
-                {
-                    case MessageCode.ServerConnectToPeer:
-                        Console.WriteLine("+++++++++++++++++++++++");
-                        response = new ConnectToPeerResponse().Map(message);
-                        break;
-                    case MessageCode.PeerSearchReply:
-                        Console.WriteLine("================================================================================================");
-                        break;
-                    default:
-                        Console.WriteLine($"Message Received: Code: {message.Code}");
-                        response = null;
-                        break;
-                }
+                Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
             }
-
-            MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = message.Code, Response = mappedResponse ?? response });
 
             if (mappedResponse is ConnectToPeerResponse connectToPeerResponse)
             {
@@ -119,11 +112,16 @@
 
             if (mappedResponse is PeerSearchReplyResponse peerSearchReplyResponse)
             {
-                if (peerSearchReplyResponse.FileCount > 0)
-                {
-                    //Console.WriteLine($"Search result recieved from {peerSearchReplyResponse.Username}");
-                    Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse })).Forget();
-                }
+                await HandlePeerSearchReplyResponse(peerSearchReplyResponse);
+            }
+        }
+
+        private async Task HandlePeerSearchReplyResponse(PeerSearchReplyResponse peerSearchReplyResponse)
+        {
+            if (peerSearchReplyResponse.FileCount > 0)
+            {
+                var eventArgs = new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse };
+                Task.Run(() => SearchResultReceived?.Invoke(this, eventArgs)).Forget();
             }
         }
 
