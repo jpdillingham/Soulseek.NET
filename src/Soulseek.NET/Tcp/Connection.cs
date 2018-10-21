@@ -194,7 +194,7 @@
 
                             NormalizeMessageCode(data, (int)Type);
 
-                            DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data });
+                            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data })).Forget();
                             buffer.RemoveRange(0, headMessageLength);
                         }
                     } while (Stream.DataAvailable);
