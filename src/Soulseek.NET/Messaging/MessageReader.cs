@@ -1,8 +1,10 @@
 ﻿namespace Soulseek.NET.Messaging
 {
     using System;
+    using System.IO;
     using System.Linq;
     using System.Text;
+    using zlib;
 
     public class MessageReader
     {
@@ -21,6 +23,20 @@
         public MessageReader(byte[] bytes)
             : this(new Message(bytes))
         {
+        }
+
+        public MessageReader Decompress()
+        {
+            byte[] decompressedPayload;
+
+            Decompress(Payload, out decompressedPayload);
+
+            Message = new MessageBuilder()
+                .Code(Code)
+                .WriteBytes(decompressedPayload)
+                .Build();
+
+            return this;
         }
 
         public MessageReader Reset()
@@ -105,6 +121,29 @@
             {
                 throw new MessageReadException($"Failed to read a string of length {length} from position {Position} of the message.", ex);
             }
+        }
+
+        private void Decompress(byte[] inData, out byte[] outData)
+        {
+            using (MemoryStream outMemoryStream = new MemoryStream())
+            using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream))
+            using (Stream inMemoryStream = new MemoryStream(inData))
+            {
+                CopyStream(inMemoryStream, outZStream);
+                outZStream.finish();
+                outData = outMemoryStream.ToArray();
+            }
+        }
+
+        private void CopyStream(Stream input, Stream output)
+        {
+            byte[] buffer = new byte[2000];
+            int len;
+            while ((len = input.Read(buffer, 0, 2000)) > 0)
+            {
+                output.Write(buffer, 0, len);
+            }
+            output.Flush();
         }
     }
 }
