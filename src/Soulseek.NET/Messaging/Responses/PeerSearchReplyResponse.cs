@@ -15,7 +15,7 @@ namespace Soulseek.NET.Messaging.Responses
         public int UploadSpeed { get; set; }
         public int InQueue { get; set; }
 
-        public List<File> FileList { get; private set; } = new List<File>();
+        private List<File> FileList { get; set; } = new List<File>();
 
         public PeerSearchReplyResponse Map(Message message)
         {
@@ -92,5 +92,7 @@ namespace Soulseek.NET.Messaging.Responses
         BitRate = 0,
         Length = 1,
         Unknown = 2,
+        SampleRate = 4,
+        BitDepth = 5,
     }
 }
