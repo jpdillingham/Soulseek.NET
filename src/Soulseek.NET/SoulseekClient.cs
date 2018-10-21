@@ -18,8 +18,6 @@
             Connection = new Connection(ConnectionType.Server, Address, Port);
             Connection.StateChanged += OnConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
-
-            MessageMapper = new MessageMapper();
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -37,7 +35,6 @@
         public int WishlistInterval { get; private set; }
         public IEnumerable<string> PrivilegedUsers { get; private set; }
 
-        private MessageMapper MessageMapper { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
@@ -90,7 +87,7 @@
             //Console.WriteLine($"Message Recieved: {message.Code}");
 
             var response = new object();
-            var mappedResponse = MessageMapper.MapResponse(message);
+            var mappedResponse = new MessageMapper().MapResponse(message);
 
             if (mappedResponse != null)
             {
@@ -145,9 +142,13 @@
                 }
             }
 
-            if (mappedResponse is PeerSearchReply reply)
+            if (mappedResponse is PeerSearchReplyResponse peerSearchReplyResponse)
             {
-                Task.Run(() => SearchResultReceived?.Invoke(this, (SearchResultReceivedEventArgs)reply)).Forget();
+                if (peerSearchReplyResponse.FileCount > 0)
+                {
+                    //Console.WriteLine($"Search result recieved from {peerSearchReplyResponse.Username}");
+                    Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse })).Forget();
+                }
             }
         }
 
