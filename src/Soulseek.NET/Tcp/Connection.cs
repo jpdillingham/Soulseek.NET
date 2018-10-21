@@ -10,7 +10,7 @@
 
     public class Connection : IConnection
     {
-        public Connection(ConnectionType type, string address, int port, int timeout = 5, int readBufferSize = 1024, ITcpClient tcpClient = null)
+        public Connection(ConnectionType type, string address, int port, int timeout = 10, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
@@ -64,7 +64,7 @@
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out
             // a TCS is basically a 'fake' task that ends when the result is set programmatically
-            var cancellationCompletionSource = new TaskCompletionSource<bool>();
+            var taskCompletionSource = new TaskCompletionSource<bool>();
 
             try
             {
@@ -77,10 +77,10 @@
 
                     // register the TCS with the CTS.  when the cancellation fires (due to timeout), it will set the value
                     // of the TCS via the registered delegate, ending the 'fake' task
-                    using (cancellationTokenSource.Token.Register(() => cancellationCompletionSource.TrySetResult(true)))
+                    using (cancellationTokenSource.Token.Register(() => taskCompletionSource.TrySetResult(true)))
                     {
                         // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
-                        if (task != await Task.WhenAny(task, cancellationCompletionSource.Task))
+                        if (task != await Task.WhenAny(task, taskCompletionSource.Task))
                         {
                             throw new OperationCanceledException($"Operation timed out after {Timeout} seconds", cancellationTokenSource.Token);
                         }
@@ -171,33 +171,40 @@
 
             try
             {
-                while (true)
+                using (var cancellationTokenSource = new CancellationTokenSource(Timeout))
+                using (cancellationTokenSource.Token.Register(() =>
                 {
-                    do
+                    if (Type == ConnectionType.Server) { }
+                }))
+                {
+                    while (true)
                     {
-                        var bytes = new byte[ReadBufferSize];
-                        var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
-
-                        if (bytesRead == 0)
+                        do
                         {
-                            //Disconnect($"No data read.");
-                            break;
-                        }
+                            var bytes = new byte[ReadBufferSize];
+                            var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
 
-                        buffer.AddRange(bytes.Take(bytesRead));
+                            if (bytesRead == 0)
+                            {
+                                Disconnect($"Zero bytes read.");
+                                break;
+                            }
 
-                        var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
+                            buffer.AddRange(bytes.Take(bytesRead));
 
-                        if (buffer.Count >= headMessageLength)
-                        {
-                            var data = buffer.Take(headMessageLength).ToArray();
+                            var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
 
-                            NormalizeMessageCode(data, (int)Type);
+                            if (buffer.Count >= headMessageLength)
+                            {
+                                var data = buffer.Take(headMessageLength).ToArray();
 
-                            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data })).Forget();
-                            buffer.RemoveRange(0, headMessageLength);
-                        }
-                    } while (Stream.DataAvailable);
+                                NormalizeMessageCode(data, (int)Type);
+
+                                Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data })).Forget();
+                                buffer.RemoveRange(0, headMessageLength);
+                            }
+                        } while (Stream.DataAvailable);
+                    }
                 }
             }
             catch (Exception ex)
