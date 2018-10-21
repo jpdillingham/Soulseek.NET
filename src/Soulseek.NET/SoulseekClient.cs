@@ -84,14 +84,10 @@
 
         private async void OnMessageReceived(Message message)
         {
-            //Console.WriteLine($"Message Recieved: {message.Code}");
+            object response = null;
 
-            var response = new object();
-            var mappedResponse = new MessageMapper().MapResponse(message);
-
-            if (mappedResponse != null)
+            if (new MessageMapper().TryMapResponse(message, out var mappedResponse))
             {
-                //Console.WriteLine($"Mapped: {mappedResponse}");
                 MessageWaiter.Complete(message.Code, mappedResponse);
             }
             else
@@ -114,32 +110,11 @@
                 }
             }
 
-            MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = message.Code, Response = response });
+            MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Code = message.Code, Response = mappedResponse ?? response });
 
-            if (mappedResponse is ConnectToPeerResponse c)
+            if (mappedResponse is ConnectToPeerResponse connectToPeerResponse)
             {
-                //Console.WriteLine($"\tUsername: {c.Username}, Type: {c.Type}, IP: {c.IPAddress}, Port: {c.Port}, Token: {c.Token}");
-
-                var connection = new Connection(ConnectionType.Peer, c.IPAddress.ToString(), c.Port);
-                PeerConnections.Add(connection);
-
-                connection.DataReceived += OnConnectionDataReceived;
-                //connection.StateChanged += OnPeerConnectionStateChanged;
-                try
-                {
-                    await connection.ConnectAsync();
-                    //Console.WriteLine($"\tConnection to {c.Username} opened.");
-                }
-                catch (ConnectionException ex)
-                {
-                    Console.WriteLine($"Failed to connect to Peer {c.Username}@{c.IPAddress}: {ex.Message}");
-                }
-
-                if (connection.State == ConnectionState.Connected)
-                {
-                    var request = new PierceFirewallRequest(c.Token);
-                    await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-                }
+                await HandleConnectToPeerResponse(connectToPeerResponse);
             }
 
             if (mappedResponse is PeerSearchReplyResponse peerSearchReplyResponse)
@@ -149,6 +124,27 @@
                     //Console.WriteLine($"Search result recieved from {peerSearchReplyResponse.Username}");
                     Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs() { Response = peerSearchReplyResponse })).Forget();
                 }
+            }
+        }
+
+        private async Task HandleConnectToPeerResponse(ConnectToPeerResponse connectToPeerResponse)
+        {
+            var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port);
+            PeerConnections.Add(connection);
+
+            connection.DataReceived += OnConnectionDataReceived;
+            connection.StateChanged += OnPeerConnectionStateChanged;
+
+            try
+            {
+                await connection.ConnectAsync();
+
+                var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+            }
+            catch (ConnectionException ex)
+            {
+                Console.WriteLine($"Failed to connect to Peer {connectToPeerResponse.Username}@{connectToPeerResponse.IPAddress}: {ex.Message}");
             }
         }
 
