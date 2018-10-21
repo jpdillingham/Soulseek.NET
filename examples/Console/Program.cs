@@ -51,12 +51,16 @@
 
         private static void Client_SearchResultReceived(object sender, SearchResultReceivedEventArgs e)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
+            //Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
+            foreach (var file in e.Response.Files)
+            {
+                Console.WriteLine($"{file.Filename}");
+            }
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            Console.WriteLine($"Server state changed to {e.State}");
+            Console.WriteLine($"Server state changed to {e.State} ({e.Message})");
         }
     }
 }
