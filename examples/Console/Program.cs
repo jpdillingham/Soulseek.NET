@@ -52,7 +52,7 @@
 
         private static void Client_SearchResultReceived(object sender, SearchResultReceivedEventArgs e)
         {
-            Console.WriteLine(JsonConvert.SerializeObject(e));
+            Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
