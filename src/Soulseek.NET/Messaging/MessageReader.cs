@@ -1,10 +1,10 @@
 ﻿namespace Soulseek.NET.Messaging
 {
+    using Soulseek.NET.Zlib;
     using System;
     using System.IO;
     using System.Linq;
     using System.Text;
-    using zlib;
 
     public class MessageReader
     {
@@ -125,9 +125,9 @@
 
         private void Decompress(byte[] inData, out byte[] outData)
         {
-            using (MemoryStream outMemoryStream = new MemoryStream())
-            using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream))
-            using (Stream inMemoryStream = new MemoryStream(inData))
+            using (var outMemoryStream = new MemoryStream())
+            using (var outZStream = new ZOutputStream(outMemoryStream))
+            using (var inMemoryStream = new MemoryStream(inData))
             {
                 CopyStream(inMemoryStream, outZStream);
                 outZStream.finish();
