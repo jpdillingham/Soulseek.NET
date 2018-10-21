@@ -5,15 +5,17 @@
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Threading;
     using System.Threading.Tasks;
 
     public class Connection : IConnection
     {
-        public Connection(ConnectionType type, string address, int port, int readBufferSize = 1024, ITcpClient tcpClient = null)
+        public Connection(ConnectionType type, string address, int port, int timeout = 5, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
             Port = port;
+            Timeout = timeout;
             ReadBufferSize = readBufferSize;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
         }
@@ -24,12 +26,32 @@
         public ConnectionType Type { get; private set; }
         public string Address { get; private set; }
         public IPAddress IPAddress { get; private set; }
+        public int Timeout { get; private set; }
         public int Port { get; private set; }
         public int ReadBufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
         private ITcpClient TcpClient { get; set; }
         private NetworkStream Stream { get; set; }
+
+        private IPAddress GetIPAddress(string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                var dns = Dns.GetHostEntry(address);
+
+                if (!dns.AddressList.Any())
+                {
+                    throw new ConnectionException($"Unable to resolve hostname {address}.");
+                }
+
+                return dns.AddressList[0];
+            }
+        }
 
         public async Task ConnectAsync()
         {
@@ -38,23 +60,37 @@
                 throw new ConnectionStateException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
 
-            IPAddress ip;
+            IPAddress = GetIPAddress(Address);
 
-            if (IPAddress.TryParse(Address, out ip))
-            {
-                IPAddress = ip;
-            }
-            else
-            {
-                IPAddress = Dns.GetHostEntry(Address).AddressList[0];
-            }
+            // create a new TCS to serve as the trigger which will throw when the CTS times out
+            // a TCS is basically a 'fake' task that ends when the result is set programmatically
+            var cancellationCompletionSource = new TaskCompletionSource<bool>();
 
             try
             {
                 ChangeServerState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
-                await TcpClient.ConnectAsync(IPAddress, Port);
-                Stream = TcpClient.GetStream();
+                // create a new CTS with our desired timeout.  when the timeout expires, the cancellation will fire
+                using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Timeout)))
+                {
+                    var task = TcpClient.ConnectAsync(IPAddress, Port);
+
+                    // register the TCS with the CTS.  when the cancellation fires (due to timeout), it will set the value
+                    // of the TCS via the registered delegate, ending the 'fake' task
+                    using (cancellationTokenSource.Token.Register(() => cancellationCompletionSource.TrySetResult(true)))
+                    {
+                        // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
+                        if (task != await Task.WhenAny(task, cancellationCompletionSource.Task))
+                        {
+                            throw new OperationCanceledException($"Operation timed out after {Timeout} seconds", cancellationTokenSource.Token);
+                        }
+
+                        if (task.Exception?.InnerException != null)
+                        {
+                            throw task.Exception.InnerException;
+                        }
+                    }
+                }
 
                 ChangeServerState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
@@ -64,6 +100,8 @@
 
                 throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
+
+            Stream = TcpClient.GetStream();
 
             Task.Run(() => Read()).Forget();
         }
