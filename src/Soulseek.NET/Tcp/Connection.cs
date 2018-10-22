@@ -37,7 +37,13 @@
                 Interval = 1000,
             };
 
-            WatchdogTimer.Elapsed += CheckConnection;
+            WatchdogTimer.Elapsed += (sender, e) => 
+            {
+                if (!TcpClient.Connected)
+                {
+                    Disconnect($"The server connection was closed unexpectedly.");
+                };
+            };
         }
 
         public event EventHandler<DataReceivedEventArgs> DataReceived;
@@ -136,7 +142,10 @@
 
         public async Task SendAsync(byte[] bytes, bool suppressCodeNormalization = false)
         {
-            CheckConnection();
+            if (!TcpClient.Connected)
+            {
+                throw new ConnectionStateException($"The underlying TcpConnection is closed.");
+            }
 
             if (State != ConnectionState.Connected)
             {
@@ -183,14 +192,6 @@
         {
             State = state;
             StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs() { State = state, Message = message });
-        }
-
-        private void CheckConnection(object sender = null, EventArgs e = null)
-        {
-            if (!TcpClient.Connected)
-            {
-                Disconnect($"The server connection was closed unexpectedly.");
-            }
         }
 
         private IPAddress GetIPAddress(string address)
