@@ -10,7 +10,7 @@
     using System.Threading.Tasks;
     using System.Timers;
 
-    public class SoulseekClient
+    public class SoulseekClient : IDisposable
     {
         public SoulseekClient(string address = "server.slsknet.org", int port = 2242)
         {
@@ -64,6 +64,16 @@
         public async Task ConnectAsync()
         {
             await Connection.ConnectAsync();
+        }
+
+        public void Disconnect()
+        {
+            Connection.Disconnect("User initiated shutdown");
+
+            foreach (var connection in PeerConnections)
+            {
+                connection.Disconnect("User initiated shutdown");
+            }
         }
 
         public async Task<LoginResponse> LoginAsync(string username, string password)
@@ -182,6 +192,27 @@
                 connection.Dispose();
                 PeerConnections.Remove(connection);
             }
+        }
+
+        private bool disposedValue = false; // To detect redundant calls
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    Connection?.Dispose();
+                    PeerConnections?.ForEach(c => c.Dispose());
+                    PeerConnectionMonitor?.Dispose();
+                }
+
+                disposedValue = true;
+            }
+        }
+        public void Dispose()
+        {
+            Dispose(true);
         }
     }
 }
