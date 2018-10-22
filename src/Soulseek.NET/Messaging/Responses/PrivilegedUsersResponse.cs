@@ -11,7 +11,7 @@ namespace Soulseek.NET.Messaging.Responses
         private int PrivilegedUserCount { get; set; }
         private List<string> PrivilegedUserList { get; set; } = new List<string>();
 
-        public static PrivilegedUsersResponse Map(Message message)
+        public static PrivilegedUsersResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 

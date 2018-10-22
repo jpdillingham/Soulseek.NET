@@ -10,7 +10,7 @@
         public string Message { get; private set; }
         public string IPAddress { get; private set; }
 
-        public static LoginResponse Map(Message message)
+        public static LoginResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 

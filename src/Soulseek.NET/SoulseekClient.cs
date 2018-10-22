@@ -150,22 +150,22 @@
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(message.Code, IntegerResponse.Map(message));
+                    MessageWaiter.Complete(message.Code, IntegerResponse.Parse(message));
                     break;
                 case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(message.Code, LoginResponse.Map(message));
+                    MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
                     break;
                 case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(message.Code, RoomListResponse.Map(message));
+                    MessageWaiter.Complete(message.Code, RoomListResponse.Parse(message));
                     break;
                 case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(message.Code, PrivilegedUsersResponse.Map(message));
+                    MessageWaiter.Complete(message.Code, PrivilegedUsersResponse.Parse(message));
                     break;
                 case MessageCode.PeerSearchReply:
-                    await HandlePeerSearchReply(PeerSearchReplyResponse.Map(message));
+                    await HandlePeerSearchReply(PeerSearchReplyResponse.Parse(message));
                     break;
                 case MessageCode.ServerConnectToPeer:
-                    await HandleServerConnectToPeer(ServerConnectToPeerResponse.Map(message));
+                    await HandleServerConnectToPeer(ServerConnectToPeerResponse.Parse(message));
                     break;
                 default:
                     Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();

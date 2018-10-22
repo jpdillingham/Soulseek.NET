@@ -16,7 +16,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         private List<File> FileList { get; set; } = new List<File>();
 
-        public static PeerSearchReplyResponse Map(Message message)
+        public static PeerSearchReplyResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
