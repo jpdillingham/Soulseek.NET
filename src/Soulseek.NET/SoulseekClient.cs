@@ -43,7 +43,7 @@
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        public event EventHandler<PeerSearchReplyResponse> SearchResultReceived;
+        public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
 
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
@@ -114,7 +114,7 @@
             return token;
         }
 
-        private async Task HandleServerConnectToPeer(ServerConnectToPeerResponse response)
+        private async Task HandleServerConnectToPeer(ServerConnectToPeerResponse response, NetworkEventArgs e)
         {
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
             PeerConnections.Add(connection);
@@ -135,11 +135,14 @@
             }
         }
 
-        private async Task HandlePeerSearchReply(PeerSearchReplyResponse response)
+        private async Task HandlePeerSearchReply(PeerSearchReplyResponse response, NetworkEventArgs e)
         {
             if (response.FileCount > 0)
             {
-                await Task.Run(() => SearchResultReceived?.Invoke(this, response));
+                await Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs(e)
+                {
+                    Result = response,
+                }));
             }
         }
 
@@ -149,13 +152,12 @@
             
             var message = new Message(e.Data);
 
-            Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs()
+            var messageEventArgs = new MessageReceivedEventArgs(e)
             {
-                Address = e.Address,
-                IPAddress = e.IPAddress,
-                Port = e.Port,
                 Message = message,
-            })).Forget();
+            };
+
+            Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
             switch (message.Code)
             {
@@ -174,10 +176,10 @@
                     MessageWaiter.Complete(message.Code, PrivilegedUsersResponse.Parse(message));
                     break;
                 case MessageCode.PeerSearchReply:
-                    await HandlePeerSearchReply(PeerSearchReplyResponse.Parse(message));
+                    await HandlePeerSearchReply(PeerSearchReplyResponse.Parse(message), e);
                     break;
                 case MessageCode.ServerConnectToPeer:
-                    await HandleServerConnectToPeer(ServerConnectToPeerResponse.Parse(message));
+                    await HandleServerConnectToPeer(ServerConnectToPeerResponse.Parse(message), e);
                     break;
                 default:
                     break;
