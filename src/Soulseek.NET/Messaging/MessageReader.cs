@@ -125,25 +125,25 @@
 
         private void Decompress(byte[] inData, out byte[] outData)
         {
+            void copyStream(Stream input, Stream output)
+            {
+                byte[] buffer = new byte[2000];
+                int len;
+                while ((len = input.Read(buffer, 0, 2000)) > 0)
+                {
+                    output.Write(buffer, 0, len);
+                }
+                output.Flush();
+            }
+
             using (var outMemoryStream = new MemoryStream())
             using (var outZStream = new ZOutputStream(outMemoryStream))
             using (var inMemoryStream = new MemoryStream(inData))
             {
-                CopyStream(inMemoryStream, outZStream);
+                copyStream(inMemoryStream, outZStream);
                 outZStream.finish();
                 outData = outMemoryStream.ToArray();
             }
-        }
-
-        private void CopyStream(Stream input, Stream output)
-        {
-            byte[] buffer = new byte[2000];
-            int len;
-            while ((len = input.Read(buffer, 0, 2000)) > 0)
-            {
-                output.Write(buffer, 0, len);
-            }
-            output.Flush();
         }
     }
 }
