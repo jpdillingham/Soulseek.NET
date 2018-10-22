@@ -30,9 +30,14 @@
             var connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
             var connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
             var disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
-            var disconnected = PeerConnections.Where(c => c.State == ConnectionState.Disconnected).Count();
 
-            Console.WriteLine($"Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}, Disconnected: {disconnected}");
+            foreach (var connection in PeerConnections.Where(c => c.State == ConnectionState.Disconnected))
+            {
+                connection.Dispose();
+                PeerConnections.Remove(connection);
+            }
+
+            Console.WriteLine($"Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}");
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -110,7 +115,7 @@
             }
             catch (ConnectionException ex)
             {
-                Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
+                //Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
             }
         }
 
@@ -174,6 +179,7 @@
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
+                connection.Dispose();
                 PeerConnections.Remove(connection);
             }
         }
