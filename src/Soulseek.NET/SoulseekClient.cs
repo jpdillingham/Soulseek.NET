@@ -60,6 +60,7 @@
 
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
         private Timer PeerConnectionMonitor { get; set; } = new Timer(1000);
+        private bool Disposed { get; set; } = false;
 
         public async Task ConnectAsync()
         {
@@ -107,9 +108,8 @@
             await Connection.SendAsync(request.ToMessage().ToByteArray());
         }
 
-        private async Task HandleServerConnectToPeer(Message message)
+        private async Task HandleServerConnectToPeer(ServerConnectToPeerResponse response)
         {
-            var response = ServerConnectToPeerResponse.Map(message);
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
             PeerConnections.Add(connection);
 
@@ -129,10 +129,8 @@
             }
         }
 
-        private async Task HandlePeerSearchReply(Message message)
+        private async Task HandlePeerSearchReply(PeerSearchReplyResponse response)
         {
-            var response = PeerSearchReplyResponse.Map(message);
-
             if (response.FileCount > 0)
             {
                 var eventArgs = new SearchResultReceivedEventArgs() { Response = response };
@@ -164,10 +162,10 @@
                     MessageWaiter.Complete(message.Code, PrivilegedUsersResponse.Map(message));
                     break;
                 case MessageCode.PeerSearchReply:
-                    await HandlePeerSearchReply(message);
+                    await HandlePeerSearchReply(PeerSearchReplyResponse.Map(message));
                     break;
                 case MessageCode.ServerConnectToPeer:
-                    await HandleServerConnectToPeer(message);
+                    await HandleServerConnectToPeer(ServerConnectToPeerResponse.Map(message));
                     break;
                 default:
                     Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
@@ -194,11 +192,9 @@
             }
         }
 
-        private bool disposedValue = false; // To detect redundant calls
-
         protected virtual void Dispose(bool disposing)
         {
-            if (!disposedValue)
+            if (!Disposed)
             {
                 if (disposing)
                 {
@@ -207,9 +203,10 @@
                     PeerConnectionMonitor?.Dispose();
                 }
 
-                disposedValue = true;
+                Disposed = true;
             }
         }
+
         public void Dispose()
         {
             Dispose(true);
