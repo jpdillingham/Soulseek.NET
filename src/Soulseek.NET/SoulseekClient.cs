@@ -105,13 +105,13 @@
             return Search(searchText, Random.Next(1, 2147483647));
         }
 
-        public int Search(string searchText, int token)
+        public int Search(string searchText, int ticket)
         {
-            var request = new SearchRequest(searchText, 1);
+            var request = new SearchRequest(searchText, ticket);
             Console.WriteLine($"Searching for {searchText}...");
             Task.Run(() => Connection.SendAsync(request.ToMessage().ToByteArray())).GetAwaiter().GetResult();
 
-            return token;
+            return ticket;
         }
 
         private async Task HandleServerConnectToPeer(ServerConnectToPeerResponse response, NetworkEventArgs e)
