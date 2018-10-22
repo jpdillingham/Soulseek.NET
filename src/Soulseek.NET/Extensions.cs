@@ -6,6 +6,7 @@
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Timers;
 
     public static class Extensions
     {
@@ -43,6 +44,12 @@
         public static void Forget(this Task task)
         {
             task.ContinueWith(t => { throw new Exception($"Thread Error: {t.Exception.Message}", t.Exception); });
+        }
+
+        public static void Reset(this Timer timer)
+        {
+            timer.Stop();
+            timer.Start();
         }
     }
 }
