@@ -191,7 +191,15 @@
         private void ChangeServerState(ConnectionState state, string message)
         {
             State = state;
-            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs() { State = state, Message = message });
+
+            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs()
+            {
+                Address = Address,
+                IPAddress = IPAddress.ToString(),
+                Port = Port,
+                State = state,
+                Message = message
+            });
         }
 
         private IPAddress GetIPAddress(string address)

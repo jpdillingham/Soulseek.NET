@@ -2,17 +2,21 @@
 {
     using System;
 
-    public class DataReceivedEventArgs : EventArgs
+    public class DataReceivedEventArgs : NetworkEventArgs
+    {
+        public byte[] Data;
+    }
+
+    public class ConnectionStateChangedEventArgs : NetworkEventArgs
+    {
+        public ConnectionState State { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class NetworkEventArgs : EventArgs
     {
         public string Address;
         public string IPAddress;
         public int Port;
-        public byte[] Data;
-    }
-
-    public class ConnectionStateChangedEventArgs : EventArgs
-    {
-        public ConnectionState State { get; set; }
-        public string Message { get; set; }
     }
 }
