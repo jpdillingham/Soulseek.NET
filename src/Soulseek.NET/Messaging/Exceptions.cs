@@ -62,24 +62,4 @@
         {
         }
     }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class MessageHandlerException : MessageException
-    {
-        public MessageHandlerException()
-            : base()
-        {
-        }
-
-        public MessageHandlerException(string message)
-            : base(message)
-        {
-        }
-
-        public MessageHandlerException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
 }
