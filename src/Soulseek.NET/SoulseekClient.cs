@@ -43,9 +43,7 @@
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        public event EventHandler<ResponseReceivedEventArgs> ResponseReceived;
-        public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
-        public event EventHandler<MessageReceivedEventArgs> UnknownMessageRecieved;
+        public event EventHandler<PeerSearchReplyResponse> SearchResultReceived;
 
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
@@ -61,6 +59,7 @@
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
         private Timer PeerConnectionMonitor { get; set; } = new Timer(1000);
         private bool Disposed { get; set; } = false;
+        private Random Random { get; set; } = new Random();
 
         public async Task ConnectAsync()
         {
@@ -101,11 +100,18 @@
             return (LoginResponse)login.Result;
         }
 
-        public async Task SearchAsync(string searchText)
+        public int Search(string searchText)
+        {
+            return Search(searchText, Random.Next(1, 2147483647));
+        }
+
+        public int Search(string searchText, int token)
         {
             var request = new SearchRequest(searchText, 1);
             Console.WriteLine($"Searching for {searchText}...");
-            await Connection.SendAsync(request.ToMessage().ToByteArray());
+            Task.Run(() => Connection.SendAsync(request.ToMessage().ToByteArray())).GetAwaiter().GetResult();
+
+            return token;
         }
 
         private async Task HandleServerConnectToPeer(ServerConnectToPeerResponse response)
@@ -133,8 +139,7 @@
         {
             if (response.FileCount > 0)
             {
-                var eventArgs = new SearchResultReceivedEventArgs() { Response = response };
-                await Task.Run(() => SearchResultReceived?.Invoke(this, eventArgs));
+                await Task.Run(() => SearchResultReceived?.Invoke(this, response));
             }
         }
 
@@ -143,7 +148,14 @@
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
             
             var message = new Message(e.Data);
-            Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
+
+            Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs()
+            {
+                Address = e.Address,
+                IPAddress = e.IPAddress,
+                Port = e.Port,
+                Message = message,
+            })).Forget();
 
             switch (message.Code)
             {
@@ -168,7 +180,6 @@
                     await HandleServerConnectToPeer(ServerConnectToPeerResponse.Parse(message));
                     break;
                 default:
-                    Task.Run(() => UnknownMessageRecieved?.Invoke(this, new MessageReceivedEventArgs() { Message = message })).Forget();
                     break;
             }
         }
