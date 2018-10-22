@@ -8,22 +8,21 @@
 
     public class MessageReader
     {
-        private int Position { get; set; } = 0;
-        private Message Message { get; set; }
-
-        public int Length => Message.Length;
-        public MessageCode Code => Message.Code;
-        public byte[] Payload => Message.Payload;
-
         public MessageReader(Message message)
         {
             Message = message;
         }
-        
+
         public MessageReader(byte[] bytes)
             : this(new Message(bytes))
         {
         }
+
+        public MessageCode Code => Message.Code;
+        public int Length => Message.Length;
+        public byte[] Payload => Message.Payload;
+        private Message Message { get; set; }
+        private int Position { get; set; } = 0;
 
         public MessageReader Decompress()
         {
@@ -36,12 +35,6 @@
                 .WriteBytes(decompressedPayload)
                 .Build();
 
-            return this;
-        }
-
-        public MessageReader Reset()
-        {
-            Position = 0;
             return this;
         }
 
@@ -121,6 +114,12 @@
             {
                 throw new MessageReadException($"Failed to read a string of length {length} from position {Position} of the message.", ex);
             }
+        }
+
+        public MessageReader Reset()
+        {
+            Position = 0;
+            return this;
         }
 
         private void Decompress(byte[] inData, out byte[] outData)

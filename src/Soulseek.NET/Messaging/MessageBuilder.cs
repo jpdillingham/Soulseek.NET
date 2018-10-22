@@ -7,11 +7,18 @@
 
     public class MessageBuilder
     {
-        private bool Initialized { get; set; } = false;
-        private List<byte> Bytes { get; set; } = new List<byte>();
-
         public MessageBuilder()
         {
+        }
+
+        private List<byte> Bytes { get; set; } = new List<byte>();
+        private bool Initialized { get; set; } = false;
+
+        public Message Build()
+        {
+            var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count()));
+            withLength.AddRange(Bytes);
+            return new Message(withLength.ToArray());
         }
 
         public MessageBuilder Code(MessageCode code)
@@ -79,13 +86,6 @@
             Bytes.AddRange(BitConverter.GetBytes(value.Length));
             Bytes.AddRange(Encoding.ASCII.GetBytes(value));
             return this;
-        }
-
-        public Message Build()
-        {
-            var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count()));
-            withLength.AddRange(Bytes);
-            return new Message(withLength.ToArray());
         }
 
         private void EnsureInitialized()

@@ -10,37 +10,11 @@
         private ReaderWriterLockSlim Lock { get; set; } = new ReaderWriterLockSlim();
         private Dictionary<object, Queue<TaskCompletionSource<object>>> Waits { get; set; } = new Dictionary<object, Queue<TaskCompletionSource<object>>>();
 
-        public TaskCompletionSource<object> Wait(MessageCode code, object token = null)
-        {
-            var key = GetKey(code, token);
-            var wait = new TaskCompletionSource<object>();
-
-            Lock.EnterWriteLock();
-
-            try
-            { 
-                if (Waits.ContainsKey(key))
-                {
-                    Waits[key].Enqueue(wait);
-                }
-                else
-                {
-                    Waits.Add(key, new Queue<TaskCompletionSource<object>>(new[] { wait }));
-                }
-            }
-            finally
-            {
-                Lock.ExitWriteLock();
-            }            
-            
-            return wait;
-        }
-
         public void Complete(MessageCode code, object result)
         {
             Complete(code, null, result);
         }
-        
+
         public void Complete(MessageCode code, object token, object result)
         {
             var key = GetKey(code, token);
@@ -75,7 +49,32 @@
             {
                 Lock.ExitUpgradeableReadLock();
             }
+        }
 
+        public TaskCompletionSource<object> Wait(MessageCode code, object token = null)
+        {
+            var key = GetKey(code, token);
+            var wait = new TaskCompletionSource<object>();
+
+            Lock.EnterWriteLock();
+
+            try
+            {
+                if (Waits.ContainsKey(key))
+                {
+                    Waits[key].Enqueue(wait);
+                }
+                else
+                {
+                    Waits.Add(key, new Queue<TaskCompletionSource<object>>(new[] { wait }));
+                }
+            }
+            finally
+            {
+                Lock.ExitWriteLock();
+            }
+
+            return wait;
         }
 
         private object GetKey(MessageCode code, object token)

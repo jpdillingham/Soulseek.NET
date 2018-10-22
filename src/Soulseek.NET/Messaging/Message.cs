@@ -21,6 +21,11 @@
             return Bytes;
         }
 
+        public MessageReader ToReader()
+        {
+            return new MessageReader(this);
+        }
+
         private byte[] GetPayload()
         {
             return Bytes.Skip(8).ToArray();
