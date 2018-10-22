@@ -7,17 +7,30 @@
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
+    using SystemTimer = System.Timers.Timer;
 
-    public class Connection : IConnection
+    public class Connection : IConnection, IDisposable
     {
-        public Connection(ConnectionType type, string address, int port, int timeout = 10, int readBufferSize = 1024, ITcpClient tcpClient = null)
+        private bool disposed = false;
+
+        public Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
             Port = port;
-            Timeout = timeout;
+            ConnectionTimeout = connectionTimeout;
+            InactivityTimeout = inactivityTimeout;
             ReadBufferSize = readBufferSize;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
+
+            InactivityTimer = new SystemTimer(InactivityTimeout * 1000);
+            InactivityTimer.Enabled = false;
+            InactivityTimer.Elapsed += InactivityTimer_Elapsed;
+        }
+
+        private void InactivityTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
+        {
+            Disconnect($"Inactivity timeout of {InactivityTimeout} seconds was reached.");
         }
 
         public event EventHandler<DataReceivedEventArgs> DataReceived;
@@ -26,13 +39,15 @@
         public ConnectionType Type { get; private set; }
         public string Address { get; private set; }
         public IPAddress IPAddress { get; private set; }
-        public int Timeout { get; private set; }
+        public int ConnectionTimeout { get; private set; }
+        public int InactivityTimeout { get; private set; }
         public int Port { get; private set; }
         public int ReadBufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
 
         private ITcpClient TcpClient { get; set; }
         private NetworkStream Stream { get; set; }
+        private SystemTimer InactivityTimer { get; set; }
 
         private IPAddress GetIPAddress(string address)
         {
@@ -71,7 +86,7 @@
                 ChangeServerState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
                 // create a new CTS with our desired timeout.  when the timeout expires, the cancellation will fire
-                using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Timeout)))
+                using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(ConnectionTimeout)))
                 {
                     var task = TcpClient.ConnectAsync(IPAddress, Port);
 
@@ -82,7 +97,7 @@
                         // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
                         if (task != await Task.WhenAny(task, taskCompletionSource.Task))
                         {
-                            throw new OperationCanceledException($"Operation timed out after {Timeout} seconds", cancellationTokenSource.Token);
+                            throw new OperationCanceledException($"Operation timed out after {ConnectionTimeout} seconds", cancellationTokenSource.Token);
                         }
 
                         if (task.Exception?.InnerException != null)
@@ -115,9 +130,9 @@
 
             ChangeServerState(ConnectionState.Disconnecting, message);
 
+            InactivityTimer.Stop();
             Stream.Close();
-            TcpClient.Close();
-            TcpClient.Dispose();
+            TcpClient.Close();           
 
             ChangeServerState(ConnectionState.Disconnected, message);
         }
@@ -169,42 +184,45 @@
         {
             var buffer = new List<byte>();
 
+            if (Type == ConnectionType.Peer)
+            {
+                InactivityTimer.Reset();
+            }
+
             try
             {
-                using (var cancellationTokenSource = new CancellationTokenSource(Timeout))
-                using (cancellationTokenSource.Token.Register(() =>
+                while (true)
                 {
-                    if (Type == ConnectionType.Server) { }
-                }))
-                {
-                    while (true)
+                    do
                     {
-                        do
+                        var bytes = new byte[ReadBufferSize];
+                        var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
+
+                        if (Type == ConnectionType.Peer)
                         {
-                            var bytes = new byte[ReadBufferSize];
-                            var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
+                            InactivityTimer.Reset();
+                        }
 
-                            if (bytesRead == 0)
-                            {
-                                Disconnect($"Zero bytes read.");
-                                break;
-                            }
+                        if (bytesRead == 0)
+                        {
+                            Disconnect($"Zero bytes read.");
+                            break;
+                        }
 
-                            buffer.AddRange(bytes.Take(bytesRead));
+                        buffer.AddRange(bytes.Take(bytesRead));
 
-                            var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
+                        var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
 
-                            if (buffer.Count >= headMessageLength)
-                            {
-                                var data = buffer.Take(headMessageLength).ToArray();
+                        if (buffer.Count >= headMessageLength)
+                        {
+                            var data = buffer.Take(headMessageLength).ToArray();
 
-                                NormalizeMessageCode(data, (int)Type);
+                            NormalizeMessageCode(data, (int)Type);
 
-                                Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data })).Forget();
-                                buffer.RemoveRange(0, headMessageLength);
-                            }
-                        } while (Stream.DataAvailable);
-                    }
+                            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data })).Forget();
+                            buffer.RemoveRange(0, headMessageLength);
+                        }
+                    } while (Stream.DataAvailable);
                 }
             }
             catch (Exception ex)
@@ -219,6 +237,26 @@
             var adjustedCode = BitConverter.GetBytes(code + newCode);
 
             Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!disposed)
+            {
+                if (disposing)
+                {
+                    InactivityTimer?.Dispose();
+                    Stream?.Dispose();
+                    TcpClient?.Dispose();
+                }
+
+                disposed = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
     }
 }
