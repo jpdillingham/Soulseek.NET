@@ -260,7 +260,14 @@
 
                             NormalizeMessageCode(data, (int)Type);
 
-                            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs() { Data = data })).Forget();
+                            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
+                            {
+                                Address = Address,
+                                IPAddress = IPAddress.ToString(),
+                                Port = Port,
+                                Data = data
+                            })).Forget();
+
                             buffer.RemoveRange(0, headMessageLength);
                         }
                     } while (Stream.DataAvailable);

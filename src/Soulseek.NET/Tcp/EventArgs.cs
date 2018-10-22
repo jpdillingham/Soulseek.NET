@@ -4,6 +4,9 @@
 
     public class DataReceivedEventArgs : EventArgs
     {
+        public string Address;
+        public string IPAddress;
+        public int Port;
         public byte[] Data;
     }
 
