@@ -9,6 +9,9 @@
 
     class Program
     {
+        public static string ActiveSearchText { get; set; }
+        public static int ActiveSearchTicket { get; set; }
+
         static async Task Main(string[] args)
         {
             using (var client = new SoulseekClient())
@@ -30,7 +33,8 @@
                     }
                     if (cmd.StartsWith("search"))
                     {
-                        await client.SearchAsync(string.Join(' ', cmd.Split(' ').Skip(1)));
+                        ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
+                        ActiveSearchTicket = client.Search(ActiveSearchText);
                     }
                     else
                     {
@@ -54,10 +58,21 @@
         private static void Client_SearchResultReceived(object sender, SearchResultReceivedEventArgs e)
         {
             //Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
-            //foreach (var file in e.Response.Files)
-            //{
-            //    Console.WriteLine($"{file.Filename}");
-            //}
+            var t = string.Empty;
+
+            if (e.Result.Ticket != ActiveSearchTicket)
+            {
+                t = $"Result for <unknown search> ({ActiveSearchTicket} != {e.Result.Ticket})";
+            }
+            else
+            {
+                t = $"Result for '{ActiveSearchText}' ({ActiveSearchTicket}): ";
+            }
+
+            foreach (var file in e.Result.Files)
+            {
+                Console.WriteLine($"{t}: {file.Filename}");
+            }
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
