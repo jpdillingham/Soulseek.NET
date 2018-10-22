@@ -11,8 +11,6 @@
 
     public class Connection : IConnection, IDisposable
     {
-        private bool disposed = false;
-
         public Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
             Type = type;
@@ -23,50 +21,42 @@
             ReadBufferSize = readBufferSize;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
-            InactivityTimer = new SystemTimer(InactivityTimeout * 1000);
-            InactivityTimer.Enabled = false;
-            InactivityTimer.Elapsed += InactivityTimer_Elapsed;
-        }
+            InactivityTimer = new SystemTimer()
+            {
+                Enabled = false,
+                AutoReset = false,
+                Interval = InactivityTimeout * 1000,
+            };
 
-        private void InactivityTimer_Elapsed(object sender, System.Timers.ElapsedEventArgs e)
-        {
-            Disconnect($"Inactivity timeout of {InactivityTimeout} seconds was reached.");
+            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Inactivity timeout of {InactivityTimeout} seconds was reached.");
+
+            WatchdogTimer = new SystemTimer()
+            {
+                Enabled = false,
+                AutoReset = true,
+                Interval = 1000,
+            };
+
+            WatchdogTimer.Elapsed += CheckConnection;
         }
 
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
-        public ConnectionType Type { get; private set; }
         public string Address { get; private set; }
-        public IPAddress IPAddress { get; private set; }
         public int ConnectionTimeout { get; private set; }
         public int InactivityTimeout { get; private set; }
+        public IPAddress IPAddress { get; private set; }
         public int Port { get; private set; }
         public int ReadBufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
+        public ConnectionType Type { get; private set; }
 
-        private ITcpClient TcpClient { get; set; }
-        private NetworkStream Stream { get; set; }
+        private bool Disposed { get; set; } = false;
         private SystemTimer InactivityTimer { get; set; }
-
-        private IPAddress GetIPAddress(string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                var dns = Dns.GetHostEntry(address);
-
-                if (!dns.AddressList.Any())
-                {
-                    throw new ConnectionException($"Unable to resolve hostname {address}.");
-                }
-
-                return dns.AddressList[0];
-            }
-        }
+        private NetworkStream Stream { get; set; }
+        private ITcpClient TcpClient { get; set; }
+        private SystemTimer WatchdogTimer { get; set; }
 
         public async Task ConnectAsync()
         {
@@ -77,21 +67,21 @@
 
             IPAddress = GetIPAddress(Address);
 
-            // create a new TCS to serve as the trigger which will throw when the CTS times out
-            // a TCS is basically a 'fake' task that ends when the result is set programmatically
+            // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
+            // that ends when the result is set programmatically
             var taskCompletionSource = new TaskCompletionSource<bool>();
 
             try
             {
                 ChangeServerState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
-                // create a new CTS with our desired timeout.  when the timeout expires, the cancellation will fire
+                // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
                 using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(ConnectionTimeout)))
                 {
                     var task = TcpClient.ConnectAsync(IPAddress, Port);
 
-                    // register the TCS with the CTS.  when the cancellation fires (due to timeout), it will set the value
-                    // of the TCS via the registered delegate, ending the 'fake' task
+                    // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
+                    // TCS via the registered delegate, ending the 'fake' task
                     using (cancellationTokenSource.Token.Register(() => taskCompletionSource.TrySetResult(true)))
                     {
                         // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
@@ -117,6 +107,7 @@
             }
 
             Stream = TcpClient.GetStream();
+            WatchdogTimer.Start();
 
             Task.Run(() => Read()).Forget();
         }
@@ -131,18 +122,16 @@
             ChangeServerState(ConnectionState.Disconnecting, message);
 
             InactivityTimer.Stop();
+            WatchdogTimer.Stop();
             Stream.Close();
-            TcpClient.Close();           
+            TcpClient.Close();
 
             ChangeServerState(ConnectionState.Disconnected, message);
         }
 
-        private void CheckConnection()
+        public void Dispose()
         {
-            if (!TcpClient.Connected)
-            {
-                Disconnect($"The server connection was closed unexpectedly.");
-            }
+            Dispose(true);
         }
 
         public async Task SendAsync(byte[] bytes, bool suppressCodeNormalization = false)
@@ -174,10 +163,61 @@
             }
         }
 
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    InactivityTimer?.Dispose();
+                    WatchdogTimer?.Dispose();
+                    Stream?.Dispose();
+                    TcpClient?.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
+
         private void ChangeServerState(ConnectionState state, string message)
         {
             State = state;
             StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs() { State = state, Message = message });
+        }
+
+        private void CheckConnection(object sender = null, EventArgs e = null)
+        {
+            if (!TcpClient.Connected)
+            {
+                Disconnect($"The server connection was closed unexpectedly.");
+            }
+        }
+
+        private IPAddress GetIPAddress(string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                var dns = Dns.GetHostEntry(address);
+
+                if (!dns.AddressList.Any())
+                {
+                    throw new ConnectionException($"Unable to resolve hostname {address}.");
+                }
+
+                return dns.AddressList[0];
+            }
+        }
+
+        private void NormalizeMessageCode(byte[] messageBytes, int newCode)
+        {
+            var code = BitConverter.ToInt32(messageBytes, 4);
+            var adjustedCode = BitConverter.GetBytes(code + newCode);
+
+            Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
         private async Task Read()
@@ -229,34 +269,6 @@
             {
                 Disconnect($"Read Error: {ex.Message}");
             }
-        }
-
-        private void NormalizeMessageCode(byte[] messageBytes, int newCode)
-        {
-            var code = BitConverter.ToInt32(messageBytes, 4);
-            var adjustedCode = BitConverter.GetBytes(code + newCode);
-
-            Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!disposed)
-            {
-                if (disposing)
-                {
-                    InactivityTimer?.Dispose();
-                    Stream?.Dispose();
-                    TcpClient?.Dispose();
-                }
-
-                disposed = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }
