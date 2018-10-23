@@ -103,22 +103,19 @@
 
         public Search CreateSearch(string searchText)
         {
-            return new Search(Connection, searchText);
+            var search = new Search(Connection, searchText);
+
+            // do not start, to give the client time to bind event handlers
+            //search.Start();
+
+            return search;
         }
 
-        //public int Search(string searchText)
-        //{
-        //    return Search(searchText, Random.Next(1, 2147483647));
-        //}
-
-        //public int Search(string searchText, int ticket)
-        //{
-        //    var request = new SearchRequest(searchText, ticket);
-        //    Console.WriteLine($"Searching for {searchText}...");
-        //    Task.Run(() => Connection.SendAsync(request.ToMessage().ToByteArray())).GetAwaiter().GetResult();
-
-        //    return ticket;
-        //}
+        public async Task<Search> SearchAsync(string searchText)
+        {
+            //todo: create and execute search, spin until it is complete, return results
+            return null;
+        }
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {

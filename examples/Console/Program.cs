@@ -35,8 +35,9 @@
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
-                        
-                        ActiveSearchTicket = client.CreateSearch(ActiveSearchText).Start();
+                        var search = client.CreateSearch(ActiveSearchText);
+
+                        ActiveSearchTicket = search.Ticket;
                     }
                     else
                     {
