@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-
-namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET.Messaging.Responses
 {
-    public class SearchResponse
+    using System.Collections.Generic;
+
+    public sealed class SearchResponse
     {
         public string Username { get; private set; }
         public int Ticket { get; private set; }
@@ -15,6 +13,10 @@ namespace Soulseek.NET.Messaging.Responses
         public int InQueue { get; set; }
 
         private List<File> FileList { get; set; } = new List<File>();
+
+        private SearchResponse()
+        {
+        }
 
         public static SearchResponse Parse(Message message)
         {
@@ -76,20 +78,28 @@ namespace Soulseek.NET.Messaging.Responses
         }
     }
 
-    public class File
+    public sealed class File
     {
-        public int Code { get; set; }
-        public string Filename { get; set; }
-        public long Size { get; set; }
-        public string Extension { get; set; }
-        public int AttributeCount { get; set; }
-        public IEnumerable<FileAttribute> Attributes { get; set; } = new List<FileAttribute>();
+        public int Code { get; internal set; }
+        public string Filename { get; internal set; }
+        public long Size { get; internal set; }
+        public string Extension { get; internal set; }
+        public int AttributeCount { get; internal set; }
+        public IEnumerable<FileAttribute> Attributes { get; internal set; } = new List<FileAttribute>();
+
+        internal File()
+        {
+        }
     }
 
-    public class FileAttribute
+    public sealed class FileAttribute
     {
-        public FileAttributeType Type { get; set; }
-        public int Value { get; set; }
+        public FileAttributeType Type { get; internal set; }
+        public int Value { get; internal set; }
+
+        internal FileAttribute()
+        {
+        }
     }
 
     public enum FileAttributeType

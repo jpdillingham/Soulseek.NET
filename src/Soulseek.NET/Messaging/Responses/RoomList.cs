@@ -32,9 +32,13 @@
         }
     }
 
-    public class Room
+    public sealed class Room
     {
-        public string Name { get; set; }
-        public int UserCount { get; set; }
+        public string Name { get; internal set; }
+        public int UserCount { get; internal set; }
+
+        internal Room()
+        {
+        }
     }
 }

@@ -3,7 +3,7 @@
     using System;
     using System.Net;
 
-    public class LoginResponse
+    public sealed class LoginResponse
     {
         public bool Succeeded { get; private set; }
         public bool Failed => !Succeeded;
@@ -33,6 +33,10 @@
             }
 
             return response;
+        }
+
+        private LoginResponse()
+        {
         }
     }
 }

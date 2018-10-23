@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    public class ConnectToPeerResponse
+    public sealed class ConnectToPeerResponse
     {
         public string Username { get; private set; }
         public string Type { get; private set; }
@@ -34,6 +34,10 @@ namespace Soulseek.NET.Messaging.Responses
             response.Token = reader.ReadInteger();
 
             return response;
+        }
+
+        private ConnectToPeerResponse()
+        {
         }
     }
 }
