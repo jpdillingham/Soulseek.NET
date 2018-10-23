@@ -4,7 +4,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    public class RoomListResponse
+    public class RoomList
     {
         public IEnumerable<Room> Rooms => RoomList;
 
@@ -12,7 +12,7 @@ namespace Soulseek.NET.Messaging.Responses
         private int UserCountCount { get; set; }
         private List<Room> RoomList { get; set; } = new List<Room>();
 
-        public static RoomListResponse Parse(Message message)
+        public static RoomList Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -21,7 +21,7 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.ServerRoomList}, received: {(int)reader.Code}");
             }
 
-            var response = new RoomListResponse
+            var response = new RoomList
             {
                 RoomCount = reader.ReadInteger()
             };

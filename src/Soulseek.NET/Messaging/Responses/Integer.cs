@@ -2,14 +2,14 @@
 {
     using System;
 
-    public class IntegerResponse
+    public class Integer
     {
         public int Value { get; private set; }
 
-        public static IntegerResponse Parse(Message message)
+        public static Integer Parse(Message message)
         {
             var reader = new MessageReader(message);
-            var response = new IntegerResponse()
+            var response = new Integer()
             {
                 Value = reader.ReadInteger()
             };

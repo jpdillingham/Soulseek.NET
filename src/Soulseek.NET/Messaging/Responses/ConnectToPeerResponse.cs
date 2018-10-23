@@ -3,7 +3,7 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    public class ServerConnectToPeerResponse
+    public class ConnectToPeerResponse
     {
         public string Username { get; private set; }
         public string Type { get; private set; }
@@ -11,7 +11,7 @@ namespace Soulseek.NET.Messaging.Responses
         public int Port { get; private set; }
         public int Token { get; private set; }
 
-        public static ServerConnectToPeerResponse Parse(Message message)
+        public static ConnectToPeerResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -20,7 +20,7 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Connect To Peer response (expected: {(int)MessageCode.ServerConnectToPeer}, received: {(int)reader.Code}");
             }
 
-            var response = new ServerConnectToPeerResponse
+            var response = new ConnectToPeerResponse
             {
                 Username = reader.ReadString(),
                 Type = reader.ReadString()

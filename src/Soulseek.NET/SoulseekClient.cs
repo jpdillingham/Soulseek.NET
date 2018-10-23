@@ -44,6 +44,7 @@
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
         public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
+        public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
 
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
@@ -91,11 +92,11 @@
 
             Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-            Rooms = ((RoomListResponse)roomList.Result).Rooms;
-            ParentMinSpeed = ((IntegerResponse)parentMinSpeed.Result).Value;
-            ParentSpeedRatio = ((IntegerResponse)parentSpeedRatio.Result).Value;
-            WishlistInterval = ((IntegerResponse)wishlistInterval.Result).Value;
-            PrivilegedUsers = ((PrivilegedUsersResponse)privilegedUsers.Result).PrivilegedUsers;
+            Rooms = ((RoomList)roomList.Result).Rooms;
+            ParentMinSpeed = ((Integer)parentMinSpeed.Result).Value;
+            ParentSpeedRatio = ((Integer)parentSpeedRatio.Result).Value;
+            WishlistInterval = ((Integer)wishlistInterval.Result).Value;
+            PrivilegedUsers = ((PrivilegedUserList)privilegedUsers.Result).PrivilegedUsers;
 
             return (LoginResponse)login.Result;
         }
@@ -114,7 +115,7 @@
             return ticket;
         }
 
-        private async Task HandleServerConnectToPeer(ServerConnectToPeerResponse response, NetworkEventArgs e)
+        private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
             PeerConnections.Add(connection);
@@ -135,7 +136,7 @@
             }
         }
 
-        private async Task HandlePeerSearchReply(PeerSearchReplyResponse response, NetworkEventArgs e)
+        private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
         {
             if (response.FileCount > 0)
             {
@@ -164,22 +165,22 @@
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(message.Code, IntegerResponse.Parse(message));
+                    MessageWaiter.Complete(message.Code, Integer.Parse(message));
                     break;
                 case MessageCode.ServerLogin:
                     MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
                     break;
                 case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(message.Code, RoomListResponse.Parse(message));
+                    MessageWaiter.Complete(message.Code, RoomList.Parse(message));
                     break;
                 case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(message.Code, PrivilegedUsersResponse.Parse(message));
+                    MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
                 case MessageCode.PeerSearchReply:
-                    await HandlePeerSearchReply(PeerSearchReplyResponse.Parse(message), e);
+                    await HandlePeerSearchReply(SearchResponse.Parse(message), e);
                     break;
                 case MessageCode.ServerConnectToPeer:
-                    await HandleServerConnectToPeer(ServerConnectToPeerResponse.Parse(message), e);
+                    await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
                 default:
                     break;

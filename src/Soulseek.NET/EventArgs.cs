@@ -3,10 +3,11 @@
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
+    using System;
 
     public class SearchResultReceivedEventArgs : NetworkEventArgs
     {
-        public PeerSearchReplyResponse Result { get; set; }
+        public SearchResponse Result { get; set; }
 
         public SearchResultReceivedEventArgs(NetworkEventArgs e)
         {
@@ -14,6 +15,12 @@
             IPAddress = e.IPAddress;
             Port = e.Port;
         }
+    }
+
+    public class SearchCompletedEventArgs : EventArgs
+    {
+        public int Ticket { get; set; }
+
     }
 
     public class MessageReceivedEventArgs : NetworkEventArgs

@@ -4,7 +4,7 @@ using System.Linq;
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    public class PeerSearchReplyResponse
+    public class SearchResponse
     {
         public string Username { get; private set; }
         public int Ticket { get; private set; }
@@ -16,7 +16,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         private List<File> FileList { get; set; } = new List<File>();
 
-        public static PeerSearchReplyResponse Parse(Message message)
+        public static SearchResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -27,7 +27,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             reader.Decompress();
 
-            var response = new PeerSearchReplyResponse
+            var response = new SearchResponse
             {
                 Username = reader.ReadString(),
                 Ticket = reader.ReadInteger(),

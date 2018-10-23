@@ -4,14 +4,14 @@ using System.Net;
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    public class PrivilegedUsersResponse
+    public class PrivilegedUserList
     {
         public IEnumerable<string> PrivilegedUsers => PrivilegedUserList;
 
         private int PrivilegedUserCount { get; set; }
         private List<string> PrivilegedUserList { get; set; } = new List<string>();
 
-        public static PrivilegedUsersResponse Parse(Message message)
+        public static PrivilegedUserList Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -20,7 +20,7 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.ServerPrivilegedUsers}, received: {(int)reader.Code}");
             }
 
-            var response = new PrivilegedUsersResponse
+            var response = new PrivilegedUserList
             {
                 PrivilegedUserCount = reader.ReadInteger()
             };
