@@ -14,7 +14,7 @@
         public IEnumerable<SearchResponse> Responses { get; private set; } = new List<SearchResponse>();
         public bool Cancelled { get; private set; }
         public bool InProgress { get; private set; }
-        public Connection Connection { get; private set; }
+        private Connection Connection { get; set; }
 
         internal int Start()
         {
