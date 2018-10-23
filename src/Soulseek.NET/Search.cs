@@ -13,11 +13,16 @@
         public string SearchText { get; private set; }
         public IEnumerable<SearchResponse> Responses { get; private set; } = new List<SearchResponse>();
         public bool Cancelled { get; private set; }
+        public bool InProgress { get; private set; }
+        public Connection Connection { get; private set; }
 
-        private Connection Connection { get; set; }
-
-        public int Start()
+        internal int Start()
         {
+            if (InProgress)
+            {
+                throw new SearchException($"The Search is already in progress.");
+            }
+
             var request = new SearchRequest(SearchText, Ticket);
 
             Console.WriteLine($"Searching for {SearchText}...");
@@ -28,6 +33,7 @@
 
         public void Cancel()
         {
+            // todo: kill peer connections, ignore ConnectoToPeer messages
             Cancelled = true;
         }
 
