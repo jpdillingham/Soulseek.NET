@@ -92,11 +92,11 @@
 
             Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-            Rooms = ((RoomList)roomList.Result).Rooms;
-            ParentMinSpeed = ((Integer)parentMinSpeed.Result).Value;
-            ParentSpeedRatio = ((Integer)parentSpeedRatio.Result).Value;
-            WishlistInterval = ((Integer)wishlistInterval.Result).Value;
-            PrivilegedUsers = ((PrivilegedUserList)privilegedUsers.Result).PrivilegedUsers;
+            Rooms = (IEnumerable<Room>)roomList.Result;
+            ParentMinSpeed = ((int)parentMinSpeed.Result);
+            ParentSpeedRatio = ((int)parentSpeedRatio.Result);
+            WishlistInterval = ((int)wishlistInterval.Result);
+            PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
 
             return (LoginResponse)login.Result;
         }
@@ -130,7 +130,7 @@
                 var request = new PierceFirewallRequest(response.Token);
                 await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
             }
-            catch (ConnectionException ex)
+            catch (ConnectionException)
             {
                 //Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
             }
