@@ -1,17 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-
-namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET.Messaging.Responses
 {
-    public class PrivilegedUserList
+    using System.Collections.Generic;
+
+    public static class PrivilegedUserList
     {
-        public IEnumerable<string> PrivilegedUsers => PrivilegedUserList;
-
-        private int PrivilegedUserCount { get; set; }
-        private List<string> PrivilegedUserList { get; set; } = new List<string>();
-
-        public static PrivilegedUserList Parse(Message message)
+        public static IEnumerable<string> Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -20,17 +13,15 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.ServerPrivilegedUsers}, received: {(int)reader.Code}");
             }
 
-            var response = new PrivilegedUserList
-            {
-                PrivilegedUserCount = reader.ReadInteger()
-            };
+            var count = reader.ReadInteger();
+            var list = new List<string>();
 
-            for (int i = 0; i < response.PrivilegedUserCount; i++)
+            for (int i = 0; i < count; i++)
             {
-                response.PrivilegedUserList.Add(reader.ReadString());
+                list.Add(reader.ReadString());
             }
 
-            return response;
+            return list;
         }
     }
 }

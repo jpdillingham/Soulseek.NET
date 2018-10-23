@@ -40,6 +40,8 @@
                     {
                         var r = await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]);
 
+                        
+
                         if (r.Succeeded)
                         {
                             Console.WriteLine("Login succeeded");

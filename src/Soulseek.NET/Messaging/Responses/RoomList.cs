@@ -1,18 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Net;
-
-namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET.Messaging.Responses
 {
-    public class RoomList
+    using System.Collections.Generic;
+
+    public static class RoomList
     {
-        public IEnumerable<Room> Rooms => RoomList;
-
-        private int RoomCount { get; set; }
-        private int UserCountCount { get; set; }
-        private List<Room> RoomList { get; set; } = new List<Room>();
-
-        public static RoomList Parse(Message message)
+        public static IEnumerable<Room> Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -20,25 +12,23 @@ namespace Soulseek.NET.Messaging.Responses
             {
                 throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.ServerRoomList}, received: {(int)reader.Code}");
             }
+            
+            var roomCount = reader.ReadInteger();
+            var list = new List<Room>();
 
-            var response = new RoomList
+            for (int i = 0; i < roomCount; i++)
             {
-                RoomCount = reader.ReadInteger()
-            };
-
-            for (int i = 0; i < response.RoomCount; i++)
-            {
-                response.RoomList.Add(new Room() { Name = reader.ReadString() });
+                list.Add(new Room() { Name = reader.ReadString() });
             }
 
-            response.UserCountCount = reader.ReadInteger();
+            var userCountCount = reader.ReadInteger();
 
-            for (int i = 0; i < response.UserCountCount; i++)
+            for (int i = 0; i < userCountCount; i++)
             {
-                response.RoomList[i].UserCount = reader.ReadInteger();
+                list[i].UserCount = reader.ReadInteger();
             }
 
-            return response;
+            return list;
         }
     }
 
