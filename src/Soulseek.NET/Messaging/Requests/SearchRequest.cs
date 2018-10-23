@@ -11,7 +11,7 @@
         public string SearchText { get; set; }
         public int Ticket { get; set; }
 
-        public Message ToMessage()
+        internal Message ToMessage()
         {
             return new MessageBuilder()
                 .Code(MessageCode.ServerFileSearch)
