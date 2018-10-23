@@ -17,7 +17,7 @@
             using (var client = new SoulseekClient())
             {
                 client.Connection.StateChanged += Client_ServerStateChanged;
-                client.SearchResultReceived += Client_SearchResultReceived;
+                //client.SearchResultReceived += Client_SearchResultReceived;
 
                 await client.ConnectAsync();
 
@@ -36,8 +36,10 @@
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
                         var search = client.CreateSearch(ActiveSearchText);
+                        search.SearchResultReceived += Client_SearchResultReceived;
 
                         ActiveSearchTicket = search.Ticket;
+                        search.Start();
                     }
                     else
                     {

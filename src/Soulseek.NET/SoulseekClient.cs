@@ -43,8 +43,6 @@
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-        public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
-        public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
 
         public string Address { get; private set; }
         public Connection Connection { get; private set; }
@@ -61,6 +59,8 @@
         private Timer PeerConnectionMonitor { get; set; } = new Timer(1000);
         private bool Disposed { get; set; } = false;
         private Random Random { get; set; } = new Random();
+
+        private List<Search> ActiveSearches { get; set; } = new List<Search>();
 
         public async Task ConnectAsync()
         {
@@ -104,6 +104,7 @@
         public Search CreateSearch(string searchText)
         {
             var search = new Search(Connection, searchText);
+            ActiveSearches.Add(search);
 
             // do not start, to give the client time to bind event handlers
             //search.Start();
@@ -119,35 +120,39 @@
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
-            PeerConnections.Add(connection);
+            Console.WriteLine($"Peer");
+            var search = ActiveSearches.Where(s => s.Ticket == response.Token).SingleOrDefault();
 
-            connection.DataReceived += OnConnectionDataReceived;
-            connection.StateChanged += OnPeerConnectionStateChanged;
+            await search.ConnectToPeer(response);
+            //var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
+            //PeerConnections.Add(connection);
 
-            try
-            {
-                await connection.ConnectAsync();
+            //connection.DataReceived += OnConnectionDataReceived;
+            //connection.StateChanged += OnPeerConnectionStateChanged;
 
-                var request = new PierceFirewallRequest(response.Token);
-                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-            }
-            catch (ConnectionException)
-            {
-                //Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
-            }
+            //try
+            //{
+            //    await connection.ConnectAsync();
+
+            //    var request = new PierceFirewallRequest(response.Token);
+            //    await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+            //}
+            //catch (ConnectionException)
+            //{
+            //    //Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
+            //}
         }
 
-        private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
-        {
-            if (response.FileCount > 0)
-            {
-                await Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs(e)
-                {
-                    Result = response,
-                }));
-            }
-        }
+        //private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
+        //{
+        //    if (response.FileCount > 0)
+        //    {
+        //        await Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs(e)
+        //        {
+        //            Result = response,
+        //        }));
+        //    }
+        //}
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
@@ -178,9 +183,9 @@
                 case MessageCode.ServerPrivilegedUsers:
                     MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
-                case MessageCode.PeerSearchReply:
-                    await HandlePeerSearchReply(SearchResponse.Parse(message), e);
-                    break;
+                //case MessageCode.PeerSearchReply:
+                //    await HandlePeerSearchReply(SearchResponse.Parse(message), e);
+                //    break;
                 case MessageCode.ServerConnectToPeer:
                     await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
