@@ -34,7 +34,9 @@
                     if (cmd.StartsWith("search"))
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
-                        ActiveSearchTicket = client.Search(ActiveSearchText);
+
+                        
+                        ActiveSearchTicket = client.CreateSearch(ActiveSearchText).Start();
                     }
                     else
                     {

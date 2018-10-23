@@ -101,19 +101,24 @@
             return (LoginResponse)login.Result;
         }
 
-        public int Search(string searchText)
+        public Search CreateSearch(string searchText)
         {
-            return Search(searchText, Random.Next(1, 2147483647));
+            return new Search(Connection, searchText);
         }
 
-        public int Search(string searchText, int ticket)
-        {
-            var request = new SearchRequest(searchText, ticket);
-            Console.WriteLine($"Searching for {searchText}...");
-            Task.Run(() => Connection.SendAsync(request.ToMessage().ToByteArray())).GetAwaiter().GetResult();
+        //public int Search(string searchText)
+        //{
+        //    return Search(searchText, Random.Next(1, 2147483647));
+        //}
 
-            return ticket;
-        }
+        //public int Search(string searchText, int ticket)
+        //{
+        //    var request = new SearchRequest(searchText, ticket);
+        //    Console.WriteLine($"Searching for {searchText}...");
+        //    Task.Run(() => Connection.SendAsync(request.ToMessage().ToByteArray())).GetAwaiter().GetResult();
+
+        //    return ticket;
+        //}
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
