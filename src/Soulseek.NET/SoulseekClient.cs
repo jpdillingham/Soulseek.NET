@@ -24,7 +24,7 @@
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
 
-            PeerConnectionMonitor = new SystemTimer(1000);
+            PeerConnectionMonitor = new SystemTimer(5000);
             PeerConnectionMonitor.Elapsed += PeerConnectionMonitor_Elapsed;
         }
 
@@ -129,21 +129,21 @@
                 var request = new LoginRequest(username, password);
 
                 var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
-                var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
-                var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
-                var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
-                var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
-                var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
+                //var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
+                //var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
+                //var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
+                //var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
+                //var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
 
                 await Connection.SendAsync(request.ToMessage().ToByteArray());
+                await login;
+                //Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-                Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
-
-                Rooms = (IEnumerable<Room>)roomList.Result;
-                ParentMinSpeed = ((int)parentMinSpeed.Result);
-                ParentSpeedRatio = ((int)parentSpeedRatio.Result);
-                WishlistInterval = ((int)wishlistInterval.Result);
-                PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
+                //Rooms = (IEnumerable<Room>)roomList.Result;
+                //ParentMinSpeed = ((int)parentMinSpeed.Result);
+                //ParentSpeedRatio = ((int)parentSpeedRatio.Result);
+                //WishlistInterval = ((int)wishlistInterval.Result);
+                //PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
 
                 return (LoginResponse)login.Result;
             }
@@ -152,7 +152,6 @@
                 Console.WriteLine(ex);
                 return null;
             }
-
         }
 
         public Search CreateSearch(string searchText)
@@ -215,15 +214,26 @@
             }
         }
 
+        private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
+        {
+            Console.WriteLine($"[{message.Username}]: {message.Message}");
+
+            Console.WriteLine($"Ack: {message.Id}");
+            await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToByteArray());
+            Console.WriteLine($"Ack sent");
+        }
+
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
+            Console.WriteLine($"Data received: {e.Data.Length} bytes");
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
             
             var message = new Message(e.Data);
             var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
+            Console.WriteLine($"Message receiveD: {message.Code}, {message.Payload.Length} bytes");
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
-
+            
             switch (message.Code)
             {
                 case MessageCode.ServerParentMinSpeed:
@@ -246,8 +256,11 @@
                 case MessageCode.ServerConnectToPeer:
                     await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
+                case MessageCode.ServerPrivateMessages:
+                    await HandlePrivateMessage(PrivateMessage.Parse(message), e);
+                    break;
                 default:
-                    Console.WriteLine($"Unknown message: {message.Code}; {Encoding.ASCII.GetString(message.Payload)}");
+                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
         }
