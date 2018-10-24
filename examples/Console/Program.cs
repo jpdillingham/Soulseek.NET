@@ -68,17 +68,19 @@
 
             if (e.Result.Ticket != ActiveSearchTicket)
             {
-                t = $"Result for <unknown search> ({ActiveSearchTicket} != {e.Result.Ticket})";
+                t = $"<unknown search> ({ActiveSearchTicket} != {e.Result.Ticket})";
             }
             else
             {
-                t = $"Result for '{ActiveSearchText}' ({ActiveSearchTicket}): ";
+                t = $"'{ActiveSearchText}' ({ActiveSearchTicket}): ";
             }
 
-            foreach (var file in e.Result.Files)
-            {
-                Console.WriteLine($"{t}: {file.Filename}");
-            }
+            Console.WriteLine($"[SEARCH] {t} {e.Result.FileCount} results from {e.Result.Username}");
+
+            //foreach (var file in e.Result.Files)
+            //{
+            //    //Console.WriteLine($"{t}: {file.Filename}");
+            //}
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
