@@ -115,24 +115,22 @@
             Stream = TcpClient.GetStream();
             WatchdogTimer.Start();
 
-            Task.Run(() => Read()).Forget();
+            Task.Run(() => ReadAsync()).Forget();
         }
 
         public void Disconnect(string message = null)
         {
-            if (State == ConnectionState.Disconnected || State == ConnectionState.Disconnecting)
+            if (State != ConnectionState.Disconnected && State != ConnectionState.Disconnecting)
             {
-                throw new ConnectionStateException($"Invalid attempt to disconnect a disconnected or transitioning connection (current state: {State})");
+                ChangeServerState(ConnectionState.Disconnecting, message);
+
+                InactivityTimer.Stop();
+                WatchdogTimer.Stop();
+                Stream.Close();
+                TcpClient.Close();
+
+                ChangeServerState(ConnectionState.Disconnected, message);
             }
-
-            ChangeServerState(ConnectionState.Disconnecting, message);
-
-            InactivityTimer.Stop();
-            WatchdogTimer.Stop();
-            Stream.Close();
-            TcpClient.Close();
-
-            ChangeServerState(ConnectionState.Disconnected, message);
         }
 
         public void Dispose()
@@ -165,6 +163,7 @@
                 }
 
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
+                Console.WriteLine($">>>>>>>>>>>>>>>>>>>>> Sent {bytes.Length} byes");
             }
             catch (Exception ex)
             {
@@ -234,7 +233,7 @@
             Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
-        private async Task Read()
+        private async Task ReadAsync()
         {
             var buffer = new List<byte>();
 
@@ -293,7 +292,7 @@
                     Disconnect($"Read error: {ex.Message}");
                 }
 
-                throw new ConnectionReadException($"Failed to read from {IPAddress}:{Port}: {ex.Message}", ex);
+                //throw new ConnectionReadException($"Failed to read from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
     }
