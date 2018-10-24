@@ -44,10 +44,10 @@
             Cancelled = true;
         }
 
-        internal async Task AddResultAsync(SearchResultReceivedEventArgs result)
+        internal void AddResult(SearchResultReceivedEventArgs result)
         {
             ResponseList.Add(result.Result);
-            await Task.Run(() => SearchResultReceived?.Invoke(this, result));
+            Task.Run(() => SearchResultReceived?.Invoke(this, result)).Forget();
         }
 
         internal Search(Connection serverConnection, string searchText)
