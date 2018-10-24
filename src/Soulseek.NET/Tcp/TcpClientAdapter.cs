@@ -5,9 +5,9 @@
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
-    public class TcpClientAdapter : ITcpClient, IDisposable
+    internal sealed class TcpClientAdapter : ITcpClient, IDisposable
     {
-        public TcpClientAdapter(TcpClient tcpClient = null)
+        internal TcpClientAdapter(TcpClient tcpClient = null)
         {
             TcpClient = tcpClient ?? new TcpClient();
         }
@@ -15,6 +15,7 @@
         public bool Connected => TcpClient.Connected;
 
         private TcpClient TcpClient { get; set; }
+        private bool Disposed { get; set; }
 
         public void Close()
         {
@@ -26,23 +27,27 @@
             await TcpClient.ConnectAsync(ipAddress, port);
         }
 
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
         public NetworkStream GetStream()
         {
             return TcpClient.GetStream();
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
-            if (disposing)
+            if (!Disposed)
             {
-                TcpClient.Dispose();
+                if (disposing)
+                {
+                    TcpClient.Dispose();
+                }
+
+                Disposed = true;
             }
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
     }
 }
