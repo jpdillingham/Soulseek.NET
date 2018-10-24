@@ -43,7 +43,7 @@
 
         public static void Forget(this Task task)
         {
-            task.ContinueWith(t => { throw new Exception($"Thread Error: {t.Exception.Message}", t.Exception); });
+            task.ContinueWith(t => { throw new Exception($"Thread Error: {t.Exception.Message}", t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static void Reset(this Timer timer)
