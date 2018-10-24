@@ -129,21 +129,21 @@
                 var request = new LoginRequest(username, password);
 
                 var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
-                //var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
-                //var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
-                //var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
-                //var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
-                //var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
+                var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
+                var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
+                var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
+                var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
+                var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
 
                 await Connection.SendAsync(request.ToMessage().ToByteArray());
-                await login;
-                //Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-                //Rooms = (IEnumerable<Room>)roomList.Result;
-                //ParentMinSpeed = ((int)parentMinSpeed.Result);
-                //ParentSpeedRatio = ((int)parentSpeedRatio.Result);
-                //WishlistInterval = ((int)wishlistInterval.Result);
-                //PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
+                Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
+
+                Rooms = (IEnumerable<Room>)roomList.Result;
+                ParentMinSpeed = ((int)parentMinSpeed.Result);
+                ParentSpeedRatio = ((int)parentSpeedRatio.Result);
+                WishlistInterval = ((int)wishlistInterval.Result);
+                PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
 
                 return (LoginResponse)login.Result;
             }
@@ -216,11 +216,8 @@
 
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
         {
-            Console.WriteLine($"[{message.Username}]: {message.Message}");
-
-            Console.WriteLine($"Ack: {message.Id}");
+            Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
             await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToByteArray());
-            Console.WriteLine($"Ack sent");
         }
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
