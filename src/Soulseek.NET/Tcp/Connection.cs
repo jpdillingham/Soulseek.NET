@@ -12,13 +12,13 @@
 
     internal sealed class Connection : IConnection, IDisposable
     {
-        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 4096, ITcpClient tcpClient = null)
+        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int readTimeout = 15, int readBufferSize = 4096, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
             Port = port;
             ConnectionTimeout = connectionTimeout;
-            InactivityTimeout = inactivityTimeout;
+            ReadTimeout = readTimeout;
             ReadBufferSize = readBufferSize;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
@@ -26,10 +26,10 @@
             {
                 Enabled = false,
                 AutoReset = false,
-                Interval = InactivityTimeout * 1000,
+                Interval = ReadTimeout * 1000,
             };
 
-            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Inactivity timeout of {InactivityTimeout} seconds was reached.");
+            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {ReadTimeout} seconds was reached.");
 
             WatchdogTimer = new SystemTimer()
             {
@@ -52,7 +52,7 @@
 
         public string Address { get; private set; }
         public int ConnectionTimeout { get; private set; }
-        public int InactivityTimeout { get; private set; }
+        public int ReadTimeout { get; private set; }
         public IPAddress IPAddress { get; private set; }
         public int Port { get; private set; }
         public int ReadBufferSize { get; private set; }
