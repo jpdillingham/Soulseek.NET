@@ -12,7 +12,7 @@
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .Code(23)
+                .Code(MessageCode.ServerAcknowledgePrivateMessage)
                 .WriteInteger(Id)
                 .Build()
                 .ToByteArray();
