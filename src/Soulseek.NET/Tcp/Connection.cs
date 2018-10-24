@@ -9,9 +9,9 @@
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
-    public class Connection : IConnection, IDisposable
+    internal sealed class Connection : IConnection, IDisposable
     {
-        public Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 1024, ITcpClient tcpClient = null)
+        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 1024, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
@@ -168,11 +168,16 @@
             }
             catch (Exception ex)
             {
-                Disconnect($"Write Error: {ex.Message}");
+                if (State != ConnectionState.Connected)
+                {
+                    Disconnect($"Write error: {ex.Message}");
+                }
+
+                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!Disposed)
             {
@@ -283,7 +288,12 @@
             }
             catch (Exception ex)
             {
-                Disconnect($"Read Error: {ex.Message}");
+                if (State != ConnectionState.Connected)
+                {
+                    Disconnect($"Read error: {ex.Message}");
+                }
+
+                throw new ConnectionReadException($"Failed to read from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
     }
