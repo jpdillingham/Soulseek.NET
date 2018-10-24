@@ -1,5 +1,6 @@
 ﻿namespace Soulseek.NET.Tcp
 {
+    using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -11,7 +12,7 @@
 
     internal sealed class Connection : IConnection, IDisposable
     {
-        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 1024, ITcpClient tcpClient = null)
+        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int inactivityTimeout = 15, int readBufferSize = 4096, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
@@ -232,25 +233,81 @@
             Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
+        private async Task<byte[]> ReadBytes(NetworkStream stream, int count)
+        {
+            var result = new List<byte>();
+            var buffer = new byte[ReadBufferSize];
+            var readBytes = 0;
+
+            while (readBytes < count)
+            {
+                var newBytes = await stream.ReadAsync(buffer, 0, count - readBytes);
+                readBytes += newBytes;
+                result.AddRange(buffer.Take(newBytes));
+            }
+
+            if (result.Count() != count)
+            {
+                Console.WriteLine($"Error in ReadBytes(); requested {count} but read {result.Count()}");
+                throw new Exception();
+            }
+
+            return result.ToArray();
+        }
+
         private async Task ReadAsync()
         {
-            var buffer = new List<byte>();
-
             if (Type == ConnectionType.Peer)
             {
                 InactivityTimer.Reset();
+            }
+
+            void log(string s) {
+                if (Type == ConnectionType.Server)
+                {
+                    Console.WriteLine(s);
+                }
             }
 
             try
             {
                 while (true)
                 {
+                    var header = await ReadBytes(Stream, 4);
+                    var length = BitConverter.ToInt32(header, 0);
+
+                    var codeBytes = await ReadBytes(Stream, 4);
+                    var code = BitConverter.ToInt32(codeBytes, 0);
+
+                    if (!Enum.TryParse<MessageCode>(code.ToString(), out var whatever))
+                    {
+                        Console.WriteLine($"Invalid code {code}");
+                    }
+
+                    var message = new List<byte>();
+                    message.AddRange(header);
+                    message.AddRange(codeBytes);
+
+                    var id = new Random().Next();
+
+                    //log($"[{IPAddress}] [{id}] 0/{length} ({message.Count})");                    
+
+                    var remainingBytes = length - 4;
+
                     do
                     {
-                        var bytes = new byte[ReadBufferSize];
-                        Console.WriteLine($"Reading.......................");
-                        var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
-                        Console.WriteLine($"..................Done reading.");
+                        // read the entire length of the message
+                        var bytesToRead = remainingBytes > ReadBufferSize ? ReadBufferSize : remainingBytes;
+                        //log($"Bytes to read: {bytesToRead}");
+
+                        var buffer = new byte[bytesToRead];
+                        var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead);
+
+                        remainingBytes -= bytesRead;
+
+                        message.AddRange(buffer.Take(bytesRead));
+
+                        //log($"[{IPAddress}] [{id}] {length - remainingBytes}/{length} ({message.Count})");
 
                         if (Type == ConnectionType.Peer)
                         {
@@ -259,31 +316,23 @@
 
                         if (bytesRead == 0)
                         {
-                            Disconnect($"Zero bytes read.");
+                            Disconnect($"Zero bytes read; remote connection closed.");
                             break;
                         }
+                    } while (remainingBytes > 0);
 
-                        buffer.AddRange(bytes.Take(bytesRead));
+                    //log($"[{IPAddress}] [{id}] {length - remainingBytes}/{length} ({ message.Count})");
+                    var data = message.ToArray();
 
-                        var headMessageLength = BitConverter.ToInt32(buffer.ToArray(), 0) + 4;
+                    NormalizeMessageCode(data, (int)Type);
 
-                        if (buffer.Count >= headMessageLength)
-                        {
-                            var data = buffer.Take(headMessageLength).ToArray();
-
-                            NormalizeMessageCode(data, (int)Type);
-
-                            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
-                            {
-                                Address = Address,
-                                IPAddress = IPAddress.ToString(),
-                                Port = Port,
-                                Data = data
-                            })).Forget();
-
-                            buffer.RemoveRange(0, headMessageLength);
-                        }
-                    } while (Stream.DataAvailable);
+                    Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
+                    {
+                        Address = Address,
+                        IPAddress = IPAddress.ToString(),
+                        Port = Port,
+                        Data = data,
+                    })).Forget();
                 }
             }
             catch (Exception ex)
@@ -293,7 +342,10 @@
                     Disconnect($"Read error: {ex.Message}");
                 }
 
-                Console.WriteLine($"Read Error: {ex}");
+                if (Type == ConnectionType.Server)
+                {
+                    log($"Read Error: {ex}");
+                }
             }
         }
     }
