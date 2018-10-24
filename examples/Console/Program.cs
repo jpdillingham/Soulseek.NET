@@ -16,8 +16,7 @@
         {
             using (var client = new SoulseekClient())
             {
-                client.Connection.StateChanged += Client_ServerStateChanged;
-                //client.SearchResultReceived += Client_SearchResultReceived;
+                client.ConnectionStateChanged += Client_ServerStateChanged;
 
                 await client.ConnectAsync();
 
@@ -29,7 +28,7 @@
 
                     if (cmd == "stop")
                     {
-                        client.Connection.Disconnect("User requested Disconnect");
+                        client.Disconnect("User requested Disconnect");
                     }
                     if (cmd.StartsWith("search"))
                     {
@@ -78,7 +77,7 @@
 
             foreach (var file in e.Result.Files)
             {
-                Console.WriteLine($"{t}: {file.Filename}");
+                //Console.WriteLine($"{t}: {file.Filename}");
             }
         }
 

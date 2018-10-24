@@ -21,23 +21,34 @@
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
 
+            PeerConnectionMonitor = new Timer(1000);
+            PeerConnectionMonitor.AutoReset = true;
             PeerConnectionMonitor.Elapsed += PeerConnectionMonitor_Elapsed;
         }
 
         private void PeerConnectionMonitor_Elapsed(object sender, ElapsedEventArgs e)
         {
-            var total = PeerConnections.Count();
-            var connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
-            var connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
-            var disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
-
-            foreach (var connection in PeerConnections.Where(c => c.State == ConnectionState.Disconnected))
+            try
             {
-                connection.Dispose();
-                PeerConnections.Remove(connection);
-            }
+                var total = PeerConnections.Count();
+                var connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
+                var connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
+                var disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
 
-            Console.WriteLine($"Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}");
+                foreach (var connection in PeerConnections.Where(c => c.State == ConnectionState.Disconnected))
+                {
+                    connection.Dispose();
+                    PeerConnections.Remove(connection);
+                }
+
+                Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}");
+
+                PeerConnectionMonitor.Reset();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in peer connection monitor: {ex}");
+            }
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -45,7 +56,6 @@
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         public string Address { get; private set; }
-        public Connection Connection { get; private set; }
         public int ParentMinSpeed { get; private set; }
         public int ParentSpeedRatio { get; private set; }
         public int Port { get; private set; }
@@ -55,8 +65,9 @@
         public int WishlistInterval { get; private set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
+        private Connection Connection { get; set; }
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
-        private Timer PeerConnectionMonitor { get; set; } = new Timer(1000);
+        private Timer PeerConnectionMonitor { get; set; }
         private bool Disposed { get; set; } = false;
         private Random Random { get; set; } = new Random();
 
@@ -67,38 +78,52 @@
             await Connection.ConnectAsync();
         }
 
-        public void Disconnect()
+        public void Disconnect(string message)
         {
-            Connection.Disconnect("User initiated shutdown");
+            if (string.IsNullOrEmpty(message))
+            {
+                message = "User initiated shutdown";
+            }
+
+            Connection.Disconnect(message);
 
             foreach (var connection in PeerConnections)
             {
-                connection.Disconnect("User initiated shutdown");
+                connection.Disconnect(message);
             }
         }
 
         public async Task<LoginResponse> LoginAsync(string username, string password)
         {
-            var request = new LoginRequest(username, password);
+            try
+            {
+                var request = new LoginRequest(username, password);
 
-            var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
-            var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
-            var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
-            var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
-            var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
-            var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
+                var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
+                var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
+                var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
+                var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
+                var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
+                var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
 
-            await Connection.SendAsync(request.ToMessage().ToByteArray());
+                await Connection.SendAsync(request.ToMessage().ToByteArray());
 
-            Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
+                Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-            Rooms = (IEnumerable<Room>)roomList.Result;
-            ParentMinSpeed = ((int)parentMinSpeed.Result);
-            ParentSpeedRatio = ((int)parentSpeedRatio.Result);
-            WishlistInterval = ((int)wishlistInterval.Result);
-            PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
+                Rooms = (IEnumerable<Room>)roomList.Result;
+                ParentMinSpeed = ((int)parentMinSpeed.Result);
+                ParentSpeedRatio = ((int)parentSpeedRatio.Result);
+                WishlistInterval = ((int)wishlistInterval.Result);
+                PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
 
-            return (LoginResponse)login.Result;
+                return (LoginResponse)login.Result;
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+                return null;
+            }
+
         }
 
         public Search CreateSearch(string searchText)
@@ -120,50 +145,44 @@
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            Console.WriteLine($"Peer");
-            var search = ActiveSearches.Where(s => s.Ticket == response.Token).SingleOrDefault();
+            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
+            PeerConnections.Add(connection);
 
-            await search.ConnectToPeer(response);
-            //var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
-            //PeerConnections.Add(connection);
+            connection.DataReceived += OnConnectionDataReceived;
+            connection.StateChanged += OnPeerConnectionStateChanged;
 
-            //connection.DataReceived += OnConnectionDataReceived;
-            //connection.StateChanged += OnPeerConnectionStateChanged;
+            try
+            {
+                await connection.ConnectAsync();
 
-            //try
-            //{
-            //    await connection.ConnectAsync();
-
-            //    var request = new PierceFirewallRequest(response.Token);
-            //    await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-            //}
-            //catch (ConnectionException)
-            //{
-            //    //Console.WriteLine($"Failed to connect to Peer {response.Username}@{response.IPAddress}: {ex.Message}");
-            //}
+                var request = new PierceFirewallRequest(response.Token);
+                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+            }
+            catch (ConnectionException ex)
+            {
+                connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
+            }
         }
 
-        //private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
-        //{
-        //    if (response.FileCount > 0)
-        //    {
-        //        await Task.Run(() => SearchResultReceived?.Invoke(this, new SearchResultReceivedEventArgs(e)
-        //        {
-        //            Result = response,
-        //        }));
-        //    }
-        //}
+        private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
+        {
+            if (response.FileCount > 0)
+            {
+                var search = ActiveSearches.Where(s => s.Ticket == response.Ticket).SingleOrDefault();
+
+                if (search != default(Search))
+                {
+                    await search.AddResultAsync(new SearchResultReceivedEventArgs(e) { Result = response });
+                }
+            }
+        }
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
             
             var message = new Message(e.Data);
-
-            var messageEventArgs = new MessageReceivedEventArgs(e)
-            {
-                Message = message,
-            };
+            var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
@@ -183,9 +202,9 @@
                 case MessageCode.ServerPrivilegedUsers:
                     MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
-                //case MessageCode.PeerSearchReply:
-                //    await HandlePeerSearchReply(SearchResponse.Parse(message), e);
-                //    break;
+                case MessageCode.PeerSearchReply:
+                    await HandlePeerSearchReply(SearchResponse.Parse(message), e);
+                    break;
                 case MessageCode.ServerConnectToPeer:
                     await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
@@ -215,6 +234,7 @@
 
         protected virtual void Dispose(bool disposing)
         {
+            Console.WriteLine($"Dispose?");
             if (!Disposed)
             {
                 if (disposing)
