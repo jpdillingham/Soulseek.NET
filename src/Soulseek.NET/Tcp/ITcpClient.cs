@@ -4,7 +4,7 @@
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
-    public interface ITcpClient
+    internal interface ITcpClient
     {
         bool Connected { get; }
 

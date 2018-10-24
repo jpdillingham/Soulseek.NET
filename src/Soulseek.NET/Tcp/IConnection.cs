@@ -4,7 +4,7 @@ namespace Soulseek.NET.Tcp
     using System;
     using System.Threading.Tasks;
 
-    interface IConnection
+    internal interface IConnection
     {
         event EventHandler<DataReceivedEventArgs> DataReceived;
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
