@@ -163,7 +163,6 @@
                 }
 
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
-                Console.WriteLine($">>>>>>>>>>>>>>>>>>>>> Sent {bytes.Length} byes");
             }
             catch (Exception ex)
             {
@@ -291,8 +290,6 @@
                 {
                     Disconnect($"Read error: {ex.Message}");
                 }
-
-                //throw new ConnectionReadException($"Failed to read from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
     }
