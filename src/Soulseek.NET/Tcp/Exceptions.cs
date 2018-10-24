@@ -42,4 +42,44 @@
         {
         }
     }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class ConnectionWriteException : Exception
+    {
+        public ConnectionWriteException()
+            : base()
+        {
+        }
+
+        public ConnectionWriteException(string message)
+            : base(message)
+        {
+        }
+
+        public ConnectionWriteException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class ConnectionReadException : Exception
+    {
+        public ConnectionReadException()
+            : base()
+        {
+        }
+
+        public ConnectionReadException(string message)
+            : base(message)
+        {
+        }
+
+        public ConnectionReadException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
