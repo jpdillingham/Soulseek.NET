@@ -77,7 +77,7 @@
 
             foreach (var file in e.Result.Files)
             {
-                //Console.WriteLine($"{t}: {file.Filename}");
+                Console.WriteLine($"{t}: {file.Filename}");
             }
         }
 
