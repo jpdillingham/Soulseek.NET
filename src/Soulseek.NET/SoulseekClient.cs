@@ -7,8 +7,11 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using System.Timers;
+    using SystemTimer = System.Timers.Timer;
 
     public class SoulseekClient : IDisposable
     {
@@ -21,8 +24,7 @@
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
 
-            PeerConnectionMonitor = new Timer(1000);
-            PeerConnectionMonitor.AutoReset = true;
+            PeerConnectionMonitor = new SystemTimer(1000);
             PeerConnectionMonitor.Elapsed += PeerConnectionMonitor_Elapsed;
         }
 
@@ -30,16 +32,42 @@
         {
             try
             {
-                var total = PeerConnections.Count();
-                var connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
-                var connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
-                var disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
+                var total = 0;
+                var connecting = 0;
+                var connected = 0;
+                var disconnecting = 0;
 
-                foreach (var connection in PeerConnections.Where(c => c.State == ConnectionState.Disconnected))
+                PeerConnectionsLock.EnterUpgradeableReadLock();
+
+                try
                 {
-                    connection.Dispose();
-                    PeerConnections.Remove(connection);
+                    total = PeerConnections.Count();
+                    connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
+                    connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
+                    disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
+
+                    var disconnectedPeers = PeerConnections.Where(c => c.State == ConnectionState.Disconnected);
+
+                    PeerConnectionsLock.EnterWriteLock();
+
+                    try
+                    {
+                        foreach (var connection in disconnectedPeers)
+                        {
+                            connection.Dispose();
+                            PeerConnections.Remove(connection);
+                        }
+                    }
+                    finally
+                    {
+                        PeerConnectionsLock.ExitWriteLock();
+                    }
                 }
+                finally
+                {
+                    PeerConnectionsLock.ExitUpgradeableReadLock();
+                }
+
 
                 Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}");
 
@@ -67,9 +95,10 @@
 
         private Connection Connection { get; set; }
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
-        private Timer PeerConnectionMonitor { get; set; }
+        private SystemTimer PeerConnectionMonitor { get; set; }
         private bool Disposed { get; set; } = false;
         private Random Random { get; set; } = new Random();
+        private ReaderWriterLockSlim PeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
 
         private List<Search> ActiveSearches { get; set; } = new List<Search>();
 
@@ -146,10 +175,19 @@
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
-            PeerConnections.Add(connection);
-
             connection.DataReceived += OnConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
+
+            PeerConnectionsLock.EnterWriteLock();
+
+            try
+            {
+                PeerConnections.Add(connection);
+            }
+            finally
+            {
+                PeerConnectionsLock.ExitWriteLock();
+            }
 
             try
             {
@@ -172,7 +210,7 @@
 
                 if (search != default(Search))
                 {
-                    await search.AddResultAsync(new SearchResultReceivedEventArgs(e) { Result = response });
+                    search.AddResult(new SearchResultReceivedEventArgs(e) { Result = response });
                 }
             }
         }
@@ -209,6 +247,7 @@
                     await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
                 default:
+                    Console.WriteLine($"Unknown message: {message.Code}; {Encoding.ASCII.GetString(message.Payload)}");
                     break;
             }
         }
