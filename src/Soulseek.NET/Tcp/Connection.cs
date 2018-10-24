@@ -248,7 +248,9 @@
                     do
                     {
                         var bytes = new byte[ReadBufferSize];
+                        Console.WriteLine($"Reading.......................");
                         var bytesRead = await Stream.ReadAsync(bytes, 0, bytes.Length);
+                        Console.WriteLine($"..................Done reading.");
 
                         if (Type == ConnectionType.Peer)
                         {
@@ -290,6 +292,8 @@
                 {
                     Disconnect($"Read error: {ex.Message}");
                 }
+
+                Console.WriteLine($"Read Error: {ex}");
             }
         }
     }
