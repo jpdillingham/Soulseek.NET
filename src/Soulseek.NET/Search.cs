@@ -16,7 +16,7 @@
         Completed = 3,
     }
 
-    public sealed class Search
+    public sealed class Search : IDisposable
     {
         internal Search(Connection serverConnection, string searchText, int searchTimeout = 15)
         {
@@ -40,6 +40,7 @@
         public string SearchText { get; private set; }
         public SearchState State { get; private set; } = SearchState.Pending;
         public int Ticket { get; private set; }
+        private bool Disposed { get; set; } = false;
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private int SearchTimeout { get; set; }
@@ -50,6 +51,11 @@
         {
             State = SearchState.Cancelled;
             Complete();
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
 
         public int Start()
@@ -90,6 +96,19 @@
             State = SearchState.Completed;
 
             Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    SearchTimeoutTimer.Dispose();
+                }
+
+                Disposed = true;
+            }
         }
     }
 }
