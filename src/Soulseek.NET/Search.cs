@@ -18,19 +18,45 @@
 
     public sealed class Search
     {
-        public int Ticket { get; private set; }
-        public string SearchText { get; private set; }
-        public IEnumerable<SearchResponse> Responses => ResponseList.AsReadOnly();
-        public SearchState State { get; private set; } = SearchState.Pending;
+        internal Search(Connection serverConnection, string searchText, int searchTimeout = 15)
+        {
+            ServerConnection = serverConnection;
+            SearchText = searchText;
+            Ticket = new Random().Next(1, 2147483647);
 
-        public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
+            SearchTimeout = searchTimeout;
+            SearchTimeoutTimer = new SystemTimer()
+            {
+                Interval = SearchTimeout * 1000,
+                Enabled = false,
+                AutoReset = false,
+            };
+        }
+
+        public event EventHandler<SearchCancelledEventArgs> SearchCancelled;
         public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
+        public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        public IEnumerable<SearchResponse> Responses => ResponseList.AsReadOnly();
+        public string SearchText { get; private set; }
+        public SearchState State { get; private set; } = SearchState.Pending;
+        public int Ticket { get; private set; }
+        private List<Connection> PeerConnections { get; set; } = new List<Connection>();
+        private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private int SearchTimeout { get; set; }
         private SystemTimer SearchTimeoutTimer { get; set; }
         private Connection ServerConnection { get; set; }
-        private List<Connection> PeerConnections { get; set; } = new List<Connection>();
-        private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
+
+        public void Cancel()
+        {
+            State = SearchState.Cancelled;
+            Complete();
+        }
+
+        public int Start()
+        {
+            return Task.Run(() => StartAsync()).GetAwaiter().GetResult();
+        }
 
         public async Task<int> StartAsync()
         {
@@ -52,12 +78,6 @@
             return Ticket;
         }
 
-        public void Cancel()
-        {
-            State = SearchState.Cancelled;
-            Complete();
-        }
-
         internal void AddResult(SearchResponseReceivedEventArgs result)
         {
             ResponseList.Add(result.Response);
@@ -71,21 +91,6 @@
             State = SearchState.Completed;
 
             Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
-        }
-
-        internal Search(Connection serverConnection, string searchText, int searchTimeout = 15)
-        {
-            ServerConnection = serverConnection;
-            SearchText = searchText;
-            Ticket = new Random().Next(1, 2147483647);
-
-            SearchTimeout = searchTimeout;
-            SearchTimeoutTimer = new SystemTimer()
-            {
-                Interval = SearchTimeout * 1000,
-                Enabled = false,
-                AutoReset = false,
-            };
         }
     }
 }
