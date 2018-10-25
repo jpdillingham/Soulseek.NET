@@ -175,6 +175,8 @@
         public Search CreateSearch(string searchText)
         {
             var search = new Search(Connection, searchText);
+            search.SearchCompleted += OnSearchCompleted;
+
             ActiveSearches.Add(search);
 
             // do not start, to give the client time to bind event handlers
@@ -183,10 +185,13 @@
             return search;
         }
 
-        public async Task<Search> SearchAsync(string searchText)
+        public async Task<SearchResult> SearchAsync(string searchText)
         {
             //todo: create and execute search, spin until it is complete, return results
-            return null;
+            var search = CreateSearch(searchText);
+            await search.StartAsync();
+            var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
+            return (SearchResult)result;
         }
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
@@ -236,6 +241,12 @@
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
             await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToByteArray());
+        }
+
+        private async void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
+        {
+            Console.WriteLine($"Search #{e.Result.Ticket} for '{e.Result.SearchText}' completed.");
+            MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Result.Ticket, e.Result);
         }
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
