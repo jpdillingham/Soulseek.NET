@@ -185,13 +185,13 @@
             return search;
         }
 
-        public async Task<SearchResult> SearchAsync(string searchText)
+        public async Task<Search> SearchAsync(string searchText)
         {
             //todo: create and execute search, spin until it is complete, return results
             var search = CreateSearch(searchText);
             await search.StartAsync();
             var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
-            return (SearchResult)result;
+            return (Search)result;
         }
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
@@ -232,7 +232,7 @@
 
                 if (search != default(Search))
                 {
-                    search.AddResult(new SearchResultReceivedEventArgs(e) { Result = response });
+                    search.AddResult(new SearchResponseReceivedEventArgs(e) { Response = response });
                 }
             }
         }
@@ -245,8 +245,8 @@
 
         private async void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
-            Console.WriteLine($"Search #{e.Result.Ticket} for '{e.Result.SearchText}' completed.");
-            MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Result.Ticket, e.Result);
+            Console.WriteLine($"Search #{e.Search.Ticket} for '{e.Search.SearchText}' completed.");
+            MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
         }
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)

@@ -8,15 +8,22 @@
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
+    public enum SearchState
+    {
+        Pending = 0,
+        InProgress = 1,
+        Cancelled = 2,
+        Completed = 3,
+    }
+
     public sealed class Search
     {
         public int Ticket { get; private set; }
         public string SearchText { get; private set; }
-        public IEnumerable<SearchResponse> Results => ResponseList.AsReadOnly();
-        public bool Cancelled { get; private set; }
-        public bool InProgress { get; private set; }
+        public IEnumerable<SearchResponse> Responses => ResponseList.AsReadOnly();
+        public SearchState State { get; private set; } = SearchState.Pending;
 
-        public event EventHandler<SearchResultReceivedEventArgs> SearchResultReceived;
+        public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
         public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
 
         private int SearchTimeout { get; set; }
@@ -27,10 +34,12 @@
 
         public async Task<int> StartAsync()
         {
-            if (InProgress)
+            if (State == SearchState.InProgress)
             {
                 throw new SearchException($"The Search is already in progress.");
             }
+
+            State = SearchState.InProgress;
 
             var request = new SearchRequest(SearchText, Ticket);
 
@@ -45,33 +54,23 @@
 
         public void Cancel()
         {
-            // todo: kill peer connections, ignore ConnectoToPeer messages
-            Cancelled = true;
+            State = SearchState.Cancelled;
             Complete();
         }
 
-        internal void AddResult(SearchResultReceivedEventArgs result)
+        internal void AddResult(SearchResponseReceivedEventArgs result)
         {
-            ResponseList.Add(result.Result);
-            Task.Run(() => SearchResultReceived?.Invoke(this, result)).Forget();
+            ResponseList.Add(result.Response);
+            Task.Run(() => SearchResponseReceived?.Invoke(this, result)).Forget();
 
             SearchTimeoutTimer.Reset();
         }
 
         private void Complete()
         {
-            InProgress = false;
+            State = SearchState.Completed;
 
-            Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs()
-            {
-                Result = new SearchResult()
-                {
-                    SearchText = SearchText,
-                    Ticket = Ticket,
-                    Results = Results,
-                    Cancelled = Cancelled,
-                }
-            })).Forget();
+            Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
         }
 
         internal Search(Connection serverConnection, string searchText, int searchTimeout = 15)

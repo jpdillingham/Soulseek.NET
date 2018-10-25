@@ -39,7 +39,7 @@
 
                         ActiveSearchTicket = search.Ticket;
                         var result = await client.SearchAsync(ActiveSearchText);
-                        Console.WriteLine($"Search complete.  {result.Results.Count()}");
+                        Console.WriteLine($"Search complete.  {result.Responses.Count()}");
                     }
                     else
                     {
@@ -62,21 +62,21 @@
             }
         }
 
-        private static void Client_SearchResultReceived(object sender, SearchResultReceivedEventArgs e)
+        private static void Client_SearchResultReceived(object sender, SearchResponseReceivedEventArgs e)
         {
             //Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
             var t = string.Empty;
 
-            if (e.Result.Ticket != ActiveSearchTicket)
+            if (e.Response.Ticket != ActiveSearchTicket)
             {
-                t = $"<unknown search> ({ActiveSearchTicket} != {e.Result.Ticket})";
+                t = $"<unknown search> ({ActiveSearchTicket} != {e.Response.Ticket})";
             }
             else
             {
                 t = $"'{ActiveSearchText}' ({ActiveSearchTicket}): ";
             }
 
-            Console.WriteLine($"[SEARCH] {t} {e.Result.FileCount} results from {e.Result.Username}");
+            Console.WriteLine($"[SEARCH] {t} {e.Response.FileCount} results from {e.Response.Username}");
 
             //foreach (var file in e.Result.Files)
             //{

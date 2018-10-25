@@ -4,13 +4,12 @@
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
-    using System.Collections.Generic;
 
-    public class SearchResultReceivedEventArgs : NetworkEventArgs
+    public class SearchResponseReceivedEventArgs : NetworkEventArgs
     {
-        public SearchResponse Result { get; set; }
+        public SearchResponse Response { get; set; }
 
-        public SearchResultReceivedEventArgs(NetworkEventArgs e)
+        public SearchResponseReceivedEventArgs(NetworkEventArgs e)
         {
             Address = e.Address;
             IPAddress = e.IPAddress;
@@ -20,7 +19,7 @@
 
     public class SearchCompletedEventArgs : EventArgs
     {
-        public SearchResult Result { get; set; }
+        public Search Search { get; set; }
     }
 
     public class MessageReceivedEventArgs : NetworkEventArgs
