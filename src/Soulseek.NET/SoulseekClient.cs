@@ -7,7 +7,6 @@
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using System.Timers;
@@ -28,53 +27,6 @@
             PeerConnectionMonitor.Elapsed += PeerConnectionMonitor_Elapsed;
         }
 
-        private void PeerConnectionMonitor_Elapsed(object sender, ElapsedEventArgs e)
-        {
-            try
-            {
-                var total = 0;
-                var connecting = 0;
-                var connected = 0;
-
-                PeerConnectionsLock.EnterUpgradeableReadLock();
-
-                try
-                {
-                    total = PeerConnections.Count();
-                    connecting = PeerConnections.Where(c => c?.State == ConnectionState.Connecting).Count();
-                    connected = PeerConnections.Where(c => c?.State == ConnectionState.Connected).Count();
-                    var disconnectedPeers = new List<Connection>(PeerConnections.Where(c => c == null || c.State == ConnectionState.Disconnected));
-
-                    Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnectedPeers.Count()}");
-                
-                    PeerConnectionsLock.EnterWriteLock();
-
-                    try
-                    {
-                        foreach (var connection in disconnectedPeers)
-                        {
-                            connection?.Dispose();
-                            PeerConnections.Remove(connection);
-                        }
-                    }
-                    finally
-                    {
-                        PeerConnectionsLock.ExitWriteLock();
-                    }
-                }
-                finally
-                {
-                    PeerConnectionsLock.ExitUpgradeableReadLock();
-                }
-
-                PeerConnectionMonitor.Reset();
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error in peer connection monitor: {ex}");
-            }
-        }
-
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
         public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
@@ -83,24 +35,37 @@
         public int ParentMinSpeed { get; private set; }
         public int ParentSpeedRatio { get; private set; }
         public int Port { get; private set; }
-
         public IEnumerable<string> PrivilegedUsers { get; private set; }
         public IEnumerable<Room> Rooms { get; private set; }
         public int WishlistInterval { get; private set; }
-        private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
-
-        private Connection Connection { get; set; }
-        private List<Connection> PeerConnections { get; set; } = new List<Connection>();
-        private SystemTimer PeerConnectionMonitor { get; set; }
-        private bool Disposed { get; set; } = false;
-        private Random Random { get; set; } = new Random();
-        private ReaderWriterLockSlim PeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
 
         private List<Search> ActiveSearches { get; set; } = new List<Search>();
+        private Connection Connection { get; set; }
+        private bool Disposed { get; set; } = false;
+        private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
+        private SystemTimer PeerConnectionMonitor { get; set; }
+        private List<Connection> PeerConnections { get; set; } = new List<Connection>();
+        private ReaderWriterLockSlim PeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
+        private Random Random { get; set; } = new Random();
+
+        public void Connect()
+        {
+            Task.Run(() => ConnectAsync()).GetAwaiter().GetResult();
+        }
 
         public async Task ConnectAsync()
         {
             await Connection.ConnectAsync();
+        }
+
+        public Search CreateSearch(string searchText)
+        {
+            var search = new Search(Connection, searchText);
+            search.SearchCompleted += OnSearchCompleted;
+
+            ActiveSearches.Add(search);
+
+            return search;
         }
 
         public void Disconnect(string message)
@@ -140,6 +105,11 @@
             }
         }
 
+        public void Dispose()
+        {
+            Dispose(true);
+        }
+
         public async Task<LoginResponse> LoginAsync(string username, string password)
         {
             try
@@ -165,24 +135,11 @@
 
                 return (LoginResponse)login.Result;
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 Console.WriteLine(ex);
                 return null;
             }
-        }
-
-        public Search CreateSearch(string searchText)
-        {
-            var search = new Search(Connection, searchText);
-            search.SearchCompleted += OnSearchCompleted;
-
-            ActiveSearches.Add(search);
-
-            // do not start, to give the client time to bind event handlers
-            //search.Start();
-
-            return search;
         }
 
         public async Task<Search> SearchAsync(string searchText)
@@ -192,6 +149,41 @@
             await search.StartAsync();
             var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
             return (Search)result;
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            Console.WriteLine($"Dispose?");
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    Connection?.Dispose();
+                    PeerConnections?.ForEach(c => c.Dispose());
+                    PeerConnectionMonitor?.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
+
+        private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
+        {
+            if (response.FileCount > 0)
+            {
+                var search = ActiveSearches.Where(s => s.Ticket == response.Ticket).SingleOrDefault();
+
+                if (search != default(Search))
+                {
+                    search.AddResult(new SearchResponseReceivedEventArgs(e) { Response = response });
+                }
+            }
+        }
+
+        private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
+        {
+            Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
+            await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToByteArray());
         }
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
@@ -224,42 +216,17 @@
             }
         }
 
-        private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
-        {
-            if (response.FileCount > 0)
-            {
-                var search = ActiveSearches.Where(s => s.Ticket == response.Ticket).SingleOrDefault();
-
-                if (search != default(Search))
-                {
-                    search.AddResult(new SearchResponseReceivedEventArgs(e) { Response = response });
-                }
-            }
-        }
-
-        private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
-        {
-            Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToByteArray());
-        }
-
-        private async void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
-        {
-            Console.WriteLine($"Search #{e.Search.Ticket} for '{e.Search.SearchText}' completed.");
-            MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
-        }
-
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             //Console.WriteLine($"Data received: {e.Data.Length} bytes");
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
-            
+
             var message = new Message(e.Data);
             var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
             //Console.WriteLine($"Message receiveD: {message.Code}, {message.Payload.Length} bytes");
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
-            
+
             switch (message.Code)
             {
                 case MessageCode.ServerParentMinSpeed:
@@ -267,38 +234,35 @@
                 case MessageCode.ServerWishlistInterval:
                     MessageWaiter.Complete(message.Code, Integer.Parse(message));
                     break;
+
                 case MessageCode.ServerLogin:
                     MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
                     break;
+
                 case MessageCode.ServerRoomList:
                     MessageWaiter.Complete(message.Code, RoomList.Parse(message));
                     break;
+
                 case MessageCode.ServerPrivilegedUsers:
                     MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
+
                 case MessageCode.PeerSearchReply:
                     await HandlePeerSearchReply(SearchResponse.Parse(message), e);
                     break;
+
                 case MessageCode.ServerConnectToPeer:
                     await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
+
                 case MessageCode.ServerPrivateMessages:
                     await HandlePrivateMessage(PrivateMessage.Parse(message), e);
                     break;
+
                 default:
                     Console.WriteLine($"Unknown message: [{e.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
-        }
-
-        private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Connected)
-            {
-                PeerConnectionMonitor.Start();
-            }
-
-            await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
         }
 
         private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
@@ -316,29 +280,70 @@
                 {
                     PeerConnectionsLock.ExitWriteLock();
                 }
-
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        private async void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
-            Console.WriteLine($"Dispose?");
-            if (!Disposed)
+            Console.WriteLine($"Search #{e.Search.Ticket} for '{e.Search.SearchText}' completed.");
+            MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
+        }
+
+        private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        {
+            if (e.State == ConnectionState.Connected)
             {
-                if (disposing)
+                PeerConnectionMonitor.Start();
+            }
+
+            await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
+        }
+
+        private void PeerConnectionMonitor_Elapsed(object sender, ElapsedEventArgs e)
+        {
+            try
+            {
+                var total = 0;
+                var connecting = 0;
+                var connected = 0;
+
+                PeerConnectionsLock.EnterUpgradeableReadLock();
+
+                try
                 {
-                    Connection?.Dispose();
-                    PeerConnections?.ForEach(c => c.Dispose());
-                    PeerConnectionMonitor?.Dispose();
+                    total = PeerConnections.Count();
+                    connecting = PeerConnections.Where(c => c?.State == ConnectionState.Connecting).Count();
+                    connected = PeerConnections.Where(c => c?.State == ConnectionState.Connected).Count();
+                    var disconnectedPeers = new List<Connection>(PeerConnections.Where(c => c == null || c.State == ConnectionState.Disconnected));
+
+                    Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnectedPeers.Count()}");
+
+                    PeerConnectionsLock.EnterWriteLock();
+
+                    try
+                    {
+                        foreach (var connection in disconnectedPeers)
+                        {
+                            connection?.Dispose();
+                            PeerConnections.Remove(connection);
+                        }
+                    }
+                    finally
+                    {
+                        PeerConnectionsLock.ExitWriteLock();
+                    }
+                }
+                finally
+                {
+                    PeerConnectionsLock.ExitUpgradeableReadLock();
                 }
 
-                Disposed = true;
+                PeerConnectionMonitor.Reset();
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in peer connection monitor: {ex}");
+            }
         }
     }
 }
