@@ -116,7 +116,7 @@
             Stream = TcpClient.GetStream();
             WatchdogTimer.Start();
 
-            Task.Run(() => ReadAsync()).Forget();
+            Task.Run(() => ReadContinuouslyAsync()).Forget();
         }
 
         public void Disconnect(string message = null)
@@ -233,29 +233,28 @@
             Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
-        private async Task<byte[]> ReadBytes(NetworkStream stream, int count)
+        private async Task<byte[]> ReadAsync(NetworkStream stream, int count)
         {
             var result = new List<byte>();
+
             var buffer = new byte[ReadBufferSize];
-            var readBytes = 0;
+            var totalBytesRead = 0;
 
-            while (readBytes < count)
+            while (totalBytesRead < count)
             {
-                var newBytes = await stream.ReadAsync(buffer, 0, count - readBytes);
-                readBytes += newBytes;
-                result.AddRange(buffer.Take(newBytes));
-            }
+                var bytesRemaining = count - totalBytesRead;
+                var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-            if (result.Count() != count)
-            {
-                Console.WriteLine($"Error in ReadBytes(); requested {count} but read {result.Count()}");
-                throw new Exception();
+                var bytesRead = await stream.ReadAsync(buffer, 0, bytesToRead);
+
+                totalBytesRead += bytesRead;
+                result.AddRange(buffer.Take(bytesRead));
             }
 
             return result.ToArray();
         }
 
-        private async Task ReadAsync()
+        private async Task ReadContinuouslyAsync()
         {
             if (Type == ConnectionType.Peer)
             {
@@ -273,66 +272,35 @@
             {
                 while (true)
                 {
-                    var header = await ReadBytes(Stream, 4);
-                    var length = BitConverter.ToInt32(header, 0);
-
-                    var codeBytes = await ReadBytes(Stream, 4);
-                    var code = BitConverter.ToInt32(codeBytes, 0);
-
-                    if (!Enum.TryParse<MessageCode>(code.ToString(), out var whatever))
-                    {
-                        Console.WriteLine($"Invalid code {code}");
-                    }
-
                     var message = new List<byte>();
-                    message.AddRange(header);
+
+                    var lengthBytes = await ReadAsync(Stream, 4);
+                    var length = BitConverter.ToInt32(lengthBytes, 0);
+                    message.AddRange(lengthBytes);
+
+                    var codeBytes = await ReadAsync(Stream, 4);
+                    var code = BitConverter.ToInt32(codeBytes, 0);
                     message.AddRange(codeBytes);
 
-                    var id = new Random().Next();
+                    var payloadBytes = await ReadAsync(Stream, length - 4);
+                    message.AddRange(payloadBytes);
 
-                    //log($"[{IPAddress}] [{id}] 0/{length} ({message.Count})");                    
+                    var messageBytes = message.ToArray();
 
-                    var remainingBytes = length - 4;
-
-                    do
-                    {
-                        // read the entire length of the message
-                        var bytesToRead = remainingBytes > ReadBufferSize ? ReadBufferSize : remainingBytes;
-                        //log($"Bytes to read: {bytesToRead}");
-
-                        var buffer = new byte[bytesToRead];
-                        var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead);
-
-                        remainingBytes -= bytesRead;
-
-                        message.AddRange(buffer.Take(bytesRead));
-
-                        //log($"[{IPAddress}] [{id}] {length - remainingBytes}/{length} ({message.Count})");
-
-                        if (Type == ConnectionType.Peer)
-                        {
-                            InactivityTimer.Reset();
-                        }
-
-                        if (bytesRead == 0)
-                        {
-                            Disconnect($"Zero bytes read; remote connection closed.");
-                            break;
-                        }
-                    } while (remainingBytes > 0);
-
-                    //log($"[{IPAddress}] [{id}] {length - remainingBytes}/{length} ({ message.Count})");
-                    var data = message.ToArray();
-
-                    NormalizeMessageCode(data, (int)Type);
+                    NormalizeMessageCode(messageBytes, (int)Type);
 
                     Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
                     {
                         Address = Address,
                         IPAddress = IPAddress.ToString(),
                         Port = Port,
-                        Data = data,
+                        Data = messageBytes,
                     })).Forget();
+
+                    if (Type == ConnectionType.Peer)
+                    {
+                        InactivityTimer.Reset();
+                    }
                 }
             }
             catch (Exception ex)
