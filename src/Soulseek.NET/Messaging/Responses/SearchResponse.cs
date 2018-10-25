@@ -36,34 +36,24 @@
                 FileCount = reader.ReadInteger()
             };
 
-            //Console.WriteLine($"User: {Username}, Ticket: {Ticket}, FileCount: {FileCount}");
-
             for (int i = 0; i < response.FileCount; i++)
             {
-                //Console.WriteLine($"#{i}");
                 var file = new File
                 {
                     Code = reader.ReadByte(),
-                    //Console.WriteLine($"Code: {file.Code}");
                     Filename = reader.ReadString(),
-                    //Console.WriteLine($"Filename: {file.Filename}");
                     Size = reader.ReadLong(),
-                    //Console.WriteLine($"Size: {file.Size}");
                     Extension = reader.ReadString(),
-                    //Console.WriteLine($"Ext: {file.Extension}");
                     AttributeCount = reader.ReadInteger()
                 };
-                //Console.WriteLine($"Attributes: {file.AttributeCount}");
 
                 for (int j = 0; j < file.AttributeCount; j++)
                 {
-                    //Console.WriteLine($"#{j}");
                     var attribute = new FileAttribute
                     {
                         Type = (FileAttributeType)reader.ReadInteger(),
                         Value = reader.ReadInteger()
                     };
-                    //Console.WriteLine($"Attribute type: {attribute.Type}, value: {attribute.Value}");
                     ((List<FileAttribute>)file.Attributes).Add(attribute);
                 }
 
