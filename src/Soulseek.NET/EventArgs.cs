@@ -22,6 +22,10 @@
         public Search Search { get; set; }
     }
 
+    public class SearchCancelledEventArgs : SearchCompletedEventArgs
+    {
+    }
+
     public class MessageReceivedEventArgs : NetworkEventArgs
     {
         public Message Message { get; set; }
