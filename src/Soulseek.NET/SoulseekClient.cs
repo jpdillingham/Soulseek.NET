@@ -112,9 +112,31 @@
 
             Connection.Disconnect(message);
 
-            foreach (var connection in PeerConnections)
+            PeerConnectionsLock.EnterUpgradeableReadLock();
+
+            try
             {
-                connection.Disconnect(message);
+                var connections = new List<Connection>(PeerConnections);
+
+                PeerConnectionsLock.EnterWriteLock();
+
+                try
+                {
+                    foreach (var connection in PeerConnections)
+                    {
+                        connection.Disconnect(message);
+                        connection.Dispose();
+                        PeerConnections.Remove(connection);
+                    }
+                }
+                finally
+                {
+                    PeerConnectionsLock.ExitWriteLock();
+                }
+            }
+            finally
+            {
+                PeerConnectionsLock.ExitUpgradeableReadLock();
             }
         }
 
@@ -253,7 +275,7 @@
                     await HandlePrivateMessage(PrivateMessage.Parse(message), e);
                     break;
                 default:
-                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
+                    Console.WriteLine($"Unknown message: [{e.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
         }
@@ -272,8 +294,18 @@
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
-                connection.Dispose();
-                PeerConnections.Remove(connection);
+                PeerConnectionsLock.EnterWriteLock();
+
+                try
+                {
+                    connection.Dispose();
+                    PeerConnections.Remove(connection);
+                }
+                finally
+                {
+                    PeerConnectionsLock.ExitWriteLock();
+                }
+
             }
         }
 
