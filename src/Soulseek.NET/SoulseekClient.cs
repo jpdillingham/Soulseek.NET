@@ -23,8 +23,8 @@
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
 
-            PeerConnectionMonitor = new SystemTimer(5000);
-            PeerConnectionMonitor.Elapsed += PeerConnectionMonitor_Elapsed;
+            PeerConnectionMonitorTimer = new SystemTimer(5000);
+            PeerConnectionMonitorTimer.Elapsed += PeerConnectionMonitor_Elapsed;
         }
 
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -44,7 +44,7 @@
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
-        private SystemTimer PeerConnectionMonitor { get; set; }
+        private SystemTimer PeerConnectionMonitorTimer { get; set; }
         private List<Connection> PeerConnections { get; set; } = new List<Connection>();
         private ReaderWriterLockSlim PeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
         private Random Random { get; set; } = new Random();
@@ -195,14 +195,14 @@
 
         protected virtual void Dispose(bool disposing)
         {
-            Console.WriteLine($"Dispose?");
             if (!Disposed)
             {
                 if (disposing)
                 {
                     Connection?.Dispose();
+                    ActiveSearches?.ForEach(s => s.Dispose());
                     PeerConnections?.ForEach(c => c.Dispose());
-                    PeerConnectionMonitor?.Dispose();
+                    PeerConnectionMonitorTimer?.Dispose();
                 }
 
                 Disposed = true;
@@ -361,7 +361,7 @@
         {
             if (e.State == ConnectionState.Connected)
             {
-                PeerConnectionMonitor.Start();
+                PeerConnectionMonitorTimer.Start();
             }
 
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
@@ -406,7 +406,7 @@
                     PeerConnectionsLock.ExitUpgradeableReadLock();
                 }
 
-                PeerConnectionMonitor.Reset();
+                PeerConnectionMonitorTimer.Reset();
             }
             catch (Exception ex)
             {
