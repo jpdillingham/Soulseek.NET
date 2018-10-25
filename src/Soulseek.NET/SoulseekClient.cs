@@ -40,6 +40,7 @@
         public int WishlistInterval { get; private set; }
 
         private List<Search> ActiveSearches { get; set; } = new List<Search>();
+        private ReaderWriterLockSlim ActiveSearchesLock { get; set; } = new ReaderWriterLockSlim();
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
@@ -63,7 +64,16 @@
             var search = new Search(Connection, searchText);
             search.SearchCompleted += OnSearchCompleted;
 
-            ActiveSearches.Add(search);
+            ActiveSearchesLock.EnterWriteLock();
+
+            try
+            {
+                ActiveSearches.Add(search);
+            }
+            finally
+            {
+                ActiveSearchesLock.ExitWriteLock();
+            }
 
             return search;
         }
@@ -102,6 +112,33 @@
             finally
             {
                 PeerConnectionsLock.ExitUpgradeableReadLock();
+            }
+
+            ActiveSearchesLock.EnterUpgradeableReadLock();
+
+            try
+            {
+                var searches = new List<Search>(ActiveSearches);
+
+                ActiveSearchesLock.EnterWriteLock();
+
+                try
+                {
+                    foreach (var search in ActiveSearches)
+                    {
+                        search.Cancel();
+                        search.Dispose();
+                        ActiveSearches.Remove(search);
+                    }
+                }
+                finally
+                {
+                    ActiveSearchesLock.ExitWriteLock();
+                }
+            }
+            finally
+            {
+                ActiveSearchesLock.ExitUpgradeableReadLock();
             }
         }
 
@@ -142,6 +179,11 @@
             }
         }
 
+        public Search Search(string searchText)
+        {
+            return Task.Run(() => SearchAsync(searchText)).GetAwaiter().GetResult();
+        }
+
         public async Task<Search> SearchAsync(string searchText)
         {
             //todo: create and execute search, spin until it is complete, return results
@@ -171,7 +213,21 @@
         {
             if (response.FileCount > 0)
             {
-                var search = ActiveSearches.Where(s => s.Ticket == response.Ticket).SingleOrDefault();
+                var search = default(Search);
+
+                ActiveSearchesLock.EnterReadLock();
+
+                try
+                {
+                    search = ActiveSearches
+                        .Where(s => s.State == SearchState.InProgress)
+                        .Where(s => s.Ticket == response.Ticket)
+                        .SingleOrDefault();
+                }
+                finally
+                {
+                    ActiveSearchesLock.ExitReadLock();
+                }
 
                 if (search != default(Search))
                 {
@@ -286,6 +342,18 @@
         private async void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
             Console.WriteLine($"Search #{e.Search.Ticket} for '{e.Search.SearchText}' completed.");
+
+            ActiveSearchesLock.EnterWriteLock();
+
+            try
+            {
+                ActiveSearches.Remove(e.Search);
+            }
+            finally
+            {
+                ActiveSearchesLock.ExitWriteLock();
+            }
+
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
         }
 
