@@ -35,10 +35,11 @@
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
                         var search = client.CreateSearch(ActiveSearchText);
-                        search.SearchResultReceived += Client_SearchResultReceived;
+                        //search.SearchResultReceived += Client_SearchResultReceived;
 
                         ActiveSearchTicket = search.Ticket;
-                        search.Start();
+                        var result = await client.SearchAsync(ActiveSearchText);
+                        Console.WriteLine($"Search complete.  {result.Results.Count()}");
                     }
                     else
                     {
