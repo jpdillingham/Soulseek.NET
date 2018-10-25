@@ -22,9 +22,9 @@
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.PeerSearchReply)
+            if (reader.Code != MessageCode.PeerSearchResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Search Reply (expected: {(int)MessageCode.PeerSearchReply}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
             }
 
             reader.Decompress();
