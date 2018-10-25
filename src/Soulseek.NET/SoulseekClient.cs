@@ -32,6 +32,7 @@
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         public string Address { get; private set; }
+        public ConnectionState ConnectionState => Connection.State;
         public int ParentMinSpeed { get; private set; }
         public int ParentSpeedRatio { get; private set; }
         public int Port { get; private set; }
