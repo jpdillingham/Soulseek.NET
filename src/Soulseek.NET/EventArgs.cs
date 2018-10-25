@@ -4,6 +4,7 @@
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
+    using System.Collections.Generic;
 
     public class SearchResultReceivedEventArgs : NetworkEventArgs
     {
@@ -19,8 +20,7 @@
 
     public class SearchCompletedEventArgs : EventArgs
     {
-        public int Ticket { get; set; }
-
+        public SearchResult Result { get; set; }
     }
 
     public class MessageReceivedEventArgs : NetworkEventArgs
