@@ -12,8 +12,16 @@
     using System.Timers;
     using SystemTimer = System.Timers.Timer;
 
+    /// <summary>
+    ///     A client for the Soulseek file sharing network.
+    /// </summary>
     public class SoulseekClient : IDisposable
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/> and <paramref name="port"/>.
+        /// </summary>
+        /// <param name="address">The address of the server to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
         public SoulseekClient(string address = "server.slsknet.org", int port = 2242)
         {
             Address = address;
@@ -27,17 +35,59 @@
             PeerConnectionMonitorTimer.Elapsed += PeerConnectionMonitor_Elapsed;
         }
 
+        /// <summary>
+        ///     Occurs when the underlying TCP connection to the server changes state.
+        /// </summary>
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+
+        /// <summary>
+        ///     Occurs when raw data is recieved by the underlying TCP connection.
+        /// </summary>
         public event EventHandler<DataReceivedEventArgs> DataReceived;
+
+        /// <summary>
+        ///     Occurs when a new message is recieved.
+        /// </summary>
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
-        public string Address { get; private set; }
+        /// <summary>
+        ///     Gets or sets the address of the server to which to connect.
+        /// </summary>
+        public string Address { get; set; }
+
+        /// <summary>
+        ///     Gets the current state of the underlying TCP connection.
+        /// </summary>
         public ConnectionState ConnectionState => Connection.State;
+
+        /// <summary>
+        ///     Gets the ParentMinSpeed value from the server.
+        /// </summary>
         public int ParentMinSpeed { get; private set; }
+
+        /// <summary>
+        ///     Gets the ParentSpeedRatio value from the server.
+        /// </summary>
         public int ParentSpeedRatio { get; private set; }
-        public int Port { get; private set; }
+
+        /// <summary>
+        ///     Gets or sets the port to which to connect.
+        /// </summary>
+        public int Port { get; set; }
+
+        /// <summary>
+        ///     Gets the list of privileged users from the server.
+        /// </summary>
         public IEnumerable<string> PrivilegedUsers { get; private set; }
+
+        /// <summary>
+        ///     Gets the list of rooms from the server.
+        /// </summary>
         public IEnumerable<Room> Rooms { get; private set; }
+
+        /// <summary>
+        ///     Gets the WishlistInterval value from the server.
+        /// </summary>
         public int WishlistInterval { get; private set; }
 
         private List<Search> ActiveSearches { get; set; } = new List<Search>();
@@ -50,16 +100,27 @@
         private ReaderWriterLockSlim PeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
         private Random Random { get; set; } = new Random();
 
+        /// <summary>
+        ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
+        /// </summary>
         public void Connect()
         {
             Task.Run(() => ConnectAsync()).GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
+        /// </summary>
         public async Task ConnectAsync()
         {
             await Connection.ConnectAsync();
         }
 
+        /// <summary>
+        ///     Creates a Pending <see cref="Soulseek.Search"/> with the specified <paramref name="searchText"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <returns>A <see cref="SearchState.Pending"/> Search.</returns>
         public Search CreateSearch(string searchText)
         {
             var search = new Search(Connection, searchText);
@@ -79,6 +140,10 @@
             return search;
         }
 
+        /// <summary>
+        ///     Disconnects the client from the server with an optionally supplied <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">An optional disconnect message.</param>
         public void Disconnect(string message)
         {
             if (string.IsNullOrEmpty(message))
@@ -143,54 +208,78 @@
             }
         }
 
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
         }
 
-        public async Task<LoginResponse> LoginAsync(string username, string password)
+        /// <summary>
+        ///     Logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
+        /// </summary>
+        /// <param name="username">The username with which to log in.</param>
+        /// <param name="password">The password with which to log in.</param>
+        /// <returns>The server response.</returns>
+        public LoginResponse Login(string username, string password)
         {
-            try
-            {
-                var request = new LoginRequest(username, password);
-
-                var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
-                var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
-                var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
-                var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
-                var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
-                var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
-
-                await Connection.SendAsync(request.ToMessage().ToByteArray());
-
-                Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
-
-                Rooms = (IEnumerable<Room>)roomList.Result;
-                ParentMinSpeed = ((int)parentMinSpeed.Result);
-                ParentSpeedRatio = ((int)parentSpeedRatio.Result);
-                WishlistInterval = ((int)wishlistInterval.Result);
-                PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
-
-                return (LoginResponse)login.Result;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-                return null;
-            }
+            return Task.Run(() => LoginAsync(username, password)).GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
+        /// </summary>
+        /// <param name="username">The username with which to log in.</param>
+        /// <param name="password">The password with which to log in.</param>
+        /// <returns>The server response.</returns>
+        public async Task<LoginResponse> LoginAsync(string username, string password)
+        {
+            var request = new LoginRequest(username, password);
+
+            var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
+            var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
+            var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
+            var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
+            var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
+            var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
+
+            await Connection.SendAsync(request.ToMessage().ToByteArray());
+
+            Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
+
+            Rooms = (IEnumerable<Room>)roomList.Result;
+            ParentMinSpeed = ((int)parentMinSpeed.Result);
+            ParentSpeedRatio = ((int)parentSpeedRatio.Result);
+            WishlistInterval = ((int)wishlistInterval.Result);
+            PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
+
+            return (LoginResponse)login.Result;
+        }
+
+        /// <summary>
+        ///     Performs a search for the specified <paramref name="searchText"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <returns>The completed search result.</returns>
         public Search Search(string searchText)
         {
             return Task.Run(() => SearchAsync(searchText)).GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        ///     Asynchronously performs a search for the specified <paramref name="searchText"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <returns>The completed search result.</returns>
         public async Task<Search> SearchAsync(string searchText)
         {
-            //todo: create and execute search, spin until it is complete, return results
             var search = CreateSearch(searchText);
+
             await search.StartAsync();
+
             var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
+
             return (Search)result;
         }
 
@@ -210,7 +299,7 @@
             }
         }
 
-        private async Task HandlePeerSearchReply(SearchResponse response, NetworkEventArgs e)
+        private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
             if (response.FileCount > 0)
             {
@@ -232,7 +321,7 @@
 
                 if (search != default(Search))
                 {
-                    search.AddResult(new SearchResponseReceivedEventArgs(e) { Response = response });
+                    search.AddResponse(response, e);
                 }
             }
         }
@@ -275,13 +364,11 @@
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            //Console.WriteLine($"Data received: {e.Data.Length} bytes");
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
 
             var message = new Message(e.Data);
             var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
-            //Console.WriteLine($"Message receiveD: {message.Code}, {message.Payload.Length} bytes");
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
             switch (message.Code)
@@ -304,8 +391,8 @@
                     MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
 
-                case MessageCode.PeerSearchReply:
-                    await HandlePeerSearchReply(SearchResponse.Parse(message), e);
+                case MessageCode.PeerSearchResponse:
+                    HandlePeerSearchResponse(SearchResponse.Parse(message), e);
                     break;
 
                 case MessageCode.ServerConnectToPeer:
