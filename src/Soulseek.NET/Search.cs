@@ -33,7 +33,6 @@
             };
         }
 
-        public event EventHandler<SearchCancelledEventArgs> SearchCancelled;
         public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
