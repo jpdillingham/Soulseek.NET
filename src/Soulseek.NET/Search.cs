@@ -83,10 +83,10 @@
             return Ticket;
         }
 
-        internal void AddResult(SearchResponseReceivedEventArgs result)
+        internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
-            ResponseList.Add(result.Response);
-            Task.Run(() => SearchResponseReceived?.Invoke(this, result)).Forget();
+            ResponseList.Add(response);
+            Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
 
             SearchTimeoutTimer.Reset();
         }
