@@ -35,26 +35,25 @@
                 var total = 0;
                 var connecting = 0;
                 var connected = 0;
-                var disconnecting = 0;
 
                 PeerConnectionsLock.EnterUpgradeableReadLock();
 
                 try
                 {
                     total = PeerConnections.Count();
-                    connecting = PeerConnections.Where(c => c.State == ConnectionState.Connecting).Count();
-                    connected = PeerConnections.Where(c => c.State == ConnectionState.Connected).Count();
-                    disconnecting = PeerConnections.Where(c => c.State == ConnectionState.Disconnecting).Count();
+                    connecting = PeerConnections.Where(c => c?.State == ConnectionState.Connecting).Count();
+                    connected = PeerConnections.Where(c => c?.State == ConnectionState.Connected).Count();
+                    var disconnectedPeers = new List<Connection>(PeerConnections.Where(c => c == null || c.State == ConnectionState.Disconnected));
 
-                    var disconnectedPeers = PeerConnections.Where(c => c.State == ConnectionState.Disconnected);
-
+                    Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnectedPeers.Count()}");
+                
                     PeerConnectionsLock.EnterWriteLock();
 
                     try
                     {
                         foreach (var connection in disconnectedPeers)
                         {
-                            connection.Dispose();
+                            connection?.Dispose();
                             PeerConnections.Remove(connection);
                         }
                     }
@@ -67,9 +66,6 @@
                 {
                     PeerConnectionsLock.ExitUpgradeableReadLock();
                 }
-
-
-                Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnecting: {disconnecting}");
 
                 PeerConnectionMonitor.Reset();
             }
@@ -222,13 +218,13 @@
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            Console.WriteLine($"Data received: {e.Data.Length} bytes");
+            //Console.WriteLine($"Data received: {e.Data.Length} bytes");
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
             
             var message = new Message(e.Data);
             var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
-            Console.WriteLine($"Message receiveD: {message.Code}, {message.Payload.Length} bytes");
+            //Console.WriteLine($"Message receiveD: {message.Code}, {message.Payload.Length} bytes");
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
             
             switch (message.Code)
