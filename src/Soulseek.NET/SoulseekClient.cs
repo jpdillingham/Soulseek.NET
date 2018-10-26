@@ -49,7 +49,7 @@ namespace Soulseek.NET
             Connection.DataReceived += OnConnectionDataReceived;
 
             PeerConnectionMonitorTimer = new SystemTimer(5000);
-            PeerConnectionMonitorTimer.Elapsed += PeerConnectionMonitor_Elapsed;
+            PeerConnectionMonitorTimer.Elapsed += OnPeerConnectionMonitorTick;
         }
 
         /// <summary>
@@ -470,50 +470,22 @@ namespace Soulseek.NET
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
         }
 
-        private void PeerConnectionMonitor_Elapsed(object sender, ElapsedEventArgs e)
+        private void OnPeerConnectionMonitorTick(object sender, ElapsedEventArgs e)
         {
+            PeerConnectionsLock.EnterReadLock();
+
             try
             {
-                var total = 0;
-                var connecting = 0;
-                var connected = 0;
+                var total = PeerConnections.Count();
+                var connecting = PeerConnections.Where(c => c?.State == ConnectionState.Connecting).Count();
+                var connected = PeerConnections.Where(c => c?.State == ConnectionState.Connected).Count();
+                var disconnected = PeerConnections.Where(c => c == null || c.State == ConnectionState.Disconnected).Count();
 
-                PeerConnectionsLock.EnterUpgradeableReadLock();
-
-                try
-                {
-                    total = PeerConnections.Count();
-                    connecting = PeerConnections.Where(c => c?.State == ConnectionState.Connecting).Count();
-                    connected = PeerConnections.Where(c => c?.State == ConnectionState.Connected).Count();
-                    var disconnectedPeers = new List<Connection>(PeerConnections.Where(c => c == null || c.State == ConnectionState.Disconnected));
-
-                    Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnectedPeers.Count()}");
-
-                    PeerConnectionsLock.EnterWriteLock();
-
-                    try
-                    {
-                        foreach (var connection in disconnectedPeers)
-                        {
-                            connection?.Dispose();
-                            PeerConnections.Remove(connection);
-                        }
-                    }
-                    finally
-                    {
-                        PeerConnectionsLock.ExitWriteLock();
-                    }
-                }
-                finally
-                {
-                    PeerConnectionsLock.ExitUpgradeableReadLock();
-                }
-
-                PeerConnectionMonitorTimer.Reset();
+                Console.WriteLine($"████████████████████ Peers: Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnected}");
             }
-            catch (Exception ex)
+            finally
             {
-                Console.WriteLine($"Error in peer connection monitor: {ex}");
+                PeerConnectionsLock.ExitReadLock();
             }
         }
     }
