@@ -1,6 +1,6 @@
 ﻿namespace Soulseek.NET.Messaging.Responses
 {
-    public static class Integer
+    public sealed class Integer
     {
         public static int Parse(Message message)
         {

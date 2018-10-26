@@ -7,10 +7,10 @@
         public string Username { get; private set; }
         public int Ticket { get; private set; }
         public int FileCount { get; private set; }
-        public IEnumerable<File> Files => FileList;
+        public IEnumerable<File> Files => FileList.AsReadOnly();
         public int FreeUploadSlots { get; private set; }
-        public int UploadSpeed { get; set; }
-        public int InQueue { get; set; }
+        public int UploadSpeed { get; private set; }
+        public int InQueue { get; private set; }
 
         private List<File> FileList { get; set; } = new List<File>();
 

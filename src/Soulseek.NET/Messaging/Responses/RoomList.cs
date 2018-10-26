@@ -28,7 +28,7 @@
                 list[i].UserCount = reader.ReadInteger();
             }
 
-            return list;
+            return list.AsReadOnly();
         }
     }
 

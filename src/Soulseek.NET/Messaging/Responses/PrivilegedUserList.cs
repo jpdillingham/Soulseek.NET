@@ -2,7 +2,7 @@
 {
     using System.Collections.Generic;
 
-    public static class PrivilegedUserList
+    public sealed class PrivilegedUserList
     {
         public static IEnumerable<string> Parse(Message message)
         {
@@ -21,7 +21,7 @@
                 list.Add(reader.ReadString());
             }
 
-            return list;
+            return list.AsReadOnly();
         }
     }
 }
