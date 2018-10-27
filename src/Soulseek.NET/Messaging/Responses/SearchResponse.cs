@@ -35,6 +35,7 @@
             catch (Exception)
             {
                 // discard result if it fails to decompress
+                return null;
             }
 
             var response = new SearchResponse
