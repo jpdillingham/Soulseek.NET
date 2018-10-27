@@ -39,7 +39,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 500)
+        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 250)
         {
             Address = address;
             Port = port;
@@ -122,7 +122,7 @@ namespace Soulseek.NET
         private ReaderWriterLockSlim ActiveSearchesLock { get; set; } = new ReaderWriterLockSlim();
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
-        private Queue<Connection> PeerConnectionQueue { get; set; } = new Queue<Connection>();
+        private Queue<Tuple<Connection, ConnectToPeerResponse>> PeerConnectionQueue { get; set; } = new Queue<Tuple<Connection, ConnectToPeerResponse>>();
         private ReaderWriterLockSlim PeerConnectionQueueLock { get; set; } = new ReaderWriterLockSlim();
         private List<Connection> ActivePeerConnections { get; set; } = new List<Connection>();
         private ReaderWriterLockSlim ActivePeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
@@ -400,10 +400,17 @@ namespace Soulseek.NET
 
             if (activated)
             {
-                await connection.ConnectAsync();
+                try
+                {
+                    await connection.ConnectAsync();
 
-                var request = new PierceFirewallRequest(response.Token);
-                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+                    var request = new PierceFirewallRequest(response.Token);
+                    await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+                }
+                catch (ConnectionException ex)
+                {
+                    connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
+                }
             }
             else
             {
@@ -411,7 +418,7 @@ namespace Soulseek.NET
 
                 try
                 {
-                    PeerConnectionQueue.Enqueue(connection);
+                    PeerConnectionQueue.Enqueue(new Tuple<Connection, ConnectToPeerResponse>(connection, response));
                 }
                 finally
                 {
@@ -467,17 +474,49 @@ namespace Soulseek.NET
             }
         }
 
-        private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
-                Console.WriteLine($"Trying to remove connection...");
+                Tuple<Connection, ConnectToPeerResponse> nextConnection = default(Tuple<Connection, ConnectToPeerResponse>);
+
+                PeerConnectionQueueLock.EnterReadLock();
+
+                try
+                {
+                    if (PeerConnectionQueue.Count() > 0)
+                    {
+                        nextConnection = PeerConnectionQueue.Dequeue();
+                    }
+                }
+                finally
+                {
+                    PeerConnectionQueueLock.ExitReadLock();
+                }
+
                 ActivePeerConnectionsLock.EnterWriteLock();
 
                 try
                 {
                     connection.Dispose();
                     ActivePeerConnections.Remove(connection);
+
+                    if (nextConnection != default(Tuple<Connection, ConnectToPeerResponse>))
+                    {
+                        ActivePeerConnections.Add(nextConnection.Item1);
+
+                        try
+                        {
+                            await nextConnection.Item1.ConnectAsync();
+
+                            var request = new PierceFirewallRequest(nextConnection.Item2.Token);
+                            await nextConnection.Item1.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+                        }
+                        catch (ConnectionException ex)
+                        {
+                            connection.Disconnect($"Failed to connect to peer {nextConnection.Item2.Username}@{nextConnection.Item2.IPAddress}:{nextConnection.Item2.Port}: {ex.Message}");
+                        }
+                    }
                 }
                 finally
                 {
