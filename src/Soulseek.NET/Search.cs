@@ -12,7 +12,6 @@
     {
         Pending = 0,
         InProgress = 1,
-        Cancelled = 2,
         Completed = 3,
     }
 
@@ -47,9 +46,8 @@
         private SystemTimer SearchTimeoutTimer { get; set; }
         private Connection ServerConnection { get; set; }
 
-        public void Cancel()
+        public void Stop()
         {
-            State = SearchState.Cancelled;
             Complete();
         }
 
@@ -85,17 +83,23 @@
 
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
-            ResponseList.Add(response);
-            Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
+            if (State == SearchState.InProgress)
+            {
+                ResponseList.Add(response);
+                Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
 
-            SearchTimeoutTimer.Reset();
+                SearchTimeoutTimer.Reset();
+            }
         }
 
         private void Complete()
         {
-            State = SearchState.Completed;
+            if (State != SearchState.Completed)
+            {
+                State = SearchState.Completed;
 
-            Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
+                Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
+            }
         }
 
         private void Dispose(bool disposing)
