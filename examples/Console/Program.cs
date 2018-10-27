@@ -11,6 +11,7 @@
     {
         public static string ActiveSearchText { get; set; }
         public static int ActiveSearchTicket { get; set; }
+        public static System.Timers.Timer StatusTimer { get; set; } = new System.Timers.Timer();
 
         static async Task Main(string[] args)
         {
@@ -35,11 +36,18 @@
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
                         var search = client.CreateSearch(ActiveSearchText);
-                        //search.SearchResultReceived += Client_SearchResultReceived;
+                        search.SearchResponseReceived += Client_SearchResultReceived;
+
+
+                        StatusTimer.Interval = 1000;
+                        StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
+                        StatusTimer.Start();
 
                         ActiveSearchTicket = search.Ticket;
-                        var result = await client.SearchAsync(ActiveSearchText);
-                        Console.WriteLine($"Search complete.  {result.Responses.Count()}");
+                        //var result = await client.SearchAsync(ActiveSearchText);
+                        search.Start();
+
+                        //Console.WriteLine($"Search complete.  {result.Responses.Count()}");
                     }
                     else
                     {
@@ -60,6 +68,11 @@
                     }
                 }
             }
+        }
+
+        private static void DisplayInfo(PeerInfo peers)
+        {
+            Console.WriteLine($"███ Queued: {peers.Queued}, Active: {peers.Active}, Connecting: {peers.Connecting}, Connected: {peers.Connected}, Disconnecting: {peers.Disconnecting}, Disconnected: {peers.Disconnected}");
         }
 
         private static void Client_SearchResultReceived(object sender, SearchResponseReceivedEventArgs e)
