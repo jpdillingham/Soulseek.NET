@@ -40,7 +40,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 1000)
+        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 500)
         {
             Address = address;
             Port = port;
@@ -202,7 +202,7 @@ namespace Soulseek.NET
 
             foreach (var search in ActiveSearches)
             {
-                search.Value.Cancel();
+                search.Value.Stop();
                 search.Value.Dispose();
                 ActiveSearches.TryRemove(search.Key, out var removed);
             }
@@ -293,7 +293,7 @@ namespace Soulseek.NET
 
                     foreach (var search in ActiveSearches)
                     {
-                        search.Value.Cancel();
+                        search.Value.Stop();
                         search.Value.Dispose();
                     }
 
