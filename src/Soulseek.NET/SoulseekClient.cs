@@ -81,36 +81,12 @@ namespace Soulseek.NET
         public ConnectionState ConnectionState => Connection.State;
 
         /// <summary>
-        ///     Gets the ParentMinSpeed value from the server.
-        /// </summary>
-        public int ParentMinSpeed { get; private set; }
-
-        /// <summary>
-        ///     Gets the ParentSpeedRatio value from the server.
-        /// </summary>
-        public int ParentSpeedRatio { get; private set; }
-
-        /// <summary>
         ///     Gets or sets the port to which to connect.
         /// </summary>
         public int Port { get; set; }
 
-        /// <summary>
-        ///     Gets the list of privileged users from the server.
-        /// </summary>
-        public IEnumerable<string> PrivilegedUsers { get; private set; }
-
-        /// <summary>
-        ///     Gets the list of rooms from the server.
-        /// </summary>
-        public IEnumerable<Room> Rooms { get; private set; }
-
+        public ServerInfo Server { get; private set; } = new ServerInfo();
         public PeerInfo Peers => GetPeerInfo();
-
-        /// <summary>
-        ///     Gets the WishlistInterval value from the server.
-        /// </summary>
-        public int WishlistInterval { get; private set; }
 
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
@@ -259,11 +235,11 @@ namespace Soulseek.NET
 
             Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-            Rooms = (IEnumerable<Room>)roomList.Result;
-            ParentMinSpeed = ((int)parentMinSpeed.Result);
-            ParentSpeedRatio = ((int)parentSpeedRatio.Result);
-            WishlistInterval = ((int)wishlistInterval.Result);
-            PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
+            Server.Rooms = (IEnumerable<Room>)roomList.Result;
+            Server.ParentMinSpeed = ((int)parentMinSpeed.Result);
+            Server.ParentSpeedRatio = ((int)parentSpeedRatio.Result);
+            Server.WishlistInterval = ((int)wishlistInterval.Result);
+            Server.PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
 
             return (LoginResponse)login.Result;
         }
