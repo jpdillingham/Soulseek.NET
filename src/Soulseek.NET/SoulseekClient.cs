@@ -40,7 +40,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 250)
+        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 1000)
         {
             Address = address;
             Port = port;
@@ -119,8 +119,8 @@ namespace Soulseek.NET
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
         private Random Random { get; set; } = new Random();
 
-        private List<Search> ActiveSearches { get; set; } = new List<Search>();
-        private ReaderWriterLockSlim ActiveSearchesLock { get; set; } = new ReaderWriterLockSlim();
+        private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
+        //private ReaderWriterLockSlim ActiveSearchesLock { get; set; } = new ReaderWriterLockSlim();
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
@@ -153,16 +153,7 @@ namespace Soulseek.NET
             var search = new Search(Connection, searchText);
             search.SearchCompleted += OnSearchCompleted;
 
-            ActiveSearchesLock.EnterWriteLock();
-
-            try
-            {
-                ActiveSearches.Add(search);
-            }
-            finally
-            {
-                ActiveSearchesLock.ExitWriteLock();
-            }
+            ActiveSearches.TryAdd(search.Ticket, search);
 
             return search;
         }
@@ -209,36 +200,16 @@ namespace Soulseek.NET
 
             // todo: dispose all connections in the peer queue
 
-            ActiveSearchesLock.EnterUpgradeableReadLock();
-
-            try
+            foreach (var search in ActiveSearches)
             {
-                var searches = new List<Search>(ActiveSearches);
-
-                ActiveSearchesLock.EnterWriteLock();
-
-                try
-                {
-                    foreach (var search in ActiveSearches)
-                    {
-                        search.Cancel();
-                        search.Dispose();
-                        ActiveSearches.Remove(search);
-                    }
-                }
-                finally
-                {
-                    ActiveSearchesLock.ExitWriteLock();
-                }
-            }
-            finally
-            {
-                ActiveSearchesLock.ExitUpgradeableReadLock();
+                search.Value.Cancel();
+                search.Value.Dispose();
+                ActiveSearches.TryRemove(search.Key, out var removed);
             }
         }
 
         /// <summary>
-        ///     Disposes this instance.
+        ///     Disposes this instance.s
         /// </summary>
         public void Dispose()
         {
@@ -319,7 +290,13 @@ namespace Soulseek.NET
                 if (disposing)
                 {
                     Connection?.Dispose();
-                    ActiveSearches?.ForEach(s => s.Dispose());
+
+                    foreach (var search in ActiveSearches)
+                    {
+                        search.Value.Cancel();
+                        search.Value.Dispose();
+                    }
+
                     ActivePeerConnections?.ForEach(c => c.Dispose());
                     
                     // todo: dispose all connections in the peer queue
@@ -333,23 +310,9 @@ namespace Soulseek.NET
 
         private async Task HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
-            if (response.FileCount > 0)
+            if (response != null && response.FileCount > 10 && response.InQueue == 0 && response.FreeUploadSlots > 0)
             {
-                var search = default(Search);
-
-                ActiveSearchesLock.EnterReadLock();
-
-                try
-                {
-                    search = ActiveSearches
-                        .Where(s => s.State == SearchState.InProgress)
-                        .Where(s => s.Ticket == response.Ticket)
-                        .SingleOrDefault();
-                }
-                finally
-                {
-                    ActiveSearchesLock.ExitReadLock();
-                }
+                ActiveSearches.TryGetValue(response.Ticket, out var search);
 
                 if (search != default(Search))
                 {
@@ -420,12 +383,12 @@ namespace Soulseek.NET
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
+            //Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
 
             var message = new Message(e.Data);
             var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
-            Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
+            //Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
             switch (message.Code)
             {
@@ -507,16 +470,7 @@ namespace Soulseek.NET
 
         private void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
-            ActiveSearchesLock.EnterWriteLock();
-
-            try
-            {
-                ActiveSearches.Remove(e.Search);
-            }
-            finally
-            {
-                ActiveSearchesLock.ExitWriteLock();
-            }
+            ActiveSearches.TryRemove(e.Search.Ticket, out var removed);
 
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
         }
