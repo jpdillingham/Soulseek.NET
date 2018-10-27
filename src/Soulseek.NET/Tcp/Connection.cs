@@ -57,6 +57,7 @@
         public int ReadBufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
         public ConnectionType Type { get; private set; }
+        public object Context { get; internal set; }
 
         private bool Disposed { get; set; } = false;
         private SystemTimer InactivityTimer { get; set; }
