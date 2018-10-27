@@ -1,6 +1,5 @@
 ﻿namespace Soulseek.NET.Tcp
 {
-    using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -12,7 +11,7 @@
 
     internal sealed class Connection : IConnection, IDisposable
     {
-        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int readTimeout = 15, int readBufferSize = 4096, ITcpClient tcpClient = null)
+        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int readTimeout = 5, int readBufferSize = 4096, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
@@ -35,7 +34,7 @@
             {
                 Enabled = false,
                 AutoReset = true,
-                Interval = 1000,
+                Interval = 250,
             };
 
             WatchdogTimer.Elapsed += (sender, e) => 
@@ -251,6 +250,11 @@
                 var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
                 var bytesRead = await stream.ReadAsync(buffer, 0, bytesToRead);
+
+                if (bytesRead == 0)
+                {
+                    Disconnect($"Remote connection closed.");
+                }
 
                 totalBytesRead += bytesRead;
                 result.AddRange(buffer.Take(bytesRead));
