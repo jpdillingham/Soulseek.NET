@@ -2,6 +2,10 @@
 {
     public class PeerInfo
     {
+        internal PeerInfo()
+        {
+        }
+
         public int Queued { get; internal set; }
         public int Active { get; internal set; }
         public int Connected { get; internal set; }
