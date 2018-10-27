@@ -49,8 +49,8 @@ namespace Soulseek.NET
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
 
-            PeerConnectionMonitorTimer = new SystemTimer(5000);
-            PeerConnectionMonitorTimer.Elapsed += OnPeerConnectionMonitorTick;
+            PeerConnectionsMonitorTimer = new SystemTimer(5000);
+            PeerConnectionsMonitorTimer.Elapsed += OnPeerConnectionMonitorTick;
         }
 
         /// <summary>
@@ -118,11 +118,11 @@ namespace Soulseek.NET
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
         private Random Random { get; set; } = new Random();
 
-        private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
+        private ConcurrentDictionary<int, Search> SearchesActive { get; set; } = new ConcurrentDictionary<int, Search>();
 
-        private SystemTimer PeerConnectionMonitorTimer { get; set; }
-        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
-        private ConcurrentDictionary<ConnectToPeerResponse, Connection> ActivePeerConnections { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
+        private SystemTimer PeerConnectionsMonitorTimer { get; set; }
+        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
+        private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
 
         /// <summary>
         ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -150,7 +150,7 @@ namespace Soulseek.NET
             var search = new Search(Connection, searchText);
             search.SearchCompleted += OnSearchCompleted;
 
-            ActiveSearches.TryAdd(search.Ticket, search);
+            SearchesActive.TryAdd(search.Ticket, search);
 
             return search;
         }
@@ -168,16 +168,16 @@ namespace Soulseek.NET
 
             Connection.Disconnect(message);
 
-            ClearPeerConnectionQueue();
-            ClearActivePeerConnections(message);
-            ClearActiveSearches();
+            ClearPeerConnectionsQueued();
+            ClearPeerConnectionsActive(message);
+            ClearSearchesActive();
         }
 
-        private void ClearActiveSearches()
+        private void ClearSearchesActive()
         {
-            foreach (var searchToRemove in ActiveSearches.ToList())
+            foreach (var searchToRemove in SearchesActive.ToList())
             {
-                if (ActiveSearches.TryRemove(searchToRemove.Key, out var search))
+                if (SearchesActive.TryRemove(searchToRemove.Key, out var search))
                 {
                     search.Stop();
                     search.Dispose();
@@ -185,22 +185,22 @@ namespace Soulseek.NET
             }
         }
 
-        private void ClearPeerConnectionQueue()
+        private void ClearPeerConnectionsQueued()
         {
-            while (!PeerConnectionQueue.IsEmpty)
+            while (!PeerConnectionsQueued.IsEmpty)
             {
-                if (PeerConnectionQueue.TryDequeue(out var queuedConnection))
+                if (PeerConnectionsQueued.TryDequeue(out var queuedConnection))
                 {
                     queuedConnection.Value.Dispose();
                 }
             }
         }
 
-        private void ClearActivePeerConnections(string disconnectMessage)
+        private void ClearPeerConnectionsActive(string disconnectMessage)
         {
-            foreach (var connectionToRemove in ActivePeerConnections.ToList())
+            foreach (var connectionToRemove in PeerConnectionsActive.ToList())
             { 
-                if (ActivePeerConnections.TryRemove(connectionToRemove.Key, out var connection))
+                if (PeerConnectionsActive.TryRemove(connectionToRemove.Key, out var connection))
                 {
                     connection.Disconnect(disconnectMessage);
                     connection.Dispose();
@@ -294,11 +294,11 @@ namespace Soulseek.NET
                     Connection?.Disconnect(message);
                     Connection?.Dispose();
 
-                    ClearPeerConnectionQueue();
-                    ClearActivePeerConnections(message);
-                    ClearActiveSearches();
+                    ClearPeerConnectionsQueued();
+                    ClearPeerConnectionsActive(message);
+                    ClearSearchesActive();
 
-                    PeerConnectionMonitorTimer?.Dispose();
+                    PeerConnectionsMonitorTimer?.Dispose();
                 }
 
                 Disposed = true;
@@ -309,7 +309,7 @@ namespace Soulseek.NET
         {
             if (response != null && response.FileCount > 1 && response.InQueue == 0 && response.FreeUploadSlots > 0)
             {
-                if (ActiveSearches.TryGetValue(response.Ticket, out var search) && search.State == SearchState.InProgress)
+                if (SearchesActive.TryGetValue(response.Ticket, out var search) && search.State == SearchState.InProgress)
                 {
                     search.AddResponse(response, e);
                 }
@@ -329,16 +329,16 @@ namespace Soulseek.NET
             connection.DataReceived += OnPeerConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
             
-            if (ActivePeerConnections.Count() < ConcurrentPeerConnectionLimit - 1)
+            if (PeerConnectionsActive.Count() < ConcurrentPeerConnectionLimit - 1)
             {
-                if (ActivePeerConnections.TryAdd(response, connection))
+                if (PeerConnectionsActive.TryAdd(response, connection))
                 {
                     await TryConnectPeerConnection(response, connection);
                 }
             }
             else
             {
-                PeerConnectionQueue.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(response, connection));
+                PeerConnectionsQueued.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(response, connection));
             }
         }
 
@@ -425,11 +425,11 @@ namespace Soulseek.NET
                 connection.Context is ConnectToPeerResponse connectToPeerResponse)
             {
                 connection.Dispose();
-                ActivePeerConnections.TryRemove(connectToPeerResponse, out var _);
+                PeerConnectionsActive.TryRemove(connectToPeerResponse, out var _);
 
-                if (PeerConnectionQueue.TryDequeue(out var nextConnection))
+                if (PeerConnectionsQueued.TryDequeue(out var nextConnection))
                 {
-                    if (ActivePeerConnections.TryAdd(nextConnection.Key, nextConnection.Value))
+                    if (PeerConnectionsActive.TryAdd(nextConnection.Key, nextConnection.Value))
                     {
                         await TryConnectPeerConnection(nextConnection.Key, nextConnection.Value);
                     }
@@ -439,7 +439,7 @@ namespace Soulseek.NET
 
         private void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
-            ActiveSearches.TryRemove(e.Search.Ticket, out var removed);
+            SearchesActive.TryRemove(e.Search.Ticket, out var removed);
 
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
         }
@@ -448,7 +448,7 @@ namespace Soulseek.NET
         {
             if (e.State == ConnectionState.Connected)
             {
-                PeerConnectionMonitorTimer.Start();
+                PeerConnectionsMonitorTimer.Start();
             }
 
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
@@ -456,12 +456,12 @@ namespace Soulseek.NET
 
         private void OnPeerConnectionMonitorTick(object sender, ElapsedEventArgs e)
         {
-            var total = ActivePeerConnections.Count();
-            var connecting = ActivePeerConnections.Where(c => c.Value?.State == ConnectionState.Connecting).Count();
-            var connected = ActivePeerConnections.Where(c => c.Value?.State == ConnectionState.Connected).Count();
-            var disconnected = ActivePeerConnections.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count();
+            var total = PeerConnectionsActive.Count();
+            var connecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connecting).Count();
+            var connected = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connected).Count();
+            var disconnected = PeerConnectionsActive.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count();
 
-            var queued = PeerConnectionQueue.Count();
+            var queued = PeerConnectionsQueued.Count();
 
             Console.WriteLine($"█████████████ Peers: Queued: {queued} Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnected}");
         }
