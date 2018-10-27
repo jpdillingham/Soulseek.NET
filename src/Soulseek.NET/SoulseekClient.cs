@@ -124,7 +124,6 @@ namespace Soulseek.NET
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
-        //private ReaderWriterLockSlim PeerConnectionQueueLock { get; set; } = new ReaderWriterLockSlim();
         private List<Connection> ActivePeerConnections { get; set; } = new List<Connection>();
         private ReaderWriterLockSlim ActivePeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
 
@@ -332,7 +331,7 @@ namespace Soulseek.NET
             }
         }
 
-        private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
+        private async Task HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
             if (response.FileCount > 0)
             {
@@ -354,7 +353,7 @@ namespace Soulseek.NET
 
                 if (search != default(Search))
                 {
-                    search.AddResponse(response, e);
+                    await Task.Run(() => search.AddResponse(response, e));
                 }
             }
         }
@@ -449,7 +448,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerSearchResponse:
-                    HandlePeerSearchResponse(SearchResponse.Parse(message), e);
+                    await HandlePeerSearchResponse(SearchResponse.Parse(message), e);
                     break;
 
                 case MessageCode.ServerConnectToPeer:
