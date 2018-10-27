@@ -22,6 +22,7 @@ namespace Soulseek.NET
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -122,8 +123,8 @@ namespace Soulseek.NET
         private ReaderWriterLockSlim ActiveSearchesLock { get; set; } = new ReaderWriterLockSlim();
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
-        private Queue<Tuple<Connection, ConnectToPeerResponse>> PeerConnectionQueue { get; set; } = new Queue<Tuple<Connection, ConnectToPeerResponse>>();
-        private ReaderWriterLockSlim PeerConnectionQueueLock { get; set; } = new ReaderWriterLockSlim();
+        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
+        //private ReaderWriterLockSlim PeerConnectionQueueLock { get; set; } = new ReaderWriterLockSlim();
         private List<Connection> ActivePeerConnections { get; set; } = new List<Connection>();
         private ReaderWriterLockSlim ActivePeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
 
@@ -414,16 +415,7 @@ namespace Soulseek.NET
             }
             else
             {
-                PeerConnectionQueueLock.EnterWriteLock();
-
-                try
-                {
-                    PeerConnectionQueue.Enqueue(new Tuple<Connection, ConnectToPeerResponse>(connection, response));
-                }
-                finally
-                {
-                    PeerConnectionQueueLock.ExitWriteLock();
-                }
+                PeerConnectionQueue.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(response, connection));
             }
         }
 
@@ -478,21 +470,7 @@ namespace Soulseek.NET
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
-                Tuple<Connection, ConnectToPeerResponse> nextConnection = default(Tuple<Connection, ConnectToPeerResponse>);
-
-                PeerConnectionQueueLock.EnterReadLock();
-
-                try
-                {
-                    if (PeerConnectionQueue.Count() > 0)
-                    {
-                        nextConnection = PeerConnectionQueue.Dequeue();
-                    }
-                }
-                finally
-                {
-                    PeerConnectionQueueLock.ExitReadLock();
-                }
+                PeerConnectionQueue.TryDequeue(out var nextConnection);
 
                 ActivePeerConnectionsLock.EnterWriteLock();
 
@@ -501,20 +479,20 @@ namespace Soulseek.NET
                     connection.Dispose();
                     ActivePeerConnections.Remove(connection);
 
-                    if (nextConnection != default(Tuple<Connection, ConnectToPeerResponse>))
+                    if (!nextConnection.Equals(default(KeyValuePair<ConnectToPeerResponse, Connection>)))
                     {
-                        ActivePeerConnections.Add(nextConnection.Item1);
+                        ActivePeerConnections.Add(nextConnection.Value);
 
                         try
                         {
-                            await nextConnection.Item1.ConnectAsync();
+                            await nextConnection.Value.ConnectAsync();
 
-                            var request = new PierceFirewallRequest(nextConnection.Item2.Token);
-                            await nextConnection.Item1.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+                            var request = new PierceFirewallRequest(nextConnection.Key.Token);
+                            await nextConnection.Value.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
                         }
                         catch (ConnectionException ex)
                         {
-                            connection.Disconnect($"Failed to connect to peer {nextConnection.Item2.Username}@{nextConnection.Item2.IPAddress}:{nextConnection.Item2.Port}: {ex.Message}");
+                            connection.Disconnect($"Failed to connect to peer {nextConnection.Key.Username}@{nextConnection.Key.IPAddress}:{nextConnection.Key.Port}: {ex.Message}");
                         }
                     }
                 }
@@ -554,7 +532,6 @@ namespace Soulseek.NET
         private void OnPeerConnectionMonitorTick(object sender, ElapsedEventArgs e)
         {
             ActivePeerConnectionsLock.EnterReadLock();
-            PeerConnectionQueueLock.EnterUpgradeableReadLock();
 
             try
             {
@@ -570,7 +547,6 @@ namespace Soulseek.NET
             finally
             {
                 ActivePeerConnectionsLock.ExitReadLock();
-                PeerConnectionQueueLock.ExitUpgradeableReadLock();
             }
         }
     }
