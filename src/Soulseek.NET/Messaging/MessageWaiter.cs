@@ -1,14 +1,12 @@
 ﻿namespace Soulseek.NET.Messaging
 {
     using System;
-    using System.Collections.Generic;
-    using System.Threading;
+    using System.Collections.Concurrent;
     using System.Threading.Tasks;
 
     public class MessageWaiter
     {
-        private ReaderWriterLockSlim Lock { get; set; } = new ReaderWriterLockSlim();
-        private Dictionary<object, Queue<TaskCompletionSource<object>>> Waits { get; set; } = new Dictionary<object, Queue<TaskCompletionSource<object>>>();
+        private ConcurrentDictionary<object, ConcurrentQueue<TaskCompletionSource<object>>> Waits { get; set; } = new ConcurrentDictionary<object, ConcurrentQueue<TaskCompletionSource<object>>>();
 
         public void Complete(MessageCode code, object result)
         {
@@ -19,35 +17,12 @@
         {
             var key = GetKey(code, token);
 
-            Lock.EnterUpgradeableReadLock();
-
-            try
+            if (Waits.TryGetValue(key, out var queue))
             {
-                if (Waits.ContainsKey(key))
+                if (queue.TryDequeue(out var wait))
                 {
-                    var queue = Waits[key];
-
-                    if (queue.Count > 0)
-                    {
-                        Lock.EnterWriteLock();
-
-                        try
-                        {
-                            var wait = queue.Dequeue();
-                            wait.SetResult(result);
-
-                            queue.TrimExcess();
-                        }
-                        finally
-                        {
-                            Lock.ExitWriteLock();
-                        }
-                    }
+                    wait.SetResult(result);
                 }
-            }
-            finally
-            {
-                Lock.ExitUpgradeableReadLock();
             }
         }
 
@@ -56,23 +31,11 @@
             var key = GetKey(code, token);
             var wait = new TaskCompletionSource<object>();
 
-            Lock.EnterWriteLock();
-
-            try
+            Waits.AddOrUpdate(key, new ConcurrentQueue<TaskCompletionSource<object>>(new[] { wait }), (_, queue) =>
             {
-                if (Waits.ContainsKey(key))
-                {
-                    Waits[key].Enqueue(wait);
-                }
-                else
-                {
-                    Waits.Add(key, new Queue<TaskCompletionSource<object>>(new[] { wait }));
-                }
-            }
-            finally
-            {
-                Lock.ExitWriteLock();
-            }
+                queue.Enqueue(wait);
+                return queue;
+            });
 
             return wait;
         }
