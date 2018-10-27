@@ -482,23 +482,26 @@ namespace Soulseek.NET
                     if (!nextConnection.Equals(default(KeyValuePair<ConnectToPeerResponse, Connection>)))
                     {
                         ActivePeerConnections.Add(nextConnection.Value);
-
-                        try
-                        {
-                            await nextConnection.Value.ConnectAsync();
-
-                            var request = new PierceFirewallRequest(nextConnection.Key.Token);
-                            await nextConnection.Value.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-                        }
-                        catch (ConnectionException ex)
-                        {
-                            connection.Disconnect($"Failed to connect to peer {nextConnection.Key.Username}@{nextConnection.Key.IPAddress}:{nextConnection.Key.Port}: {ex.Message}");
-                        }
                     }
                 }
                 finally
                 {
                     ActivePeerConnectionsLock.ExitWriteLock();
+                }
+
+                if (!nextConnection.Equals(default(KeyValuePair<ConnectToPeerResponse, Connection>)))
+                {
+                    try
+                    {
+                        await nextConnection.Value.ConnectAsync();
+
+                        var request = new PierceFirewallRequest(nextConnection.Key.Token);
+                        await nextConnection.Value.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+                    }
+                    catch (ConnectionException ex)
+                    {
+                        nextConnection.Value.Disconnect($"Failed to connect to peer {nextConnection.Key.Username}@{nextConnection.Key.IPAddress}:{nextConnection.Key.Port}: {ex.Message}");
+                    }
                 }
             }
         }
