@@ -25,7 +25,6 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
     using System.Timers;
     using SystemTimer = System.Timers.Timer;
@@ -123,7 +122,7 @@ namespace Soulseek.NET
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
-        private ConcurrentDictionary<string, Connection> ActivePeerConnections { get; set; } = new ConcurrentDictionary<string, Connection>();
+        private ConcurrentDictionary<ConnectToPeerResponse, Connection> ActivePeerConnections { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
 
         /// <summary>
         ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -326,54 +325,35 @@ namespace Soulseek.NET
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
+            connection.Context = response;
             connection.DataReceived += OnPeerConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
-
-            bool activated = false;
-
-            ActivePeerConnectionsLock.EnterUpgradeableReadLock();
-
-            try
+            
+            if (ActivePeerConnections.Count() < ConcurrentPeerConnectionLimit - 1)
             {
-                var activeConnections = ActivePeerConnections.Count();
-
-                if (activeConnections < ConcurrentPeerConnectionLimit)
+                if (ActivePeerConnections.TryAdd(response, connection))
                 {
-                    ActivePeerConnectionsLock.EnterWriteLock();
-
-                    try
-                    {
-                        ActivePeerConnections.Add(connection);
-                        activated = true;
-                    }
-                    finally
-                    {
-                        ActivePeerConnectionsLock.ExitWriteLock();
-                    }
-                }
-            }
-            finally
-            {
-                ActivePeerConnectionsLock.ExitUpgradeableReadLock();
-            }
-
-            if (activated)
-            {
-                try
-                {
-                    await connection.ConnectAsync();
-
-                    var request = new PierceFirewallRequest(response.Token);
-                    await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-                }
-                catch (ConnectionException ex)
-                {
-                    connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
+                    await TryConnectPeerConnection(response, connection);
                 }
             }
             else
             {
                 PeerConnectionQueue.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(response, connection));
+            }
+        }
+
+        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, Connection connection)
+        {
+            try
+            {
+                await connection.ConnectAsync();
+
+                var request = new PierceFirewallRequest(response.Token);
+                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+            }
+            catch (ConnectionException ex)
+            {
+                connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
             }
         }
 
@@ -440,39 +420,18 @@ namespace Soulseek.NET
 
         private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            if (e.State == ConnectionState.Disconnected && sender is Connection connection)
+            if (e.State == ConnectionState.Disconnected && 
+                sender is Connection connection && 
+                connection.Context is ConnectToPeerResponse connectToPeerResponse)
             {
-                PeerConnectionQueue.TryDequeue(out var nextConnection);
+                connection.Dispose();
+                ActivePeerConnections.TryRemove(connectToPeerResponse, out var _);
 
-                ActivePeerConnectionsLock.EnterWriteLock();
-
-                try
+                if (PeerConnectionQueue.TryDequeue(out var nextConnection))
                 {
-                    connection.Dispose();
-                    ActivePeerConnections.Remove(connection);
-
-                    if (!nextConnection.Equals(default(KeyValuePair<ConnectToPeerResponse, Connection>)))
+                    if (ActivePeerConnections.TryAdd(nextConnection.Key, nextConnection.Value))
                     {
-                        ActivePeerConnections.Add(nextConnection.Value);
-                    }
-                }
-                finally
-                {
-                    ActivePeerConnectionsLock.ExitWriteLock();
-                }
-
-                if (!nextConnection.Equals(default(KeyValuePair<ConnectToPeerResponse, Connection>)))
-                {
-                    try
-                    {
-                        await nextConnection.Value.ConnectAsync();
-
-                        var request = new PierceFirewallRequest(nextConnection.Key.Token);
-                        await nextConnection.Value.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-                    }
-                    catch (ConnectionException ex)
-                    {
-                        nextConnection.Value.Disconnect($"Failed to connect to peer {nextConnection.Key.Username}@{nextConnection.Key.IPAddress}:{nextConnection.Key.Port}: {ex.Message}");
+                        await TryConnectPeerConnection(nextConnection.Key, nextConnection.Value);
                     }
                 }
             }
@@ -497,23 +456,14 @@ namespace Soulseek.NET
 
         private void OnPeerConnectionMonitorTick(object sender, ElapsedEventArgs e)
         {
-            ActivePeerConnectionsLock.EnterReadLock();
+            var total = ActivePeerConnections.Count();
+            var connecting = ActivePeerConnections.Where(c => c.Value?.State == ConnectionState.Connecting).Count();
+            var connected = ActivePeerConnections.Where(c => c.Value?.State == ConnectionState.Connected).Count();
+            var disconnected = ActivePeerConnections.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count();
 
-            try
-            {
-                var total = ActivePeerConnections.Count();
-                var connecting = ActivePeerConnections.Where(c => c?.State == ConnectionState.Connecting).Count();
-                var connected = ActivePeerConnections.Where(c => c?.State == ConnectionState.Connected).Count();
-                var disconnected = ActivePeerConnections.Where(c => c == null || c.State == ConnectionState.Disconnected).Count();
+            var queued = PeerConnectionQueue.Count();
 
-                var queued = PeerConnectionQueue.Count();
-
-                Console.WriteLine($"█████████████ Peers: Queued: {queued} Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnected}");
-            }
-            finally
-            {
-                ActivePeerConnectionsLock.ExitReadLock();
-            }
+            Console.WriteLine($"█████████████ Peers: Queued: {queued} Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnected}");
         }
     }
 }
