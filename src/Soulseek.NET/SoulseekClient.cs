@@ -33,7 +33,8 @@ namespace Soulseek.NET
     public class SoulseekClient : IDisposable
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/> and <paramref name="port"/>.
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
+        ///     and <paramref name="port"/>.
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
@@ -79,35 +80,28 @@ namespace Soulseek.NET
         public ConnectionState ConnectionState => Connection.State;
 
         /// <summary>
+        ///     Gets information about peer connections.
+        /// </summary>
+        public PeerInfo Peers => GetPeerInfo();
+
+        /// <summary>
         ///     Gets or sets the port to which to connect.
         /// </summary>
         public int Port { get; set; }
 
+        /// <summary>
+        ///     Gets information about the connected server.
+        /// </summary>
         public ServerInfo Server { get; private set; } = new ServerInfo();
-        public PeerInfo Peers => GetPeerInfo();
 
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
+        private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
+        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private Random Random { get; set; } = new Random();
 
         private ConcurrentDictionary<int, Search> SearchesActive { get; set; } = new ConcurrentDictionary<int, Search>();
-
-        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
-        private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
-
-        private PeerInfo GetPeerInfo()
-        {
-            return new PeerInfo()
-            {
-                Active = PeerConnectionsActive.Count(),
-                Queued = PeerConnectionsQueued.Count(),
-                Connecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connecting).Count(),
-                Connected = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connected).Count(),
-                Disconnecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Disconnecting).Count(),
-                Disconnected = PeerConnectionsActive.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count(),
-            };
-        }
 
         /// <summary>
         ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -156,41 +150,6 @@ namespace Soulseek.NET
             ClearPeerConnectionsQueued();
             ClearPeerConnectionsActive(message);
             ClearSearchesActive();
-        }
-
-        private void ClearSearchesActive()
-        {
-            foreach (var searchToRemove in SearchesActive.ToList())
-            {
-                if (SearchesActive.TryRemove(searchToRemove.Key, out var search))
-                {
-                    search.Stop();
-                    search.Dispose();
-                }
-            }
-        }
-
-        private void ClearPeerConnectionsQueued()
-        {
-            while (!PeerConnectionsQueued.IsEmpty)
-            {
-                if (PeerConnectionsQueued.TryDequeue(out var queuedConnection))
-                {
-                    queuedConnection.Value.Dispose();
-                }
-            }
-        }
-
-        private void ClearPeerConnectionsActive(string disconnectMessage)
-        {
-            foreach (var connectionToRemove in PeerConnectionsActive.ToList())
-            { 
-                if (PeerConnectionsActive.TryRemove(connectionToRemove.Key, out var connection))
-                {
-                    connection.Disconnect(disconnectMessage);
-                    connection.Dispose();
-                }
-            }
         }
 
         /// <summary>
@@ -288,6 +247,54 @@ namespace Soulseek.NET
             }
         }
 
+        private void ClearPeerConnectionsActive(string disconnectMessage)
+        {
+            foreach (var connectionToRemove in PeerConnectionsActive.ToList())
+            {
+                if (PeerConnectionsActive.TryRemove(connectionToRemove.Key, out var connection))
+                {
+                    connection.Disconnect(disconnectMessage);
+                    connection.Dispose();
+                }
+            }
+        }
+
+        private void ClearPeerConnectionsQueued()
+        {
+            while (!PeerConnectionsQueued.IsEmpty)
+            {
+                if (PeerConnectionsQueued.TryDequeue(out var queuedConnection))
+                {
+                    queuedConnection.Value.Dispose();
+                }
+            }
+        }
+
+        private void ClearSearchesActive()
+        {
+            foreach (var searchToRemove in SearchesActive.ToList())
+            {
+                if (SearchesActive.TryRemove(searchToRemove.Key, out var search))
+                {
+                    search.Stop();
+                    search.Dispose();
+                }
+            }
+        }
+
+        private PeerInfo GetPeerInfo()
+        {
+            return new PeerInfo()
+            {
+                Active = PeerConnectionsActive.Count(),
+                Queued = PeerConnectionsQueued.Count(),
+                Connecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connecting).Count(),
+                Connected = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connected).Count(),
+                Disconnecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Disconnecting).Count(),
+                Disconnected = PeerConnectionsActive.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count(),
+            };
+        }
+
         private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
             if (response != null && response.FileCount > 1 && response.InQueue == 0 && response.FreeUploadSlots > 0)
@@ -311,7 +318,7 @@ namespace Soulseek.NET
             connection.Context = response;
             connection.DataReceived += OnPeerConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
-            
+
             if (PeerConnectionsActive.Count() < ConcurrentPeerConnectionLimit - 1)
             {
                 if (PeerConnectionsActive.TryAdd(response, connection))
@@ -322,21 +329,6 @@ namespace Soulseek.NET
             else
             {
                 PeerConnectionsQueued.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(response, connection));
-            }
-        }
-
-        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, Connection connection)
-        {
-            try
-            {
-                await connection.ConnectAsync();
-
-                var request = new PierceFirewallRequest(response.Token);
-                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-            }
-            catch (ConnectionException ex)
-            {
-                connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
             }
         }
 
@@ -392,6 +384,7 @@ namespace Soulseek.NET
                 case MessageCode.PeerSearchResponse:
                     HandlePeerSearchResponse(SearchResponse.Parse(message), e);
                     break;
+
                 default:
                     if (sender is Connection peerConnection)
                     {
@@ -403,8 +396,8 @@ namespace Soulseek.NET
 
         private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            if (e.State == ConnectionState.Disconnected && 
-                sender is Connection connection && 
+            if (e.State == ConnectionState.Disconnected &&
+                sender is Connection connection &&
                 connection.Context is ConnectToPeerResponse connectToPeerResponse)
             {
                 connection.Dispose();
@@ -429,6 +422,21 @@ namespace Soulseek.NET
         private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
+        }
+
+        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, Connection connection)
+        {
+            try
+            {
+                await connection.ConnectAsync();
+
+                var request = new PierceFirewallRequest(response.Token);
+                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+            }
+            catch (ConnectionException ex)
+            {
+                connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
+            }
         }
     }
 }
