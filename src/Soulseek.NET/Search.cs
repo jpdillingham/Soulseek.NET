@@ -40,7 +40,6 @@
         public SearchState State { get; private set; } = SearchState.Pending;
         public int Ticket { get; private set; }
         private bool Disposed { get; set; } = false;
-        private List<Connection> PeerConnections { get; set; } = new List<Connection>();
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private int SearchTimeout { get; set; }
         private SystemTimer SearchTimeoutTimer { get; set; }
