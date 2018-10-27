@@ -1,5 +1,6 @@
 ﻿namespace Soulseek.NET.Messaging.Responses
 {
+    using System;
     using System.Collections.Generic;
 
     public sealed class SearchResponse
@@ -27,7 +28,14 @@
                 throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
             }
 
-            reader.Decompress();
+            try
+            {
+                reader.Decompress();
+            }
+            catch (Exception)
+            {
+                // discard result if it fails to decompress
+            }
 
             var response = new SearchResponse
             {
