@@ -32,17 +32,23 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable
     {
+        public SoulseekClient(SoulseekClientOptions options = null)
+            : this("server.slsknet.org", 2242, options)
+        {
+
+        }
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
         ///     and <paramref name="port"/>.
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        public SoulseekClient(string address = "server.slsknet.org", int port = 2242, int concurrentPeerConnectionLimit = 500)
+        public SoulseekClient(string address, int port, SoulseekClientOptions options)
         {
             Address = address;
             Port = port;
-            ConcurrentPeerConnectionLimit = concurrentPeerConnectionLimit;
+            Options = options;
 
             Connection = new Connection(ConnectionType.Server, Address, Port);
             Connection.StateChanged += OnServerConnectionStateChanged;
@@ -70,9 +76,9 @@ namespace Soulseek.NET
         public string Address { get; set; }
 
         /// <summary>
-        ///     Gets or sets the limit to the number of concurrent peer connections.
+        ///     Gets the client options.
         /// </summary>
-        public int ConcurrentPeerConnectionLimit { get; set; }
+        public SoulseekClientOptions Options { get; private set; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -319,7 +325,7 @@ namespace Soulseek.NET
             connection.DataReceived += OnPeerConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
 
-            if (PeerConnectionsActive.Count() < ConcurrentPeerConnectionLimit - 1)
+            if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections)
             {
                 if (PeerConnectionsActive.TryAdd(response, connection))
                 {
