@@ -48,9 +48,6 @@ namespace Soulseek.NET
             Connection = new Connection(ConnectionType.Server, Address, Port);
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnConnectionDataReceived;
-
-            PeerConnectionsMonitorTimer = new SystemTimer(5000);
-            PeerConnectionsMonitorTimer.Elapsed += OnPeerConnectionMonitorTick;
         }
 
         /// <summary>
@@ -108,6 +105,8 @@ namespace Soulseek.NET
         /// </summary>
         public IEnumerable<Room> Rooms { get; private set; }
 
+        public PeerInfo Peers => GetPeerInfo();
+
         /// <summary>
         ///     Gets the WishlistInterval value from the server.
         /// </summary>
@@ -120,9 +119,21 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Search> SearchesActive { get; set; } = new ConcurrentDictionary<int, Search>();
 
-        private SystemTimer PeerConnectionsMonitorTimer { get; set; }
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
+
+        private PeerInfo GetPeerInfo()
+        {
+            return new PeerInfo()
+            {
+                Active = PeerConnectionsActive.Count(),
+                Queued = PeerConnectionsQueued.Count(),
+                Connecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connecting).Count(),
+                Connected = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connected).Count(),
+                Disconnecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Disconnecting).Count(),
+                Disconnected = PeerConnectionsActive.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count(),
+            };
+        }
 
         /// <summary>
         ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -297,8 +308,6 @@ namespace Soulseek.NET
                     ClearPeerConnectionsQueued();
                     ClearPeerConnectionsActive(message);
                     ClearSearchesActive();
-
-                    PeerConnectionsMonitorTimer?.Dispose();
                 }
 
                 Disposed = true;
@@ -440,30 +449,12 @@ namespace Soulseek.NET
         private void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
             SearchesActive.TryRemove(e.Search.Ticket, out var removed);
-
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
         }
 
         private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            if (e.State == ConnectionState.Connected)
-            {
-                PeerConnectionsMonitorTimer.Start();
-            }
-
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
-        }
-
-        private void OnPeerConnectionMonitorTick(object sender, ElapsedEventArgs e)
-        {
-            var total = PeerConnectionsActive.Count();
-            var connecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connecting).Count();
-            var connected = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connected).Count();
-            var disconnected = PeerConnectionsActive.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count();
-
-            var queued = PeerConnectionsQueued.Count();
-
-            Console.WriteLine($"█████████████ Peers: Queued: {queued} Total: {total}, Connecting: {connecting}, Connected: {connected}, Disconnected: {disconnected}");
         }
     }
 }
