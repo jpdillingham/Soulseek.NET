@@ -123,8 +123,7 @@ namespace Soulseek.NET
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
-        private List<Connection> ActivePeerConnections { get; set; } = new List<Connection>();
-        private ReaderWriterLockSlim ActivePeerConnectionsLock { get; set; } = new ReaderWriterLockSlim();
+        private ConcurrentDictionary<string, Connection> ActivePeerConnections { get; set; } = new ConcurrentDictionary<string, Connection>();
 
         /// <summary>
         ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -170,40 +169,43 @@ namespace Soulseek.NET
 
             Connection.Disconnect(message);
 
-            ActivePeerConnectionsLock.EnterUpgradeableReadLock();
+            ClearPeerConnectionQueue();
+            ClearActivePeerConnections(message);
+            ClearActiveSearches();
+        }
 
-            try
+        private void ClearActiveSearches()
+        {
+            foreach (var searchToRemove in ActiveSearches.ToList())
             {
-                var connections = new List<Connection>(ActivePeerConnections);
-
-                ActivePeerConnectionsLock.EnterWriteLock();
-
-                try
+                if (ActiveSearches.TryRemove(searchToRemove.Key, out var search))
                 {
-                    foreach (var connection in ActivePeerConnections)
-                    {
-                        connection.Disconnect(message);
-                        connection.Dispose();
-                        ActivePeerConnections.Remove(connection);
-                    }
-                }
-                finally
-                {
-                    ActivePeerConnectionsLock.ExitWriteLock();
+                    search.Stop();
+                    search.Dispose();
                 }
             }
-            finally
+        }
+
+        private void ClearPeerConnectionQueue()
+        {
+            while (!PeerConnectionQueue.IsEmpty)
             {
-                ActivePeerConnectionsLock.ExitUpgradeableReadLock();
+                if (PeerConnectionQueue.TryDequeue(out var queuedConnection))
+                {
+                    queuedConnection.Value.Dispose();
+                }
             }
+        }
 
-            // todo: dispose all connections in the peer queue
-
-            foreach (var search in ActiveSearches)
-            {
-                search.Value.Stop();
-                search.Value.Dispose();
-                ActiveSearches.TryRemove(search.Key, out var removed);
+        private void ClearActivePeerConnections(string disconnectMessage)
+        {
+            foreach (var connectionToRemove in ActivePeerConnections.ToList())
+            { 
+                if (ActivePeerConnections.TryRemove(connectionToRemove.Key, out var connection))
+                {
+                    connection.Disconnect(disconnectMessage);
+                    connection.Dispose();
+                }
             }
         }
 
@@ -288,17 +290,14 @@ namespace Soulseek.NET
             {
                 if (disposing)
                 {
+                    var message = "Client is being disposed.";
+
+                    Connection?.Disconnect(message);
                     Connection?.Dispose();
 
-                    foreach (var search in ActiveSearches)
-                    {
-                        search.Value.Stop();
-                        search.Value.Dispose();
-                    }
-
-                    ActivePeerConnections?.ForEach(c => c.Dispose());
-                    
-                    // todo: dispose all connections in the peer queue
+                    ClearPeerConnectionQueue();
+                    ClearActivePeerConnections(message);
+                    ClearActiveSearches();
 
                     PeerConnectionMonitorTimer?.Dispose();
                 }
