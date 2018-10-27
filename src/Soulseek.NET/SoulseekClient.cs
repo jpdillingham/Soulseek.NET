@@ -120,7 +120,6 @@ namespace Soulseek.NET
         private Random Random { get; set; } = new Random();
 
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
-        //private ReaderWriterLockSlim ActiveSearchesLock { get; set; } = new ReaderWriterLockSlim();
 
         private SystemTimer PeerConnectionMonitorTimer { get; set; }
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionQueue { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
@@ -308,15 +307,13 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
+        private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
-            if (response != null && response.FileCount > 10 && response.InQueue == 0 && response.FreeUploadSlots > 0)
+            if (response != null && response.FileCount > 1 && response.InQueue == 0 && response.FreeUploadSlots > 0)
             {
-                ActiveSearches.TryGetValue(response.Ticket, out var search);
-
-                if (search != default(Search))
+                if (ActiveSearches.TryGetValue(response.Ticket, out var search) && search.State == SearchState.InProgress)
                 {
-                    await Task.Run(() => search.AddResponse(response, e));
+                    search.AddResponse(response, e);
                 }
             }
         }
@@ -330,7 +327,7 @@ namespace Soulseek.NET
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
-            connection.DataReceived += OnConnectionDataReceived;
+            connection.DataReceived += OnPeerConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
 
             bool activated = false;
@@ -383,12 +380,12 @@ namespace Soulseek.NET
 
         private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            //Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
+            Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
 
             var message = new Message(e.Data);
             var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
 
-            //Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
+            Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
             switch (message.Code)
             {
@@ -410,10 +407,6 @@ namespace Soulseek.NET
                     MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
 
-                case MessageCode.PeerSearchResponse:
-                    await HandlePeerSearchResponse(SearchResponse.Parse(message), e);
-                    break;
-
                 case MessageCode.ServerConnectToPeer:
                     await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
                     break;
@@ -424,6 +417,24 @@ namespace Soulseek.NET
 
                 default:
                     Console.WriteLine($"Unknown message: [{e.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
+                    break;
+            }
+        }
+
+        private void OnPeerConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        {
+            var message = new Message(e.Data);
+
+            switch (message.Code)
+            {
+                case MessageCode.PeerSearchResponse:
+                    HandlePeerSearchResponse(SearchResponse.Parse(message), e);
+                    break;
+                default:
+                    if (sender is Connection peerConnection)
+                    {
+                        peerConnection.Disconnect($"Unknown response from peer: {message.Code}");
+                    }
                     break;
             }
         }
