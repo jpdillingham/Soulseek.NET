@@ -156,7 +156,7 @@ namespace Soulseek.NET
             ClearPeerConnectionsQueued();
             ClearPeerConnectionsActive(message);
             ActiveSearch.Dispose();
-            ActiveSearch = null;
+            ActiveSearch = default(Search);
         }
 
         /// <summary>
@@ -216,8 +216,8 @@ namespace Soulseek.NET
         /// <returns>The completed search.</returns>
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null)
         {
-            await StartSearchAsync(searchText, options);
-            var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, ActiveSearch.Ticket).Task;
+            var search = await StartSearchAsync(searchText, options);
+            var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
 
             return (Search)result;
         }
@@ -230,7 +230,7 @@ namespace Soulseek.NET
         /// <returns>The started search.</returns>
         public async Task<Search> StartSearchAsync(string searchText, SearchOptions options = null)
         {
-            if (ActiveSearch != null)
+            if (ActiveSearch != default(Search))
             {
                 throw new SearchException($"A search is already in progress.");
             }
