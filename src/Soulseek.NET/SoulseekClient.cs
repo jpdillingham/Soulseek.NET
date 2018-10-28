@@ -308,7 +308,7 @@ namespace Soulseek.NET
 
         private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
-            if (response != null && response.FileCount > 1 && response.InQueue == 0 && response.FreeUploadSlots > 0)
+            if (response != null && response.FileCount > 0)
             {
                 if (SearchesActive.TryGetValue(response.Ticket, out var search) && search.State == SearchState.InProgress)
                 {
