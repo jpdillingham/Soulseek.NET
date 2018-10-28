@@ -78,7 +78,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Occurs when a search is completed.
         /// </summary>
-        public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
+        public event EventHandler<SearchCompletedEventArgs> SearchEnded;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -148,7 +148,7 @@ namespace Soulseek.NET
         {
             if (string.IsNullOrEmpty(message))
             {
-                message = "User initiated shutdown";
+                message = "Client disconnected.";
             }
 
             Connection.Disconnect(message);
@@ -238,7 +238,7 @@ namespace Soulseek.NET
             options = options ?? new SearchOptions();
 
             ActiveSearch = new Search(Connection, searchText, options);
-            ActiveSearch.SearchCompleted += OnSearchCompleted;
+            ActiveSearch.SearchEnded += OnSearchEnded;
 
             await ActiveSearch.StartAsync();
 
@@ -258,7 +258,7 @@ namespace Soulseek.NET
             }
             if (ActiveSearch.State != SearchState.InProgress)
             {
-                throw new SearchException($"The requested search has already ended.");
+                throw new SearchException($"The requested search has already completed.");
             }
 
             var wait = MessageWaiter.Wait(MessageCode.ServerFileSearch, ActiveSearch.Ticket);
@@ -278,10 +278,6 @@ namespace Soulseek.NET
 
                     Connection?.Disconnect(message);
                     Connection?.Dispose();
-
-                    ClearPeerConnectionsQueued();
-                    ClearPeerConnectionsActive(message);
-                    ActiveSearch.Dispose();
                 }
 
                 Disposed = true;
@@ -290,12 +286,20 @@ namespace Soulseek.NET
 
         private void ClearPeerConnectionsActive(string disconnectMessage)
         {
-            foreach (var connectionToRemove in PeerConnectionsActive.ToList())
+            while (!PeerConnectionsActive.IsEmpty)
             {
-                if (PeerConnectionsActive.TryRemove(connectionToRemove.Key, out var connection))
+                var key = PeerConnectionsActive.Keys.First();
+
+                if (PeerConnectionsActive.TryRemove(key, out var connection))
                 {
-                    connection.Disconnect(disconnectMessage);
-                    connection.Dispose();
+                    try
+                    {
+                        connection?.Disconnect(disconnectMessage);
+                        connection?.Dispose();
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
         }
@@ -306,7 +310,13 @@ namespace Soulseek.NET
             {
                 if (PeerConnectionsQueued.TryDequeue(out var queuedConnection))
                 {
-                    queuedConnection.Value.Dispose();
+                    try
+                    {
+                        queuedConnection.Value?.Dispose();
+                    }
+                    catch (Exception)
+                    {
+                    }
                 }
             }
         }
@@ -442,13 +452,14 @@ namespace Soulseek.NET
             }
         }
 
-        private void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
+        private void OnSearchEnded(object sender, SearchCompletedEventArgs e)
         {
             ClearPeerConnectionsQueued();
-            ActiveSearch = null;
+            ClearPeerConnectionsActive("Search completed.");
+            ActiveSearch = default(Search);
 
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
-            Task.Run(() => SearchCompleted?.Invoke(this, e));
+            Task.Run(() => SearchEnded?.Invoke(this, e));
         }
 
         private void OnSearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
