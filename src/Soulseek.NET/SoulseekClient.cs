@@ -32,8 +32,12 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="options"/>.
+        /// </summary>
+        /// <param name="options">The client options.</param>
         public SoulseekClient(SoulseekClientOptions options = null)
-            : this("server.slsknet.org", 2242, options)
+            : this("vps.slsknet.org", 2271, options)
         {
 
         }
@@ -44,15 +48,16 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
+        /// <param name="options">The client options.</param>
         public SoulseekClient(string address, int port, SoulseekClientOptions options)
         {
             Address = address;
             Port = port;
-            Options = options;
+            Options = options ?? new SoulseekClientOptions();
 
-            Connection = new Connection(ConnectionType.Server, Address, Port);
+            Connection = new Connection(ConnectionType.Server, Address, Port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
             Connection.StateChanged += OnServerConnectionStateChanged;
-            Connection.DataReceived += OnConnectionDataReceived;
+            Connection.DataReceived += OnServerConnectionDataReceived;
         }
 
         /// <summary>
@@ -320,8 +325,11 @@ namespace Soulseek.NET
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port);
-            connection.Context = response;
+            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize)
+            {
+                Context = response
+            };
+
             connection.DataReceived += OnPeerConnectionDataReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
 
@@ -338,7 +346,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        private async void OnServerConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
 
