@@ -12,21 +12,23 @@
     {
         Pending = 0,
         InProgress = 1,
+        Stopped = 2,
         Completed = 3,
     }
 
     public sealed class Search : IDisposable
     {
-        internal Search(Connection serverConnection, string searchText, int searchTimeout = 15)
+        internal Search(Connection serverConnection, string searchText, SearchOptions options)
         {
             ServerConnection = serverConnection;
             SearchText = searchText;
+            Options = options;
+
             Ticket = new Random().Next(1, 2147483647);
 
-            SearchTimeout = searchTimeout;
             SearchTimeoutTimer = new SystemTimer()
             {
-                Interval = SearchTimeout * 1000,
+                Interval = Options.Timeout * 1000,
                 Enabled = false,
                 AutoReset = false,
             };
@@ -35,49 +37,26 @@
         public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        public SearchOptions Options { get; private set; }
         public IEnumerable<SearchResponse> Responses => ResponseList.AsReadOnly();
         public string SearchText { get; private set; }
         public SearchState State { get; private set; } = SearchState.Pending;
         public int Ticket { get; private set; }
+
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private int SearchTimeout { get; set; }
         private SystemTimer SearchTimeoutTimer { get; set; }
         private Connection ServerConnection { get; set; }
 
-        public void Stop()
-        {
-            Complete();
-        }
-
         public void Dispose()
         {
             Dispose(true);
         }
 
-        public int Start()
+        public void Stop()
         {
-            return Task.Run(() => StartAsync()).GetAwaiter().GetResult();
-        }
-
-        public async Task<int> StartAsync()
-        {
-            if (State == SearchState.InProgress)
-            {
-                throw new SearchException($"The Search is already in progress.");
-            }
-
-            State = SearchState.InProgress;
-
-            var request = new SearchRequest(SearchText, Ticket);
-
-            Console.WriteLine($"Searching for {SearchText}...");
-            await ServerConnection.SendAsync(request.ToMessage().ToByteArray());
-
-            SearchTimeoutTimer.Reset();
-            SearchTimeoutTimer.Elapsed += (sender, e) => Complete();
-
-            return Ticket;
+            End(SearchState.Stopped);
         }
 
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
@@ -91,14 +70,35 @@
             }
         }
 
-        private void Complete()
+        internal void End(SearchState state)
         {
-            if (State != SearchState.Completed)
+            Console.WriteLine($"Requested: {state}, present: {State}");
+            if (State != SearchState.Completed && State != SearchState.Stopped)
             {
-                State = SearchState.Completed;
-
+                State = state;
+                Console.WriteLine($"Firing...");
                 Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
             }
+        }
+
+        internal async Task<int> StartAsync()
+        {
+            if (State != SearchState.Pending)
+            {
+                throw new SearchException($"The Search is already in progress or has completed.");
+            }
+
+            State = SearchState.InProgress;
+
+            var request = new SearchRequest(SearchText, Ticket);
+
+            Console.WriteLine($"Searching for {SearchText}...");
+            await ServerConnection.SendAsync(request.ToMessage().ToByteArray());
+
+            SearchTimeoutTimer.Reset();
+            SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
+
+            return Ticket;
         }
 
         private void Dispose(bool disposing)
