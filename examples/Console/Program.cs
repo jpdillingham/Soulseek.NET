@@ -32,23 +32,38 @@
                     {
                         client.Disconnect("User requested Disconnect");
                     }
+                    if (cmd.StartsWith("search-lazy"))
+                    {
+                        ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
+
+                        StatusTimer.Interval = 1000;
+                        StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
+                        StatusTimer.Start();
+
+                        var search = await client.StartSearchAsync(ActiveSearchText);
+                        Console.WriteLine($"Search started.  do stuff.");
+
+                        var ended = await client.StopSearchAsync(search);
+
+                        Console.WriteLine($"Search complete.  {ended.Responses.Count()}");
+                    }
                     if (cmd.StartsWith("search"))
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
-                        var search = client.CreateSearch(ActiveSearchText);
-                        search.SearchResponseReceived += Client_SearchResultReceived;
+                        //var search = client.CreateSearch(ActiveSearchText);
+                        //search.SearchResponseReceived += Client_SearchResultReceived;
 
 
                         StatusTimer.Interval = 1000;
                         StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
                         StatusTimer.Start();
 
-                        ActiveSearchTicket = search.Ticket;
-                        //var result = await client.SearchAsync(ActiveSearchText);
-                        search.Start();
+                        //ActiveSearchTicket = search.Ticket;
+                        var result = await client.SearchAsync(ActiveSearchText);
+                        //search.Start();
 
-                        //Console.WriteLine($"Search complete.  {result.Responses.Count()}");
+                        Console.WriteLine($"Search complete.  {result.Responses.Count()}");
                     }
                     else
                     {
