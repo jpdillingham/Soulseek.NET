@@ -2,6 +2,7 @@
 {
     using Newtonsoft.Json;
     using Soulseek.NET;
+    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
     using System;
     using System.Linq;
@@ -91,10 +92,11 @@
 
             Console.WriteLine($"[SEARCH] {t} {e.Response.FileCount} results from {e.Response.Username}");
 
-            //foreach (var file in e.Result.Files)
-            //{
-            //    //Console.WriteLine($"{t}: {file.Filename}");
-            //}
+            foreach (var file in e.Response.Files)
+            {
+                var br = file.Attributes.Where(a => a.Type == FileAttributeType.BitRate).FirstOrDefault();
+                Console.WriteLine($"{t}: [{br.Value}] {file.Filename}");
+            }
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
