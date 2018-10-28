@@ -61,6 +61,7 @@
 
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
+            // todo: use options to filter
             if (State == SearchState.InProgress)
             {
                 ResponseList.Add(response);
