@@ -34,7 +34,7 @@
             };
         }
 
-        public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
+        public event EventHandler<SearchCompletedEventArgs> SearchEnded;
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         public SearchOptions Options { get; private set; }
@@ -54,7 +54,7 @@
             Dispose(true);
         }
 
-        public void Stop()
+        internal void Stop()
         {
             End(SearchState.Stopped);
         }
@@ -72,12 +72,10 @@
 
         internal void End(SearchState state)
         {
-            Console.WriteLine($"Requested: {state}, present: {State}");
             if (State != SearchState.Completed && State != SearchState.Stopped)
             {
                 State = state;
-                Console.WriteLine($"Firing...");
-                Task.Run(() => SearchCompleted?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
+                Task.Run(() => SearchEnded?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
             }
         }
 
