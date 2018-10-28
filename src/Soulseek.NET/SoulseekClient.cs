@@ -66,14 +66,24 @@ namespace Soulseek.NET
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
         /// <summary>
-        ///     Occurs when raw data is recieved by the underlying TCP connection.
+        ///     Occurs when raw data is received by the underlying TCP connection.
         /// </summary>
         public event EventHandler<DataReceivedEventArgs> DataReceived;
 
         /// <summary>
-        ///     Occurs when a new message is recieved.
+        ///     Occurs when a new message is received.
         /// </summary>
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
+        /// <summary>
+        ///     Occurs when a search is completed.
+        /// </summary>
+        public event EventHandler<SearchCompletedEventArgs> SearchCompleted;
+
+        /// <summary>
+        ///     Occurs when a new search result is received.
+        /// </summary>
+        public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
@@ -112,7 +122,7 @@ namespace Soulseek.NET
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private Random Random { get; set; } = new Random();
 
-        private ConcurrentDictionary<int, Search> SearchesActive { get; set; } = new ConcurrentDictionary<int, Search>();
+        private Search ActiveSearch { get; set; }
 
         /// <summary>
         ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -131,21 +141,6 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Creates a Pending <see cref="Soulseek.Search"/> with the specified <paramref name="searchText"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <returns>A <see cref="SearchState.Pending"/> Search.</returns>
-        public Search CreateSearch(string searchText)
-        {
-            var search = new Search(Connection, searchText);
-            search.SearchCompleted += OnSearchCompleted;
-
-            SearchesActive.TryAdd(search.Ticket, search);
-
-            return search;
-        }
-
-        /// <summary>
         ///     Disconnects the client from the server with an optionally supplied <paramref name="message"/>.
         /// </summary>
         /// <param name="message">An optional disconnect message.</param>
@@ -160,7 +155,8 @@ namespace Soulseek.NET
 
             ClearPeerConnectionsQueued();
             ClearPeerConnectionsActive(message);
-            ClearSearchesActive();
+            ActiveSearch.Dispose();
+            ActiveSearch = null;
         }
 
         /// <summary>
@@ -213,27 +209,61 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Performs a search for the specified <paramref name="searchText"/>.
+        ///     Asynchronously performs a search for the specified <paramref name="searchText"/> using the specified <paramref name="options"/>.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
-        /// <returns>The completed search result.</returns>
-        public Search Search(string searchText)
+        /// <param name="options">The options for the search.</param>
+        /// <returns>The completed search.</returns>
+        public async Task<Search> SearchAsync(string searchText, SearchOptions options = null)
         {
-            return Task.Run(() => SearchAsync(searchText)).GetAwaiter().GetResult();
+            await StartSearchAsync(searchText, options);
+            var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, ActiveSearch.Ticket).Task;
+
+            return (Search)result;
         }
 
         /// <summary>
-        ///     Asynchronously performs a search for the specified <paramref name="searchText"/>.
+        ///     Asynchronously starts a search for the specified <paramref name="searchText"/> using the specified <paramref name="options"/>.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
-        /// <returns>The completed search result.</returns>
-        public async Task<Search> SearchAsync(string searchText)
+        /// <param name="options">The options for the search.</param>
+        /// <returns>The started search.</returns>
+        public async Task<Search> StartSearchAsync(string searchText, SearchOptions options = null)
         {
-            var search = CreateSearch(searchText);
+            if (ActiveSearch != null)
+            {
+                throw new SearchException($"A search is already in progress.");
+            }
 
-            await search.StartAsync();
+            options = options ?? new SearchOptions();
 
-            var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
+            ActiveSearch = new Search(Connection, searchText, options);
+            ActiveSearch.SearchCompleted += OnSearchCompleted;
+
+            await ActiveSearch.StartAsync();
+
+            return ActiveSearch;
+        }
+
+        /// <summary>
+        ///     Asynchronously stops the specified <paramref name="search"/>.
+        /// </summary>
+        /// <param name="search">The search to stop.</param>
+        /// <returns>The completed search.</returns>
+        public async Task<Search> StopSearchAsync(Search search)
+        {
+            if (ActiveSearch.Ticket != search.Ticket)
+            {
+                throw new SearchException($"The requested search is not presently active.");
+            }
+            if (ActiveSearch.State != SearchState.InProgress)
+            {
+                throw new SearchException($"The requested search has already ended.");
+            }
+
+            var wait = MessageWaiter.Wait(MessageCode.ServerFileSearch, ActiveSearch.Ticket);
+            ActiveSearch.Stop();
+            var result = await wait.Task;
 
             return (Search)result;
         }
@@ -251,7 +281,7 @@ namespace Soulseek.NET
 
                     ClearPeerConnectionsQueued();
                     ClearPeerConnectionsActive(message);
-                    ClearSearchesActive();
+                    ActiveSearch.Dispose();
                 }
 
                 Disposed = true;
@@ -281,18 +311,6 @@ namespace Soulseek.NET
             }
         }
 
-        private void ClearSearchesActive()
-        {
-            foreach (var searchToRemove in SearchesActive.ToList())
-            {
-                if (SearchesActive.TryRemove(searchToRemove.Key, out var search))
-                {
-                    search.Stop();
-                    search.Dispose();
-                }
-            }
-        }
-
         private PeerInfo GetPeerInfo()
         {
             return new PeerInfo()
@@ -308,12 +326,9 @@ namespace Soulseek.NET
 
         private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
         {
-            if (response != null && response.FileCount > 0)
+            if (response != null)
             {
-                if (SearchesActive.TryGetValue(response.Ticket, out var search) && search.State == SearchState.InProgress)
-                {
-                    search.AddResponse(response, e);
-                }
+                ActiveSearch?.AddResponse(response, e);
             }
         }
 
@@ -429,8 +444,16 @@ namespace Soulseek.NET
 
         private void OnSearchCompleted(object sender, SearchCompletedEventArgs e)
         {
-            SearchesActive.TryRemove(e.Search.Ticket, out var removed);
+            ClearPeerConnectionsQueued();
+            ActiveSearch = null;
+
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
+            Task.Run(() => SearchCompleted?.Invoke(this, e));
+        }
+
+        private void OnSearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
+        {
+            Task.Run(() => SearchResponseReceived?.Invoke(this, e));
         }
 
         private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
