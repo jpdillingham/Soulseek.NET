@@ -11,14 +11,14 @@
 
     internal sealed class Connection : IConnection, IDisposable
     {
-        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int readTimeout = 5, int readBufferSize = 4096, ITcpClient tcpClient = null)
+        internal Connection(ConnectionType type, string address, int port, int connectionTimeout = 5, int readTimeout = 5, int bufferSize = 4096, ITcpClient tcpClient = null)
         {
             Type = type;
             Address = address;
             Port = port;
             ConnectionTimeout = connectionTimeout;
             ReadTimeout = readTimeout;
-            ReadBufferSize = readBufferSize;
+            BufferSize = bufferSize;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
             InactivityTimer = new SystemTimer()
@@ -54,7 +54,7 @@
         public int ReadTimeout { get; private set; }
         public IPAddress IPAddress { get; private set; }
         public int Port { get; private set; }
-        public int ReadBufferSize { get; private set; }
+        public int BufferSize { get; private set; }
         public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
         public ConnectionType Type { get; private set; }
         public object Context { get; internal set; }
@@ -242,7 +242,7 @@
         {
             var result = new List<byte>();
 
-            var buffer = new byte[ReadBufferSize];
+            var buffer = new byte[BufferSize];
             var totalBytesRead = 0;
 
             while (totalBytesRead < count)
