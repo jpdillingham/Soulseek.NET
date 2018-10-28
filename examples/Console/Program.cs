@@ -12,6 +12,7 @@
     {
         public static string ActiveSearchText { get; set; }
         public static int ActiveSearchTicket { get; set; }
+        public static Search ActiveSearch { get; set; }
         public static System.Timers.Timer StatusTimer { get; set; } = new System.Timers.Timer();
 
         static async Task Main(string[] args)
@@ -32,7 +33,7 @@
                     {
                         client.Disconnect("User requested Disconnect");
                     }
-                    if (cmd.StartsWith("search-lazy"))
+                    else if (cmd.StartsWith("search-lazy"))
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
@@ -40,14 +41,16 @@
                         StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
                         StatusTimer.Start();
 
-                        var search = await client.StartSearchAsync(ActiveSearchText);
-                        Console.WriteLine($"Search started.  do stuff.");
-
-                        var ended = await client.StopSearchAsync(search);
+                        ActiveSearch = await client.StartSearchAsync(ActiveSearchText);
+                        Console.WriteLine($"Search started.");
+                    }
+                    else if (cmd.StartsWith("search-stop"))
+                    {
+                        var ended = await client.StopSearchAsync(ActiveSearch);
 
                         Console.WriteLine($"Search complete.  {ended.Responses.Count()}");
                     }
-                    if (cmd.StartsWith("search"))
+                    else if (cmd.StartsWith("search"))
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
