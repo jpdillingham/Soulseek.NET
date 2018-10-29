@@ -239,6 +239,7 @@ namespace Soulseek.NET
 
             ActiveSearch = new Search(Connection, searchText, options);
             ActiveSearch.SearchEnded += OnSearchEnded;
+            ActiveSearch.SearchResponseReceived += OnSearchResponseReceived;
 
             await ActiveSearch.StartAsync();
 
