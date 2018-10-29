@@ -237,7 +237,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            ActiveSearch = new Search(Connection, searchText, options);
+            ActiveSearch = new Search(searchText, options, Connection);
             ActiveSearch.SearchEnded += OnSearchEnded;
             ActiveSearch.SearchResponseReceived += OnSearchResponseReceived;
 
