@@ -1,4 +1,21 @@
-﻿namespace Soulseek.NET
+﻿// <copyright file="Search.cs" company="JP Dillingham">
+//     Copyright(C) 2018 JP Dillingham
+//     
+//     This program is free software: you can redistribute it and/or modify
+//     it under the terms of the GNU General Public License as published by
+//     the Free Software Foundation, either version 3 of the License, or
+//     (at your option) any later version.
+//     
+//     This program is distributed in the hope that it will be useful,
+//     but WITHOUT ANY WARRANTY; without even the implied warranty of
+//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
+//     GNU General Public License for more details.
+//     
+//     You should have received a copy of the GNU General Public License
+//     along with this program.If not, see<https://www.gnu.org/licenses/>.
+// </copyright>
+
+namespace Soulseek.NET
 {
     using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Messaging.Responses;
@@ -8,21 +25,19 @@
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
-    public enum SearchState
-    {
-        Pending = 0,
-        InProgress = 1,
-        Stopped = 2,
-        Completed = 3,
-    }
-
     public sealed class Search : IDisposable
     {
-        internal Search(Connection serverConnection, string searchText, SearchOptions options)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Search"/> class with the specified <paramref name="searchText"/>, <paramref name="options"/>, and <paramref name="serverConnection"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="options">The options for the search.</param>
+        /// <param name="serverConnection">The connection to use when searching.</param>
+        internal Search(string searchText, SearchOptions options, Connection serverConnection)
         {
-            ServerConnection = serverConnection;
             SearchText = searchText;
             Options = options;
+            ServerConnection = serverConnection;
 
             Ticket = new Random().Next(1, 2147483647);
 
@@ -35,6 +50,7 @@
         }
 
         public event EventHandler<SearchCompletedEventArgs> SearchEnded;
+
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         public SearchOptions Options { get; private set; }
@@ -52,11 +68,6 @@
         public void Dispose()
         {
             Dispose(true);
-        }
-
-        internal void Stop()
-        {
-            End(SearchState.Stopped);
         }
 
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
@@ -98,6 +109,11 @@
             SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
 
             return Ticket;
+        }
+
+        internal void Stop()
+        {
+            End(SearchState.Stopped);
         }
 
         private void Dispose(bool disposing)
