@@ -20,6 +20,7 @@
             using (var client = new SoulseekClient())
             {
                 client.ConnectionStateChanged += Client_ServerStateChanged;
+                client.SearchResponseReceived += Client_SearchResponseReceived;
 
                 await client.ConnectAsync();
 
@@ -89,12 +90,7 @@
             }
         }
 
-        private static void DisplayInfo(PeerInfo peers)
-        {
-            Console.WriteLine($"███ Queued: {peers.Queued}, Active: {peers.Active}, Connecting: {peers.Connecting}, Connected: {peers.Connected}, Disconnecting: {peers.Disconnecting}, Disconnected: {peers.Disconnected}");
-        }
-
-        private static void Client_SearchResultReceived(object sender, SearchResponseReceivedEventArgs e)
+        private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
         {
             //Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
             var t = string.Empty;
@@ -115,6 +111,11 @@
                 var br = file.Attributes.Where(a => a.Type == FileAttributeType.BitRate).FirstOrDefault();
                 Console.WriteLine($"{t}: [{br.Value}] {file.Filename}");
             }
+        }
+
+        private static void DisplayInfo(PeerInfo peers)
+        {
+            Console.WriteLine($"███ Queued: {peers.Queued}, Active: {peers.Active}, Connecting: {peers.Connecting}, Connected: {peers.Connected}, Disconnecting: {peers.Disconnecting}, Disconnected: {peers.Disconnected}");
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
