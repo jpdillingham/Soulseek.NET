@@ -64,7 +64,11 @@
                         StatusTimer.Start();
 
                         //ActiveSearchTicket = search.Ticket;
-                        var result = await client.SearchAsync(ActiveSearchText);
+                        var result = await client.SearchAsync(ActiveSearchText, new SearchOptions()
+                        {
+                            FilterFiles = true,
+                            IncludeConstantBitRate = false
+                        });
                         //search.Start();
 
                         Console.WriteLine($"Search complete.  {result.Responses.Count()}");
