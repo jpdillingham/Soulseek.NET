@@ -73,8 +73,9 @@ namespace Soulseek.NET
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
             // todo: use options to filter
-            if (State == SearchState.InProgress)
+            if (State == SearchState.InProgress && response.QueueLength == 0 && response.FreeUploadSlots > 0)
             {
+                response.ParseFiles();
                 ResponseList.Add(response);
                 Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
 
