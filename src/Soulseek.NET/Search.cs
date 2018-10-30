@@ -22,6 +22,7 @@ namespace Soulseek.NET
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
@@ -72,15 +73,81 @@ namespace Soulseek.NET
 
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
-            // todo: use options to filter
-            if (State == SearchState.InProgress && response.QueueLength == 0 && response.FreeUploadSlots > 0)
+            if (State == SearchState.InProgress && ResponseMeetsOptionCriteria(response))
             {
                 response.ParseFiles();
+
+                if (Options.FilterFiles || true)
+                {
+                    response.Files = response.Files.Where(f => FileMeetsOptionCriteria(f));
+                }
+
                 ResponseList.Add(response);
                 Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
 
                 SearchTimeoutTimer.Reset();
             }
+        }
+
+        private bool ResponseMeetsOptionCriteria(SearchResponse response)
+        {
+            if (
+                Options.FilterResponses && (
+                    response.FileCount < Options.MinimumResponseFileCount ||
+                    response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
+                    response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
+                    response.QueueLength > Options.MaximumPeerQueueLength
+                )
+            )
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool FileMeetsOptionCriteria(File file)
+        {
+            if (
+                Options.FilterFiles && (
+                    file.Size < Options.MinimumFileSize ||
+                    FileHasIgnoredExtension(file)
+                )
+            )
+            {
+                return false;
+            }
+
+            var bitRate = file.GetAttributeValue(FileAttributeType.BitRate);
+            var length = file.GetAttributeValue(FileAttributeType.Length);
+            var bitDepth = file.GetAttributeValue(FileAttributeType.BitDepth);
+            var sampleRate = file.GetAttributeValue(FileAttributeType.SampleRate);
+
+            if (
+                bitRate != null && bitRate < Options.MinimumFileBitRate ||
+                length != null && length < Options.MinimumFileLength ||
+                bitDepth != null && bitDepth < Options.MinimumFileBitDepth ||
+                sampleRate != null && sampleRate < Options.MinimumFileSampleRate
+            )
+            {
+                return false;
+            }
+
+            var constantBitRates = new[] { 32, 64, 128, 192, 256, 320 };
+            var isConstant = constantBitRates.Any(b => b == bitRate);
+
+            if (bitRate != null && (!Options.IncludeConstantBitRate && isConstant || !Options.IncludeVariableBitRate && !isConstant))
+            {
+                return false;
+            }
+
+            return true;
+        }
+
+        private bool FileHasIgnoredExtension(File file)
+        {
+            return Options.IgnoredFileExtensions == null ? false : 
+                Options.IgnoredFileExtensions.Any(e => e == System.IO.Path.GetExtension(file.Filename));
         }
 
         internal void End(SearchState state)
