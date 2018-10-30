@@ -11,12 +11,49 @@
         public IEnumerable<File> Files => FileList.AsReadOnly();
         public int FreeUploadSlots { get; private set; }
         public int UploadSpeed { get; private set; }
-        public int InQueue { get; private set; }
+        public long QueueLength { get; private set; }
 
-        private List<File> FileList { get; set; } = new List<File>();
+        private MessageReader MessageReader { get; set; }
+        private List<File> FileList { get; set; }
 
-        private SearchResponse()
+        internal void ParseFiles()
         {
+            FileList = ParseFiles(MessageReader, FileCount);
+        }
+
+        internal SearchResponse()
+        {
+        }
+
+        private static List<File> ParseFiles(MessageReader reader, int count)
+        {
+            var files = new List<File>();
+
+            for (int i = 0; i < count; i++)
+            {
+                var file = new File
+                {
+                    Code = reader.ReadByte(),
+                    Filename = reader.ReadString(),
+                    Size = reader.ReadLong(),
+                    Extension = reader.ReadString(),
+                    AttributeCount = reader.ReadInteger()
+                };
+
+                for (int j = 0; j < file.AttributeCount; j++)
+                {
+                    var attribute = new FileAttribute
+                    {
+                        Type = (FileAttributeType)reader.ReadInteger(),
+                        Value = reader.ReadInteger()
+                    };
+                    ((List<FileAttribute>)file.Attributes).Add(attribute);
+                }
+
+                files.Add(file);
+            }
+
+            return files;
         }
 
         public static SearchResponse Parse(Message message)
@@ -45,33 +82,16 @@
                 FileCount = reader.ReadInteger()
             };
 
-            for (int i = 0; i < response.FileCount; i++)
-            {
-                var file = new File
-                {
-                    Code = reader.ReadByte(),
-                    Filename = reader.ReadString(),
-                    Size = reader.ReadLong(),
-                    Extension = reader.ReadString(),
-                    AttributeCount = reader.ReadInteger()
-                };
-
-                for (int j = 0; j < file.AttributeCount; j++)
-                {
-                    var attribute = new FileAttribute
-                    {
-                        Type = (FileAttributeType)reader.ReadInteger(),
-                        Value = reader.ReadInteger()
-                    };
-                    ((List<FileAttribute>)file.Attributes).Add(attribute);
-                }
-
-                response.FileList.Add(file);
-            }
+            var position = reader.Position;
+            
+            reader.Seek(reader.Payload.Length - 17); // there are 8 unused bytes at the end of each message
 
             response.FreeUploadSlots = reader.ReadByte();
             response.UploadSpeed = reader.ReadInteger();
-            response.InQueue = reader.ReadInteger();
+            response.QueueLength = reader.ReadLong();
+
+            reader.Seek(position);
+            response.MessageReader = reader;
 
             return response;
         }
