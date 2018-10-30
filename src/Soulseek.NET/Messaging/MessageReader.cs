@@ -19,10 +19,25 @@
         }
 
         public MessageCode Code => Message.Code;
-        public int Length => Message.Length;
         public byte[] Payload => Message.Payload;
+        public int Position { get; private set; } = 0;
+
         private Message Message { get; set; }
-        private int Position { get; set; } = 0;
+
+        public void Seek(int position)
+        {
+            if (position < 0)
+            {
+                throw new MessageReadException($"Attempt to seek to a negative position.");
+            }
+
+            if (position > Payload.Length)
+            {
+                throw new MessageReadException($"Seek to position {position} would extend beyond the length of the message.");
+            }
+
+            Position = position;
+        }
 
         public MessageReader Decompress()
         {
