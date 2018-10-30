@@ -2,13 +2,24 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     public sealed class SearchResponse
     {
         public string Username { get; private set; }
         public int Ticket { get; private set; }
         public int FileCount { get; private set; }
-        public IEnumerable<File> Files => FileList.AsReadOnly();
+        public IEnumerable<File> Files
+        {
+            get
+            {
+                return FileList.AsReadOnly();
+            }
+            internal set
+            {
+                FileList = value.ToList();
+            }
+        }
         public int FreeUploadSlots { get; private set; }
         public int UploadSpeed { get; private set; }
         public long QueueLength { get; private set; }
@@ -19,6 +30,11 @@
         internal void ParseFiles()
         {
             FileList = ParseFiles(MessageReader, FileCount);
+        }
+
+        internal void SetFiles(IEnumerable<File> files)
+        {
+            FileList = files.ToList();
         }
 
         internal SearchResponse()
@@ -108,6 +124,11 @@
 
         internal File()
         {
+        }
+
+        public int? GetAttributeValue(FileAttributeType type)
+        {
+            return Attributes.Where(a => a.Type == type).SingleOrDefault()?.Value;
         }
     }
 
