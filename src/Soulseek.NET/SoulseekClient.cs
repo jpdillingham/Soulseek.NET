@@ -422,8 +422,6 @@ namespace Soulseek.NET
             switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
-                    // todo: create SearchResponseSlim and pass that instead
-                    // do this to avoid parsing a bunch of files that may not meet search criteria (number of slots, queue, number of files)
                     HandlePeerSearchResponse(SearchResponse.Parse(message), e);
                     break;
 
