@@ -455,6 +455,7 @@ namespace Soulseek.NET
 
         private void OnSearchEnded(object sender, SearchCompletedEventArgs e)
         {
+            // todo: figure out why this doesn't clear the queue and kill active connections
             ClearPeerConnectionsQueued();
             ClearPeerConnectionsActive("Search completed.");
             ActiveSearch = default(Search);
