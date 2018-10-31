@@ -23,13 +23,18 @@ namespace Soulseek.NET
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
+    /// <summary>
+    ///     A single file search.
+    /// </summary>
     public sealed class Search : IDisposable
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Search"/> class with the specified <paramref name="searchText"/>, <paramref name="options"/>, and <paramref name="serverConnection"/>.
+        ///     Initializes a new instance of the <see cref="Search"/> class with the specified <paramref name="searchText"/>,
+        ///     <paramref name="options"/>, and <paramref name="serverConnection"/>.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The options for the search.</param>
@@ -50,27 +55,63 @@ namespace Soulseek.NET
             };
         }
 
-        public event EventHandler<SearchCompletedEventArgs> SearchEnded;
+        /// <summary>
+        ///     Occurs when the search has ended.
+        /// </summary>
+        internal event EventHandler<SearchCompletedEventArgs> SearchEnded;
 
-        public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
+        /// <summary>
+        ///     Occurs when a search response is received from a peer.
+        /// </summary>
+        internal event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        /// <summary>
+        ///     Gets the options for the search.
+        /// </summary>
         public SearchOptions Options { get; private set; }
+
+        /// <summary>
+        ///     Gets the collection of responses received from peers.
+        /// </summary>
         public IEnumerable<SearchResponse> Responses => ResponseList.AsReadOnly();
+
+        /// <summary>
+        ///     Gets the text for which to search.
+        /// </summary>
         public string SearchText { get; private set; }
+
+        /// <summary>
+        ///     Gets the current state of the search.
+        /// </summary>
         public SearchState State { get; private set; } = SearchState.Pending;
+
+        /// <summary>
+        ///     Gets the unique identifier for the search.
+        /// </summary>
         public int Ticket { get; private set; }
 
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
-        private int SearchTimeout { get; set; }
         private SystemTimer SearchTimeoutTimer { get; set; }
         private Connection ServerConnection { get; set; }
 
+        private int resultCount = 0;
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
         }
 
+        /// <summary>
+        ///     If the specified response meets the filter criteria set in <see cref="Options"/>, adds the 
+        ///     specified <paramref name="response"/> to the collection of peer responses, then fires 
+        ///     the <see cref="SearchResponseReceived"/> event.
+        /// </summary>
+        /// <param name="response">The response to add.</param>
+        /// <param name="e">The network context of the response.</param>
         internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
             if (State == SearchState.InProgress && ResponseMeetsOptionCriteria(response))
@@ -82,6 +123,14 @@ namespace Soulseek.NET
                     response.Files = response.Files.Where(f => FileMeetsOptionCriteria(f));
                 }
 
+                Interlocked.Add(ref resultCount, response.Files.Count());
+
+                if (resultCount >= Options.FileLimit)
+                {
+                    End(SearchState.Completed);
+                    return;
+                }
+
                 ResponseList.Add(response);
                 Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
 
@@ -89,31 +138,85 @@ namespace Soulseek.NET
             }
         }
 
-        private bool ResponseMeetsOptionCriteria(SearchResponse response)
+        /// <summary>
+        ///     Ends the search with the specified <paramref name="state"/>.
+        /// </summary>
+        /// <remarks>
+        ///     A state of <see cref="SearchState.Completed"/> indicates that the search completed normally
+        ///     by timeout or after having reached the result limit, while <see cref="SearchState.Stopped"/>
+        ///     indicates that the search was stopped prematurely, e.g., by error or user request.
+        /// </remarks>
+        /// <param name="state">The desired state of the search.</param>
+        internal void End(SearchState state)
         {
-            if (
-                Options.FilterResponses && (
-                    response.FileCount < Options.MinimumResponseFileCount ||
-                    response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
-                    response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
-                    response.QueueLength > Options.MaximumPeerQueueLength
-                )
-            )
+            if (State != SearchState.Completed && State != SearchState.Stopped)
             {
-                return false;
+                State = state;
+                SearchTimeoutTimer.Stop();
+                Task.Run(() => SearchEnded?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
+            }
+        }
+
+        /// <summary>
+        ///     Asynchronously starts the search.
+        /// </summary>
+        /// <returns>This search.</returns>
+        internal async Task<Search> StartAsync()
+        {
+            if (State != SearchState.Pending)
+            {
+                throw new SearchException($"The Search is already in progress or has completed.");
             }
 
-            return true;
+            State = SearchState.InProgress;
+
+            var request = new SearchRequest(SearchText, Ticket);
+
+            Console.WriteLine($"Searching for {SearchText}...");
+            await ServerConnection.SendAsync(request.ToMessage().ToByteArray());
+
+            SearchTimeoutTimer.Reset();
+            SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
+
+            return this;
+        }
+
+        /// <summary>
+        ///     Stops the search.
+        /// </summary>
+        internal void Stop()
+        {
+            End(SearchState.Stopped);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    SearchTimeoutTimer.Dispose();
+                    ResponseList = default(List<SearchResponse>);
+                }
+
+                Disposed = true;
+            }
         }
 
         private bool FileMeetsOptionCriteria(File file)
         {
-            if (
-                Options.FilterFiles && (
-                    file.Size < Options.MinimumFileSize ||
-                    FileHasIgnoredExtension(file)
-                )
-            )
+            if (!Options.FilterFiles)
+            {
+                return true;
+            }
+
+            bool fileHasIgnoredExtension(File f)
+            {
+                return Options.IgnoredFileExtensions == null ? false :
+                    Options.IgnoredFileExtensions.Any(e => e == System.IO.Path.GetExtension(f.Filename));
+            }
+
+            if (file.Size < Options.MinimumFileSize || fileHasIgnoredExtension(file))
             {
                 return false;
             }
@@ -144,57 +247,21 @@ namespace Soulseek.NET
             return true;
         }
 
-        private bool FileHasIgnoredExtension(File file)
+        private bool ResponseMeetsOptionCriteria(SearchResponse response)
         {
-            return Options.IgnoredFileExtensions == null ? false : 
-                Options.IgnoredFileExtensions.Any(e => e == System.IO.Path.GetExtension(file.Filename));
-        }
-
-        internal void End(SearchState state)
-        {
-            if (State != SearchState.Completed && State != SearchState.Stopped)
+            if (
+                Options.FilterResponses && (
+                    response.FileCount < Options.MinimumResponseFileCount ||
+                    response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
+                    response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
+                    response.QueueLength > Options.MaximumPeerQueueLength
+                )
+            )
             {
-                State = state;
-                Task.Run(() => SearchEnded?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
-            }
-        }
-
-        internal async Task<int> StartAsync()
-        {
-            if (State != SearchState.Pending)
-            {
-                throw new SearchException($"The Search is already in progress or has completed.");
+                return false;
             }
 
-            State = SearchState.InProgress;
-
-            var request = new SearchRequest(SearchText, Ticket);
-
-            Console.WriteLine($"Searching for {SearchText}...");
-            await ServerConnection.SendAsync(request.ToMessage().ToByteArray());
-
-            SearchTimeoutTimer.Reset();
-            SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
-
-            return Ticket;
-        }
-
-        internal void Stop()
-        {
-            End(SearchState.Stopped);
-        }
-
-        private void Dispose(bool disposing)
-        {
-            if (!Disposed)
-            {
-                if (disposing)
-                {
-                    SearchTimeoutTimer.Dispose();
-                }
-
-                Disposed = true;
-            }
+            return true;
         }
     }
 }
