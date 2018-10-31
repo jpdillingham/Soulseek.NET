@@ -160,7 +160,7 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Disposes this instance.s
+        ///     Disposes this instance.
         /// </summary>
         public void Dispose()
         {
