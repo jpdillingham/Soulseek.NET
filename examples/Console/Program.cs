@@ -67,7 +67,8 @@
                         var result = await client.SearchAsync(ActiveSearchText, new SearchOptions()
                         {
                             FilterFiles = true,
-                            IncludeConstantBitRate = false
+                            IncludeConstantBitRate = false,
+                            FileLimit = 100,
                         });
                         //search.Start();
 
