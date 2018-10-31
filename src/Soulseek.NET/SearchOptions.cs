@@ -5,7 +5,7 @@
     public class SearchOptions
     {
         public int Timeout { get; set; } = 15;
-        public int ResultLimit { get; set; } = 5000;
+        public int FileLimit { get; set; } = 10000;
 
         public bool FilterResponses { get; set; } = true;
         public int MinimumResponseFileCount { get; set; } = 1;
