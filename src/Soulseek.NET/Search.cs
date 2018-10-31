@@ -32,6 +32,8 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class Search : IDisposable
     {
+        private int resultCount = 0;
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="Search"/> class with the specified <paramref name="searchText"/>,
         ///     <paramref name="options"/>, and <paramref name="serverConnection"/>.
@@ -95,8 +97,6 @@ namespace Soulseek.NET
         private SystemTimer SearchTimeoutTimer { get; set; }
         private Connection ServerConnection { get; set; }
 
-        private int resultCount = 0;
-
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -106,9 +106,9 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     If the specified response meets the filter criteria set in <see cref="Options"/>, adds the 
-        ///     specified <paramref name="response"/> to the collection of peer responses, then fires 
-        ///     the <see cref="SearchResponseReceived"/> event.
+        ///     If the specified response meets the filter criteria set in <see cref="Options"/>, adds the specified
+        ///     <paramref name="response"/> to the collection of peer responses, then fires the
+        ///     <see cref="SearchResponseReceived"/> event.
         /// </summary>
         /// <param name="response">The response to add.</param>
         /// <param name="e">The network context of the response.</param>
@@ -142,9 +142,9 @@ namespace Soulseek.NET
         ///     Ends the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <remarks>
-        ///     A state of <see cref="SearchState.Completed"/> indicates that the search completed normally
-        ///     by timeout or after having reached the result limit, while <see cref="SearchState.Stopped"/>
-        ///     indicates that the search was stopped prematurely, e.g., by error or user request.
+        ///     A state of <see cref="SearchState.Completed"/> indicates that the search completed normally by timeout or after
+        ///     having reached the result limit, while <see cref="SearchState.Stopped"/> indicates that the search was stopped
+        ///     prematurely, e.g., by error or user request.
         /// </remarks>
         /// <param name="state">The desired state of the search.</param>
         internal void End(SearchState state)
