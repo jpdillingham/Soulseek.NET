@@ -17,6 +17,7 @@
 
 namespace Soulseek.NET
 {
+    using Soulseek.NET.Common;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Messaging.Responses;

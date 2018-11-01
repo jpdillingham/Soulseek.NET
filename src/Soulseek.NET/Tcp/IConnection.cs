@@ -1,6 +1,7 @@
 ﻿
 namespace Soulseek.NET.Tcp
 {
+    using Soulseek.NET.Common;
     using System;
     using System.Threading.Tasks;
 
