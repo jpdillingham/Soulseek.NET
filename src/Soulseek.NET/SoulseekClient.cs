@@ -220,7 +220,7 @@ namespace Soulseek.NET
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null)
         {
             var search = await StartSearchAsync(searchText, options);
-            var result = await MessageWaiter.Wait(MessageCode.ServerFileSearch, search.Ticket).Task;
+            var result = await MessageWaiter.WaitIndefinitely(MessageCode.ServerFileSearch, search.Ticket).Task;
 
             return (Search)result;
         }
