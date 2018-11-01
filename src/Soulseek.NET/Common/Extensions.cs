@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET
+﻿namespace Soulseek.NET.Common
 {
     using System;
     using System.Collections.Generic;
