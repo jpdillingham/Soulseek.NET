@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Soulseek.NET.Common;
+using System;
 using System.Net;
 
 namespace Soulseek.NET.Messaging.Responses

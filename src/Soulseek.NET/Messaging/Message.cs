@@ -1,5 +1,6 @@
 ﻿namespace Soulseek.NET.Messaging
 {
+    using Soulseek.NET.Common;
     using System;
     using System.Linq;
 
