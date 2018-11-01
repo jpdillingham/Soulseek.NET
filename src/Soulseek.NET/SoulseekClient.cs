@@ -59,6 +59,8 @@ namespace Soulseek.NET
             Connection = new Connection(ConnectionType.Server, Address, Port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnServerConnectionDataReceived;
+
+            MessageWaiter = new MessageWaiter(Options.MessageTimeout);
         }
 
         /// <summary>
@@ -118,7 +120,7 @@ namespace Soulseek.NET
 
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
-        private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
+        private MessageWaiter MessageWaiter { get; set; }
         private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private Random Random { get; set; } = new Random();
