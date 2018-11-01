@@ -351,6 +351,11 @@ namespace Soulseek.NET
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
+            if (ActiveSearch == default(Search))
+            {
+                return;
+            }
+
             var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize)
             {
                 Context = response
@@ -443,7 +448,8 @@ namespace Soulseek.NET
                 connection.Dispose();
                 PeerConnectionsActive.TryRemove(connectToPeerResponse, out var _);
 
-                if (PeerConnectionsQueued.TryDequeue(out var nextConnection))
+                if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections && 
+                    PeerConnectionsQueued.TryDequeue(out var nextConnection))
                 {
                     if (PeerConnectionsActive.TryAdd(nextConnection.Key, nextConnection.Value))
                     {
@@ -455,10 +461,10 @@ namespace Soulseek.NET
 
         private void OnSearchEnded(object sender, SearchCompletedEventArgs e)
         {
-            // todo: figure out why this doesn't clear the queue and kill active connections
+            ActiveSearch = default(Search);
+
             ClearPeerConnectionsQueued();
             ClearPeerConnectionsActive("Search completed.");
-            ActiveSearch = default(Search);
 
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
             Task.Run(() => SearchEnded?.Invoke(this, e));
