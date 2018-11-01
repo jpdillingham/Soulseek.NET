@@ -8,9 +8,9 @@
 
     public class MessageWaiter
     {
-        public MessageWaiter(int timeout)
+        public MessageWaiter(int defaultTimeout)
         {
-            Timeout = timeout;
+            DefaultTimeout = defaultTimeout;
             TimeoutTimer = new SystemTimer()
             {
                 Enabled = true,
@@ -21,7 +21,7 @@
             TimeoutTimer.Elapsed += CompleteExpiredWaits;
         }
 
-        private int Timeout { get; set; }
+        private int DefaultTimeout { get; set; }
         private SystemTimer TimeoutTimer { get; set; }
         private ConcurrentDictionary<object, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<object, ConcurrentQueue<PendingWait>>();
 
@@ -43,13 +43,40 @@
             }
         }
 
-        public TaskCompletionSource<object> Wait(MessageCode code, object token = null)
+        public TaskCompletionSource<object> WaitIndefinitely(MessageCode code)
+        {
+            return Wait(code, null, 2147483647);
+        }
+
+        public TaskCompletionSource<object> WaitIndefinitely(MessageCode code, object token)
+        {
+            return Wait(code, token, 2147483647);
+        }
+
+        public TaskCompletionSource<object> Wait(MessageCode code)
+        {
+            return Wait(code, null, DefaultTimeout);
+        }
+
+        public TaskCompletionSource<object> Wait(MessageCode code, int timeout)
+        {
+            return Wait(code, null, timeout);
+        }
+
+        public TaskCompletionSource<object> Wait(MessageCode code, object token)
+        {
+            return Wait(code, token, DefaultTimeout);
+        }
+
+        public TaskCompletionSource<object> Wait(MessageCode code, object token, int timeout)
         {
             var key = GetKey(code, token);
+
             var wait = new PendingWait()
             {
                 TaskCompletionSource = new TaskCompletionSource<object>(),
                 DateTime = DateTime.UtcNow,
+                TimeoutAfter = timeout,
             };
 
             Waits.AddOrUpdate(key, new ConcurrentQueue<PendingWait>(new[] { wait }), (_, queue) =>
@@ -65,12 +92,12 @@
         {
             foreach (var queue in Waits)
             {
-                if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(Timeout) < DateTime.UtcNow)
+                if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
                 {
                     if (queue.Value.TryDequeue(out var timedOutWait))
                     {
                         var code = ((Tuple<MessageCode, object>)queue.Key).Item1;
-                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {code} timed out after {Timeout} seconds."));
+                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {code} timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
                 }
             }
@@ -85,6 +112,7 @@
         {
             public DateTime DateTime { get; set; }
             public TaskCompletionSource<object> TaskCompletionSource { get; set; }
+            public int TimeoutAfter { get; set; }
         }
     }
 }
