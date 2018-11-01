@@ -182,4 +182,24 @@
         {
         }
     }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageTimeoutException : MessageException
+    {
+        public MessageTimeoutException()
+            : base()
+        {
+        }
+
+        public MessageTimeoutException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageTimeoutException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
