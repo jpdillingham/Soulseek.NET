@@ -133,8 +133,7 @@ namespace Soulseek.NET.Messaging
                     {
                         if (queue.Value.TryDequeue(out var timedOutWait))
                         {
-                            dynamic tcs = timedOutWait.TaskCompletionSource;
-                            tcs.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
+                            timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
                         }
                     }
                 }
@@ -160,7 +159,7 @@ namespace Soulseek.NET.Messaging
         private class PendingWait
         {
             public DateTime DateTime { get; set; }
-            public object TaskCompletionSource { get; set; }
+            public dynamic TaskCompletionSource { get; set; }
             public int TimeoutAfter { get; set; }
         }
     }
