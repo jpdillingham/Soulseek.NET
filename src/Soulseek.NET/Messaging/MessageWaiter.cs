@@ -133,7 +133,8 @@ namespace Soulseek.NET.Messaging
                     {
                         if (queue.Value.TryDequeue(out var timedOutWait))
                         {
-                            ((TaskCompletionSource)timedOutWait.TaskCompletionSource).SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
+                            dynamic tcs = timedOutWait.TaskCompletionSource;
+                            tcs.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
                         }
                     }
                 }
