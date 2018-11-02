@@ -23,7 +23,7 @@
 
         private int DefaultTimeout { get; set; }
         private SystemTimer TimeoutTimer { get; set; }
-        private ConcurrentDictionary<object, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<object, ConcurrentQueue<PendingWait>>();
+        private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
         internal void Complete(MessageCode code, object result)
         {
@@ -96,16 +96,21 @@
                 {
                     if (queue.Value.TryDequeue(out var timedOutWait))
                     {
-                        var code = ((Tuple<MessageCode, object>)queue.Key).Item1;
-                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {code} timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
                 }
             }
         }
 
-        private object GetKey(MessageCode code, object token)
+        private WaitKey GetKey(MessageCode code, object token)
         {
-            return new Tuple<MessageCode, object>(code, token);
+            return new WaitKey() { Code = code, Token = token };
+        }
+
+        private struct WaitKey
+        {
+            public MessageCode Code;
+            public object Token;
         }
 
         private class PendingWait
