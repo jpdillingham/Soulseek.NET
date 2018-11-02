@@ -191,24 +191,24 @@ namespace Soulseek.NET
         {
             var request = new LoginRequest(username, password);
 
-            var login = MessageWaiter.Wait(MessageCode.ServerLogin).Task;
-            var roomList = MessageWaiter.Wait(MessageCode.ServerRoomList).Task;
-            var parentMinSpeed = MessageWaiter.Wait(MessageCode.ServerParentMinSpeed).Task;
-            var parentSpeedRatio = MessageWaiter.Wait(MessageCode.ServerParentSpeedRatio).Task;
-            var wishlistInterval = MessageWaiter.Wait(MessageCode.ServerWishlistInterval).Task;
-            var privilegedUsers = MessageWaiter.Wait(MessageCode.ServerPrivilegedUsers).Task;
+            var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
+            var roomList = MessageWaiter.Wait<IEnumerable<Room>>(MessageCode.ServerRoomList);
+            var parentMinSpeed = MessageWaiter.Wait<int>(MessageCode.ServerParentMinSpeed);
+            var parentSpeedRatio = MessageWaiter.Wait<int>(MessageCode.ServerParentSpeedRatio);
+            var wishlistInterval = MessageWaiter.Wait<int>(MessageCode.ServerWishlistInterval);
+            var privilegedUsers = MessageWaiter.Wait<IEnumerable<string>>(MessageCode.ServerPrivilegedUsers);
 
             await Connection.SendAsync(request.ToMessage().ToByteArray());
 
             Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
 
-            Server.Rooms = (IEnumerable<Room>)roomList.Result;
-            Server.ParentMinSpeed = ((int)parentMinSpeed.Result);
-            Server.ParentSpeedRatio = ((int)parentSpeedRatio.Result);
-            Server.WishlistInterval = ((int)wishlistInterval.Result);
-            Server.PrivilegedUsers = (IEnumerable<string>)privilegedUsers.Result;
+            Server.Rooms = roomList.Result;
+            Server.ParentMinSpeed = parentMinSpeed.Result;
+            Server.ParentSpeedRatio = parentSpeedRatio.Result;
+            Server.WishlistInterval = wishlistInterval.Result;
+            Server.PrivilegedUsers = privilegedUsers.Result;
 
-            return (LoginResponse)login.Result;
+            return login.Result;
         }
 
         /// <summary>
@@ -220,9 +220,9 @@ namespace Soulseek.NET
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null)
         {
             var search = await StartSearchAsync(searchText, options);
-            var result = await MessageWaiter.WaitIndefinitely(MessageCode.ServerFileSearch, search.Ticket).Task;
+            var result = await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, search.Ticket);
 
-            return (Search)result;
+            return result;
         }
 
         /// <summary>
@@ -265,11 +265,11 @@ namespace Soulseek.NET
                 throw new SearchException($"The requested search has already completed.");
             }
 
-            var wait = MessageWaiter.Wait(MessageCode.ServerFileSearch, ActiveSearch.Ticket);
+            var wait = MessageWaiter.Wait<Search>(MessageCode.ServerFileSearch, ActiveSearch.Ticket);
             ActiveSearch.Stop();
-            var result = await wait.Task;
+            var result = await wait;
 
-            return (Search)result;
+            return result;
         }
 
         protected virtual void Dispose(bool disposing)

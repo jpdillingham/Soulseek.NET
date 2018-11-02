@@ -60,12 +60,12 @@ namespace Soulseek.NET.Messaging
         private SystemTimer TimeoutTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
-        internal void Complete(MessageCode code, object result)
+        internal void Complete<T>(MessageCode code, T result)
         {
             Complete(code, null, result);
         }
 
-        internal void Complete(MessageCode code, object token, object result)
+        internal void Complete<T>(MessageCode code, object token, T result)
         {
             var key = GetKey(code, token);
 
@@ -73,33 +73,33 @@ namespace Soulseek.NET.Messaging
             {
                 if (queue.TryDequeue(out var wait))
                 {
-                    wait.TaskCompletionSource.SetResult(result);
+                    ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
                 }
             }
         }
 
-        internal TaskCompletionSource<object> Wait(MessageCode code)
+        internal Task<T> Wait<T>(MessageCode code)
         {
-            return Wait(code, null, DefaultTimeout);
+            return Wait<T>(code, null, DefaultTimeout);
         }
 
-        internal TaskCompletionSource<object> Wait(MessageCode code, int timeout)
+        internal Task<T> Wait<T>(MessageCode code, int timeout)
         {
-            return Wait(code, null, timeout);
+            return Wait<T>(code, null, timeout);
         }
 
-        internal TaskCompletionSource<object> Wait(MessageCode code, object token)
+        internal Task<T> Wait<T>(MessageCode code, object token)
         {
-            return Wait(code, token, DefaultTimeout);
+            return Wait<T>(code, token, DefaultTimeout);
         }
 
-        internal TaskCompletionSource<object> Wait(MessageCode code, object token, int timeout)
+        internal Task<T> Wait<T>(MessageCode code, object token, int timeout)
         {
             var key = GetKey(code, token);
 
             var wait = new PendingWait()
             {
-                TaskCompletionSource = new TaskCompletionSource<object>(),
+                TaskCompletionSource = new TaskCompletionSource<T>(),
                 DateTime = DateTime.UtcNow,
                 TimeoutAfter = timeout,
             };
@@ -110,17 +110,17 @@ namespace Soulseek.NET.Messaging
                 return queue;
             });
 
-            return wait.TaskCompletionSource;
+            return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
         }
 
-        internal TaskCompletionSource<object> WaitIndefinitely(MessageCode code)
+        internal Task<T> WaitIndefinitely<T>(MessageCode code)
         {
-            return Wait(code, null, 2147483647);
+            return Wait<T>(code, null, 2147483647);
         }
 
-        internal TaskCompletionSource<object> WaitIndefinitely(MessageCode code, object token)
+        internal Task<T> WaitIndefinitely<T>(MessageCode code, object token)
         {
-            return Wait(code, token, 2147483647);
+            return Wait<T>(code, token, 2147483647);
         }
 
         private void CompleteExpiredWaits(object sender, object e)
@@ -131,7 +131,7 @@ namespace Soulseek.NET.Messaging
                 {
                     if (queue.Value.TryDequeue(out var timedOutWait))
                     {
-                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        //timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
                 }
             }
@@ -151,7 +151,7 @@ namespace Soulseek.NET.Messaging
         private class PendingWait
         {
             public DateTime DateTime { get; set; }
-            public TaskCompletionSource<object> TaskCompletionSource { get; set; }
+            public object TaskCompletionSource { get; set; }
             public int TimeoutAfter { get; set; }
         }
     }
