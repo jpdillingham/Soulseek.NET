@@ -6,9 +6,9 @@
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
-    public class MessageWaiter
+    internal class MessageWaiter
     {
-        public MessageWaiter(int defaultTimeout)
+        internal MessageWaiter(int defaultTimeout)
         {
             DefaultTimeout = defaultTimeout;
             TimeoutTimer = new SystemTimer()
@@ -25,12 +25,12 @@
         private SystemTimer TimeoutTimer { get; set; }
         private ConcurrentDictionary<object, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<object, ConcurrentQueue<PendingWait>>();
 
-        public void Complete(MessageCode code, object result)
+        internal void Complete(MessageCode code, object result)
         {
             Complete(code, null, result);
         }
 
-        public void Complete(MessageCode code, object token, object result)
+        internal void Complete(MessageCode code, object token, object result)
         {
             var key = GetKey(code, token);
 
@@ -43,32 +43,22 @@
             }
         }
 
-        public TaskCompletionSource<object> WaitIndefinitely(MessageCode code)
-        {
-            return Wait(code, null, 2147483647);
-        }
-
-        public TaskCompletionSource<object> WaitIndefinitely(MessageCode code, object token)
-        {
-            return Wait(code, token, 2147483647);
-        }
-
-        public TaskCompletionSource<object> Wait(MessageCode code)
+        internal TaskCompletionSource<object> Wait(MessageCode code)
         {
             return Wait(code, null, DefaultTimeout);
         }
 
-        public TaskCompletionSource<object> Wait(MessageCode code, int timeout)
+        internal TaskCompletionSource<object> Wait(MessageCode code, int timeout)
         {
             return Wait(code, null, timeout);
         }
 
-        public TaskCompletionSource<object> Wait(MessageCode code, object token)
+        internal TaskCompletionSource<object> Wait(MessageCode code, object token)
         {
             return Wait(code, token, DefaultTimeout);
         }
 
-        public TaskCompletionSource<object> Wait(MessageCode code, object token, int timeout)
+        internal TaskCompletionSource<object> Wait(MessageCode code, object token, int timeout)
         {
             var key = GetKey(code, token);
 
@@ -86,6 +76,16 @@
             });
 
             return wait.TaskCompletionSource;
+        }
+
+        internal TaskCompletionSource<object> WaitIndefinitely(MessageCode code)
+        {
+            return Wait(code, null, 2147483647);
+        }
+
+        internal TaskCompletionSource<object> WaitIndefinitely(MessageCode code, object token)
+        {
+            return Wait(code, token, 2147483647);
         }
 
         private void CompleteExpiredWaits(object sender, object e)
