@@ -125,16 +125,24 @@ namespace Soulseek.NET.Messaging
 
         private void CompleteExpiredWaits(object sender, object e)
         {
-            foreach (var queue in Waits)
+            try
             {
-                if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
+                foreach (var queue in Waits)
                 {
-                    if (queue.Value.TryDequeue(out var timedOutWait))
+                    if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
                     {
-                        //timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        if (queue.Value.TryDequeue(out var timedOutWait))
+                        {
+                            ((TaskCompletionSource)timedOutWait.TaskCompletionSource).SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        }
                     }
                 }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
         }
 
         private WaitKey GetKey(MessageCode code, object token)
