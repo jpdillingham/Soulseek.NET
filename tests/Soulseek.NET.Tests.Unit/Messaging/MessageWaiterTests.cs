@@ -21,6 +21,8 @@
             Assert.Null(ex);
             Assert.NotNull(t);
             Assert.Equal(defaultConst, t.DefaultTimeout);
+
+            t.Dispose();
         }
 
         [Trait("Category", "Instantiation")]
@@ -35,6 +37,8 @@
             Assert.Null(ex);
             Assert.NotNull(t);
             Assert.Equal(timeout, t.DefaultTimeout);
+
+            t.Dispose();
         }
 
         [Trait("Category", "Wait Creation")]
@@ -72,6 +76,38 @@
                 {
                     Assert.Equal(timeout, wait.TimeoutAfter);
                 }
+            }
+        }
+
+        [Trait("Category", "Wait Creation")]
+        [Fact(DisplayName = "WaitIndefinitely invocation creates Wait with max timeout")]
+        public void WaitIndefinitely_Invocation_Creates_Wait_With_Max_Timeout()
+        {
+            var key = new WaitKey() { Code = MessageCode.ServerLogin };
+
+            using (var waiter = new MessageWaiter())
+            {
+                var maxConst = waiter.GetNonPublicStaticField<int>("maxTimeout");
+
+                Task<object> task = waiter.WaitIndefinitely<object>(key.Code, key.Token);
+
+                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.IsType<Task<object>>(task);
+                Assert.NotNull(task);
+                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Single(queue);
+
+                Assert.NotNull(wait);
+                Assert.NotEqual(new DateTime(), wait.DateTime);
+                Assert.Equal(maxConst, wait.TimeoutAfter);
             }
         }
 
