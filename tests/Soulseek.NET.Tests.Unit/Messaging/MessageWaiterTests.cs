@@ -1,5 +1,6 @@
 ﻿namespace Soulseek.NET.Tests.Unit.Messaging
 {
+    using Soulseek.NET.Common;
     using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Concurrent;
@@ -111,6 +112,65 @@
             }
         }
 
+        [Trait("Category", "Wait Timeout")]
+        [Fact(DisplayName = "Wait throws and is dequeued when timing out")]
+        public void Wait_Throws_And_Is_Dequeued_When_Timing_out()
+        {
+            var key = new WaitKey() { Code = MessageCode.ServerLogin };
+
+            using (var waiter = new MessageWaiter(0))
+            {
+                Task<object> task = waiter.Wait<object>(key.Code);
+                object result = null;
+
+                var ex = Record.Exception(() => result = task.Result);
+
+                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.NotNull(ex);
+                Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Empty(queue);
+            }
+        }
+
+        [Trait("Category", "Wait Timeout")]
+        [Fact(DisplayName = "Expiration ignores non-timed out waits")]
+        public void Expiration_Ignores_Non_Timed_Out_Waits()
+        {
+            var key = new WaitKey() { Code = MessageCode.ServerLogin };
+
+            using (var waiter = new MessageWaiter(0))
+            {
+                Task<object> task = waiter.Wait<object>(key.Code);
+                Task<object> tast2 = waiter.Wait<object>(key.Code, null, 30);
+                object result = null;
+
+                var ex = Record.Exception(() => result = task.Result);
+
+                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.NotNull(ex);
+                Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Single(queue);
+            }
+        }
+
         [Trait("Category", "Wait Creation")]
         [Fact(DisplayName = "Wait for subsequent MessageCode enqueues Wait")]
         public void Wait_For_Subsequent_MessageCode_Enqueues_Wait()
@@ -138,6 +198,42 @@
 
                 Assert.NotNull(queue);
                 Assert.Equal(2, queue.Count);
+            }
+        }
+
+        [Trait("Category", "Wait Completion")]
+        [Fact(DisplayName = "Complete for missing wait does not throw")]
+        public void Complete_For_Missing_Wait_Does_Not_Throw()
+        {
+            using (var waiter = new MessageWaiter())
+            {
+                var ex = Record.Exception(() => waiter.Complete<object>(MessageCode.ServerAddPrivilegedUser, null));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Wait Completion")]
+        [Fact(DisplayName = "Complete dequeues wait")]
+        public void Complete_Dequeues_Wait()
+        {
+            using (var waiter = new MessageWaiter())
+            {
+                var result = Guid.NewGuid();
+                var task = waiter.Wait<Guid>(MessageCode.ServerLogin);
+                waiter.Complete(MessageCode.ServerLogin, result);
+
+                var waitResult = task.Result;
+
+                var key = new WaitKey() { Code = MessageCode.ServerLogin };
+
+                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+                
+                Assert.NotNull(queue);
+                Assert.Empty(queue);
+                Assert.Null(wait);
             }
         }
     }
