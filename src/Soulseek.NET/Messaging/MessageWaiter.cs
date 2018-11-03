@@ -99,41 +99,6 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Adds a new wait for the specified <paramref name="messageCode"/>.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <returns>A Task representing the wait.</returns>
-        internal Task<T> Wait<T>(MessageCode messageCode)
-        {
-            return Wait<T>(messageCode, null, DefaultTimeout);
-        }
-
-        /// <summary>
-        ///     Adds a new wait for the specified <paramref name="messageCode"/> and with the specified <paramref name="timeout"/>.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="timeout">The wait timeout.</param>
-        /// <returns>A Task representing the wait.</returns>
-        internal Task<T> Wait<T>(MessageCode code, int timeout)
-        {
-            return Wait<T>(code, null, timeout);
-        }
-
-        /// <summary>
-        ///     Adds a new wait for the specified <paramref name="messageCode"/> and <paramref name="token"/>.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="token">A unique token for the wait.</param>
-        /// <returns>A Task representing the wait.</returns>
-        internal Task<T> Wait<T>(MessageCode code, object token)
-        {
-            return Wait<T>(code, token, DefaultTimeout);
-        }
-
-        /// <summary>
         ///     Adds a new wait for the specified <paramref name="messageCode"/> and <paramref name="token"/> and with the
         ///     specified <paramref name="timeout"/>.
         /// </summary>
@@ -142,15 +107,17 @@ namespace Soulseek.NET.Messaging
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="timeout">The wait timeout.</param>
         /// <returns>A Task representing the wait.</returns>
-        internal Task<T> Wait<T>(MessageCode code, object token, int timeout)
+        internal Task<T> Wait<T>(MessageCode code, object token = null, int? timeout = null)
         {
+            timeout = timeout ?? DefaultTimeout;
+
             var key = new WaitKey() { Code = code, Token = token };
 
             var wait = new PendingWait()
             {
                 TaskCompletionSource = new TaskCompletionSource<T>(),
                 DateTime = DateTime.UtcNow,
-                TimeoutAfter = timeout,
+                TimeoutAfter = (int)timeout,
             };
 
             Waits.AddOrUpdate(key, new ConcurrentQueue<PendingWait>(new[] { wait }), (_, queue) =>
