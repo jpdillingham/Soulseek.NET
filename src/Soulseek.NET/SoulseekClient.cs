@@ -402,7 +402,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerRoomList:
-                    //MessageWaiter.Complete(message.Code, RoomList.Parse(message));
+                    MessageWaiter.Complete(message.Code, RoomList.Parse(message));
                     break;
 
                 case MessageCode.ServerPrivilegedUsers:
