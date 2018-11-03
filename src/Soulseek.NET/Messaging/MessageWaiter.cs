@@ -60,14 +60,27 @@ namespace Soulseek.NET.Messaging
         private SystemTimer TimeoutTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
-        internal void Complete<T>(MessageCode code, T result)
+        /// <summary>
+        ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="result">The wait result.</param>
+        internal void Complete<T>(MessageCode messageCode, T result)
         {
-            Complete(code, null, result);
+            Complete(messageCode, null, result);
         }
 
-        internal void Complete<T>(MessageCode code, object token, T result)
+        /// <summary>
+        ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> and <paramref name="token"/> with
+        ///     the specified <paramref name="result"/>.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="result">The wait result.</param>
+        internal void Complete<T>(MessageCode messageCode, object token, T result)
         {
-            var key = GetKey(code, token);
+            var key = new WaitKey() { Code = messageCode, Token = token };
 
             if (Waits.TryGetValue(key, out var queue))
             {
@@ -78,24 +91,53 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        internal Task<T> Wait<T>(MessageCode code)
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="messageCode"/>.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <returns>A Task representing the wait.</returns>
+        internal Task<T> Wait<T>(MessageCode messageCode)
         {
-            return Wait<T>(code, null, DefaultTimeout);
+            return Wait<T>(messageCode, null, DefaultTimeout);
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="messageCode"/> and with the specified <paramref name="timeout"/>.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="timeout">The wait timeout.</param>
+        /// <returns>A Task representing the wait.</returns>
         internal Task<T> Wait<T>(MessageCode code, int timeout)
         {
             return Wait<T>(code, null, timeout);
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="messageCode"/> and <paramref name="token"/>.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="token">A unique token for the wait.</param>
+        /// <returns>A Task representing the wait.</returns>
         internal Task<T> Wait<T>(MessageCode code, object token)
         {
             return Wait<T>(code, token, DefaultTimeout);
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="messageCode"/> and <paramref name="token"/> and with the
+        ///     specified <paramref name="timeout"/>.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="token">A unique token for the wait.</param>
+        /// <param name="timeout">The wait timeout.</param>
+        /// <returns>A Task representing the wait.</returns>
         internal Task<T> Wait<T>(MessageCode code, object token, int timeout)
         {
-            var key = GetKey(code, token);
+            var key = new WaitKey() { Code = code, Token = token };
 
             var wait = new PendingWait()
             {
@@ -113,11 +155,24 @@ namespace Soulseek.NET.Messaging
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="messageCode"/> which does not time out.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <returns>A Task representing the wait.</returns>
         internal Task<T> WaitIndefinitely<T>(MessageCode code)
         {
             return Wait<T>(code, null, 2147483647);
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="messageCode"/> which does not time out.
+        /// </summary>
+        /// <typeparam name="T">The wait result type.</typeparam>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="token">A unique token for the wait.</param>
+        /// <returns>A Task representing the wait.</returns>
         internal Task<T> WaitIndefinitely<T>(MessageCode code, object token)
         {
             return Wait<T>(code, token, 2147483647);
@@ -125,29 +180,18 @@ namespace Soulseek.NET.Messaging
 
         private void CompleteExpiredWaits(object sender, object e)
         {
-            try
+            foreach (var queue in Waits)
             {
-                foreach (var queue in Waits)
+                if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
                 {
-                    if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
+                    if (queue.Value.TryDequeue(out var timedOutWait))
                     {
-                        if (queue.Value.TryDequeue(out var timedOutWait))
-                        {
-                            timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message wait for {queue.Key.Code} ({queue.Key.Token}) timed out after {timedOutWait.TimeoutAfter} seconds."));
-                        }
+                        var token = queue.Key.Token == null ? "" : $"({queue.Key.Token}) ";
+                        var message = $"Message wait for {queue.Key.Code} {token}timed out after {timedOutWait.TimeoutAfter} seconds.";
+                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException(message));
                     }
                 }
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
-            }
-
-        }
-
-        private WaitKey GetKey(MessageCode code, object token)
-        {
-            return new WaitKey() { Code = code, Token = token };
         }
 
         private struct WaitKey
