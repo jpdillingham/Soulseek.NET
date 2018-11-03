@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="MessageWaiter.cs" company="JP Dillingham">
 //     Copyright(C) 2018 JP Dillingham
 //     
 //     This program is free software: you can redistribute it and/or modify
