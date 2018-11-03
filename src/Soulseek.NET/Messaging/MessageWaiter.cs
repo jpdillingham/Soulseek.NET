@@ -26,7 +26,7 @@ namespace Soulseek.NET.Messaging
     /// <summary>
     ///     Enables await-able server messages.
     /// </summary>
-    internal class MessageWaiter
+    internal class MessageWaiter : IDisposable
     {
         private const int defaultTimeout = 5;
 
@@ -56,9 +56,15 @@ namespace Soulseek.NET.Messaging
             TimeoutTimer.Elapsed += CompleteExpiredWaits;
         }
 
-        private int DefaultTimeout { get; set; }
+        internal int DefaultTimeout { get; private set; }
+        private bool Disposed { get; set; }
         private SystemTimer TimeoutTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
+
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
@@ -176,6 +182,33 @@ namespace Soulseek.NET.Messaging
         internal Task<T> WaitIndefinitely<T>(MessageCode code, object token)
         {
             return Wait<T>(code, token, 2147483647);
+        }
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    TimeoutTimer.Stop();
+                    TimeoutTimer.Dispose();
+
+                    ClearWaits();
+                }
+
+                Disposed = true;
+            }
+        }
+
+        private void ClearWaits()
+        {
+            foreach (var queue in Waits)
+            {
+                while (queue.Value.TryDequeue(out var wait))
+                {
+                    wait.TaskCompletionSource.SetCancelled();
+                }
+            }
         }
 
         private void CompleteExpiredWaits(object sender, object e)
