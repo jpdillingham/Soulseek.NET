@@ -134,20 +134,9 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
         /// <param name="messageCode">The wait message code.</param>
-        /// <returns>A Task representing the wait.</returns>
-        internal Task<T> WaitIndefinitely<T>(MessageCode code)
-        {
-            return Wait<T>(code, null, maxTimeout);
-        }
-
-        /// <summary>
-        ///     Adds a new wait for the specified <paramref name="messageCode"/> which does not time out.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">A unique token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        internal Task<T> WaitIndefinitely<T>(MessageCode code, object token)
+        internal Task<T> WaitIndefinitely<T>(MessageCode code, object token = null)
         {
             return Wait<T>(code, token, maxTimeout);
         }
