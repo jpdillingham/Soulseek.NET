@@ -29,6 +29,7 @@ namespace Soulseek.NET.Messaging
     internal class MessageWaiter : IDisposable
     {
         private const int defaultTimeout = 5;
+        private const int maxTimeout = 2147483647;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageWaiter"/> class with the default timeout.
@@ -169,7 +170,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>A Task representing the wait.</returns>
         internal Task<T> WaitIndefinitely<T>(MessageCode code)
         {
-            return Wait<T>(code, null, 2147483647);
+            return Wait<T>(code, null, maxTimeout);
         }
 
         /// <summary>
@@ -181,7 +182,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>A Task representing the wait.</returns>
         internal Task<T> WaitIndefinitely<T>(MessageCode code, object token)
         {
-            return Wait<T>(code, token, 2147483647);
+            return Wait<T>(code, token, maxTimeout);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -206,7 +207,7 @@ namespace Soulseek.NET.Messaging
             {
                 while (queue.Value.TryDequeue(out var wait))
                 {
-                    wait.TaskCompletionSource.SetCancelled();
+                    wait.TaskCompletionSource.SetCanceled();
                 }
             }
         }
@@ -227,13 +228,13 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        private struct WaitKey
+        internal struct WaitKey
         {
             public MessageCode Code;
             public object Token;
         }
 
-        private class PendingWait
+        internal class PendingWait
         {
             public DateTime DateTime { get; set; }
             public dynamic TaskCompletionSource { get; set; }
