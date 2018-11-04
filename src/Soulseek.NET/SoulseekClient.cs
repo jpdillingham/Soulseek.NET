@@ -170,6 +170,39 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
+        private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
+        {
+            var request = new GetPeerAddressRequest(username);
+            await Connection.SendAsync(request.ToMessage().ToByteArray());
+
+            return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
+        }
+
+        public async Task<bool> Download(string username, string filename)
+        {
+            var address = await GetPeerAddressAsync(username);
+
+            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port + 1);
+            peerConnection.DataReceived += OnPeerConnectionDataReceived;
+            peerConnection.StateChanged += OnPeerConnectionStateChanged;
+
+            try
+            {
+                await peerConnection.ConnectAsync();
+
+                var request = new PierceFirewallRequest(1);
+                await peerConnection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+
+                await peerConnection.SendAsync(new PeerTransferRequest(0, new Random().Next(), "test").ToMessage().ToByteArray());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}");
+            }
+
+            return true;
+        }
+
         /// <summary>
         ///     Logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
@@ -389,6 +422,8 @@ namespace Soulseek.NET
 
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
+            Console.WriteLine($"[MESSAGE]: {message.Code}");
+
             switch (message.Code)
             {
                 case MessageCode.ServerParentMinSpeed:
@@ -417,6 +452,11 @@ namespace Soulseek.NET
                     await HandlePrivateMessage(PrivateMessage.Parse(message), e);
                     break;
 
+                case MessageCode.ServerGetPeerAddress:
+                    var response = GetPeerAddressResponse.Parse(message);
+                    MessageWaiter.Complete(message.Code, response.Username, response);
+                    break;
+
                 default:
                     Console.WriteLine($"Unknown message: [{e.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
@@ -426,6 +466,8 @@ namespace Soulseek.NET
         private void OnPeerConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             var message = new Message(e.Data);
+
+            Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
 
             switch (message.Code)
             {
@@ -444,6 +486,7 @@ namespace Soulseek.NET
 
         private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
+            Console.WriteLine($"Peer connection state changed: {e.Address} {e.State}");
             if (e.State == ConnectionState.Disconnected &&
                 sender is Connection connection &&
                 connection.Context is ConnectToPeerResponse connectToPeerResponse)
