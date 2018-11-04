@@ -34,6 +34,14 @@
                     if (cmd == "stop")
                     {
                         client.Disconnect("User requested Disconnect");
+                        return;
+                    }
+                    else if (cmd.StartsWith("download"))
+                    {
+                        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
+                        var result = await client.Download(peer, "test");
+                        Console.WriteLine(JsonConvert.SerializeObject(result));
+                        continue;
                     }
                     else if (cmd.StartsWith("search-lazy"))
                     {
@@ -45,12 +53,14 @@
 
                         ActiveSearch = await client.StartSearchAsync(ActiveSearchText);
                         Console.WriteLine($"Search started.");
+                        continue;
                     }
                     else if (cmd.StartsWith("search-stop"))
                     {
                         var ended = await client.StopSearchAsync(ActiveSearch);
 
                         Console.WriteLine($"Search complete.  {ended.Responses.Count()}");
+                        continue;
                     }
                     else if (cmd.StartsWith("search"))
                     {
@@ -67,13 +77,14 @@
                         //ActiveSearchTicket = search.Ticket;
                         var result = await client.SearchAsync(ActiveSearchText, new SearchOptions()
                         {
-                            FilterFiles = true,
-                            IncludeConstantBitRate = false,
-                            FileLimit = 100,
+                            FilterFiles = false,
+                            FilterResponses = false,
+                            FileLimit = 100000,
                         });
                         //search.Start();
 
                         Console.WriteLine($"Search complete.  {result.Responses.Count()}");
+                        continue;
                     }
                     else
                     {
