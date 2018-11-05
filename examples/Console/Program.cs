@@ -43,6 +43,13 @@
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
                     }
+                    else if (cmd.StartsWith("browse"))
+                    {
+                        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
+                        var result = await client.Browse(peer);
+                        Console.WriteLine(JsonConvert.SerializeObject(result));
+                        continue;
+                    }
                     else if (cmd.StartsWith("search-lazy"))
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
@@ -132,7 +139,7 @@
 
         private static void DisplayInfo(PeerInfo peers)
         {
-            Console.WriteLine($"███ Queued: {peers.Queued}, Active: {peers.Active}, Connecting: {peers.Connecting}, Connected: {peers.Connected}, Disconnecting: {peers.Disconnecting}, Disconnected: {peers.Disconnected}");
+            //Console.WriteLine($"███ Queued: {peers.Queued}, Active: {peers.Active}, Connecting: {peers.Connecting}, Connected: {peers.Connected}, Disconnecting: {peers.Disconnecting}, Disconnected: {peers.Disconnected}");
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
