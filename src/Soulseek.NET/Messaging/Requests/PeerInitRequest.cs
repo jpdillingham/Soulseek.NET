@@ -19,6 +19,7 @@
                 .Code(0x1)
                 .WriteString(Username)
                 .WriteString(TransferType)
+                .WriteInteger(300)
                 .WriteInteger(Token)
                 .Build()
                 .ToByteArray();
