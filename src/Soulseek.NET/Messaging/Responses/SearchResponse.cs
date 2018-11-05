@@ -64,7 +64,8 @@
                         Type = (FileAttributeType)reader.ReadInteger(),
                         Value = reader.ReadInteger()
                     };
-                    ((List<FileAttribute>)file.Attributes).Add(attribute);
+
+                    file.AttributeList.Add(attribute);
                 }
 
                 files.Add(file);

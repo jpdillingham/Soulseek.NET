@@ -10,7 +10,9 @@
         public long Size { get; internal set; }
         public string Extension { get; internal set; }
         public int AttributeCount { get; internal set; }
-        public IEnumerable<FileAttribute> Attributes { get; internal set; } = new List<FileAttribute>();
+        public IEnumerable<FileAttribute> Attributes => AttributeList.AsReadOnly();
+
+        internal List<FileAttribute> AttributeList { get; set; } = new List<FileAttribute>();
 
         internal File()
         {
@@ -18,7 +20,7 @@
 
         public int? GetAttributeValue(FileAttributeType type)
         {
-            return Attributes.Where(a => a.Type == type).SingleOrDefault()?.Value;
+            return AttributeList.Where(a => a.Type == type).SingleOrDefault()?.Value;
         }
     }
 }

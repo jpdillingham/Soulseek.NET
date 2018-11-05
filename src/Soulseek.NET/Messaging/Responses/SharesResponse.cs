@@ -3,7 +3,6 @@
     using Soulseek.NET.Common;
     using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     public sealed class SharesResponse
     {
@@ -66,7 +65,8 @@
                             Type = (FileAttributeType)reader.ReadInteger(),
                             Value = reader.ReadInteger()
                         };
-                        ((List<FileAttribute>)file.Attributes).Add(attribute);
+
+                        file.AttributeList.Add(attribute);
                     }
 
                     dir.FileList.Add(file);
