@@ -182,7 +182,9 @@ namespace Soulseek.NET
         {
             var address = await GetPeerAddressAsync(username);
 
-            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port + 1);
+            Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
+
+            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port);
             peerConnection.DataReceived += OnPeerConnectionDataReceived;
             peerConnection.StateChanged += OnPeerConnectionStateChanged;
 
@@ -190,14 +192,39 @@ namespace Soulseek.NET
             {
                 await peerConnection.ConnectAsync();
 
-                var request = new PierceFirewallRequest(1);
-                await peerConnection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-
-                await peerConnection.SendAsync(new PeerTransferRequest(0, new Random().Next(), "test").ToMessage().ToByteArray());
+                var token = new Random().Next();
+                await peerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToByteArray(), suppressCodeNormalization: true);
+                await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray());
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}");
+            }
+
+            return true;
+        }
+
+        public async Task<bool> Browse(string username)
+        {
+            var address = await GetPeerAddressAsync(username);
+
+            Console.WriteLine($"[BROWSE]: {username} {address.IPAddress}:{address.Port}");
+
+            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port);
+            peerConnection.DataReceived += OnPeerConnectionDataReceived;
+            peerConnection.StateChanged += OnPeerConnectionStateChanged;
+
+            try
+            {
+                await peerConnection.ConnectAsync();
+
+                var token = new Random().Next();
+                await peerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToByteArray(), suppressCodeNormalization: true);
+                await peerConnection.SendAsync(new PeerSharesRequest().ToByteArray());
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to browse {username}: {ex.Message}");
             }
 
             return true;
@@ -387,12 +414,14 @@ namespace Soulseek.NET
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
+            Console.WriteLine($"[CONNECT TO PEER]: {response.Username}");
+
             if (ActiveSearch == default(Search))
             {
                 return;
             }
 
-            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize)
+            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port, 15, 15, Options.BufferSize)
             {
                 Context = response
             };
@@ -532,11 +561,14 @@ namespace Soulseek.NET
             {
                 await connection.ConnectAsync();
 
+                Console.WriteLine($"[PIERCE FIREWALL]: {response.Username}/{response.IPAddress}:{response.Port} Token: {response.Token}");
+
                 var request = new PierceFirewallRequest(response.Token);
                 await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
             }
             catch (ConnectionException ex)
             {
+                Console.WriteLine(ex);
                 connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
             }
         }
