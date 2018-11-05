@@ -22,6 +22,7 @@
             {
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
+                client.BrowseResponseReceived += Client_BrowseResponseReceived;
 
                 await client.ConnectAsync();
 
@@ -112,6 +113,11 @@
                     }
                 }
             }
+        }
+
+        private static void Client_BrowseResponseReceived(object sender, BrowseResponseReceivedEventArgs e)
+        {
+            Console.WriteLine(JsonConvert.SerializeObject(e.Response));
         }
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
