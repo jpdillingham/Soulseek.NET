@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET
 {
 
     public sealed class Room

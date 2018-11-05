@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET
 {
     using System.Collections.Generic;
     using System.Linq;
