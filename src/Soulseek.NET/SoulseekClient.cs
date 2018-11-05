@@ -89,6 +89,11 @@ namespace Soulseek.NET
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         /// <summary>
+        ///     Occurs when a new browse response is received.
+        /// </summary>
+        public event EventHandler<BrowseResponseReceivedEventArgs> BrowseResponseReceived;
+
+        /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
         public string Address { get; set; }
@@ -406,6 +411,14 @@ namespace Soulseek.NET
             }
         }
 
+        private void HandlePeerSharesResponse(SharesResponse response, NetworkEventArgs e)
+        {
+            if (response != null)
+            {
+                BrowseResponseReceived?.Invoke(this, new BrowseResponseReceivedEventArgs(e) { Response = response });
+            }
+        }
+
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
@@ -502,6 +515,10 @@ namespace Soulseek.NET
             {
                 case MessageCode.PeerSearchResponse:
                     HandlePeerSearchResponse(SearchResponse.Parse(message), e);
+                    break;
+
+                case MessageCode.PeerSharesResponse:
+                    HandlePeerSharesResponse(SharesResponse.Parse(message), e);
                     break;
 
                 default:
