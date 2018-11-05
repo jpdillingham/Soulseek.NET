@@ -78,15 +78,5 @@
 
             return response;
         }
-
-        public class Directory
-        {
-            public string Directoryname { get; set; }
-            public int FileCount { get; set; }
-            public IEnumerable<File> Files => FileList.AsReadOnly();
-
-            internal List<File> FileList { get; set; } = new List<File>();
-
-        }
     }
 }
