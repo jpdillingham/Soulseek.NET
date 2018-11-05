@@ -17,6 +17,18 @@
         }
     }
 
+    public class BrowseResponseReceivedEventArgs : NetworkEventArgs
+    {
+        public SharesResponse Response { get; set; }
+
+        public BrowseResponseReceivedEventArgs(NetworkEventArgs e)
+        {
+            Address = e.Address;
+            IPAddress = e.IPAddress;
+            Port = e.Port;
+        }
+    }
+
     public class SearchCompletedEventArgs : EventArgs
     {
         public Search Search { get; set; }
