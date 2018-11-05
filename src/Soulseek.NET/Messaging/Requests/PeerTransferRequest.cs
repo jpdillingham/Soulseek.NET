@@ -2,7 +2,7 @@
 { 
     public class PeerTransferRequest
     {
-        public PeerTransferRequest(int direction, int token, string filename, int size = 0)
+        public PeerTransferRequest(TransferDirection direction, int token, string filename, int size = 0)
         {
             Direction = direction;
             Token = token;
@@ -10,7 +10,7 @@
             Size = size;
         }
 
-        public int Direction { get; set; }
+        public TransferDirection Direction { get; set; }
         public int Token { get; set; }
         public string Filename { get; set; }
         public int Size { get; set; }
@@ -19,7 +19,7 @@
         {
             return new MessageBuilder()
                 .Code(MessageCode.PeerTransferRequest)
-                .WriteInteger(Direction)
+                .WriteInteger((int)Direction)
                 .WriteInteger(Token)
                 .WriteString(Filename)
                 .WriteInteger(Size)
