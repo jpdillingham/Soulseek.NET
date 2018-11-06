@@ -23,6 +23,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
+    using static Soulseek.NET.Messaging.MessageWaiter;
 
     public class MessageWaiterTests
     {
