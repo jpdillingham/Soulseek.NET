@@ -4,9 +4,21 @@
     <TargetFramework>netstandard2.0</TargetFramework>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>C:\Users\JP.WHATNET\source\repos\Soulseek.NET\src\Soulseek.NET\Soulseek.NET.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="stylecop.json" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="stylecop.json" />
+  </ItemGroup>
+
   <ItemGroup>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
-    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.0-beta009">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>

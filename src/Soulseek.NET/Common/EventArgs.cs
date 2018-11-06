@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Common
+﻿namespace Soulseek.NET
 {
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Responses;
