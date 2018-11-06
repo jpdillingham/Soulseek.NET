@@ -7,6 +7,7 @@
     using Soulseek.NET.Tcp;
     using System;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class Program
@@ -23,6 +24,7 @@
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
                 client.BrowseResponseReceived += Client_BrowseResponseReceived;
+                client.SearchEnded += Client_SearchEnded;
 
                 await client.ConnectAsync();
 
@@ -74,26 +76,27 @@
                     {
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
-                        //var search = client.CreateSearch(ActiveSearchText);
-                        //search.SearchResponseReceived += Client_SearchResultReceived;
-
-
                         StatusTimer.Interval = 1000;
                         StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
                         StatusTimer.Start();
 
-                        //ActiveSearchTicket = search.Ticket;
-                        var result = await client.SearchAsync(ActiveSearchText, new SearchOptions()
+                        var tcs = new CancellationTokenSource();
+                        var result = default(Search);
+
+                        tcs.CancelAfter(500);
+
+                        result = await client.SearchAsync(ActiveSearchText, new SearchOptions()
                         {
                             FilterFiles = false,
                             FilterResponses = false,
                             FileLimit = 100000,
-                        });
-                        //search.Start();
+                        }, tcs.Token);
 
-                        Console.WriteLine($"Search complete.  {result.Responses.Count()}");
+
+                        Console.WriteLine($"Search complete: {result.State}.  {result?.Responses?.Count()}");
                         continue;
                     }
+
                     else
                     {
                         var r = await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]);
@@ -115,6 +118,11 @@
             }
         }
 
+        private static void Client_SearchEnded(object sender, SearchCompletedEventArgs e)
+        {
+            Console.WriteLine($"[SEARCH ENDED]");
+        }
+
         private static void Client_BrowseResponseReceived(object sender, BrowseResponseReceivedEventArgs e)
         {
             Console.WriteLine(JsonConvert.SerializeObject(e.Response));
@@ -134,7 +142,7 @@
                 t = $"'{ActiveSearchText}' ({ActiveSearchTicket}): ";
             }
 
-            Console.WriteLine($"[SEARCH] {t} {e.Response.FileCount} results from {e.Response.Username}");
+            //Console.WriteLine($"[SEARCH] {t} {e.Response.FileCount} results from {e.Response.Username}");
 
             foreach (var file in e.Response.Files)
             {

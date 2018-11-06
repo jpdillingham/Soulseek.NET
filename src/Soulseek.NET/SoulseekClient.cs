@@ -286,9 +286,17 @@ namespace Soulseek.NET
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             var search = await StartSearchAsync(searchText, options);
-            var result = await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, search.Ticket, cancellationToken);
 
-            return result;
+            try
+            {
+                search = await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, search.Ticket, cancellationToken);
+            }
+            catch (MessageCancelledException)
+            {
+                search.End(SearchState.Stopped);
+            }
+
+            return search;
         }
 
         /// <summary>
