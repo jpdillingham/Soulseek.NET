@@ -21,7 +21,6 @@ namespace Soulseek.NET.Messaging
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Common;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
