@@ -1,27 +1,27 @@
 ﻿// <copyright file="MessageWaiter.cs" company="JP Dillingham">
-//     Copyright(C) 2018 JP Dillingham
-//     
+//     Copyright (c) JP Dillingham. All rights reserved.
+//
 //     This program is free software: you can redistribute it and/or modify
 //     it under the terms of the GNU General Public License as published by
 //     the Free Software Foundation, either version 3 of the License, or
 //     (at your option) any later version.
-//     
+//
 //     This program is distributed in the hope that it will be useful,
 //     but WITHOUT ANY WARRANTY; without even the implied warranty of
 //     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
 //     GNU General Public License for more details.
-//     
+//
 //     You should have received a copy of the GNU General Public License
-//     along with this program.If not, see<https://www.gnu.org/licenses/>.
+//     along with this program.If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
 namespace Soulseek.NET.Messaging
 {
-    using Soulseek.NET.Common;
     using System;
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Common;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
@@ -29,14 +29,14 @@ namespace Soulseek.NET.Messaging
     /// </summary>
     internal class MessageWaiter : IDisposable
     {
-        private const int defaultTimeout = 5;
-        private const int maxTimeout = 2147483647;
+        private const int DefaultTimeoutValue = 5;
+        private const int MaxTimeout = 2147483647;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageWaiter"/> class with the default timeout.
         /// </summary>
         internal MessageWaiter()
-            : this(defaultTimeout)
+            : this(DefaultTimeoutValue)
         {
         }
 
@@ -145,7 +145,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>A Task representing the wait.</returns>
         internal Task<T> WaitIndefinitely<T>(MessageCode code, object token = null, CancellationToken? cancellationToken = null)
         {
-            return Wait<T>(code, token, maxTimeout, cancellationToken);
+            return Wait<T>(code, token, MaxTimeout, cancellationToken);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -203,13 +203,13 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        internal struct WaitKey
+        private struct WaitKey
         {
             public MessageCode Code;
             public object Token;
         }
 
-        internal class PendingWait
+        private class PendingWait
         {
             public DateTime DateTime { get; set; }
             public dynamic TaskCompletionSource { get; set; }
