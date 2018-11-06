@@ -31,8 +31,10 @@ namespace Soulseek.NET
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
-    public class SoulseekClient : IDisposable
+    public class SoulseekClient : IDisposable, ISoulseekClient
     {
+        #region Public Constructors
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="options"/>.
         /// </summary>
@@ -61,6 +63,10 @@ namespace Soulseek.NET
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
         }
+
+        #endregion Public Constructors
+
+        #region Public Events
 
         /// <summary>
         ///     Occurs when a new browse response is received.
@@ -92,6 +98,10 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        #endregion Public Events
+
+        #region Public Properties
+
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
@@ -122,6 +132,10 @@ namespace Soulseek.NET
         /// </summary>
         public ServerInfo Server { get; private set; } = new ServerInfo();
 
+        #endregion Public Properties
+
+        #region Private Properties
+
         private Search ActiveSearch { get; set; }
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
@@ -129,6 +143,10 @@ namespace Soulseek.NET
         private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private Random Random { get; set; } = new Random();
+
+        #endregion Private Properties
+
+        #region Public Methods
 
         public async Task<bool> Browse(string username)
         {
@@ -338,6 +356,10 @@ namespace Soulseek.NET
             return result;
         }
 
+        #endregion Public Methods
+
+        #region Protected Methods
+
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -357,6 +379,10 @@ namespace Soulseek.NET
                 Disposed = true;
             }
         }
+
+        #endregion Protected Methods
+
+        #region Private Methods
 
         private void ClearPeerConnectionsActive(string disconnectMessage)
         {
@@ -603,5 +629,7 @@ namespace Soulseek.NET
                 connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
             }
         }
+
+        #endregion Private Methods
     }
 }
