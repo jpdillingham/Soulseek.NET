@@ -202,4 +202,24 @@
         {
         }
     }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageCancelledException : MessageException
+    {
+        public MessageCancelledException()
+            : base()
+        {
+        }
+
+        public MessageCancelledException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageCancelledException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
