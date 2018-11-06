@@ -21,6 +21,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
     using static Soulseek.NET.Messaging.MessageWaiter;
@@ -212,6 +213,38 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 Assert.NotNull(ex);
                 Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Empty(queue);
+            }
+        }
+
+        [Trait("Category", "Wait Cancellation")]
+        [Fact(DisplayName = "Wait throws and is dequeued when cancelled")]
+        public void Wait_Throws_And_Is_Dequeued_When_Cancelled()
+        {
+            var tcs = new CancellationTokenSource();
+            tcs.CancelAfter(100);
+
+            var key = new WaitKey() { Code = MessageCode.ServerLogin };
+
+            using (var waiter = new MessageWaiter(0))
+            {
+                Task<object> task = waiter.Wait<object>(key.Code, null, 999999, tcs.Token);
+                object result = null;
+
+                var ex = Record.Exception(() => result = task.Result);
+
+                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.NotNull(ex);
+                Assert.IsType<MessageCancelledException>(ex.InnerException);
                 Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
 
                 Assert.NotEmpty(waits);
