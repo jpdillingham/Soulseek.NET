@@ -20,6 +20,7 @@ namespace Soulseek.NET.Messaging
     using Soulseek.NET.Common;
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
@@ -47,21 +48,24 @@ namespace Soulseek.NET.Messaging
         {
             DefaultTimeout = defaultTimeout;
 
-            TimeoutTimer = new SystemTimer()
+            MonitorTimer = new SystemTimer()
             {
                 Enabled = true,
                 AutoReset = true,
                 Interval = 500,
             };
 
-            TimeoutTimer.Elapsed += CompleteExpiredWaits;
+            MonitorTimer.Elapsed += MonitorWaits;
         }
 
         internal int DefaultTimeout { get; private set; }
         private bool Disposed { get; set; }
-        private SystemTimer TimeoutTimer { get; set; }
+        private SystemTimer MonitorTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
@@ -106,8 +110,9 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="timeout">The wait timeout.</param>
+        /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        internal Task<T> Wait<T>(MessageCode code, object token = null, int? timeout = null)
+        internal Task<T> Wait<T>(MessageCode code, object token = null, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             timeout = timeout ?? DefaultTimeout;
 
@@ -118,6 +123,7 @@ namespace Soulseek.NET.Messaging
                 TaskCompletionSource = new TaskCompletionSource<T>(),
                 DateTime = DateTime.UtcNow,
                 TimeoutAfter = (int)timeout,
+                CancellationToken = cancellationToken,
             };
 
             Waits.AddOrUpdate(key, new ConcurrentQueue<PendingWait>(new[] { wait }), (_, queue) =>
@@ -135,10 +141,11 @@ namespace Soulseek.NET.Messaging
         /// <typeparam name="T">The wait result type.</typeparam>
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">A unique token for the wait.</param>
+        /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        internal Task<T> WaitIndefinitely<T>(MessageCode code, object token = null)
+        internal Task<T> WaitIndefinitely<T>(MessageCode code, object token = null, CancellationToken? cancellationToken = null)
         {
-            return Wait<T>(code, token, maxTimeout);
+            return Wait<T>(code, token, maxTimeout, cancellationToken);
         }
 
         protected virtual void Dispose(bool disposing)
@@ -147,8 +154,8 @@ namespace Soulseek.NET.Messaging
             {
                 if (disposing)
                 {
-                    TimeoutTimer.Stop();
-                    TimeoutTimer.Dispose();
+                    MonitorTimer.Stop();
+                    MonitorTimer.Dispose();
 
                     ClearWaits();
                 }
@@ -168,17 +175,29 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        private void CompleteExpiredWaits(object sender, object e)
+        private void MonitorWaits(object sender, object e)
         {
             foreach (var queue in Waits)
             {
-                if (queue.Value.TryPeek(out var nextPendingWait) && nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
+                if (queue.Value.TryPeek(out var nextPendingWait))
                 {
-                    if (queue.Value.TryDequeue(out var timedOutWait))
+                    var wait = queue.Key.Code + (queue.Key.Token == null ? "" : $" ({queue.Key.Token}) ");
+
+                    if (nextPendingWait.CancellationToken != null && ((CancellationToken)nextPendingWait.CancellationToken).IsCancellationRequested)
                     {
-                        var token = queue.Key.Token == null ? "" : $"({queue.Key.Token}) ";
-                        var message = $"Message wait for {queue.Key.Code} {token}timed out after {timedOutWait.TimeoutAfter} seconds.";
-                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException(message));
+                        if (queue.Value.TryDequeue(out var cancelledWait))
+                        {
+                            var message = $"Message wait for {wait} was cancelled.";
+                            cancelledWait.TaskCompletionSource.SetException(new MessageCancelledException(message));
+                        }
+                    }
+                    else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
+                    {
+                        if (queue.Value.TryDequeue(out var timedOutWait))
+                        {
+                            var message = $"Message wait for {wait} timed out after {timedOutWait.TimeoutAfter} seconds.";
+                            timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException(message));
+                        }
                     }
                 }
             }
@@ -195,6 +214,7 @@ namespace Soulseek.NET.Messaging
             public DateTime DateTime { get; set; }
             public dynamic TaskCompletionSource { get; set; }
             public int TimeoutAfter { get; set; }
+            public CancellationToken? CancellationToken { get; set; }
         }
     }
 }
