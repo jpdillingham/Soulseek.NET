@@ -5,7 +5,11 @@
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <DocumentationFile>C:\Users\JP.WHATNET\source\repos\Soulseek.NET\src\Soulseek.NET\Soulseek.NET.xml</DocumentationFile>
+    <DocumentationFile>bin\Debug\netstandard2.0\Soulseek.NET.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\Soulseek.NET.xml</DocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
