@@ -26,6 +26,7 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -282,10 +283,10 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The options for the search.</param>
         /// <returns>The completed search.</returns>
-        public async Task<Search> SearchAsync(string searchText, SearchOptions options = null)
+        public async Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             var search = await StartSearchAsync(searchText, options);
-            var result = await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, search.Ticket);
+            var result = await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, search.Ticket, cancellationToken);
 
             return result;
         }
