@@ -10,9 +10,11 @@
 
   <ItemGroup>
     <None Remove="stylecop.json" />
+    <None Remove="stylecop.ruleset" />
   </ItemGroup>
 
   <ItemGroup>
+    <AdditionalFiles Include="stylecop.ruleset" />
     <AdditionalFiles Include="stylecop.json" />
   </ItemGroup>
 

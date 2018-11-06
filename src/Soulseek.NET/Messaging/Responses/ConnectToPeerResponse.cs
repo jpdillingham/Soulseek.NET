@@ -1,9 +1,8 @@
-﻿using Soulseek.NET.Common;
-using System;
-using System.Net;
-
-namespace Soulseek.NET.Messaging.Responses
+﻿namespace Soulseek.NET.Messaging.Responses
 {
+    using System;
+    using System.Net;
+
     public sealed class ConnectToPeerResponse
     {
         public string Username { get; private set; }

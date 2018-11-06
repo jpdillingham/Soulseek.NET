@@ -202,13 +202,13 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        private struct WaitKey
+        internal struct WaitKey
         {
             public MessageCode Code;
             public object Token;
         }
 
-        private class PendingWait
+        internal class PendingWait
         {
             public DateTime DateTime { get; set; }
             public dynamic TaskCompletionSource { get; set; }

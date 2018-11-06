@@ -1,7 +1,5 @@
-﻿using Soulseek.NET.Common;
-
-namespace Soulseek.NET.Messaging.Requests
-{ 
+﻿namespace Soulseek.NET.Messaging.Requests
+{
     public class LoginRequest
     {
         public LoginRequest(string username, string password)

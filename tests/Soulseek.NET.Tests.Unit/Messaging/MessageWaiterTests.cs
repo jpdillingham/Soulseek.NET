@@ -17,14 +17,12 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
-    using Soulseek.NET.Common;
     using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
-    using static Soulseek.NET.Messaging.MessageWaiter;
 
     public class MessageWaiterTests
     {

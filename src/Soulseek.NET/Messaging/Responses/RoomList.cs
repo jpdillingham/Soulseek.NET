@@ -1,6 +1,5 @@
 ﻿namespace Soulseek.NET.Messaging.Responses
 {
-    using Soulseek.NET.Common;
     using System.Collections.Generic;
 
     public static class RoomList
