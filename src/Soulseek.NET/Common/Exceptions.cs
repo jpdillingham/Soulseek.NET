@@ -222,4 +222,24 @@
         {
         }
     }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class BrowseException : Exception
+    {
+        public BrowseException()
+            : base()
+        {
+        }
+
+        public BrowseException(string message)
+            : base(message)
+        {
+        }
+
+        public BrowseException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
