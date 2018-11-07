@@ -97,6 +97,9 @@ namespace Soulseek.NET
 
         #region Public Properties
 
+        public string Username { get; private set; }
+        public bool LoggedIn { get; private set; } = false;
+
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
@@ -143,13 +146,15 @@ namespace Soulseek.NET
 
         #region Public Methods
 
-        public async Task<bool> Browse(string username)
+        public async Task<bool> BrowseAsync(string username, CancellationToken? cancellationToken)
         {
+            // todo: fail if not logged in 
+
             var address = await GetPeerAddressAsync(username);
 
             Console.WriteLine($"[BROWSE]: {username} {address.IPAddress}:{address.Port}");
 
-            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port);
+            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port, Options.ConnectionTimeout);
             peerConnection.DataReceived += OnPeerConnectionDataReceived;
             peerConnection.StateChanged += OnPeerConnectionStateChanged;
 
@@ -158,8 +163,10 @@ namespace Soulseek.NET
                 await peerConnection.ConnectAsync();
 
                 var token = new Random().Next();
-                await peerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToByteArray(), suppressCodeNormalization: true);
+                await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await peerConnection.SendAsync(new PeerSharesRequest().ToByteArray());
+
+                // todo: await response message
             }
             catch (Exception ex)
             {
@@ -170,39 +177,31 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
-        /// </summary>
-        public void Connect()
-        {
-            Task.Run(() => ConnectAsync()).GetAwaiter().GetResult();
-        }
-
-        /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task ConnectAsync()
         {
+            // todo: fail if already connected
             await Connection.ConnectAsync();
         }
 
         /// <summary>
         ///     Disconnects the client from the server with an optionally supplied <paramref name="message"/>.
         /// </summary>
-        /// <param name="message">An optional disconnect message.</param>
-        public void Disconnect(string message)
+        public void Disconnect()
         {
-            if (string.IsNullOrEmpty(message))
-            {
-                message = "Client disconnected.";
-            }
+            var message = "Client disconnected.";
 
             Connection.Disconnect(message);
 
             ClearPeerConnectionsQueued();
             ClearPeerConnectionsActive(message);
             ActiveSearch.Dispose();
+
             ActiveSearch = default(Search);
+            Username = null;
+            LoggedIn = false;
         }
 
         /// <summary>
@@ -215,6 +214,8 @@ namespace Soulseek.NET
 
         public async Task<bool> Download(string username, string filename)
         {
+            // todo: fail if not logged in
+
             var address = await GetPeerAddressAsync(username);
 
             Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
@@ -228,7 +229,7 @@ namespace Soulseek.NET
                 await peerConnection.ConnectAsync();
 
                 var token = new Random().Next();
-                await peerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToByteArray(), suppressCodeNormalization: true);
+                await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray());
             }
             catch (Exception ex)
@@ -240,17 +241,6 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
-        /// </summary>
-        /// <param name="username">The username with which to log in.</param>
-        /// <param name="password">The password with which to log in.</param>
-        /// <returns>The server response.</returns>
-        public LoginResponse Login(string username, string password)
-        {
-            return Task.Run(() => LoginAsync(username, password)).GetAwaiter().GetResult();
-        }
-
-        /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
         /// <param name="username">The username with which to log in.</param>
@@ -258,6 +248,9 @@ namespace Soulseek.NET
         /// <returns>The server response.</returns>
         public async Task<LoginResponse> LoginAsync(string username, string password)
         {
+            // todo: fail if already logged in
+
+            Username = username;
             var request = new LoginRequest(username, password);
 
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
@@ -277,6 +270,8 @@ namespace Soulseek.NET
             Server.WishlistInterval = wishlistInterval.Result;
             Server.PrivilegedUsers = privilegedUsers.Result;
 
+            LoggedIn = login.Result.Succeeded;
+
             return login.Result;
         }
 
@@ -289,6 +284,8 @@ namespace Soulseek.NET
         /// <returns>The completed search.</returns>
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
+            // todo: fail if not logged in
+
             var search = await StartSearchAsync(searchText, options);
 
             try
@@ -311,6 +308,8 @@ namespace Soulseek.NET
         /// <returns>The started search.</returns>
         public async Task<Search> StartSearchAsync(string searchText, SearchOptions options = null)
         {
+            // todo: fail if not logged in
+
             if (ActiveSearch != default(Search))
             {
                 throw new SearchException($"A search is already in progress.");
@@ -604,6 +603,11 @@ namespace Soulseek.NET
 
         private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
+            if (e.State == ConnectionState.Disconnected)
+            {
+                Disconnect();
+            }
+
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
         }
 
