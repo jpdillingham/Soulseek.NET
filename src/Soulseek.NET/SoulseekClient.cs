@@ -414,16 +414,6 @@ namespace Soulseek.NET
             }
         }
 
-        private void HandlePeerSharesResponse(SharesResponse response, NetworkEventArgs e)
-        {
-            if (response != null)
-            {
-                BrowseResponseReceived?.Invoke(this, new BrowseResponseReceivedEventArgs(e) { Response = response });
-            }
-
-            MessageWaiter.Complete(MessageCode.PeerSharesResponse, e.IPAddress, response);
-        }
-
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
@@ -473,7 +463,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerSharesResponse:
-                    HandlePeerSharesResponse(SharesResponse.Parse(message), e);
+                    MessageWaiter.Complete(MessageCode.PeerSharesResponse, e.IPAddress, SharesResponse.Parse(message));
                     break;
 
                 default:
