@@ -11,7 +11,7 @@
 // </copyright>
 
 namespace Soulseek.NET.Messaging.Requests
-{ 
+{
     public class PeerTransferRequest
     {
         public PeerTransferRequest(TransferDirection direction, int token, string filename, int size = 0)

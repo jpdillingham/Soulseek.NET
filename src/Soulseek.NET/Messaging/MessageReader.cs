@@ -12,11 +12,11 @@
 
 namespace Soulseek.NET.Messaging
 {
-    using Soulseek.NET.Zlib;
     using System;
     using System.IO;
     using System.Linq;
     using System.Text;
+    using Soulseek.NET.Zlib;
 
     public class MessageReader
     {

@@ -11,7 +11,7 @@
 // </copyright>
 
 namespace Soulseek.NET.Messaging.Requests
-{ 
+{
     public class PeerInitRequest
     {
         public PeerInitRequest(string username, string transferType, int token)

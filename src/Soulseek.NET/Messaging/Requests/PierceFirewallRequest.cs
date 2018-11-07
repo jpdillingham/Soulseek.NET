@@ -11,7 +11,7 @@
 // </copyright>
 
 namespace Soulseek.NET.Messaging.Requests
-{ 
+{
     public class PierceFirewallRequest
     {
         public PierceFirewallRequest(int token)
