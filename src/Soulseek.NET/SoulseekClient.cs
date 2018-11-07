@@ -64,11 +64,6 @@ namespace Soulseek.NET
         #region Public Events
 
         /// <summary>
-        ///     Occurs when a new browse response is received.
-        /// </summary>
-        public event EventHandler<BrowseResponseReceivedEventArgs> BrowseResponseReceived;
-
-        /// <summary>
         ///     Occurs when the underlying TCP connection to the server changes state.
         /// </summary>
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -146,9 +141,17 @@ namespace Soulseek.NET
 
         #region Public Methods
 
-        public async Task<bool> BrowseAsync(string username, CancellationToken? cancellationToken)
+        public async Task<SharesResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            // todo: fail if not logged in 
+            if (ConnectionState != ConnectionState.Connected)
+            {
+                throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {ConnectionState})");
+            }
+
+            if (!LoggedIn)
+            {
+                throw new SearchException($"A user must be logged in to browse.");
+            }
 
             var address = await GetPeerAddressAsync(username);
 
@@ -166,14 +169,12 @@ namespace Soulseek.NET
                 await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await peerConnection.SendAsync(new PeerSharesRequest().ToByteArray());
 
-                // todo: await response message
+                return await MessageWaiter.WaitIndefinitely<SharesResponse>(MessageCode.PeerSharesResponse, address.IPAddress, cancellationToken);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to browse {username}: {ex.Message}");
+                throw new BrowseException($"Failed to browse user {username}.", ex);
             }
-
-            return true;
         }
 
         /// <summary>
@@ -284,31 +285,15 @@ namespace Soulseek.NET
         /// <returns>The completed search.</returns>
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            // todo: fail if not logged in
-
-            var search = await StartSearchAsync(searchText, options);
-
-            try
+            if (ConnectionState != ConnectionState.Connected)
             {
-                search = await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, search.Ticket, cancellationToken);
-            }
-            catch (MessageCancelledException)
-            {
-                search.End(SearchState.Stopped);
+                throw new ConnectionStateException($"The server connection must be Connected to perform a search (currently: {ConnectionState})");
             }
 
-            return search;
-        }
-
-        /// <summary>
-        ///     Asynchronously starts a search for the specified <paramref name="searchText"/> using the specified <paramref name="options"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="options">The options for the search.</param>
-        /// <returns>The started search.</returns>
-        public async Task<Search> StartSearchAsync(string searchText, SearchOptions options = null)
-        {
-            // todo: fail if not logged in
+            if (!LoggedIn)
+            {
+                throw new SearchException($"A user must be logged in to perform a search.");
+            }
 
             if (ActiveSearch != default(Search))
             {
@@ -323,31 +308,16 @@ namespace Soulseek.NET
 
             await ActiveSearch.StartAsync();
 
+            try
+            {
+                await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, ActiveSearch.Ticket, cancellationToken);
+            }
+            catch (MessageCancelledException)
+            {
+                ActiveSearch.End(SearchState.Stopped);
+            }
+
             return ActiveSearch;
-        }
-
-        /// <summary>
-        ///     Asynchronously stops the specified <paramref name="search"/>.
-        /// </summary>
-        /// <param name="search">The search to stop.</param>
-        /// <returns>The completed search.</returns>
-        public async Task<Search> StopSearchAsync(Search search)
-        {
-            if (ActiveSearch.Ticket != search.Ticket)
-            {
-                throw new SearchException($"The requested search is not presently active.");
-            }
-
-            if (ActiveSearch.State != SearchState.InProgress)
-            {
-                throw new SearchException($"The requested search has already completed.");
-            }
-
-            var wait = MessageWaiter.Wait<Search>(MessageCode.ServerFileSearch, ActiveSearch.Ticket);
-            ActiveSearch.Stop();
-            var result = await wait;
-
-            return result;
         }
 
         #endregion Public Methods
@@ -450,6 +420,8 @@ namespace Soulseek.NET
             {
                 BrowseResponseReceived?.Invoke(this, new BrowseResponseReceivedEventArgs(e) { Response = response });
             }
+
+            MessageWaiter.Complete(MessageCode.PeerSharesResponse, e.IPAddress, response);
         }
 
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)

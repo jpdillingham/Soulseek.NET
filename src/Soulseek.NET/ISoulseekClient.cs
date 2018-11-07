@@ -23,11 +23,6 @@ namespace Soulseek.NET
         #region Public Events
 
         /// <summary>
-        ///     Occurs when a new browse response is received.
-        /// </summary>
-        event EventHandler<BrowseResponseReceivedEventArgs> BrowseResponseReceived;
-
-        /// <summary>
         ///     Occurs when the underlying TCP connection to the server changes state.
         /// </summary>
         event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
@@ -95,9 +90,7 @@ namespace Soulseek.NET
         Task<LoginResponse> LoginAsync(string username, string password);
 
         Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
-        Task<Search> StartSearchAsync(string searchText, SearchOptions options = null);
-        Task<Search> StopSearchAsync(Search search);
 
-        Task BrowseAsync(string username, CancellationToken? cancellationToken);
+        Task<SharesResponse> BrowseAsync(string username, CancellationToken? cancellationToken);
     }
 }
