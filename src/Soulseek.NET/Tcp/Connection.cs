@@ -37,12 +37,12 @@
                 Interval = 250,
             };
 
-            WatchdogTimer.Elapsed += (sender, e) => 
+            WatchdogTimer.Elapsed += (sender, e) =>
             {
                 if (!TcpClient.Connected)
                 {
                     Disconnect($"The server connection was closed unexpectedly.");
-                };
+                }
             };
         }
 
@@ -271,7 +271,8 @@
                 InactivityTimer.Reset();
             }
 
-            void log(string s) {
+            void log(string s)
+            {
                 if (Type == ConnectionType.Server)
                 {
                     Console.WriteLine(s);

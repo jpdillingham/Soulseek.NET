@@ -14,8 +14,8 @@
 
         public bool Connected => TcpClient.Connected;
 
-        private TcpClient TcpClient { get; set; }
         private bool Disposed { get; set; }
+        private TcpClient TcpClient { get; set; }
 
         public void Close()
         {
@@ -25,6 +25,11 @@
         public async Task ConnectAsync(IPAddress ipAddress, int port)
         {
             await TcpClient.ConnectAsync(ipAddress, port);
+        }
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
 
         public NetworkStream GetStream()
@@ -43,11 +48,6 @@
 
                 Disposed = true;
             }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
         }
     }
 }

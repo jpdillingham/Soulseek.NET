@@ -6,26 +6,72 @@
 
     public sealed class SearchResponse
     {
-        public string Username { get; private set; }
-        public int Ticket { get; private set; }
+        internal SearchResponse()
+        {
+        }
+
         public int FileCount { get; private set; }
+
         public IEnumerable<File> Files
         {
             get
             {
                 return FileList.AsReadOnly();
             }
+
             internal set
             {
                 FileList = value.ToList();
             }
         }
-        public int FreeUploadSlots { get; private set; }
-        public int UploadSpeed { get; private set; }
-        public long QueueLength { get; private set; }
 
-        private MessageReader MessageReader { get; set; }
+        public int FreeUploadSlots { get; private set; }
+        public long QueueLength { get; private set; }
+        public int Ticket { get; private set; }
+        public int UploadSpeed { get; private set; }
+        public string Username { get; private set; }
         private List<File> FileList { get; set; }
+        private MessageReader MessageReader { get; set; }
+
+        public static SearchResponse Parse(Message message)
+        {
+            var reader = new MessageReader(message);
+
+            if (reader.Code != MessageCode.PeerSearchResponse)
+            {
+                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
+            }
+
+            try
+            {
+                reader.Decompress();
+            }
+            catch (Exception)
+            {
+                // discard result if it fails to decompress
+                return null;
+            }
+
+            var response = new SearchResponse
+            {
+                Username = reader.ReadString(),
+                Ticket = reader.ReadInteger(),
+                FileCount = reader.ReadInteger()
+            };
+
+            var position = reader.Position;
+
+            reader.Seek(reader.Payload.Length - 17); // there are 8 unused bytes at the end of each message
+
+            response.FreeUploadSlots = reader.ReadByte();
+            response.UploadSpeed = reader.ReadInteger();
+            response.QueueLength = reader.ReadLong();
+
+            reader.Seek(position);
+            response.MessageReader = reader;
+
+            return response;
+        }
 
         internal void ParseFiles()
         {
@@ -35,10 +81,6 @@
         internal void SetFiles(IEnumerable<File> files)
         {
             FileList = files.ToList();
-        }
-
-        internal SearchResponse()
-        {
         }
 
         private static List<File> ParseFiles(MessageReader reader, int count)
@@ -71,46 +113,6 @@
             }
 
             return files;
-        }
-
-        public static SearchResponse Parse(Message message)
-        {
-            var reader = new MessageReader(message);
-
-            if (reader.Code != MessageCode.PeerSearchResponse)
-            {
-                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
-            }
-
-            try
-            {
-                reader.Decompress();
-            }
-            catch (Exception)
-            {
-                // discard result if it fails to decompress
-                return null;
-            }
-
-            var response = new SearchResponse
-            {
-                Username = reader.ReadString(),
-                Ticket = reader.ReadInteger(),
-                FileCount = reader.ReadInteger()
-            };
-
-            var position = reader.Position;
-            
-            reader.Seek(reader.Payload.Length - 17); // there are 8 unused bytes at the end of each message
-
-            response.FreeUploadSlots = reader.ReadByte();
-            response.UploadSpeed = reader.ReadInteger();
-            response.QueueLength = reader.ReadLong();
-
-            reader.Seek(position);
-            response.MessageReader = reader;
-
-            return response;
         }
     }
 }

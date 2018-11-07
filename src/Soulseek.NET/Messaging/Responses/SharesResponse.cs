@@ -5,14 +5,13 @@
 
     public sealed class SharesResponse
     {
-        public int DirectoryCount { get; private set; }
-        public IEnumerable<Directory> Directories => DirectoryList.AsReadOnly();
-
-        private List<Directory> DirectoryList { get; set; } = new List<Directory>();
-
         internal SharesResponse()
         {
         }
+
+        public IEnumerable<Directory> Directories => DirectoryList.AsReadOnly();
+        public int DirectoryCount { get; private set; }
+        private List<Directory> DirectoryList { get; set; } = new List<Directory>();
 
         public static SharesResponse Parse(Message message)
         {
@@ -73,7 +72,6 @@
 
                 response.DirectoryList.Add(dir);
             }
-
 
             return response;
         }

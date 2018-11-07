@@ -1,30 +1,25 @@
 ﻿// <copyright file="Search.cs" company="JP Dillingham">
-//     Copyright(C) 2018 JP Dillingham
-//     
-//     This program is free software: you can redistribute it and/or modify
-//     it under the terms of the GNU General Public License as published by
-//     the Free Software Foundation, either version 3 of the License, or
-//     (at your option) any later version.
-//     
-//     This program is distributed in the hope that it will be useful,
-//     but WITHOUT ANY WARRANTY; without even the implied warranty of
-//     MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the
-//     GNU General Public License for more details.
-//     
-//     You should have received a copy of the GNU General Public License
-//     along with this program.If not, see<https://www.gnu.org/licenses/>.
+//     Copyright (c) JP Dillingham. All rights reserved.
+//
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
+//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//
+//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
+//
+//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
 namespace Soulseek.NET
 {
-    using Soulseek.NET.Messaging.Requests;
-    using Soulseek.NET.Messaging.Responses;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging.Requests;
+    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Tcp;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
@@ -226,12 +221,10 @@ namespace Soulseek.NET
             var bitDepth = file.GetAttributeValue(FileAttributeType.BitDepth);
             var sampleRate = file.GetAttributeValue(FileAttributeType.SampleRate);
 
-            if (
-                bitRate != null && bitRate < Options.MinimumFileBitRate ||
-                length != null && length < Options.MinimumFileLength ||
-                bitDepth != null && bitDepth < Options.MinimumFileBitDepth ||
-                sampleRate != null && sampleRate < Options.MinimumFileSampleRate
-            )
+            if ((bitRate != null && bitRate < Options.MinimumFileBitRate) ||
+                (length != null && length < Options.MinimumFileLength) ||
+                (bitDepth != null && bitDepth < Options.MinimumFileBitDepth) ||
+                (sampleRate != null && sampleRate < Options.MinimumFileSampleRate))
             {
                 return false;
             }
@@ -239,7 +232,7 @@ namespace Soulseek.NET
             var constantBitRates = new[] { 32, 64, 128, 192, 256, 320 };
             var isConstant = constantBitRates.Any(b => b == bitRate);
 
-            if (bitRate != null && (!Options.IncludeConstantBitRate && isConstant || !Options.IncludeVariableBitRate && !isConstant))
+            if (bitRate != null && ((!Options.IncludeConstantBitRate && isConstant) || (!Options.IncludeVariableBitRate && !isConstant)))
             {
                 return false;
             }
@@ -249,14 +242,11 @@ namespace Soulseek.NET
 
         private bool ResponseMeetsOptionCriteria(SearchResponse response)
         {
-            if (
-                Options.FilterResponses && (
+            if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||
                     response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
                     response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
-                    response.QueueLength > Options.MaximumPeerQueueLength
-                )
-            )
+                    response.QueueLength > Options.MaximumPeerQueueLength))
             {
                 return false;
             }
