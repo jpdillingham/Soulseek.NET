@@ -100,11 +100,6 @@
             Console.WriteLine($"[SEARCH ENDED]");
         }
 
-        private static void Client_BrowseResponseReceived(object sender, BrowseResponseReceivedEventArgs e)
-        {
-            Console.WriteLine(JsonConvert.SerializeObject(e.Response));
-        }
-
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
         {
             //Console.WriteLine(JsonConvert.SerializeObject(e, Formatting.Indented, new Newtonsoft.Json.Converters.StringEnumConverter()));
