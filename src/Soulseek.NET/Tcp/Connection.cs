@@ -65,11 +65,6 @@
         private ITcpClient TcpClient { get; set; }
         private SystemTimer WatchdogTimer { get; set; }
 
-        public void Connect()
-        {
-            Task.Run(() => ConnectAsync()).GetAwaiter().GetResult();
-        }
-
         public async Task ConnectAsync()
         {
             if (State != ConnectionState.Disconnected)
