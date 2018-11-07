@@ -13,6 +13,9 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
 
     public interface ISoulseekClient
@@ -84,5 +87,17 @@ namespace Soulseek.NET
         ServerInfo Server { get; }
 
         #endregion Public Properties
+
+        Task ConnectAsync();
+        void Disconnect();
+        void Dispose();
+
+        Task<LoginResponse> LoginAsync(string username, string password);
+
+        Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Search> StartSearchAsync(string searchText, SearchOptions options = null);
+        Task<Search> StopSearchAsync(Search search);
+
+        Task BrowseAsync(string username, CancellationToken? cancellationToken);
     }
 }
