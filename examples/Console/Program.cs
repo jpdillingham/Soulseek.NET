@@ -20,7 +20,6 @@
             {
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
-                client.BrowseResponseReceived += Client_BrowseResponseReceived;
                 client.SearchEnded += Client_SearchEnded;
 
                 await client.ConnectAsync();
@@ -31,9 +30,9 @@
                 {
                     var cmd = Console.ReadLine();
 
-                    if (cmd == "stop")
+                    if (cmd == "disconnect")
                     {
-                        client.Disconnect("User requested Disconnect");
+                        client.Disconnect();
                         return;
                     }
                     else if (cmd.StartsWith("download"))
@@ -46,27 +45,8 @@
                     else if (cmd.StartsWith("browse"))
                     {
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
-                        var result = await client.Browse(peer);
+                        var result = await client.BrowseAsync(peer);
                         Console.WriteLine(JsonConvert.SerializeObject(result));
-                        continue;
-                    }
-                    else if (cmd.StartsWith("search-lazy"))
-                    {
-                        ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
-
-                        StatusTimer.Interval = 1000;
-                        StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
-                        StatusTimer.Start();
-
-                        ActiveSearch = await client.StartSearchAsync(ActiveSearchText);
-                        Console.WriteLine($"Search started.");
-                        continue;
-                    }
-                    else if (cmd.StartsWith("search-stop"))
-                    {
-                        var ended = await client.StopSearchAsync(ActiveSearch);
-
-                        Console.WriteLine($"Search complete.  {ended.Responses.Count()}");
                         continue;
                     }
                     else if (cmd.StartsWith("search"))
