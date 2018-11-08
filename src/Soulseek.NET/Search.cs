@@ -56,11 +56,6 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Occurs when the search has ended.
-        /// </summary>
-        internal event EventHandler<SearchCompletedEventArgs> SearchEnded;
-
-        /// <summary>
         ///     Occurs when a search response is received from a peer.
         /// </summary>
         internal event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
@@ -97,6 +92,7 @@ namespace Soulseek.NET
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
         private Connection ServerConnection { get; set; }
+        private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         /// <summary>
         ///     Disposes this instance.
@@ -148,7 +144,7 @@ namespace Soulseek.NET
                 ClearPeerConnectionsQueued();
                 ClearPeerConnectionsActive("Search completed.");
 
-                Task.Run(() => SearchEnded?.Invoke(this, new SearchCompletedEventArgs() { Search = this })).Forget();
+                MessageWaiter.Complete(MessageCode.ServerFileSearch, Ticket, this);
             }
         }
 
@@ -156,7 +152,7 @@ namespace Soulseek.NET
         ///     Asynchronously starts the search.
         /// </summary>
         /// <returns>This search.</returns>
-        internal async Task<Search> StartAsync()
+        internal async Task<Search> SearchAsync(CancellationToken? cancellationToken)
         {
             if (State != SearchState.Pending)
             {
@@ -173,7 +169,7 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Reset();
             SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
 
-            return this;
+            return await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, Ticket, cancellationToken);
         }
 
         private void Dispose(bool disposing)
@@ -225,7 +221,6 @@ namespace Soulseek.NET
 
         private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            //Console.WriteLine($"Peer connection state changed: {e.Address} {e.State}");
             if (e.State == ConnectionState.Disconnected &&
                 sender is Connection connection &&
                 connection.Context is ConnectToPeerResponse connectToPeerResponse)
@@ -287,15 +282,11 @@ namespace Soulseek.NET
             {
                 await connection.ConnectAsync();
 
-                //Console.WriteLine($"[PIERCE FIREWALL]: {response.Username}/{response.IPAddress}:{response.Port} Token: {response.Token}");
-
                 var request = new PierceFirewallRequest(response.Token);
                 await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
             }
-            catch (ConnectionException ex)
+            catch (ConnectionException)
             {
-                Console.WriteLine(ex);
-                //connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
             }
         }
     }

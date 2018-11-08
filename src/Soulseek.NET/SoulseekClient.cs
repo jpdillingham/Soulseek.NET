@@ -13,9 +13,7 @@
 namespace Soulseek.NET
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -278,21 +276,9 @@ namespace Soulseek.NET
             options = options ?? new SearchOptions(soulseekClientOptions: Options);
 
             ActiveSearch = new Search(searchText, options, Connection);
-            ActiveSearch.SearchEnded += OnSearchEnded;
             ActiveSearch.SearchResponseReceived += OnSearchResponseReceived;
 
-            await ActiveSearch.StartAsync();
-
-            try
-            {
-                await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, ActiveSearch.Ticket, cancellationToken);
-            }
-            catch (MessageCancelledException)
-            {
-                ActiveSearch.End(SearchState.Stopped);
-            }
-
-            return ActiveSearch;
+            return await ActiveSearch.SearchAsync(cancellationToken);
         }
 
         #endregion Public Methods
@@ -343,14 +329,6 @@ namespace Soulseek.NET
             {
                 await ActiveSearch.AddPeerConnection(response, e);
             }
-        }
-
-        private void OnSearchEnded(object sender, SearchCompletedEventArgs e)
-        {
-            ActiveSearch = default(Search);
-
-            MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
-            Task.Run(() => SearchEnded?.Invoke(this, e));
         }
 
         private void OnSearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
