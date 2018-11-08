@@ -69,11 +69,22 @@ namespace Soulseek.NET.Messaging
             Dispose(true);
         }
 
+        /// <summary>
+        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/>.
+        /// </summary>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="exception">The Exception to throw.</param>
         internal void Throw(MessageCode messageCode, Exception exception)
         {
             Throw(messageCode, null, exception);
         }
 
+        /// <summary>
+        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/> and <paramref name="token"/>.
+        /// </summary>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="token">The unique wait token.</param>
+        /// <param name="exception">The Exception to throw.</param>
         internal void Throw(MessageCode messageCode, object token, Exception exception)
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
