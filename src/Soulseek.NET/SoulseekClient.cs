@@ -341,7 +341,7 @@ namespace Soulseek.NET
         {
             if (ActiveSearch != default(Search))
             {
-                await ActiveSearch.AddPeer(response, e);
+                await ActiveSearch.AddPeerConnection(response, e);
             }
         }
 
@@ -367,7 +367,7 @@ namespace Soulseek.NET
 
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
-            Console.WriteLine($"[MESSAGE]: {message.Code}");
+            //Console.WriteLine($"[MESSAGE]: {message.Code}");
 
             switch (message.Code)
             {

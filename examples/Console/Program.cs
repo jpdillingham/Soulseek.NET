@@ -57,20 +57,17 @@
                         //StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
                         StatusTimer.Start();
 
-                        var tcs = new CancellationTokenSource();
                         var result = default(Search);
-
-                        tcs.CancelAfter(500);
 
                         result = await client.SearchAsync(ActiveSearchText, new SearchOptions()
                         {
                             FilterFiles = false,
                             FilterResponses = false,
                             FileLimit = 100000,
-                        }, tcs.Token);
+                        });
 
 
-                        Console.WriteLine($"Search complete: {result.State}.  {result?.Responses?.Count()}");
+                        Console.WriteLine($"Search complete: {result?.State}.  {result?.Responses?.Count()}");
                         continue;
                     }
 
