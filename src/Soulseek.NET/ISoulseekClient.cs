@@ -91,6 +91,6 @@ namespace Soulseek.NET
 
         Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
-        Task<SharesResponse> BrowseAsync(string username, CancellationToken? cancellationToken);
+        Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
     }
 }

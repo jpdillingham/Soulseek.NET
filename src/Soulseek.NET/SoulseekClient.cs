@@ -141,7 +141,7 @@ namespace Soulseek.NET
 
         #region Public Methods
 
-        public async Task<SharesResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
+        public async Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (ConnectionState != ConnectionState.Connected)
             {
@@ -153,11 +153,13 @@ namespace Soulseek.NET
                 throw new SearchException($"A user must be logged in to browse.");
             }
 
+            options = options ?? new BrowseOptions();
+
             var address = await GetPeerAddressAsync(username);
 
             Console.WriteLine($"[BROWSE]: {username} {address.IPAddress}:{address.Port}");
 
-            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port, Options.ConnectionTimeout);
+            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port, Options.ConnectionTimeout, options.Timeout);
             peerConnection.DataReceived += OnPeerConnectionDataReceived;
             peerConnection.StateChanged += OnPeerConnectionStateChanged;
 
