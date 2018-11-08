@@ -35,13 +35,13 @@
                         client.Disconnect();
                         return;
                     }
-                    else if (cmd.StartsWith("download"))
-                    {
-                        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
-                        var result = await client.Download(peer, "test");
-                        Console.WriteLine(JsonConvert.SerializeObject(result));
-                        continue;
-                    }
+                    //else if (cmd.StartsWith("download"))
+                    //{
+                    //    var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
+                    //    var result = await client.Download(peer, "test");
+                    //    Console.WriteLine(JsonConvert.SerializeObject(result));
+                    //    continue;
+                    //}
                     else if (cmd.StartsWith("browse"))
                     {
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
@@ -54,7 +54,7 @@
                         ActiveSearchText = string.Join(' ', cmd.Split(' ').Skip(1));
 
                         StatusTimer.Interval = 1000;
-                        StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
+                        //StatusTimer.Elapsed += (sender, e) => DisplayInfo(client.Peers);
                         StatusTimer.Start();
 
                         var tcs = new CancellationTokenSource();
