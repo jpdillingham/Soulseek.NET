@@ -116,7 +116,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             MessageWaiter t = null;
             var ex = Record.Exception(() => t = new MessageWaiter());
 
-            var defaultConst = t.GetNonPublicStaticField<int>("defaultTimeout");
+            var defaultConst = t.GetNonPublicStaticField<int>("DefaultTimeoutValue");
 
             Assert.Null(ex);
             Assert.NotNull(t);
@@ -254,6 +254,37 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             }
         }
 
+        [Trait("Category", "Wait Throw")]
+        [Fact(DisplayName = "Wait throws and is dequeued when thrown")]
+        public void Wait_Throws_And_Is_Dequeued_When_Thrown()
+        {
+            var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+
+            using (var waiter = new MessageWaiter(0))
+            {
+                Task<object> task = waiter.Wait<object>(key.MessageCode, null, 999999);
+                object result = null;
+
+                waiter.Throw(key.MessageCode, new InvalidOperationException("error"));
+
+                var ex = Record.Exception(() => result = task.Result);
+
+                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex.InnerException);
+                Assert.Equal("error", ex.InnerException.Message);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Empty(queue);
+            }
+        }
+
         [Trait("Category", "Wait Creation")]
         [Fact(DisplayName = "WaitIndefinitely invocation creates Wait with max timeout")]
         public void WaitIndefinitely_Invocation_Creates_Wait_With_Max_Timeout()
@@ -262,7 +293,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter())
             {
-                var maxConst = waiter.GetNonPublicStaticField<int>("maxTimeout");
+                var maxConst = waiter.GetNonPublicStaticField<int>("MaxTimeoutValue");
 
                 Task<object> task = waiter.WaitIndefinitely<object>(key.MessageCode, key.Token);
 
