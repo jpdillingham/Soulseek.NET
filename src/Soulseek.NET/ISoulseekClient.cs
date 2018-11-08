@@ -67,11 +67,6 @@ namespace Soulseek.NET
         SoulseekClientOptions Options { get; }
 
         /// <summary>
-        ///     Gets information about peer connections.
-        /// </summary>
-        PeerInfo Peers { get; }
-
-        /// <summary>
         ///     Gets or sets the port to which to connect.
         /// </summary>
         int Port { get; set; }

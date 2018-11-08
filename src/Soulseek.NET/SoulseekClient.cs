@@ -111,11 +111,6 @@ namespace Soulseek.NET
         public SoulseekClientOptions Options { get; private set; }
 
         /// <summary>
-        ///     Gets information about peer connections.
-        /// </summary>
-        public PeerInfo Peers => GetPeerInfo();
-
-        /// <summary>
         ///     Gets or sets the port to which to connect.
         /// </summary>
         public int Port { get; set; }
@@ -133,8 +128,6 @@ namespace Soulseek.NET
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
-        private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
-        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private Random Random { get; set; } = new Random();
 
         #endregion Private Properties
@@ -180,8 +173,6 @@ namespace Soulseek.NET
 
             Connection.Disconnect(message);
 
-            ClearPeerConnectionsQueued();
-            ClearPeerConnectionsActive(message);
             ActiveSearch.Dispose();
 
             ActiveSearch = default(Search);
@@ -197,33 +188,33 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
-        public async Task<bool> Download(string username, string filename)
-        {
-            // todo: fail if not logged in
+        //public async Task<bool> Download(string username, string filename)
+        //{
+        //    // todo: fail if not logged in
 
-            var address = await GetPeerAddressAsync(username);
+        //    var address = await GetPeerAddressAsync(username);
 
-            Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
+        //    Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
 
-            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port);
-            peerConnection.DataReceived += OnPeerConnectionDataReceived;
-            peerConnection.StateChanged += OnPeerConnectionStateChanged;
+        //    var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port);
+        //    peerConnection.DataReceived += OnPeerConnectionDataReceived;
+        //    peerConnection.StateChanged += OnPeerConnectionStateChanged;
 
-            try
-            {
-                await peerConnection.ConnectAsync();
+        //    try
+        //    {
+        //        await peerConnection.ConnectAsync();
 
-                var token = new Random().Next();
-                await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
-                await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray());
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}");
-            }
+        //        var token = new Random().Next();
+        //        await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
+        //        await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray());
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}");
+        //    }
 
-            return true;
-        }
+        //    return true;
+        //}
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
@@ -284,7 +275,7 @@ namespace Soulseek.NET
                 throw new SearchException($"A search is already in progress.");
             }
 
-            options = options ?? new SearchOptions();
+            options = options ?? new SearchOptions(soulseekClientOptions: Options);
 
             ActiveSearch = new Search(searchText, options, Connection);
             ActiveSearch.SearchEnded += OnSearchEnded;
@@ -332,70 +323,12 @@ namespace Soulseek.NET
 
         #region Private Methods
 
-        private void ClearPeerConnectionsActive(string disconnectMessage)
-        {
-            while (!PeerConnectionsActive.IsEmpty)
-            {
-                var key = PeerConnectionsActive.Keys.First();
-
-                if (PeerConnectionsActive.TryRemove(key, out var connection))
-                {
-                    try
-                    {
-                        connection?.Disconnect(disconnectMessage);
-                        connection?.Dispose();
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-        }
-
-        private void ClearPeerConnectionsQueued()
-        {
-            while (!PeerConnectionsQueued.IsEmpty)
-            {
-                if (PeerConnectionsQueued.TryDequeue(out var queuedConnection))
-                {
-                    try
-                    {
-                        queuedConnection.Value?.Dispose();
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-        }
-
         private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
         {
             var request = new GetPeerAddressRequest(username);
             await Connection.SendAsync(request.ToMessage().ToByteArray());
 
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
-        }
-
-        private PeerInfo GetPeerInfo()
-        {
-            return new PeerInfo()
-            {
-                Active = PeerConnectionsActive.Count(),
-                Queued = PeerConnectionsQueued.Count(),
-                Connecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connecting).Count(),
-                Connected = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Connected).Count(),
-                Disconnecting = PeerConnectionsActive.Where(c => c.Value?.State == ConnectionState.Disconnecting).Count(),
-                Disconnected = PeerConnectionsActive.Where(c => c.Value == null || c.Value.State == ConnectionState.Disconnected).Count(),
-            };
-        }
-
-        private void HandlePeerSearchResponse(SearchResponse response, NetworkEventArgs e)
-        {
-            if (response != null)
-            {
-                ActiveSearch?.AddResponse(response, e);
-            }
         }
 
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
@@ -406,83 +339,15 @@ namespace Soulseek.NET
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            Console.WriteLine($"[CONNECT TO PEER]: {response.Username}");
-
-            if (ActiveSearch == default(Search))
+            if (ActiveSearch != default(Search))
             {
-                return;
-            }
-
-            var connection = new Connection(ConnectionType.Peer, response.IPAddress.ToString(), response.Port, 15, 15, Options.BufferSize)
-            {
-                Context = response
-            };
-
-            connection.DataReceived += OnPeerConnectionDataReceived;
-            connection.StateChanged += OnPeerConnectionStateChanged;
-
-            if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections)
-            {
-                if (PeerConnectionsActive.TryAdd(response, connection))
-                {
-                    await TryConnectPeerConnection(response, connection);
-                }
-            }
-            else
-            {
-                PeerConnectionsQueued.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(response, connection));
-            }
-        }
-
-        private void OnPeerConnectionDataReceived(object sender, DataReceivedEventArgs e)
-        {
-            var message = new Message(e.Data);
-
-            Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
-
-            switch (message.Code)
-            {
-                case MessageCode.PeerSearchResponse:
-                    HandlePeerSearchResponse(SearchResponse.Parse(message), e);
-                    break;
-
-                default:
-                    if (sender is Connection peerConnection)
-                    {
-                        peerConnection.Disconnect($"Unknown response from peer: {message.Code}");
-                    }
-
-                    break;
-            }
-        }
-
-        private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            Console.WriteLine($"Peer connection state changed: {e.Address} {e.State}");
-            if (e.State == ConnectionState.Disconnected &&
-                sender is Connection connection &&
-                connection.Context is ConnectToPeerResponse connectToPeerResponse)
-            {
-                connection.Dispose();
-                PeerConnectionsActive.TryRemove(connectToPeerResponse, out var _);
-
-                if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections &&
-                    PeerConnectionsQueued.TryDequeue(out var nextConnection))
-                {
-                    if (PeerConnectionsActive.TryAdd(nextConnection.Key, nextConnection.Value))
-                    {
-                        await TryConnectPeerConnection(nextConnection.Key, nextConnection.Value);
-                    }
-                }
+                await ActiveSearch.AddPeer(response, e);
             }
         }
 
         private void OnSearchEnded(object sender, SearchCompletedEventArgs e)
         {
             ActiveSearch = default(Search);
-
-            ClearPeerConnectionsQueued();
-            ClearPeerConnectionsActive("Search completed.");
 
             MessageWaiter.Complete(MessageCode.ServerFileSearch, e.Search.Ticket, e.Search);
             Task.Run(() => SearchEnded?.Invoke(this, e));
@@ -551,24 +416,6 @@ namespace Soulseek.NET
             }
 
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
-        }
-
-        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, Connection connection)
-        {
-            try
-            {
-                await connection.ConnectAsync();
-
-                Console.WriteLine($"[PIERCE FIREWALL]: {response.Username}/{response.IPAddress}:{response.Port} Token: {response.Token}");
-
-                var request = new PierceFirewallRequest(response.Token);
-                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
-            }
-            catch (ConnectionException ex)
-            {
-                Console.WriteLine(ex);
-                connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
-            }
         }
 
         #endregion Private Methods
