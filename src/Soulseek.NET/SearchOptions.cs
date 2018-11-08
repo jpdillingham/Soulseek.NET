@@ -16,7 +16,40 @@ namespace Soulseek.NET
 
     public class SearchOptions
     {
-        public int Timeout { get; set; } = 15;
+        public SearchOptions()
+        {
+        }
+
+        public SearchOptions(SoulseekClientOptions soulseekClientOptions)
+        {
+            BufferSize = soulseekClientOptions.BufferSize;
+            ConcurrentPeerConnections = soulseekClientOptions.ConcurrentPeerConnections;
+            ConnectionTimeout = soulseekClientOptions.ConnectionTimeout;
+            ReadTimeout = soulseekClientOptions.ReadTimeout;
+        }
+
+        /// <summary>
+        ///     Gets or sets the read and write buffer size for underlying TCP connections.
+        /// </summary>
+        public int BufferSize { get; set; } = 4096;
+
+        /// <summary>
+        ///     Gets or sets the number of allowed concurrent peer connections.
+        /// </summary>
+        public int ConcurrentPeerConnections { get; set; } = 500;
+
+        /// <summary>
+        ///     Gets or sets the connection timeout for client and peer TCP connections.
+        /// </summary>
+        public int ConnectionTimeout { get; set; } = 5;
+
+        /// <summary>
+        ///     Gets or sets the read timeout for peer TCP connections. Once connected and after reading data, if a no additional
+        ///     data is read within this threshold the connection will be forcibly disconnected.
+        /// </summary>
+        public int ReadTimeout { get; set; } = 5;
+
+        public int SearchTimeout { get; set; } = 15;
         public int FileLimit { get; set; } = 10000;
 
         public bool FilterResponses { get; set; } = true;
