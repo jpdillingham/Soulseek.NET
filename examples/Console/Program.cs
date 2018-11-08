@@ -20,7 +20,6 @@
             {
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
-                client.SearchEnded += Client_SearchEnded;
 
                 await client.ConnectAsync();
 
@@ -90,11 +89,6 @@
                     }
                 }
             }
-        }
-
-        private static void Client_SearchEnded(object sender, SearchCompletedEventArgs e)
-        {
-            Console.WriteLine($"[SEARCH ENDED]");
         }
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)

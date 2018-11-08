@@ -38,11 +38,6 @@ namespace Soulseek.NET
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         /// <summary>
-        ///     Occurs when a search is completed.
-        /// </summary>
-        event EventHandler<SearchCompletedEventArgs> SearchEnded;
-
-        /// <summary>
         ///     Occurs when a new search result is received.
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
