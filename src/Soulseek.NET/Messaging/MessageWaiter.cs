@@ -24,7 +24,7 @@ namespace Soulseek.NET.Messaging
     internal class MessageWaiter : IDisposable
     {
         private const int DefaultTimeoutValue = 5;
-        private const int MaxTimeout = 2147483647;
+        private const int MaxTimeoutValue = 2147483647;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageWaiter"/> class with the default timeout.
@@ -173,7 +173,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>A Task representing the wait.</returns>
         internal Task<T> WaitIndefinitely<T>(MessageCode messageCode, object token = null, CancellationToken? cancellationToken = null)
         {
-            return Wait<T>(messageCode, token, MaxTimeout, cancellationToken);
+            return Wait<T>(messageCode, token, MaxTimeoutValue, cancellationToken);
         }
 
         /// <summary>
