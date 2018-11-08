@@ -43,6 +43,7 @@ namespace Soulseek.NET
             SearchText = searchText;
             Options = options;
             ServerConnection = serverConnection;
+            SearchFilters = new SearchFilters(Options);
 
             Ticket = new Random().Next(1, 2147483647);
 
@@ -89,6 +90,7 @@ namespace Soulseek.NET
         /// </summary>
         public int Ticket { get; private set; }
 
+        private SearchFilters SearchFilters { get; set; }
         private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
         private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
         private bool Disposed { get; set; } = false;
@@ -104,22 +106,15 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
-        /// <summary>
-        ///     If the specified response meets the filter criteria set in <see cref="Options"/>, adds the specified
-        ///     <paramref name="response"/> to the collection of peer responses, then fires the
-        ///     <see cref="SearchResponseReceived"/> event.
-        /// </summary>
-        /// <param name="response">The response to add.</param>
-        /// <param name="e">The network context of the response.</param>
-        internal void AddResponse(SearchResponse response, NetworkEventArgs e)
+        private void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
-            if (State == SearchState.InProgress && ResponseMeetsOptionCriteria(response))
+            if (State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
             {
                 response.ParseFiles();
 
                 if (Options.FilterFiles || true)
                 {
-                    response.Files = response.Files.Where(f => FileMeetsOptionCriteria(f));
+                    response.Files = response.Files.Where(f => SearchFilters.FileMeetsOptionCriteria(f));
                 }
 
                 Interlocked.Add(ref resultCount, response.Files.Count());
@@ -137,10 +132,8 @@ namespace Soulseek.NET
             }
         }
 
-        internal async Task AddPeer(ConnectToPeerResponse connectToPeerResponse, NetworkEventArgs e)
+        internal async Task AddPeerConnection(ConnectToPeerResponse connectToPeerResponse, NetworkEventArgs e)
         {
-            Console.WriteLine($"[CONNECT TO PEER]: {connectToPeerResponse.Username}");
-
             var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, 15, 15, Options.BufferSize)
             {
                 Context = connectToPeerResponse
@@ -221,62 +214,6 @@ namespace Soulseek.NET
 
                 Disposed = true;
             }
-        }
-
-        private bool FileMeetsOptionCriteria(File file)
-        {
-            if (!Options.FilterFiles)
-            {
-                return true;
-            }
-
-            bool fileHasIgnoredExtension(File f)
-            {
-                return Options.IgnoredFileExtensions == null ? false :
-                    Options.IgnoredFileExtensions.Any(e => e == System.IO.Path.GetExtension(f.Filename));
-            }
-
-            if (file.Size < Options.MinimumFileSize || fileHasIgnoredExtension(file))
-            {
-                return false;
-            }
-
-            var bitRate = file.GetAttributeValue(FileAttributeType.BitRate);
-            var length = file.GetAttributeValue(FileAttributeType.Length);
-            var bitDepth = file.GetAttributeValue(FileAttributeType.BitDepth);
-            var sampleRate = file.GetAttributeValue(FileAttributeType.SampleRate);
-
-            if ((bitRate != null && bitRate < Options.MinimumFileBitRate) ||
-                (length != null && length < Options.MinimumFileLength) ||
-                (bitDepth != null && bitDepth < Options.MinimumFileBitDepth) ||
-                (sampleRate != null && sampleRate < Options.MinimumFileSampleRate))
-            {
-                return false;
-            }
-
-            var constantBitRates = new[] { 32, 64, 128, 192, 256, 320 };
-            var isConstant = constantBitRates.Any(b => b == bitRate);
-
-            if (bitRate != null && ((!Options.IncludeConstantBitRate && isConstant) || (!Options.IncludeVariableBitRate && !isConstant)))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool ResponseMeetsOptionCriteria(SearchResponse response)
-        {
-            if (Options.FilterResponses && (
-                    response.FileCount < Options.MinimumResponseFileCount ||
-                    response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
-                    response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
-                    response.QueueLength > Options.MaximumPeerQueueLength))
-            {
-                return false;
-            }
-
-            return true;
         }
 
         private void OnPeerConnectionDataReceived(object sender, DataReceivedEventArgs e)
