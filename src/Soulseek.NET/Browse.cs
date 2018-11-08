@@ -22,13 +22,14 @@ namespace Soulseek.NET
 
     public sealed class Browse
     {
-        internal Browse(string username, string ipAddress, int port, BrowseOptions options = null, IConnection connection = null)
+        internal Browse(string username, string ipAddress, int port, BrowseOptions options = null, CancellationToken? cancellationToken = null, IConnection connection = null)
         {
             Username = username;
             IPAddress = ipAddress;
             Port = port;
 
             Options = options ?? new BrowseOptions();
+            CancellationToken = cancellationToken;
 
             Connection = connection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
         }
@@ -40,8 +41,9 @@ namespace Soulseek.NET
         public BrowseOptions Options { get; private set; }
         private IConnection Connection { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
+        private CancellationToken? CancellationToken { get; set; }
 
-        internal async Task<SharesResponse> BrowseAsync(CancellationToken? cancellationToken)
+        internal async Task<SharesResponse> BrowseAsync()
         {
             Connection.DataReceived += OnConnectionDataReceived;
             Connection.StateChanged += OnConnectionStateChanged;
@@ -54,7 +56,7 @@ namespace Soulseek.NET
                 await Connection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await Connection.SendAsync(new PeerSharesRequest().ToByteArray());
 
-                return await MessageWaiter.WaitIndefinitely<SharesResponse>(MessageCode.PeerSharesResponse, IPAddress, cancellationToken);
+                return await MessageWaiter.WaitIndefinitely<SharesResponse>(MessageCode.PeerSharesResponse, IPAddress, CancellationToken);
             }
             catch (Exception ex)
             {
