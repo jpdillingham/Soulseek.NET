@@ -156,27 +156,9 @@ namespace Soulseek.NET
             options = options ?? new BrowseOptions();
 
             var address = await GetPeerAddressAsync(username);
+            var browse = new Browse(username, address.IPAddress, address.Port, options);
 
-            Console.WriteLine($"[BROWSE]: {username} {address.IPAddress}:{address.Port}");
-
-            var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port, Options.ConnectionTimeout, options.Timeout);
-            peerConnection.DataReceived += OnPeerConnectionDataReceived;
-            peerConnection.StateChanged += OnPeerConnectionStateChanged;
-
-            try
-            {
-                await peerConnection.ConnectAsync();
-
-                var token = new Random().Next();
-                await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
-                await peerConnection.SendAsync(new PeerSharesRequest().ToByteArray());
-
-                return await MessageWaiter.WaitIndefinitely<SharesResponse>(MessageCode.PeerSharesResponse, address.IPAddress, cancellationToken);
-            }
-            catch (Exception ex)
-            {
-                throw new BrowseException($"Failed to browse user {username}.", ex);
-            }
+            return await browse.BrowseAsync(cancellationToken);
         }
 
         /// <summary>
@@ -462,10 +444,6 @@ namespace Soulseek.NET
             {
                 case MessageCode.PeerSearchResponse:
                     HandlePeerSearchResponse(SearchResponse.Parse(message), e);
-                    break;
-
-                case MessageCode.PeerSharesResponse:
-                    MessageWaiter.Complete(MessageCode.PeerSharesResponse, e.IPAddress, SharesResponse.Parse(message));
                     break;
 
                 default:
