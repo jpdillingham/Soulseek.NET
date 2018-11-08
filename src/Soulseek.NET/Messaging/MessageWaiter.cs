@@ -69,12 +69,12 @@ namespace Soulseek.NET.Messaging
             Dispose(true);
         }
 
-        internal void Fail(MessageCode messageCode, Exception exception)
+        internal void Throw(MessageCode messageCode, Exception exception)
         {
-            Fail(messageCode, null, exception);
+            Throw(messageCode, null, exception);
         }
 
-        internal void Fail(MessageCode messageCode, object token, Exception exception)
+        internal void Throw(MessageCode messageCode, object token, Exception exception)
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 

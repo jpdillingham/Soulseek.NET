@@ -89,7 +89,7 @@ namespace Soulseek.NET
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
                 connection.Dispose();
-                MessageWaiter.Fail(MessageCode.PeerSharesResponse, e.IPAddress, new ConnectionException(e.Message));
+                MessageWaiter.Throw(MessageCode.PeerSharesResponse, e.IPAddress, new ConnectionException(e.Message));
             }
         }
     }
