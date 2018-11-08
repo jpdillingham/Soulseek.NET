@@ -41,7 +41,7 @@ namespace Soulseek.NET
         internal Search(string searchText, SearchOptions options, Connection serverConnection)
         {
             SearchText = searchText;
-            Options = options;
+            Options = options ?? new SearchOptions();
             ServerConnection = serverConnection;
             SearchFilters = new SearchFilters(Options);
 
@@ -104,32 +104,6 @@ namespace Soulseek.NET
         public void Dispose()
         {
             Dispose(true);
-        }
-
-        private void AddResponse(SearchResponse response, NetworkEventArgs e)
-        {
-            if (State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
-            {
-                response.ParseFiles();
-
-                if (Options.FilterFiles || true)
-                {
-                    response.Files = response.Files.Where(f => SearchFilters.FileMeetsOptionCriteria(f));
-                }
-
-                Interlocked.Add(ref resultCount, response.Files.Count());
-
-                if (resultCount >= Options.FileLimit)
-                {
-                    End(SearchState.Completed);
-                    return;
-                }
-
-                ResponseList.Add(response);
-                Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
-
-                SearchTimeoutTimer.Reset();
-            }
         }
 
         internal async Task AddPeerConnection(ConnectToPeerResponse connectToPeerResponse, NetworkEventArgs e)
@@ -220,27 +194,38 @@ namespace Soulseek.NET
         {
             var message = new Message(e.Data);
 
-            Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
-
-            switch (message.Code)
+            if (message.Code == MessageCode.PeerSearchResponse)
             {
-                case MessageCode.PeerSearchResponse:
-                    AddResponse(SearchResponse.Parse(message), e);
-                    break;
+                var response = SearchResponse.Parse(message);
 
-                default:
-                    if (sender is Connection peerConnection)
+                if (response.Ticket == Ticket && State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
+                {
+                    response.ParseFiles();
+
+                    if (Options.FilterFiles || true)
                     {
-                        peerConnection.Disconnect($"Unknown response from peer: {message.Code}");
+                        response.Files = response.Files.Where(f => SearchFilters.FileMeetsOptionCriteria(f));
                     }
 
-                    break;
+                    Interlocked.Add(ref resultCount, response.Files.Count());
+
+                    if (resultCount >= Options.FileLimit)
+                    {
+                        End(SearchState.Completed);
+                        return;
+                    }
+
+                    ResponseList.Add(response);
+                    Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
+
+                    SearchTimeoutTimer.Reset();
+                }
             }
         }
 
         private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            Console.WriteLine($"Peer connection state changed: {e.Address} {e.State}");
+            //Console.WriteLine($"Peer connection state changed: {e.Address} {e.State}");
             if (e.State == ConnectionState.Disconnected &&
                 sender is Connection connection &&
                 connection.Context is ConnectToPeerResponse connectToPeerResponse)
@@ -302,7 +287,7 @@ namespace Soulseek.NET
             {
                 await connection.ConnectAsync();
 
-                Console.WriteLine($"[PIERCE FIREWALL]: {response.Username}/{response.IPAddress}:{response.Port} Token: {response.Token}");
+                //Console.WriteLine($"[PIERCE FIREWALL]: {response.Username}/{response.IPAddress}:{response.Port} Token: {response.Token}");
 
                 var request = new PierceFirewallRequest(response.Token);
                 await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
@@ -310,7 +295,7 @@ namespace Soulseek.NET
             catch (ConnectionException ex)
             {
                 Console.WriteLine(ex);
-                connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
+                //connection.Disconnect($"Failed to connect to peer {response.Username}@{response.IPAddress}:{response.Port}: {ex.Message}");
             }
         }
     }
