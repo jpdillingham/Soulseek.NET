@@ -70,35 +70,6 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/>.
-        /// </summary>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="exception">The Exception to throw.</param>
-        internal void Throw(MessageCode messageCode, Exception exception)
-        {
-            Throw(messageCode, null, exception);
-        }
-
-        /// <summary>
-        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/> and <paramref name="token"/>.
-        /// </summary>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="token">The unique wait token.</param>
-        /// <param name="exception">The Exception to throw.</param>
-        internal void Throw(MessageCode messageCode, object token, Exception exception)
-        {
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
-
-            if (Waits.TryGetValue(key, out var queue))
-            {
-                if (queue.TryDequeue(out var wait))
-                {
-                    wait.TaskCompletionSource.SetException(exception);
-                }
-            }
-        }
-
-        /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
@@ -126,6 +97,36 @@ namespace Soulseek.NET.Messaging
                 if (queue.TryDequeue(out var wait))
                 {
                     ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
+                }
+            }
+        }
+
+        /// <summary>
+        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/>.
+        /// </summary>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="exception">The Exception to throw.</param>
+        internal void Throw(MessageCode messageCode, Exception exception)
+        {
+            Throw(messageCode, null, exception);
+        }
+
+        /// <summary>
+        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified
+        ///     <paramref name="messageCode"/> and <paramref name="token"/>.
+        /// </summary>
+        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="token">The unique wait token.</param>
+        /// <param name="exception">The Exception to throw.</param>
+        internal void Throw(MessageCode messageCode, object token, Exception exception)
+        {
+            var key = new WaitKey() { MessageCode = messageCode, Token = token };
+
+            if (Waits.TryGetValue(key, out var queue))
+            {
+                if (queue.TryDequeue(out var wait))
+                {
+                    wait.TaskCompletionSource.SetException(exception);
                 }
             }
         }
@@ -257,6 +258,11 @@ namespace Soulseek.NET.Messaging
         internal class PendingWait
         {
             /// <summary>
+            ///     Gets or sets the cancellation token for the wait.
+            /// </summary>
+            public CancellationToken? CancellationToken { get; set; }
+
+            /// <summary>
             ///     Gets or sets the time at which the wait was enqueued.
             /// </summary>
             public DateTime DateTime { get; set; }
@@ -270,11 +276,6 @@ namespace Soulseek.NET.Messaging
             ///     Gets or sets the number of seconds after which the wait is to time out.
             /// </summary>
             public int TimeoutAfter { get; set; }
-
-            /// <summary>
-            ///     Gets or sets the cancellation token for the wait.
-            /// </summary>
-            public CancellationToken? CancellationToken { get; set; }
         }
     }
 }
