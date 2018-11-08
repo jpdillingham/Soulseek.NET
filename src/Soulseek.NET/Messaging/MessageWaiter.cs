@@ -69,6 +69,24 @@ namespace Soulseek.NET.Messaging
             Dispose(true);
         }
 
+        internal void Fail(MessageCode messageCode, Exception exception)
+        {
+            Fail(messageCode, null, exception);
+        }
+
+        internal void Fail(MessageCode messageCode, object token, Exception exception)
+        {
+            var key = new WaitKey() { MessageCode = messageCode, Token = token };
+
+            if (Waits.TryGetValue(key, out var queue))
+            {
+                if (queue.TryDequeue(out var wait))
+                {
+                    wait.TaskCompletionSource.SetException(exception);
+                }
+            }
+        }
+
         /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
         /// </summary>
