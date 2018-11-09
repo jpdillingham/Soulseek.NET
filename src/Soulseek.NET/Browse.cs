@@ -37,13 +37,14 @@ namespace Soulseek.NET
         public string Username { get; private set; }
         public string IPAddress { get; private set; }
         public int Port { get; private set; }
+        public BrowseResponse Response { get; private set; }
 
         public BrowseOptions Options { get; private set; }
         private IConnection Connection { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
         private CancellationToken? CancellationToken { get; set; }
 
-        internal async Task<SharesResponse> BrowseAsync()
+        internal async Task<Browse> BrowseAsync()
         {
             Connection.DataReceived += OnConnectionDataReceived;
             Connection.StateChanged += OnConnectionStateChanged;
@@ -56,7 +57,8 @@ namespace Soulseek.NET
                 await Connection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await Connection.SendAsync(new PeerSharesRequest().ToByteArray());
 
-                return await MessageWaiter.WaitIndefinitely<SharesResponse>(MessageCode.PeerSharesResponse, IPAddress, CancellationToken);
+                Response = await MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, IPAddress, CancellationToken);
+                return this;
             }
             catch (Exception ex)
             {
@@ -70,8 +72,8 @@ namespace Soulseek.NET
 
             switch (message.Code)
             {
-                case MessageCode.PeerSharesResponse:
-                    MessageWaiter.Complete(MessageCode.PeerSharesResponse, e.IPAddress, SharesResponse.Parse(message));
+                case MessageCode.PeerBrowseResponse:
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, e.IPAddress, BrowseResponse.Parse(message));
                     break;
 
                 default:
@@ -89,7 +91,7 @@ namespace Soulseek.NET
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
                 connection.Dispose();
-                MessageWaiter.Throw(MessageCode.PeerSharesResponse, e.IPAddress, new ConnectionException(e.Message));
+                MessageWaiter.Throw(MessageCode.PeerBrowseResponse, e.IPAddress, new ConnectionException(e.Message));
             }
         }
     }
