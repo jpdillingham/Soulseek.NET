@@ -78,8 +78,7 @@ namespace Soulseek.NET
         /// </summary>
         string Username { get; }
 
-
-        Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
+        Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
         Task ConnectAsync();
 

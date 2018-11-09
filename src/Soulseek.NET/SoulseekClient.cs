@@ -116,7 +116,7 @@ namespace Soulseek.NET
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
 
-        public async Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (ConnectionState != ConnectionState.Connected)
             {
