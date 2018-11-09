@@ -21,7 +21,6 @@ namespace Soulseek.NET.Messaging.Responses
         {
         }
 
-        public bool Failed => !Succeeded;
         public string IPAddress { get; private set; }
         public string Message { get; private set; }
         public bool Succeeded { get; private set; }
