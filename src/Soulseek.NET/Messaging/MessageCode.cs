@@ -445,12 +445,12 @@ namespace Soulseek.NET.Messaging
         /// <summary>
         ///     4
         /// </summary>
-        PeerSharesRequest = 20004,
+        PeerBrowseRequest = 20004,
 
         /// <summary>
         ///     5
         /// </summary>
-        PeerSharesResponse = 20005,
+        PeerBrowseResponse = 20005,
 
         /// <summary>
         ///     8
