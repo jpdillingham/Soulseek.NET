@@ -23,6 +23,8 @@ namespace Soulseek.NET
     /// </summary>
     public interface ISoulseekClient
     {
+        #region Public Events
+
         /// <summary>
         ///     Occurs when the underlying TCP connection to the server changes state.
         /// </summary>
@@ -42,6 +44,10 @@ namespace Soulseek.NET
         ///     Occurs when a new search result is received.
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
+
+        #endregion Public Events
+
+        #region Public Properties
 
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
@@ -69,14 +75,13 @@ namespace Soulseek.NET
         int Port { get; set; }
 
         /// <summary>
-        ///     Gets information about the connected server.
-        /// </summary>
-        ServerInfo Server { get; }
-
-        /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
         string Username { get; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
@@ -86,8 +91,10 @@ namespace Soulseek.NET
 
         void Dispose();
 
-        Task<LoginResponse> LoginAsync(string username, string password);
+        Task LoginAsync(string username, string password);
 
         Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
+
+        #endregion Public Methods
     }
 }
