@@ -55,7 +55,7 @@ namespace Soulseek.NET
 
                 var token = new Random().Next();
                 await Connection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
-                await Connection.SendAsync(new PeerSharesRequest().ToByteArray());
+                await Connection.SendAsync(new PeerBrowseRequest().ToByteArray());
 
                 Response = await MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, IPAddress, CancellationToken);
                 return this;
