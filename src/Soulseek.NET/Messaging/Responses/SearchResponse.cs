@@ -22,7 +22,7 @@ namespace Soulseek.NET.Messaging.Responses
         {
         }
 
-        public int FileCount { get; private set; }
+        public int FileCount { get; internal set; }
 
         public IEnumerable<File> Files
         {
@@ -37,11 +37,12 @@ namespace Soulseek.NET.Messaging.Responses
             }
         }
 
-        public int FreeUploadSlots { get; private set; }
-        public long QueueLength { get; private set; }
-        public int Ticket { get; private set; }
-        public int UploadSpeed { get; private set; }
-        public string Username { get; private set; }
+        public int FreeUploadSlots { get; internal set; }
+        public long QueueLength { get; internal set; }
+        public int Ticket { get; internal set; }
+        public int UploadSpeed { get; internal set; }
+        public string Username { get; internal set; }
+
         private List<File> FileList { get; set; }
         private MessageReader MessageReader { get; set; }
 
@@ -88,11 +89,6 @@ namespace Soulseek.NET.Messaging.Responses
         internal void ParseFiles()
         {
             FileList = ParseFiles(MessageReader, FileCount);
-        }
-
-        internal void SetFiles(IEnumerable<File> files)
-        {
-            FileList = files.ToList();
         }
 
         private static List<File> ParseFiles(MessageReader reader, int count)
