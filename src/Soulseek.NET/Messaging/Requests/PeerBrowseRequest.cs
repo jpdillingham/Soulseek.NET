@@ -12,12 +12,12 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
-    public class PeerSharesRequest
+    public class PeerBrowseRequest
     {
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerSharesRequest)
+                .Code(MessageCode.PeerBrowseRequest)
                 .Build()
                 .ToByteArray();
         }
