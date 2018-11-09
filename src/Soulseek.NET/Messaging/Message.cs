@@ -15,23 +15,50 @@ namespace Soulseek.NET.Messaging
     using System;
     using System.Linq;
 
+    /// <summary>
+    ///     A message.
+    /// </summary>
     public class Message
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Message"/> class from the specified <paramref name="bytes"/>.
+        /// </summary>
+        /// <param name="bytes">The byte array with which to initialize the message.</param>
         public Message(byte[] bytes)
         {
             Bytes = bytes;
         }
 
+        /// <summary>
+        ///     Gets the message code.
+        /// </summary>
         public MessageCode Code => GetCode();
+
+        /// <summary>
+        ///     Gets the message length.
+        /// </summary>
         public int Length => GetLength();
+
+        /// <summary>
+        ///     Gets the message payload.
+        /// </summary>
         public byte[] Payload => GetPayload();
+
         private byte[] Bytes { get; set; }
 
+        /// <summary>
+        ///     Returns the message as a byte array.
+        /// </summary>
+        /// <returns>The message as a byte array.</returns>
         public byte[] ToByteArray()
         {
             return Bytes;
         }
 
+        /// <summary>
+        ///     Returns a <see cref="MessageReader"/> for the message.
+        /// </summary>
+        /// <returns>The MessageReader for the message.</returns>
         public MessageReader ToReader()
         {
             return new MessageReader(this);

@@ -17,15 +17,18 @@ namespace Soulseek.NET.Messaging
     using System.Linq;
     using System.Text;
 
+    /// <summary>
+    ///     Builds a message.
+    /// </summary>
     public class MessageBuilder
     {
-        public MessageBuilder()
-        {
-        }
-
         private List<byte> Bytes { get; set; } = new List<byte>();
         private bool Initialized { get; set; } = false;
 
+        /// <summary>
+        ///     Builds the message.
+        /// </summary>
+        /// <returns>The built message.</returns>
         public Message Build()
         {
             var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count()));
@@ -33,6 +36,11 @@ namespace Soulseek.NET.Messaging
             return new Message(withLength.ToArray());
         }
 
+        /// <summary>
+        ///     Sets the message code.
+        /// </summary>
+        /// <param name="code">The desired message code.</param>
+        /// <returns>This MessageBuilder.</returns>
         public MessageBuilder Code(MessageCode code)
         {
             if (Initialized)
@@ -46,6 +54,11 @@ namespace Soulseek.NET.Messaging
             return this;
         }
 
+        /// <summary>
+        ///     Sets the single-byte message code.
+        /// </summary>
+        /// <param name="code">The desired single-byte message code.</param>
+        /// <returns>This MessageBuilder.</returns>
         public MessageBuilder Code(byte code)
         {
             if (Initialized)
@@ -59,6 +72,11 @@ namespace Soulseek.NET.Messaging
             return this;
         }
 
+        /// <summary>
+        ///     Writes the specified byte <paramref name="value"/> to the message.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteByte(byte value)
         {
             EnsureInitialized();
@@ -67,14 +85,24 @@ namespace Soulseek.NET.Messaging
             return this;
         }
 
-        public MessageBuilder WriteBytes(byte[] values)
+        /// <summary>
+        ///     Writes the specified <paramref name="bytes"/> to the message.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <returns>This MessageBuilder.</returns>
+        public MessageBuilder WriteBytes(byte[] bytes)
         {
             EnsureInitialized();
 
-            Bytes.AddRange(values);
+            Bytes.AddRange(bytes);
             return this;
         }
 
+        /// <summary>
+        ///     Writes the specified integer <paramref name="value"/> to the message.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteInteger(int value)
         {
             EnsureInitialized();
@@ -83,6 +111,11 @@ namespace Soulseek.NET.Messaging
             return this;
         }
 
+        /// <summary>
+        ///     Writes the specified long <paramref name="value"/> to the message.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteLong(long value)
         {
             EnsureInitialized();
@@ -91,6 +124,11 @@ namespace Soulseek.NET.Messaging
             return this;
         }
 
+        /// <summary>
+        ///     Writes the specified string <paramref name="value"/> to the message.
+        /// </summary>
+        /// <param name="value">The value to write.</param>
+        /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteString(string value)
         {
             EnsureInitialized();

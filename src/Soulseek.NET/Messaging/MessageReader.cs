@@ -18,24 +18,50 @@ namespace Soulseek.NET.Messaging
     using System.Text;
     using Soulseek.NET.Zlib;
 
+    /// <summary>
+    ///     Reads data from a Message payload.
+    /// </summary>
     public class MessageReader
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MessageReader"/> class from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message with which to initialize the reader.</param>
         public MessageReader(Message message)
         {
             Message = message;
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MessageReader"/> class from the specified <paramref name="bytes"/>.
+        /// </summary>
+        /// <param name="bytes">The byte array with which to initialize the reader.</param>
         public MessageReader(byte[] bytes)
             : this(new Message(bytes))
         {
         }
 
+        /// <summary>
+        ///     Gets the Message Code.
+        /// </summary>
         public MessageCode Code => Message.Code;
+
+        /// <summary>
+        ///     Gets the Message payload.
+        /// </summary>
         public byte[] Payload => Message.Payload;
+
+        /// <summary>
+        ///     Gets the current position of the head of the reader.
+        /// </summary>
         public int Position { get; private set; } = 0;
 
         private Message Message { get; set; }
 
+        /// <summary>
+        ///     Moves the head of the reader to the specified <paramref name="position"/>.
+        /// </summary>
+        /// <param name="position">The desired position.</param>
         public void Seek(int position)
         {
             if (position < 0)
@@ -51,11 +77,13 @@ namespace Soulseek.NET.Messaging
             Position = position;
         }
 
+        /// <summary>
+        ///     Decompresses the message payload.
+        /// </summary>
+        /// <returns>This MessageReader.</returns>
         public MessageReader Decompress()
         {
-            byte[] decompressedPayload;
-
-            Decompress(Payload, out decompressedPayload);
+            Decompress(Payload, out byte[] decompressedPayload);
 
             Message = new MessageBuilder()
                 .Code(Code)
@@ -65,6 +93,10 @@ namespace Soulseek.NET.Messaging
             return this;
         }
 
+        /// <summary>
+        ///     Reads a single byte at the head of the reader.
+        /// </summary>
+        /// <returns>The read byte.</returns>
         public int ReadByte()
         {
             try
@@ -79,6 +111,11 @@ namespace Soulseek.NET.Messaging
             }
         }
 
+        /// <summary>
+        ///     Reads a byte array of length <paramref name="count"/> at the head of the reader.
+        /// </summary>
+        /// <param name="count">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
         public byte[] ReadBytes(int count)
         {
             try
@@ -93,6 +130,10 @@ namespace Soulseek.NET.Messaging
             }
         }
 
+        /// <summary>
+        ///     Reads an integer at the head of the reader.
+        /// </summary>
+        /// <returns>The read integer.</returns>
         public int ReadInteger()
         {
             try
@@ -107,6 +148,10 @@ namespace Soulseek.NET.Messaging
             }
         }
 
+        /// <summary>
+        ///     Reads a long at the head of the reader.
+        /// </summary>
+        /// <returns>The read long.</returns>
         public long ReadLong()
         {
             try
@@ -121,6 +166,10 @@ namespace Soulseek.NET.Messaging
             }
         }
 
+        /// <summary>
+        ///     Reads a string at the head of the reader.
+        /// </summary>
+        /// <returns>The read string.</returns>
         public string ReadString()
         {
             var length = 0;
@@ -143,6 +192,10 @@ namespace Soulseek.NET.Messaging
             }
         }
 
+        /// <summary>
+        ///     Returns the head of the reader to the beginning of the message payload.
+        /// </summary>
+        /// <returns>This MessageReader.</returns>
         public MessageReader Reset()
         {
             Position = 0;
