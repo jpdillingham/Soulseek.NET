@@ -15,16 +15,16 @@ spirit of the network.
 
 ## Supported and Planned Functionality
 
+- [ ] Private messaging
 - [x] Searching the network 
 - [x] Browsing individual user shares
 - [ ] Downloading of files
-- [ ] Private messaging
 
 ## Unsupported Functionality
 
-- Downloads from users behind a firewall
 - Sharing of files:
-  - Accepting or responding to distributed search requests
   - Providing the server with a list of shared files
+  - Accepting or responding to distributed search requests
   - Uploading files
+- Downloads from users behind a firewall
 - Chat rooms
