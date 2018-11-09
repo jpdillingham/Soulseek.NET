@@ -37,6 +37,26 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
+    public class LoginException : ServerException
+    {
+        public LoginException()
+            : base()
+        {
+        }
+
+        public LoginException(string message)
+            : base(message)
+        {
+        }
+
+        public LoginException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
     public class SearchException : Exception
     {
         public SearchException()
