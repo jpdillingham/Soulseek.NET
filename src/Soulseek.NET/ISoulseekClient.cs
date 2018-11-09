@@ -18,10 +18,11 @@ namespace Soulseek.NET
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
 
+    /// <summary>
+    ///     A client for the Soulseek file sharing network.
+    /// </summary>
     public interface ISoulseekClient
     {
-        #region Public Events
-
         /// <summary>
         ///     Occurs when the underlying TCP connection to the server changes state.
         /// </summary>
@@ -42,10 +43,6 @@ namespace Soulseek.NET
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
-        #endregion Public Events
-
-        #region Public Properties
-
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
@@ -55,6 +52,11 @@ namespace Soulseek.NET
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         ConnectionState ConnectionState { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether a user is currently signed in.
+        /// </summary>
+        bool LoggedIn { get; }
 
         /// <summary>
         ///     Gets the client options.
@@ -71,16 +73,22 @@ namespace Soulseek.NET
         /// </summary>
         ServerInfo Server { get; }
 
-        #endregion Public Properties
+        /// <summary>
+        ///     Gets the name of the currently signed in user.
+        /// </summary>
+        string Username { get; }
+
+
+        Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
         Task ConnectAsync();
+
         void Disconnect();
+
         void Dispose();
 
         Task<LoginResponse> LoginAsync(string username, string password);
 
         Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
-
-        Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
     }
 }

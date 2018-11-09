@@ -26,8 +26,6 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
-        #region Public Constructors
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="options"/>.
         /// </summary>
@@ -57,10 +55,6 @@ namespace Soulseek.NET
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
         }
 
-        #endregion Public Constructors
-
-        #region Public Events
-
         /// <summary>
         ///     Occurs when the underlying TCP connection to the server changes state.
         /// </summary>
@@ -81,13 +75,6 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
-        #endregion Public Events
-
-        #region Public Properties
-
-        public string Username { get; private set; }
-        public bool LoggedIn { get; private set; } = false;
-
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
@@ -97,6 +84,11 @@ namespace Soulseek.NET
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         public ConnectionState ConnectionState => Connection.State;
+
+        /// <summary>
+        ///     Gets a value indicating whether a user is currently signed in.
+        /// </summary>
+        public bool LoggedIn { get; private set; } = false;
 
         /// <summary>
         ///     Gets the client options.
@@ -113,19 +105,16 @@ namespace Soulseek.NET
         /// </summary>
         public ServerInfo Server { get; private set; } = new ServerInfo();
 
-        #endregion Public Properties
-
-        #region Private Properties
+        /// <summary>
+        ///     Gets the name of the currently signed in user.
+        /// </summary>
+        public string Username { get; private set; }
 
         private Search ActiveSearch { get; set; }
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         public async Task<SharesResponse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -185,26 +174,19 @@ namespace Soulseek.NET
         //{
         //    // todo: fail if not logged in
 
-        //    var address = await GetPeerAddressAsync(username);
+        // var address = await GetPeerAddressAsync(username);
 
-        //    Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
+        // Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
 
-        //    var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port);
-        //    peerConnection.DataReceived += OnPeerConnectionDataReceived;
-        //    peerConnection.StateChanged += OnPeerConnectionStateChanged;
+        // var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port); peerConnection.DataReceived
+        // += OnPeerConnectionDataReceived; peerConnection.StateChanged += OnPeerConnectionStateChanged;
 
-        //    try
-        //    {
-        //        await peerConnection.ConnectAsync();
+        // try { await peerConnection.ConnectAsync();
 
-        //        var token = new Random().Next();
-        //        await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
-        //        await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray());
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}");
-        //    }
+        // var token = new Random().Next(); await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(),
+        // suppressCodeNormalization: true); await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download,
+        // token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray()); } catch (Exception ex) {
+        // Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}"); }
 
         //    return true;
         //}
@@ -276,10 +258,6 @@ namespace Soulseek.NET
             return await ActiveSearch.SearchAsync(cancellationToken);
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -299,10 +277,6 @@ namespace Soulseek.NET
                 Disposed = true;
             }
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
         {
@@ -390,7 +364,5 @@ namespace Soulseek.NET
 
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
         }
-
-        #endregion Private Methods
     }
 }
