@@ -14,24 +14,38 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
 
-    public sealed class SharesResponse
+    public sealed class BrowseResponse
     {
-        internal SharesResponse()
+        internal BrowseResponse()
         {
         }
 
-        public IEnumerable<Directory> Directories => DirectoryList.AsReadOnly();
-        public int DirectoryCount { get; private set; }
+        public IEnumerable<Directory> Directories
+        {
+            get
+            {
+                return DirectoryList.AsReadOnly();
+            }
+
+            internal set
+            {
+                DirectoryList = value.ToList();
+            }
+        }
+
+        public int DirectoryCount { get; internal set; }
+
         private List<Directory> DirectoryList { get; set; } = new List<Directory>();
 
-        public static SharesResponse Parse(Message message)
+        public static BrowseResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.PeerSharesResponse)
+            if (reader.Code != MessageCode.PeerBrowseResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Shares Response (expected: {(int)MessageCode.PeerSharesResponse}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Peer Shares Response (expected: {(int)MessageCode.PeerBrowseResponse}, received: {(int)reader.Code}");
             }
 
             try
@@ -44,7 +58,7 @@ namespace Soulseek.NET.Messaging.Responses
                 return null;
             }
 
-            var response = new SharesResponse
+            var response = new BrowseResponse
             {
                 DirectoryCount = reader.ReadInteger(),
             };
