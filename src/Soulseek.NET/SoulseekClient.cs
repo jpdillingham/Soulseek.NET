@@ -101,11 +101,6 @@ namespace Soulseek.NET
         public int Port { get; set; }
 
         /// <summary>
-        ///     Gets information about the connected server.
-        /// </summary>
-        public ServerInfo Server { get; private set; } = new ServerInfo();
-
-        /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
         public string Username { get; private set; }
@@ -153,9 +148,9 @@ namespace Soulseek.NET
         {
             var message = "Client disconnected.";
 
-            Connection.Disconnect(message);
+            Connection?.Disconnect(message);
 
-            ActiveSearch.Dispose();
+            ActiveSearch?.Dispose();
 
             ActiveSearch = default(Search);
             Username = null;
@@ -196,34 +191,32 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
-        /// <returns>The server response.</returns>
-        public async Task<LoginResponse> LoginAsync(string username, string password)
+        /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="LoginException">Thrown when the login fails.</exception>
+        public async Task LoginAsync(string username, string password)
         {
-            // todo: fail if already logged in
+            if (LoggedIn)
+            {
+                throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
+            }
 
             Username = username;
-            var request = new LoginRequest(username, password);
-
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
-            var roomList = MessageWaiter.Wait<IEnumerable<Room>>(MessageCode.ServerRoomList);
-            var parentMinSpeed = MessageWaiter.Wait<int>(MessageCode.ServerParentMinSpeed);
-            var parentSpeedRatio = MessageWaiter.Wait<int>(MessageCode.ServerParentSpeedRatio);
-            var wishlistInterval = MessageWaiter.Wait<int>(MessageCode.ServerWishlistInterval);
-            var privilegedUsers = MessageWaiter.Wait<IEnumerable<string>>(MessageCode.ServerPrivilegedUsers);
 
-            await Connection.SendAsync(request.ToMessage().ToByteArray());
+            await Connection.SendAsync(new LoginRequest(username, password).ToMessage().ToByteArray());
 
-            Task.WaitAll(login, roomList, parentMinSpeed, parentSpeedRatio, wishlistInterval, privilegedUsers);
+            await login;
 
-            Server.Rooms = roomList.Result;
-            Server.ParentMinSpeed = parentMinSpeed.Result;
-            Server.ParentSpeedRatio = parentSpeedRatio.Result;
-            Server.WishlistInterval = wishlistInterval.Result;
-            Server.PrivilegedUsers = privilegedUsers.Result;
-
-            LoggedIn = login.Result.Succeeded;
-
-            return login.Result;
+            if (login.Result.Succeeded)
+            {
+                LoggedIn = true;
+            }
+            else
+            {
+                // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                Disconnect();
+                throw new LoginException($"Failed to log in as {username}: {login.Result.Message}");
+            }
         }
 
         /// <summary>
@@ -314,7 +307,7 @@ namespace Soulseek.NET
 
             Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
 
-            //Console.WriteLine($"[MESSAGE]: {message.Code}");
+            Console.WriteLine($"[MESSAGE]: {message.Code}");
 
             switch (message.Code)
             {
