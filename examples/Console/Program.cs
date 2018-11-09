@@ -72,19 +72,14 @@
 
                     else
                     {
-                        var r = await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]);
-
-                        
-
-                        if (r.Succeeded)
+                        try
                         {
-                            Console.WriteLine("Login succeeded");
-                            Console.WriteLine(JsonConvert.SerializeObject(r));
-                            //break;
+                            await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]);
+                            Console.WriteLine($"Logged in.");
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            Console.WriteLine("Login failed");
+                            Console.WriteLine($"Login failed: {ex.Message}");
                         }
                     }
                 }
