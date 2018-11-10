@@ -132,9 +132,9 @@ namespace Soulseek.NET
             options = options ?? new BrowseOptions();
 
             var address = await GetPeerAddressAsync(username);
-            var browse = new Browse(username, address.IPAddress, address.Port, options, cancellationToken);
+            var browse = new Browse(username, address.IPAddress, address.Port, options);
 
-            return await browse.BrowseAsync();
+            return await browse.BrowseAsync(cancellationToken);
         }
 
         /// <summary>
