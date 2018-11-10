@@ -22,13 +22,13 @@ namespace Soulseek.NET
 
     public sealed class Browse
     {
-        internal Browse(string username, string ipAddress, int port, BrowseOptions options = null, CancellationToken? cancellationToken = null, IConnection connection = null)
+        internal Browse(string username, string ipAddress, int port, BrowseOptions options, CancellationToken? cancellationToken = null, IConnection connection = null)
         {
             Username = username;
             IPAddress = ipAddress;
             Port = port;
 
-            Options = options ?? new BrowseOptions();
+            Options = options;
             CancellationToken = cancellationToken;
 
             Connection = connection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
