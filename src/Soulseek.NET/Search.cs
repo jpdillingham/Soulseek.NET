@@ -38,10 +38,10 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The options for the search.</param>
         /// <param name="serverConnection">The connection to use when searching.</param>
-        internal Search(string searchText, SearchOptions options, Connection serverConnection)
+        internal Search(string searchText, SearchOptions options, IConnection serverConnection)
         {
             SearchText = searchText;
-            Options = options ?? new SearchOptions();
+            Options = options;
             ServerConnection = serverConnection;
             SearchFilters = new SearchFilters(Options);
 
@@ -91,7 +91,7 @@ namespace Soulseek.NET
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
-        private Connection ServerConnection { get; set; }
+        private IConnection ServerConnection { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         /// <summary>
