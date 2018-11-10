@@ -15,7 +15,6 @@ namespace Soulseek.NET
     using System;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
 
     /// <summary>
@@ -83,16 +82,52 @@ namespace Soulseek.NET
 
         #region Public Methods
 
+        /// <summary>
+        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
+        ///     specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="username">The user to browse.</param>
+        /// <param name="options">The operation <see cref="BrowseOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including the fetched list of files.</returns>
         Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
+        /// <summary>
+        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ConnectionStateException">
+        ///     Thrown when the client is already connected, or is transitioning between states.
+        /// </exception>
         Task ConnectAsync();
 
+        /// <summary>
+        ///     Disconnects the client from the server.
+        /// </summary>
         void Disconnect();
 
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
         void Dispose();
 
+        /// <summary>
+        ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
+        /// </summary>
+        /// <param name="username">The username with which to log in.</param>
+        /// <param name="password">The password with which to log in.</param>
+        /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="LoginException">Thrown when the login fails.</exception>
         Task LoginAsync(string username, string password);
 
+        /// <summary>
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> with the optionally specified
+        ///     <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including the search results.</returns>
         Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         #endregion Public Methods
