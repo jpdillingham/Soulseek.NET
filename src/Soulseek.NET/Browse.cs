@@ -22,15 +22,13 @@ namespace Soulseek.NET
 
     public sealed class Browse
     {
-        internal Browse(string username, string ipAddress, int port, BrowseOptions options, CancellationToken? cancellationToken = null, IConnection connection = null)
+        internal Browse(string username, string ipAddress, int port, BrowseOptions options, IConnection connection = null)
         {
             Username = username;
             IPAddress = ipAddress;
             Port = port;
 
             Options = options;
-            CancellationToken = cancellationToken;
-
             Connection = connection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
         }
 
@@ -42,9 +40,8 @@ namespace Soulseek.NET
         public BrowseOptions Options { get; private set; }
         private IConnection Connection { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
-        private CancellationToken? CancellationToken { get; set; }
 
-        internal async Task<Browse> BrowseAsync()
+        internal async Task<Browse> BrowseAsync(CancellationToken? cancellationToken = null)
         {
             Connection.DataReceived += OnConnectionDataReceived;
             Connection.StateChanged += OnConnectionStateChanged;
@@ -57,7 +54,7 @@ namespace Soulseek.NET
                 await Connection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await Connection.SendAsync(new PeerBrowseRequest().ToByteArray());
 
-                Response = await MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, IPAddress, CancellationToken);
+                Response = await MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, IPAddress, cancellationToken);
                 return this;
             }
             catch (Exception ex)
@@ -86,7 +83,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        private void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
