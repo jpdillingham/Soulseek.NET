@@ -17,19 +17,19 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class ServerException : Exception
+    public class BrowseException : SoulseekClientException
     {
-        public ServerException()
+        public BrowseException()
             : base()
         {
         }
 
-        public ServerException(string message)
+        public BrowseException(string message)
             : base(message)
         {
         }
 
-        public ServerException(string message, Exception innerException)
+        public BrowseException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
@@ -37,47 +37,7 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class LoginException : ServerException
-    {
-        public LoginException()
-            : base()
-        {
-        }
-
-        public LoginException(string message)
-            : base(message)
-        {
-        }
-
-        public LoginException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class SearchException : Exception
-    {
-        public SearchException()
-            : base()
-        {
-        }
-
-        public SearchException(string message)
-            : base(message)
-        {
-        }
-
-        public SearchException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class ConnectionException : Exception
+    public class ConnectionException : SoulseekClientException
     {
         public ConnectionException()
             : base()
@@ -97,47 +57,7 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class ConnectionStateException : Exception
-    {
-        public ConnectionStateException()
-            : base()
-        {
-        }
-
-        public ConnectionStateException(string message)
-            : base(message)
-        {
-        }
-
-        public ConnectionStateException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class ConnectionWriteException : Exception
-    {
-        public ConnectionWriteException()
-            : base()
-        {
-        }
-
-        public ConnectionWriteException(string message)
-            : base(message)
-        {
-        }
-
-        public ConnectionWriteException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class ConnectionReadException : Exception
+    public class ConnectionReadException : ConnectionException
     {
         public ConnectionReadException()
             : base()
@@ -157,7 +77,107 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class MessageException : Exception
+    public class ConnectionStateException : ConnectionException
+    {
+        public ConnectionStateException()
+            : base()
+        {
+        }
+
+        public ConnectionStateException(string message)
+            : base(message)
+        {
+        }
+
+        public ConnectionStateException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class ConnectionWriteException : ConnectionException
+    {
+        public ConnectionWriteException()
+            : base()
+        {
+        }
+
+        public ConnectionWriteException(string message)
+            : base(message)
+        {
+        }
+
+        public ConnectionWriteException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class LoginException : SoulseekClientException
+    {
+        public LoginException()
+            : base()
+        {
+        }
+
+        public LoginException(string message)
+            : base(message)
+        {
+        }
+
+        public LoginException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageBuildException : MessageException
+    {
+        public MessageBuildException()
+            : base()
+        {
+        }
+
+        public MessageBuildException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageBuildException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageCancelledException : MessageException
+    {
+        public MessageCancelledException()
+            : base()
+        {
+        }
+
+        public MessageCancelledException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageCancelledException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class MessageException : SoulseekClientException
     {
         public MessageException()
             : base()
@@ -197,26 +217,6 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class MessageBuildException : MessageException
-    {
-        public MessageBuildException()
-            : base()
-        {
-        }
-
-        public MessageBuildException(string message)
-            : base(message)
-        {
-        }
-
-        public MessageBuildException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
     public class MessageTimeoutException : MessageException
     {
         public MessageTimeoutException()
@@ -237,19 +237,19 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class MessageCancelledException : MessageException
+    public class SearchException : SoulseekClientException
     {
-        public MessageCancelledException()
+        public SearchException()
             : base()
         {
         }
 
-        public MessageCancelledException(string message)
+        public SearchException(string message)
             : base(message)
         {
         }
 
-        public MessageCancelledException(string message, Exception innerException)
+        public SearchException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
@@ -257,19 +257,19 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class BrowseException : Exception
+    public class SoulseekClientException : Exception
     {
-        public BrowseException()
+        public SoulseekClientException()
             : base()
         {
         }
 
-        public BrowseException(string message)
+        public SoulseekClientException(string message)
             : base(message)
         {
         }
 
-        public BrowseException(string message, Exception innerException)
+        public SoulseekClientException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
