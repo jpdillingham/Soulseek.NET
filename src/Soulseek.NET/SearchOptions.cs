@@ -14,58 +14,33 @@ namespace Soulseek.NET
 {
     using System.Collections.Generic;
 
-    public class SearchOptions
+    /// <summary>
+    ///     Options for the search operation.
+    /// </summary>
+    public class SearchOptions : SoulseekClientOptions
     {
-        public SearchOptions()
-        {
-        }
-
-        public SearchOptions(SoulseekClientOptions soulseekClientOptions)
-        {
-            BufferSize = soulseekClientOptions.BufferSize;
-            ConcurrentPeerConnections = soulseekClientOptions.ConcurrentPeerConnections;
-            ConnectionTimeout = soulseekClientOptions.ConnectionTimeout;
-            ReadTimeout = soulseekClientOptions.ReadTimeout;
-        }
-
-        /// <summary>
-        ///     Gets or sets the read and write buffer size for underlying TCP connections.
-        /// </summary>
-        public int BufferSize { get; set; } = 4096;
-
         /// <summary>
         ///     Gets or sets the number of allowed concurrent peer connections.
         /// </summary>
         public int ConcurrentPeerConnections { get; set; } = 500;
-
-        /// <summary>
-        ///     Gets or sets the connection timeout for client and peer TCP connections.
-        /// </summary>
-        public int ConnectionTimeout { get; set; } = 5;
-
-        /// <summary>
-        ///     Gets or sets the read timeout for peer TCP connections. Once connected and after reading data, if a no additional
-        ///     data is read within this threshold the connection will be forcibly disconnected.
-        /// </summary>
-        public int ReadTimeout { get; set; } = 5;
 
         public int SearchTimeout { get; set; } = 15;
         public int FileLimit { get; set; } = 10000;
 
         public bool FilterResponses { get; set; } = true;
         public int MinimumResponseFileCount { get; set; } = 1;
-        public int MinimumPeerFreeUploadSlots { get; set; }
+        public int MinimumPeerFreeUploadSlots { get; set; } = 0;
         public int MaximumPeerQueueLength { get; set; } = 1000000;
-        public int MinimumPeerUploadSpeed { get; set; }
+        public int MinimumPeerUploadSpeed { get; set; } = 0;
 
         public IEnumerable<string> IgnoredFileExtensions { get; set; }
 
         public bool FilterFiles { get; set; } = false;
-        public int MinimumFileBitRate { get; set; }
-        public int MinimumFileSize { get; set; }
-        public int MinimumFileLength { get; set; }
-        public int MinimumFileSampleRate { get; set; }
-        public int MinimumFileBitDepth { get; set; }
+        public int MinimumFileBitRate { get; set; } = 128;
+        public int MinimumFileSize { get; set; } = 0;
+        public int MinimumFileLength { get; set; } = 0;
+        public int MinimumFileSampleRate { get; set; } = 0;
+        public int MinimumFileBitDepth { get; set; } = 0;
         public bool IncludeConstantBitRate { get; set; } = true;
         public bool IncludeVariableBitRate { get; set; } = true;
     }

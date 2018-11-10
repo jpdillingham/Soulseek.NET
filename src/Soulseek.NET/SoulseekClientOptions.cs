@@ -23,11 +23,6 @@ namespace Soulseek.NET
         public int BufferSize { get; set; } = 4096;
 
         /// <summary>
-        ///     Gets or sets the number of allowed concurrent peer connections.
-        /// </summary>
-        public int ConcurrentPeerConnections { get; set; } = 500;
-
-        /// <summary>
         ///     Gets or sets the connection timeout for client and peer TCP connections.
         /// </summary>
         public int ConnectionTimeout { get; set; } = 5;
