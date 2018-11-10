@@ -13,7 +13,6 @@
 namespace Soulseek.NET
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -41,7 +40,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        /// <param name="options">The client options.</param>
+        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         public SoulseekClient(string address, int port, SoulseekClientOptions options)
         {
             Address = address;
@@ -111,6 +110,13 @@ namespace Soulseek.NET
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
 
+        /// <summary>
+        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="username">The user to browse.</param>
+        /// <param name="options">The operation <see cref="BrowseOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including the fetched list of files.</returns>
         public async Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (ConnectionState != ConnectionState.Connected)
@@ -120,7 +126,7 @@ namespace Soulseek.NET
 
             if (!LoggedIn)
             {
-                throw new SearchException($"A user must be logged in to browse.");
+                throw new BrowseException($"A user must be logged in to browse.");
             }
 
             options = options ?? new BrowseOptions();
@@ -135,20 +141,28 @@ namespace Soulseek.NET
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ConnectionStateException">Thrown when the client is already connected, or is transitioning between states.</exception>
         public async Task ConnectAsync()
         {
-            // todo: fail if already connected
+            if (Connection.State == ConnectionState.Connected)
+            {
+                throw new ConnectionStateException($"Failed to connect; the client is already connected.");
+            }
+
+            if (Connection.State == ConnectionState.Connecting || Connection.State == ConnectionState.Disconnecting)
+            {
+                throw new ConnectionStateException($"Failed to connect; the client is transitioning between states.");
+            }
+
             await Connection.ConnectAsync();
         }
 
         /// <summary>
-        ///     Disconnects the client from the server with an optionally supplied <paramref name="message"/>.
+        ///     Disconnects the client from the server.
         /// </summary>
         public void Disconnect()
         {
-            var message = "Client disconnected.";
-
-            Connection?.Disconnect(message);
+            Connection.Disconnect("Client disconnected.");
 
             ActiveSearch?.Dispose();
 
@@ -200,7 +214,6 @@ namespace Soulseek.NET
                 throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
 
-            Username = username;
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
             await Connection.SendAsync(new LoginRequest(username, password).ToMessage().ToByteArray());
@@ -209,6 +222,7 @@ namespace Soulseek.NET
 
             if (login.Result.Succeeded)
             {
+                Username = username;
                 LoggedIn = true;
             }
             else
@@ -243,7 +257,7 @@ namespace Soulseek.NET
                 throw new SearchException($"A search is already in progress.");
             }
 
-            options = options ?? new SearchOptions(soulseekClientOptions: Options);
+            options = options ?? new SearchOptions();
 
             ActiveSearch = new Search(searchText, options, Connection);
             ActiveSearch.SearchResponseReceived += OnSearchResponseReceived;
