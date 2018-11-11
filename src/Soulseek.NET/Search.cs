@@ -104,7 +104,14 @@ namespace Soulseek.NET
 
         internal async Task AddPeerConnection(ConnectToPeerResponse connectToPeerResponse, NetworkEventArgs e)
         {
-            var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, 15, 15, Options.BufferSize)
+            var connectionOptions = new ConnectionOptions()
+            {
+                ConnectionTimeout = 15,
+                ReadTimeout = 15,
+                BufferSize = Options.BufferSize,
+            };
+
+            var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectionOptions)
             {
                 Context = connectToPeerResponse
             };
