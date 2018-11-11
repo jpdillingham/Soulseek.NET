@@ -1,13 +1,13 @@
 ﻿namespace Soulseek.NET
 {
-    using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Requests;
-    using Soulseek.NET.Messaging.Responses;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Requests;
+    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Tcp;
 
     public sealed class Download
     {
@@ -27,9 +27,12 @@
         public int Port { get; private set; }
         public string Filename { get; private set; }
         public PeerTransferResponse TransferResponse { get; private set; }
+        public PeerTransferRequestResponse TransferRequestResponse { get; private set; }
         public DownloadOptions Options { get; private set; }
         private IConnection PeerConnection { get; set; }
         private IConnection TransferConnection { get; set; }
+        public int Token { get; private set; }
+        public long FileSize { get; private set; }
 
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
@@ -49,6 +52,7 @@
                 await PeerConnection.ConnectAsync();
 
                 var token = new Random().Next();
+                Console.WriteLine($"Requesting: {token}");
                 await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToByteArray(), suppressCodeNormalization: true);
                 await PeerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage().ToByteArray());
 
@@ -56,17 +60,19 @@
 
                 if (TransferResponse.Allowed)
                 {
+                    Token = TransferResponse.Token;
+                    FileSize = TransferResponse.FileSize;
                     Console.WriteLine($"Transfer OK, begin now.");
+                    // todo: this
                 }
                 else
                 {
                     Console.WriteLine($"Transfer rejected, wait for request.");
-                    var request = await peerTransferRequestResponse;
+                    TransferRequestResponse = await peerTransferRequestResponse;
+                    Token = TransferRequestResponse.Token;
+                    FileSize = TransferRequestResponse.Size;
 
-                    Console.WriteLine($"Request received: {request.Direction}, {request.Token}, {request.Filename}, {request.Size}, sending response");
-
-                    await PeerConnection.SendAsync(new PeerTransferResponseRequest(request.Token, true, 0, string.Empty).ToMessage().ToByteArray());
-                    Console.WriteLine($"Response sent.");
+                    await PeerConnection.SendAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage().ToByteArray());
                 }
 
                 return this;
@@ -90,18 +96,28 @@
             var request = new PierceFirewallRequest(response.Token);
             await t.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
 
-            var something = await t.ReadAsync(4); // not sure what this is
-            Console.WriteLine($"Something: {BitConverter.ToInt32(something, 0)}");
-            await t.SendAsync(new byte[8], suppressCodeNormalization: true); // this either
+            var tokenBytes = await t.ReadAsync(4);
+            var token = BitConverter.ToInt32(tokenBytes, 0);
 
-            var bytes = await t.ReadAsync(6628623);
+            if (token != Token)
+            {
+                // todo: think through this.  we don't have the token until we connect, pierce the firewall and read the first 4 bytes.
+                // perhaps a DownloadRouter to determine this, or a DownloadQueue to abstract it and handling of Download objects.
+                throw new Exception($"Received token {token} doesn't match expected token {TransferResponse.Token}.  The ConnectToPeer response was routed to the wrong place.");
+            }
 
-            Console.WriteLine($"File downloaded: {Encoding.UTF8.GetString(bytes)}");
+            // write 8 empty bytes.  no idea what this is; captured via WireShark
+            // the transfer will not begin until it is sent.
+            await t.SendAsync(new byte[8], suppressCodeNormalization: true);
 
-            System.IO.File.WriteAllBytes(System.IO.Path.Combine(@"C:\tmp\", Filename), bytes);
+            Console.WriteLine($"Downloading {FileSize} bytes...");
+            var destination = System.IO.Path.Combine(@"C:\tmp\", System.IO.Path.GetFileName(Filename));
+            var bytes = await t.ReadAsync(FileSize);
 
-            await t.SendAsync(new byte[8], suppressCodeNormalization: true); // this either
+            System.IO.File.WriteAllBytes(destination, bytes);
+            Console.WriteLine($"File downloaded to {destination}");
 
+            // just wait for now
             await new MessageWaiter().WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.Unknown);
         }
 
@@ -120,7 +136,6 @@
                     try
                     {
                         var x = PeerTransferRequestResponse.Parse(message);
-                        Console.WriteLine($"parsed");
                         MessageWaiter.Complete(MessageCode.PeerTransferRequest, x);
                     }
                     catch (Exception ex)
