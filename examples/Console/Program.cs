@@ -49,6 +49,12 @@
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
                     }
+                    else if (cmd.StartsWith("download"))
+                    {
+                        var result = await client.DownloadAsync("praetor-", @"@@djpnk\Bootlegs\Staind - Mudshuvel.mp3");
+
+                        Console.WriteLine(JsonConvert.SerializeObject(result));
+                    }
                     else
                     {
                         try

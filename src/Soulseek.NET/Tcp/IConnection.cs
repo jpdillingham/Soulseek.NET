@@ -13,10 +13,19 @@
 namespace Soulseek.NET.Tcp
 {
     using System;
+    using System.Net;
     using System.Threading.Tasks;
 
     internal interface IConnection
     {
+        ConnectionOptions Options { get; }
+        string Address { get; }
+        IPAddress IPAddress { get; }
+        int Port { get; }
+        ConnectionState State { get; }
+        ConnectionType Type { get; }
+        object Context { get; }
+
         event EventHandler<DataReceivedEventArgs> DataReceived;
 
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;

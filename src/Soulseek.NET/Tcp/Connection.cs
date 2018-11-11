@@ -17,6 +17,7 @@ namespace Soulseek.NET.Tcp
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
@@ -124,7 +125,10 @@ namespace Soulseek.NET.Tcp
             Stream = TcpClient.GetStream();
             WatchdogTimer.Start();
 
-            Task.Run(() => ReadContinuouslyAsync()).Forget();
+            if (Type != ConnectionType.Transfer)
+            {
+                Task.Run(() => ReadContinuouslyAsync()).Forget();
+            }
         }
 
         public void Disconnect(string message = null)
@@ -241,6 +245,11 @@ namespace Soulseek.NET.Tcp
             Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
+        public async Task<byte[]> ReadAsync(int count)
+        {
+            return await ReadAsync(Stream, count);
+        }
+
         private async Task<byte[]> ReadAsync(NetworkStream stream, int count)
         {
             var result = new List<byte>();
@@ -282,38 +291,59 @@ namespace Soulseek.NET.Tcp
                 }
             }
 
+            var fileBytes = new List<byte>();
+
             try
             {
                 while (true)
                 {
-                    var message = new List<byte>();
-
-                    var lengthBytes = await ReadAsync(Stream, 4);
-                    var length = BitConverter.ToInt32(lengthBytes, 0);
-                    message.AddRange(lengthBytes);
-
-                    var codeBytes = await ReadAsync(Stream, 4);
-                    var code = BitConverter.ToInt32(codeBytes, 0);
-                    message.AddRange(codeBytes);
-
-                    var payloadBytes = await ReadAsync(Stream, length - 4);
-                    message.AddRange(payloadBytes);
-
-                    var messageBytes = message.ToArray();
-
-                    NormalizeMessageCode(messageBytes, (int)Type);
-
-                    Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
+                    if (Type == ConnectionType.Transfer)
                     {
-                        Address = Address,
-                        IPAddress = IPAddress.ToString(),
-                        Port = Port,
-                        Data = messageBytes,
-                    })).Forget();
+                        Console.WriteLine($"Trying to read transfer bytes...");
 
-                    if (Type == ConnectionType.Peer)
+                        var buffer = new byte[Options.BufferSize];
+                        var bytesRead = await Stream.ReadAsync(buffer, 0, Options.BufferSize);
+
+                        if (bytesRead == 0)
+                        {
+                            Console.WriteLine(Encoding.ASCII.GetString(fileBytes.ToArray()));
+                            Disconnect($"Remote connection closed.");
+                        }
+
+                        Console.WriteLine($"{bytesRead} bytes read");
+                        fileBytes.AddRange(buffer.Take(bytesRead));
+                    }
+                    else
                     {
-                        InactivityTimer.Reset();
+                        var message = new List<byte>();
+
+                        var lengthBytes = await ReadAsync(Stream, 4);
+                        var length = BitConverter.ToInt32(lengthBytes, 0);
+                        message.AddRange(lengthBytes);
+
+                        var codeBytes = await ReadAsync(Stream, 4);
+                        var code = BitConverter.ToInt32(codeBytes, 0);
+                        message.AddRange(codeBytes);
+
+                        var payloadBytes = await ReadAsync(Stream, length - 4);
+                        message.AddRange(payloadBytes);
+
+                        var messageBytes = message.ToArray();
+
+                        NormalizeMessageCode(messageBytes, (int)Type);
+
+                        Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
+                        {
+                            Address = Address,
+                            IPAddress = IPAddress.ToString(),
+                            Port = Port,
+                            Data = messageBytes,
+                        })).Forget();
+
+                        if (Type == ConnectionType.Peer)
+                        {
+                            InactivityTimer.Reset();
+                        }
                     }
                 }
             }

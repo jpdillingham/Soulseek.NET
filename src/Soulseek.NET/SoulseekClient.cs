@@ -47,7 +47,7 @@ namespace Soulseek.NET
             Port = port;
             Options = options ?? new SoulseekClientOptions();
 
-            Connection = new Connection(ConnectionType.Server, Address, Port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
+            Connection = new Connection(ConnectionType.Server, Address, Port, Options);
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.DataReceived += OnServerConnectionDataReceived;
 
@@ -179,26 +179,18 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
-        //public async Task<bool> Download(string username, string filename)
-        //{
-        //    // todo: fail if not logged in
+        public async Task<Download> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            var address = await GetPeerAddressAsync(username);
 
-        // var address = await GetPeerAddressAsync(username);
+            Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
 
-        // Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
+            var download = new Download(username, filename, address.IPAddress, address.Port, options);
 
-        // var peerConnection = new Connection(ConnectionType.Peer, address.IPAddress, address.Port); peerConnection.DataReceived
-        // += OnPeerConnectionDataReceived; peerConnection.StateChanged += OnPeerConnectionStateChanged;
+            await download.DownloadAsync(cancellationToken);
 
-        // try { await peerConnection.ConnectAsync();
-
-        // var token = new Random().Next(); await peerConnection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(),
-        // suppressCodeNormalization: true); await peerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download,
-        // token, @"@@djpnk\Bootlegs\30 Songs for a Revolution\album.nfo").ToMessage().ToByteArray()); } catch (Exception ex) {
-        // Console.WriteLine($"Failed to download {filename} from {username}: {ex.Message}"); }
-
-        //    return true;
-        //}
+            return download;
+        }
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
@@ -301,9 +293,16 @@ namespace Soulseek.NET
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            if (ActiveSearch != default(Search))
+            if (response.Type == "F")
             {
-                await ActiveSearch.AddPeerConnection(response, e);
+                await Download.ConnectToPeer(response, e);
+            }
+            else
+            {
+                if (ActiveSearch != default(Search))
+                {
+                    await ActiveSearch.AddPeerConnection(response, e);
+                }
             }
         }
 
