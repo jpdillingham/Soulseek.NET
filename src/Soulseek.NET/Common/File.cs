@@ -17,16 +17,17 @@ namespace Soulseek.NET
 
     public sealed class File
     {
-        internal File()
-        {
-        }
-
-        public int AttributeCount { get; internal set; }
+        public int AttributeCount { get; set; }
         public IEnumerable<FileAttribute> Attributes => AttributeList.AsReadOnly();
-        public int Code { get; internal set; }
-        public string Extension { get; internal set; }
-        public string Filename { get; internal set; }
-        public long Size { get; internal set; }
+        public int Code { get; set; }
+        public string Extension { get; set; }
+        public string Filename { get; set; }
+        public long Size { get; set; }
+        public int? BitRate => GetAttributeValue(FileAttributeType.BitRate);
+        public int? BitDepth => GetAttributeValue(FileAttributeType.BitDepth);
+        public int? SampleRate => GetAttributeValue(FileAttributeType.SampleRate);
+        public int? Length => GetAttributeValue(FileAttributeType.Length);
+
         internal List<FileAttribute> AttributeList { get; set; } = new List<FileAttribute>();
 
         public int? GetAttributeValue(FileAttributeType type)
