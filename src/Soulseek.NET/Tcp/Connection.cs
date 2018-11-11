@@ -245,6 +245,20 @@ namespace Soulseek.NET.Tcp
             Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
+        public async Task<byte[]> ReadAsync(long count)
+        {
+            try
+            {
+                var intCount = (int)count;
+                return await ReadAsync(intCount);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"adsfasfdsa");
+                throw new NotImplementedException($"File sizes exceeding ~2gb are not yet supported.");
+            }
+        }
+
         public async Task<byte[]> ReadAsync(int count)
         {
             return await ReadAsync(Stream, count);
