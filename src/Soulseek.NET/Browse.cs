@@ -29,7 +29,7 @@ namespace Soulseek.NET
             Port = port;
 
             Options = options;
-            Connection = connection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options.ConnectionTimeout, Options.ReadTimeout, Options.BufferSize);
+            Connection = connection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options);
         }
 
         public string Username { get; private set; }
