@@ -16,11 +16,17 @@ namespace Soulseek.NET.Messaging.Responses
 
     public sealed class PrivateMessage
     {
+        #region Public Properties
+
         public int Id { get; private set; }
         public bool IsAdmin { get; private set; }
         public string Message { get; private set; }
         public DateTime Timestamp { get; private set; }
         public string Username { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public static PrivateMessage Parse(Message message)
         {
@@ -41,5 +47,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return response;
         }
+
+        #endregion Public Methods
     }
 }

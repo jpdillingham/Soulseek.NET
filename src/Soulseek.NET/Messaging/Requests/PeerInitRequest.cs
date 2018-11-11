@@ -14,6 +14,8 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class PeerInitRequest
     {
+        #region Public Constructors
+
         public PeerInitRequest(string username, string transferType, int token)
         {
             Username = username;
@@ -21,9 +23,17 @@ namespace Soulseek.NET.Messaging.Requests
             Token = token;
         }
 
-        public string Username { get; set; }
-        public string TransferType { get; set; }
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public int Token { get; set; }
+        public string TransferType { get; set; }
+        public string Username { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public byte[] ToByteArray()
         {
@@ -36,5 +46,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .Build()
                 .ToByteArray();
         }
+
+        #endregion Public Methods
     }
 }

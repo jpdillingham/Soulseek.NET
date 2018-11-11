@@ -14,12 +14,22 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class GetPeerAddressRequest
     {
+        #region Public Constructors
+
         public GetPeerAddressRequest(string username)
         {
             Username = username;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public string Username { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public Message ToMessage()
         {
@@ -28,5 +38,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteString(Username)
                 .Build();
         }
+
+        #endregion Public Methods
     }
 }

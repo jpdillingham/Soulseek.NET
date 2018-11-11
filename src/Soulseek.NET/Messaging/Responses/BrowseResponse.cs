@@ -1,4 +1,4 @@
-﻿// <copyright file="SharesResponse.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,9 +18,15 @@ namespace Soulseek.NET.Messaging.Responses
 
     public sealed class BrowseResponse
     {
+        #region Internal Constructors
+
         internal BrowseResponse()
         {
         }
+
+        #endregion Internal Constructors
+
+        #region Public Properties
 
         public IEnumerable<Directory> Directories
         {
@@ -37,7 +43,15 @@ namespace Soulseek.NET.Messaging.Responses
 
         public int DirectoryCount { get; internal set; }
 
+        #endregion Public Properties
+
+        #region Private Properties
+
         private List<Directory> DirectoryList { get; set; } = new List<Directory>();
+
+        #endregion Private Properties
+
+        #region Public Methods
 
         public static BrowseResponse Parse(Message message)
         {
@@ -101,5 +115,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return response;
         }
+
+        #endregion Public Methods
     }
 }

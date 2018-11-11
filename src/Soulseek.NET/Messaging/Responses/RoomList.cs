@@ -16,6 +16,8 @@ namespace Soulseek.NET.Messaging.Responses
 
     public static class RoomList
     {
+        #region Public Methods
+
         public static IEnumerable<Room> Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -42,5 +44,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return list.AsReadOnly();
         }
+
+        #endregion Public Methods
     }
 }

@@ -14,12 +14,22 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class PierceFirewallRequest
     {
+        #region Public Constructors
+
         public PierceFirewallRequest(int token)
         {
             Token = token;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public int Token { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public byte[] ToByteArray()
         {
@@ -29,5 +39,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .Build()
                 .ToByteArray();
         }
+
+        #endregion Public Methods
     }
 }

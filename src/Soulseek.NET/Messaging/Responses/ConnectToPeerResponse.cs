@@ -17,15 +17,25 @@ namespace Soulseek.NET.Messaging.Responses
 
     public sealed class ConnectToPeerResponse
     {
+        #region Private Constructors
+
         private ConnectToPeerResponse()
         {
         }
+
+        #endregion Private Constructors
+
+        #region Public Properties
 
         public IPAddress IPAddress { get; private set; }
         public int Port { get; private set; }
         public int Token { get; private set; }
         public string Type { get; private set; }
         public string Username { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public static ConnectToPeerResponse Parse(Message message)
         {
@@ -51,5 +61,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return response;
         }
+
+        #endregion Public Methods
     }
 }

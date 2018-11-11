@@ -17,13 +17,23 @@ namespace Soulseek.NET.Messaging.Responses
 
     public sealed class GetPeerAddressResponse
     {
+        #region Private Constructors
+
         private GetPeerAddressResponse()
         {
         }
 
+        #endregion Private Constructors
+
+        #region Public Properties
+
         public string IPAddress { get; private set; }
         public int Port { get; private set; }
         public string Username { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public static GetPeerAddressResponse Parse(Message message)
         {
@@ -47,5 +57,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return response;
         }
+
+        #endregion Public Methods
     }
 }

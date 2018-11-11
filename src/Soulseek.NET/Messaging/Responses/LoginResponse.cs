@@ -17,13 +17,23 @@ namespace Soulseek.NET.Messaging.Responses
 
     public sealed class LoginResponse
     {
+        #region Private Constructors
+
         private LoginResponse()
         {
         }
 
+        #endregion Private Constructors
+
+        #region Public Properties
+
         public string IPAddress { get; private set; }
         public string Message { get; private set; }
         public bool Succeeded { get; private set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public static LoginResponse Parse(Message message)
         {
@@ -49,5 +59,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return response;
         }
+
+        #endregion Public Methods
     }
 }

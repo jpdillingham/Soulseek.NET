@@ -18,9 +18,15 @@ namespace Soulseek.NET.Messaging.Responses
 
     public sealed class SearchResponse
     {
+        #region Internal Constructors
+
         internal SearchResponse()
         {
         }
+
+        #endregion Internal Constructors
+
+        #region Public Properties
 
         public int FileCount { get; internal set; }
 
@@ -43,8 +49,16 @@ namespace Soulseek.NET.Messaging.Responses
         public int UploadSpeed { get; internal set; }
         public string Username { get; internal set; }
 
+        #endregion Public Properties
+
+        #region Private Properties
+
         private List<File> FileList { get; set; }
         private MessageReader MessageReader { get; set; }
+
+        #endregion Private Properties
+
+        #region Public Methods
 
         public static SearchResponse Parse(Message message)
         {
@@ -86,10 +100,18 @@ namespace Soulseek.NET.Messaging.Responses
             return response;
         }
 
+        #endregion Public Methods
+
+        #region Internal Methods
+
         internal void ParseFiles()
         {
             FileList = ParseFiles(MessageReader, FileCount);
         }
+
+        #endregion Internal Methods
+
+        #region Private Methods
 
         private static List<File> ParseFiles(MessageReader reader, int count)
         {
@@ -122,5 +144,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             return files;
         }
+
+        #endregion Private Methods
     }
 }

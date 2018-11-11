@@ -14,6 +14,8 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class PeerBrowseRequest
     {
+        #region Public Methods
+
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
@@ -21,5 +23,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .Build()
                 .ToByteArray();
         }
+
+        #endregion Public Methods
     }
 }

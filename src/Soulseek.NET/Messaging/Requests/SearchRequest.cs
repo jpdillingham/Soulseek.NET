@@ -14,14 +14,24 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class SearchRequest
     {
+        #region Public Constructors
+
         public SearchRequest(string searchText, int ticket)
         {
             SearchText = searchText;
             Ticket = ticket;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public string SearchText { get; set; }
         public int Ticket { get; set; }
+
+        #endregion Public Properties
+
+        #region Internal Methods
 
         internal Message ToMessage()
         {
@@ -31,5 +41,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteString(SearchText)
                 .Build();
         }
+
+        #endregion Internal Methods
     }
 }

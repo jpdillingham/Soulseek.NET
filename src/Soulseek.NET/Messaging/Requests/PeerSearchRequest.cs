@@ -14,14 +14,24 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class PeerSearchRequest
     {
+        #region Public Constructors
+
         public PeerSearchRequest(int token, string searchText)
         {
             Token = token;
             SearchText = searchText;
         }
 
-        public int Token { get; set; }
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public string SearchText { get; set; }
+        public int Token { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public Message ToMessage()
         {
@@ -31,5 +41,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteString(SearchText)
                 .Build();
         }
+
+        #endregion Public Methods
     }
 }

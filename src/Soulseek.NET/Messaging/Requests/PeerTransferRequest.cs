@@ -14,6 +14,8 @@ namespace Soulseek.NET.Messaging.Requests
 {
     public class PeerTransferRequest
     {
+        #region Public Constructors
+
         public PeerTransferRequest(TransferDirection direction, int token, string filename, int size = 0)
         {
             Direction = direction;
@@ -22,10 +24,18 @@ namespace Soulseek.NET.Messaging.Requests
             Size = size;
         }
 
+        #endregion Public Constructors
+
+        #region Public Properties
+
         public TransferDirection Direction { get; set; }
-        public int Token { get; set; }
         public string Filename { get; set; }
         public int Size { get; set; }
+        public int Token { get; set; }
+
+        #endregion Public Properties
+
+        #region Public Methods
 
         public Message ToMessage()
         {
@@ -37,5 +47,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(Size)
                 .Build();
         }
+
+        #endregion Public Methods
     }
 }
