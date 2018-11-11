@@ -12,13 +12,34 @@
 
 namespace Soulseek.NET
 {
+    /// <summary>
+    ///     A file attribute.
+    /// </summary>
     public sealed class FileAttribute
     {
+        #region Internal Constructors
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="FileAttribute"/> class.
+        /// </summary>
         internal FileAttribute()
         {
         }
 
+        #endregion Internal Constructors
+
+        #region Public Properties
+
+        /// <summary>
+        ///     Gets the attribute type.
+        /// </summary>
         public FileAttributeType Type { get; internal set; }
+
+        /// <summary>
+        ///     Gets the attribute value.
+        /// </summary>
         public int Value { get; internal set; }
+
+        #endregion Public Properties
     }
 }

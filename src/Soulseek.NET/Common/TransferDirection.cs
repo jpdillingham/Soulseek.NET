@@ -12,9 +12,19 @@
 
 namespace Soulseek.NET
 {
+    /// <summary>
+    ///     File transfer direction.
+    /// </summary>
     public enum TransferDirection
     {
+        /// <summary>
+        ///     Download; remote to local.
+        /// </summary>
         Download = 0,
+
+        /// <summary>
+        ///     Upload; local to remote.
+        /// </summary>
         Upload = 1,
     }
 }

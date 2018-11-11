@@ -12,13 +12,34 @@
 
 namespace Soulseek.NET
 {
+    /// <summary>
+    ///     A chat room.
+    /// </summary>
     public sealed class Room
     {
+        #region Internal Constructors
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Room"/> class.
+        /// </summary>
         internal Room()
         {
         }
 
+        #endregion Internal Constructors
+
+        #region Public Properties
+
+        /// <summary>
+        ///     Gets the name of the room.
+        /// </summary>
         public string Name { get; internal set; }
+
+        /// <summary>
+        ///     Gets the number of users in the room.
+        /// </summary>
         public int UserCount { get; internal set; }
+
+        #endregion Public Properties
     }
 }

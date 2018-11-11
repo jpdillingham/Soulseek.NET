@@ -12,12 +12,34 @@
 
 namespace Soulseek.NET
 {
+    /// <summary>
+    ///     File attribute types.
+    /// </summary>
     public enum FileAttributeType
     {
+        /// <summary>
+        ///     Bit rate, in kbps.
+        /// </summary>
         BitRate = 0,
+
+        /// <summary>
+        ///     Length, in seconds.
+        /// </summary>
         Length = 1,
+
+        /// <summary>
+        ///     Unknown.
+        /// </summary>
         Unknown = 2,
+
+        /// <summary>
+        ///     Sample rate, in khz.
+        /// </summary>
         SampleRate = 4,
+
+        /// <summary>
+        ///     Bit depth, in bits.
+        /// </summary>
         BitDepth = 5,
     }
 }
