@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInitRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,38 +12,39 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
-    public class PeerInitRequest
+    public class PeerTransferResponseRequest
     {
         #region Public Constructors
 
-        public PeerInitRequest(string username, string transferType, int token)
+        public PeerTransferResponseRequest(int token, bool allowed, int fileSize, string message)
         {
-            Username = username;
-            TransferType = transferType;
             Token = token;
+            Allowed = allowed;
+            FileSize = fileSize;
+            Message = message;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public int Token { get; set; }
-        public string TransferType { get; set; }
-        public string Username { get; set; }
+        public int Token { get; private set; }
+        public bool Allowed { get; private set; }
+        public int FileSize { get; private set; }
+        public string Message { get; private set; }
 
         #endregion Public Properties
 
         #region Public Methods
 
-        public byte[] ToByteArray()
+        public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(0x1)
-                .WriteString(Username)
-                .WriteString(TransferType)
+                .Code(MessageCode.PeerTransferResponse)
                 .WriteInteger(Token)
-                .Build()
-                .ToByteArray();
+                .WriteByte((byte)(Allowed ? 1 : 0))
+                .WriteInteger(FileSize)
+                .Build();
         }
 
         #endregion Public Methods
