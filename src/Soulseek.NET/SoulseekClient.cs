@@ -82,7 +82,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        public ConnectionState ConnectionState => Connection.State;
+        public ConnectionState State => Connection.State;
 
         /// <summary>
         ///     Gets a value indicating whether a user is currently signed in.
@@ -119,9 +119,9 @@ namespace Soulseek.NET
         /// <returns>The operation context, including the fetched list of files.</returns>
         public async Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
-            if (ConnectionState != ConnectionState.Connected)
+            if (State != ConnectionState.Connected)
             {
-                throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {ConnectionState})");
+                throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {State})");
             }
 
             if (!LoggedIn)
@@ -242,9 +242,9 @@ namespace Soulseek.NET
         /// <returns>The completed search.</returns>
         public async Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            if (ConnectionState != ConnectionState.Connected)
+            if (State != ConnectionState.Connected)
             {
-                throw new ConnectionStateException($"The server connection must be Connected to perform a search (currently: {ConnectionState})");
+                throw new ConnectionStateException($"The server connection must be Connected to perform a search (currently: {State})");
             }
 
             if (!LoggedIn)

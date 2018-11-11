@@ -56,7 +56,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        ConnectionState ConnectionState { get; }
+        ConnectionState State { get; }
 
         /// <summary>
         ///     Gets a value indicating whether a user is currently signed in.
