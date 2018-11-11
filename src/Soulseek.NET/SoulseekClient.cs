@@ -105,6 +105,7 @@ namespace Soulseek.NET
         public string Username { get; private set; }
 
         private Search ActiveSearch { get; set; }
+        private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentQueue> for this
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
@@ -185,11 +186,11 @@ namespace Soulseek.NET
 
             Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
 
-            var download = new Download(username, filename, address.IPAddress, address.Port, options);
+            ActiveDownload = new Download(username, filename, address.IPAddress, address.Port, options);
 
-            await download.DownloadAsync(cancellationToken);
+            await ActiveDownload.DownloadAsync(cancellationToken);
 
-            return download;
+            return ActiveDownload;
         }
 
         /// <summary>
@@ -295,7 +296,7 @@ namespace Soulseek.NET
         {
             if (response.Type == "F")
             {
-                await Download.ConnectToPeer(response, e);
+                await ActiveDownload.ConnectToPeer(response, e);
             }
             else
             {
