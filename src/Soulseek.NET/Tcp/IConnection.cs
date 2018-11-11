@@ -35,5 +35,7 @@ namespace Soulseek.NET.Tcp
         void Disconnect(string message = null);
 
         Task SendAsync(byte[] bytes, bool suppressCodeNormalization = false);
+        Task<byte[]> ReadAsync(int count);
+        Task<byte[]> ReadAsync(long count);
     }
 }
