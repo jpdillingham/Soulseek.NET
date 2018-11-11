@@ -105,7 +105,7 @@ namespace Soulseek.NET
         public string Username { get; private set; }
 
         private Search ActiveSearch { get; set; }
-        private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentQueue> for this
+        private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
         private Connection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
