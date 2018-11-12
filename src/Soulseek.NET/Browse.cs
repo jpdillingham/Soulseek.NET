@@ -22,14 +22,14 @@ namespace Soulseek.NET
 
     public sealed class Browse
     {
-        internal Browse(string username, string ipAddress, int port, BrowseOptions options, IConnection connection = null)
+        internal Browse(string username, string ipAddress, int port, BrowseOptions options, IMessageConnection connection = null)
         {
             Username = username;
             IPAddress = ipAddress;
             Port = port;
 
             Options = options;
-            Connection = connection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options);
+            Connection = connection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options);
         }
 
         public string Username { get; private set; }
@@ -38,12 +38,12 @@ namespace Soulseek.NET
         public BrowseResponse Response { get; private set; }
 
         public BrowseOptions Options { get; private set; }
-        private IConnection Connection { get; set; }
+        private IMessageConnection Connection { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         internal async Task<Browse> BrowseAsync(CancellationToken? cancellationToken = null)
         {
-            Connection.DataReceived += OnConnectionDataReceived;
+            Connection.MessageReceived += OnConnectionMessageReceived;
             Connection.StateChanged += OnConnectionStateChanged;
 
             try
@@ -51,8 +51,8 @@ namespace Soulseek.NET
                 await Connection.ConnectAsync();
 
                 var token = new Random().Next();
-                await Connection.SendAsync(new PeerInitRequest(Username, "P", token).ToByteArray(), suppressCodeNormalization: true);
-                await Connection.SendAsync(new PeerBrowseRequest().ToByteArray());
+                await Connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                await Connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
 
                 Response = await MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, IPAddress, cancellationToken);
                 return this;
@@ -63,20 +63,18 @@ namespace Soulseek.NET
             }
         }
 
-        private void OnConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        private void OnConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            var message = new Message(e.Data);
-
-            switch (message.Code)
+            switch (e.Message.Code)
             {
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, e.IPAddress, BrowseResponse.Parse(message));
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, e.IPAddress, BrowseResponse.Parse(e.Message));
                     break;
 
                 default:
                     if (sender is Connection connection)
                     {
-                        connection.Disconnect($"Unknown browse response from peer: {message.Code}");
+                        connection.Disconnect($"Unknown browse response from peer: {e.Message.Code}");
                     }
 
                     break;
