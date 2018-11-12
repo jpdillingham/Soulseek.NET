@@ -65,7 +65,7 @@ namespace Soulseek.NET.Tcp
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
         public ConnectionType Type { get; protected set; }
-        public object Context { get; protected set; }
+        public object Context { get; set; }
 
         protected bool Disposed { get; set; } = false;
         protected SystemTimer InactivityTimer { get; set; }
