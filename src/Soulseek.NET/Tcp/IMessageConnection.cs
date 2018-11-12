@@ -16,10 +16,10 @@ namespace Soulseek.NET.Tcp
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
 
-    internal interface IMessageConnection : IConnection
+    internal interface IMessageConnection : IConnection, IDisposable
     {
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
-        Task SendAsync(Message message, bool suppressCodeNormalization = false);
+        Task SendMessageAsync(Message message, bool suppressCodeNormalization = false);
     }
 }
