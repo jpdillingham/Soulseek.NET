@@ -16,7 +16,7 @@ namespace Soulseek.NET.Tcp
     using System.Net;
     using System.Threading.Tasks;
 
-    internal interface IConnection
+    internal interface IConnection : IDisposable
     {
         ConnectionOptions Options { get; }
         string Address { get; }
