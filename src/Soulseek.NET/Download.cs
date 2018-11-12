@@ -18,7 +18,7 @@
             Port = port;
             Options = options ?? new DownloadOptions();
             PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options);
-            TransferConnection = transferConnection ?? new Connection(ConnectionType.Transfer, ipAddress, port, Options);
+            TransferConnection = transferConnection ?? new TransferConnection(ConnectionType.Transfer, ipAddress, port, Options);
         }
 
         public string Username { get; private set; }
@@ -29,7 +29,7 @@
         public PeerTransferRequestResponse TransferRequestResponse { get; private set; }
         public DownloadOptions Options { get; private set; }
         private IMessageConnection PeerConnection { get; set; }
-        private IConnection TransferConnection { get; set; }
+        private ITransferConnection TransferConnection { get; set; }
         public int Token { get; private set; }
         public long FileSize { get; private set; }
 
@@ -84,7 +84,7 @@
 
         public async Task ConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            var t = new Connection(ConnectionType.Transfer, response.IPAddress.ToString(), response.Port);
+            var t = new TransferConnection(ConnectionType.Transfer, response.IPAddress.ToString(), response.Port);
             //t.DataReceived += OnTransferConnectionDataReceived;
             //t.StateChanged += OnTransferConnectionStateChanged;
 
@@ -92,7 +92,7 @@
             Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
             await t.ConnectAsync();
             var request = new PierceFirewallRequest(response.Token);
-            await t.SendAsync(request.ToMessage().ToByteArray(), suppressCodeNormalization: true);
+            await t.SendAsync(request.ToMessage().ToByteArray());
 
             var tokenBytes = await t.ReadAsync(4);
             var token = BitConverter.ToInt32(tokenBytes, 0);
@@ -106,7 +106,7 @@
 
             // write 8 empty bytes.  no idea what this is; captured via WireShark
             // the transfer will not begin until it is sent.
-            await t.SendAsync(new byte[8], suppressCodeNormalization: true);
+            await t.SendAsync(new byte[8]);
 
             Console.WriteLine($"Downloading {FileSize} bytes...");
             var destination = System.IO.Path.Combine(@"C:\tmp\", System.IO.Path.GetFileName(Filename));
