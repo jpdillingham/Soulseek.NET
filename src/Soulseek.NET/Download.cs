@@ -11,14 +11,14 @@
 
     public sealed class Download
     {
-        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IConnection peerConnection = null, IConnection transferConnection = null)
+        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IMessageConnection peerConnection = null, IConnection transferConnection = null)
         {
             Username = username;
             Filename = filename;
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new DownloadOptions();
-            PeerConnection = peerConnection ?? new Connection(ConnectionType.Peer, ipAddress, port, Options);
+            PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options);
             TransferConnection = transferConnection ?? new Connection(ConnectionType.Transfer, ipAddress, port, Options);
         }
 
@@ -29,7 +29,7 @@
         public PeerTransferResponse TransferResponse { get; private set; }
         public PeerTransferRequestResponse TransferRequestResponse { get; private set; }
         public DownloadOptions Options { get; private set; }
-        private IConnection PeerConnection { get; set; }
+        private IMessageConnection PeerConnection { get; set; }
         private IConnection TransferConnection { get; set; }
         public int Token { get; private set; }
         public long FileSize { get; private set; }
@@ -38,10 +38,9 @@
 
         internal async Task<Download> DownloadAsync(CancellationToken? cancellationToken = null)
         {
-            PeerConnection.DataReceived += OnPeerConnectionDataReceived;
+            PeerConnection.MessageReceived += OnPeerConnectionMessageReceived;
             PeerConnection.StateChanged += OnPeerConnectionStateChanged;
 
-            TransferConnection.DataReceived += OnTransferConnectionDataReceived;
             TransferConnection.StateChanged += OnTransferConnectionStateChanged;
 
             try
@@ -53,7 +52,7 @@
 
                 var token = new Random().Next();
                 Console.WriteLine($"Requesting: {token}");
-                await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToByteArray(), suppressCodeNormalization: true);
+                await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage().ToByteArray(), suppressCodeNormalization: true);
                 await PeerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage().ToByteArray());
 
                 TransferResponse = await peerTransferResponse;
@@ -94,7 +93,7 @@
             Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
             await t.ConnectAsync();
             var request = new PierceFirewallRequest(response.Token);
-            await t.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+            await t.SendAsync(request.ToMessage().ToByteArray(), suppressCodeNormalization: true);
 
             var tokenBytes = await t.ReadAsync(4);
             var token = BitConverter.ToInt32(tokenBytes, 0);
@@ -121,21 +120,19 @@
             await new MessageWaiter().WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.Unknown);
         }
 
-        private void OnPeerConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            var message = new Message(e.Data);
+            Console.WriteLine($"[MESSAGE FROM PEER]: {e.Message.Code}");
 
-            Console.WriteLine($"[MESSAGE FROM PEER]: {message.Code}");
-
-            switch (message.Code)
+            switch (e.Message.Code)
             {
                 case MessageCode.PeerTransferResponse:
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(message));
+                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(e.Message));
                     break;
                 case MessageCode.PeerTransferRequest:
                     try
                     {
-                        var x = PeerTransferRequestResponse.Parse(message);
+                        var x = PeerTransferRequestResponse.Parse(e.Message);
                         MessageWaiter.Complete(MessageCode.PeerTransferRequest, x);
                     }
                     catch (Exception ex)
@@ -145,7 +142,7 @@
 
                     break;
                 default:
-                    Console.WriteLine($"[RESPONSE]: {message.Code}");
+                    Console.WriteLine($"[RESPONSE]: {e.Message.Code}");
                     break;
             }
         }
