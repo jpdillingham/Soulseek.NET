@@ -17,12 +17,11 @@ namespace Soulseek.NET.Tcp
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
-    internal class Connection : IConnection, IDisposable
+    internal abstract class Connection : IConnection, IDisposable
     {
         internal Connection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
@@ -145,7 +144,7 @@ namespace Soulseek.NET.Tcp
             Dispose(true);
         }
 
-        public async Task SendAsync(byte[] bytes, bool suppressCodeNormalization = false)
+        protected async Task SendAsync(byte[] bytes)
         {
             if (!TcpClient.Connected)
             {
@@ -226,7 +225,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        public async Task<byte[]> ReadAsync(long count)
+        protected async Task<byte[]> ReadAsync(long count)
         {
             try
             {
@@ -240,12 +239,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        public async Task<byte[]> ReadAsync(int count)
-        {
-            return await ReadAsync(Stream, count);
-        }
-
-        protected async Task<byte[]> ReadAsync(NetworkStream stream, int count)
+        protected async Task<byte[]> ReadAsync(int count)
         {
             var result = new List<byte>();
 
@@ -257,7 +251,7 @@ namespace Soulseek.NET.Tcp
                 var bytesRemaining = count - totalBytesRead;
                 var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                var bytesRead = await stream.ReadAsync(buffer, 0, bytesToRead);
+                var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead);
 
                 if (bytesRead == 0)
                 {
