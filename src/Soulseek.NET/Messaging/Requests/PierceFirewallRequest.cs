@@ -31,13 +31,12 @@ namespace Soulseek.NET.Messaging.Requests
 
         #region Public Methods
 
-        public byte[] ToByteArray()
+        public Message ToMessage()
         {
             return new MessageBuilder()
                 .Code((byte)0x0)
                 .WriteInteger(Token)
-                .Build()
-                .ToByteArray();
+                .Build();
         }
 
         #endregion Public Methods

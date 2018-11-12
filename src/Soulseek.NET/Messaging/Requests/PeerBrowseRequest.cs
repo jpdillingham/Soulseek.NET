@@ -16,12 +16,11 @@ namespace Soulseek.NET.Messaging.Requests
     {
         #region Public Methods
 
-        public byte[] ToByteArray()
+        public Message ToMessage()
         {
             return new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
-                .Build()
-                .ToByteArray();
+                .Build();
         }
 
         #endregion Public Methods

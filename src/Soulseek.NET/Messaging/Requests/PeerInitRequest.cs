@@ -35,15 +35,14 @@ namespace Soulseek.NET.Messaging.Requests
 
         #region Public Methods
 
-        public byte[] ToByteArray()
+        public Message ToMessage()
         {
             return new MessageBuilder()
                 .Code(0x1)
                 .WriteString(Username)
                 .WriteString(TransferType)
                 .WriteInteger(Token)
-                .Build()
-                .ToByteArray();
+                .Build();
         }
 
         #endregion Public Methods
