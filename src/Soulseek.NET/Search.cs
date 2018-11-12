@@ -38,7 +38,7 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The options for the search.</param>
         /// <param name="serverConnection">The connection to use when searching.</param>
-        internal Search(string searchText, SearchOptions options, IConnection serverConnection)
+        internal Search(string searchText, SearchOptions options, IMessageConnection serverConnection)
         {
             SearchText = searchText;
             Options = options;
@@ -86,12 +86,12 @@ namespace Soulseek.NET
         public int Ticket { get; private set; }
 
         private SearchFilters SearchFilters { get; set; }
-        private ConcurrentDictionary<ConnectToPeerResponse, Connection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, Connection>();
-        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, Connection>>();
+        private ConcurrentDictionary<ConnectToPeerResponse, IMessageConnection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, IMessageConnection>();
+        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, IMessageConnection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, IMessageConnection>>();
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
-        private IConnection ServerConnection { get; set; }
+        private IMessageConnection ServerConnection { get; set; }
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         /// <summary>
@@ -111,12 +111,12 @@ namespace Soulseek.NET
                 BufferSize = Options.BufferSize,
             };
 
-            var connection = new Connection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectionOptions)
+            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectionOptions)
             {
                 Context = connectToPeerResponse
             };
 
-            connection.DataReceived += OnPeerConnectionDataReceived;
+            connection.MessageReceived += OnPeerConnectionMessageReceived;
             connection.StateChanged += OnPeerConnectionStateChanged;
 
             if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections)
@@ -128,7 +128,7 @@ namespace Soulseek.NET
             }
             else
             {
-                PeerConnectionsQueued.Enqueue(new KeyValuePair<ConnectToPeerResponse, Connection>(connectToPeerResponse, connection));
+                PeerConnectionsQueued.Enqueue(new KeyValuePair<ConnectToPeerResponse, IMessageConnection>(connectToPeerResponse, connection));
             }
         }
 
@@ -171,7 +171,7 @@ namespace Soulseek.NET
             var request = new SearchRequest(SearchText, Ticket);
 
             Console.WriteLine($"Searching for {SearchText}...");
-            await ServerConnection.SendAsync(request.ToMessage().ToByteArray());
+            await ServerConnection.SendMessageAsync(request.ToMessage());
 
             SearchTimeoutTimer.Reset();
             SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
@@ -193,13 +193,11 @@ namespace Soulseek.NET
             }
         }
 
-        private void OnPeerConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            var message = new Message(e.Data);
-
-            if (message.Code == MessageCode.PeerSearchResponse)
+            if (e.Message.Code == MessageCode.PeerSearchResponse)
             {
-                var response = SearchResponse.Parse(message);
+                var response = SearchResponse.Parse(e.Message);
 
                 if (response.Ticket == Ticket && State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
                 {
@@ -283,14 +281,14 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, Connection connection)
+        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, IMessageConnection connection)
         {
             try
             {
                 await connection.ConnectAsync();
 
                 var request = new PierceFirewallRequest(response.Token);
-                await connection.SendAsync(request.ToByteArray(), suppressCodeNormalization: true);
+                await connection.SendMessageAsync(request.ToMessage(), suppressCodeNormalization: true);
             }
             catch (ConnectionException)
             {
