@@ -22,7 +22,7 @@ namespace Soulseek.NET.Tcp
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
-    internal sealed class Connection : IConnection, IDisposable
+    internal class Connection : IConnection, IDisposable
     {
         internal Connection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
@@ -57,22 +57,21 @@ namespace Soulseek.NET.Tcp
             };
         }
 
-        public event EventHandler<DataReceivedEventArgs> DataReceived;
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
-        public ConnectionOptions Options { get; private set; }
-        public string Address { get; private set; }
-        public IPAddress IPAddress { get; private set; }
-        public int Port { get; private set; }
-        public ConnectionState State { get; private set; } = ConnectionState.Disconnected;
-        public ConnectionType Type { get; private set; }
-        public object Context { get; internal set; }
+        public ConnectionOptions Options { get; protected set; }
+        public string Address { get; protected set; }
+        public IPAddress IPAddress { get; protected set; }
+        public int Port { get; protected set; }
+        public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
+        public ConnectionType Type { get; protected set; }
+        public object Context { get; protected set; }
 
-        private bool Disposed { get; set; } = false;
-        private SystemTimer InactivityTimer { get; set; }
-        private NetworkStream Stream { get; set; }
-        private ITcpClient TcpClient { get; set; }
-        private SystemTimer WatchdogTimer { get; set; }
+        protected bool Disposed { get; set; } = false;
+        protected SystemTimer InactivityTimer { get; set; }
+        protected NetworkStream Stream { get; set; }
+        protected ITcpClient TcpClient { get; set; }
+        protected SystemTimer WatchdogTimer { get; set; }
 
         public async Task ConnectAsync()
         {
@@ -124,11 +123,6 @@ namespace Soulseek.NET.Tcp
 
             Stream = TcpClient.GetStream();
             WatchdogTimer.Start();
-
-            if (Type != ConnectionType.Transfer)
-            {
-                Task.Run(() => ReadContinuouslyAsync()).Forget();
-            }
         }
 
         public void Disconnect(string message = null)
@@ -170,11 +164,6 @@ namespace Soulseek.NET.Tcp
 
             try
             {
-                if (!suppressCodeNormalization)
-                {
-                    NormalizeMessageCode(bytes, 0 - (int)Type);
-                }
-
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
             }
             catch (Exception ex)
@@ -188,7 +177,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        private void Dispose(bool disposing)
+        protected void Dispose(bool disposing)
         {
             if (!Disposed)
             {
@@ -204,7 +193,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        private void ChangeServerState(ConnectionState state, string message)
+        protected void ChangeServerState(ConnectionState state, string message)
         {
             State = state;
 
@@ -218,7 +207,7 @@ namespace Soulseek.NET.Tcp
             });
         }
 
-        private IPAddress GetIPAddress(string address)
+        protected IPAddress GetIPAddress(string address)
         {
             if (IPAddress.TryParse(address, out IPAddress ip))
             {
@@ -235,14 +224,6 @@ namespace Soulseek.NET.Tcp
 
                 return dns.AddressList[0];
             }
-        }
-
-        private void NormalizeMessageCode(byte[] messageBytes, int newCode)
-        {
-            var code = BitConverter.ToInt32(messageBytes, 4);
-            var adjustedCode = BitConverter.GetBytes(code + newCode);
-
-            Array.Copy(adjustedCode, 0, messageBytes, 4, 4);
         }
 
         public async Task<byte[]> ReadAsync(long count)
@@ -264,7 +245,7 @@ namespace Soulseek.NET.Tcp
             return await ReadAsync(Stream, count);
         }
 
-        private async Task<byte[]> ReadAsync(NetworkStream stream, int count)
+        protected async Task<byte[]> ReadAsync(NetworkStream stream, int count)
         {
             var result = new List<byte>();
 
@@ -288,91 +269,6 @@ namespace Soulseek.NET.Tcp
             }
 
             return result.ToArray();
-        }
-
-        private async Task ReadContinuouslyAsync()
-        {
-            if (Type == ConnectionType.Peer)
-            {
-                InactivityTimer.Reset();
-            }
-
-            void log(string s)
-            {
-                if (Type == ConnectionType.Server)
-                {
-                    Console.WriteLine(s);
-                }
-            }
-
-            var fileBytes = new List<byte>();
-
-            try
-            {
-                while (true)
-                {
-                    if (Type == ConnectionType.Transfer)
-                    {
-                        Console.WriteLine($"Trying to read transfer bytes...");
-
-                        var buffer = new byte[Options.BufferSize];
-                        var bytesRead = await Stream.ReadAsync(buffer, 0, Options.BufferSize);
-
-                        if (bytesRead == 0)
-                        {
-                            Console.WriteLine(Encoding.ASCII.GetString(fileBytes.ToArray()));
-                            Disconnect($"Remote connection closed.");
-                        }
-
-                        Console.WriteLine($"{bytesRead} bytes read");
-                        fileBytes.AddRange(buffer.Take(bytesRead));
-                    }
-                    else
-                    {
-                        var message = new List<byte>();
-
-                        var lengthBytes = await ReadAsync(Stream, 4);
-                        var length = BitConverter.ToInt32(lengthBytes, 0);
-                        message.AddRange(lengthBytes);
-
-                        var codeBytes = await ReadAsync(Stream, 4);
-                        var code = BitConverter.ToInt32(codeBytes, 0);
-                        message.AddRange(codeBytes);
-
-                        var payloadBytes = await ReadAsync(Stream, length - 4);
-                        message.AddRange(payloadBytes);
-
-                        var messageBytes = message.ToArray();
-
-                        NormalizeMessageCode(messageBytes, (int)Type);
-
-                        Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs()
-                        {
-                            Address = Address,
-                            IPAddress = IPAddress.ToString(),
-                            Port = Port,
-                            Data = messageBytes,
-                        })).Forget();
-
-                        if (Type == ConnectionType.Peer)
-                        {
-                            InactivityTimer.Reset();
-                        }
-                    }
-                }
-            }
-            catch (Exception ex)
-            {
-                if (State != ConnectionState.Connected)
-                {
-                    Disconnect($"Read error: {ex.Message}");
-                }
-
-                if (Type == ConnectionType.Server)
-                {
-                    log($"Read Error: {ex}");
-                }
-            }
         }
     }
 }
