@@ -47,9 +47,9 @@ namespace Soulseek.NET
             Port = port;
             Options = options ?? new SoulseekClientOptions();
 
-            Connection = new Connection(ConnectionType.Server, Address, Port, Options);
+            Connection = new MessageConnection(ConnectionType.Server, Address, Port, Options);
             Connection.StateChanged += OnServerConnectionStateChanged;
-            Connection.DataReceived += OnServerConnectionDataReceived;
+            Connection.MessageReceived += OnServerConnectionMessageReceived;
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
         }
@@ -106,7 +106,7 @@ namespace Soulseek.NET
 
         private Search ActiveSearch { get; set; }
         private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
-        private Connection Connection { get; set; }
+        private IMessageConnection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
@@ -155,7 +155,9 @@ namespace Soulseek.NET
                 throw new ConnectionStateException($"Failed to connect; the client is transitioning between states.");
             }
 
+            Console.WriteLine($"Connecting...");
             await Connection.ConnectAsync();
+            Console.WriteLine($"Connected.");
         }
 
         /// <summary>
@@ -209,7 +211,9 @@ namespace Soulseek.NET
 
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
-            await Connection.SendAsync(new LoginRequest(username, password).ToMessage().ToByteArray());
+            Console.WriteLine($"Sending login message");
+            await Connection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
+            Console.WriteLine($"Login message sent");
 
             await login;
 
@@ -281,7 +285,7 @@ namespace Soulseek.NET
         private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
         {
             var request = new GetPeerAddressRequest(username);
-            await Connection.SendAsync(request.ToMessage().ToByteArray());
+            await Connection.SendMessageAsync(request.ToMessage());
 
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
@@ -289,7 +293,7 @@ namespace Soulseek.NET
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToByteArray());
+            await Connection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
@@ -312,52 +316,47 @@ namespace Soulseek.NET
             Task.Run(() => SearchResponseReceived?.Invoke(this, e));
         }
 
-        private async void OnServerConnectionDataReceived(object sender, DataReceivedEventArgs e)
+        private async void OnServerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            Task.Run(() => DataReceived?.Invoke(this, e)).Forget();
+            Task.Run(() => MessageReceived?.Invoke(this, e)).Forget();
 
-            var message = new Message(e.Data);
-            var messageEventArgs = new MessageReceivedEventArgs(e) { Message = message };
+            Console.WriteLine($"[MESSAGE]: {e.Message.Code}");
 
-            Task.Run(() => MessageReceived?.Invoke(this, messageEventArgs)).Forget();
-
-            Console.WriteLine($"[MESSAGE]: {message.Code}");
-
-            switch (message.Code)
+            switch (e.Message.Code)
             {
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(message.Code, Integer.Parse(message));
+                    MessageWaiter.Complete(e.Message.Code, Integer.Parse(e.Message));
                     break;
 
                 case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
+                    MessageWaiter.Complete(e.Message.Code, LoginResponse.Parse(e.Message));
                     break;
 
                 case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(message.Code, RoomList.Parse(message));
+                    MessageWaiter.Complete(e.Message.Code, RoomList.Parse(e.Message));
                     break;
 
                 case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
+                    MessageWaiter.Complete(e.Message.Code, PrivilegedUserList.Parse(e.Message));
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(message), e);
+                    await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(e.Message), e);
                     break;
 
                 case MessageCode.ServerPrivateMessages:
-                    await HandlePrivateMessage(PrivateMessage.Parse(message), e);
+                    await HandlePrivateMessage(PrivateMessage.Parse(e.Message), e);
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
-                    var response = GetPeerAddressResponse.Parse(message);
-                    MessageWaiter.Complete(message.Code, response.Username, response);
+                    var response = GetPeerAddressResponse.Parse(e.Message);
+                    MessageWaiter.Complete(e.Message.Code, response.Username, response);
                     break;
 
                 default:
-                    Console.WriteLine($"Unknown message: [{e.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
+                    Console.WriteLine($"Unknown message: [{e.IPAddress}] {e.Message.Code}: {e.Message.Payload.Length} bytes");
                     break;
             }
         }
