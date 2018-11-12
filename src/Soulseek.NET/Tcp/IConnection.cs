@@ -26,8 +26,6 @@ namespace Soulseek.NET.Tcp
         ConnectionType Type { get; }
         object Context { get; }
 
-        event EventHandler<DataReceivedEventArgs> DataReceived;
-
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         Task ConnectAsync();
