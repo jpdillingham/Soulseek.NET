@@ -20,7 +20,7 @@ namespace Soulseek.NET.Tcp
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
 
-    internal sealed class MessageConnection : Connection, IDisposable
+    internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
         internal MessageConnection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(type, address, port, options, tcpClient)
@@ -28,8 +28,7 @@ namespace Soulseek.NET.Tcp
             StateChanged += MessageConnection_StateChanged;
         }
 
-        event EventHandler<DataReceivedEventArgs> DataReceived;
-        event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         private void MessageConnection_StateChanged(object sender, ConnectionStateChangedEventArgs e)
         {

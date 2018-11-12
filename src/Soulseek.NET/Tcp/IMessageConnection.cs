@@ -18,7 +18,6 @@ namespace Soulseek.NET.Tcp
 
     internal interface IMessageConnection : IConnection
     {
-        event EventHandler<DataReceivedEventArgs> DataReceived;
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         Task SendAsync(Message message, bool suppressCodeNormalization = false);
