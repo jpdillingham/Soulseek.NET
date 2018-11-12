@@ -39,7 +39,7 @@ namespace Soulseek.NET.Tcp
 
         public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
-            if (TcpClient.Connected)
+            if (!TcpClient.Connected)
             {
                 throw new ConnectionStateException($"The underlying TcpConnection is closed.");
             }
