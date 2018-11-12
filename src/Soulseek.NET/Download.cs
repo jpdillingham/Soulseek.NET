@@ -10,7 +10,7 @@
 
     public sealed class Download
     {
-        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IMessageConnection peerConnection = null, IConnection transferConnection = null)
+        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IMessageConnection peerConnection = null, ITransferConnection transferConnection = null)
         {
             Username = username;
             Filename = filename;
