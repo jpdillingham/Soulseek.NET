@@ -1,7 +1,6 @@
 ﻿namespace Soulseek.NET
 {
     using System;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -52,8 +51,8 @@
 
                 var token = new Random().Next();
                 Console.WriteLine($"Requesting: {token}");
-                await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage().ToByteArray(), suppressCodeNormalization: true);
-                await PeerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage().ToByteArray());
+                await PeerConnection.SendMessageAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
+                await PeerConnection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
 
                 TransferResponse = await peerTransferResponse;
 
@@ -71,7 +70,7 @@
                     Token = TransferRequestResponse.Token;
                     FileSize = TransferRequestResponse.Size;
 
-                    await PeerConnection.SendAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage().ToByteArray());
+                    await PeerConnection.SendMessageAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
                 }
 
                 return this;
