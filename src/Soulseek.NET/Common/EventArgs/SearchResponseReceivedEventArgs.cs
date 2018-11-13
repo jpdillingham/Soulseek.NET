@@ -17,10 +17,8 @@ namespace Soulseek.NET
     public class SearchResponseReceivedEventArgs : NetworkEventArgs
     {
         public SearchResponseReceivedEventArgs(NetworkEventArgs e)
+            : base(e)
         {
-            Address = e.Address;
-            IPAddress = e.IPAddress;
-            Port = e.Port;
         }
 
         public SearchResponse Response { get; set; }

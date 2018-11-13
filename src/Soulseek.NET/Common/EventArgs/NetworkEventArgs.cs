@@ -13,11 +13,23 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Net;
 
     public class NetworkEventArgs : EventArgs
     {
+        public NetworkEventArgs()
+        {
+        }
+
+        public NetworkEventArgs(NetworkEventArgs e)
+        {
+            Address = e.Address;
+            IPAddress = e.IPAddress;
+            Port = e.Port;
+        }
+
         public string Address;
-        public string IPAddress;
+        public IPAddress IPAddress;
         public int Port;
     }
 }

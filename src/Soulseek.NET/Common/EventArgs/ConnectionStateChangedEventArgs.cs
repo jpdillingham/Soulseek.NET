@@ -16,6 +16,11 @@ namespace Soulseek.NET
 
     public class ConnectionStateChangedEventArgs : NetworkEventArgs
     {
+        public ConnectionStateChangedEventArgs(NetworkEventArgs e)
+            : base(e)
+        {
+        }
+
         public ConnectionState State { get; set; }
         public string Message { get; set; }
     }

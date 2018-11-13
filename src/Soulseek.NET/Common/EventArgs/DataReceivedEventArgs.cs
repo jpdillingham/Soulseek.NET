@@ -14,6 +14,11 @@ namespace Soulseek.NET
 {
     public class DataReceivedEventArgs : NetworkEventArgs
     {
+        public DataReceivedEventArgs(NetworkEventArgs e)
+            : base(e)
+        {
+        }
+
         public byte[] Data;
     }
 }
