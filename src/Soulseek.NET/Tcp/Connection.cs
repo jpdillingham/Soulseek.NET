@@ -23,9 +23,8 @@ namespace Soulseek.NET.Tcp
 
     internal abstract class Connection : IConnection, IDisposable
     {
-        internal Connection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal Connection(string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
-            Type = type;
             Address = address;
             Port = port;
             Options = options ?? new ConnectionOptions();
@@ -66,7 +65,6 @@ namespace Soulseek.NET.Tcp
         public IPAddress IPAddress { get; protected set; }
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
-        public ConnectionType Type { get; protected set; }
         public object Context { get; set; }
 
         protected bool Disposed { get; set; } = false;
@@ -93,7 +91,7 @@ namespace Soulseek.NET.Tcp
                 ChangeServerState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
-                using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectionTimeout)))
+                using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
                 {
                     var task = TcpClient.ConnectAsync(IPAddress, Port);
 
@@ -104,7 +102,7 @@ namespace Soulseek.NET.Tcp
                         // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
                         if (task != await Task.WhenAny(task, taskCompletionSource.Task))
                         {
-                            throw new OperationCanceledException($"Operation timed out after {Options.ConnectionTimeout} seconds", cancellationTokenSource.Token);
+                            throw new OperationCanceledException($"Operation timed out after {Options.ConnectTimeout} seconds", cancellationTokenSource.Token);
                         }
 
                         if (task.Exception?.InnerException != null)
