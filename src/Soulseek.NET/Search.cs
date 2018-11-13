@@ -106,7 +106,7 @@ namespace Soulseek.NET
         {
             var connectionOptions = new ConnectionOptions()
             {
-                ConnectionTimeout = 15,
+                ConnectTimeout = 15,
                 ReadTimeout = 15,
                 BufferSize = Options.ConnectionOptions.BufferSize,
             };
