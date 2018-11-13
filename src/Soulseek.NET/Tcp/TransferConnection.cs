@@ -43,7 +43,7 @@ namespace Soulseek.NET.Tcp
 
         public async Task<byte[]> ReadAsync(int count)
         {
-            return await ReadAsync(Stream, count);
+            return await ReadAsync(count);
         }
     }
 }

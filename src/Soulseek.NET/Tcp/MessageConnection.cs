@@ -116,16 +116,16 @@ namespace Soulseek.NET.Tcp
                 {
                     var message = new List<byte>();
 
-                    var lengthBytes = await ReadAsync(Stream, 4);
+                    var lengthBytes = await ReadAsync(4);
                     var length = BitConverter.ToInt32(lengthBytes, 0);
                     Console.WriteLine($"Read {length} bytes");
                     message.AddRange(lengthBytes);
 
-                    var codeBytes = await ReadAsync(Stream, 4);
+                    var codeBytes = await ReadAsync(4);
                     var code = BitConverter.ToInt32(codeBytes, 0);
                     message.AddRange(codeBytes);
 
-                    var payloadBytes = await ReadAsync(Stream, length - 4);
+                    var payloadBytes = await ReadAsync(length - 4);
                     message.AddRange(payloadBytes);
 
                     var messageBytes = message.ToArray();
