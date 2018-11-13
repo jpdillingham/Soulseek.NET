@@ -21,8 +21,9 @@ namespace Soulseek.NET.Tcp
     internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
         internal MessageConnection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : base(type, address, port, options, tcpClient)
+            : base(address, port, options, tcpClient)
         {
+            Type = type;
             StateChanged += MessageConnection_StateChanged;
         }
 
@@ -36,6 +37,8 @@ namespace Soulseek.NET.Tcp
                 Task.Run(() => ReadContinuouslyAsync()).Forget();
             }
         }
+
+        public ConnectionType Type { get; private set; }
 
         public async Task SendAsync(Message message, bool suppressCodeNormalization = false)
         {
