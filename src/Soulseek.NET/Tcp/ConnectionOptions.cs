@@ -1,5 +1,8 @@
 ﻿namespace Soulseek.NET.Tcp
 {
+    /// <summary>
+    ///     Options for connections.
+    /// </summary>
     public class ConnectionOptions
     {
         /// <summary>
@@ -10,7 +13,7 @@
         /// <summary>
         ///     Gets or sets the connection timeout for client and peer TCP connections.
         /// </summary>
-        public int ConnectionTimeout { get; set; } = 5;
+        public int ConnectTimeout { get; set; } = 5;
 
         /// <summary>
         ///     Gets or sets the read timeout for peer TCP connections. Once connected and after reading data, if a no additional
