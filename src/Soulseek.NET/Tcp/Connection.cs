@@ -73,6 +73,8 @@ namespace Soulseek.NET.Tcp
         protected ITcpClient TcpClient { get; set; }
         protected SystemTimer WatchdogTimer { get; set; }
 
+        protected NetworkEventArgs NetworkEventArgs => new NetworkEventArgs() { Address = Address, IPAddress = IPAddress, Port = Port };
+
         public async Task ConnectAsync()
         {
             if (State != ConnectionState.Disconnected)
@@ -162,9 +164,16 @@ namespace Soulseek.NET.Tcp
                 throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
             }
 
+            if (bytes.Length > Options.BufferSize)
+            {
+                throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
+            }
+
             try
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
+
+                DataSentHandler(bytes);
             }
             catch (Exception ex)
             {
@@ -197,14 +206,7 @@ namespace Soulseek.NET.Tcp
         {
             State = state;
 
-            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs()
-            {
-                Address = Address,
-                IPAddress = IPAddress.ToString(),
-                Port = Port,
-                State = state,
-                Message = message
-            });
+            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(NetworkEventArgs) { State = state, Message = message });
         }
 
         protected IPAddress GetIPAddress(string address)
@@ -260,10 +262,21 @@ namespace Soulseek.NET.Tcp
                 }
 
                 totalBytesRead += bytesRead;
+                var data = buffer.Take(bytesRead);
                 result.AddRange(buffer.Take(bytesRead));
+
+                DataReceivedHandler(data.ToArray());
             }
 
             return result.ToArray();
+        }
+
+        protected virtual void DataSentHandler(byte[] data)
+        {
+        }
+
+        protected virtual void DataReceivedHandler(byte[] data)
+        {
         }
     }
 }
