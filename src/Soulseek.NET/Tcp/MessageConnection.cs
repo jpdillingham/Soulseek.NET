@@ -66,7 +66,7 @@ namespace Soulseek.NET.Tcp
                     NormalizeMessageCode(bytes, 0 - (int)Type);
                 }
 
-                await Stream.WriteAsync(bytes, 0, bytes.Length);
+                await SendAsync(bytes);
 
                 Console.WriteLine($"Sent {bytes.Length} bytes");
             }
@@ -103,13 +103,6 @@ namespace Soulseek.NET.Tcp
 
             var fileBytes = new List<byte>();
 
-            var networkEventArgs = new NetworkEventArgs()
-            {
-                Address = Address,
-                IPAddress = IPAddress.ToString(),
-                Port = Port,
-            };
-
             try
             {
                 while (true)
@@ -132,7 +125,7 @@ namespace Soulseek.NET.Tcp
 
                     NormalizeMessageCode(messageBytes, (int)Type);
 
-                    Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(networkEventArgs) { Message = new Message(messageBytes) })).Forget();
+                    Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(NetworkEventArgs) { Message = new Message(messageBytes) })).Forget();
 
                     InactivityTimer?.Reset();
                 }
