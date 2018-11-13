@@ -12,12 +12,13 @@
 
 namespace Soulseek.NET
 {
+    using Soulseek.NET.Tcp;
     using System.Collections.Generic;
 
     /// <summary>
     ///     Options for the search operation.
     /// </summary>
-    public class SearchOptions : SoulseekClientOptions
+    public class SearchOptions
     {
         /// <summary>
         ///     Gets or sets the number of allowed concurrent peer connections.
@@ -43,5 +44,7 @@ namespace Soulseek.NET
         public int MinimumFileBitDepth { get; set; } = 0;
         public bool IncludeConstantBitRate { get; set; } = true;
         public bool IncludeVariableBitRate { get; set; } = true;
+
+        public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }

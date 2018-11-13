@@ -108,7 +108,7 @@ namespace Soulseek.NET
             {
                 ConnectionTimeout = 15,
                 ReadTimeout = 15,
-                BufferSize = Options.BufferSize,
+                BufferSize = Options.ConnectionOptions.BufferSize,
             };
 
             var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectionOptions)
@@ -171,7 +171,7 @@ namespace Soulseek.NET
             var request = new SearchRequest(SearchText, Ticket);
 
             Console.WriteLine($"Searching for {SearchText}...");
-            await ServerConnection.SendMessageAsync(request.ToMessage());
+            await ServerConnection.SendAsync(request.ToMessage());
 
             SearchTimeoutTimer.Reset();
             SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
@@ -288,7 +288,7 @@ namespace Soulseek.NET
                 await connection.ConnectAsync();
 
                 var request = new PierceFirewallRequest(response.Token);
-                await connection.SendMessageAsync(request.ToMessage(), suppressCodeNormalization: true);
+                await connection.SendAsync(request.ToMessage(), suppressCodeNormalization: true);
             }
             catch (ConnectionException)
             {

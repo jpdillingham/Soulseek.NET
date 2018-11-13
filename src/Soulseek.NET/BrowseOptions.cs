@@ -12,10 +12,13 @@
 
 namespace Soulseek.NET
 {
+    using Soulseek.NET.Tcp;
+
     /// <summary>
     ///     Options for the browse operation.
     /// </summary>
-    public sealed class BrowseOptions : SoulseekClientOptions
+    public sealed class BrowseOptions
     {
+        public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }

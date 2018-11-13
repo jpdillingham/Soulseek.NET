@@ -37,7 +37,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)
+        public async Task SendAsync(Message message, bool suppressCodeNormalization = false)
         {
             if (!TcpClient.Connected)
             {

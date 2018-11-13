@@ -29,7 +29,7 @@ namespace Soulseek.NET
             Port = port;
 
             Options = options;
-            Connection = connection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options);
+            Connection = connection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options.ConnectionOptions);
         }
 
         public string Username { get; private set; }
@@ -51,8 +51,8 @@ namespace Soulseek.NET
                 await Connection.ConnectAsync();
 
                 var token = new Random().Next();
-                await Connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
-                await Connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
+                await Connection.SendAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                await Connection.SendAsync(new PeerBrowseRequest().ToMessage());
 
                 Response = await MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, IPAddress, cancellationToken);
                 return this;

@@ -17,8 +17,8 @@
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new DownloadOptions();
-            PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options);
-            TransferConnection = transferConnection ?? new TransferConnection(ConnectionType.Transfer, ipAddress, port, Options);
+            PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options.ConnectionOptions);
+            TransferConnection = transferConnection ?? new TransferConnection(ConnectionType.Transfer, ipAddress, port, Options.ConnectionOptions);
         }
 
         public string Username { get; private set; }
@@ -51,8 +51,8 @@
 
                 var token = new Random().Next();
                 Console.WriteLine($"Requesting: {token}");
-                await PeerConnection.SendMessageAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
-                await PeerConnection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
+                await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
+                await PeerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
 
                 TransferResponse = await peerTransferResponse;
 
@@ -70,7 +70,7 @@
                     Token = TransferRequestResponse.Token;
                     FileSize = TransferRequestResponse.Size;
 
-                    await PeerConnection.SendMessageAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
+                    await PeerConnection.SendAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
                 }
 
                 return this;

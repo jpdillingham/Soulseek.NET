@@ -17,11 +17,12 @@ namespace Soulseek.NET
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>
-    public class SoulseekClientOptions : ConnectionOptions
+    public class SoulseekClientOptions
     {
         /// <summary>
         ///     Gets or sets the message timeout used when waiting for a response from the server.
         /// </summary>
         public int MessageTimeout { get; set; } = 5;
+        public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }

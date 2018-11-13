@@ -20,6 +20,6 @@ namespace Soulseek.NET.Tcp
     {
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
-        Task SendMessageAsync(Message message, bool suppressCodeNormalization = false);
+        Task SendAsync(Message message, bool suppressCodeNormalization = false);
     }
 }

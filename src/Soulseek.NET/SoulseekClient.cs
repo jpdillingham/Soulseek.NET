@@ -47,7 +47,7 @@ namespace Soulseek.NET
             Port = port;
             Options = options ?? new SoulseekClientOptions();
 
-            Connection = new MessageConnection(ConnectionType.Server, Address, Port, Options);
+            Connection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions);
             Connection.StateChanged += OnServerConnectionStateChanged;
             Connection.MessageReceived += OnServerConnectionMessageReceived;
 
@@ -212,7 +212,7 @@ namespace Soulseek.NET
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
             Console.WriteLine($"Sending login message");
-            await Connection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
+            await Connection.SendAsync(new LoginRequest(username, password).ToMessage());
             Console.WriteLine($"Login message sent");
 
             await login;
@@ -285,7 +285,7 @@ namespace Soulseek.NET
         private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
         {
             var request = new GetPeerAddressRequest(username);
-            await Connection.SendMessageAsync(request.ToMessage());
+            await Connection.SendAsync(request.ToMessage());
 
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
@@ -293,7 +293,7 @@ namespace Soulseek.NET
         private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await Connection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
+            await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
         private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
