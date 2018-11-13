@@ -45,7 +45,7 @@ namespace Soulseek.NET
         {
             Address = address;
             Port = port;
-            Options = options ?? new SoulseekClientOptions();
+            Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
 
             Connection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions);
             Connection.StateChanged += OnServerConnectionStateChanged;
