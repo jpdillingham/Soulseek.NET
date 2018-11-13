@@ -48,8 +48,8 @@ namespace Soulseek.NET
             Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
 
             Connection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions);
-            Connection.StateChanged += OnServerConnectionStateChanged;
-            Connection.MessageReceived += OnServerConnectionMessageReceived;
+            Connection.StateChanged += ServerConnectionStateChangedEventHandler;
+            Connection.MessageReceived += ServerConnectionMessageReceivedEventHandler;
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
         }
@@ -257,7 +257,7 @@ namespace Soulseek.NET
             options = options ?? new SearchOptions();
 
             ActiveSearch = new Search(searchText, options, Connection);
-            ActiveSearch.SearchResponseReceived += OnSearchResponseReceived;
+            ActiveSearch.SearchResponseReceived += SearchResponseReceivedEventHandler;
 
             return await ActiveSearch.SearchAsync(cancellationToken);
         }
@@ -290,13 +290,13 @@ namespace Soulseek.NET
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
 
-        private async Task HandlePrivateMessage(PrivateMessage message, NetworkEventArgs e)
+        private async Task PrivateMessageHandler(PrivateMessage message, NetworkEventArgs e)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
             await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
-        private async Task HandleServerConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
+        private async Task ServerConnectToPeerHandler(ConnectToPeerResponse response, NetworkEventArgs e)
         {
             if (response.Type == "F")
             {
@@ -311,12 +311,12 @@ namespace Soulseek.NET
             }
         }
 
-        private void OnSearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
+        private void SearchResponseReceivedEventHandler(object sender, SearchResponseReceivedEventArgs e)
         {
             Task.Run(() => SearchResponseReceived?.Invoke(this, e));
         }
 
-        private async void OnServerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
+        private async void ServerConnectionMessageReceivedEventHandler(object sender, MessageReceivedEventArgs e)
         {
             Task.Run(() => MessageReceived?.Invoke(this, e)).Forget();
 
@@ -343,11 +343,11 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await HandleServerConnectToPeer(ConnectToPeerResponse.Parse(e.Message), e);
+                    await ServerConnectToPeerHandler(ConnectToPeerResponse.Parse(e.Message), e);
                     break;
 
                 case MessageCode.ServerPrivateMessages:
-                    await HandlePrivateMessage(PrivateMessage.Parse(e.Message), e);
+                    await PrivateMessageHandler(PrivateMessage.Parse(e.Message), e);
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
@@ -361,7 +361,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async void OnServerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        private async void ServerConnectionStateChangedEventHandler(object sender, ConnectionStateChangedEventArgs e)
         {
             if (e.State == ConnectionState.Disconnected)
             {
