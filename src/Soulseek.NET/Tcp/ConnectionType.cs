@@ -16,6 +16,5 @@ namespace Soulseek.NET.Tcp
     {
         Server = 10000,
         Peer = 20000,
-        Transfer = 30000,
     }
 }

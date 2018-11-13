@@ -18,7 +18,7 @@
             Port = port;
             Options = options ?? new DownloadOptions();
             PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options.ConnectionOptions);
-            TransferConnection = transferConnection ?? new TransferConnection(ConnectionType.Transfer, ipAddress, port, Options.ConnectionOptions);
+            TransferConnection = transferConnection ?? new TransferConnection(ipAddress, port, Options.ConnectionOptions);
         }
 
         public string Username { get; private set; }
@@ -84,7 +84,7 @@
 
         public async Task ConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            var t = new TransferConnection(ConnectionType.Transfer, response.IPAddress.ToString(), response.Port);
+            var t = new TransferConnection(response.IPAddress.ToString(), response.Port);
             //t.DataReceived += OnTransferConnectionDataReceived;
             //t.StateChanged += OnTransferConnectionStateChanged;
 

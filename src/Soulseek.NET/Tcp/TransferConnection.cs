@@ -17,14 +17,14 @@ namespace Soulseek.NET.Tcp
 
     internal class TransferConnection : Connection, ITransferConnection
     {
-        internal TransferConnection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : base(type, address, port, options, tcpClient)
+        internal TransferConnection(string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : base(address, port, options, tcpClient)
         {
         }
 
         public async Task SendAsync(byte[] bytes)
         {
-            await SendAsync(bytes);
+            await base.SendAsync(bytes);
         }
 
         public async Task<byte[]> ReadAsync(long count)
@@ -43,7 +43,7 @@ namespace Soulseek.NET.Tcp
 
         public async Task<byte[]> ReadAsync(int count)
         {
-            return await ReadAsync(count);
+            return await base.ReadAsync(count);
         }
     }
 }
