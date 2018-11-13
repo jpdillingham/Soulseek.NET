@@ -17,6 +17,9 @@ namespace Soulseek.NET.Tcp
 
     internal interface ITransferConnection : IConnection, IDisposable
     {
+        event EventHandler<DataSentEventArgs> DataSent;
+        event EventHandler<DataReceivedEventArgs> DataReceived;
+
         Task SendAsync(byte[] bytes);
         Task<byte[]> ReadAsync(int count);
         Task<byte[]> ReadAsync(long count);

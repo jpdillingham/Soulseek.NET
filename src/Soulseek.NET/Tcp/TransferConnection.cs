@@ -22,6 +22,9 @@ namespace Soulseek.NET.Tcp
         {
         }
 
+        public event EventHandler<DataSentEventArgs> DataSent;
+        public event EventHandler<DataReceivedEventArgs> DataReceived;
+
         public async Task SendAsync(byte[] bytes)
         {
             await base.SendAsync(bytes);
@@ -44,6 +47,16 @@ namespace Soulseek.NET.Tcp
         public async Task<byte[]> ReadAsync(int count)
         {
             return await base.ReadAsync(count);
+        }
+
+        protected override void DataSentHandler(byte[] data)
+        {
+            Task.Run(() => DataSent?.Invoke(this, new DataSentEventArgs(NetworkEventArgs) { Data = data }));
+        }
+
+        protected override void DataReceivedHandler(byte[] data)
+        {
+            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs(NetworkEventArgs) { Data = data }));
         }
     }
 }
