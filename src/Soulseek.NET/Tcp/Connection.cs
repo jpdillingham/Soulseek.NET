@@ -31,14 +31,17 @@ namespace Soulseek.NET.Tcp
             Options = options ?? new ConnectionOptions();
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
-            InactivityTimer = new SystemTimer()
+            if (Options.ReadTimeout > 0)
             {
-                Enabled = false,
-                AutoReset = false,
-                Interval = Options.ReadTimeout * 1000,
-            };
+                InactivityTimer = new SystemTimer()
+                {
+                    Enabled = false,
+                    AutoReset = false,
+                    Interval = Options.ReadTimeout * 1000,
+                };
 
-            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {Options.ReadTimeout} seconds was reached.");
+                InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {Options.ReadTimeout} seconds was reached.");
+            }
 
             WatchdogTimer = new SystemTimer()
             {
@@ -130,7 +133,7 @@ namespace Soulseek.NET.Tcp
             {
                 ChangeServerState(ConnectionState.Disconnecting, message);
 
-                InactivityTimer.Stop();
+                InactivityTimer?.Stop();
                 WatchdogTimer.Stop();
                 Stream.Close();
                 TcpClient.Close();
