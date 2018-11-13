@@ -88,10 +88,7 @@ namespace Soulseek.NET.Tcp
 
         private async Task ReadContinuouslyAsync()
         {
-            if (Type == ConnectionType.Peer)
-            {
-                InactivityTimer.Reset();
-            }
+            InactivityTimer?.Reset();
 
             void log(string s)
             {
@@ -134,10 +131,7 @@ namespace Soulseek.NET.Tcp
 
                     Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(networkEventArgs) { Message = new Message(messageBytes) })).Forget();
 
-                    if (Type == ConnectionType.Peer)
-                    {
-                        InactivityTimer.Reset();
-                    }
+                    InactivityTimer?.Reset();
                 }
             }
             catch (Exception ex)
