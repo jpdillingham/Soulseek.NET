@@ -50,9 +50,9 @@ namespace Soulseek.NET
             Port = port;
             Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
 
-            Connection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions);
-            Connection.StateChanged += ServerConnectionStateChangedEventHandler;
-            Connection.MessageReceived += ServerConnectionMessageReceivedEventHandler;
+            ServerConnection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions);
+            ServerConnection.StateChanged += ServerConnectionStateChangedEventHandler;
+            ServerConnection.MessageReceived += ServerConnectionMessageReceivedEventHandler;
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
         }
@@ -85,7 +85,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        public ConnectionState State => Connection.State;
+        public ConnectionState State => ServerConnection.State;
 
         /// <summary>
         ///     Gets a value indicating whether a user is currently signed in.
@@ -110,10 +110,12 @@ namespace Soulseek.NET
         private Search ActiveSearch { get; set; }
         private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
         private ConcurrentDictionary<string, List<Download>> ActiveDownloads { get; set; } = new ConcurrentDictionary<string, List<Download>>();
-        private IMessageConnection Connection { get; set; }
+        private IMessageConnection ServerConnection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
+
+        private ConcurrentDictionary<string, MessageConnection> PeerConnections { get; set; } = new ConcurrentDictionary<string, MessageConnection>();
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
@@ -149,18 +151,18 @@ namespace Soulseek.NET
         /// <exception cref="ConnectionStateException">Thrown when the client is already connected, or is transitioning between states.</exception>
         public async Task ConnectAsync()
         {
-            if (Connection.State == ConnectionState.Connected)
+            if (ServerConnection.State == ConnectionState.Connected)
             {
                 throw new ConnectionStateException($"Failed to connect; the client is already connected.");
             }
 
-            if (Connection.State == ConnectionState.Connecting || Connection.State == ConnectionState.Disconnecting)
+            if (ServerConnection.State == ConnectionState.Connecting || ServerConnection.State == ConnectionState.Disconnecting)
             {
                 throw new ConnectionStateException($"Failed to connect; the client is transitioning between states.");
             }
 
             Console.WriteLine($"Connecting...");
-            await Connection.ConnectAsync();
+            await ServerConnection.ConnectAsync();
             Console.WriteLine($"Connected.");
         }
 
@@ -169,7 +171,7 @@ namespace Soulseek.NET
         /// </summary>
         public void Disconnect()
         {
-            Connection.Disconnect("Client disconnected.");
+            ServerConnection.Disconnect("Client disconnected.");
 
             ActiveSearch?.Dispose();
 
@@ -227,7 +229,7 @@ namespace Soulseek.NET
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
             Console.WriteLine($"Sending login message");
-            await Connection.SendAsync(new LoginRequest(username, password).ToMessage());
+            await ServerConnection.SendAsync(new LoginRequest(username, password).ToMessage());
             Console.WriteLine($"Login message sent");
 
             await login;
@@ -271,7 +273,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            ActiveSearch = new Search(searchText, options, Connection);
+            ActiveSearch = new Search(searchText, options, ServerConnection);
             ActiveSearch.SearchResponseReceived += SearchResponseReceivedEventHandler;
 
             return await ActiveSearch.SearchAsync(cancellationToken);
@@ -289,8 +291,8 @@ namespace Soulseek.NET
                 {
                     var message = "Client is being disposed.";
 
-                    Connection?.Disconnect(message);
-                    Connection?.Dispose();
+                    ServerConnection?.Disconnect(message);
+                    ServerConnection?.Dispose();
                 }
 
                 Disposed = true;
@@ -300,7 +302,7 @@ namespace Soulseek.NET
         private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
         {
             var request = new GetPeerAddressRequest(username);
-            await Connection.SendAsync(request.ToMessage());
+            await ServerConnection.SendAsync(request.ToMessage());
 
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
@@ -308,7 +310,7 @@ namespace Soulseek.NET
         private async Task PrivateMessageHandler(PrivateMessage message, NetworkEventArgs e)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await Connection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
+            await ServerConnection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
         private async Task ServerConnectToPeerHandler(ConnectToPeerResponse response, NetworkEventArgs e)
