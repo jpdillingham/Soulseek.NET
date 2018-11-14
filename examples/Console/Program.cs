@@ -51,7 +51,10 @@
                     }
                     else if (cmd.StartsWith("download"))
                     {
-                        var result = await client.DownloadAsync("praetor-", @"@@djpnk\Bootlegs\Staind - Mudshuvel.mp3");
+                        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
+                        var file = string.Join(' ', cmd.Split(' ').Skip(2));
+
+                        var result = await client.DownloadAsync(peer, file);
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                     }
