@@ -23,6 +23,12 @@ namespace Soulseek.NET
         ///     Gets or sets the message timeout used when waiting for a response from the server.
         /// </summary>
         public int MessageTimeout { get; set; } = 5;
+
+        /// <summary>
+        ///     Gets or sets the number of allowed concurrent peer connections.
+        /// </summary>
+        public int ConcurrentPeerConnections { get; set; } = 500;
+
         public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }
