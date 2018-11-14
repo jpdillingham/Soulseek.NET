@@ -65,10 +65,12 @@ namespace Soulseek.NET
 
         private void OnConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
+            Console.WriteLine($"[BROWSE MESSAGE]: {e.Message.Code}");
+
             switch (e.Message.Code)
             {
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, e.IPAddress, BrowseResponse.Parse(e.Message));
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, e.IPAddress.ToString(), BrowseResponse.Parse(e.Message));
                     break;
 
                 default:

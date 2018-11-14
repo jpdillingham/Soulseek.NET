@@ -17,6 +17,7 @@
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new DownloadOptions();
+
             PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options.ConnectionOptions);
             TransferConnection = transferConnection ?? new TransferConnection(ipAddress, port, Options.ConnectionOptions);
         }
@@ -44,13 +45,13 @@
 
             try
             {
-                var peerTransferResponse = MessageWaiter.Wait<PeerTransferResponse>(MessageCode.PeerTransferResponse, cancellationToken);
-                var peerTransferRequestResponse = MessageWaiter.Wait<PeerTransferRequestResponse>(MessageCode.PeerTransferRequest, cancellationToken);
+                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(MessageCode.PeerTransferResponse, cancellationToken);
+                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.PeerTransferRequest, cancellationToken);
 
                 await PeerConnection.ConnectAsync();
 
                 var token = new Random().Next();
-                Console.WriteLine($"Requesting: {token}");
+                Console.WriteLine($"[{Filename}] Requesting: {token}");
                 await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
                 await PeerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
 
@@ -65,7 +66,7 @@
                 }
                 else
                 {
-                    Console.WriteLine($"Transfer rejected, wait for request.");
+                    Console.WriteLine($"[{Filename}] Transfer rejected, wait for request.");
                     TransferRequestResponse = await peerTransferRequestResponse;
                     Token = TransferRequestResponse.Token;
                     FileSize = TransferRequestResponse.Size;
@@ -77,19 +78,35 @@
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to download {Filename} from {Username}: {ex.Message}");
+                Console.WriteLine($"[{Filename}] Failed to download {Filename} from {Username}: {ex.Message}");
                 return this; // todo throw DownloadException
             }
+        }
+
+        internal async Task StartDownload(TransferConnection t)
+        {
+            // write 8 empty bytes.  no idea what this is; captured via WireShark
+            // the transfer will not begin until it is sent.
+            await t.SendAsync(new byte[8]);
+
+            Console.WriteLine($"[{Filename}] Downloading {FileSize} bytes...");
+            var destination = System.IO.Path.Combine(@"C:\tmp\", System.IO.Path.GetFileName(Filename));
+            var bytes = await t.ReadAsync(FileSize);
+
+            System.IO.File.WriteAllBytes(destination, bytes);
+            Console.WriteLine($"[{Filename}] File downloaded to {destination}");
+
+            // just wait for now
+            //await new MessageWaiter().WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.Unknown);
+            t.Disconnect($"[{Filename}] Download complete.");
         }
 
         public async Task ConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
             var t = new TransferConnection(response.IPAddress.ToString(), response.Port);
-            //t.DataReceived += OnTransferConnectionDataReceived;
-            //t.StateChanged += OnTransferConnectionStateChanged;
 
-            Console.WriteLine($"[CONNECT TO PEER]: {response.Token}");
-            Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
+            Console.WriteLine($"[{Filename}] [CONNECT TO PEER]: {response.Token}");
+            Console.WriteLine($"[{Filename}] [OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
             await t.ConnectAsync();
             var request = new PierceFirewallRequest(response.Token);
             await t.SendAsync(request.ToMessage().ToByteArray());
@@ -116,12 +133,13 @@
             Console.WriteLine($"File downloaded to {destination}");
 
             // just wait for now
-            await new MessageWaiter().WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.Unknown);
+            //await new MessageWaiter().WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.Unknown);
+            t.Disconnect("Download complete.");
         }
 
         private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
-            Console.WriteLine($"[MESSAGE FROM PEER]: {e.Message.Code}");
+            Console.WriteLine($"[{Filename}] [MESSAGE FROM PEER]: {e.Message.Code}");
 
             switch (e.Message.Code)
             {
@@ -132,6 +150,7 @@
                     try
                     {
                         var x = PeerTransferRequestResponse.Parse(e.Message);
+                        Console.WriteLine($"[{Filename}] Completing PTRR");
                         MessageWaiter.Complete(MessageCode.PeerTransferRequest, x);
                     }
                     catch (Exception ex)
@@ -141,7 +160,7 @@
 
                     break;
                 default:
-                    Console.WriteLine($"[RESPONSE]: {e.Message.Code}");
+                    Console.WriteLine($"[{Filename}] [RESPONSE]: {e.Message.Code}");
                     break;
             }
         }
@@ -150,19 +169,19 @@
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
-                Console.WriteLine($"[PEER DISCONNECTED]");
+                Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
                 //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
             }
         }
 
         private void OnTransferConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
-            Console.WriteLine($"[TRANSFER DATA]");
+            Console.WriteLine($"[{Filename}] [TRANSFER DATA]");
         }
 
         private void OnTransferConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
-            Console.WriteLine($"[TRANSFER CONNECTION]: {e.State}");
+            Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {e.State}");
         }
     }
 }

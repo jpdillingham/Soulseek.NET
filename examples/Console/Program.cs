@@ -49,6 +49,35 @@
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
                     }
+                    else if (cmd.StartsWith("download-folder"))
+                    {
+                        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
+
+                        var files = new[]
+                        {
+                            "@@djpnk\\Bootlegs\\Fear Is Your Only God\\01 - Bulls On Parade.mp3",
+                            "@@djpnk\\Bootlegs\\Fear Is Your Only God\\02 - Down Rodeo.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\03 - People Of The Sun.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\04 - Revolver.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\05 - Roll Right.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\06 - Snakecharmer.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\07 - Tire Me.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\08 - Vietnow.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\09 - Wind Below.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\10 - Without A Face.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\11 - Year Of The Boomerang.mp3",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\Thumbs.db",
+                            //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\album.nfo",
+                        };
+
+                        Parallel.ForEach(files, async (file) =>
+                        {
+                            Console.WriteLine($"Attempting to download {file}");
+                            await client.DownloadAsync(peer, file);
+                        });
+
+                        Console.WriteLine($"All files complete.");
+                    }
                     else if (cmd.StartsWith("download"))
                     {
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();

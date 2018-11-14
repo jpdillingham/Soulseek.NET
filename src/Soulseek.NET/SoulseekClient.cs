@@ -13,6 +13,9 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -106,6 +109,7 @@ namespace Soulseek.NET
 
         private Search ActiveSearch { get; set; }
         private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
+        private ConcurrentDictionary<string, List<Download>> ActiveDownloads { get; set; } = new ConcurrentDictionary<string, List<Download>>();
         private IMessageConnection Connection { get; set; }
         private bool Disposed { get; set; } = false;
         private MessageWaiter MessageWaiter { get; set; }
@@ -184,15 +188,26 @@ namespace Soulseek.NET
 
         public async Task<Download> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null)
         {
+            options = options ?? new DownloadOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
+
             var address = await GetPeerAddressAsync(username);
 
             Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
 
-            ActiveDownload = new Download(username, filename, address.IPAddress, address.Port, options);
+            if (!ActiveDownloads.ContainsKey(username))
+            {
+                Console.WriteLine($"Initializing download list for user {username}");
+                ActiveDownloads.TryAdd(username, new List<Download>());
+            }
 
-            await ActiveDownload.DownloadAsync(cancellationToken);
+            ActiveDownloads.TryGetValue(username, out var downloads);
 
-            return ActiveDownload;
+            var download = new Download(username, filename, address.IPAddress, address.Port, options);
+            downloads.Add(download);
+
+            await download.DownloadAsync(cancellationToken);
+
+            return download;
         }
 
         /// <summary>
@@ -300,7 +315,32 @@ namespace Soulseek.NET
         {
             if (response.Type == "F")
             {
-                await ActiveDownload.ConnectToPeer(response, e);
+                Console.WriteLine($"ConnectToPeerResponse \'F\' received, trying to locate download");
+
+                var t = new TransferConnection(response.IPAddress.ToString(), response.Port, new ConnectionOptions() { ReadTimeout = 0 });
+
+                Console.WriteLine($"[CONNECT TO PEER]: {response.Token}");
+                Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
+                await t.ConnectAsync();
+                var request = new PierceFirewallRequest(response.Token);
+                await t.SendAsync(request.ToMessage().ToByteArray());
+
+                var tokenBytes = await t.ReadAsync(4);
+                var token = BitConverter.ToInt32(tokenBytes, 0);
+
+                Console.WriteLine($"Peer: {response.Username}, token: {token}");
+
+                ActiveDownloads.TryGetValue(response.Username, out var downloads);
+
+                var download = downloads.Where(d => d.Token == token).FirstOrDefault();
+
+                if (download != null)
+                {
+                    Console.WriteLine($"Download found, starting...");
+                    await download.StartDownload(t);
+                }
+
+                //await ActiveDownload.ConnectToPeer(response, e);
             }
             else
             {
