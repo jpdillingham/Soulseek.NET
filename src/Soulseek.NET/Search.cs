@@ -13,7 +13,6 @@
 namespace Soulseek.NET
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -86,8 +85,6 @@ namespace Soulseek.NET
         public int Ticket { get; private set; }
 
         private SearchFilters SearchFilters { get; set; }
-        private ConcurrentDictionary<ConnectToPeerResponse, IMessageConnection> PeerConnectionsActive { get; set; } = new ConcurrentDictionary<ConnectToPeerResponse, IMessageConnection>();
-        private ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, IMessageConnection>> PeerConnectionsQueued { get; set; } = new ConcurrentQueue<KeyValuePair<ConnectToPeerResponse, IMessageConnection>>();
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
@@ -102,33 +99,29 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
-        internal async Task AddPeerConnection(ConnectToPeerResponse connectToPeerResponse, NetworkEventArgs e)
+        internal void AddResponse(SearchResponse response, NetworkEventArgs e)
         {
-            var connectionOptions = new ConnectionOptions()
+            if (response.Ticket == Ticket && State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
             {
-                ConnectTimeout = 15,
-                ReadTimeout = 15,
-                BufferSize = Options.ConnectionOptions.BufferSize,
-            };
+                response.ParseFiles();
 
-            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectionOptions)
-            {
-                Context = connectToPeerResponse
-            };
-
-            connection.MessageReceived += OnPeerConnectionMessageReceived;
-            connection.StateChanged += OnPeerConnectionStateChanged;
-
-            if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections)
-            {
-                if (PeerConnectionsActive.TryAdd(connectToPeerResponse, connection))
+                if (Options.FilterFiles || true)
                 {
-                    await TryConnectPeerConnection(connectToPeerResponse, connection);
+                    response.Files = response.Files.Where(f => SearchFilters.FileMeetsOptionCriteria(f));
                 }
-            }
-            else
-            {
-                PeerConnectionsQueued.Enqueue(new KeyValuePair<ConnectToPeerResponse, IMessageConnection>(connectToPeerResponse, connection));
+
+                Interlocked.Add(ref resultCount, response.Files.Count());
+
+                if (resultCount >= Options.FileLimit)
+                {
+                    End(SearchState.Completed);
+                    return;
+                }
+
+                ResponseList.Add(response);
+                Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
+
+                SearchTimeoutTimer.Reset();
             }
         }
 
@@ -147,9 +140,6 @@ namespace Soulseek.NET
             {
                 State = state;
                 SearchTimeoutTimer.Stop();
-
-                ClearPeerConnectionsQueued();
-                ClearPeerConnectionsActive("Search completed.");
 
                 MessageWaiter.Complete(MessageCode.ServerFileSearch, Ticket, this);
             }
@@ -190,108 +180,6 @@ namespace Soulseek.NET
                 }
 
                 Disposed = true;
-            }
-        }
-
-        private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
-        {
-            if (e.Message.Code == MessageCode.PeerSearchResponse)
-            {
-                var response = SearchResponse.Parse(e.Message);
-
-                if (response.Ticket == Ticket && State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
-                {
-                    response.ParseFiles();
-
-                    if (Options.FilterFiles || true)
-                    {
-                        response.Files = response.Files.Where(f => SearchFilters.FileMeetsOptionCriteria(f));
-                    }
-
-                    Interlocked.Add(ref resultCount, response.Files.Count());
-
-                    if (resultCount >= Options.FileLimit)
-                    {
-                        End(SearchState.Completed);
-                        return;
-                    }
-
-                    ResponseList.Add(response);
-                    Task.Run(() => SearchResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
-
-                    SearchTimeoutTimer.Reset();
-                }
-            }
-        }
-
-        private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Disconnected &&
-                sender is Connection connection &&
-                connection.Context is ConnectToPeerResponse connectToPeerResponse)
-            {
-                connection.Dispose();
-                PeerConnectionsActive.TryRemove(connectToPeerResponse, out var _);
-
-                if (PeerConnectionsActive.Count() < Options.ConcurrentPeerConnections &&
-                    PeerConnectionsQueued.TryDequeue(out var nextConnection))
-                {
-                    if (PeerConnectionsActive.TryAdd(nextConnection.Key, nextConnection.Value))
-                    {
-                        await TryConnectPeerConnection(nextConnection.Key, nextConnection.Value);
-                    }
-                }
-            }
-        }
-
-        private void ClearPeerConnectionsActive(string disconnectMessage)
-        {
-            while (!PeerConnectionsActive.IsEmpty)
-            {
-                var key = PeerConnectionsActive.Keys.First();
-
-                if (PeerConnectionsActive.TryRemove(key, out var connection))
-                {
-                    try
-                    {
-                        connection?.Disconnect(disconnectMessage);
-                        connection?.Dispose();
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-        }
-
-        private void ClearPeerConnectionsQueued()
-        {
-            while (!PeerConnectionsQueued.IsEmpty)
-            {
-                if (PeerConnectionsQueued.TryDequeue(out var queuedConnection))
-                {
-                    try
-                    {
-                        queuedConnection.Value?.Dispose();
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-        }
-
-        private async Task TryConnectPeerConnection(ConnectToPeerResponse response, IMessageConnection connection)
-        {
-            try
-            {
-                await connection.ConnectAsync();
-
-                var request = new PierceFirewallRequest(response.Token);
-                await connection.SendAsync(request.ToMessage(), suppressCodeNormalization: true);
-            }
-            catch (ConnectionException)
-            {
             }
         }
     }
