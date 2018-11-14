@@ -114,6 +114,9 @@ namespace Soulseek.NET.Tcp
                     }
                 }
 
+                WatchdogTimer.Start();
+                Stream = TcpClient.GetStream();
+
                 ChangeServerState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
             catch (Exception ex)
@@ -122,9 +125,6 @@ namespace Soulseek.NET.Tcp
 
                 throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
-
-            Stream = TcpClient.GetStream();
-            WatchdogTimer.Start();
         }
 
         public void Disconnect(string message = null)

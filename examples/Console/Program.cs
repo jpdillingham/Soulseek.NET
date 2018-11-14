@@ -105,15 +105,15 @@
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
         {
-            var r = e.Response;
+            //var r = e.Response;
 
-            Console.WriteLine($"=====================================================================================");
-            Console.WriteLine($"New search result from: {r.Username} (slots: {r.FreeUploadSlots}, upload: {r.UploadSpeed}, queue: {r.QueueLength})");
+            //Console.WriteLine($"=====================================================================================");
+            //Console.WriteLine($"New search result from: {r.Username} (slots: {r.FreeUploadSlots}, upload: {r.UploadSpeed}, queue: {r.QueueLength})");
 
-            foreach (var file in r.Files)
-            {
-                Console.WriteLine($"[{file.BitRate}/{file.SampleRate}/{file.BitDepth}] {file.Filename}");
-            }
+            //foreach (var file in r.Files)
+            //{
+            //    Console.WriteLine($"[{file.BitRate}/{file.SampleRate}/{file.BitDepth}] {file.Filename}");
+            //}
         }
 
         private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
