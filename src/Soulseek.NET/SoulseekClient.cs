@@ -352,11 +352,28 @@ namespace Soulseek.NET
                 {
                     var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port)
                     {
-                        Context = response
+                        Context = response,
+                        ConnectHandler = async (conn) =>
+                        {
+                            Console.WriteLine($"[CONNECT]");
+                            var context = (ConnectToPeerResponse)conn.Context;
+                            var request = new PierceFirewallRequest(context.Token).ToMessage();
+                            await conn.SendAsync(request, suppressCodeNormalization: true);
+                        },
+                        DisconnectHandler = async (conn) =>
+                        {
+                            Console.WriteLine($"[DISCONNECT]");
+                            await MessageConnectionManager.Remove((IMessageConnection)conn);
+                        },
+                        MessageHandler = (conn, message) =>
+                        {
+                            Console.WriteLine($"[FIRED HANDLER]");
+                            PeerConnectionMessageHandler(conn, message);
+                        }
                     };
 
-                    connection.MessageReceived += PeerConnectionMessageReceivedEventHandler;
-                    connection.StateChanged += PeerConnectionStateChangedEventHandler;
+                    //connection.MessageReceived += PeerConnectionMessageHandler;
+                    //connection.StateChanged += PeerConnectionStateChangedEventHandler;
 
                     await MessageConnectionManager.Add(connection);
                 }
@@ -459,17 +476,18 @@ namespace Soulseek.NET
         //    }
         //}
 
-        private void PeerConnectionMessageReceivedEventHandler(object sender, MessageReceivedEventArgs e)
+        private void PeerConnectionMessageHandler(IMessageConnection connection, Message message)
         {
-            switch (e.Message.Code)
+            Console.WriteLine($"[PEER RESPONSE]");
+            switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
-                    var response = SearchResponse.Parse(e.Message);
+                    var response = SearchResponse.Parse(message);
 
-                    ActiveSearch?.AddResponse(response, e);
+                    ActiveSearch?.AddResponse(connection, response);
                     break;
                 default:
-                    Console.WriteLine($"Unknown message: [{e.IPAddress}] {e.Message.Code}: {e.Message.Payload.Length} bytes");
+                    Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
         }
@@ -488,9 +506,9 @@ namespace Soulseek.NET
                 }
                 else if (e.State == ConnectionState.Connected)
                 {
-                    var context = (ConnectToPeerResponse)messageConnection.Context;
-                    var request = new PierceFirewallRequest(context.Token).ToMessage();
-                    await messageConnection.SendAsync(request, suppressCodeNormalization: true);
+                    //var context = (ConnectToPeerResponse)messageConnection.Context;
+                    //var request = new PierceFirewallRequest(context.Token).ToMessage();
+                    //await messageConnection.SendAsync(request, suppressCodeNormalization: true);
                 }
             }
             else if (connection is ITransferConnection transferConnection)
