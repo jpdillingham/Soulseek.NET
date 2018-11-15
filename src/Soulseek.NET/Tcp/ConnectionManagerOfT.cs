@@ -45,6 +45,7 @@ namespace Soulseek.NET.Tcp
 
         internal async Task Remove(T connection)
         {
+            Console.WriteLine($"[ACTIVE]: {Connections.Count} [QUEUED]: {ConnectionQueue.Count}");
             var key = connection.Key;
             connection.Dispose();
 
