@@ -14,12 +14,17 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Collections.Generic;
-    using System.Net;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
 
     internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
+        internal MessageConnection(ConnectionType type, string username, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : this(type, address, port, options, tcpClient)
+        {
+            Username = username;
+        }
+
         internal MessageConnection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(address, port, options, tcpClient)
         {
@@ -39,6 +44,8 @@ namespace Soulseek.NET.Tcp
         }
 
         public ConnectionType Type { get; private set; }
+        public string Username { get; private set; } = string.Empty;
+        public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
 
         public async Task SendAsync(Message message, bool suppressCodeNormalization = false)
         {
