@@ -29,21 +29,6 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
-        private struct PeerConnectionKey
-        {
-            public string Username;
-            public IPAddress IPAddress;
-            public int Port;
-            public int Token;
-            public string Type;
-        }
-
-        private static class PeerConnectionType
-        {
-            public const string Message = "P";
-            public const string Transfer = "F";
-        }
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="options"/>.
         /// </summary>
@@ -71,6 +56,7 @@ namespace Soulseek.NET
             ServerConnection.MessageReceived += ServerConnectionMessageReceivedEventHandler;
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
+            MessageConnectionManager = new ConnectionManager<IMessageConnection>(new ConnectionManagerOptions() { ConcurrentConnections = Options.ConcurrentPeerConnections });
         }
 
         /// <summary>
@@ -131,8 +117,7 @@ namespace Soulseek.NET
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
 
-        private ConcurrentQueue<PeerConnectionKey> PeerConnectionQueue { get; set; } = new ConcurrentQueue<PeerConnectionKey>();
-        private ConcurrentDictionary<PeerConnectionKey, IConnection> PeerConnections { get; set; } = new ConcurrentDictionary<PeerConnectionKey, IConnection>();
+        private ConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
@@ -334,48 +319,47 @@ namespace Soulseek.NET
         {
             if (response.Type == "F")
             {
-                Console.WriteLine($"ConnectToPeerResponse \'F\' received, trying to locate download");
+                //Console.WriteLine($"ConnectToPeerResponse \'F\' received, trying to locate download");
 
-                var t = new TransferConnection(response.IPAddress.ToString(), response.Port, new ConnectionOptions() { ReadTimeout = 0 });
+                //var t = new TransferConnection(response.IPAddress.ToString(), response.Port, new ConnectionOptions() { ReadTimeout = 0 });
 
-                Console.WriteLine($"[CONNECT TO PEER]: {response.Token}");
-                Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
-                await t.ConnectAsync();
-                var request = new PierceFirewallRequest(response.Token);
-                await t.SendAsync(request.ToMessage().ToByteArray());
+                //Console.WriteLine($"[CONNECT TO PEER]: {response.Token}");
+                //Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
+                //await t.ConnectAsync();
+                //var request = new PierceFirewallRequest(response.Token);
+                //await t.SendAsync(request.ToMessage().ToByteArray());
 
-                var tokenBytes = await t.ReadAsync(4);
-                var token = BitConverter.ToInt32(tokenBytes, 0);
+                //var tokenBytes = await t.ReadAsync(4);
+                //var token = BitConverter.ToInt32(tokenBytes, 0);
 
-                Console.WriteLine($"Peer: {response.Username}, token: {token}");
+                //Console.WriteLine($"Peer: {response.Username}, token: {token}");
 
-                ActiveDownloads.TryGetValue(response.Username, out var downloads);
+                //ActiveDownloads.TryGetValue(response.Username, out var downloads);
 
-                var download = downloads.Where(d => d.Token == token).FirstOrDefault();
+                //var download = downloads.Where(d => d.Token == token).FirstOrDefault();
 
-                if (download != null)
-                {
-                    Console.WriteLine($"Download found, starting...");
-                    await download.StartDownload(t);
-                }
+                //if (download != null)
+                //{
+                //    Console.WriteLine($"Download found, starting...");
+                //    await download.StartDownload(t);
+                //}
 
-                //await ActiveDownload.ConnectToPeer(response, e);
+                ////await ActiveDownload.ConnectToPeer(response, e);
             }
             else
             {
                 if (ActiveSearch != default(Search))
                 {
-                    var key = new PeerConnectionKey()
+                    var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port)
                     {
-                        Username = response.Username,
-                        IPAddress = response.IPAddress,
-                        Port = response.Port,
-                        Type = "P",
-                        Token = response.Token,
+                        Context = response
                     };
 
-                    Console.WriteLine($"[CONNECT TO PEER TYPE P]: Enqueuing {key.Username} {key.IPAddress.ToString()}:{key.Port}");
-                    await EnqueuePeerConnection(key);
+                    connection.MessageReceived += OnPeerConnectionMessageReceived;
+                    connection.StateChanged += OnPeerConnectionStateChanged;
+
+                    Console.WriteLine($"Enqueueing connection...");
+                    await MessageConnectionManager.Enqueue(connection);
                 }
             }
         }
@@ -440,64 +424,45 @@ namespace Soulseek.NET
             await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
         }
 
-        private async Task EnqueuePeerConnection(PeerConnectionKey key, ConnectionOptions connectionOptions = null)
-        {
-            if (PeerConnections.Count() < Options.ConcurrentPeerConnections)
-            {
-                var connection = GetPeerConnection(key);
+        //private IConnection GetPeerConnection(PeerConnectionKey key)
+        //{
+        //    var options = new ConnectionOptions()
+        //    {
+        //        ConnectTimeout = 15,
+        //        ReadTimeout = 0,
+        //        BufferSize = Options.ConnectionOptions.BufferSize,
+        //    };
 
-                Console.WriteLine($"[CONNECT]: {key.Username} {key.IPAddress.ToString()}:{key.Port}");
-                if (PeerConnections.TryAdd(key, connection))
-                {
-                    await TryConnectPeerConnection(key, connection);
-                }
-            }
-            else
-            {
-                Console.WriteLine($"[QUEUE]: {key.Username} {key.IPAddress.ToString()}:{key.Port}");
-                Console.WriteLine($"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[QUEUE DEPTH]: {PeerConnectionQueue.Count()}");
-                PeerConnectionQueue.Enqueue(key);
-            }
-        }
+        //    if (key.Type == "P")
+        //    {
+        //        var conn = new MessageConnection(ConnectionType.Peer, key.IPAddress.ToString(), key.Port, options)
+        //        {
+        //            Context = key
+        //        };
 
-        private IConnection GetPeerConnection(PeerConnectionKey key)
-        {
-            var options = new ConnectionOptions()
-            {
-                ConnectTimeout = 15,
-                ReadTimeout = 0,
-                BufferSize = Options.ConnectionOptions.BufferSize,
-            };
+        //        conn.MessageReceived += OnPeerConnectionMessageReceived;
+        //        conn.StateChanged += OnPeerConnectionStateChanged;
+        //        return conn;
+        //    }
+        //    else if (key.Type == "F")
+        //    {
+        //        var conn = new TransferConnection(key.IPAddress.ToString(), key.Port, options)
+        //        {
+        //            Context = key
+        //        };
 
-            if (key.Type == "P")
-            {
-                var conn = new MessageConnection(ConnectionType.Peer, key.IPAddress.ToString(), key.Port, options)
-                {
-                    Context = key
-                };
-
-                conn.MessageReceived += OnPeerConnectionMessageReceived;
-                conn.StateChanged += OnPeerConnectionStateChanged;
-                return conn;
-            }
-            else if (key.Type == "F")
-            {
-                var conn = new TransferConnection(key.IPAddress.ToString(), key.Port, options)
-                {
-                    Context = key
-                };
-
-                conn.StateChanged += OnPeerConnectionStateChanged;
-                return conn;
-            }
-            else
-            {
-                throw new ConnectionException($"Unrecognized conection type '{key.Type}'; expected 'P' or 'F'");
-            }
-        }
+        //        conn.StateChanged += OnPeerConnectionStateChanged;
+        //        return conn;
+        //    }
+        //    else
+        //    {
+        //        throw new ConnectionException($"Unrecognized conection type '{key.Type}'; expected 'P' or 'F'");
+        //    }
+        //}
 
         private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
         {
+            Console.WriteLine($"[PEER MESSAGE]: {e.Message.Code}");
             if (e.Message.Code == MessageCode.PeerSearchResponse)
             {
                 var response = SearchResponse.Parse(e.Message);
@@ -509,77 +474,34 @@ namespace Soulseek.NET
         private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
         {
             var connection = (IConnection)sender;
-            var key = (PeerConnectionKey)connection.Context;
 
-            if (e.State == ConnectionState.Disconnected && connection is IMessageConnection)
+            Console.WriteLine($"[PEER CONNECTION]: {e.IPAddress}: {connection.State}");
+
+            if (connection is IMessageConnection messageConnection)
             {
-                Console.WriteLine($"[DISCONNECTED]: {connection.IPAddress.ToString()}");
-                connection.Dispose();
-                PeerConnections.TryRemove(key, out var _);
-
-                if (PeerConnections.Count() < Options.ConcurrentPeerConnections &&
-                    PeerConnectionQueue.TryDequeue(out var nextConnectionKey))
+                if (e.State == ConnectionState.Disconnected)
                 {
-                    var nextConnection = GetPeerConnection(nextConnectionKey);
-                    if (PeerConnections.TryAdd(nextConnectionKey, nextConnection))
-                    {
-                        Console.WriteLine($"[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[QUEUE DEPTH]: {PeerConnectionQueue.Count()}");
-                        await TryConnectPeerConnection(nextConnectionKey, nextConnection);
-                    }
+                    await MessageConnectionManager.Remove(messageConnection);
                 }
-            }
-            else if (e.State == ConnectionState.Connected)
-            {
-                Console.WriteLine($"[CONNECTED]: {connection.IPAddress.ToString()}");
-                if (connection is IMessageConnection messageConnection)
+                else if (e.State == ConnectionState.Connected)
                 {
-                    var request = new PierceFirewallRequest(key.Token).ToMessage();
+                    var context = (ConnectToPeerResponse)messageConnection.Context;
+                    var request = new PierceFirewallRequest(context.Token).ToMessage();
                     await messageConnection.SendAsync(request, suppressCodeNormalization: true);
                 }
-                else if (connection is ITransferConnection transferConnection)
+            }
+            else if (connection is ITransferConnection transferConnection)
+            {
+                if (e.State == ConnectionState.Disconnected)
                 {
-                    var request = new PierceFirewallRequest(key.Token);
+
+                }
+                else if (e.State == ConnectionState.Connected)
+                {
+                    var context = (ConnectToPeerResponse)transferConnection.Context;
+                    var request = new PierceFirewallRequest(context.Token);
                     await transferConnection.SendAsync(request.ToMessage().ToByteArray());
                 }
-            }
-        }
-
-        private void ClearPeerConnectionsActive(string disconnectMessage)
-        {
-            while (!PeerConnections.IsEmpty)
-            {
-                var key = PeerConnections.Keys.First();
-
-                if (PeerConnections.TryRemove(key, out var connection))
-                {
-                    try
-                    {
-                        connection?.Disconnect(disconnectMessage);
-                        connection?.Dispose();
-                    }
-                    catch (Exception)
-                    {
-                    }
-                }
-            }
-        }
-
-        private void ClearPeerConnectionQueue()
-        {
-            while (!PeerConnectionQueue.IsEmpty)
-            {
-                PeerConnectionQueue.TryDequeue(out var _);
-            }
-        }
-
-        private async Task TryConnectPeerConnection(PeerConnectionKey key, IConnection connection)
-        {
-            try
-            {
-                await connection.ConnectAsync();
-            }
-            catch (ConnectionException)
-            {
             }
         }
     }
