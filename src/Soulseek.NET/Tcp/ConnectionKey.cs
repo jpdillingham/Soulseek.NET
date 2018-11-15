@@ -12,13 +12,43 @@
 
 namespace Soulseek.NET.Tcp
 {
+    using System;
     using System.Net;
 
-    internal struct ConnectionKey
+    internal class ConnectionKey : IEquatable<ConnectionKey>
     {
-        public string Username;
-        public IPAddress IPAddress;
-        public int Port;
-        public ConnectionType Type;
+        public string Username { get; set; }
+        public IPAddress IPAddress { get; set; }
+        public int Port { get; set; }
+        public ConnectionType Type { get; set; }
+
+        public bool Equals(ConnectionKey other)
+        {
+            return Username == other.Username && IPAddress == other.IPAddress && Port == other.Port && Type == other.Type;
+        }
+
+        public override bool Equals(object obj)
+        {
+            try
+            {
+                return Equals((ConnectionKey)obj);
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        public override int GetHashCode()
+        {
+            var u = Username?.GetHashCode() ?? 0;
+            var i = IPAddress?.GetHashCode() ?? 0;
+            return u ^ i ^ Port.GetHashCode() ^ Type.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return $"Username: {Username}, IPAddress: {IPAddress}, Port: {Port}, Type: {Type}";
+        }
     }
 }
