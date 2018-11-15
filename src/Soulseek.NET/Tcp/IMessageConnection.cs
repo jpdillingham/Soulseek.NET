@@ -22,6 +22,9 @@ namespace Soulseek.NET.Tcp
 
         string Username { get; }
         ConnectionType Type { get; }
+        Action<IMessageConnection> ConnectHandler { get; set; }
+        Action<IMessageConnection> DisconnectHandler { get; set; }
+        Action<IMessageConnection, Message> MessageHandler { get; set; }
 
         Task SendAsync(Message message, bool suppressCodeNormalization = false);
     }
