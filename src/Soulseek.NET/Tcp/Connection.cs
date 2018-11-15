@@ -26,6 +26,7 @@ namespace Soulseek.NET.Tcp
         internal Connection(string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             Address = address;
+            IPAddress = GetIPAddress(Address);
             Port = port;
             Options = options ?? new ConnectionOptions();
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
@@ -82,8 +83,6 @@ namespace Soulseek.NET.Tcp
             {
                 throw new ConnectionStateException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
-
-            IPAddress = GetIPAddress(Address);
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
             // that ends when the result is set programmatically
