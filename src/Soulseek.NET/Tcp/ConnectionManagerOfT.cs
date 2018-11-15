@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManager.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionManagerOfT.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -19,18 +19,20 @@ namespace Soulseek.NET.Tcp
     internal class ConnectionManager<T>
         where T : IConnection
     {
-        internal ConnectionManager(ConnectionManagerOptions options = null)
+        internal ConnectionManager(int concurrentConnections)
         {
-            Options = options ?? new ConnectionManagerOptions();
+            ConcurrentConnections = concurrentConnections;
         }
 
-        private ConnectionManagerOptions Options { get; set; }
+        internal int Active => Connections.Count;
+        internal int Queued => ConnectionQueue.Count;
+        private int ConcurrentConnections { get; set; }
         private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
         private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
 
-        internal async Task Enqueue(T connection)
+        internal async Task Add(T connection)
         {
-            if (Connections.Count < Options.ConcurrentConnections)
+            if (Connections.Count < ConcurrentConnections)
             {
                 if (Connections.TryAdd(connection.Key, connection))
                 {
@@ -45,13 +47,12 @@ namespace Soulseek.NET.Tcp
 
         internal async Task Remove(T connection)
         {
-            Console.WriteLine($"[ACTIVE]: {Connections.Count} [QUEUED]: {ConnectionQueue.Count}");
             var key = connection.Key;
-            connection.Dispose();
 
+            connection.Dispose();
             Connections.TryRemove(key, out var _);
 
-            if (Connections.Count < Options.ConcurrentConnections &&
+            if (Connections.Count < ConcurrentConnections &&
                 ConnectionQueue.TryDequeue(out var nextConnection))
             {
                 if (Connections.TryAdd(nextConnection.Key, nextConnection))
