@@ -56,7 +56,7 @@ namespace Soulseek.NET
             ServerConnection.MessageReceived += ServerConnectionMessageReceivedEventHandler;
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
-            MessageConnectionManager = new ConnectionManager<IMessageConnection>(new ConnectionManagerOptions() { ConcurrentConnections = Options.ConcurrentPeerConnections });
+            MessageConnectionManager = new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
         }
 
         /// <summary>
@@ -276,7 +276,7 @@ namespace Soulseek.NET
             options = options ?? new SearchOptions();
 
             ActiveSearch = new Search(searchText, options, ServerConnection);
-            ActiveSearch.SearchResponseReceived += SearchResponseReceivedEventHandler;
+            ActiveSearch.ResponseReceived += SearchResponseReceivedEventHandler;
 
             return await ActiveSearch.SearchAsync(cancellationToken);
         }
@@ -355,11 +355,10 @@ namespace Soulseek.NET
                         Context = response
                     };
 
-                    connection.MessageReceived += OnPeerConnectionMessageReceived;
-                    connection.StateChanged += OnPeerConnectionStateChanged;
+                    connection.MessageReceived += PeerConnectionMessageReceivedEventHandler;
+                    connection.StateChanged += PeerConnectionStateChangedEventHandler;
 
-                    Console.WriteLine($"Enqueueing connection...");
-                    await MessageConnectionManager.Enqueue(connection);
+                    await MessageConnectionManager.Add(connection);
                 }
             }
         }
@@ -460,18 +459,22 @@ namespace Soulseek.NET
         //    }
         //}
 
-        private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
+        private void PeerConnectionMessageReceivedEventHandler(object sender, MessageReceivedEventArgs e)
         {
-            Console.WriteLine($"[PEER MESSAGE]: {e.Message.Code}");
-            if (e.Message.Code == MessageCode.PeerSearchResponse)
+            switch (e.Message.Code)
             {
-                var response = SearchResponse.Parse(e.Message);
+                case MessageCode.PeerSearchResponse:
+                    var response = SearchResponse.Parse(e.Message);
 
-                ActiveSearch?.AddResponse(response, e);
+                    ActiveSearch?.AddResponse(response, e);
+                    break;
+                default:
+                    Console.WriteLine($"Unknown message: [{e.IPAddress}] {e.Message.Code}: {e.Message.Payload.Length} bytes");
+                    break;
             }
         }
 
-        private async void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        private async void PeerConnectionStateChangedEventHandler(object sender, ConnectionStateChangedEventArgs e)
         {
             var connection = (IConnection)sender;
 
