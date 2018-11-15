@@ -45,7 +45,22 @@ namespace Soulseek.NET.Tcp
 
         public ConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
+
+        public new Action<IMessageConnection> ConnectHandler
+        {
+            get { return base.ConnectHandler; }
+            set { base.ConnectHandler = new Action<IConnection>((c) => value((IMessageConnection)c)); }
+        }
+
+        public new Action<IMessageConnection> DisconnectHandler
+        {
+            get { return base.DisconnectHandler; }
+            set { base.DisconnectHandler = new Action<IConnection>((c) => value((IMessageConnection)c)); }
+        }
+
         public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
+
+        public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
 
         public async Task SendAsync(Message message, bool suppressCodeNormalization = false)
         {
@@ -132,6 +147,7 @@ namespace Soulseek.NET.Tcp
 
                     NormalizeMessageCode(messageBytes, (int)Type);
 
+                    MessageHandler(this, new Message(messageBytes));
                     Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(NetworkEventArgs) { Message = new Message(messageBytes) })).Forget();
 
                     InactivityTimer?.Reset();
