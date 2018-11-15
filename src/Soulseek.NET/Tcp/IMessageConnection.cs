@@ -20,6 +20,9 @@ namespace Soulseek.NET.Tcp
     {
         event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
+        string Username { get; }
+        ConnectionType Type { get; }
+
         Task SendAsync(Message message, bool suppressCodeNormalization = false);
     }
 }
