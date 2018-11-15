@@ -28,7 +28,7 @@ namespace Soulseek.NET.Tcp
         private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
         private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
 
-        internal async void Enqueue(T connection)
+        internal async Task Enqueue(T connection)
         {
             if (Connections.Count < Options.ConcurrentConnections)
             {
@@ -43,7 +43,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        internal async void Remove(T connection)
+        internal async Task Remove(T connection)
         {
             var key = connection.Key;
             connection.Dispose();
