@@ -19,9 +19,9 @@ namespace Soulseek.NET.Tcp
     internal class ConnectionManager<T>
         where T : IConnection
     {
-        internal ConnectionManager(ConnectionManagerOptions options)
+        internal ConnectionManager(ConnectionManagerOptions options = null)
         {
-            Options = options;
+            Options = options ?? new ConnectionManagerOptions();
         }
 
         private ConnectionManagerOptions Options { get; set; }
