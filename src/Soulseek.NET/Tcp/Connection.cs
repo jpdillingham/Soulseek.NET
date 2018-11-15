@@ -65,6 +65,7 @@ namespace Soulseek.NET.Tcp
         public IPAddress IPAddress { get; protected set; }
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
+        public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
         public object Context { get; set; }
 
         protected bool Disposed { get; set; } = false;

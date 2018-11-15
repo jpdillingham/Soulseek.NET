@@ -23,6 +23,7 @@ namespace Soulseek.NET.Tcp
         IPAddress IPAddress { get; }
         int Port { get; }
         ConnectionState State { get; }
+        ConnectionKey Key { get; }
         object Context { get; }
 
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
