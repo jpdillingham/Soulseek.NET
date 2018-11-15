@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tcp
 {
     public enum ConnectionType
     {
+        Default = 0,
         Server = 10000,
         Peer = 20000,
     }
