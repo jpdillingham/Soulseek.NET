@@ -99,7 +99,7 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
-        internal void AddResponse(SearchResponse response, NetworkEventArgs e)
+        internal void AddResponse(IMessageConnection connection, SearchResponse response)
         {
             if (response.Ticket == Ticket && State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
             {
@@ -119,7 +119,8 @@ namespace Soulseek.NET
                 }
 
                 ResponseList.Add(response);
-                Task.Run(() => ResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(e) { Response = response })).Forget();
+
+                Task.Run(() => ResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(new NetworkEventArgs() { Address = connection.Address, IPAddress = connection.IPAddress, Port = connection.Port }) { Response = response })).Forget();
 
                 SearchTimeoutTimer.Reset();
             }
