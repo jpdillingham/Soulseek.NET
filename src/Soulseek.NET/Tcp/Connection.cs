@@ -67,6 +67,9 @@ namespace Soulseek.NET.Tcp
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
+
+        public Action<IConnection> ConnectHandler { get; set; } = (c) => { };
+        public Action<IConnection> DisconnectHandler { get; set; } = (c) => { };
         public object Context { get; set; }
 
         protected bool Disposed { get; set; } = false;
@@ -90,7 +93,7 @@ namespace Soulseek.NET.Tcp
 
             try
             {
-                ChangeServerState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
+                ChangeState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
                 using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
@@ -117,11 +120,11 @@ namespace Soulseek.NET.Tcp
                 WatchdogTimer.Start();
                 Stream = TcpClient.GetStream();
 
-                ChangeServerState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
+                ChangeState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
             catch (Exception ex)
             {
-                ChangeServerState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
+                ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
 
                 throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
@@ -131,14 +134,14 @@ namespace Soulseek.NET.Tcp
         {
             if (State != ConnectionState.Disconnected && State != ConnectionState.Disconnecting)
             {
-                ChangeServerState(ConnectionState.Disconnecting, message);
+                ChangeState(ConnectionState.Disconnecting, message);
 
                 InactivityTimer?.Stop();
                 WatchdogTimer.Stop();
                 Stream.Close();
                 TcpClient.Close();
 
-                ChangeServerState(ConnectionState.Disconnected, message);
+                ChangeState(ConnectionState.Disconnected, message);
             }
         }
 
@@ -202,9 +205,18 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        protected void ChangeServerState(ConnectionState state, string message)
+        protected void ChangeState(ConnectionState state, string message)
         {
             State = state;
+
+            if (State == ConnectionState.Connected)
+            {
+                ConnectHandler(this);
+            }
+            else if (State == ConnectionState.Disconnected)
+            {
+                DisconnectHandler(this);
+            }
 
             StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(NetworkEventArgs) { State = state, Message = message });
         }
