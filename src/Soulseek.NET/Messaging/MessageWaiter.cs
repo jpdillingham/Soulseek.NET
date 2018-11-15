@@ -236,17 +236,45 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        private struct WaitKey
+        /// <summary>
+        ///     The composite key for the wait dictionary.
+        /// </summary>
+        internal struct WaitKey
         {
+            /// <summary>
+            ///     The wait message code.
+            /// </summary>
             public MessageCode MessageCode;
+
+            /// <summary>
+            ///     The unique token for the wait.
+            /// </summary>
             public object Token;
         }
 
-        private class PendingWait
+        /// <summary>
+        ///     The composite value for the wait dictionary.
+        /// </summary>
+        internal class PendingWait
         {
+            /// <summary>
+            ///     Gets or sets the cancellation token for the wait.
+            /// </summary>
             public CancellationToken? CancellationToken { get; set; }
+
+            /// <summary>
+            ///     Gets or sets the time at which the wait was enqueued.
+            /// </summary>
             public DateTime DateTime { get; set; }
+
+            /// <summary>
+            ///     Gets or sets the task completion source for the wait task.
+            /// </summary>
             public dynamic TaskCompletionSource { get; set; }
+
+            /// <summary>
+            ///     Gets or sets the number of seconds after which the wait is to time out.
+            /// </summary>
             public int TimeoutAfter { get; set; }
         }
     }
