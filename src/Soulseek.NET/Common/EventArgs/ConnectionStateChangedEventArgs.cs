@@ -21,6 +21,21 @@ namespace Soulseek.NET
         {
         }
 
+        internal ConnectionStateChangedEventArgs(IConnection connection)
+            : this(connection, null)
+        {
+
+        }
+
+        internal ConnectionStateChangedEventArgs(IConnection connection, string message = null)
+        {
+            Address = connection.Address;
+            IPAddress = connection.IPAddress;
+            Port = connection.Port;
+            State = connection.State;
+            Message = message;
+        }
+
         public ConnectionState State { get; set; }
         public string Message { get; set; }
     }
