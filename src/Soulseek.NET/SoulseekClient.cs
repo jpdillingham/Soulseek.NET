@@ -51,9 +51,22 @@ namespace Soulseek.NET
             Port = port;
             Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
 
-            ServerConnection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions);
-            ServerConnection.StateChanged += ServerConnectionStateChangedEventHandler;
-            ServerConnection.MessageReceived += ServerConnectionMessageReceivedEventHandler;
+            ServerConnection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions)
+            {
+                ConnectHandler = (conn) =>
+                {
+                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
+                },
+                DisconnectHandler = async (conn, message) =>
+                {
+                    Disconnect();
+                    await Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message)));
+                },
+                MessageHandler = async (conn, message) =>
+                {
+                    await ServerMessageHandler(message);
+                }
+            };
 
             MessageWaiter = new MessageWaiter(Options.MessageTimeout);
             MessageConnectionManager = new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
@@ -309,13 +322,13 @@ namespace Soulseek.NET
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
 
-        private async Task PrivateMessageHandler(PrivateMessage message, NetworkEventArgs e)
+        private async Task PrivateMessageHandler(PrivateMessage message)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
             await ServerConnection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
-        private async Task ServerConnectToPeerHandler(ConnectToPeerResponse response, NetworkEventArgs e)
+        private async Task ConnectToPeerHandler(ConnectToPeerResponse response)
         {
             if (response.Type == "F")
             {
@@ -355,25 +368,19 @@ namespace Soulseek.NET
                         Context = response,
                         ConnectHandler = async (conn) =>
                         {
-                            Console.WriteLine($"[CONNECT]");
                             var context = (ConnectToPeerResponse)conn.Context;
                             var request = new PierceFirewallRequest(context.Token).ToMessage();
                             await conn.SendAsync(request, suppressCodeNormalization: true);
                         },
-                        DisconnectHandler = async (conn) =>
+                        DisconnectHandler = async (conn, message) =>
                         {
-                            Console.WriteLine($"[DISCONNECT]");
-                            await MessageConnectionManager.Remove((IMessageConnection)conn);
+                            await MessageConnectionManager.Remove(conn);
                         },
                         MessageHandler = (conn, message) =>
                         {
-                            Console.WriteLine($"[FIRED HANDLER]");
-                            PeerConnectionMessageHandler(conn, message);
+                            PeerMessageHandler(conn, message);
                         }
                     };
-
-                    //connection.MessageReceived += PeerConnectionMessageHandler;
-                    //connection.StateChanged += PeerConnectionStateChangedEventHandler;
 
                     await MessageConnectionManager.Add(connection);
                 }
@@ -385,59 +392,51 @@ namespace Soulseek.NET
             Task.Run(() => SearchResponseReceived?.Invoke(this, e));
         }
 
-        private async void ServerConnectionMessageReceivedEventHandler(object sender, MessageReceivedEventArgs e)
+        private async Task ServerMessageHandler(Message message)
         {
-            Task.Run(() => MessageReceived?.Invoke(this, e)).Forget();
+            Console.WriteLine($"[MESSAGE]: {message.Code}");
 
-            Console.WriteLine($"[MESSAGE]: {e.Message.Code}");
-
-            switch (e.Message.Code)
+            switch (message.Code)
             {
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(e.Message.Code, Integer.Parse(e.Message));
+                    MessageWaiter.Complete(message.Code, Integer.Parse(message));
                     break;
 
                 case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(e.Message.Code, LoginResponse.Parse(e.Message));
+                    Console.WriteLine($"[SERVER LOGIN]");
+                    MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
+                    Console.WriteLine($"[SERVER LOGIN COMPLATE]");
                     break;
 
                 case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(e.Message.Code, RoomList.Parse(e.Message));
+                    MessageWaiter.Complete(message.Code, RoomList.Parse(message));
                     break;
 
                 case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(e.Message.Code, PrivilegedUserList.Parse(e.Message));
+                    MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await ServerConnectToPeerHandler(ConnectToPeerResponse.Parse(e.Message), e);
+                    await ConnectToPeerHandler(ConnectToPeerResponse.Parse(message));
                     break;
 
                 case MessageCode.ServerPrivateMessages:
-                    await PrivateMessageHandler(PrivateMessage.Parse(e.Message), e);
+                    await PrivateMessageHandler(PrivateMessage.Parse(message));
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
-                    var response = GetPeerAddressResponse.Parse(e.Message);
-                    MessageWaiter.Complete(e.Message.Code, response.Username, response);
+                    var response = GetPeerAddressResponse.Parse(message);
+                    MessageWaiter.Complete(message.Code, response.Username, response);
                     break;
 
                 default:
-                    Console.WriteLine($"Unknown message: [{e.IPAddress}] {e.Message.Code}: {e.Message.Payload.Length} bytes");
+                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
-        }
 
-        private async void ServerConnectionStateChangedEventHandler(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Disconnected)
-            {
-                Disconnect();
-            }
-
-            await Task.Run(() => ConnectionStateChanged?.Invoke(this, e));
+            Console.WriteLine($"[MESSAGE DONE]");
         }
 
         //private IConnection GetPeerConnection(PeerConnectionKey key)
@@ -476,7 +475,7 @@ namespace Soulseek.NET
         //    }
         //}
 
-        private void PeerConnectionMessageHandler(IMessageConnection connection, Message message)
+        private void PeerMessageHandler(IMessageConnection connection, Message message)
         {
             Console.WriteLine($"[PEER RESPONSE]");
             switch (message.Code)
@@ -498,20 +497,7 @@ namespace Soulseek.NET
 
             Console.WriteLine($"[PEER CONNECTION]: {e.IPAddress}: {connection.State}");
 
-            if (connection is IMessageConnection messageConnection)
-            {
-                if (e.State == ConnectionState.Disconnected)
-                {
-                    await MessageConnectionManager.Remove(messageConnection);
-                }
-                else if (e.State == ConnectionState.Connected)
-                {
-                    //var context = (ConnectToPeerResponse)messageConnection.Context;
-                    //var request = new PierceFirewallRequest(context.Token).ToMessage();
-                    //await messageConnection.SendAsync(request, suppressCodeNormalization: true);
-                }
-            }
-            else if (connection is ITransferConnection transferConnection)
+            if (connection is ITransferConnection transferConnection)
             {
                 if (e.State == ConnectionState.Disconnected)
                 {
