@@ -25,6 +25,8 @@ namespace Soulseek.NET.Tcp
         ConnectionState State { get; }
         ConnectionKey Key { get; }
         object Context { get; }
+        Action<IConnection> ConnectHandler { get; }
+        Action<IConnection, string> DisconnectHandler { get; }
 
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
