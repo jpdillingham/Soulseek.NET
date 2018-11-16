@@ -18,6 +18,8 @@ namespace Soulseek.NET.Tcp
 
     internal interface IMessageConnection : IConnection, IDisposable
     {
+        event EventHandler<MessageReceivedEventArgs> MessageReceived;
+
         string Username { get; }
         ConnectionType Type { get; }
         Action<IMessageConnection> ConnectHandler { get; set; }
