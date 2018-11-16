@@ -68,8 +68,8 @@ namespace Soulseek.NET.Tcp
         public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
 
-        public Action<IConnection> ConnectHandler { get; set; } = (c) => { };
-        public Action<IConnection> DisconnectHandler { get; set; } = (c) => { };
+        public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
+        public Action<IConnection, string> DisconnectHandler { get; set; } = (connection, message) => { };
         public object Context { get; set; }
 
         protected bool Disposed { get; set; } = false;
@@ -215,7 +215,7 @@ namespace Soulseek.NET.Tcp
             }
             else if (State == ConnectionState.Disconnected)
             {
-                DisconnectHandler(this);
+                DisconnectHandler(this, message);
             }
 
             StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(NetworkEventArgs) { State = state, Message = message });
