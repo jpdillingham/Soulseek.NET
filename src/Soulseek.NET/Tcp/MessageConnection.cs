@@ -52,10 +52,10 @@ namespace Soulseek.NET.Tcp
             set { base.ConnectHandler = new Action<IConnection>((c) => value((IMessageConnection)c)); }
         }
 
-        public new Action<IMessageConnection> DisconnectHandler
+        public new Action<IMessageConnection, string> DisconnectHandler
         {
             get { return base.DisconnectHandler; }
-            set { base.DisconnectHandler = new Action<IConnection>((c) => value((IMessageConnection)c)); }
+            set { base.DisconnectHandler = new Action<IConnection, string>((connection, message) => value((IMessageConnection)connection, message)); }
         }
 
         public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
