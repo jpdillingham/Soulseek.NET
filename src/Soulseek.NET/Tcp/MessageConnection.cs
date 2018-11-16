@@ -133,7 +133,6 @@ namespace Soulseek.NET.Tcp
 
                     var lengthBytes = await ReadAsync(4);
                     var length = BitConverter.ToInt32(lengthBytes, 0);
-                    Console.WriteLine($"Read {length} bytes");
                     message.AddRange(lengthBytes);
 
                     var codeBytes = await ReadAsync(4);
@@ -147,7 +146,7 @@ namespace Soulseek.NET.Tcp
 
                     NormalizeMessageCode(messageBytes, (int)Type);
 
-                    MessageHandler(this, new Message(messageBytes));
+                    Task.Run(() => MessageHandler(this, new Message(messageBytes))).Forget();
                     Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(NetworkEventArgs) { Message = new Message(messageBytes) })).Forget();
 
                     InactivityTimer?.Reset();
