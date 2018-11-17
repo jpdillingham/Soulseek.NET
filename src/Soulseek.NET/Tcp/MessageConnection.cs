@@ -29,27 +29,25 @@ namespace Soulseek.NET.Tcp
             : base(address, port, options, tcpClient)
         {
             Type = type;
-            StateChanged += MessageConnection_StateChanged;
+            base.ConnectHandler = new Action<IConnection>((c) => Task.Run(() => ReadContinuouslyAsync()).Forget());
         }
 
         public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-
-        private void MessageConnection_StateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Connected)
-            {
-                Console.WriteLine($"Connected, beginning read loop");
-                Task.Run(() => ReadContinuouslyAsync()).Forget();
-            }
-        }
 
         public ConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
 
         public new Action<IMessageConnection> ConnectHandler
         {
-            get { return base.ConnectHandler; }
-            set { base.ConnectHandler = new Action<IConnection>((c) => value((IMessageConnection)c)); }
+            get => base.ConnectHandler;
+            set
+            {
+                base.ConnectHandler = new Action<IConnection>((c) =>
+                {
+                    Task.Run(() => ReadContinuouslyAsync()).Forget();
+                    value((IMessageConnection)c);
+                });
+            }
         }
 
         public new Action<IMessageConnection, string> DisconnectHandler
