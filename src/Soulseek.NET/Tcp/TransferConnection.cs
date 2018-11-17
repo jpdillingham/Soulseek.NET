@@ -22,8 +22,41 @@ namespace Soulseek.NET.Tcp
         {
         }
 
-        public event EventHandler<DataSentEventArgs> DataSent;
-        public event EventHandler<DataReceivedEventArgs> DataReceived;
+        public new Action<ITransferConnection> ConnectHandler
+        {
+            get => base.ConnectHandler;
+            set
+            {
+                base.ConnectHandler = new Action<IConnection>((connection) => value((ITransferConnection)connection));
+            }
+        }
+
+        public new Action<ITransferConnection, string> DisconnectHandler
+        {
+            get => base.DisconnectHandler;
+            set
+            {
+                base.DisconnectHandler = new Action<IConnection, string>((connection, message) => value((ITransferConnection)connection, message));
+            }
+        }
+
+        public Action<ITransferConnection, byte[]> DataSentHandler
+        {
+            get => base.DataSentHandler;
+            set
+            {
+                base.DataSentHandler = new Action<IConnection, byte[]>((connection, data) => value((ITransferConnection)connection, data));
+            }
+        }
+
+        public Action<ITransferConnection, byte[]> DataReceivedHandler
+        {
+            get => base.DataReceivedHandler;
+            set
+            {
+                base.DataReceivedHandler = new Action<IConnection, byte[]>((connection, data) => value((ITransferConnection)connection, data));
+            }
+        }
 
         public async Task SendAsync(byte[] bytes)
         {
@@ -47,16 +80,6 @@ namespace Soulseek.NET.Tcp
         public async Task<byte[]> ReadAsync(int count)
         {
             return await base.ReadAsync(count);
-        }
-
-        protected override void DataSentHandler(byte[] data)
-        {
-            Task.Run(() => DataSent?.Invoke(this, new DataSentEventArgs(NetworkEventArgs) { Data = data }));
-        }
-
-        protected override void DataReceivedHandler(byte[] data)
-        {
-            Task.Run(() => DataReceived?.Invoke(this, new DataReceivedEventArgs(NetworkEventArgs) { Data = data }));
         }
     }
 }
