@@ -38,10 +38,21 @@
 
         internal async Task<Download> DownloadAsync(CancellationToken? cancellationToken = null)
         {
-            PeerConnection.MessageReceived += OnPeerConnectionMessageReceived;
-            PeerConnection.StateChanged += OnPeerConnectionStateChanged;
+            PeerConnection.MessageHandler = HandleMessage;
+            PeerConnection.DisconnectHandler = (connection, message) =>
+            {
+                Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
+                //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
+            };
 
-            TransferConnection.StateChanged += OnTransferConnectionStateChanged;
+            TransferConnection.DisconnectHandler = (connection, message) =>
+            {
+                Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {connection.State}");
+            };
+            TransferConnection.ConnectHandler = (connection) =>
+            {
+                Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {connection.State}");
+            };
 
             try
             {
@@ -137,19 +148,19 @@
             t.Disconnect("Download complete.");
         }
 
-        private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
+        private void HandleMessage(IMessageConnection connection, Message message)
         {
-            Console.WriteLine($"[{Filename}] [MESSAGE FROM PEER]: {e.Message.Code}");
+            Console.WriteLine($"[{Filename}] [MESSAGE FROM PEER]: {message.Code}");
 
-            switch (e.Message.Code)
+            switch (message.Code)
             {
                 case MessageCode.PeerTransferResponse:
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(e.Message));
+                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(message));
                     break;
                 case MessageCode.PeerTransferRequest:
                     try
                     {
-                        var x = PeerTransferRequestResponse.Parse(e.Message);
+                        var x = PeerTransferRequestResponse.Parse(message);
                         Console.WriteLine($"[{Filename}] Completing PTRR");
                         MessageWaiter.Complete(MessageCode.PeerTransferRequest, x);
                     }
@@ -160,28 +171,14 @@
 
                     break;
                 default:
-                    Console.WriteLine($"[{Filename}] [RESPONSE]: {e.Message.Code}");
+                    Console.WriteLine($"[{Filename}] [RESPONSE]: {message.Code}");
                     break;
-            }
-        }
-
-        private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Disconnected && sender is Connection connection)
-            {
-                Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
-                //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
             }
         }
 
         private void OnTransferConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             Console.WriteLine($"[{Filename}] [TRANSFER DATA]");
-        }
-
-        private void OnTransferConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {e.State}");
         }
     }
 }

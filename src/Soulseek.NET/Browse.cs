@@ -43,8 +43,12 @@ namespace Soulseek.NET
 
         internal async Task<Browse> BrowseAsync(CancellationToken? cancellationToken = null)
         {
-            Connection.MessageReceived += OnConnectionMessageReceived;
-            Connection.StateChanged += OnConnectionStateChanged;
+            Connection.MessageHandler = HandleMessage;
+            Connection.DisconnectHandler = (connection, message) =>
+            {
+                connection.Dispose();
+                MessageWaiter.Throw(MessageCode.PeerBrowseResponse, connection.IPAddress, new ConnectionException(message));
+            };
 
             try
             {
@@ -63,32 +67,20 @@ namespace Soulseek.NET
             }
         }
 
-        private void OnConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
+        private void HandleMessage(IMessageConnection connection, Message message)
         {
-            Console.WriteLine($"[BROWSE MESSAGE]: {e.Message.Code}");
+            Console.WriteLine($"[BROWSE MESSAGE]: {message.Code}");
 
-            switch (e.Message.Code)
+            switch (message.Code)
             {
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, e.IPAddress.ToString(), BrowseResponse.Parse(e.Message));
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.IPAddress.ToString(), BrowseResponse.Parse(message));
                     break;
 
                 default:
-                    if (sender is Connection connection)
-                    {
-                        connection.Disconnect($"Unknown browse response from peer: {e.Message.Code}");
-                    }
+                    connection.Disconnect($"Unknown browse response from peer: {message.Code}");
 
                     break;
-            }
-        }
-
-        private void OnConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Disconnected && sender is Connection connection)
-            {
-                connection.Dispose();
-                MessageWaiter.Throw(MessageCode.PeerBrowseResponse, e.IPAddress, new ConnectionException(e.Message));
             }
         }
     }

@@ -29,18 +29,7 @@ namespace Soulseek.NET.Tcp
             : base(address, port, options, tcpClient)
         {
             Type = type;
-            StateChanged += MessageConnection_StateChanged;
-        }
-
-        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-
-        private void MessageConnection_StateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Connected)
-            {
-                Console.WriteLine($"Connected, beginning read loop");
-                Task.Run(() => ReadContinuouslyAsync()).Forget();
-            }
+            base.ConnectHandler = new Action<IConnection>((c) => Task.Run(() => ReadContinuouslyAsync()).Forget());
         }
 
         public ConnectionType Type { get; private set; }
@@ -48,8 +37,15 @@ namespace Soulseek.NET.Tcp
 
         public new Action<IMessageConnection> ConnectHandler
         {
-            get { return base.ConnectHandler; }
-            set { base.ConnectHandler = new Action<IConnection>((c) => value((IMessageConnection)c)); }
+            get => base.ConnectHandler;
+            set
+            {
+                base.ConnectHandler = new Action<IConnection>((c) =>
+                {
+                    Task.Run(() => ReadContinuouslyAsync()).Forget();
+                    value((IMessageConnection)c);
+                });
+            }
         }
 
         public new Action<IMessageConnection, string> DisconnectHandler
@@ -147,8 +143,6 @@ namespace Soulseek.NET.Tcp
                     NormalizeMessageCode(messageBytes, (int)Type);
 
                     Task.Run(() => MessageHandler(this, new Message(messageBytes))).Forget();
-                    Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(NetworkEventArgs) { Message = new Message(messageBytes) })).Forget();
-
                     InactivityTimer?.Reset();
                 }
             }

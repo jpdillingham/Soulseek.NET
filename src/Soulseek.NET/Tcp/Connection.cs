@@ -59,8 +59,6 @@ namespace Soulseek.NET.Tcp
             };
         }
 
-        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
-
         public ConnectionOptions Options { get; protected set; }
         public string Address { get; protected set; }
         public IPAddress IPAddress { get; protected set; }
@@ -176,7 +174,7 @@ namespace Soulseek.NET.Tcp
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
 
-                DataSentHandler(bytes);
+                Task.Run(() => DataSentHandler(this, bytes)).Forget();
             }
             catch (Exception ex)
             {
@@ -217,8 +215,6 @@ namespace Soulseek.NET.Tcp
             {
                 DisconnectHandler(this, message);
             }
-
-            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(NetworkEventArgs) { State = state, Message = message });
         }
 
         protected IPAddress GetIPAddress(string address)
@@ -277,18 +273,13 @@ namespace Soulseek.NET.Tcp
                 var data = buffer.Take(bytesRead);
                 result.AddRange(buffer.Take(bytesRead));
 
-                DataReceivedHandler(data.ToArray());
+                Task.Run(() => DataReceivedHandler(this, data.ToArray())).Forget();
             }
 
             return result.ToArray();
         }
 
-        protected virtual void DataSentHandler(byte[] data)
-        {
-        }
-
-        protected virtual void DataReceivedHandler(byte[] data)
-        {
-        }
+        protected Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
+        protected Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
     }
 }
