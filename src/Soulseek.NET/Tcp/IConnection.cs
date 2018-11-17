@@ -18,23 +18,34 @@ namespace Soulseek.NET.Tcp
 
     internal interface IConnection : IDisposable
     {
-        ConnectionOptions Options { get; }
+        #region Public Properties
+
         string Address { get; }
+        Action<IConnection> ConnectHandler { get; set; }
+        object Context { get; }
+        Action<IConnection, byte[]> DataReceivedHandler { get; set; }
+        Action<IConnection, byte[]> DataSentHandler { get; set; }
+        Action<IConnection, string> DisconnectHandler { get; set; }
         IPAddress IPAddress { get; }
+        ConnectionKey Key { get; }
+        ConnectionOptions Options { get; }
         int Port { get; }
         ConnectionState State { get; }
-        ConnectionKey Key { get; }
-        object Context { get; }
 
-        Task SendAsync(byte[] bytes);
-        Task<byte[]> ReadAsync(int count);
-        Task<byte[]> ReadAsync(long count);
+        #endregion Public Properties
+
+        #region Public Methods
+
         Task ConnectAsync();
+
         void Disconnect(string message = null);
 
-        Action<IConnection> ConnectHandler { get; set; }
-        Action<IConnection, string> DisconnectHandler { get; set; }
-        Action<IConnection, byte[]> DataSentHandler { get; set; }
-        Action<IConnection, byte[]> DataReceivedHandler { get; set; }
+        Task<byte[]> ReadAsync(int count);
+
+        Task<byte[]> ReadAsync(long count);
+
+        Task SendAsync(byte[] bytes);
+
+        #endregion Public Methods
     }
 }
