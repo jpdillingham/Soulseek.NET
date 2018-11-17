@@ -288,8 +288,14 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            ActiveSearch = new Search(searchText, options, ServerConnection);
-            ActiveSearch.ResponseReceived += SearchResponseReceivedEventHandler;
+            ActiveSearch = new Search(searchText, options, ServerConnection)
+            {
+                ResponseHandler = (search, response) =>
+                {
+                    var e = new SearchResponseReceivedEventArgs() { Search = search, Response = response };
+                    Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
+                }
+            };
 
             return await ActiveSearch.SearchAsync(cancellationToken);
         }
@@ -385,11 +391,6 @@ namespace Soulseek.NET
                     await MessageConnectionManager.Add(connection);
                 }
             }
-        }
-
-        private void SearchResponseReceivedEventHandler(object sender, SearchResponseReceivedEventArgs e)
-        {
-            Task.Run(() => SearchResponseReceived?.Invoke(this, e));
         }
 
         private async Task ServerMessageHandler(Message message)

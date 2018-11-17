@@ -54,10 +54,7 @@ namespace Soulseek.NET
             };
         }
 
-        /// <summary>
-        ///     Occurs when a search response is received from a peer.
-        /// </summary>
-        internal event EventHandler<SearchResponseReceivedEventArgs> ResponseReceived;
+        public Action<Search, SearchResponse> ResponseHandler { get; set; } = (search, response) => { };
 
         /// <summary>
         ///     Gets the options for the search.
@@ -120,7 +117,7 @@ namespace Soulseek.NET
 
                 ResponseList.Add(response);
 
-                Task.Run(() => ResponseReceived?.Invoke(this, new SearchResponseReceivedEventArgs(new NetworkEventArgs() { Address = connection.Address, IPAddress = connection.IPAddress, Port = connection.Port }) { Response = response })).Forget();
+                Task.Run(() => ResponseHandler(this, response)).Forget();
 
                 SearchTimeoutTimer.Reset();
             }
