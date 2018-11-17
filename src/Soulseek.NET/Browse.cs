@@ -44,7 +44,11 @@ namespace Soulseek.NET
         internal async Task<Browse> BrowseAsync(CancellationToken? cancellationToken = null)
         {
             Connection.MessageReceived += OnConnectionMessageReceived;
-            Connection.StateChanged += OnConnectionStateChanged;
+            Connection.DisconnectHandler = (connection, message) =>
+            {
+                connection.Dispose();
+                MessageWaiter.Throw(MessageCode.PeerBrowseResponse, connection.IPAddress, new ConnectionException(message));
+            };
 
             try
             {
@@ -87,8 +91,7 @@ namespace Soulseek.NET
         {
             if (e.State == ConnectionState.Disconnected && sender is Connection connection)
             {
-                connection.Dispose();
-                MessageWaiter.Throw(MessageCode.PeerBrowseResponse, e.IPAddress, new ConnectionException(e.Message));
+
             }
         }
     }
