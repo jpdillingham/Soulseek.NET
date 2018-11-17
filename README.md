@@ -1,7 +1,7 @@
 # Soulseek.NET
 
-![Azure DevOps builds](https://img.shields.io/vso/build/jpdillingham/3416406e-e4a8-4bf2-8a6e-75beec2d24e3/2.svg)
-![license](https://img.shields.io/github/license/jpdillingham/Soulseek.NET.svg)
+[![Azure DevOps builds](https://img.shields.io/vso/build/jpdillingham/3416406e-e4a8-4bf2-8a6e-75beec2d24e3/2.svg)](https://jpdillingham.visualstudio.com/Soulseek.NET/_build?definitionId=2)
+[![license](https://img.shields.io/github/license/jpdillingham/Soulseek.NET.svg)](https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE)
 
 A .NET Standard client library for the Soulseek network.
 
