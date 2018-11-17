@@ -32,8 +32,6 @@ namespace Soulseek.NET.Tcp
             base.ConnectHandler = new Action<IConnection>((c) => Task.Run(() => ReadContinuouslyAsync()).Forget());
         }
 
-        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
-
         public ConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
 
@@ -145,8 +143,6 @@ namespace Soulseek.NET.Tcp
                     NormalizeMessageCode(messageBytes, (int)Type);
 
                     Task.Run(() => MessageHandler(this, new Message(messageBytes))).Forget();
-                    Task.Run(() => MessageReceived?.Invoke(this, new MessageReceivedEventArgs(NetworkEventArgs) { Message = new Message(messageBytes) })).Forget();
-
                     InactivityTimer?.Reset();
                 }
             }
