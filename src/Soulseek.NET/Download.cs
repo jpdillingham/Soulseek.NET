@@ -10,7 +10,7 @@
 
     public sealed class Download
     {
-        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IMessageConnection peerConnection = null, ITransferConnection transferConnection = null)
+        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IMessageConnection peerConnection = null, IConnection transferConnection = null)
         {
             Username = username;
             Filename = filename;
@@ -19,7 +19,7 @@
             Options = options ?? new DownloadOptions();
 
             PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options.ConnectionOptions);
-            TransferConnection = transferConnection ?? new TransferConnection(ipAddress, port, Options.ConnectionOptions);
+            TransferConnection = transferConnection ?? new Connection(ipAddress, port, Options.ConnectionOptions);
         }
 
         public string Username { get; private set; }
@@ -30,7 +30,7 @@
         public PeerTransferRequestResponse TransferRequestResponse { get; private set; }
         public DownloadOptions Options { get; private set; }
         private IMessageConnection PeerConnection { get; set; }
-        private ITransferConnection TransferConnection { get; set; }
+        private IConnection TransferConnection { get; set; }
         public int Token { get; private set; }
         public long FileSize { get; private set; }
 
@@ -94,7 +94,7 @@
             }
         }
 
-        internal async Task StartDownload(TransferConnection t)
+        internal async Task StartDownload(IConnection t)
         {
             // write 8 empty bytes.  no idea what this is; captured via WireShark
             // the transfer will not begin until it is sent.
@@ -114,7 +114,7 @@
 
         public async Task ConnectToPeer(ConnectToPeerResponse response, NetworkEventArgs e)
         {
-            var t = new TransferConnection(response.IPAddress.ToString(), response.Port);
+            var t = new Connection(response.IPAddress.ToString(), response.Port);
 
             Console.WriteLine($"[{Filename}] [CONNECT TO PEER]: {response.Token}");
             Console.WriteLine($"[{Filename}] [OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");

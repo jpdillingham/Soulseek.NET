@@ -54,7 +54,7 @@ namespace Soulseek.NET
             };
         }
 
-        public Action<Search, SearchResponse> ResponseHandler { get; set; } = (search, response) => { };
+        internal Action<Search, SearchResponse> ResponseHandler { get; set; } = (search, response) => { };
 
         /// <summary>
         ///     Gets the options for the search.

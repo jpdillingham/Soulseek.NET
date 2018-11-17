@@ -498,7 +498,7 @@ namespace Soulseek.NET
 
             Console.WriteLine($"[PEER CONNECTION]: {e.IPAddress}: {connection.State}");
 
-            if (connection is ITransferConnection transferConnection)
+            if (connection is IConnection transferConnection)
             {
                 if (e.State == ConnectionState.Disconnected)
                 {

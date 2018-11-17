@@ -25,11 +25,16 @@ namespace Soulseek.NET.Tcp
         ConnectionState State { get; }
         ConnectionKey Key { get; }
         object Context { get; }
+
+        Task SendAsync(byte[] bytes);
+        Task<byte[]> ReadAsync(int count);
+        Task<byte[]> ReadAsync(long count);
+        Task ConnectAsync();
+        void Disconnect(string message = null);
+
         Action<IConnection> ConnectHandler { get; set; }
         Action<IConnection, string> DisconnectHandler { get; set; }
-
-        Task ConnectAsync();
-
-        void Disconnect(string message = null);
+        Action<IConnection, byte[]> DataSentHandler { get; set; }
+        Action<IConnection, byte[]> DataReceivedHandler { get; set; }
     }
 }

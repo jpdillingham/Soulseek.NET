@@ -21,12 +21,12 @@ namespace Soulseek.NET.Tcp
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
-    internal abstract class Connection : IConnection, IDisposable
+    internal class Connection : IConnection, IDisposable
     {
         internal Connection(string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             Address = address;
-            IPAddress = GetIPAddress(Address);
+            IPAddress = ResolveIPAddress(Address);
             Port = port;
             Options = options ?? new ConnectionOptions();
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
@@ -148,7 +148,7 @@ namespace Soulseek.NET.Tcp
             Dispose(true);
         }
 
-        protected async Task SendAsync(byte[] bytes)
+        public async Task SendAsync(byte[] bytes)
         {
             if (!TcpClient.Connected)
             {
@@ -217,7 +217,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        protected IPAddress GetIPAddress(string address)
+        protected IPAddress ResolveIPAddress(string address)
         {
             if (IPAddress.TryParse(address, out IPAddress ip))
             {
@@ -236,7 +236,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        protected async Task<byte[]> ReadAsync(long count)
+        public async Task<byte[]> ReadAsync(long count)
         {
             try
             {
@@ -250,7 +250,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        protected async Task<byte[]> ReadAsync(int count)
+        public async Task<byte[]> ReadAsync(int count)
         {
             var result = new List<byte>();
 
@@ -279,7 +279,7 @@ namespace Soulseek.NET.Tcp
             return result.ToArray();
         }
 
-        protected Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
-        protected Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
+        public Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
+        public Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
     }
 }
