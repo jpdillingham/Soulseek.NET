@@ -28,8 +28,6 @@ namespace Soulseek.NET.Tcp
         Action<IConnection> ConnectHandler { get; }
         Action<IConnection, string> DisconnectHandler { get; }
 
-        event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
-
         Task ConnectAsync();
 
         void Disconnect(string message = null);

@@ -59,8 +59,6 @@ namespace Soulseek.NET.Tcp
             };
         }
 
-        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
-
         public ConnectionOptions Options { get; protected set; }
         public string Address { get; protected set; }
         public IPAddress IPAddress { get; protected set; }
@@ -217,8 +215,6 @@ namespace Soulseek.NET.Tcp
             {
                 DisconnectHandler(this, message);
             }
-
-            StateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(NetworkEventArgs) { State = state, Message = message });
         }
 
         protected IPAddress GetIPAddress(string address)
