@@ -174,7 +174,7 @@ namespace Soulseek.NET.Tcp
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
 
-                DataSentHandler(bytes);
+                Task.Run(() => DataSentHandler(this, bytes)).Forget();
             }
             catch (Exception ex)
             {
@@ -273,18 +273,13 @@ namespace Soulseek.NET.Tcp
                 var data = buffer.Take(bytesRead);
                 result.AddRange(buffer.Take(bytesRead));
 
-                DataReceivedHandler(data.ToArray());
+                Task.Run(() => DataReceivedHandler(this, data.ToArray())).Forget();
             }
 
             return result.ToArray();
         }
 
-        protected virtual void DataSentHandler(byte[] data)
-        {
-        }
-
-        protected virtual void DataReceivedHandler(byte[] data)
-        {
-        }
+        protected Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
+        protected Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
     }
 }
