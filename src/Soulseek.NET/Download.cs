@@ -39,9 +39,20 @@
         internal async Task<Download> DownloadAsync(CancellationToken? cancellationToken = null)
         {
             PeerConnection.MessageReceived += OnPeerConnectionMessageReceived;
-            PeerConnection.StateChanged += OnPeerConnectionStateChanged;
+            PeerConnection.DisconnectHandler = (connection, message) =>
+            {
+                Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
+                //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
+            };
 
-            TransferConnection.StateChanged += OnTransferConnectionStateChanged;
+            TransferConnection.DisconnectHandler = (connection, message) =>
+            {
+                Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {connection.State}");
+            };
+            TransferConnection.ConnectHandler = (connection) =>
+            {
+                Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {connection.State}");
+            };
 
             try
             {
@@ -165,23 +176,9 @@
             }
         }
 
-        private void OnPeerConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            if (e.State == ConnectionState.Disconnected && sender is Connection connection)
-            {
-                Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
-                //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
-            }
-        }
-
         private void OnTransferConnectionDataReceived(object sender, DataReceivedEventArgs e)
         {
             Console.WriteLine($"[{Filename}] [TRANSFER DATA]");
-        }
-
-        private void OnTransferConnectionStateChanged(object sender, ConnectionStateChangedEventArgs e)
-        {
-            Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {e.State}");
         }
     }
 }
