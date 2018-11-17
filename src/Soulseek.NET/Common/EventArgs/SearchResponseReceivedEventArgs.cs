@@ -14,13 +14,13 @@ namespace Soulseek.NET
 {
     using Soulseek.NET.Messaging.Responses;
 
-    public class SearchResponseReceivedEventArgs : NetworkEventArgs
+    public class SearchResponseReceivedEventArgs
     {
-        public SearchResponseReceivedEventArgs(NetworkEventArgs e)
-            : base(e)
+        public SearchResponseReceivedEventArgs()
         {
         }
 
+        public Search Search { get; set; }
         public SearchResponse Response { get; set; }
     }
 }
