@@ -38,7 +38,7 @@
 
         internal async Task<Download> DownloadAsync(CancellationToken? cancellationToken = null)
         {
-            PeerConnection.MessageReceived += OnPeerConnectionMessageReceived;
+            PeerConnection.MessageHandler = HandleMessage;
             PeerConnection.DisconnectHandler = (connection, message) =>
             {
                 Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
@@ -148,19 +148,19 @@
             t.Disconnect("Download complete.");
         }
 
-        private void OnPeerConnectionMessageReceived(object sender, MessageReceivedEventArgs e)
+        private void HandleMessage(IMessageConnection connection, Message message)
         {
-            Console.WriteLine($"[{Filename}] [MESSAGE FROM PEER]: {e.Message.Code}");
+            Console.WriteLine($"[{Filename}] [MESSAGE FROM PEER]: {message.Code}");
 
-            switch (e.Message.Code)
+            switch (message.Code)
             {
                 case MessageCode.PeerTransferResponse:
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(e.Message));
+                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(message));
                     break;
                 case MessageCode.PeerTransferRequest:
                     try
                     {
-                        var x = PeerTransferRequestResponse.Parse(e.Message);
+                        var x = PeerTransferRequestResponse.Parse(message);
                         Console.WriteLine($"[{Filename}] Completing PTRR");
                         MessageWaiter.Complete(MessageCode.PeerTransferRequest, x);
                     }
@@ -171,7 +171,7 @@
 
                     break;
                 default:
-                    Console.WriteLine($"[{Filename}] [RESPONSE]: {e.Message.Code}");
+                    Console.WriteLine($"[{Filename}] [RESPONSE]: {message.Code}");
                     break;
             }
         }
