@@ -23,6 +23,8 @@ namespace Soulseek.NET.Tcp
 
     internal class Connection : IConnection, IDisposable
     {
+        #region Internal Constructors
+
         internal Connection(string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             Address = address;
@@ -59,24 +61,36 @@ namespace Soulseek.NET.Tcp
             };
         }
 
-        public ConnectionOptions Options { get; protected set; }
+        #endregion Internal Constructors
+
+        #region Public Properties
+
         public string Address { get; protected set; }
+        public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
+        public object Context { get; set; }
+        public Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
+        public Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
+        public Action<IConnection, string> DisconnectHandler { get; set; } = (connection, message) => { };
         public IPAddress IPAddress { get; protected set; }
+        public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
+        public ConnectionOptions Options { get; protected set; }
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
-        public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
 
-        public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
-        public Action<IConnection, string> DisconnectHandler { get; set; } = (connection, message) => { };
-        public object Context { get; set; }
+        #endregion Public Properties
+
+        #region Protected Properties
 
         protected bool Disposed { get; set; } = false;
         protected SystemTimer InactivityTimer { get; set; }
+        protected NetworkEventArgs NetworkEventArgs => new NetworkEventArgs() { Address = Address, IPAddress = IPAddress, Port = Port };
         protected NetworkStream Stream { get; set; }
         protected ITcpClient TcpClient { get; set; }
         protected SystemTimer WatchdogTimer { get; set; }
 
-        protected NetworkEventArgs NetworkEventArgs => new NetworkEventArgs() { Address = Address, IPAddress = IPAddress, Port = Port };
+        #endregion Protected Properties
+
+        #region Public Methods
 
         public async Task ConnectAsync()
         {
@@ -148,94 +162,6 @@ namespace Soulseek.NET.Tcp
             Dispose(true);
         }
 
-        public async Task SendAsync(byte[] bytes)
-        {
-            if (!TcpClient.Connected)
-            {
-                throw new ConnectionStateException($"The underlying TcpConnection is closed.");
-            }
-
-            if (State != ConnectionState.Connected)
-            {
-                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
-            }
-
-            if (bytes == null || bytes.Length == 0)
-            {
-                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
-            }
-
-            if (bytes.Length > Options.BufferSize)
-            {
-                throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
-            }
-
-            try
-            {
-                await Stream.WriteAsync(bytes, 0, bytes.Length);
-
-                Task.Run(() => DataSentHandler(this, bytes)).Forget();
-            }
-            catch (Exception ex)
-            {
-                if (State != ConnectionState.Connected)
-                {
-                    Disconnect($"Write error: {ex.Message}");
-                }
-
-                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
-            }
-        }
-
-        protected void Dispose(bool disposing)
-        {
-            if (!Disposed)
-            {
-                if (disposing)
-                {
-                    InactivityTimer?.Dispose();
-                    WatchdogTimer?.Dispose();
-                    Stream?.Dispose();
-                    TcpClient?.Dispose();
-                }
-
-                Disposed = true;
-            }
-        }
-
-        protected void ChangeState(ConnectionState state, string message)
-        {
-            State = state;
-
-            if (State == ConnectionState.Connected)
-            {
-                ConnectHandler(this);
-            }
-            else if (State == ConnectionState.Disconnected)
-            {
-                DisconnectHandler(this, message);
-            }
-        }
-
-        protected IPAddress ResolveIPAddress(string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                var dns = Dns.GetHostEntry(address);
-
-                if (!dns.AddressList.Any())
-                {
-                    throw new ConnectionException($"Unable to resolve hostname {address}.");
-                }
-
-                return dns.AddressList[0];
-            }
-        }
-
         public async Task<byte[]> ReadAsync(long count)
         {
             try
@@ -279,7 +205,97 @@ namespace Soulseek.NET.Tcp
             return result.ToArray();
         }
 
-        public Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
-        public Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
+        public async Task SendAsync(byte[] bytes)
+        {
+            if (!TcpClient.Connected)
+            {
+                throw new ConnectionStateException($"The underlying TcpConnection is closed.");
+            }
+
+            if (State != ConnectionState.Connected)
+            {
+                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
+            }
+
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
+            }
+
+            if (bytes.Length > Options.BufferSize)
+            {
+                throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
+            }
+
+            try
+            {
+                await Stream.WriteAsync(bytes, 0, bytes.Length);
+
+                Task.Run(() => DataSentHandler(this, bytes)).Forget();
+            }
+            catch (Exception ex)
+            {
+                if (State != ConnectionState.Connected)
+                {
+                    Disconnect($"Write error: {ex.Message}");
+                }
+
+                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
+            }
+        }
+
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        protected void ChangeState(ConnectionState state, string message)
+        {
+            State = state;
+
+            if (State == ConnectionState.Connected)
+            {
+                ConnectHandler(this);
+            }
+            else if (State == ConnectionState.Disconnected)
+            {
+                DisconnectHandler(this, message);
+            }
+        }
+
+        protected void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    InactivityTimer?.Dispose();
+                    WatchdogTimer?.Dispose();
+                    Stream?.Dispose();
+                    TcpClient?.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
+        protected IPAddress ResolveIPAddress(string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                var dns = Dns.GetHostEntry(address);
+
+                if (!dns.AddressList.Any())
+                {
+                    throw new ConnectionException($"Unable to resolve hostname {address}.");
+                }
+
+                return dns.AddressList[0];
+            }
+        }
+
+        #endregion Protected Methods
     }
 }
