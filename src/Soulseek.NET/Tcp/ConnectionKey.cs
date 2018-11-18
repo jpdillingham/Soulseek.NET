@@ -24,7 +24,7 @@ namespace Soulseek.NET.Tcp
 
         public bool Equals(ConnectionKey other)
         {
-            return Username == other.Username && IPAddress == other.IPAddress && Port == other.Port && Type == other.Type;
+            return Username == other.Username && IPAddress.ToString() == other.IPAddress.ToString() && Port == other.Port && Type == other.Type;
         }
 
         public override bool Equals(object obj)
@@ -42,13 +42,13 @@ namespace Soulseek.NET.Tcp
         public override int GetHashCode()
         {
             var u = Username?.GetHashCode() ?? 0;
-            var i = IPAddress?.GetHashCode() ?? 0;
+            var i = IPAddress?.ToString().GetHashCode() ?? 0;
             return u ^ i ^ Port.GetHashCode() ^ Type.GetHashCode();
         }
 
         public override string ToString()
         {
-            return $"Username: {Username}, IPAddress: {IPAddress}, Port: {Port}, Type: {Type}";
+            return $"Username: {Username}, IPAddress: {IPAddress}, Port: {Port}, Type: {Type}, HashCode: {GetHashCode()}";
         }
     }
 }
