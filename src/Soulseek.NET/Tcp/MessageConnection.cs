@@ -30,7 +30,8 @@ namespace Soulseek.NET.Tcp
             : base(address, port, options, tcpClient)
         {
             Type = type;
-            base.ConnectHandler = new Action<IConnection>(async (c) => {
+            base.ConnectHandler = new Action<IConnection>(async (c) =>
+            {
                 Task.Run(() => ReadContinuouslyAsync()).Forget();
                 await SendDeferredMessages();
             });
@@ -64,10 +65,22 @@ namespace Soulseek.NET.Tcp
 
         public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
 
-        public void DeferMessage(Message message, bool suppressCodeNormalization = false)
+        public async Task DeferMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
-            var deferredMessage = new DeferredMessage() { Message = message, SuppressCodeNormalization = suppressCodeNormalization };
-            DeferredMessages.Enqueue(deferredMessage);
+            if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
+            {
+                throw new ConnectionStateException($"The underlying TcpConnection is disconnecting or disconnected.");
+            }
+
+            if (State == ConnectionState.Connected)
+            {
+                await SendMessageAsync(message, suppressCodeNormalization);
+            }
+            else if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
+            {
+                var deferredMessage = new DeferredMessage() { Message = message, SuppressCodeNormalization = suppressCodeNormalization };
+                DeferredMessages.Enqueue(deferredMessage);
+            }
         }
 
         public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)

@@ -25,6 +25,6 @@ namespace Soulseek.NET.Tcp
         Action<IMessageConnection, Message> MessageHandler { get; set; }
 
         Task SendMessageAsync(Message message, bool suppressCodeNormalization = false);
-        void DeferMessage(Message message, bool suppressCodeNormalization = false);
+        Task DeferMessageAsync(Message message, bool suppressCodeNormalization = false);
     }
 }
