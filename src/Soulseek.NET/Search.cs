@@ -159,7 +159,7 @@ namespace Soulseek.NET
             var request = new SearchRequest(SearchText, Ticket);
 
             Console.WriteLine($"Searching for {SearchText}...");
-            await ServerConnection.SendAsync(request.ToMessage());
+            await ServerConnection.SendMessageAsync(request.ToMessage());
 
             SearchTimeoutTimer.Reset();
             SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);

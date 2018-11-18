@@ -48,8 +48,8 @@
 
             var token = new Random().Next();
             Console.WriteLine($"[{Filename}] Requesting: {token}");
-            await connection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
-            await connection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
+            await connection.SendMessageAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
+            await connection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
 
             try
             {
@@ -72,7 +72,7 @@
                     Token = TransferRequestResponse.Token;
                     FileSize = TransferRequestResponse.Size;
 
-                    await connection.SendAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
+                    await connection.SendMessageAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
                 }
             }
             catch (Exception ex)

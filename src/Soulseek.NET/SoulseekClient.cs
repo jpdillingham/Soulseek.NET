@@ -182,7 +182,7 @@ namespace Soulseek.NET
                 {
                     try
                     {
-                        await connection.SendAsync(new PeerBrowseRequest().ToMessage());
+                        await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
                     }
                     catch (ConnectionException)
                     {
@@ -199,8 +199,8 @@ namespace Soulseek.NET
                         ConnectHandler = async (conn) =>
                         {
                             var token = new Random().Next();
-                            await connection.SendAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
-                            await connection.SendAsync(new PeerBrowseRequest().ToMessage());
+                            await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                            await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
                         },
                         DisconnectHandler = (conn, message) => { throw new ConnectionException($"Peer connection disconnected unexpectedly."); },
                     };
@@ -309,7 +309,7 @@ namespace Soulseek.NET
             var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
             Console.WriteLine($"Sending login message");
-            await ServerConnection.SendAsync(new LoginRequest(username, password).ToMessage());
+            await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
             Console.WriteLine($"Login message sent");
 
             await login;
@@ -430,7 +430,7 @@ namespace Soulseek.NET
                     {
                         var context = (ConnectToPeerResponse)conn.Context;
                         var request = new PierceFirewallRequest(context.Token).ToMessage();
-                        await conn.SendAsync(request, suppressCodeNormalization: true);
+                        await conn.SendMessageAsync(request, suppressCodeNormalization: true);
                     },
                     DisconnectHandler = async (conn, message) =>
                     {
@@ -449,7 +449,7 @@ namespace Soulseek.NET
         private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
         {
             var request = new GetPeerAddressRequest(username);
-            await ServerConnection.SendAsync(request.ToMessage());
+            await ServerConnection.SendMessageAsync(request.ToMessage());
 
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
@@ -501,7 +501,7 @@ namespace Soulseek.NET
         private async Task PrivateMessageHandler(PrivateMessage message)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await ServerConnection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
+            await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
         private async Task ServerMessageHandler(Message message)
         {
