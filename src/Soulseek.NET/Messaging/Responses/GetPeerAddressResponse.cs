@@ -27,7 +27,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         #region Public Properties
 
-        public string IPAddress { get; private set; }
+        public IPAddress IPAddress { get; private set; }
         public int Port { get; private set; }
         public string Username { get; private set; }
 
@@ -51,7 +51,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             var ipBytes = reader.ReadBytes(4);
             Array.Reverse(ipBytes);
-            response.IPAddress = new IPAddress(ipBytes).ToString();
+            response.IPAddress = new IPAddress(ipBytes);
 
             response.Port = reader.ReadInteger();
 
