@@ -22,7 +22,7 @@ namespace Soulseek.NET.Tcp
 
         string Address { get; }
         Action<IConnection> ConnectHandler { get; set; }
-        object Context { get; }
+        object Context { get; set; }
         Action<IConnection, byte[]> DataReceivedHandler { get; set; }
         Action<IConnection, byte[]> DataSentHandler { get; set; }
         Action<IConnection, string> DisconnectHandler { get; set; }
