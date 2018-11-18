@@ -75,7 +75,7 @@ namespace Soulseek.NET.Tcp
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
         public ConnectionOptions Options { get; protected set; }
         public int Port { get; protected set; }
-        public ConnectionState State { get; protected set; } = ConnectionState.Disconnected;
+        public ConnectionState State { get; protected set; } = ConnectionState.Pending;
 
         #endregion Public Properties
 
@@ -94,7 +94,7 @@ namespace Soulseek.NET.Tcp
 
         public async Task ConnectAsync()
         {
-            if (State != ConnectionState.Disconnected)
+            if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
             {
                 throw new ConnectionStateException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
