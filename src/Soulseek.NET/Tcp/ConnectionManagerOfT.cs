@@ -14,31 +14,49 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Threading.Tasks;
 
-    internal class ConnectionManager<T>
+    internal class ConnectionManager<T> : IDisposable
         where T : IConnection
     {
+        #region Internal Constructors
+
         internal ConnectionManager(int concurrentConnections)
         {
             ConcurrentConnections = concurrentConnections;
         }
 
+        #endregion Internal Constructors
+
+        #region Internal Properties
+
         internal int Active => Connections.Count;
         internal int Queued => ConnectionQueue.Count;
+
+        #endregion Internal Properties
+
+        #region Private Properties
+
         private int ConcurrentConnections { get; set; }
         private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
         private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
 
-        internal T Get(ConnectionKey key)
-        {
-            if (Connections.ContainsKey(key))
-            {
-                return Connections[key];
-            }
+        private bool Disposed { get; set; }
 
-            return default(T);
+        #endregion Private Properties
+
+        #region Public Methods
+
+        public void Dispose()
+        {
+            Dispose(true);
         }
+
+        #endregion Public Methods
+
+        #region Internal Methods
 
         internal async Task Add(T connection)
         {
@@ -53,6 +71,22 @@ namespace Soulseek.NET.Tcp
             {
                 ConnectionQueue.Enqueue(connection);
             }
+        }
+
+        internal T Get(ConnectionKey key)
+        {
+            var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(key));
+
+            if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
+            {
+                return queuedConnection;
+            }
+            else if (Connections.ContainsKey(key))
+            {
+                return Connections[key];
+            }
+
+            return default(T);
         }
 
         internal async Task Remove(T connection)
@@ -72,6 +106,41 @@ namespace Soulseek.NET.Tcp
             }
         }
 
+        #endregion Internal Methods
+
+        #region Protected Methods
+
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    while (!ConnectionQueue.IsEmpty)
+                    {
+                        if (ConnectionQueue.TryDequeue(out var connection))
+                        {
+                            connection.Dispose();
+                        }
+                    }
+
+                    while (!Connections.IsEmpty)
+                    {
+                        if (Connections.TryGetValue(Connections.Keys.First(), out var connection))
+                        {
+                            connection.Dispose();
+                        }
+                    }
+                }
+
+                Disposed = true;
+            }
+        }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
         private async Task TryConnectAsync(T connection)
         {
             try
@@ -82,5 +151,7 @@ namespace Soulseek.NET.Tcp
             {
             }
         }
+
+        #endregion Private Methods
     }
 }
