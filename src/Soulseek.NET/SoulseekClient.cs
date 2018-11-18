@@ -29,6 +29,8 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
+        #region Public Constructors
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="options"/>.
         /// </summary>
@@ -72,6 +74,10 @@ namespace Soulseek.NET
             MessageConnectionManager = new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
         }
 
+        #endregion Public Constructors
+
+        #region Public Events
+
         /// <summary>
         ///     Occurs when the underlying TCP connection to the server changes state.
         /// </summary>
@@ -92,15 +98,14 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        #endregion Public Events
+
+        #region Public Properties
+
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
         public string Address { get; set; }
-
-        /// <summary>
-        ///     Gets the current state of the underlying TCP connection.
-        /// </summary>
-        public ConnectionState State => ServerConnection.State;
 
         /// <summary>
         ///     Gets a value indicating whether a user is currently signed in.
@@ -118,19 +123,33 @@ namespace Soulseek.NET
         public int Port { get; set; }
 
         /// <summary>
+        ///     Gets the current state of the underlying TCP connection.
+        /// </summary>
+        public ConnectionState State => ServerConnection.State;
+
+        /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
         public string Username { get; private set; }
 
-        private Search ActiveSearch { get; set; }
-        private Download ActiveDownload { get; set; } // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
+        #endregion Public Properties
+
+        #region Private Properties
+
+        private Download ActiveDownload { get; set; }
+        // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
         private ConcurrentDictionary<string, List<Download>> ActiveDownloads { get; set; } = new ConcurrentDictionary<string, List<Download>>();
-        private IMessageConnection ServerConnection { get; set; }
+
+        private Search ActiveSearch { get; set; }
         private bool Disposed { get; set; } = false;
+        private ConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
+        private IMessageConnection ServerConnection { get; set; }
 
-        private ConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
+        #endregion Private Properties
+
+        #region Public Methods
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
@@ -154,7 +173,7 @@ namespace Soulseek.NET
             options = options ?? new BrowseOptions();
 
             var address = await GetPeerAddressAsync(username);
-            var browse = new Browse(username, address.IPAddress, address.Port, options);
+            var browse = new Browse(username, address.IPAddress.ToString(), address.Port, options);
 
             return await browse.BrowseAsync(cancellationToken);
         }
@@ -209,20 +228,20 @@ namespace Soulseek.NET
 
             var address = await GetPeerAddressAsync(username);
 
-            Console.WriteLine($"[DOWNLOAD]: {username} {address.IPAddress}:{address.Port}");
+            // create a key and try to fetch any existing connection
+            var key = new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
+            var connection = MessageConnectionManager.Get(key);
 
-            if (!ActiveDownloads.ContainsKey(username))
+            // if the connection we fetched is null, there wasn't one, so create it.
+            if (connection == default(IMessageConnection))
             {
-                Console.WriteLine($"Initializing download list for user {username}");
-                ActiveDownloads.TryAdd(username, new List<Download>());
+                connection = new MessageConnection(ConnectionType.Peer, address.IPAddress.ToString(), address.Port, options.ConnectionOptions);
             }
 
-            ActiveDownloads.TryGetValue(username, out var downloads);
+            var download = new Download(username, filename, address.IPAddress.ToString(), address.Port, options, cancellationToken, connection);
+            //await download.DownloadAsync(cancellationToken);
 
-            var download = new Download(username, filename, address.IPAddress, address.Port, options);
-            downloads.Add(download);
-
-            await download.DownloadAsync(cancellationToken);
+            await MessageConnectionManager.Add(connection);
 
             return download;
         }
@@ -300,6 +319,10 @@ namespace Soulseek.NET
             return await ActiveSearch.SearchAsync(cancellationToken);
         }
 
+        #endregion Public Methods
+
+        #region Protected Methods
+
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -320,27 +343,17 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
-        {
-            var request = new GetPeerAddressRequest(username);
-            await ServerConnection.SendAsync(request.ToMessage());
+        #endregion Protected Methods
 
-            return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
-        }
-
-        private async Task PrivateMessageHandler(PrivateMessage message)
-        {
-            Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await ServerConnection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
-        }
+        #region Private Methods
 
         private async Task ConnectToPeerHandler(ConnectToPeerResponse response)
         {
             if (response.Type == "F")
             {
-                //Console.WriteLine($"ConnectToPeerResponse \'F\' received, trying to locate download");
+                Console.WriteLine($"ConnectToPeerResponse \'F\' received, trying to locate download");
 
-                //var t = new TransferConnection(response.IPAddress.ToString(), response.Port, new ConnectionOptions() { ReadTimeout = 0 });
+                //var t = new Connection(response.IPAddress.ToString(), response.Port, new ConnectionOptions() { ReadTimeout = 0 });
 
                 //Console.WriteLine($"[CONNECT TO PEER]: {response.Token}");
                 //Console.WriteLine($"[OPENING TRANSFER CONNECTION] {t.Address}:{t.Port}");
@@ -363,7 +376,7 @@ namespace Soulseek.NET
                 //    await download.StartDownload(t);
                 //}
 
-                ////await ActiveDownload.ConnectToPeer(response, e);
+                //await ActiveDownload.ConnectToPeer(response, e);
             }
             else
             {
@@ -393,6 +406,56 @@ namespace Soulseek.NET
             }
         }
 
+        private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
+        {
+            var request = new GetPeerAddressRequest(username);
+            await ServerConnection.SendAsync(request.ToMessage());
+
+            return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
+        }
+
+        private async void PeerConnectionStateChangedEventHandler(object sender, ConnectionStateChangedEventArgs e)
+        {
+            var connection = (IConnection)sender;
+
+            Console.WriteLine($"[PEER CONNECTION]: {e.IPAddress}: {connection.State}");
+
+            if (connection is IConnection transferConnection)
+            {
+                if (e.State == ConnectionState.Disconnected)
+                {
+
+                }
+                else if (e.State == ConnectionState.Connected)
+                {
+                    var context = (ConnectToPeerResponse)transferConnection.Context;
+                    var request = new PierceFirewallRequest(context.Token);
+                    await transferConnection.SendAsync(request.ToMessage().ToByteArray());
+                }
+            }
+        }
+
+        private void PeerMessageHandler(IMessageConnection connection, Message message)
+        {
+            Console.WriteLine($"[PEER RESPONSE]");
+            switch (message.Code)
+            {
+                case MessageCode.PeerSearchResponse:
+                    var response = SearchResponse.Parse(message);
+
+                    ActiveSearch?.AddResponse(connection, response);
+                    break;
+                default:
+                    Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
+                    break;
+            }
+        }
+
+        private async Task PrivateMessageHandler(PrivateMessage message)
+        {
+            Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
+            await ServerConnection.SendAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
+        }
         private async Task ServerMessageHandler(Message message)
         {
             Console.WriteLine($"[MESSAGE]: {message.Code}");
@@ -440,6 +503,8 @@ namespace Soulseek.NET
             Console.WriteLine($"[MESSAGE DONE]");
         }
 
+        #endregion Private Methods
+
         //private IConnection GetPeerConnection(PeerConnectionKey key)
         //{
         //    var options = new ConnectionOptions()
@@ -475,42 +540,5 @@ namespace Soulseek.NET
         //        throw new ConnectionException($"Unrecognized conection type '{key.Type}'; expected 'P' or 'F'");
         //    }
         //}
-
-        private void PeerMessageHandler(IMessageConnection connection, Message message)
-        {
-            Console.WriteLine($"[PEER RESPONSE]");
-            switch (message.Code)
-            {
-                case MessageCode.PeerSearchResponse:
-                    var response = SearchResponse.Parse(message);
-
-                    ActiveSearch?.AddResponse(connection, response);
-                    break;
-                default:
-                    Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
-                    break;
-            }
-        }
-
-        private async void PeerConnectionStateChangedEventHandler(object sender, ConnectionStateChangedEventArgs e)
-        {
-            var connection = (IConnection)sender;
-
-            Console.WriteLine($"[PEER CONNECTION]: {e.IPAddress}: {connection.State}");
-
-            if (connection is IConnection transferConnection)
-            {
-                if (e.State == ConnectionState.Disconnected)
-                {
-
-                }
-                else if (e.State == ConnectionState.Connected)
-                {
-                    var context = (ConnectToPeerResponse)transferConnection.Context;
-                    var request = new PierceFirewallRequest(context.Token);
-                    await transferConnection.SendAsync(request.ToMessage().ToByteArray());
-                }
-            }
-        }
     }
 }
