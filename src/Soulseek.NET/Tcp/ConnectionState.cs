@@ -14,9 +14,10 @@ namespace Soulseek.NET.Tcp
 {
     public enum ConnectionState
     {
-        Disconnected = 0,
-        Connected = 1,
-        Connecting = 2,
+        Pending = 0,
+        Connecting = 1,
+        Connected = 2,
         Disconnecting = 3,
+        Disconnected = 4,
     }
 }
