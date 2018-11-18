@@ -155,10 +155,9 @@ namespace Soulseek.NET
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
-        /// <param name="options">The operation <see cref="BrowseOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
-        public async Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<BrowseResponse> BrowseAsync(string username, int timeout = 60, CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Connected)
             {
@@ -170,12 +169,41 @@ namespace Soulseek.NET
                 throw new BrowseException($"A user must be logged in to browse.");
             }
 
-            options = options ?? new BrowseOptions();
+            try
+            {
+                var address = await GetPeerAddressAsync(username);
+                var key = new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
+                var wait = MessageWaiter.Wait<BrowseResponse>(MessageCode.PeerBrowseResponse, key, timeout, cancellationToken);
 
-            var address = await GetPeerAddressAsync(username);
-            var browse = new Browse(username, address.IPAddress.ToString(), address.Port, options);
+                var connection = MessageConnectionManager.Get(key);
 
-            return await browse.BrowseAsync(cancellationToken);
+                if (connection == default(IMessageConnection))
+                {
+                    connection = new MessageConnection(ConnectionType.Peer, username, address.IPAddress.ToString(), address.Port, Options.ConnectionOptions)
+                    {
+                        MessageHandler = PeerMessageHandler,
+                        ConnectHandler = async (conn) =>
+                        {
+                            var token = new Random().Next();
+                            await connection.SendAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                            await connection.SendAsync(new PeerBrowseRequest().ToMessage());
+                        },
+                        DisconnectHandler = (conn, message) => { throw new ConnectionException($"Peer connection disconnected unexpectedly."); },
+                    };
+
+                    await MessageConnectionManager.Add(connection);
+                }
+                else
+                {
+                    await connection.SendAsync(new PeerBrowseRequest().ToMessage());
+                }
+
+                return await wait;
+            }
+            catch (Exception ex)
+            {
+                throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -382,7 +410,7 @@ namespace Soulseek.NET
             {
                 if (ActiveSearch != default(Search))
                 {
-                    var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port)
+                    var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port, Options.ConnectionOptions)
                     {
                         Context = response,
                         ConnectHandler = async (conn) =>
@@ -437,13 +465,16 @@ namespace Soulseek.NET
 
         private void PeerMessageHandler(IMessageConnection connection, Message message)
         {
-            Console.WriteLine($"[PEER RESPONSE]");
+            Console.WriteLine($"[PEER RESPONSE]: {message.Code}");
             switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
                     var response = SearchResponse.Parse(message);
-
                     ActiveSearch?.AddResponse(connection, response);
+                    break;
+
+                case MessageCode.PeerBrowseResponse:
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key, BrowseResponse.Parse(message));
                     break;
                 default:
                     Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
