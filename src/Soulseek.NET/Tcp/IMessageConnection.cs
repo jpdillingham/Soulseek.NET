@@ -24,6 +24,6 @@ namespace Soulseek.NET.Tcp
         Action<IMessageConnection, string> DisconnectHandler { get; set; }
         Action<IMessageConnection, Message> MessageHandler { get; set; }
 
-        Task SendAsync(Message message, bool suppressCodeNormalization = false);
+        Task SendMessageAsync(Message message, bool suppressCodeNormalization = false);
     }
 }

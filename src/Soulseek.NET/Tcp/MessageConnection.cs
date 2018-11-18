@@ -58,7 +58,7 @@ namespace Soulseek.NET.Tcp
 
         public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
 
-        public async Task SendAsync(Message message, bool suppressCodeNormalization = false)
+        public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
             if (!TcpClient.Connected)
             {
