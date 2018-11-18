@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Tcp
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -29,21 +30,26 @@ namespace Soulseek.NET.Tcp
             : base(address, port, options, tcpClient)
         {
             Type = type;
-            base.ConnectHandler = new Action<IConnection>((c) => Task.Run(() => ReadContinuouslyAsync()).Forget());
+            base.ConnectHandler = new Action<IConnection>(async (c) => {
+                Task.Run(() => ReadContinuouslyAsync()).Forget();
+                await SendDeferredMessages();
+            });
         }
 
         public ConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
+        private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
 
         public new Action<IMessageConnection> ConnectHandler
         {
             get => base.ConnectHandler;
             set
             {
-                base.ConnectHandler = new Action<IConnection>((c) =>
+                base.ConnectHandler = new Action<IConnection>(async (c) =>
                 {
                     Task.Run(() => ReadContinuouslyAsync()).Forget();
                     value((IMessageConnection)c);
+                    await SendDeferredMessages();
                 });
             }
         }
@@ -57,6 +63,12 @@ namespace Soulseek.NET.Tcp
         public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
 
         public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
+
+        public void DeferMessage(Message message, bool suppressCodeNormalization = false)
+        {
+            var deferredMessage = new DeferredMessage() { Message = message, SuppressCodeNormalization = suppressCodeNormalization };
+            DeferredMessages.Enqueue(deferredMessage);
+        }
 
         public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
@@ -158,6 +170,23 @@ namespace Soulseek.NET.Tcp
                     log($"Read Error: {ex}");
                 }
             }
+        }
+
+        private async Task SendDeferredMessages()
+        {
+            while (!DeferredMessages.IsEmpty)
+            {
+                if (DeferredMessages.TryDequeue(out var deferredMessage))
+                {
+                    await SendMessageAsync(deferredMessage.Message, deferredMessage.SuppressCodeNormalization);
+                }
+            }
+        }
+
+        internal struct DeferredMessage
+        {
+            public Message Message;
+            public bool SuppressCodeNormalization;
         }
     }
 }
