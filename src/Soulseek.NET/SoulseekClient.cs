@@ -59,10 +59,10 @@ namespace Soulseek.NET
                 {
                     Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
                 },
-                DisconnectHandler = async (conn, message) =>
+                DisconnectHandler = (conn, message) =>
                 {
                     Disconnect();
-                    await Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message)));
+                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message))).Forget();
                 },
                 MessageHandler = async (conn, message) =>
                 {
@@ -140,7 +140,7 @@ namespace Soulseek.NET
         // todo: use a ConcurrentDictionary<string username, ConcurrentBag> for this
         private ConcurrentDictionary<string, List<Download>> ActiveDownloads { get; set; } = new ConcurrentDictionary<string, List<Download>>();
 
-        private Search ActiveSearch { get; set; }
+        private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
         private ConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
         private MessageWaiter MessageWaiter { get; set; }
@@ -245,9 +245,17 @@ namespace Soulseek.NET
         {
             ServerConnection.Disconnect("Client disconnected.");
 
-            ActiveSearch?.Dispose();
+            var searches = ActiveSearches;
+            ActiveSearches = new ConcurrentDictionary<int, Search>();
 
-            ActiveSearch = default(Search);
+            while (!searches.IsEmpty)
+            {
+                if (searches.TryRemove(searches.Keys.First(), out var search))
+                {
+                    search.Dispose();
+                }
+            }
+
             Username = null;
             LoggedIn = false;
         }
@@ -338,23 +346,20 @@ namespace Soulseek.NET
                 throw new SearchException($"A user must be logged in to perform a search.");
             }
 
-            if (ActiveSearch != default(Search))
-            {
-                throw new SearchException($"A search is already in progress.");
-            }
-
             options = options ?? new SearchOptions();
 
-            ActiveSearch = new Search(searchText, options, ServerConnection)
+            var search = new Search(searchText, options, ServerConnection)
             {
-                ResponseHandler = (search, response) =>
+                ResponseHandler = (s, response) =>
                 {
-                    var e = new SearchResponseReceivedEventArgs() { Search = search, Response = response };
+                    var e = new SearchResponseReceivedEventArgs() { Search = s, Response = response };
                     Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
                 }
             };
 
-            return await ActiveSearch.SearchAsync(cancellationToken);
+            ActiveSearches.TryAdd(search.Ticket, search);
+
+            return await search.SearchAsync(cancellationToken);
         }
 
         #endregion Public Methods
@@ -418,29 +423,26 @@ namespace Soulseek.NET
             }
             else
             {
-                if (ActiveSearch != default(Search))
+                var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port, Options.ConnectionOptions)
                 {
-                    var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port, Options.ConnectionOptions)
+                    Context = response,
+                    ConnectHandler = async (conn) =>
                     {
-                        Context = response,
-                        ConnectHandler = async (conn) =>
-                        {
-                            var context = (ConnectToPeerResponse)conn.Context;
-                            var request = new PierceFirewallRequest(context.Token).ToMessage();
-                            await conn.SendAsync(request, suppressCodeNormalization: true);
-                        },
-                        DisconnectHandler = async (conn, message) =>
-                        {
-                            await MessageConnectionManager.Remove(conn);
-                        },
-                        MessageHandler = (conn, message) =>
-                        {
-                            PeerMessageHandler(conn, message);
-                        }
-                    };
+                        var context = (ConnectToPeerResponse)conn.Context;
+                        var request = new PierceFirewallRequest(context.Token).ToMessage();
+                        await conn.SendAsync(request, suppressCodeNormalization: true);
+                    },
+                    DisconnectHandler = async (conn, message) =>
+                    {
+                        await MessageConnectionManager.Remove(conn);
+                    },
+                    MessageHandler = (conn, message) =>
+                    {
+                        PeerMessageHandler(conn, message);
+                    }
+                };
 
-                    await MessageConnectionManager.Add(connection);
-                }
+                await MessageConnectionManager.Add(connection);
             }
         }
 
@@ -480,7 +482,11 @@ namespace Soulseek.NET
             {
                 case MessageCode.PeerSearchResponse:
                     var response = SearchResponse.Parse(message);
-                    ActiveSearch?.AddResponse(connection, response);
+                    if (ActiveSearches.TryGetValue(response.Ticket, out var search))
+                    {
+                        search.AddResponse(connection, response);
+                    }
+
                     break;
 
                 case MessageCode.PeerBrowseResponse:
