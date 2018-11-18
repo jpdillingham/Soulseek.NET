@@ -15,6 +15,7 @@ namespace Soulseek.NET
     using System;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
 
     /// <summary>
@@ -87,10 +88,9 @@ namespace Soulseek.NET
         ///     specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
-        /// <param name="options">The operation <see cref="BrowseOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
-        Task<Browse> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
+        Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
