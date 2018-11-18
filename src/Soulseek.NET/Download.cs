@@ -10,16 +10,21 @@
 
     public sealed class Download
     {
-        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, IMessageConnection peerConnection = null, IConnection transferConnection = null)
+        internal Download(string username, string filename, string ipAddress, int port, DownloadOptions options, CancellationToken? cancellationToken, IMessageConnection peerConnection = null, IConnection transferConnection = null)
         {
             Username = username;
             Filename = filename;
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new DownloadOptions();
+            CancellationToken = cancellationToken;
 
             PeerConnection = peerConnection ?? new MessageConnection(ConnectionType.Peer, ipAddress, port, Options.ConnectionOptions);
             TransferConnection = transferConnection ?? new Connection(ipAddress, port, Options.ConnectionOptions);
+
+            peerConnection.ConnectHandler = HandleConnect;
+            PeerConnection.DisconnectHandler = HandleDisconnect;
+            PeerConnection.MessageHandler = HandleMessage;
         }
 
         public string Username { get; private set; }
@@ -33,38 +38,23 @@
         private IConnection TransferConnection { get; set; }
         public int Token { get; private set; }
         public long FileSize { get; private set; }
+        public CancellationToken? CancellationToken { get; private set; }
 
         private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
-        internal async Task<Download> DownloadAsync(CancellationToken? cancellationToken = null)
+        private async void HandleConnect(IMessageConnection connection)
         {
-            PeerConnection.MessageHandler = HandleMessage;
-            PeerConnection.DisconnectHandler = (connection, message) =>
-            {
-                Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
-                //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
-            };
+            Console.WriteLine($"[DOWNLOAD CONNECT]: {Username}");
 
-            TransferConnection.DisconnectHandler = (connection, message) =>
-            {
-                Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {connection.State}");
-            };
-            TransferConnection.ConnectHandler = (connection) =>
-            {
-                Console.WriteLine($"[{Filename}] [TRANSFER CONNECTION]: {connection.State}");
-            };
+            var token = new Random().Next();
+            Console.WriteLine($"[{Filename}] Requesting: {token}");
+            await connection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
+            await connection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
 
             try
             {
-                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(MessageCode.PeerTransferResponse, cancellationToken);
-                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.PeerTransferRequest, cancellationToken);
-
-                await PeerConnection.ConnectAsync();
-
-                var token = new Random().Next();
-                Console.WriteLine($"[{Filename}] Requesting: {token}");
-                await PeerConnection.SendAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
-                await PeerConnection.SendAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
+                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(MessageCode.PeerTransferResponse, CancellationToken);
+                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.PeerTransferRequest, CancellationToken);
 
                 TransferResponse = await peerTransferResponse;
 
@@ -73,25 +63,28 @@
                     Token = TransferResponse.Token;
                     FileSize = TransferResponse.FileSize;
                     Console.WriteLine($"Transfer OK, begin now.");
-                    // todo: this
                 }
                 else
                 {
                     Console.WriteLine($"[{Filename}] Transfer rejected, wait for request.");
-                    TransferRequestResponse = await peerTransferRequestResponse;
+                    TransferRequestResponse = await peerTransferRequestResponse; // when ready, peer will initiate transfer
+
                     Token = TransferRequestResponse.Token;
                     FileSize = TransferRequestResponse.Size;
 
-                    await PeerConnection.SendAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
+                    await connection.SendAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
                 }
-
-                return this;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[{Filename}] Failed to download {Filename} from {Username}: {ex.Message}");
-                return this; // todo throw DownloadException
             }
+        }
+
+        private async void HandleDisconnect(IMessageConnection connection, string message)
+        {
+            Console.WriteLine($"[{Filename}] [PEER DISCONNECTED]");
+            //MessageWaiter.Throw(MessageCode.Unknown, new Exception("disconnected"));
         }
 
         internal async Task StartDownload(IConnection t)
