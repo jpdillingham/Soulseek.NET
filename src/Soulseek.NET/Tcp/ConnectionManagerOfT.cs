@@ -30,6 +30,16 @@ namespace Soulseek.NET.Tcp
         private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
         private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
 
+        internal T Get(ConnectionKey key)
+        {
+            if (Connections.ContainsKey(key))
+            {
+                return Connections[key];
+            }
+
+            return default(T);
+        }
+
         internal async Task Add(T connection)
         {
             if (Connections.Count < ConcurrentConnections)
@@ -47,15 +57,15 @@ namespace Soulseek.NET.Tcp
 
         internal async Task Remove(T connection)
         {
-            var key = connection.Key;
+            var key = connection?.Key;
 
-            connection.Dispose();
+            connection?.Dispose();
             Connections.TryRemove(key, out var _);
 
             if (Connections.Count < ConcurrentConnections &&
                 ConnectionQueue.TryDequeue(out var nextConnection))
             {
-                if (Connections.TryAdd(nextConnection.Key, nextConnection))
+                if (!Connections.ContainsKey(nextConnection.Key) && Connections.TryAdd(nextConnection.Key, nextConnection))
                 {
                     await TryConnectAsync(nextConnection);
                 }
@@ -66,7 +76,7 @@ namespace Soulseek.NET.Tcp
         {
             try
             {
-                await connection.ConnectAsync();
+                await connection?.ConnectAsync();
             }
             catch (Exception)
             {
