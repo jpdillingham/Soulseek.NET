@@ -172,42 +172,9 @@ namespace Soulseek.NET
 
             try
             {
-                var address = await GetPeerAddressAsync(username);
-                var key = new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
+                var key = await GetConnectionKeyAsync(username);
                 var wait = MessageWaiter.Wait<BrowseResponse>(MessageCode.PeerBrowseResponse, key, timeout, cancellationToken);
-
-                var connection = MessageConnectionManager.Get(key);
-
-                if (connection != default(IMessageConnection))
-                {
-                    try
-                    {
-                        await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
-                    }
-                    catch (ConnectionException)
-                    {
-                        await MessageConnectionManager.Remove(connection);
-                        connection = default(IMessageConnection);
-                    }
-                }
-
-                if (connection == default(IMessageConnection))
-                {
-                    connection = new MessageConnection(ConnectionType.Peer, username, address.IPAddress.ToString(), address.Port, Options.ConnectionOptions)
-                    {
-                        MessageHandler = PeerMessageHandler,
-                        ConnectHandler = async (conn) =>
-                        {
-                            var token = new Random().Next();
-                            await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
-                            await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
-                        },
-                        DisconnectHandler = (conn, message) => { throw new ConnectionException($"Peer connection disconnected unexpectedly."); },
-                    };
-
-                    await MessageConnectionManager.Add(connection);
-                }
-
+                await SendUnsolicitedPeerMessageAsync(key, new PeerBrowseRequest().ToMessage());
                 return await wait;
             }
             catch (Exception ex)
@@ -436,10 +403,7 @@ namespace Soulseek.NET
                     {
                         await MessageConnectionManager.Remove(conn);
                     },
-                    MessageHandler = (conn, message) =>
-                    {
-                        PeerMessageHandler(conn, message);
-                    }
+                    MessageHandler = PeerMessageHandler,
                 };
 
                 await MessageConnectionManager.Add(connection);
@@ -503,6 +467,7 @@ namespace Soulseek.NET
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
             await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
+
         private async Task ServerMessageHandler(Message message)
         {
             Console.WriteLine($"[MESSAGE]: {message.Code}");
@@ -587,5 +552,86 @@ namespace Soulseek.NET
         //        throw new ConnectionException($"Unrecognized conection type '{key.Type}'; expected 'P' or 'F'");
         //    }
         //}
+
+        private async Task<ConnectionKey> GetConnectionKeyAsync(string username)
+        {
+            var address = await GetPeerAddressAsync(username);
+            return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
+        }
+
+        private async Task SendUnsolicitedPeerMessageAsync(string username, Message message, bool suppressCodeNormalization = false)
+        {
+            var key = await GetConnectionKeyAsync(username);
+            await SendUnsolicitedPeerMessageAsync(key, message, suppressCodeNormalization);
+        }
+
+        private async Task SendUnsolicitedPeerMessageAsync(ConnectionKey key, Message message, bool suppressCodeNormalization = false)
+        {
+            if (State != ConnectionState.Connected)
+            {
+                throw new ConnectionStateException($"The server connection must be Connected to send peer messages (currently: {State})");
+            }
+
+            if (!LoggedIn)
+            {
+                throw new BrowseException($"A user must be logged in to send peer messages.");
+            }
+
+            try
+            {
+                var connection = MessageConnectionManager.Get(key);
+
+                // there's already a connection to this peer; figure out what state it is in and either defer or send the message, or discard the connection altogether.
+                if (connection != default(IMessageConnection))
+                {
+                    if (connection.State == ConnectionState.Pending || connection.State == ConnectionState.Connecting)
+                    {
+                        await connection.DeferMessageAsync(new PeerBrowseRequest().ToMessage());
+                    }
+                    else if (connection.State == ConnectionState.Connected)
+                    {
+                        try
+                        {
+                            await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
+                        }
+                        catch (ConnectionException)
+                        {
+                            await MessageConnectionManager.Remove(connection);
+                            connection = default(IMessageConnection);
+                        }
+                    }
+                    else if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
+                    {
+                        await MessageConnectionManager.Remove(connection);
+                        connection = default(IMessageConnection);
+                    }
+                }
+
+                // there's no existing connection, or we found one and threw it out above.  create a new one, defer the message, and add to the manager.
+                if (connection == default(IMessageConnection))
+                {
+                    connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, Options.ConnectionOptions)
+                    {
+                        ConnectHandler = async (conn) =>
+                        {
+                            var token = new Random().Next(1, 2147483647);
+                            await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                        },
+                        DisconnectHandler = async (conn, msg) =>
+                        {
+                            await MessageConnectionManager.Remove(conn);
+                        },
+                        MessageHandler = PeerMessageHandler,
+                    };
+
+                    await connection.DeferMessageAsync(message, suppressCodeNormalization);
+                    await MessageConnectionManager.Add(connection);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new SoulseekClientException($"Failed to send unsolicited message to {Username}: {ex.Message}", ex);
+            }
+        }
     }
 }
