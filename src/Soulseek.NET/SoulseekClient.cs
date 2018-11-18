@@ -155,8 +155,9 @@ namespace Soulseek.NET
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
+        /// <param name="timeout">The operation timeout, in seconds.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>The operation context, including the fetched list of files.</returns>
+        /// <returns>The operation response.</returns>
         public async Task<BrowseResponse> BrowseAsync(string username, int timeout = 60, CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Connected)
@@ -177,6 +178,19 @@ namespace Soulseek.NET
 
                 var connection = MessageConnectionManager.Get(key);
 
+                if (connection != default(IMessageConnection))
+                {
+                    try
+                    {
+                        await connection.SendAsync(new PeerBrowseRequest().ToMessage());
+                    }
+                    catch (ConnectionException)
+                    {
+                        await MessageConnectionManager.Remove(connection);
+                        connection = default(IMessageConnection);
+                    }
+                }
+
                 if (connection == default(IMessageConnection))
                 {
                     connection = new MessageConnection(ConnectionType.Peer, username, address.IPAddress.ToString(), address.Port, Options.ConnectionOptions)
@@ -192,10 +206,6 @@ namespace Soulseek.NET
                     };
 
                     await MessageConnectionManager.Add(connection);
-                }
-                else
-                {
-                    await connection.SendAsync(new PeerBrowseRequest().ToMessage());
                 }
 
                 return await wait;
