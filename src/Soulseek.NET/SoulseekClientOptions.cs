@@ -29,6 +29,14 @@ namespace Soulseek.NET
         /// </summary>
         public int ConcurrentPeerConnections { get; set; } = 500;
 
+        /// <summary>
+        ///     Gets or sets the number of allowed concurrent downloads.
+        /// </summary>
+        public int ConcurrentDownloads { get; set; } = 25;
+
+        /// <summary>
+        ///     Gets or sets the options for the underlying Tcp connection.
+        /// </summary>
         public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }
