@@ -85,12 +85,13 @@ namespace Soulseek.NET
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
-        ///     specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        ///     specified <paramref name="timeout"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
+        /// <param name="timeout">The operation timeout, in seconds.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
-        Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
+        Task<BrowseResponse> BrowseAsync(string username, int timeout = 60, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
