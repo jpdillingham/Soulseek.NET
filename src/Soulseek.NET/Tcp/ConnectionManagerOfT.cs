@@ -18,7 +18,7 @@ namespace Soulseek.NET.Tcp
     using System.Linq;
     using System.Threading.Tasks;
 
-    internal class ConnectionManager<T> : IDisposable
+    internal abstract class ConnectionManager<T> : IDisposable
         where T : IConnection
     {
         #region Internal Constructors
