@@ -6,6 +6,7 @@
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
 
     public sealed class Download

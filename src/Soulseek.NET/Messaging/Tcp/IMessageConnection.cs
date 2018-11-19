@@ -10,11 +10,12 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Tcp
+namespace Soulseek.NET.Messaging.Tcp
 {
     using System;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
+    using Soulseek.NET.Tcp;
 
     internal interface IMessageConnection : IConnection, IDisposable
     {

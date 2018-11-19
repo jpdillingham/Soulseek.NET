@@ -20,6 +20,7 @@ namespace Soulseek.NET
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
     using SystemTimer = System.Timers.Timer;
 

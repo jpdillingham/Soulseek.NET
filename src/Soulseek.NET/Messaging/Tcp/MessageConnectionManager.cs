@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManagerOfT.cs" company="JP Dillingham">
+﻿// <copyright file="MessageConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,12 +10,13 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Tcp
+namespace Soulseek.NET.Messaging.Tcp
 {
     using System;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Requests;
     using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Tcp;
 
     internal class MessageConnectionManager : ConnectionManager<IMessageConnection>, IDisposable
     {
