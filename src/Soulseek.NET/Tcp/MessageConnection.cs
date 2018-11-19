@@ -65,63 +65,46 @@ namespace Soulseek.NET.Tcp
 
         public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
 
-        public async Task DeferMessageAsync(Message message, bool suppressCodeNormalization = false)
+        public async Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
+            var deferred = false;
+
             if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
             {
-                throw new ConnectionStateException($"The underlying TcpConnection is disconnecting or disconnected.");
+                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
             }
 
-            if (State == ConnectionState.Connected)
-            {
-                await SendMessageAsync(message, suppressCodeNormalization);
-            }
-            else if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
+            if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
             {
                 var deferredMessage = new DeferredMessage() { Message = message, SuppressCodeNormalization = suppressCodeNormalization };
                 DeferredMessages.Enqueue(deferredMessage);
+                deferred = true;
             }
-        }
-
-        public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)
-        {
-            if (!TcpClient.Connected)
+            else if (State == ConnectionState.Connected)
             {
-                throw new ConnectionStateException($"The underlying TcpConnection is closed.");
-            }
+                var bytes = message.ToByteArray();
 
-            if (State != ConnectionState.Connected)
-            {
-                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
-            }
-
-            var bytes = message.ToByteArray();
-
-            if (bytes == null || bytes.Length == 0)
-            {
-                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
-            }
-
-            try
-            {
-                if (!suppressCodeNormalization)
+                try
                 {
-                    NormalizeMessageCode(bytes, 0 - (int)Type);
+                    if (!suppressCodeNormalization)
+                    {
+                        NormalizeMessageCode(bytes, 0 - (int)Type);
+                    }
+
+                    await SendAsync(bytes);
                 }
-
-                await SendAsync(bytes);
-
-                Console.WriteLine($"Sent {bytes.Length} bytes");
-            }
-            catch (Exception ex)
-            {
-                if (State != ConnectionState.Connected)
+                catch (Exception ex)
                 {
-                    Disconnect($"Write error: {ex.Message}");
-                }
+                    if (State != ConnectionState.Connected)
+                    {
+                        Disconnect($"Write error: {ex.Message}");
+                    }
 
-                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
+                    throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
+                }
             }
+
+            return deferred;
         }
 
         private void NormalizeMessageCode(byte[] messageBytes, int newCode)

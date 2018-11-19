@@ -166,20 +166,19 @@ namespace Soulseek.NET
 
             if (!LoggedIn)
             {
-                throw new BrowseException($"A user must be logged in to browse.");
+                throw new LoginException($"A user must be logged in to browse.");
             }
 
             try
             {
-                var key = await GetPeerConnectionKeyAsync(username);
-                var wait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, key, cancellationToken);
-
-                var connection = await SendUnsolicitedPeerMessageAsync(key, new PeerBrowseRequest().ToMessage());
+                var connection = await GetUnsolicitedPeerConnectionAsync(username);
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, key, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 });
 
+                var wait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, connection.Key, cancellationToken);
+                await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
                 return await wait;
             }
             catch (Exception ex)
@@ -459,7 +458,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    //MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key, BrowseResponse.Parse(message));
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key, BrowseResponse.Parse(message));
                     break;
                 default:
                     Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
@@ -564,48 +563,27 @@ namespace Soulseek.NET
             return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
         }
 
-        private async Task SendUnsolicitedPeerMessageAsync(string username, Message message, bool suppressCodeNormalization = false)
-        {
-            var key = await GetPeerConnectionKeyAsync(username);
-            await SendUnsolicitedPeerMessageAsync(key, message, suppressCodeNormalization);
-        }
-
-        private async Task<IMessageConnection> SendUnsolicitedPeerMessageAsync(ConnectionKey key, Message message, bool suppressCodeNormalization = false)
+        private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username)
         {
             if (State != ConnectionState.Connected)
             {
-                throw new ConnectionStateException($"The server connection must be Connected to send peer messages (currently: {State})");
+                throw new ConnectionStateException($"The server connection must be Connected to establish a peer connection (currently: {State})");
             }
 
             if (!LoggedIn)
             {
-                throw new BrowseException($"A user must be logged in to send peer messages.");
+                throw new BrowseException($"A user must be logged in to establish a peer connection.");
             }
 
             try
             {
+                var key = await GetPeerConnectionKeyAsync(username);
                 var connection = MessageConnectionManager.Get(key);
 
                 // there's already a connection to this peer; figure out what state it is in and either defer or send the message, or discard the connection altogether.
                 if (connection != default(IMessageConnection))
                 {
-                    if (connection.State == ConnectionState.Pending || connection.State == ConnectionState.Connecting)
-                    {
-                        await connection.DeferMessageAsync(new PeerBrowseRequest().ToMessage());
-                    }
-                    else if (connection.State == ConnectionState.Connected)
-                    {
-                        try
-                        {
-                            await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
-                        }
-                        catch (ConnectionException)
-                        {
-                            await MessageConnectionManager.Remove(connection);
-                            connection = default(IMessageConnection);
-                        }
-                    }
-                    else if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
+                    if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
                     {
                         await MessageConnectionManager.Remove(connection);
                         connection = default(IMessageConnection);
@@ -629,7 +607,6 @@ namespace Soulseek.NET
                         MessageHandler = PeerMessageHandler,
                     };
 
-                    await connection.DeferMessageAsync(message, suppressCodeNormalization);
                     await MessageConnectionManager.Add(connection);
                 }
 
@@ -637,7 +614,7 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
-                throw new SoulseekClientException($"Failed to send unsolicited message to {Username}: {ex.Message}", ex);
+                throw new SoulseekClientException($"Failed to establish peer connection to {Username}: {ex.Message}", ex);
             }
         }
     }
