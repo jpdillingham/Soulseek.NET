@@ -38,5 +38,6 @@ namespace Soulseek.NET
         ///     Gets or sets the options for the underlying Tcp connection.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
+        public ConnectionOptions PeerConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }
