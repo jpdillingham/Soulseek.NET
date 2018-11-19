@@ -65,8 +65,10 @@ namespace Soulseek.NET.Tcp
 
         public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
 
-        public async Task SendMessageAsync(Message message, bool suppressCodeNormalization = false)
+        public async Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
+            var deferred = false;
+
             if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
             {
                 throw new ConnectionStateException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
@@ -76,6 +78,7 @@ namespace Soulseek.NET.Tcp
             {
                 var deferredMessage = new DeferredMessage() { Message = message, SuppressCodeNormalization = suppressCodeNormalization };
                 DeferredMessages.Enqueue(deferredMessage);
+                deferred = true;
             }
             else if (State == ConnectionState.Connected)
             {
@@ -89,8 +92,6 @@ namespace Soulseek.NET.Tcp
                     }
 
                     await SendAsync(bytes);
-
-                    //Console.WriteLine($"Sent {bytes.Length} bytes");
                 }
                 catch (Exception ex)
                 {
@@ -102,6 +103,8 @@ namespace Soulseek.NET.Tcp
                     throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
                 }
             }
+
+            return deferred;
         }
 
         private void NormalizeMessageCode(byte[] messageBytes, int newCode)

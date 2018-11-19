@@ -24,6 +24,12 @@ namespace Soulseek.NET.Tcp
         Action<IMessageConnection, string> DisconnectHandler { get; set; }
         Action<IMessageConnection, Message> MessageHandler { get; set; }
 
-        Task SendMessageAsync(Message message, bool suppressCodeNormalization = false);
+        /// <summary>
+        ///     Asynchronously sends the specified <paramref name="message"/> and optionally suppresses code normalization if <paramref name="suppressCodeNormalization"/> is specified.
+        /// </summary>
+        /// <param name="message">The message to send.</param>
+        /// <param name="suppressCodeNormalization">A value indicating whether normalization of the message code should be suppressed.</param>
+        /// <returns>A value indicating whether the write was deferred until the connection is established instead of being sent immediately.</returns>
+        Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false);
     }
 }
