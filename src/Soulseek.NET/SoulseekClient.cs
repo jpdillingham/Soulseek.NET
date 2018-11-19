@@ -155,10 +155,9 @@ namespace Soulseek.NET
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
-        /// <param name="timeout">The operation timeout, in seconds.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation response.</returns>
-        public async Task<BrowseResponse> BrowseAsync(string username, int timeout = 60, CancellationToken? cancellationToken = null)
+        public async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Connected)
             {
@@ -172,9 +171,15 @@ namespace Soulseek.NET
 
             try
             {
-                var key = await GetConnectionKeyAsync(username);
-                var wait = MessageWaiter.Wait<BrowseResponse>(MessageCode.PeerBrowseResponse, key, timeout, cancellationToken);
-                await SendUnsolicitedPeerMessageAsync(key, new PeerBrowseRequest().ToMessage());
+                var key = await GetPeerConnectionKeyAsync(username);
+                var wait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, key, cancellationToken);
+
+                var connection = await SendUnsolicitedPeerMessageAsync(key, new PeerBrowseRequest().ToMessage());
+                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
+                {
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, key, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                });
+
                 return await wait;
             }
             catch (Exception ex)
@@ -390,7 +395,7 @@ namespace Soulseek.NET
             }
             else
             {
-                var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port, Options.ConnectionOptions)
+                var connection = new MessageConnection(ConnectionType.Peer, response.Username, response.IPAddress.ToString(), response.Port, Options.PeerConnectionOptions)
                 {
                     Context = response,
                     ConnectHandler = async (conn) =>
@@ -454,7 +459,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key, BrowseResponse.Parse(message));
+                    //MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key, BrowseResponse.Parse(message));
                     break;
                 default:
                     Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
@@ -553,7 +558,7 @@ namespace Soulseek.NET
         //    }
         //}
 
-        private async Task<ConnectionKey> GetConnectionKeyAsync(string username)
+        private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
             var address = await GetPeerAddressAsync(username);
             return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
@@ -561,11 +566,11 @@ namespace Soulseek.NET
 
         private async Task SendUnsolicitedPeerMessageAsync(string username, Message message, bool suppressCodeNormalization = false)
         {
-            var key = await GetConnectionKeyAsync(username);
+            var key = await GetPeerConnectionKeyAsync(username);
             await SendUnsolicitedPeerMessageAsync(key, message, suppressCodeNormalization);
         }
 
-        private async Task SendUnsolicitedPeerMessageAsync(ConnectionKey key, Message message, bool suppressCodeNormalization = false)
+        private async Task<IMessageConnection> SendUnsolicitedPeerMessageAsync(ConnectionKey key, Message message, bool suppressCodeNormalization = false)
         {
             if (State != ConnectionState.Connected)
             {
@@ -610,7 +615,7 @@ namespace Soulseek.NET
                 // there's no existing connection, or we found one and threw it out above.  create a new one, defer the message, and add to the manager.
                 if (connection == default(IMessageConnection))
                 {
-                    connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, Options.ConnectionOptions)
+                    connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, Options.PeerConnectionOptions)
                     {
                         ConnectHandler = async (conn) =>
                         {
@@ -627,6 +632,8 @@ namespace Soulseek.NET
                     await connection.DeferMessageAsync(message, suppressCodeNormalization);
                     await MessageConnectionManager.Add(connection);
                 }
+
+                return connection;
             }
             catch (Exception ex)
             {
