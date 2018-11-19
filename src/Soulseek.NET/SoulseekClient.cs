@@ -16,7 +16,6 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -53,6 +52,9 @@ namespace Soulseek.NET
             Port = port;
             Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
 
+            MessageConnectionManager = new MessageConnectionManager(Options.ConcurrentPeerConnections);
+            MessageWaiter = new MessageWaiter(Options.MessageTimeout);
+
             ServerConnection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions)
             {
                 ConnectHandler = (conn) =>
@@ -69,9 +71,6 @@ namespace Soulseek.NET
                     await ServerMessageHandler(message);
                 }
             };
-
-            MessageWaiter = new MessageWaiter(Options.MessageTimeout);
-            MessageConnectionManager = new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
         }
 
         #endregion Public Constructors
@@ -142,7 +141,7 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
-        private ConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
+        private MessageConnectionManager MessageConnectionManager { get; set; }
         private MessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
