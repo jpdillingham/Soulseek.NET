@@ -21,7 +21,7 @@ namespace Soulseek.NET.Messaging
     /// <summary>
     ///     Enables await-able server messages.
     /// </summary>
-    internal class MessageWaiter : IDisposable
+    internal class MessageWaiter : IMessageWaiter
     {
         private const int DefaultTimeoutValue = 5;
         private const int MaxTimeoutValue = 2147483647;
@@ -55,7 +55,7 @@ namespace Soulseek.NET.Messaging
         /// <summary>
         ///     Gets the default timeout duration.
         /// </summary>
-        internal int DefaultTimeout { get; private set; }
+        public int DefaultTimeout { get; private set; }
 
         private bool Disposed { get; set; }
         private SystemTimer MonitorTimer { get; set; }
@@ -75,7 +75,7 @@ namespace Soulseek.NET.Messaging
         /// <typeparam name="T">The wait result type.</typeparam>
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="result">The wait result.</param>
-        internal void Complete<T>(MessageCode messageCode, T result)
+        public void Complete<T>(MessageCode messageCode, T result)
         {
             Complete(messageCode, null, result);
         }
@@ -88,7 +88,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="result">The wait result.</param>
-        internal void Complete<T>(MessageCode messageCode, object token, T result)
+        public void Complete<T>(MessageCode messageCode, object token, T result)
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
@@ -106,7 +106,7 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="exception">The Exception to throw.</param>
-        internal void Throw(MessageCode messageCode, Exception exception)
+        public void Throw(MessageCode messageCode, Exception exception)
         {
             Throw(messageCode, null, exception);
         }
@@ -118,7 +118,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="exception">The Exception to throw.</param>
-        internal void Throw(MessageCode messageCode, object token, Exception exception)
+        public void Throw(MessageCode messageCode, object token, Exception exception)
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
@@ -141,7 +141,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="timeout">The wait timeout.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        internal Task<T> Wait<T>(MessageCode messageCode, object token = null, int? timeout = null, CancellationToken? cancellationToken = null)
+        public Task<T> Wait<T>(MessageCode messageCode, object token = null, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             timeout = timeout ?? DefaultTimeout;
 
@@ -172,7 +172,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        internal Task<T> WaitIndefinitely<T>(MessageCode messageCode, object token = null, CancellationToken? cancellationToken = null)
+        public Task<T> WaitIndefinitely<T>(MessageCode messageCode, object token = null, CancellationToken? cancellationToken = null)
         {
             return Wait<T>(messageCode, token, MaxTimeoutValue, cancellationToken);
         }
@@ -190,14 +190,17 @@ namespace Soulseek.NET.Messaging
                     MonitorTimer.Stop();
                     MonitorTimer.Dispose();
 
-                    ClearWaits();
+                    CancelAll();
                 }
 
                 Disposed = true;
             }
         }
 
-        private void ClearWaits()
+        /// <summary>
+        ///     Cancels all waits.
+        /// </summary>
+        public void CancelAll()
         {
             foreach (var queue in Waits)
             {
