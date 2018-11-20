@@ -32,46 +32,31 @@ namespace Soulseek.NET
         #region Public Constructors
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="options"/>.
-        /// </summary>
-        /// <param name="options">The client options.</param>
-        public SoulseekClient(SoulseekClientOptions options = null)
-            : this("vps.slsknet.org", 2271, options)
-        {
-        }
-
-        /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
         ///     and <paramref name="port"/>.
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
-        public SoulseekClient(string address, int port, SoulseekClientOptions options)
+        public SoulseekClient(string address = "vps.slsknet.org", int port = 2271, SoulseekClientOptions options = null)
+            : this(address, port, options, null, null, null)
+        {
+        }
+
+        internal SoulseekClient(
+            string address,
+            int port,
+            SoulseekClientOptions options,
+            IMessageConnection serverConnection = null,
+            IConnectionManager<IMessageConnection> messageConnectionManager = null,
+            IMessageWaiter messageWaiter = null)
         {
             Address = address;
             Port = port;
             Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
-
-            MessageConnectionManager = new MessageConnectionManager(Options.ConcurrentPeerConnections);
-            MessageWaiter = new MessageWaiter(Options.MessageTimeout);
-
-            ServerConnection = new MessageConnection(ConnectionType.Server, Address, Port, Options.ConnectionOptions)
-            {
-                ConnectHandler = (conn) =>
-                {
-                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
-                },
-                DisconnectHandler = (conn, message) =>
-                {
-                    Disconnect();
-                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message))).Forget();
-                },
-                MessageHandler = async (conn, message) =>
-                {
-                    await ServerMessageHandler(message);
-                }
-            };
+            ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
+            MessageConnectionManager = messageConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
+            MessageWaiter = messageWaiter ?? new MessageWaiter(Options.MessageTimeout);
         }
 
         #endregion Public Constructors
@@ -142,8 +127,8 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
-        private MessageConnectionManager MessageConnectionManager { get; set; }
-        private MessageWaiter MessageWaiter { get; set; }
+        private IConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
+        private IMessageWaiter MessageWaiter { get; set; }
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
 
@@ -169,14 +154,14 @@ namespace Soulseek.NET
                 throw new LoginException($"A user must be logged in to browse.");
             }
 
-            var connection = await GetUnsolicitedPeerConnectionAsync(username);
-            return await BrowseAsync(username, cancellationToken, connection);
+            return await BrowseAsync(username, cancellationToken, null);
         }
 
         internal async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
             {
+                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
                 {
                     MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
@@ -231,6 +216,8 @@ namespace Soulseek.NET
                     search.Dispose();
                 }
             }
+
+            MessageWaiter.CancelAll();
 
             Username = null;
             LoggedIn = false;
@@ -352,6 +339,8 @@ namespace Soulseek.NET
             {
                 if (disposing)
                 {
+                    MessageWaiter.Dispose();
+
                     var message = "Client is being disposed.";
 
                     ServerConnection?.Disconnect(message);
@@ -399,7 +388,7 @@ namespace Soulseek.NET
             }
             else
             {
-                await GetSolicitedPeerConnectionAsync(response);
+                await GetSolicitedPeerConnectionAsync(response, Options.PeerConnectionOptions);
             }
         }
 
@@ -461,7 +450,7 @@ namespace Soulseek.NET
             await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
-        private async Task ServerMessageHandler(Message message)
+        private async void ServerMessageHandler(IMessageConnection connection, Message message)
         {
             Console.WriteLine($"[MESSAGE]: {message.Code}");
 
@@ -552,7 +541,24 @@ namespace Soulseek.NET
             return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
         }
 
-        private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username)
+        private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
+        {
+            return new MessageConnection(ConnectionType.Server, Address, Port, options)
+            {
+                ConnectHandler = (conn) =>
+                {
+                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
+                },
+                DisconnectHandler = (conn, message) =>
+                {
+                    Disconnect();
+                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message))).Forget();
+                },
+                MessageHandler = ServerMessageHandler,
+            };
+        }
+
+        private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username, ConnectionOptions options)
         {
             var key = await GetPeerConnectionKeyAsync(username);
             var connection = MessageConnectionManager.Get(key);
@@ -568,7 +574,7 @@ namespace Soulseek.NET
 
             if (connection == default(IMessageConnection))
             {
-                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, Options.PeerConnectionOptions)
+                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, options)
                 {
                     ConnectHandler = async (conn) =>
                     {
@@ -588,9 +594,9 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
+        private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, Options.PeerConnectionOptions)
+            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, options)
             {
                 Context = connectToPeerResponse,
                 ConnectHandler = async (conn) =>
