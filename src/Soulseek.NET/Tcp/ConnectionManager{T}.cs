@@ -18,7 +18,7 @@ namespace Soulseek.NET.Tcp
     using System.Linq;
     using System.Threading.Tasks;
 
-    internal abstract class ConnectionManager<T> : IDisposable
+    internal class ConnectionManager<T> : IConnectionManager<T>, IDisposable
         where T : IConnection
     {
         #region Internal Constructors
@@ -32,8 +32,8 @@ namespace Soulseek.NET.Tcp
 
         #region Internal Properties
 
-        internal int Active => Connections.Count;
-        internal int Queued => ConnectionQueue.Count;
+        public int Active => Connections.Count;
+        public int Queued => ConnectionQueue.Count;
 
         #endregion Internal Properties
 
@@ -58,7 +58,7 @@ namespace Soulseek.NET.Tcp
 
         #region Internal Methods
 
-        internal async Task Add(T connection)
+        public async Task Add(T connection)
         {
             if (Connections.Count < ConcurrentConnections)
             {
@@ -73,7 +73,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        internal T Get(ConnectionKey key)
+        public T Get(ConnectionKey key)
         {
             var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(key));
 
@@ -89,7 +89,7 @@ namespace Soulseek.NET.Tcp
             return default(T);
         }
 
-        internal async Task Remove(T connection)
+        public async Task Remove(T connection)
         {
             var key = connection?.Key;
 
