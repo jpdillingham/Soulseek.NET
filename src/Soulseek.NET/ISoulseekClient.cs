@@ -131,7 +131,7 @@ namespace Soulseek.NET
         /// <returns>The operation context, including the search results.</returns>
         Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
-        Task<Download> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null);
+        Task DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         #endregion Public Methods
     }

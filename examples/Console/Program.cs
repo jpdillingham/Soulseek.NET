@@ -83,9 +83,9 @@
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
                         var file = string.Join(' ', cmd.Split(' ').Skip(2));
 
-                        var result = await client.DownloadAsync(peer, file);
+                        await client.DownloadAsync(peer, file);
 
-                        Console.WriteLine(JsonConvert.SerializeObject(result));
+                        Console.WriteLine("Download complete!");
                     }
                     else
                     {
