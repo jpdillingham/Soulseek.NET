@@ -254,6 +254,26 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             }
         }
 
+        [Trait("Category", "Wait Cancellation")]
+        [Fact(DisplayName = "All waits are cancelled when CancelAll is invoked")]
+        public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
+        {
+            var waiter = new MessageWaiter(0);
+            var loginKey = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = 1 };
+            var loginKey2 = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = 2 };
+            var leaveKey = new WaitKey() { MessageCode = MessageCode.ServerLeaveRoom };
+
+            var loginTask = waiter.Wait<object>(loginKey.MessageCode, loginKey.Token);
+            var loginTask2 = waiter.Wait<object>(loginKey2.MessageCode, loginKey2.Token);
+            var leaveTask = waiter.Wait<object>(leaveKey.MessageCode);
+
+            waiter.CancelAll();
+
+            Assert.True(loginTask.IsCanceled);
+            Assert.True(loginTask2.IsCanceled);
+            Assert.True(leaveTask.IsCanceled);
+        }
+
         [Trait("Category", "Wait Throw")]
         [Fact(DisplayName = "Wait throws and is dequeued when thrown")]
         public void Wait_Throws_And_Is_Dequeued_When_Thrown()
