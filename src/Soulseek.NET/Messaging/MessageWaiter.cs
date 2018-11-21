@@ -62,11 +62,17 @@ namespace Soulseek.NET.Messaging
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
         /// <summary>
-        ///     Disposes this instance.
+        ///     Cancels all waits.
         /// </summary>
-        public void Dispose()
+        public void CancelAll()
         {
-            Dispose(true);
+            foreach (var queue in Waits)
+            {
+                while (queue.Value.TryDequeue(out var wait))
+                {
+                    wait.TaskCompletionSource.SetCanceled();
+                }
+            }
         }
 
         /// <summary>
@@ -92,24 +98,21 @@ namespace Soulseek.NET.Messaging
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
-            Console.WriteLine($":::::::::::::: COMPLETE {key.MessageCode} {key.Token} ({key.GetHashCode()})");
-
             if (Waits.TryGetValue(key, out var queue))
             {
                 if (queue.TryDequeue(out var wait))
                 {
-                    Task.Run(() => ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result)).Forget();
-                    Console.WriteLine($":::::::::::::: RESULT {key.MessageCode} {key.Token}");
-                }
-                else
-                {
-                    Console.WriteLine($":::::::::::::: COMPLETE -- QUEUE MISS {key.MessageCode} {key.Token} ({key.GetHashCode()})");
+                    ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
                 }
             }
-            else
-            {
-                Console.WriteLine($":::::::::::::: COMPLETE -- DICT MISS {key.MessageCode} {key.Token} ({key.GetHashCode()})");
-            }
+        }
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
         }
 
         /// <summary>
@@ -157,10 +160,10 @@ namespace Soulseek.NET.Messaging
             timeout = timeout ?? DefaultTimeout;
 
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
-            Console.WriteLine($":::::::::::::: WAIT {key}  ({key.GetHashCode()})");
+
             var wait = new PendingWait()
             {
-                TaskCompletionSource = new TaskCompletionSource<T>(),
+                TaskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously),
                 DateTime = DateTime.UtcNow,
                 TimeoutAfter = (int)timeout,
                 CancellationToken = cancellationToken,
@@ -208,20 +211,6 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        /// <summary>
-        ///     Cancels all waits.
-        /// </summary>
-        public void CancelAll()
-        {
-            foreach (var queue in Waits)
-            {
-                while (queue.Value.TryDequeue(out var wait))
-                {
-                    wait.TaskCompletionSource.SetCanceled();
-                }
-            }
-        }
-
         private void MonitorWaits(object sender, object e)
         {
             foreach (var queue in Waits)
@@ -251,66 +240,45 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     The composite key for the wait dictionary.
+        ///     The composite value for the wait dictionary.
         /// </summary>
-        internal class WaitKey
+        internal struct PendingWait
         {
             /// <summary>
-            ///     The wait message code.
+            ///     The cancellation token for the wait.
             /// </summary>
-            public MessageCode MessageCode { get; set; }
+            public CancellationToken? CancellationToken;
 
             /// <summary>
-            ///     The unique token for the wait.
+            ///     The time at which the wait was enqueued.
             /// </summary>
-            public string Token { get; set; }
+            public DateTime DateTime;
 
-            public override bool Equals(object obj)
-            {
-                if (obj != null && obj is WaitKey key)
-                {
-                    return MessageCode == key.MessageCode && Token == key.Token;
-                }
+            /// <summary>
+            ///     The task completion source for the wait task.
+            /// </summary>
+            public dynamic TaskCompletionSource;
 
-                return false;
-            }
-
-            public override int GetHashCode()
-            {
-                var tokenHash = Token?.GetStableHashCode() ?? 0;
-                return MessageCode.GetHashCode() ^ tokenHash;
-            }
-
-            public override string ToString()
-            {
-                return $"(Code: {MessageCode}, Token: {Token})";
-            }
+            /// <summary>
+            ///     The number of seconds after which the wait is to time out.
+            /// </summary>
+            public int TimeoutAfter;
         }
 
         /// <summary>
-        ///     The composite value for the wait dictionary.
+        ///     The composite key for the wait dictionary.
         /// </summary>
-        internal class PendingWait
+        internal struct WaitKey
         {
             /// <summary>
-            ///     Gets or sets the cancellation token for the wait.
+            ///     The message code of the wait.
             /// </summary>
-            public CancellationToken? CancellationToken { get; set; }
+            public MessageCode MessageCode;
 
             /// <summary>
-            ///     Gets or sets the time at which the wait was enqueued.
+            ///     The wait token.
             /// </summary>
-            public DateTime DateTime { get; set; }
-
-            /// <summary>
-            ///     Gets or sets the task completion source for the wait task.
-            /// </summary>
-            public dynamic TaskCompletionSource { get; set; }
-
-            /// <summary>
-            ///     Gets or sets the number of seconds after which the wait is to time out.
-            /// </summary>
-            public int TimeoutAfter { get; set; }
+            public string Token;
         }
     }
 }
