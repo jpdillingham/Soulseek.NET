@@ -352,7 +352,7 @@ namespace Soulseek.NET
         /// <param name="options">The options for the search.</param>
         /// <param name="cancellationToken">The optional cancellation token for the task.</param>
         /// <returns>The completed search.</returns>
-        public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Connected)
             {
@@ -366,33 +366,26 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            var token = new Random().Next();
             var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
-
-            var search = new Search(searchText, token, options, ServerConnection)
+            using (var search = new Search(searchText, token, options)
             {
                 ResponseHandler = (s, response) =>
                 {
-                    var e = new SearchResponseReceivedEventArgs() { Search = s, Response = response };
+                    var e = new SearchResponseReceivedEventArgs() { SearchText = s.SearchText, Token = s.Token, Response = response };
                     Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
                 },
-                EndHandler = (s, message) =>
-                {
-                    MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
-                },
-                TimeoutHandler = (s) => MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s),
-            };
+                CompleteHandler = (s, message) => MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s),
+            })
+            {
+                ActiveSearches.TryAdd(search.Token, search);
+                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
 
-            await ServerConnection.SendMessageAsync(new SearchRequest(searchText, token).ToMessage());
+                var result = await searchWait;
 
-            ActiveSearches.TryAdd(search.Token, search);
+                ActiveSearches.TryRemove(search.Token, out var _);
 
-            var result = await searchWait;
-
-            ActiveSearches.TryRemove(search.Token, out var _);
-            search.Dispose();
-
-            return result.Responses;
+                return result.Responses;
+            }
         }
 
         #endregion Public Methods
@@ -477,7 +470,7 @@ namespace Soulseek.NET
                     var searchResponse = SearchResponse.Parse(message);
                     if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
                     {
-                        search.AddResponse(connection, searchResponse);
+                        search.AddResponse(searchResponse);
                     }
 
                     break;
