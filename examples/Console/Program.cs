@@ -40,7 +40,8 @@
                     else if (cmd.StartsWith("search"))
                     {
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
-                        var result = await client.SearchAsync(search, new SearchOptions()
+                        var token = new Random().Next();
+                        var result = await client.SearchAsync(search, token, new SearchOptions()
                         {
                             FilterFiles = false,
                             FilterResponses = false,
