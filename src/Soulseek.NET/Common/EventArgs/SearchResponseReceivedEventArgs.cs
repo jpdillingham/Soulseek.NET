@@ -20,7 +20,8 @@ namespace Soulseek.NET
         {
         }
 
-        public Search Search { get; set; }
+        public string SearchText { get; set; }
+        public int Token { get; set; }
         public SearchResponse Response { get; set; }
     }
 }
