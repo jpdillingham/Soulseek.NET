@@ -3,6 +3,7 @@
     using Newtonsoft.Json;
     using Soulseek.NET;
     using System;
+    using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
 
@@ -70,12 +71,22 @@
                             //"@@djpnk\\Bootlegs\\Fear Is Your Only God\\album.nfo",
                         };
 
-                        Parallel.ForEach(files, async (file) =>
+                        var task = Task.Run(() =>
                         {
-                            Console.WriteLine($"Attempting to download {file}");
-                            await client.DownloadAsync(peer, file);
+                            Parallel.ForEach(files, async (file) =>
+                            {
+                                Console.WriteLine($"Attempting to download {file}");
+                                var bytes = await client.DownloadAsync(peer, file);
+                                var filename = $@"C:\tmp\{Path.GetFileName(file)}";
+
+                                Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
+                                System.IO.File.WriteAllBytes(filename, bytes);
+                                Console.WriteLine("Download complete!");
+                            });
                         });
 
+                        await task;
+                        
                         Console.WriteLine($"All files complete.");
                     }
                     else if (cmd.StartsWith("download"))
@@ -83,8 +94,11 @@
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
                         var file = string.Join(' ', cmd.Split(' ').Skip(2));
 
-                        await client.DownloadAsync(peer, file);
+                        var bytes = await client.DownloadAsync(peer, file);
+                        var filename = $@"C:\tmp\{Path.GetFileName(file)}";
 
+                        Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
+                        System.IO.File.WriteAllBytes(filename, bytes);
                         Console.WriteLine("Download complete!");
                     }
                     else

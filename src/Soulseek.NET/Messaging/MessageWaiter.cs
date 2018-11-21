@@ -92,12 +92,23 @@ namespace Soulseek.NET.Messaging
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
+            Console.WriteLine($":::::::::::::: COMPLETE {key.MessageCode} {key.Token} ({key.GetHashCode()})");
+
             if (Waits.TryGetValue(key, out var queue))
             {
                 if (queue.TryDequeue(out var wait))
                 {
                     ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
+                    Console.WriteLine($":::::::::::::: RESULT {key.MessageCode} {key.Token}");
                 }
+                else
+                {
+                    Console.WriteLine($":::::::::::::: COMPLETE -- QUEUE MISS {key.MessageCode} {key.Token}");
+                }
+            }
+            else
+            {
+                Console.WriteLine($":::::::::::::: COMPLETE -- DICT MISS {key.MessageCode} {key.Token}");
             }
         }
 
@@ -146,7 +157,7 @@ namespace Soulseek.NET.Messaging
             timeout = timeout ?? DefaultTimeout;
 
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
-
+            Console.WriteLine($":::::::::::::: WAIT {key.MessageCode} {key.Token}  ({key.GetHashCode()})");
             var wait = new PendingWait()
             {
                 TaskCompletionSource = new TaskCompletionSource<T>(),
