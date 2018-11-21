@@ -161,7 +161,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [InlineData(MessageCode.ServerLogin, "token", null)]
         [InlineData(MessageCode.ServerLogin, null, 13)]
         [InlineData(MessageCode.ServerLogin, "token", 13)]
-        public void Wait_Invocation_Creates_Valid_Wait(MessageCode code, object token, int? timeout)
+        public void Wait_Invocation_Creates_Valid_Wait(MessageCode code, string token, int? timeout)
         {
             var key = new WaitKey() { MessageCode = code, Token = token };
 
@@ -259,8 +259,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
         {
             var waiter = new MessageWaiter(0);
-            var loginKey = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = 1 };
-            var loginKey2 = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = 2 };
+            var loginKey = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = "1" };
+            var loginKey2 = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = "2" };
             var leaveKey = new WaitKey() { MessageCode = MessageCode.ServerLeaveRoom };
 
             var loginTask = waiter.Wait<object>(loginKey.MessageCode, loginKey.Token);

@@ -88,7 +88,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="result">The wait result.</param>
-        public void Complete<T>(MessageCode messageCode, object token, T result)
+        public void Complete<T>(MessageCode messageCode, string token, T result)
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
@@ -98,17 +98,17 @@ namespace Soulseek.NET.Messaging
             {
                 if (queue.TryDequeue(out var wait))
                 {
-                    ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
+                    Task.Run(() => ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result)).Forget();
                     Console.WriteLine($":::::::::::::: RESULT {key.MessageCode} {key.Token}");
                 }
                 else
                 {
-                    Console.WriteLine($":::::::::::::: COMPLETE -- QUEUE MISS {key.MessageCode} {key.Token}");
+                    Console.WriteLine($":::::::::::::: COMPLETE -- QUEUE MISS {key.MessageCode} {key.Token} ({key.GetHashCode()})");
                 }
             }
             else
             {
-                Console.WriteLine($":::::::::::::: COMPLETE -- DICT MISS {key.MessageCode} {key.Token}");
+                Console.WriteLine($":::::::::::::: COMPLETE -- DICT MISS {key.MessageCode} {key.Token} ({key.GetHashCode()})");
             }
         }
 
@@ -129,7 +129,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="exception">The Exception to throw.</param>
-        public void Throw(MessageCode messageCode, object token, Exception exception)
+        public void Throw(MessageCode messageCode, string token, Exception exception)
         {
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
@@ -152,12 +152,12 @@ namespace Soulseek.NET.Messaging
         /// <param name="timeout">The wait timeout.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        public Task<T> Wait<T>(MessageCode messageCode, object token = null, int? timeout = null, CancellationToken? cancellationToken = null)
+        public Task<T> Wait<T>(MessageCode messageCode, string token = null, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             timeout = timeout ?? DefaultTimeout;
 
             var key = new WaitKey() { MessageCode = messageCode, Token = token };
-            Console.WriteLine($":::::::::::::: WAIT {key.MessageCode} {key.Token}  ({key.GetHashCode()})");
+            Console.WriteLine($":::::::::::::: WAIT {key}  ({key.GetHashCode()})");
             var wait = new PendingWait()
             {
                 TaskCompletionSource = new TaskCompletionSource<T>(),
@@ -183,7 +183,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        public Task<T> WaitIndefinitely<T>(MessageCode messageCode, object token = null, CancellationToken? cancellationToken = null)
+        public Task<T> WaitIndefinitely<T>(MessageCode messageCode, string token = null, CancellationToken? cancellationToken = null)
         {
             return Wait<T>(messageCode, token, MaxTimeoutValue, cancellationToken);
         }
@@ -253,17 +253,38 @@ namespace Soulseek.NET.Messaging
         /// <summary>
         ///     The composite key for the wait dictionary.
         /// </summary>
-        internal struct WaitKey
+        internal class WaitKey
         {
             /// <summary>
             ///     The wait message code.
             /// </summary>
-            public MessageCode MessageCode;
+            public MessageCode MessageCode { get; set; }
 
             /// <summary>
             ///     The unique token for the wait.
             /// </summary>
-            public object Token;
+            public string Token { get; set; }
+
+            public override bool Equals(object obj)
+            {
+                if (obj != null && obj is WaitKey key)
+                {
+                    return MessageCode == key.MessageCode && Token == key.Token;
+                }
+
+                return false;
+            }
+
+            public override int GetHashCode()
+            {
+                var tokenHash = Token?.GetStableHashCode() ?? 0;
+                return MessageCode.GetHashCode() ^ tokenHash;
+            }
+
+            public override string ToString()
+            {
+                return $"(Code: {MessageCode}, Token: {Token})";
+            }
         }
 
         /// <summary>

@@ -140,7 +140,7 @@ namespace Soulseek.NET
                 State = state;
                 SearchTimeoutTimer.Stop();
 
-                MessageWaiter.Complete(MessageCode.ServerFileSearch, Ticket, this);
+                MessageWaiter.Complete(MessageCode.ServerFileSearch, Ticket.ToString(), this);
             }
         }
 
@@ -165,7 +165,7 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Reset();
             SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
 
-            return await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, Ticket, cancellationToken);
+            return await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, Ticket.ToString(), cancellationToken);
         }
 
         private void Dispose(bool disposing)

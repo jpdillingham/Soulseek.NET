@@ -41,7 +41,7 @@
         public long FileSize { get; private set; }
         public CancellationToken? CancellationToken { get; private set; }
 
-        private MessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
+        private IMessageWaiter MessageWaiter { get; set; } = new MessageWaiter();
 
         private async void HandleConnect(IMessageConnection connection)
         {
@@ -54,8 +54,8 @@
 
             try
             {
-                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, CancellationToken);
-                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, CancellationToken);
+                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, cancellationToken: CancellationToken);
+                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, cancellationToken: CancellationToken);
 
                 TransferResponseIncoming = await peerTransferResponse;
 

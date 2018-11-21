@@ -122,7 +122,7 @@ namespace Soulseek.NET
         #region Private Properties
 
         private PeerTransferRequestIncoming ActiveDownload { get; set; }
-        private Tuple<ConnectionKey, string> ActiveDownloadKey { get; set; }
+        private string ActiveDownloadKey { get; set; }
 
         private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
 
@@ -165,10 +165,10 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key.ToString(), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 });
 
-                var wait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, connection.Key, cancellationToken);
+                var wait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, connection.Key.ToString(), cancellationToken);
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
                 return await wait;
             }
@@ -242,7 +242,7 @@ namespace Soulseek.NET
             try
             {
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                var downloadKey = new Tuple<ConnectionKey, string>(connection.Key, filename);
+                var downloadKey = $"{connection.Key}:{filename}";
                 ActiveDownloadKey = downloadKey;
 
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
@@ -254,16 +254,18 @@ namespace Soulseek.NET
 
                 // request the file from the peer using a new token.  wait for the response, which will be identified with the token.
                 var token = new Random().Next();
-                var responseToken = new Tuple<ConnectionKey, int>(connection.Key, token);
+                var responseToken = $"{connection.Key}:{token}";
                 var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, responseToken, cancellationToken);
 
                 // the peer will eventually signal that it is ready for the transfer by sending a transfer request, which will be identififed with a new token
                 // and the filename.  wait for that message.
-                var requestToken = new Tuple<ConnectionKey, string>(connection.Key, filename);
+                var requestToken = $"{connection.Key}:{filename}";
                 Console.WriteLine($"[CREATING WAIT]: {connection.Key}, {filename}");
                 var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, requestToken, cancellationToken);
 
+                Console.WriteLine($"[SENDING REQUEST]: connection state: {connection.State}");
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
+                Console.WriteLine($"[REQUEST SENT]");
                 var transferResponse = await peerTransferResponse;
 
                 if (transferResponse.Allowed)
@@ -485,17 +487,17 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key, BrowseResponse.Parse(message));
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key.ToString(), BrowseResponse.Parse(message));
                     break;
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
-                    var waitKey = new Tuple<ConnectionKey, int>(connection.Key, transferResponse.Token);
+                    var waitKey = $"{connection.Key}:{transferResponse.Token}";
                     MessageWaiter.Complete(MessageCode.PeerTransferResponse, waitKey, transferResponse);
                     break;
                 case MessageCode.PeerTransferRequest:
                     var x = PeerTransferRequestIncoming.Parse(message);
                     Console.WriteLine($"[PEER TRANSFER REQUEST]: {x.Filename} {x.Token}");
-                    var token = new Tuple<ConnectionKey, string>(connection.Key, x.Filename);
+                    var token = $"{connection.Key}:{x.Filename}";
                     Console.WriteLine($"[COMPLETING WAIT]: {connection.Key} {x.Filename}");
                     MessageWaiter.Complete(MessageCode.PeerTransferRequest, token, x);
 
