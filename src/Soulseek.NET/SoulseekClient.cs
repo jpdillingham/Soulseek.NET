@@ -227,12 +227,12 @@ namespace Soulseek.NET
             Dispose(true);
         }
 
-        public async Task<byte[]> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
-            return await DownloadAsync(username, filename, options, cancellationToken, null);
+            return await DownloadAsync(username, filename, cancellationToken, null);
         }
 
-        internal async Task<byte[]> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        internal async Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
             {
@@ -609,12 +609,6 @@ namespace Soulseek.NET
 
             await MessageConnectionManager.Add(connection);
             return connection;
-        }
-
-        private struct DownloadKey
-        {
-            ConnectionKey ConnectionKey;
-            string Filename;
         }
     }
 }
