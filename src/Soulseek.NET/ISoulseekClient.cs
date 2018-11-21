@@ -13,6 +13,7 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Responses;
@@ -129,7 +130,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the search results.</returns>
-        Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null);
 

@@ -38,14 +38,13 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The options for the search.</param>
         /// <param name="serverConnection">The connection to use when searching.</param>
-        internal Search(string searchText, SearchOptions options, IMessageConnection serverConnection)
+        internal Search(string searchText, int token, SearchOptions options, IMessageConnection serverConnection)
         {
             SearchText = searchText;
+            Token = token;
             Options = options;
             ServerConnection = serverConnection;
             SearchFilters = new SearchFilters(Options);
-
-            Ticket = new Random().Next(1, 2147483647);
 
             SearchTimeoutTimer = new SystemTimer()
             {
@@ -53,9 +52,14 @@ namespace Soulseek.NET
                 Enabled = false,
                 AutoReset = false,
             };
+
+            SearchTimeoutTimer.Elapsed += (sender, e) => { End($"The search completed after {options.SearchTimeout} seconds of inactivity."); };
+            SearchTimeoutTimer.Reset();
         }
 
         internal Action<Search, SearchResponse> ResponseHandler { get; set; } = (search, response) => { };
+        internal Action<Search, string> EndHandler { get; set; } = (search, message) => { };
+        internal Action<Search> TimeoutHandler { get; set; } = (search) => { };
 
         /// <summary>
         ///     Gets the options for the search.
@@ -73,14 +77,9 @@ namespace Soulseek.NET
         public string SearchText { get; private set; }
 
         /// <summary>
-        ///     Gets the current state of the search.
-        /// </summary>
-        public SearchState State { get; private set; } = SearchState.Pending;
-
-        /// <summary>
         ///     Gets the unique identifier for the search.
         /// </summary>
-        public int Ticket { get; private set; }
+        public int Token { get; private set; }
 
         private SearchFilters SearchFilters { get; set; }
         private bool Disposed { get; set; } = false;
@@ -99,11 +98,12 @@ namespace Soulseek.NET
 
         internal void AddResponse(IMessageConnection connection, SearchResponse response)
         {
-            if (response.Ticket == Ticket && State == SearchState.InProgress && SearchFilters.ResponseMeetsOptionCriteria(response))
+            Console.WriteLine($"[Adding]");
+            if (response.Token == Token && SearchFilters.ResponseMeetsOptionCriteria(response))
             {
                 response.ParseFiles();
 
-                if (Options.FilterFiles || true)
+                if (Options.FilterFiles)
                 {
                     response.Files = response.Files.Where(f => SearchFilters.FileMeetsOptionCriteria(f));
                 }
@@ -112,7 +112,7 @@ namespace Soulseek.NET
 
                 if (resultCount >= Options.FileLimit)
                 {
-                    End(SearchState.Completed);
+                    End($"The search completed after receiving {Options.FileLimit} results.");
                     return;
                 }
 
@@ -133,40 +133,35 @@ namespace Soulseek.NET
         ///     prematurely, e.g., by error or user request.
         /// </remarks>
         /// <param name="state">The desired state of the search.</param>
-        internal void End(SearchState state)
+        internal void End(string message)
         {
-            if (State != SearchState.Completed && State != SearchState.Stopped)
-            {
-                State = state;
-                SearchTimeoutTimer.Stop();
-
-                MessageWaiter.Complete(MessageCode.ServerFileSearch, Ticket.ToString(), this);
-            }
+            SearchTimeoutTimer.Stop();
+            EndHandler(this, message);
         }
 
-        /// <summary>
-        ///     Asynchronously starts the search.
-        /// </summary>
-        /// <returns>This search.</returns>
-        internal async Task<Search> SearchAsync(CancellationToken? cancellationToken)
-        {
-            if (State != SearchState.Pending)
-            {
-                throw new SearchException($"The Search is already in progress or has completed.");
-            }
+        ///// <summary>
+        /////     Asynchronously starts the search.
+        ///// </summary>
+        ///// <returns>This search.</returns>
+        //internal async Task<Search> SearchAsync(CancellationToken? cancellationToken)
+        //{
+        //    if (State != SearchState.Pending)
+        //    {
+        //        throw new SearchException($"The Search is already in progress or has completed.");
+        //    }
 
-            State = SearchState.InProgress;
+        //    State = SearchState.InProgress;
 
-            var request = new SearchRequest(SearchText, Ticket);
+        //    var request = new SearchRequest(SearchText, Ticket);
 
-            Console.WriteLine($"Searching for {SearchText}...");
-            await ServerConnection.SendMessageAsync(request.ToMessage());
+        //    Console.WriteLine($"Searching for {SearchText}...");
+        //    await ServerConnection.SendMessageAsync(request.ToMessage());
 
-            SearchTimeoutTimer.Reset();
-            SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
+        //    SearchTimeoutTimer.Reset();
+        //    SearchTimeoutTimer.Elapsed += (sender, e) => End(SearchState.Completed);
 
-            return await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, Ticket.ToString(), cancellationToken);
-        }
+        //    return await MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, Ticket.ToString(), cancellationToken);
+        //}
 
         private void Dispose(bool disposing)
         {

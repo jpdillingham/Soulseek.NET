@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿  // <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,6 +14,7 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -133,7 +134,7 @@ namespace Soulseek.NET
         #region Public Methods
 
         /// <summary>
-        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
@@ -153,19 +154,29 @@ namespace Soulseek.NET
             return await BrowseAsync(username, cancellationToken, null);
         }
 
+        /// <summary>
+        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="cancellationToken"/> and <paramref name="connection"/>.
+        /// </summary>
+        /// <param name="username">The user to browse.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="connection">The peer connection over which to send the browse request.</param>
+        /// <returns>The operation response.</returns>
         internal async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
             {
+                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
+
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key.ToString(), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 });
 
-                var wait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, connection.Key.ToString(), cancellationToken);
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
-                return await wait;
+
+                var response = await browseWait;
+                return response;
             }
             catch (Exception ex)
             {
@@ -313,15 +324,15 @@ namespace Soulseek.NET
                 throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
 
-            var login = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
+            var loginWait = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
             Console.WriteLine($"Sending login message");
             await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
             Console.WriteLine($"Login message sent");
 
-            await login;
+            var response = await loginWait;
 
-            if (login.Result.Succeeded)
+            if (response.Succeeded)
             {
                 Username = username;
                 LoggedIn = true;
@@ -330,7 +341,7 @@ namespace Soulseek.NET
             {
                 // upon login failure the server will refuse to allow any more input, eventually disconnecting.
                 Disconnect();
-                throw new LoginException($"Failed to log in as {username}: {login.Result.Message}");
+                throw new LoginException($"Failed to log in as {username}: {response.Message}");
             }
         }
 
@@ -341,7 +352,7 @@ namespace Soulseek.NET
         /// <param name="options">The options for the search.</param>
         /// <param name="cancellationToken">The optional cancellation token for the task.</param>
         /// <returns>The completed search.</returns>
-        public async Task<Search> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Connected)
             {
@@ -355,18 +366,33 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            var search = new Search(searchText, options, ServerConnection)
+            var token = new Random().Next();
+            var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
+
+            var search = new Search(searchText, token, options, ServerConnection)
             {
                 ResponseHandler = (s, response) =>
                 {
                     var e = new SearchResponseReceivedEventArgs() { Search = s, Response = response };
                     Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
-                }
+                },
+                EndHandler = (s, message) =>
+                {
+                    MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
+                },
+                TimeoutHandler = (s) => MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s),
             };
 
-            ActiveSearches.TryAdd(search.Ticket, search);
+            await ServerConnection.SendMessageAsync(new SearchRequest(searchText, token).ToMessage());
 
-            return await search.SearchAsync(cancellationToken);
+            ActiveSearches.TryAdd(search.Token, search);
+
+            var result = await searchWait;
+
+            ActiveSearches.TryRemove(search.Token, out var _);
+            search.Dispose();
+
+            return result.Responses;
         }
 
         #endregion Public Methods
@@ -444,12 +470,12 @@ namespace Soulseek.NET
 
         private void PeerMessageHandler(IMessageConnection connection, Message message)
         {
-            //Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
+            Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
             switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
                     var searchResponse = SearchResponse.Parse(message);
-                    if (ActiveSearches.TryGetValue(searchResponse.Ticket, out var search))
+                    if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
                     {
                         search.AddResponse(connection, searchResponse);
                     }
@@ -457,7 +483,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key.ToString(), BrowseResponse.Parse(message));
+                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key.Username, BrowseResponse.Parse(message));
                     break;
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
@@ -487,7 +513,7 @@ namespace Soulseek.NET
 
         private async void ServerMessageHandler(IMessageConnection connection, Message message)
         {
-            //Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
+            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
 
             switch (message.Code)
             {
