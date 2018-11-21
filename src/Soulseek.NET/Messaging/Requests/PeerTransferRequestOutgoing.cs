@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferRequestOutgoing.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,26 +12,26 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
-    public class PeerTransferResponseRequest
+    public class PeerTransferRequestOutgoing
     {
         #region Public Constructors
 
-        public PeerTransferResponseRequest(int token, bool allowed, int fileSize, string message)
+        public PeerTransferRequestOutgoing(TransferDirection direction, int token, string filename, int size = 0)
         {
+            Direction = direction;
             Token = token;
-            Allowed = allowed;
-            FileSize = fileSize;
-            Message = message;
+            Filename = filename;
+            Size = size;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public int Token { get; private set; }
-        public bool Allowed { get; private set; }
-        public int FileSize { get; private set; }
-        public string Message { get; private set; }
+        public TransferDirection Direction { get; set; }
+        public string Filename { get; set; }
+        public int Size { get; set; }
+        public int Token { get; set; }
 
         #endregion Public Properties
 
@@ -40,10 +40,11 @@ namespace Soulseek.NET.Messaging.Requests
         public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .Code(MessageCode.PeerTransferRequest)
+                .WriteInteger((int)Direction)
                 .WriteInteger(Token)
-                .WriteByte((byte)(Allowed ? 1 : 0))
-                .WriteInteger(FileSize)
+                .WriteString(Filename)
+                .WriteInteger(Size)
                 .Build();
         }
 

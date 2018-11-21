@@ -32,8 +32,8 @@
         public string IPAddress { get; private set; }
         public int Port { get; private set; }
         public string Filename { get; private set; }
-        public PeerTransferResponse TransferResponse { get; private set; }
-        public PeerTransferRequestResponse TransferRequestResponse { get; private set; }
+        public PeerTransferResponseIncoming TransferResponseIncoming { get; private set; }
+        public PeerTransferRequestIncoming TransferRequestIncoming { get; private set; }
         public DownloadOptions Options { get; private set; }
         private IMessageConnection PeerConnection { get; set; }
         private IConnection TransferConnection { get; set; }
@@ -50,30 +50,30 @@
             var token = new Random().Next();
             Console.WriteLine($"[{Filename}] Requesting: {token}");
             await connection.SendMessageAsync(new PeerInitRequest("praetor-2", "P", token).ToMessage(), suppressCodeNormalization: true);
-            await connection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, Filename).ToMessage());
+            await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, Filename).ToMessage());
 
             try
             {
-                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(MessageCode.PeerTransferResponse, CancellationToken);
-                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestResponse>(MessageCode.PeerTransferRequest, CancellationToken);
+                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, CancellationToken);
+                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, CancellationToken);
 
-                TransferResponse = await peerTransferResponse;
+                TransferResponseIncoming = await peerTransferResponse;
 
-                if (TransferResponse.Allowed)
+                if (TransferResponseIncoming.Allowed)
                 {
-                    Token = TransferResponse.Token;
-                    FileSize = TransferResponse.FileSize;
+                    Token = TransferResponseIncoming.Token;
+                    FileSize = TransferResponseIncoming.FileSize;
                     Console.WriteLine($"Transfer OK, begin now.");
                 }
                 else
                 {
                     Console.WriteLine($"[{Filename}] Transfer rejected, wait for request.");
-                    TransferRequestResponse = await peerTransferRequestResponse; // when ready, peer will initiate transfer
+                    TransferRequestIncoming = await peerTransferRequestResponse; // when ready, peer will initiate transfer
 
-                    Token = TransferRequestResponse.Token;
-                    FileSize = TransferRequestResponse.Size;
+                    Token = TransferRequestIncoming.Token;
+                    FileSize = TransferRequestIncoming.Size;
 
-                    await connection.SendMessageAsync(new PeerTransferResponseRequest(TransferRequestResponse.Token, true, 0, string.Empty).ToMessage());
+                    await connection.SendMessageAsync(new PeerTransferResponseOutgoing(TransferRequestIncoming.Token, true, 0, string.Empty).ToMessage());
                 }
             }
             catch (Exception ex)
@@ -123,7 +123,7 @@
             {
                 // todo: think through this.  we don't have the token until we connect, pierce the firewall and read the first 4 bytes.
                 // perhaps a DownloadRouter to determine this, or a DownloadQueue to abstract it and handling of Download objects.
-                throw new Exception($"Received token {token} doesn't match expected token {TransferResponse.Token}.  The ConnectToPeer response was routed to the wrong place.");
+                throw new Exception($"Received token {token} doesn't match expected token {TransferResponseIncoming.Token}.  The ConnectToPeer response was routed to the wrong place.");
             }
 
             // write 8 empty bytes.  no idea what this is; captured via WireShark
@@ -149,12 +149,12 @@
             switch (message.Code)
             {
                 case MessageCode.PeerTransferResponse:
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponse.Parse(message));
+                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, PeerTransferResponseIncoming.Parse(message));
                     break;
                 case MessageCode.PeerTransferRequest:
                     try
                     {
-                        var x = PeerTransferRequestResponse.Parse(message);
+                        var x = PeerTransferRequestIncoming.Parse(message);
                         Console.WriteLine($"[{Filename}] Completing PTRR");
                         MessageWaiter.Complete(MessageCode.PeerTransferRequest, x);
                     }

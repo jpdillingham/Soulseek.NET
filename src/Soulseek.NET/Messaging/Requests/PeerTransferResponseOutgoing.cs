@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferResponseOutgoing.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,26 +12,26 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
-    public class PeerTransferRequest
+    public class PeerTransferResponseOutgoing
     {
         #region Public Constructors
 
-        public PeerTransferRequest(TransferDirection direction, int token, string filename, int size = 0)
+        public PeerTransferResponseOutgoing(int token, bool allowed, int fileSize, string message)
         {
-            Direction = direction;
             Token = token;
-            Filename = filename;
-            Size = size;
+            Allowed = allowed;
+            FileSize = fileSize;
+            Message = message;
         }
 
         #endregion Public Constructors
 
         #region Public Properties
 
-        public TransferDirection Direction { get; set; }
-        public string Filename { get; set; }
-        public int Size { get; set; }
-        public int Token { get; set; }
+        public int Token { get; private set; }
+        public bool Allowed { get; private set; }
+        public int FileSize { get; private set; }
+        public string Message { get; private set; }
 
         #endregion Public Properties
 
@@ -40,11 +40,10 @@ namespace Soulseek.NET.Messaging.Requests
         public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerTransferRequest)
-                .WriteInteger((int)Direction)
+                .Code(MessageCode.PeerTransferResponse)
                 .WriteInteger(Token)
-                .WriteString(Filename)
-                .WriteInteger(Size)
+                .WriteByte((byte)(Allowed ? 1 : 0))
+                .WriteInteger(FileSize)
                 .Build();
         }
 

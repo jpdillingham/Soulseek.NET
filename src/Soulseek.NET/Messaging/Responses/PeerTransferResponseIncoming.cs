@@ -15,11 +15,11 @@ namespace Soulseek.NET.Messaging.Responses
     using System;
     using System.Net;
 
-    public sealed class PeerTransferResponse
+    public sealed class PeerTransferResponseIncoming
     {
         #region Private Constructors
 
-        private PeerTransferResponse()
+        private PeerTransferResponseIncoming()
         {
         }
 
@@ -36,7 +36,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         #region Public Methods
 
-        public static PeerTransferResponse Parse(Message message)
+        public static PeerTransferResponseIncoming Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -45,7 +45,7 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.PeerTransferResponse}, received: {(int)reader.Code}.");
             }
 
-            var response = new PeerTransferResponse()
+            var response = new PeerTransferResponseIncoming()
             {
                 Token = reader.ReadInteger(),
                 Allowed = reader.ReadByte() == 1 ? true : false,
