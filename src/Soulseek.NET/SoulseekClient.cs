@@ -14,7 +14,6 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -121,11 +120,7 @@ namespace Soulseek.NET
 
         #region Private Properties
 
-        private PeerTransferRequestIncoming ActiveDownload { get; set; }
-        private string ActiveDownloadKey { get; set; }
-
         private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
-
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
         private IConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
@@ -242,8 +237,8 @@ namespace Soulseek.NET
             try
             {
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                var downloadKey = $"{connection.Key}:{filename}";
-                ActiveDownloadKey = downloadKey;
+
+                var downloadKey = $"{username}:{filename}";
 
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
                 {
@@ -260,12 +255,10 @@ namespace Soulseek.NET
                 // the peer will eventually signal that it is ready for the transfer by sending a transfer request, which will be identififed with a new token
                 // and the filename.  wait for that message.
                 var requestToken = $"{connection.Key}:{filename}";
-                Console.WriteLine($"[CREATING WAIT]: {connection.Key}, {filename}");
                 var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, requestToken, cancellationToken);
 
-                Console.WriteLine($"[SENDING REQUEST]: connection state: {connection.State}");
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
-                Console.WriteLine($"[REQUEST SENT]");
+
                 var transferResponse = await peerTransferResponse;
 
                 if (transferResponse.Allowed)
@@ -274,9 +267,8 @@ namespace Soulseek.NET
                 }
                 else
                 {
+                    //Console.WriteLine($"Download disallowed; wait for peer to call back.  Token: {transferRequest.Token}, Filename: {transferRequest.Filename}");
                     var transferRequest = await peerTransferRequestResponse;
-
-                    Console.WriteLine($"Download disallowed; wait for peer to call back.  Token: {transferRequest.Token}, Filename: {transferRequest.Filename}");
 
                     // add the request to the list of pending downloads
                     if (PendingDownloads.TryGetValue(username, out var downloads))
@@ -427,13 +419,12 @@ namespace Soulseek.NET
                     // check to make sure we are expecting this particular file, and if so grab the original request
                     if (pendingDownloads.TryGetValue(token, out var peerTransferRequestIncoming))
                     {
-                        Console.WriteLine($"[TRANSFER START]: {peerTransferRequestIncoming.Filename} ({peerTransferRequestIncoming.Size})");
                         await t.SendAsync(new byte[8]);
 
                         var bytes = await t.ReadAsync(peerTransferRequestIncoming.Size);
-                        t.Disconnect($"[TRANSFER COMPLETE]: {bytes.Length} bytes");
+                        t.Disconnect($"Transfer complete.");
 
-                        MessageWaiter.Complete(MessageCode.PeerDownloadResponse, ActiveDownloadKey, bytes);
+                        MessageWaiter.Complete(MessageCode.PeerDownloadResponse, $"{response.Username}:{peerTransferRequestIncoming.Filename}", bytes);
                     }
                 }
             }
@@ -451,30 +442,9 @@ namespace Soulseek.NET
             return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
         }
 
-        private async void PeerConnectionStateChangedEventHandler(object sender, ConnectionStateChangedEventArgs e)
-        {
-            var connection = (IConnection)sender;
-
-            Console.WriteLine($"[PEER CONNECTION]: {e.IPAddress}: {connection.State}");
-
-            if (connection is IConnection transferConnection)
-            {
-                if (e.State == ConnectionState.Disconnected)
-                {
-
-                }
-                else if (e.State == ConnectionState.Connected)
-                {
-                    var context = (ConnectToPeerResponse)transferConnection.Context;
-                    var request = new PierceFirewallRequest(context.Token);
-                    await transferConnection.SendAsync(request.ToMessage().ToByteArray());
-                }
-            }
-        }
-
         private void PeerMessageHandler(IMessageConnection connection, Message message)
         {
-            Console.WriteLine($"[PEER RESPONSE]: {message.Code}");
+            //Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
             switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
@@ -491,15 +461,11 @@ namespace Soulseek.NET
                     break;
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
-                    var waitKey = $"{connection.Key}:{transferResponse.Token}";
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, waitKey, transferResponse);
+                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, $"{connection.Key}:{transferResponse.Token}", transferResponse);
                     break;
                 case MessageCode.PeerTransferRequest:
-                    var x = PeerTransferRequestIncoming.Parse(message);
-                    Console.WriteLine($"[PEER TRANSFER REQUEST]: {x.Filename} {x.Token}");
-                    var token = $"{connection.Key}:{x.Filename}";
-                    Console.WriteLine($"[COMPLETING WAIT]: {connection.Key} {x.Filename}");
-                    MessageWaiter.Complete(MessageCode.PeerTransferRequest, token, x);
+                    var transferRequest = PeerTransferRequestIncoming.Parse(message);
+                    MessageWaiter.Complete(MessageCode.PeerTransferRequest, $"{connection.Key}:{transferRequest.Filename}", transferRequest);
 
                     break;
                 case MessageCode.PeerQueueFailed:
@@ -521,7 +487,7 @@ namespace Soulseek.NET
 
         private async void ServerMessageHandler(IMessageConnection connection, Message message)
         {
-            Console.WriteLine($"[MESSAGE]: {message.Code}");
+            //Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
 
             switch (message.Code)
             {
@@ -532,9 +498,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerLogin:
-                    Console.WriteLine($"[SERVER LOGIN]");
                     MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
-                    Console.WriteLine($"[SERVER LOGIN COMPLATE]");
                     break;
 
                 case MessageCode.ServerRoomList:
@@ -562,47 +526,9 @@ namespace Soulseek.NET
                     Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
-
-            Console.WriteLine($"[MESSAGE DONE]");
         }
 
         #endregion Private Methods
-
-        //private IConnection GetPeerConnection(PeerConnectionKey key)
-        //{
-        //    var options = new ConnectionOptions()
-        //    {
-        //        ConnectTimeout = 15,
-        //        ReadTimeout = 0,
-        //        BufferSize = Options.ConnectionOptions.BufferSize,
-        //    };
-
-        //    if (key.Type == "P")
-        //    {
-        //        var conn = new MessageConnection(ConnectionType.Peer, key.IPAddress.ToString(), key.Port, options)
-        //        {
-        //            Context = key
-        //        };
-
-        //        conn.MessageReceived += OnPeerConnectionMessageReceived;
-        //        conn.StateChanged += OnPeerConnectionStateChanged;
-        //        return conn;
-        //    }
-        //    else if (key.Type == "F")
-        //    {
-        //        var conn = new TransferConnection(key.IPAddress.ToString(), key.Port, options)
-        //        {
-        //            Context = key
-        //        };
-
-        //        conn.StateChanged += OnPeerConnectionStateChanged;
-        //        return conn;
-        //    }
-        //    else
-        //    {
-        //        throw new ConnectionException($"Unrecognized conection type '{key.Type}'; expected 'P' or 'F'");
-        //    }
-        //}
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
