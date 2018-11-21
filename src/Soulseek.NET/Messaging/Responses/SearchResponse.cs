@@ -45,7 +45,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         public int FreeUploadSlots { get; internal set; }
         public long QueueLength { get; internal set; }
-        public int Ticket { get; internal set; }
+        public int Token { get; internal set; }
         public int UploadSpeed { get; internal set; }
         public string Username { get; internal set; }
 
@@ -82,7 +82,7 @@ namespace Soulseek.NET.Messaging.Responses
             var response = new SearchResponse
             {
                 Username = reader.ReadString(),
-                Ticket = reader.ReadInteger(),
+                Token = reader.ReadInteger(),
                 FileCount = reader.ReadInteger()
             };
 
