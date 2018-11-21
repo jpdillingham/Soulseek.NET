@@ -39,5 +39,6 @@ namespace Soulseek.NET
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
         public ConnectionOptions PeerConnectionOptions { get; set; } = new ConnectionOptions();
+        public ConnectionOptions TransferConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }
