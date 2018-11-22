@@ -1,4 +1,4 @@
-﻿  // <copyright file="SoulseekClient.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -43,6 +43,10 @@ namespace Soulseek.NET
         {
         }
 
+        #endregion Public Constructors
+
+        #region Internal Constructors
+
         internal SoulseekClient(
             string address,
             int port,
@@ -59,7 +63,7 @@ namespace Soulseek.NET
             MessageWaiter = messageWaiter ?? new MessageWaiter(Options.MessageTimeout);
         }
 
-        #endregion Public Constructors
+        #endregion Internal Constructors
 
         #region Public Events
 
@@ -121,11 +125,11 @@ namespace Soulseek.NET
 
         #region Private Properties
 
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
         private IConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
         private IMessageWaiter MessageWaiter { get; set; }
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
 
@@ -134,7 +138,8 @@ namespace Soulseek.NET
         #region Public Methods
 
         /// <summary>
-        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="cancellationToken"/>.
+        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
+        ///     specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
@@ -155,40 +160,12 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally specified <paramref name="cancellationToken"/> and <paramref name="connection"/>.
-        /// </summary>
-        /// <param name="username">The user to browse.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <param name="connection">The peer connection over which to send the browse request.</param>
-        /// <returns>The operation response.</returns>
-        internal async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
-        {
-            try
-            {
-                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
-
-                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
-                {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                });
-
-                await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
-
-                var response = await browseWait;
-                return response;
-            }
-            catch (Exception ex)
-            {
-                throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
-            }
-        }
-
-        /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionStateException">Thrown when the client is already connected, or is transitioning between states.</exception>
+        /// <exception cref="ConnectionStateException">
+        ///     Thrown when the client is already connected, or is transitioning between states.
+        /// </exception>
         public async Task ConnectAsync()
         {
             if (ServerConnection.State == ConnectionState.Connected)
@@ -241,73 +218,6 @@ namespace Soulseek.NET
         public async Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
             return await DownloadAsync(username, filename, cancellationToken, null);
-        }
-
-        internal async Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
-        {
-            try
-            {
-                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-
-                var downloadKey = $"{username}:{filename}";
-
-                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
-                {
-                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, downloadKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                });
-
-                var wait = MessageWaiter.WaitIndefinitely<byte[]>(MessageCode.PeerDownloadResponse, downloadKey, cancellationToken);
-
-                // request the file from the peer using a new token.  wait for the response, which will be identified with the token.
-                var token = new Random().Next();
-                var responseToken = $"{connection.Key}:{token}";
-                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, responseToken, cancellationToken);
-
-                // the peer will eventually signal that it is ready for the transfer by sending a transfer request, which will be identififed with a new token
-                // and the filename.  wait for that message.
-                var requestToken = $"{connection.Key}:{filename}";
-                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, requestToken, cancellationToken);
-
-                await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
-
-                var transferResponse = await peerTransferResponse;
-
-                if (transferResponse.Allowed)
-                {
-                    Console.WriteLine($"TODO: download now");
-                }
-                else
-                {
-                    //Console.WriteLine($"Download disallowed; wait for peer to call back.  Token: {transferRequest.Token}, Filename: {transferRequest.Filename}");
-                    var transferRequest = await peerTransferRequestResponse;
-
-                    // add the request to the list of pending downloads
-                    if (PendingDownloads.TryGetValue(username, out var downloads))
-                    {
-                        downloads.TryAdd(transferRequest.Token, transferRequest);
-                    }
-                    else
-                    {
-                        var initialDownloads = new ConcurrentDictionary<int, PeerTransferRequestIncoming>();
-                        initialDownloads.TryAdd(transferRequest.Token, transferRequest);
-
-                        PendingDownloads.AddOrUpdate(username, initialDownloads, (key, existingDownloads) =>
-                        {
-                            existingDownloads.TryAdd(transferRequest.Token, transferRequest);
-                            return existingDownloads;
-                        });
-                    }
-
-                    // respond to the peer that we are ready to start
-                    await connection.SendMessageAsync(new PeerTransferResponseOutgoing(transferRequest.Token, true, 0, string.Empty).ToMessage());
-                }
-
-                return await wait;
-            }
-            catch (Exception ex)
-            {
-                throw new BrowseException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
-            }
         }
 
         /// <summary>
@@ -390,6 +300,108 @@ namespace Soulseek.NET
 
         #endregion Public Methods
 
+        #region Internal Methods
+
+        /// <summary>
+        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
+        ///     specified <paramref name="cancellationToken"/> and <paramref name="connection"/>.
+        /// </summary>
+        /// <param name="username">The user to browse.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="connection">The peer connection over which to send the browse request.</param>
+        /// <returns>The operation response.</returns>
+        internal async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        {
+            try
+            {
+                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
+
+                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
+                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
+                {
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                });
+
+                await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
+
+                var response = await browseWait;
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
+            }
+        }
+
+        internal async Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        {
+            try
+            {
+                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
+
+                var downloadKey = $"{username}:{filename}";
+
+                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
+                {
+                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, downloadKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                });
+
+                var wait = MessageWaiter.WaitIndefinitely<byte[]>(MessageCode.PeerDownloadResponse, downloadKey, cancellationToken);
+
+                // request the file from the peer using a new token. wait for the response, which will be identified with the token.
+                var token = new Random().Next();
+                var responseToken = $"{connection.Key}:{token}";
+                var peerTransferResponse = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, responseToken, cancellationToken);
+
+                // the peer will eventually signal that it is ready for the transfer by sending a transfer request, which will be
+                // identififed with a new token and the filename. wait for that message.
+                var requestToken = $"{connection.Key}:{filename}";
+                var peerTransferRequestResponse = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, requestToken, cancellationToken);
+
+                await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
+
+                var transferResponse = await peerTransferResponse;
+
+                if (transferResponse.Allowed)
+                {
+                    Console.WriteLine($"TODO: download now");
+                }
+                else
+                {
+                    //Console.WriteLine($"Download disallowed; wait for peer to call back.  Token: {transferRequest.Token}, Filename: {transferRequest.Filename}");
+                    var transferRequest = await peerTransferRequestResponse;
+
+                    // add the request to the list of pending downloads
+                    if (PendingDownloads.TryGetValue(username, out var downloads))
+                    {
+                        downloads.TryAdd(transferRequest.Token, transferRequest);
+                    }
+                    else
+                    {
+                        var initialDownloads = new ConcurrentDictionary<int, PeerTransferRequestIncoming>();
+                        initialDownloads.TryAdd(transferRequest.Token, transferRequest);
+
+                        PendingDownloads.AddOrUpdate(username, initialDownloads, (key, existingDownloads) =>
+                        {
+                            existingDownloads.TryAdd(transferRequest.Token, transferRequest);
+                            return existingDownloads;
+                        });
+                    }
+
+                    // respond to the peer that we are ready to start
+                    await connection.SendMessageAsync(new PeerTransferResponseOutgoing(transferRequest.Token, true, 0, string.Empty).ToMessage());
+                }
+
+                return await wait;
+            }
+            catch (Exception ex)
+            {
+                throw new BrowseException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+            }
+        }
+
+        #endregion Internal Methods
+
         #region Protected Methods
 
         /// <summary>
@@ -418,7 +430,96 @@ namespace Soulseek.NET
 
         #region Private Methods
 
-        private async Task ConnectToPeerHandler(ConnectToPeerResponse response)
+        private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
+        {
+            var request = new GetPeerAddressRequest(username);
+            await ServerConnection.SendMessageAsync(request.ToMessage());
+
+            return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
+        }
+
+        private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
+        {
+            var address = await GetPeerAddressAsync(username);
+            return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
+        }
+
+        private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
+        {
+            return new MessageConnection(ConnectionType.Server, Address, Port, options)
+            {
+                ConnectHandler = (conn) =>
+                {
+                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
+                },
+                DisconnectHandler = (conn, message) =>
+                {
+                    Disconnect();
+                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message))).Forget();
+                },
+                MessageHandler = HandleServerMessage,
+            };
+        }
+
+        private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
+        {
+            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, options)
+            {
+                Context = connectToPeerResponse,
+                ConnectHandler = async (conn) =>
+                {
+                    var context = (ConnectToPeerResponse)conn.Context;
+                    var request = new PierceFirewallRequest(context.Token).ToMessage();
+                    await conn.SendMessageAsync(request, suppressCodeNormalization: true);
+                },
+                DisconnectHandler = async (conn, message) =>
+                {
+                    await MessageConnectionManager.Remove(conn);
+                },
+                MessageHandler = HandlePeerMessage,
+            };
+
+            await MessageConnectionManager.Add(connection);
+            return connection;
+        }
+
+        private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username, ConnectionOptions options)
+        {
+            var key = await GetPeerConnectionKeyAsync(username);
+            var connection = MessageConnectionManager.Get(key);
+
+            if (connection != default(IMessageConnection))
+            {
+                if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
+                {
+                    await MessageConnectionManager.Remove(connection);
+                    connection = default(IMessageConnection);
+                }
+            }
+
+            if (connection == default(IMessageConnection))
+            {
+                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, options)
+                {
+                    ConnectHandler = async (conn) =>
+                    {
+                        var token = new Random().Next(1, 2147483647);
+                        await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                    },
+                    DisconnectHandler = async (conn, msg) =>
+                    {
+                        await MessageConnectionManager.Remove(conn);
+                    },
+                    MessageHandler = HandlePeerMessage,
+                };
+
+                await MessageConnectionManager.Add(connection);
+            }
+
+            return connection;
+        }
+
+        private async Task HandleConnectToPeer(ConnectToPeerResponse response)
         {
             if (response.Type == "F")
             {
@@ -453,15 +554,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
-        {
-            var request = new GetPeerAddressRequest(username);
-            await ServerConnection.SendMessageAsync(request.ToMessage());
-
-            return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
-        }
-
-        private void PeerMessageHandler(IMessageConnection connection, Message message)
+        private void HandlePeerMessage(IMessageConnection connection, Message message)
         {
             Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
             switch (message.Code)
@@ -478,33 +571,37 @@ namespace Soulseek.NET
                 case MessageCode.PeerBrowseResponse:
                     MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key.Username, BrowseResponse.Parse(message));
                     break;
+
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
                     MessageWaiter.Complete(MessageCode.PeerTransferResponse, $"{connection.Key}:{transferResponse.Token}", transferResponse);
                     break;
+
                 case MessageCode.PeerTransferRequest:
                     var transferRequest = PeerTransferRequestIncoming.Parse(message);
                     MessageWaiter.Complete(MessageCode.PeerTransferRequest, $"{connection.Key}:{transferRequest.Filename}", transferRequest);
 
                     break;
+
                 case MessageCode.PeerQueueFailed:
                     var pqfResponse = PeerQueueFailedResponse.Parse(message);
                     Console.WriteLine($"[PEER QUEUE FAILED]: {pqfResponse.Filename}; {pqfResponse.Message}");
 
                     break;
+
                 default:
                     Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
         }
 
-        private async Task PrivateMessageHandler(PrivateMessage message)
+        private async Task HandlePrivateMessage(PrivateMessage message)
         {
             Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
             await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
         }
 
-        private async void ServerMessageHandler(IMessageConnection connection, Message message)
+        private async void HandleServerMessage(IMessageConnection connection, Message message)
         {
             Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
 
@@ -529,11 +626,11 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await ConnectToPeerHandler(ConnectToPeerResponse.Parse(message));
+                    await HandleConnectToPeer(ConnectToPeerResponse.Parse(message));
                     break;
 
                 case MessageCode.ServerPrivateMessages:
-                    await PrivateMessageHandler(PrivateMessage.Parse(message));
+                    await HandlePrivateMessage(PrivateMessage.Parse(message));
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
@@ -548,86 +645,5 @@ namespace Soulseek.NET
         }
 
         #endregion Private Methods
-
-        private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
-        {
-            var address = await GetPeerAddressAsync(username);
-            return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
-        }
-
-        private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
-        {
-            return new MessageConnection(ConnectionType.Server, Address, Port, options)
-            {
-                ConnectHandler = (conn) =>
-                {
-                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
-                },
-                DisconnectHandler = (conn, message) =>
-                {
-                    Disconnect();
-                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message))).Forget();
-                },
-                MessageHandler = ServerMessageHandler,
-            };
-        }
-
-        private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username, ConnectionOptions options)
-        {
-            var key = await GetPeerConnectionKeyAsync(username);
-            var connection = MessageConnectionManager.Get(key);
-
-            if (connection != default(IMessageConnection))
-            {
-                if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
-                {
-                    await MessageConnectionManager.Remove(connection);
-                    connection = default(IMessageConnection);
-                }
-            }
-
-            if (connection == default(IMessageConnection))
-            {
-                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, options)
-                {
-                    ConnectHandler = async (conn) =>
-                    {
-                        var token = new Random().Next(1, 2147483647);
-                        await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
-                    },
-                    DisconnectHandler = async (conn, msg) =>
-                    {
-                        await MessageConnectionManager.Remove(conn);
-                    },
-                    MessageHandler = PeerMessageHandler,
-                };
-
-                await MessageConnectionManager.Add(connection);
-            }
-
-            return connection;
-        }
-
-        private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
-        {
-            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, options)
-            {
-                Context = connectToPeerResponse,
-                ConnectHandler = async (conn) =>
-                {
-                    var context = (ConnectToPeerResponse)conn.Context;
-                    var request = new PierceFirewallRequest(context.Token).ToMessage();
-                    await conn.SendMessageAsync(request, suppressCodeNormalization: true);
-                },
-                DisconnectHandler = async (conn, message) =>
-                {
-                    await MessageConnectionManager.Remove(conn);
-                },
-                MessageHandler = PeerMessageHandler,
-            };
-
-            await MessageConnectionManager.Add(connection);
-            return connection;
-        }
     }
 }
