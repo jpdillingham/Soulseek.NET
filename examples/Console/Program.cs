@@ -74,10 +74,12 @@
 
                         var task = Task.Run(() =>
                         {
+                            var random = new Random();
+
                             Parallel.ForEach(files, async (file) =>
                             {
                                 Console.WriteLine($"Attempting to download {file}");
-                                var bytes = await client.DownloadAsync(peer, file);
+                                var bytes = await client.DownloadAsync(peer, file, random.Next());
                                 var filename = $@"C:\tmp\{Path.GetFileName(file)}";
 
                                 Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
@@ -95,7 +97,7 @@
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
                         var file = string.Join(' ', cmd.Split(' ').Skip(2));
 
-                        var bytes = await client.DownloadAsync(peer, file);
+                        var bytes = await client.DownloadAsync(peer, file, new Random().Next());
                         var filename = $@"C:\tmp\{Path.GetFileName(file)}";
 
                         Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
