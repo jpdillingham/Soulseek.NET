@@ -127,8 +127,8 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
-        private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private IMessageWaiter MessageWaiter { get; set; }
+        private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
@@ -430,17 +430,14 @@ namespace Soulseek.NET
 
         #region Private Methods
 
-        private async Task<GetPeerAddressResponse> GetPeerAddressAsync(string username)
+        private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
+            var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
+
             var request = new GetPeerAddressRequest(username);
             await ServerConnection.SendMessageAsync(request.ToMessage());
 
-            return await MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
-        }
-
-        private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
-        {
-            var address = await GetPeerAddressAsync(username);
+            var address = await addressWait;
             return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
         }
 
@@ -480,6 +477,17 @@ namespace Soulseek.NET
             };
 
             await PeerConnectionManager.Add(connection);
+            return connection;
+        }
+
+        private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
+        {
+            var connection = new Connection(connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, options);
+            await connection.ConnectAsync();
+
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            await connection.SendAsync(request.ToMessage().ToByteArray());
+
             return connection;
         }
 
@@ -523,26 +531,19 @@ namespace Soulseek.NET
         {
             if (response.Type == "F")
             {
-                // check to make sure we are expecting a download from this peer, and if so, get the dict of pending downloads
                 if (PendingDownloads.TryGetValue(response.Username, out var pendingDownloads))
                 {
-                    // connect, pierce the firewall, and retrieve the transfer token
-                    var t = new Connection(response.IPAddress.ToString(), response.Port, Options.TransferConnectionOptions);
-                    await t.ConnectAsync();
+                    var connection = await GetTransferConnectionAsync(response, Options.TransferConnectionOptions);
 
-                    var request = new PierceFirewallRequest(response.Token);
-                    await t.SendAsync(request.ToMessage().ToByteArray());
-
-                    var tokenBytes = await t.ReadAsync(4);
+                    var tokenBytes = await connection.ReadAsync(4);
                     var token = BitConverter.ToInt32(tokenBytes, 0);
 
-                    // check to make sure we are expecting this particular file, and if so grab the original request
                     if (pendingDownloads.TryGetValue(token, out var peerTransferRequestIncoming))
                     {
-                        await t.SendAsync(new byte[8]);
+                        await connection.SendAsync(new byte[8]);
 
-                        var bytes = await t.ReadAsync(peerTransferRequestIncoming.Size);
-                        t.Disconnect($"Transfer complete.");
+                        var bytes = await connection.ReadAsync(peerTransferRequestIncoming.Size);
+                        connection.Disconnect($"Transfer complete.");
 
                         MessageWaiter.Complete(MessageCode.PeerDownloadResponse, $"{response.Username}:{peerTransferRequestIncoming.Filename}", bytes);
                     }
