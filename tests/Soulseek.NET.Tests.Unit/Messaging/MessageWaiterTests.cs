@@ -29,7 +29,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     {
         [Trait("Category", "Wait Completion")]
         [Fact(DisplayName = "Complete dequeues wait")]
-        public void Complete_Dequeues_Wait()
+        public async Task Complete_Dequeues_Wait()
         {
             using (var waiter = new MessageWaiter())
             {
@@ -37,17 +37,17 @@ namespace Soulseek.NET.Tests.Unit.Messaging
                 var task = waiter.Wait<Guid>(MessageCode.ServerLogin);
                 waiter.Complete(MessageCode.ServerLogin, result);
 
-                var waitResult = task.Result;
+                var waitResult = await task;
 
                 var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
 
                 var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var peek = queue.TryPeek(out var wait);
 
                 Assert.NotNull(queue);
                 Assert.Empty(queue);
-                Assert.Null(wait);
+                Assert.False(peek);
             }
         }
 
