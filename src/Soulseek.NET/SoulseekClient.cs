@@ -52,14 +52,14 @@ namespace Soulseek.NET
             int port,
             SoulseekClientOptions options,
             IMessageConnection serverConnection = null,
-            IConnectionManager<IMessageConnection> messageConnectionManager = null,
+            IConnectionManager<IMessageConnection> peerConnectionManager = null,
             IMessageWaiter messageWaiter = null)
         {
             Address = address;
             Port = port;
             Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
-            MessageConnectionManager = messageConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
+            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new MessageWaiter(Options.MessageTimeout);
         }
 
@@ -127,7 +127,7 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
-        private IConnectionManager<IMessageConnection> MessageConnectionManager { get; set; }
+        private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private IMessageWaiter MessageWaiter { get; set; }
         private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
         private Random Random { get; set; } = new Random();
@@ -474,25 +474,25 @@ namespace Soulseek.NET
                 },
                 DisconnectHandler = async (conn, message) =>
                 {
-                    await MessageConnectionManager.Remove(conn);
+                    await PeerConnectionManager.Remove(conn);
                 },
                 MessageHandler = HandlePeerMessage,
             };
 
-            await MessageConnectionManager.Add(connection);
+            await PeerConnectionManager.Add(connection);
             return connection;
         }
 
         private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username, ConnectionOptions options)
         {
             var key = await GetPeerConnectionKeyAsync(username);
-            var connection = MessageConnectionManager.Get(key);
+            var connection = PeerConnectionManager.Get(key);
 
             if (connection != default(IMessageConnection))
             {
                 if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
                 {
-                    await MessageConnectionManager.Remove(connection);
+                    await PeerConnectionManager.Remove(connection);
                     connection = default(IMessageConnection);
                 }
             }
@@ -508,12 +508,12 @@ namespace Soulseek.NET
                     },
                     DisconnectHandler = async (conn, msg) =>
                     {
-                        await MessageConnectionManager.Remove(conn);
+                        await PeerConnectionManager.Remove(conn);
                     },
                     MessageHandler = HandlePeerMessage,
                 };
 
-                await MessageConnectionManager.Add(connection);
+                await PeerConnectionManager.Add(connection);
             }
 
             return connection;
@@ -595,12 +595,6 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task HandlePrivateMessage(PrivateMessage message)
-        {
-            Console.WriteLine($"[{message.Timestamp}][{message.Username}]: {message.Message}");
-            await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(message.Id).ToMessage());
-        }
-
         private async void HandleServerMessage(IMessageConnection connection, Message message)
         {
             Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
@@ -630,7 +624,9 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerPrivateMessages:
-                    await HandlePrivateMessage(PrivateMessage.Parse(message));
+                    var pm = PrivateMessage.Parse(message);
+                    Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
+                    await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage());
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
