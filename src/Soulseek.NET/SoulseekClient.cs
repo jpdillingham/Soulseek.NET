@@ -129,7 +129,7 @@ namespace Soulseek.NET
         private bool Disposed { get; set; } = false;
         private IMessageWaiter MessageWaiter { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
-        private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> PendingDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
+        private ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>> QueuedDownloads { get; set; } = new ConcurrentDictionary<string, ConcurrentDictionary<int, PeerTransferRequestIncoming>>();
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
 
@@ -372,7 +372,7 @@ namespace Soulseek.NET
                     var transferRequest = await peerTransferRequestResponse;
 
                     // add the request to the list of pending downloads
-                    if (PendingDownloads.TryGetValue(username, out var downloads))
+                    if (QueuedDownloads.TryGetValue(username, out var downloads))
                     {
                         downloads.TryAdd(transferRequest.Token, transferRequest);
                     }
@@ -381,7 +381,7 @@ namespace Soulseek.NET
                         var initialDownloads = new ConcurrentDictionary<int, PeerTransferRequestIncoming>();
                         initialDownloads.TryAdd(transferRequest.Token, transferRequest);
 
-                        PendingDownloads.AddOrUpdate(username, initialDownloads, (key, existingDownloads) =>
+                        QueuedDownloads.AddOrUpdate(username, initialDownloads, (key, existingDownloads) =>
                         {
                             existingDownloads.TryAdd(transferRequest.Token, transferRequest);
                             return existingDownloads;
@@ -531,7 +531,7 @@ namespace Soulseek.NET
         {
             if (response.Type == "F")
             {
-                if (PendingDownloads.TryGetValue(response.Username, out var pendingDownloads))
+                if (QueuedDownloads.TryGetValue(response.Username, out var pendingDownloads))
                 {
                     var connection = await GetTransferConnectionAsync(response, Options.TransferConnectionOptions);
 
