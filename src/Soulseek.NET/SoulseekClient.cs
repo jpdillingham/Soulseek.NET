@@ -355,24 +355,24 @@ namespace Soulseek.NET
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
 
                 var incomingResponse = await incomingResponseWait;
-                Console.WriteLine($"Response");
 
                 if (incomingResponse.Allowed)
                 {
-                    Console.WriteLine($"TODO: download now");
+                    // in testing, peers have, without exception, returned Allowed = false, Message = Queued for this request, regardless of number of available slots and/or queue depth.
+                    // this condition is likely only used when uploading to a peer, which is not supported.
+                    throw new DownloadException($"A condition believed to be unreachable (PeerTransferResponseIncoming.Allowed = true) was reached.  Please report this in a GitHub issue and provide context.");
                 }
                 else
                 {
                     var incomingRequest = await incomingRequestWait;
 
-                    download.Size = incomingRequest.Size;
+                    download.Size = incomingRequest.FileSize;
                     download.RemoteToken = incomingRequest.Token;
 
                     QueuedDownloads.TryRemove(download.Token, out var _);
                     ActiveDownloads.TryAdd(download.RemoteToken, download);
 
                     await connection.SendMessageAsync(new PeerTransferResponseOutgoing(download.RemoteToken, true, download.Size, string.Empty).ToMessage());
-                    Console.WriteLine($"Confirm sent");
                 }
 
                 return await downloadWait;
