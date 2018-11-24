@@ -20,7 +20,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         public TransferDirection Direction { get; private set; }
         public string Filename { get; private set; }
-        public int Size { get; private set; }
+        public int FileSize { get; private set; }
         public int Token { get; private set; }
 
         public static PeerTransferRequestIncoming Parse(Message message)
