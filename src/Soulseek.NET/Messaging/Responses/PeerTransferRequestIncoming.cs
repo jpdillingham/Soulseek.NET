@@ -37,7 +37,7 @@ namespace Soulseek.NET.Messaging.Responses
                 Direction = (TransferDirection)reader.ReadInteger(),
                 Token = reader.ReadInteger(),
                 Filename = reader.ReadString(),
-                Size = reader.ReadInteger(),
+                FileSize = reader.ReadInteger(),
             };
 
             return response;
