@@ -465,10 +465,15 @@ namespace Soulseek.NET
 
         private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            var connection = new Connection(connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, options);
+            return await GetTransferConnectionAsync(connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectToPeerResponse.Token, options);
+        }
+
+        private async Task<IConnection> GetTransferConnectionAsync(string ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var connection = new Connection(ipAddress, port, options);
             await connection.ConnectAsync();
 
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            var request = new PierceFirewallRequest(token);
             await connection.SendAsync(request.ToMessage().ToByteArray());
 
             return connection;
