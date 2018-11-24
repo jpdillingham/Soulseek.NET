@@ -274,4 +274,25 @@ namespace Soulseek.NET
         {
         }
     }
+
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class DownloadException : SoulseekClientException
+    {
+        public DownloadException()
+            : base()
+        {
+        }
+
+        public DownloadException(string message)
+            : base(message)
+        {
+        }
+
+        public DownloadException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+    }
 }
