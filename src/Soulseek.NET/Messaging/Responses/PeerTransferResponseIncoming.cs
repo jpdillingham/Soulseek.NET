@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferResponse.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferResponseIncoming.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,9 +12,6 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    using System;
-    using System.Net;
-
     public sealed class PeerTransferResponseIncoming
     {
         #region Private Constructors
@@ -29,7 +26,7 @@ namespace Soulseek.NET.Messaging.Responses
 
         public int Token { get; private set; }
         public bool Allowed { get; private set; }
-        public long FileSize { get; private set; }
+        public int FileSize { get; private set; }
         public string Message { get; private set; }
 
         #endregion Public Properties
@@ -53,7 +50,7 @@ namespace Soulseek.NET.Messaging.Responses
 
             if (response.Allowed)
             {
-                response.FileSize = reader.ReadLong();
+                response.FileSize = reader.ReadInteger();
             }
             else
             {
