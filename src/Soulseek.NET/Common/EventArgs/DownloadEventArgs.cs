@@ -12,15 +12,48 @@
 
 namespace Soulseek.NET
 {
-    public class DownloadEventArgs : NetworkEventArgs
+    using System;
+
+    public class DownloadEventArgs : EventArgs
     {
-        public DownloadEventArgs(NetworkEventArgs e)
-            : base(e)
+        internal DownloadEventArgs(Download download)
         {
+            Username = download.Username;
+            Filename = download.Filename;
+            Token = download.Token;
+            Size = download.Size;
         }
 
-        public string Username { get; set; }
-        public string Filename { get; set; }
-        public int Token { get; set; }
+        public string Username { get; private set; }
+        public string Filename { get; private set; }
+        public int Token { get; private set; }
+        public int Size { get; private set; }
+    }
+
+    public class DownloadProgressEventArgs : DownloadEventArgs
+    {
+        internal DownloadProgressEventArgs(Download download, int bytesDownloaded)
+            : base(download)
+        {
+            BytesDownloaded = bytesDownloaded;
+        }
+
+        public int BytesDownloaded { get; private set; }
+        public double PercentComplete => (BytesDownloaded / (double)Size) * 100;
+    }
+
+    public class DownloadStateChangedEventArgs : DownloadEventArgs
+    {
+        internal DownloadStateChangedEventArgs(Download download)
+            : base(download)
+        {
+            State = download.State;
+            PlaceInQueue = download.PlaceInQueue;
+            Data = download.Data;
+        }
+
+        public DownloadState State { get; private set; }
+        public int PlaceInQueue { get; internal set; }
+        public byte[] Data { get; internal set; }
     }
 }
