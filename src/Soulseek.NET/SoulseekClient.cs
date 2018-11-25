@@ -78,6 +78,14 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<DataReceivedEventArgs> DataReceived;
 
+        public event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
+
+        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+
+        public event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
+
+        public event EventHandler<DownloadEventArgs> DownloadStarted;
+
         /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
@@ -87,12 +95,8 @@ namespace Soulseek.NET
         ///     Occurs when a new search result is received.
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
-        public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
-        public event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
-        public event EventHandler<DownloadEventArgs> DownloadStarted;
-        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
-        public event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
+        public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         #endregion Public Events
 
@@ -132,18 +136,42 @@ namespace Soulseek.NET
 
         #region Private Properties
 
+        private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
         private IMessageWaiter MessageWaiter { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
 
         #endregion Private Properties
 
         #region Public Methods
+
+        /// <summary>
+        ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/>
+        ///     and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ConnectionStateException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
+        /// </exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        public async Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: false);
+        }
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -263,24 +291,6 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
-        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionStateException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
-        /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public async Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
-        {
-            await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: false);
-        }
-
-        /// <summary>
         ///     Asynchronously searches for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
         ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
@@ -289,15 +299,20 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionStateException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
-        /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
+        /// <exception cref="ConnectionStateException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
+        /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true);
         }
-
 
         private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
@@ -420,7 +435,8 @@ namespace Soulseek.NET
                     MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 });
 
-                // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the peer is ready to send the file.
+                // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
+                // peer is ready to send the file.
                 var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, Key(download.Username, download.Token), cancellationToken);
                 var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, Key(download.Username, download.Filename), cancellationToken);
 
@@ -433,8 +449,9 @@ namespace Soulseek.NET
 
                 if (incomingResponse.Allowed)
                 {
-                    // in testing, peers have, without exception, returned Allowed = false, Message = Queued for this request, regardless of number of available slots and/or queue depth.
-                    // this condition is likely only used when uploading to a peer, which is not supported.
+                    // in testing, peers have, without exception, returned Allowed = false, Message = Queued for this request,
+                    // regardless of number of available slots and/or queue depth. this condition is likely only used when
+                    // uploading to a peer, which is not supported.
                     throw new DownloadException($"A condition believed to be unreachable (PeerTransferResponseIncoming.Allowed = true) was reached.  Please report this in a GitHub issue and provide context.");
                 }
                 else
@@ -503,25 +520,6 @@ namespace Soulseek.NET
         #endregion Protected Methods
 
         #region Private Methods
-
-        private IPAddress ResolveIPAddress(string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                var dns = Dns.GetHostEntry(address);
-
-                if (!dns.AddressList.Any())
-                {
-                    throw new SoulseekClientException($"Unable to resolve hostname {address}.");
-                }
-
-                return dns.AddressList[0];
-            }
-        }
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
@@ -755,6 +753,25 @@ namespace Soulseek.NET
         private string Key(params object[] parts)
         {
             return string.Join(":", parts);
+        }
+
+        private IPAddress ResolveIPAddress(string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                var dns = Dns.GetHostEntry(address);
+
+                if (!dns.AddressList.Any())
+                {
+                    throw new SoulseekClientException($"Unable to resolve hostname {address}.");
+                }
+
+                return dns.AddressList[0];
+            }
         }
 
         #endregion Private Methods
