@@ -12,6 +12,8 @@
 
 namespace Soulseek.NET
 {
+    using Soulseek.NET.Tcp;
+
     internal class Download
     {
         internal Download(string username, string filename, int token)
@@ -28,6 +30,8 @@ namespace Soulseek.NET
         public int Size { get; set; }
         public int PlaceInQueue { get; set; }
         public DownloadState State { get; set; }
+        public byte[] Data { get; set; }
+        public IConnection Connection { get; set; }
         public string WaitKey => $"{Username}:{Filename}:{Token}";
     }
 }
