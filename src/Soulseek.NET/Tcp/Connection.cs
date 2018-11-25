@@ -25,10 +25,9 @@ namespace Soulseek.NET.Tcp
     {
         #region Internal Constructors
 
-        internal Connection(string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
-            Address = address;
-            IPAddress = ResolveIPAddress(Address);
+            IPAddress = ipAddress;
             Port = port;
             Options = options ?? new ConnectionOptions();
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
@@ -65,7 +64,6 @@ namespace Soulseek.NET.Tcp
 
         #region Public Properties
 
-        public string Address { get; protected set; }
         public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
         public object Context { get; set; }
         public Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
@@ -275,24 +273,6 @@ namespace Soulseek.NET.Tcp
                 }
 
                 Disposed = true;
-            }
-        }
-        protected IPAddress ResolveIPAddress(string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                var dns = Dns.GetHostEntry(address);
-
-                if (!dns.AddressList.Any())
-                {
-                    throw new ConnectionException($"Unable to resolve hostname {address}.");
-                }
-
-                return dns.AddressList[0];
             }
         }
 

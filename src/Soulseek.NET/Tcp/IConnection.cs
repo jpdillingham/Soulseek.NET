@@ -20,7 +20,6 @@ namespace Soulseek.NET.Tcp
     {
         #region Public Properties
 
-        string Address { get; }
         Action<IConnection> ConnectHandler { get; set; }
         object Context { get; set; }
         Action<IConnection, byte[]> DataReceivedHandler { get; set; }
