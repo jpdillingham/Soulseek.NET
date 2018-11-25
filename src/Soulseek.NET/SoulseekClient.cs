@@ -12,11 +12,6 @@
 
 namespace Soulseek.NET
 {
-    using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Requests;
-    using Soulseek.NET.Messaging.Responses;
-    using Soulseek.NET.Messaging.Tcp;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -24,6 +19,11 @@ namespace Soulseek.NET
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Requests;
+    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -80,7 +80,7 @@ namespace Soulseek.NET
 
         public event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
 
-        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgress;
 
         public event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
 
@@ -632,7 +632,7 @@ namespace Soulseek.NET
 
         private async Task HandleConnectToPeer(ConnectToPeerResponse response)
         {
-            if (response.Type == "F")
+            if (response.Type == "F" && !ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
             {
                 var connection = await GetTransferConnectionAsync(response, Options.TransferConnectionOptions);
                 var tokenBytes = await connection.ReadAsync(4);
@@ -652,7 +652,14 @@ namespace Soulseek.NET
                             BytesTotal = bytesTotal,
                         };
 
-                        Task.Run(() => DownloadProgressUpdated?.Invoke(this, e));
+                        if (Options.UseSynchronousDownloadProgressEvents)
+                        {
+                            DownloadProgress?.Invoke(this, e); // ensure order; impacts performance.
+                        }
+                        else
+                        {
+                            Task.Run(() => DownloadProgress?.Invoke(this, e)).Forget();
+                        }
                     };
 
                     await connection.SendAsync(new byte[8]);

@@ -33,7 +33,7 @@ namespace Soulseek.NET
 
         event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
 
-        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgress;
 
         event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
 

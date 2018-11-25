@@ -34,6 +34,8 @@ namespace Soulseek.NET
         /// </summary>
         public int ConcurrentDownloads { get; set; } = 25;
 
+        public bool UseSynchronousDownloadProgressEvents { get; set; } = false;
+
         /// <summary>
         ///     Gets or sets the options for the underlying Tcp connection.
         /// </summary>
