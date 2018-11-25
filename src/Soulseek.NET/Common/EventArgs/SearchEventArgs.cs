@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponseReceivedEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="SearchEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,16 +12,22 @@
 
 namespace Soulseek.NET
 {
+    using System;
     using Soulseek.NET.Messaging.Responses;
 
-    public class SearchResponseReceivedEventArgs
+    public class SearchEventArgs : EventArgs
     {
-        public SearchResponseReceivedEventArgs()
-        {
-        }
-
         public string SearchText { get; set; }
         public int Token { get; set; }
+    }
+
+    public class SearchResponseReceivedEventArgs : SearchEventArgs
+    {
         public SearchResponse Response { get; set; }
+    }
+
+    public class SearchStateChangedEventArgs : SearchEventArgs
+    {
+        public SearchState State { get; set; }
     }
 }
