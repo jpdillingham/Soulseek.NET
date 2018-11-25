@@ -12,6 +12,11 @@
 
 namespace Soulseek.NET
 {
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Requests;
+    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -19,11 +24,6 @@ namespace Soulseek.NET
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Requests;
-    using Soulseek.NET.Messaging.Responses;
-    using Soulseek.NET.Messaging.Tcp;
-    using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -437,8 +437,8 @@ namespace Soulseek.NET
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, Key(download.Username, download.Token), cancellationToken);
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, Key(download.Username, download.Filename), cancellationToken);
+                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, GetKey(download.Username, download.Token), cancellationToken);
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, GetKey(download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
@@ -520,6 +520,11 @@ namespace Soulseek.NET
         #endregion Protected Methods
 
         #region Private Methods
+
+        private string GetKey(params object[] parts)
+        {
+            return string.Join(":", parts);
+        }
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
@@ -684,12 +689,12 @@ namespace Soulseek.NET
 
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, Key(connection.Username, transferResponse.Token), transferResponse);
+                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, GetKey(connection.Username, transferResponse.Token), transferResponse);
                     break;
 
                 case MessageCode.PeerTransferRequest:
                     var transferRequest = PeerTransferRequestIncoming.Parse(message);
-                    MessageWaiter.Complete(MessageCode.PeerTransferRequest, Key(connection.Username, transferRequest.Filename), transferRequest);
+                    MessageWaiter.Complete(MessageCode.PeerTransferRequest, GetKey(connection.Username, transferRequest.Filename), transferRequest);
 
                     break;
 
@@ -748,11 +753,6 @@ namespace Soulseek.NET
                     Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
                     break;
             }
-        }
-
-        private string Key(params object[] parts)
-        {
-            return string.Join(":", parts);
         }
 
         private IPAddress ResolveIPAddress(string address)
