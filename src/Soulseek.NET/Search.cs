@@ -47,7 +47,7 @@ namespace Soulseek.NET
                 AutoReset = false,
             };
 
-            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete($"The search completed after {options.SearchTimeout} seconds of inactivity."); };
+            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchState.Completed | SearchState.TimedOut); };
             SearchTimeoutTimer.Reset();
         }
 
@@ -72,9 +72,14 @@ namespace Soulseek.NET
         public int Token { get; private set; }
 
         /// <summary>
+        ///     Gets the state of the search.
+        /// </summary>
+        public SearchState State { get; private set; } = SearchState.InProgress;
+
+        /// <summary>
         ///     Gets or sets the action invoked upon completion of the search.
         /// </summary>
-        public Action<Search, string> CompleteHandler { get; set; } = (search, message) => { };
+        public Action<Search, SearchState> CompleteHandler { get; set; } = (search, state) => { };
 
         /// <summary>
         ///     Gets or sets the action invoked upon receipt of a search response.
@@ -97,9 +102,9 @@ namespace Soulseek.NET
         ///     Adds the specified <paramref name="response"/> to the list of responses after applying the filters specified in the search options.
         /// </summary>
         /// <param name="response">The response to add.</param>
-        public void AddResponse(SearchResponse response)
+        internal void AddResponse(SearchResponse response)
         {
-            if (response.Token == Token && ResponseMeetsOptionCriteria(response))
+            if (State == SearchState.InProgress && response.Token == Token && ResponseMeetsOptionCriteria(response))
             {
                 response.ParseFiles();
 
@@ -112,7 +117,7 @@ namespace Soulseek.NET
 
                 if (resultCount >= Options.FileLimit)
                 {
-                    Complete($"The search completed after receiving {Options.FileLimit} results.");
+                    Complete(SearchState.Completed | SearchState.FileLimitReached);
                     return;
                 }
 
@@ -125,13 +130,14 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Completes the search with the specified <paramref name="message"/>.
+        ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
-        /// <param name="message">A message indicating how the search was completed.</param>
-        internal void Complete(string message)
+        /// <param name="state">The terminal state of the search.</param>
+        internal void Complete(SearchState state)
         {
             SearchTimeoutTimer.Stop();
-            CompleteHandler(this, message);
+            State = state;
+            CompleteHandler(this, state);
         }
 
         private void Dispose(bool disposing)
