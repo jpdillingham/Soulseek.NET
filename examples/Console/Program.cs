@@ -15,6 +15,10 @@
             {
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
+                client.DownloadQueued += Client_DownloadQueued;
+                client.DownloadStarted += Client_DownloadStarted;
+                client.DownloadCompleted += Client_DownloadCompleted;
+                client.DownloadProgressUpdated += Client_DownloadProgressUpdated;
 
                 await client.ConnectAsync();
 
@@ -118,6 +122,26 @@
                     }
                 }
             }
+        }
+
+        private static void Client_DownloadProgressUpdated(object sender, DownloadProgressUpdatedEventArgs e)
+        {
+            Console.WriteLine($"[PROGRESS]: {e.Filename}: {e.PercentComplete}%");
+        }
+
+        private static void Client_DownloadCompleted(object sender, DownloadCompletedEventArgs e)
+        {
+            Console.WriteLine($"[COMPLETED]: {e.Filename}");
+        }
+
+        private static void Client_DownloadStarted(object sender, DownloadEventArgs e)
+        {
+            Console.WriteLine($"[STARTED]: {e.Filename}");
+        }
+
+        private static void Client_DownloadQueued(object sender, DownloadQueuedEventArgs e)
+        {
+            Console.WriteLine($"[QUEUED]: {e.Filename}");
         }
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
