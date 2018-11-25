@@ -466,7 +466,7 @@ namespace Soulseek.NET
 
         private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, options)
+            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
             {
                 Context = connectToPeerResponse,
                 ConnectHandler = async (conn) =>
@@ -488,10 +488,10 @@ namespace Soulseek.NET
 
         private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            return await GetTransferConnectionAsync(connectToPeerResponse.IPAddress.ToString(), connectToPeerResponse.Port, connectToPeerResponse.Token, options);
+            return await GetTransferConnectionAsync(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, connectToPeerResponse.Token, options);
         }
 
-        private async Task<IConnection> GetTransferConnectionAsync(string ipAddress, int port, int token, ConnectionOptions options)
+        private async Task<IConnection> GetTransferConnectionAsync(IPAddress ipAddress, int port, int token, ConnectionOptions options)
         {
             var connection = new Connection(ipAddress, port, options);
             await connection.ConnectAsync();
@@ -518,7 +518,7 @@ namespace Soulseek.NET
 
             if (connection == default(IMessageConnection))
             {
-                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress.ToString(), key.Port, options)
+                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress, key.Port, options)
                 {
                     ConnectHandler = async (conn) =>
                     {
