@@ -15,20 +15,21 @@ namespace Soulseek.NET.Messaging.Tcp
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
 
     internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
-        internal MessageConnection(ConnectionType type, string username, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : this(type, address, port, options, tcpClient)
+        internal MessageConnection(ConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : this(type, ipAddress, port, options, tcpClient)
         {
             Username = username;
         }
 
-        internal MessageConnection(ConnectionType type, string address, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : base(address, port, options, tcpClient)
+        internal MessageConnection(ConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : base(ipAddress, port, options, tcpClient)
         {
             Type = type;
             base.ConnectHandler = new Action<IConnection>(async (c) =>
