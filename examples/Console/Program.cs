@@ -15,6 +15,7 @@
             {
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
+                client.SearchStateChanged += Client_SearchStateChanged;
                 client.DownloadQueued += Client_DownloadQueued;
                 client.DownloadStarted += Client_DownloadStarted;
                 client.DownloadCompleted += Client_DownloadCompleted;
@@ -40,6 +41,20 @@
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
+                    }
+                    else if (cmd.StartsWith("start-search"))
+                    {
+                        var search = string.Join(' ', cmd.Split(' ').Skip(1));
+                        var token = new Random().Next();
+
+                        await client.BeginSearchAsync(search, token, new SearchOptions()
+                        {
+                            FilterFiles = false,
+                            FilterResponses = false,
+                            FileLimit = 100000,
+                        });
+
+                        Console.WriteLine($"Search for {search} started.");
                     }
                     else if (cmd.StartsWith("search"))
                     {
@@ -124,6 +139,11 @@
             }
         }
 
+        private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
+        {
+            Console.WriteLine($"[SEARCH] [{e.SearchText}]: {e.State}");
+        }
+
         private static void Client_DownloadProgressUpdated(object sender, DownloadProgressUpdatedEventArgs e)
         {
             Console.WriteLine($"[PROGRESS]: {e.Filename}: {e.PercentComplete}%");
@@ -146,6 +166,7 @@
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
         {
+            Console.WriteLine($"[SEARCH RESPONSE] [{e.SearchText}]: {e.Response.FileCount} files from {e.Response.Username}");
             //var r = e.Response;
 
             //Console.WriteLine($"=====================================================================================");

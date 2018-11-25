@@ -31,25 +31,23 @@ namespace Soulseek.NET
         /// </summary>
         event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
-        /// <summary>
-        ///     Occurs when raw data is received by the underlying TCP connection.
-        /// </summary>
-        event EventHandler<DataReceivedEventArgs> DataReceived;
+        event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
 
-        /// <summary>
-        ///     Occurs when a new message is received.
-        /// </summary>
-        event EventHandler<MessageReceivedEventArgs> MessageReceived;
+        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+
+        event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
+
+        event EventHandler<DownloadEventArgs> DownloadStarted;
 
         /// <summary>
         ///     Occurs when a new search result is received.
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
-        event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
-        event EventHandler<DownloadEventArgs> DownloadStarted;
-        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
-        event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
+        /// <summary>
+        ///     Occurs when a search changes state.
+        /// </summary>
+        event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         #endregion Public Events
 
@@ -59,11 +57,6 @@ namespace Soulseek.NET
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
         string Address { get; set; }
-
-        /// <summary>
-        ///     Gets the current state of the underlying TCP connection.
-        /// </summary>
-        ConnectionState State { get; }
 
         /// <summary>
         ///     Gets a value indicating whether a user is currently signed in.
@@ -81,6 +74,11 @@ namespace Soulseek.NET
         int Port { get; set; }
 
         /// <summary>
+        ///     Gets the current state of the underlying TCP connection.
+        /// </summary>
+        ConnectionState State { get; }
+
+        /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
         string Username { get; }
@@ -88,6 +86,17 @@ namespace Soulseek.NET
         #endregion Public Properties
 
         #region Public Methods
+
+        /// <summary>
+        ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
+        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -118,6 +127,8 @@ namespace Soulseek.NET
         /// </summary>
         void Dispose();
 
+        Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null);
+
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
@@ -128,16 +139,15 @@ namespace Soulseek.NET
         Task LoginAsync(string username, string password);
 
         /// <summary>
-        ///     Asynchronously searches for the specified <paramref name="searchText"/> with the optionally specified
-        ///     <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
+        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the search results.</returns>
         Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
-
-        Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null);
 
         #endregion Public Methods
     }

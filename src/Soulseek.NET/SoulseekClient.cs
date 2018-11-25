@@ -87,6 +87,7 @@ namespace Soulseek.NET
         ///     Occurs when a new search result is received.
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
+        public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         public event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
         public event EventHandler<DownloadEventArgs> DownloadStarted;
@@ -262,14 +263,19 @@ namespace Soulseek.NET
             }
         }
 
-        /// <summary>
-        ///     Asynchronously performs a search for the specified <paramref name="searchText"/> using the specified <paramref name="options"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="options">The options for the search.</param>
-        /// <param name="cancellationToken">The optional cancellation token for the task.</param>
-        /// <returns>The completed search.</returns>
+        public async Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            EnsureConnectedAndLoggedIn();
+            await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: false);
+        }
+
         public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            EnsureConnectedAndLoggedIn();
+            return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true);
+        }
+
+        private void EnsureConnectedAndLoggedIn()
         {
             if (State != ConnectionState.Connected)
             {
@@ -278,31 +284,65 @@ namespace Soulseek.NET
 
             if (!LoggedIn)
             {
-                throw new SearchException($"A user must be logged in to perform a search.");
+                throw new SoulseekClientException($"A user must be logged in before carrying out operations.");
             }
+        }
 
+        /// <summary>
+        ///     Asynchronously performs a search for the specified <paramref name="searchText"/> using the specified <paramref name="options"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="options">The options for the search.</param>
+        /// <param name="cancellationToken">The optional cancellation token for the task.</param>
+        /// <returns>The completed search.</returns>
+        private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        {
             options = options ?? new SearchOptions();
 
             var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
-            using (var search = new Search(searchText, token, options)
+
+            var search = new Search(searchText, token, options)
             {
                 ResponseHandler = (s, response) =>
                 {
                     var e = new SearchResponseReceivedEventArgs() { SearchText = s.SearchText, Token = s.Token, Response = response };
                     Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
                 },
-                CompleteHandler = (s, message) => MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s),
-            })
+                CompleteHandler = (s, state) =>
+                {
+                    MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
+                    ActiveSearches.TryRemove(s.Token, out var _);
+                    Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = state })).Forget();
+
+                    if (!waitForCompletion)
+                    {
+                        s.Dispose();
+                    }
+                }
+            };
+
+            ActiveSearches.TryAdd(search.Token, search);
+            Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = search.State })).Forget();
+
+            await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
+
+            if (!waitForCompletion)
             {
-                ActiveSearches.TryAdd(search.Token, search);
-                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
-
-                var result = await searchWait;
-
-                ActiveSearches.TryRemove(search.Token, out var _);
-
-                return result.Responses;
+                return default(IEnumerable<SearchResponse>);
             }
+
+            try
+            {
+                await searchWait; // completed in CompleteHandler above
+            }
+            catch (OperationCanceledException)
+            {
+                search.Complete(SearchState.Completed | SearchState.Cancelled);
+            }
+
+            var responses = search.Responses;
+            search.Dispose();
+            return responses;
         }
 
         #endregion Public Methods
