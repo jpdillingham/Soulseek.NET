@@ -26,6 +26,8 @@ namespace Soulseek.NET
         public int Token { get; private set; }
         public int RemoteToken { get; set; }
         public int Size { get; set; }
+        public int PlaceInQueue { get; set; }
+        public DownloadState State { get; set; }
         public string WaitKey => $"{Username}:{Filename}:{Token}";
     }
 }
