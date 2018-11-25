@@ -16,6 +16,7 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -413,6 +414,26 @@ namespace Soulseek.NET
 
         #region Private Methods
 
+
+        private IPAddress ResolveIPAddress(string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                var dns = Dns.GetHostEntry(address);
+
+                if (!dns.AddressList.Any())
+                {
+                    throw new SoulseekClientException($"Unable to resolve hostname {address}.");
+                }
+
+                return dns.AddressList[0];
+            }
+        }
+
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
             var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
@@ -426,7 +447,9 @@ namespace Soulseek.NET
 
         private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
         {
-            return new MessageConnection(ConnectionType.Server, Address, Port, options)
+            var ipAddress = ResolveIPAddress(address);
+
+            return new MessageConnection(ConnectionType.Server, ipAddress, Port, options)
             {
                 ConnectHandler = (conn) =>
                 {
