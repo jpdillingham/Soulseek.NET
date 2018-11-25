@@ -18,10 +18,8 @@
                 client.ConnectionStateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
                 client.SearchStateChanged += Client_SearchStateChanged;
-                client.DownloadQueued += Client_DownloadQueued;
-                client.DownloadStarted += Client_DownloadStarted;
-                client.DownloadCompleted += Client_DownloadCompleted;
                 client.DownloadProgress += Client_DownloadProgress;
+                client.DownloadStateChanged += Client_DownloadStateChanged;
 
                 await client.ConnectAsync();
 
@@ -141,6 +139,11 @@
             }
         }
 
+        private static void Client_DownloadStateChanged(object sender, DownloadStateChangedEventArgs e)
+        {
+            Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.State}");
+        }
+
         private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
         {
             Console.WriteLine($"[SEARCH] [{e.SearchText}]: {e.State}");
@@ -148,7 +151,7 @@
 
         private static ConcurrentDictionary<string, double> Progress { get; set; } = new ConcurrentDictionary<string, double>();
 
-        private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
+        private static void Client_DownloadProgress(object sender, DownloadProgressEventArgs e)
         {
             var key = $"{e.Username}:{e.Filename}:{e.Token}";
             Progress.AddOrUpdate(key, e.PercentComplete, (k, v) =>
@@ -161,22 +164,7 @@
                 return Progress[k];
             });
 
-            Console.WriteLine($"[PROGRESS]: {e.Filename}: {Progress[key]}%");
-        }
-
-        private static void Client_DownloadCompleted(object sender, DownloadCompletedEventArgs e)
-        {
-            Console.WriteLine($"[COMPLETED]: {e.Filename}");
-        }
-
-        private static void Client_DownloadStarted(object sender, DownloadEventArgs e)
-        {
-            Console.WriteLine($"[STARTED]: {e.Filename}");
-        }
-
-        private static void Client_DownloadQueued(object sender, DownloadQueuedEventArgs e)
-        {
-            Console.WriteLine($"[QUEUED]: {e.Filename}");
+            //Console.WriteLine($"[PROGRESS]: {e.Filename}: {Progress[key]}%");
         }
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
