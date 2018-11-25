@@ -88,6 +88,11 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        public event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
+        public event EventHandler<DownloadEventArgs> DownloadStarted;
+        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        public event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
+
         #endregion Public Events
 
         #region Public Properties
@@ -340,22 +345,25 @@ namespace Soulseek.NET
             try
             {
                 var download = new Download(username, filename, token);
-                QueuedDownloads.TryAdd(download.Token, download);
-
                 var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(MessageCode.PeerDownloadResponse, download.WaitKey, cancellationToken);
 
+                // establish a message connection to the peer
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
                 {
                     MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 });
 
+                // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the peer is ready to send the file.
                 var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, Key(download.Username, download.Token), cancellationToken);
                 var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, Key(download.Username, download.Filename), cancellationToken);
 
+                // request the file and await the response
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
 
                 var incomingResponse = await incomingResponseWait;
+
+                var networkEventArgs = new NetworkEventArgs() { IPAddress = connection.IPAddress, Port = connection.Port };
 
                 if (incomingResponse.Allowed)
                 {
@@ -365,18 +373,34 @@ namespace Soulseek.NET
                 }
                 else
                 {
+                    // todo: get place in line
+                    QueuedDownloads.TryAdd(download.Token, download);
+
+                    var queuedEventArgs = new DownloadQueuedEventArgs(networkEventArgs) { Username = username, Filename = filename, Token = token };
+                    Task.Run(() => DownloadQueued?.Invoke(this, queuedEventArgs)).Forget();
+
+                    // wait for the peer to respond that they are ready to start the transfer
                     var incomingRequest = await incomingRequestWait;
 
                     download.Size = incomingRequest.FileSize;
                     download.RemoteToken = incomingRequest.Token;
 
                     QueuedDownloads.TryRemove(download.Token, out var _);
+
                     ActiveDownloads.TryAdd(download.RemoteToken, download);
+
+                    var startedEventArgs = new DownloadEventArgs(networkEventArgs) { Username = username, Filename = filename, Token = token };
+                    Task.Run(() => DownloadStarted?.Invoke(this, startedEventArgs)).Forget();
 
                     await connection.SendMessageAsync(new PeerTransferResponseOutgoing(download.RemoteToken, true, download.Size, string.Empty).ToMessage());
                 }
 
-                return await downloadWait;
+                var data = await downloadWait;
+
+                var completedEventArgs = new DownloadCompletedEventArgs(networkEventArgs) { Username = username, Filename = filename, Token = token, Data = data };
+                Task.Run(() => DownloadCompleted?.Invoke(this, completedEventArgs)).Forget();
+
+                return data;
             }
             catch (Exception ex)
             {
@@ -413,7 +437,6 @@ namespace Soulseek.NET
         #endregion Protected Methods
 
         #region Private Methods
-
 
         private IPAddress ResolveIPAddress(string address)
         {
@@ -548,6 +571,21 @@ namespace Soulseek.NET
 
                 if (ActiveDownloads.TryGetValue(token, out var download))
                 {
+                    connection.DataReadHandler = (conn, data, bytesRead, bytesTotal) =>
+                    {
+                        var n = new NetworkEventArgs() { IPAddress = conn.IPAddress, Port = conn.Port };
+                        var e = new DownloadProgressUpdatedEventArgs(n)
+                        {
+                            Username = download.Username,
+                            Filename = download.Filename,
+                            Token = download.Token,
+                            BytesDownloaded = bytesRead,
+                            BytesTotal = bytesTotal,
+                        };
+
+                        Task.Run(() => DownloadProgressUpdated?.Invoke(this, e));
+                    };
+
                     await connection.SendAsync(new byte[8]);
 
                     var bytes = await connection.ReadAsync(download.Size);
