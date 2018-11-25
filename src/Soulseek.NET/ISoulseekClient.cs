@@ -31,13 +31,9 @@ namespace Soulseek.NET
         /// </summary>
         event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
-        event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
+        event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
-        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgress;
-
-        event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
-
-        event EventHandler<DownloadEventArgs> DownloadStarted;
+        event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
 
         /// <summary>
         ///     Occurs when a new search result is received.
