@@ -3,6 +3,8 @@
     using Newtonsoft.Json;
     using Soulseek.NET;
     using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -19,7 +21,7 @@
                 client.DownloadQueued += Client_DownloadQueued;
                 client.DownloadStarted += Client_DownloadStarted;
                 client.DownloadCompleted += Client_DownloadCompleted;
-                client.DownloadProgressUpdated += Client_DownloadProgressUpdated;
+                client.DownloadProgress += Client_DownloadProgress;
 
                 await client.ConnectAsync();
 
@@ -144,9 +146,22 @@
             Console.WriteLine($"[SEARCH] [{e.SearchText}]: {e.State}");
         }
 
-        private static void Client_DownloadProgressUpdated(object sender, DownloadProgressUpdatedEventArgs e)
+        private static ConcurrentDictionary<string, double> Progress { get; set; } = new ConcurrentDictionary<string, double>();
+
+        private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
         {
-            Console.WriteLine($"[PROGRESS]: {e.Filename}: {e.PercentComplete}%");
+            var key = $"{e.Username}:{e.Filename}:{e.Token}";
+            Progress.AddOrUpdate(key, e.PercentComplete, (k, v) =>
+            {
+                if (Progress[k] <= e.PercentComplete)
+                {
+                    return e.PercentComplete;
+                }
+
+                return Progress[k];
+            });
+
+            Console.WriteLine($"[PROGRESS]: {e.Filename}: {Progress[key]}%");
         }
 
         private static void Client_DownloadCompleted(object sender, DownloadCompletedEventArgs e)
