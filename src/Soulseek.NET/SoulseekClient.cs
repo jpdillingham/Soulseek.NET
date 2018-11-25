@@ -341,14 +341,14 @@ namespace Soulseek.NET
                 {
                     ResponseHandler = (s, response) =>
                     {
-                        var e = new SearchResponseReceivedEventArgs() { SearchText = s.SearchText, Token = s.Token, Response = response };
+                        var e = new SearchResponseReceivedEventArgs(s, response);
                         Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
                     },
                     CompleteHandler = (s, state) =>
                     {
                         MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
                         ActiveSearches.TryRemove(s.Token, out var _);
-                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = state })).Forget();
+                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
 
                         if (!waitForCompletion)
                         {
@@ -358,7 +358,7 @@ namespace Soulseek.NET
                 };
 
                 ActiveSearches.TryAdd(search.Token, search);
-                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = search.State })).Forget();
+                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
 
                 await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
 
