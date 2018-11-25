@@ -17,17 +17,35 @@ namespace Soulseek.NET
 
     public class SearchEventArgs : EventArgs
     {
-        public string SearchText { get; set; }
-        public int Token { get; set; }
+        internal SearchEventArgs(Search search)
+        {
+            SearchText = search.SearchText;
+            Token = search.Token;
+        }
+
+        public string SearchText { get; private set; }
+        public int Token { get; private set; }
     }
 
     public class SearchResponseReceivedEventArgs : SearchEventArgs
     {
-        public SearchResponse Response { get; set; }
+        internal SearchResponseReceivedEventArgs(Search search, SearchResponse response)
+            : base(search)
+        {
+            Response = response;
+        }
+
+        public SearchResponse Response { get; private set; }
     }
 
     public class SearchStateChangedEventArgs : SearchEventArgs
     {
-        public SearchState State { get; set; }
+        internal SearchStateChangedEventArgs(Search search)
+            : base(search)
+        {
+            State = search.State;
+        }
+
+        public SearchState State { get; private set; }
     }
 }
