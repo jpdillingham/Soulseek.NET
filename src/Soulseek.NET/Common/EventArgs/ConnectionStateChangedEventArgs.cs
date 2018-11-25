@@ -29,7 +29,6 @@ namespace Soulseek.NET
 
         internal ConnectionStateChangedEventArgs(IConnection connection, string message = null)
         {
-            Address = connection.Address;
             IPAddress = connection.IPAddress;
             Port = connection.Port;
             State = connection.State;
