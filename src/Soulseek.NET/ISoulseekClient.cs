@@ -46,6 +46,11 @@ namespace Soulseek.NET
         /// </summary>
         event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        event EventHandler<DownloadQueuedEventArgs> DownloadQueued;
+        event EventHandler<DownloadEventArgs> DownloadStarted;
+        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        event EventHandler<DownloadCompletedEventArgs> DownloadCompleted;
+
         #endregion Public Events
 
         #region Public Properties
