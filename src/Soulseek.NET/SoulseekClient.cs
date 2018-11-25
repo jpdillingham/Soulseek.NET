@@ -257,92 +257,118 @@ namespace Soulseek.NET
             }
             else
             {
-                // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                Disconnect();
+                Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
                 throw new LoginException($"Failed to log in as {username}: {response.Message}");
             }
         }
 
+        /// <summary>
+        ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
+        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <exception cref="ConnectionStateException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
+        /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public async Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            EnsureConnectedAndLoggedIn();
             await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: false);
         }
 
+        /// <summary>
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
+        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including the search results.</returns>
+        /// <exception cref="ConnectionStateException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
+        /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            EnsureConnectedAndLoggedIn();
             return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true);
         }
 
-        private void EnsureConnectedAndLoggedIn()
-        {
-            if (State != ConnectionState.Connected)
-            {
-                throw new ConnectionStateException($"The server connection must be Connected to perform a search (currently: {State})");
-            }
 
-            if (!LoggedIn)
-            {
-                throw new SoulseekClientException($"A user must be logged in before carrying out operations.");
-            }
-        }
-
-        /// <summary>
-        ///     Asynchronously performs a search for the specified <paramref name="searchText"/> using the specified <paramref name="options"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="options">The options for the search.</param>
-        /// <param name="cancellationToken">The optional cancellation token for the task.</param>
-        /// <returns>The completed search.</returns>
         private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            options = options ?? new SearchOptions();
-
-            var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
-
-            var search = new Search(searchText, token, options)
+            if (State != ConnectionState.Connected || !LoggedIn)
             {
-                ResponseHandler = (s, response) =>
-                {
-                    var e = new SearchResponseReceivedEventArgs() { SearchText = s.SearchText, Token = s.Token, Response = response };
-                    Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
-                },
-                CompleteHandler = (s, state) =>
-                {
-                    MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
-                    ActiveSearches.TryRemove(s.Token, out var _);
-                    Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = state })).Forget();
-
-                    if (!waitForCompletion)
-                    {
-                        s.Dispose();
-                    }
-                }
-            };
-
-            ActiveSearches.TryAdd(search.Token, search);
-            Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = search.State })).Forget();
-
-            await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
-
-            if (!waitForCompletion)
-            {
-                return default(IEnumerable<SearchResponse>);
+                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
             }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
+            }
+
+            if (ActiveSearches.ContainsKey(token))
+            {
+                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+            }
+
+            options = options ?? new SearchOptions();
 
             try
             {
-                await searchWait; // completed in CompleteHandler above
-            }
-            catch (OperationCanceledException)
-            {
-                search.Complete(SearchState.Completed | SearchState.Cancelled);
-            }
+                var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
 
-            var responses = search.Responses;
-            search.Dispose();
-            return responses;
+                var search = new Search(searchText, token, options)
+                {
+                    ResponseHandler = (s, response) =>
+                    {
+                        var e = new SearchResponseReceivedEventArgs() { SearchText = s.SearchText, Token = s.Token, Response = response };
+                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
+                    },
+                    CompleteHandler = (s, state) =>
+                    {
+                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
+                        ActiveSearches.TryRemove(s.Token, out var _);
+                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = state })).Forget();
+
+                        if (!waitForCompletion)
+                        {
+                            s.Dispose();
+                        }
+                    }
+                };
+
+                ActiveSearches.TryAdd(search.Token, search);
+                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs() { SearchText = searchText, Token = token, State = search.State })).Forget();
+
+                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
+
+                if (!waitForCompletion)
+                {
+                    return default(IEnumerable<SearchResponse>);
+                }
+
+                try
+                {
+                    await searchWait; // completed in CompleteHandler above
+                }
+                catch (OperationCanceledException)
+                {
+                    search.Complete(SearchState.Completed | SearchState.Cancelled);
+                }
+
+                var responses = search.Responses;
+                search.Dispose();
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+            }
         }
 
         #endregion Public Methods
