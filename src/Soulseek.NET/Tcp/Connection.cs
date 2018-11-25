@@ -66,8 +66,8 @@ namespace Soulseek.NET.Tcp
 
         public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
         public object Context { get; set; }
-        public Action<IConnection, byte[]> DataReceivedHandler { get; set; } = (connection, data) => { };
-        public Action<IConnection, byte[]> DataSentHandler { get; set; } = (connection, data) => { };
+        public Action<IConnection, byte[], int, int> DataReadHandler { get; set; } = (connection, data, bytesRead, bytesTotal) => { };
+        public Action<IConnection, byte[], int, int> DataSentHandler { get; set; } = (connection, data, bytesSent, bytesTotal) => { };
         public Action<IConnection, string> DisconnectHandler { get; set; } = (connection, message) => { };
         public IPAddress IPAddress { get; protected set; }
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
@@ -195,9 +195,9 @@ namespace Soulseek.NET.Tcp
 
                 totalBytesRead += bytesRead;
                 var data = buffer.Take(bytesRead);
-                result.AddRange(buffer.Take(bytesRead));
+                result.AddRange(data);
 
-                Task.Run(() => DataReceivedHandler(this, data.ToArray())).Forget();
+                DataReadHandler(this, data.ToArray(), totalBytesRead, count);
             }
 
             return result.ToArray();
@@ -229,7 +229,7 @@ namespace Soulseek.NET.Tcp
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
 
-                Task.Run(() => DataSentHandler(this, bytes)).Forget();
+                DataSentHandler(this, bytes, bytes.Length, bytes.Length);
             }
             catch (Exception ex)
             {

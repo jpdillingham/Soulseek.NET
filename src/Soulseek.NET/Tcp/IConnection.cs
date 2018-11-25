@@ -22,8 +22,8 @@ namespace Soulseek.NET.Tcp
 
         Action<IConnection> ConnectHandler { get; set; }
         object Context { get; set; }
-        Action<IConnection, byte[]> DataReceivedHandler { get; set; }
-        Action<IConnection, byte[]> DataSentHandler { get; set; }
+        Action<IConnection, byte[], int, int> DataReadHandler { get; set; }
+        Action<IConnection, byte[], int, int> DataSentHandler { get; set; }
         Action<IConnection, string> DisconnectHandler { get; set; }
         IPAddress IPAddress { get; }
         ConnectionKey Key { get; }
