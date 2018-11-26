@@ -5,10 +5,12 @@
 
     public static class TestIsolationExtensions
     {
-        public static T GetField<T>(this object target, string fieldName, BindingFlags flags)
+        private static readonly BindingFlags bindingFlags = BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static;
+
+        public static T GetField<T>(this object target, string fieldName)
         {
             var type = target.GetType();
-            var field = type.GetField(fieldName, flags);
+            var field = type.GetField(fieldName, bindingFlags);
 
             if (field == default(FieldInfo))
             {
@@ -25,30 +27,10 @@
             }
         }
 
-        public static T GetNonPublicField<T>(this object target, string fieldName)
-        {
-            return GetField<T>(target, fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        public static T GetNonPublicProperty<T>(this object target, string propertyName)
-        {
-            return GetProperty<T>(target, propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
-        }
-
-        public static T GetNonPublicStaticField<T>(this object target, string fieldName)
-        {
-            return GetField<T>(target, fieldName, BindingFlags.NonPublic | BindingFlags.Static);
-        }
-
-        public static T GetNonPublicStaticProperty<T>(this object target, string propertyName)
-        {
-            return GetProperty<T>(target, propertyName, BindingFlags.NonPublic | BindingFlags.Static);
-        }
-
-        public static T GetProperty<T>(this object target, string propertyName, BindingFlags flags)
+        public static T GetProperty<T>(this object target, string propertyName)
         {
             var type = target.GetType();
-            var field = type.GetProperty(propertyName, flags);
+            var field = type.GetProperty(propertyName, bindingFlags);
 
             if (field == default(FieldInfo))
             {
@@ -65,13 +47,13 @@
             }
         }
 
-        public static void InvokePrivateMethod(this object target, string methodName, params object[] args)
+        public static void InvokeMethod(this object target, string methodName, params object[] args)
         {
             var type = target.GetType();
 
             try
             {
-                GetPrivateMethod(type, methodName).Invoke(target, args);
+                GetMethod(type, methodName, bindingFlags).Invoke(target, args);
             }
             catch (Exception ex)
             {
@@ -79,13 +61,13 @@
             }
         }
 
-        public static T InvokePrivateMethod<T>(this object target, string methodName, params object[] args)
+        public static T InvokeMethod<T>(this object target, string methodName, params object[] args)
         {
             var type = target.GetType();
 
             try
             {
-                return (T)GetPrivateMethod(type, methodName).Invoke(target, args);
+                return (T)GetMethod(type, methodName, bindingFlags).Invoke(target, args);
             }
             catch (Exception ex)
             {
@@ -93,10 +75,10 @@
             }
         }
 
-        public static void SetNonPublicField(this object target, string fieldName, object value)
+        public static void SetField(this object target, string fieldName, object value)
         {
             var type = target.GetType();
-            var field = type.GetField(fieldName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var field = type.GetField(fieldName, bindingFlags);
 
             if (field == default(FieldInfo))
             {
@@ -113,10 +95,10 @@
             }
         }
 
-        public static void SetNonPublicProperty(this object target, string propertyName, object value)
+        public static void SetProperty(this object target, string propertyName, object value)
         {
             var type = target.GetType();
-            var property = type.GetProperty(propertyName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var property = type.GetProperty(propertyName, bindingFlags);
 
             if (property == default(FieldInfo))
             {
@@ -129,13 +111,13 @@
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to inject private property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+                throw new Exception($"Failed to inject property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
-        private static MethodInfo GetPrivateMethod(Type type, string methodName)
+        private static MethodInfo GetMethod(Type type, string methodName, BindingFlags flags)
         {
-            var method = type.GetMethod(methodName, BindingFlags.NonPublic | BindingFlags.Instance);
+            var method = type.GetMethod(methodName, flags);
 
             if (method == default(MethodInfo))
             {
