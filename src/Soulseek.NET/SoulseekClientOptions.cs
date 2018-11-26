@@ -20,27 +20,41 @@ namespace Soulseek.NET
     public class SoulseekClientOptions
     {
         /// <summary>
-        ///     Gets or sets the message timeout used when waiting for a response from the server.
+        ///     Gets or sets the message timeout, in seconds, used when waiting for a response from the server.  (Default = 5).
         /// </summary>
         public int MessageTimeout { get; set; } = 5;
 
         /// <summary>
-        ///     Gets or sets the number of allowed concurrent peer connections.
+        ///     Gets or sets the number of allowed concurrent peer connections.  (Default = 500).
         /// </summary>
         public int ConcurrentPeerConnections { get; set; } = 500;
 
         /// <summary>
-        ///     Gets or sets the number of allowed concurrent downloads.
+        ///     Gets or sets a value indicating whether download progress events are invoked synchronously.
         /// </summary>
-        public int ConcurrentDownloads { get; set; } = 25;
-
+        /// <remarks>
+        ///     <para>
+        ///         If this option is not set, events may not be received in the proper order.
+        ///     </para>
+        ///     <para>
+        ///         Enabling this option may impact download performance.
+        ///     </para>
+        /// </remarks>
         public bool UseSynchronousDownloadProgressEvents { get; set; } = false;
 
         /// <summary>
-        ///     Gets or sets the options for the underlying Tcp connection.
+        ///     Gets or sets the options for the server message connection.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
+
+        /// <summary>
+        ///     Gets or sets the options for peer message connections.
+        /// </summary>
         public ConnectionOptions PeerConnectionOptions { get; set; } = new ConnectionOptions();
+
+        /// <summary>
+        ///     Gets or sets the options for peer transfer connections.
+        /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; set; } = new ConnectionOptions();
     }
 }

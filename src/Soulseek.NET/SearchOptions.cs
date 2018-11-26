@@ -12,7 +12,6 @@
 
 namespace Soulseek.NET
 {
-    using Soulseek.NET.Tcp;
     using System.Collections.Generic;
 
     /// <summary>
@@ -21,30 +20,86 @@ namespace Soulseek.NET
     public class SearchOptions
     {
         /// <summary>
-        ///     Gets or sets the number of allowed concurrent peer connections.
+        ///     Gets or sets the search timeout value, in seconds, used to determine when the search is complete. (Default = 15).
         /// </summary>
-        public int ConcurrentPeerConnections { get; set; } = 500;
-
+        /// <remarks>
+        ///     The timeout duration is from the time of the last response.
+        /// </remarks>
         public int SearchTimeout { get; set; } = 15;
+
+        /// <summary>
+        ///     Gets or sets the maximum number of search results to accept before the search is considered complete. (Default = 10,000).
+        /// </summary>
         public int FileLimit { get; set; } = 10000;
 
+        /// <summary>
+        ///     Gets or sets a value indicating whether responses are to be filtered. (Default = true).
+        /// </summary>
         public bool FilterResponses { get; set; } = true;
+
+        /// <summary>
+        ///     Gets or sets the minimum number of files a response must contain in order to be processed. (Default = 1).
+        /// </summary>
         public int MinimumResponseFileCount { get; set; } = 1;
+
+        /// <summary>
+        ///     Gets or sets the minimum number of free upload slots a peer must have in order for a response to be processed.  (Default = 0).
+        /// </summary>
         public int MinimumPeerFreeUploadSlots { get; set; } = 0;
+
+        /// <summary>
+        ///     Gets or sets the maximum queue depth a peer may have in order for a response to be processed.  (Default = 1000000).
+        /// </summary>
         public int MaximumPeerQueueLength { get; set; } = 1000000;
+
+        /// <summary>
+        ///     Gets or sets the minimum upload speed a peer must have in order for a response to be processed.  (Default = 0).
+        /// </summary>
         public int MinimumPeerUploadSpeed { get; set; } = 0;
 
+        /// <summary>
+        ///     Gets or sets a list of ignored file extensions.  (Default = empty).
+        /// </summary>
         public IEnumerable<string> IgnoredFileExtensions { get; set; }
 
+        /// <summary>
+        ///     Gets or sets a value indicating whether files are to be filtered.  (Default = false).
+        /// </summary>
         public bool FilterFiles { get; set; } = false;
-        public int MinimumFileBitRate { get; set; } = 128;
-        public int MinimumFileSize { get; set; } = 0;
-        public int MinimumFileLength { get; set; } = 0;
-        public int MinimumFileSampleRate { get; set; } = 0;
-        public int MinimumFileBitDepth { get; set; } = 0;
-        public bool IncludeConstantBitRate { get; set; } = true;
-        public bool IncludeVariableBitRate { get; set; } = true;
 
-        public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();
+        /// <summary>
+        ///     Gets or sets the minimum file bitrate.  (Default = 128).
+        /// </summary>
+        public int MinimumFileBitRate { get; set; } = 128;
+
+        /// <summary>
+        ///     Gets or sets the minimum file size.  (Default = 0).
+        /// </summary>
+        public int MinimumFileSize { get; set; } = 0;
+
+        /// <summary>
+        ///     Gets or sets the minimum file length, in seconds.  (Default = 0).
+        /// </summary>
+        public int MinimumFileLength { get; set; } = 0;
+
+        /// <summary>
+        ///     Gets or sets the minimum file sample rate.  (Default = 0).
+        /// </summary>
+        public int MinimumFileSampleRate { get; set; } = 0;
+
+        /// <summary>
+        ///     Gets or sets the minimum file bit depth.  (Default = 0).
+        /// </summary>
+        public int MinimumFileBitDepth { get; set; } = 0;
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether constant bit rate files are to be included.  (Default = true).
+        /// </summary>
+        public bool IncludeConstantBitRate { get; set; } = true;
+
+        /// <summary>
+        ///     Gets or sets a value indicating whether variable bit rate files are to be included.  (Default = true).
+        /// </summary>
+        public bool IncludeVariableBitRate { get; set; } = true;
     }
 }

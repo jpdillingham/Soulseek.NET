@@ -14,13 +14,38 @@ namespace Soulseek.NET
 {
     using System;
 
+    /// <summary>
+    ///     Search state.
+    /// </summary>
     [Flags]
     public enum SearchState
     {
+        /// <summary>
+        ///     In progress.
+        /// </summary>
         InProgress = 0,
+
+        /// <summary>
+        ///     Completed.
+        /// </summary>
         Completed = 1,
+
+        /// <summary>
+        ///     Completed due to cancellation.
+        /// </summary>
         Cancelled = 2,
+
+        /// <summary>
+        ///     Completed due to the timeout value specified in search options having been reached.
+        /// </summary>
+        /// <remarks>
+        ///     The timeout duration is from the time of the last response.
+        /// </remarks>
         TimedOut = 4,
+
+        /// <summary>
+        ///     Completed due to the file limit specified in search options having been reached.
+        /// </summary>
         FileLimitReached = 8
     }
 }

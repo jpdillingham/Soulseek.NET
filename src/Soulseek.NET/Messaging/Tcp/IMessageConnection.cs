@@ -20,7 +20,7 @@ namespace Soulseek.NET.Messaging.Tcp
     internal interface IMessageConnection : IConnection, IDisposable
     {
         string Username { get; }
-        ConnectionType Type { get; }
+        MessageConnectionType Type { get; }
         Action<IMessageConnection> ConnectHandler { get; set; }
         Action<IMessageConnection, string> DisconnectHandler { get; set; }
         Action<IMessageConnection, Message> MessageHandler { get; set; }

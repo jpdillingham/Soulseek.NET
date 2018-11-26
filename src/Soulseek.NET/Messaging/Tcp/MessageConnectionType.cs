@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionType.cs" company="JP Dillingham">
+﻿// <copyright file="MessageConnectionType.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,10 +12,27 @@
 
 namespace Soulseek.NET.Tcp
 {
-    public enum ConnectionType
+    /// <summary>
+    ///     Message connection type.
+    /// </summary>
+    /// <remarks>
+    ///     Used to normalize message codes.
+    /// </remarks>
+    public enum MessageConnectionType
     {
+        /// <summary>
+        ///     Default type.
+        /// </summary>
         Default = 0,
+
+        /// <summary>
+        ///     Server.
+        /// </summary>
         Server = 10000,
+
+        /// <summary>
+        ///     Peer.
+        /// </summary>
         Peer = 20000,
     }
 }

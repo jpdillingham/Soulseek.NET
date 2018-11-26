@@ -182,8 +182,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 Assert.NotNull(queue);
                 Assert.Single(queue);
-
-                Assert.NotNull(wait);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
 
                 if (timeout != null)
@@ -330,8 +328,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 Assert.NotNull(queue);
                 Assert.Single(queue);
-
-                Assert.NotNull(wait);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
                 Assert.Equal(maxConst, wait.TimeoutAfter);
             }

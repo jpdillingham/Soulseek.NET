@@ -12,12 +12,34 @@
 
 namespace Soulseek.NET.Tcp
 {
+    /// <summary>
+    ///     Connection state.
+    /// </summary>
     public enum ConnectionState
     {
+        /// <summary>
+        ///     Pending.
+        /// </summary>
         Pending = 0,
+
+        /// <summary>
+        ///     Connecting.
+        /// </summary>
         Connecting = 1,
+
+        /// <summary>
+        ///     Connected.
+        /// </summary>
         Connected = 2,
+
+        /// <summary>
+        ///     Disconnecting.
+        /// </summary>
         Disconnecting = 3,
+
+        /// <summary>
+        ///     Disconnected.
+        /// </summary>
         Disconnected = 4,
     }
 }

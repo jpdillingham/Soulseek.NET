@@ -1,4 +1,4 @@
-﻿// <copyright file="Class1.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionKey.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -20,7 +20,7 @@ namespace Soulseek.NET.Tcp
         public string Username { get; set; }
         public IPAddress IPAddress { get; set; }
         public int Port { get; set; }
-        public ConnectionType Type { get; set; }
+        public MessageConnectionType Type { get; set; }
 
         public bool Equals(ConnectionKey other)
         {

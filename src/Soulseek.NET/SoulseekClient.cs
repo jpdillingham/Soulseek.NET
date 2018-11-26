@@ -541,14 +541,14 @@ namespace Soulseek.NET
             await ServerConnection.SendMessageAsync(request.ToMessage());
 
             var address = await addressWait;
-            return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = ConnectionType.Peer };
+            return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = MessageConnectionType.Peer };
         }
 
         private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
         {
             var ipAddress = ResolveIPAddress(address);
 
-            return new MessageConnection(ConnectionType.Server, ipAddress, Port, options)
+            return new MessageConnection(MessageConnectionType.Server, ipAddress, Port, options)
             {
                 ConnectHandler = (conn) =>
                 {
@@ -565,7 +565,7 @@ namespace Soulseek.NET
 
         private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            var connection = new MessageConnection(ConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
+            var connection = new MessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
             {
                 Context = connectToPeerResponse,
                 ConnectHandler = async (conn) =>
@@ -617,7 +617,7 @@ namespace Soulseek.NET
 
             if (connection == default(IMessageConnection))
             {
-                connection = new MessageConnection(ConnectionType.Peer, key.Username, key.IPAddress, key.Port, options)
+                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options)
                 {
                     ConnectHandler = async (conn) =>
                     {

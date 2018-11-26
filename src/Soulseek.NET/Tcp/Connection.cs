@@ -167,9 +167,8 @@ namespace Soulseek.NET.Tcp
                 var intCount = (int)count;
                 return await ReadAsync(intCount);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                Console.WriteLine($"adsfasfdsa");
                 throw new NotImplementedException($"File sizes exceeding ~2gb are not yet supported.");
             }
         }

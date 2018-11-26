@@ -9,8 +9,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact]
         public void HashCodeMatches()
         {
-            var a = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = ConnectionType.Default };
-            var b = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = ConnectionType.Default };
+            var a = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = MessageConnectionType.Default };
+            var b = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = MessageConnectionType.Default };
 
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
         }
@@ -18,8 +18,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact]
         public void EqualsBothWays()
         {
-            var a = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = ConnectionType.Default };
-            var b = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = ConnectionType.Default };
+            var a = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = MessageConnectionType.Default };
+            var b = new ConnectionKey() { Username = "a", IPAddress = new IPAddress(0x0), Port = 1, Type = MessageConnectionType.Default };
 
             Assert.True(a.Equals(b));
             Assert.True(b.Equals(a));

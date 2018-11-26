@@ -21,7 +21,7 @@ namespace Soulseek.NET.Tcp
         int Active { get; }
         int Queued { get; }
 
-        void Dispose();
+        new void Dispose();
 
         Task Add(T connection);
 

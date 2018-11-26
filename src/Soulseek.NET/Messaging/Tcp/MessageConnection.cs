@@ -22,13 +22,13 @@ namespace Soulseek.NET.Messaging.Tcp
 
     internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
-        internal MessageConnection(ConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : this(type, ipAddress, port, options, tcpClient)
         {
             Username = username;
         }
 
-        internal MessageConnection(ConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal MessageConnection(MessageConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(ipAddress, port, options, tcpClient)
         {
             Type = type;
@@ -39,7 +39,7 @@ namespace Soulseek.NET.Messaging.Tcp
             });
         }
 
-        public ConnectionType Type { get; private set; }
+        public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
         private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
 
@@ -123,7 +123,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
             void log(string s)
             {
-                if (Type == ConnectionType.Server)
+                if (Type == MessageConnectionType.Server)
                 {
                     Console.WriteLine(s);
                 }
