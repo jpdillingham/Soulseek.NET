@@ -81,7 +81,6 @@ namespace Soulseek.NET.Tcp
 
         protected bool Disposed { get; set; } = false;
         protected SystemTimer InactivityTimer { get; set; }
-        protected NetworkEventArgs NetworkEventArgs => new NetworkEventArgs() { IPAddress = IPAddress, Port = Port };
         protected NetworkStream Stream { get; set; }
         protected ITcpClient TcpClient { get; set; }
         protected SystemTimer WatchdogTimer { get; set; }

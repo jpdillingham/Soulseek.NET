@@ -14,13 +14,8 @@ namespace Soulseek.NET
 {
     using Soulseek.NET.Tcp;
 
-    public class ConnectionStateChangedEventArgs : NetworkEventArgs
+    public class ConnectionStateChangedEventArgs
     {
-        public ConnectionStateChangedEventArgs(NetworkEventArgs e)
-            : base(e)
-        {
-        }
-
         internal ConnectionStateChangedEventArgs(IConnection connection)
             : this(connection, null)
         {
@@ -29,8 +24,6 @@ namespace Soulseek.NET
 
         internal ConnectionStateChangedEventArgs(IConnection connection, string message = null)
         {
-            IPAddress = connection.IPAddress;
-            Port = connection.Port;
             State = connection.State;
             Message = message;
         }
