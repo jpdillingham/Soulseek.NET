@@ -31,8 +31,14 @@ namespace Soulseek.NET
         /// </summary>
         event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
+        /// <summary>
+        ///     Occurs when an active download receives data.
+        /// </summary>
         event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
+        /// <summary>
+        ///     Occurs when a download changes state.
+        /// </summary>
         event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
 
         /// <summary>

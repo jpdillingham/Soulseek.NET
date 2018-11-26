@@ -73,19 +73,9 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
 
-        /// <summary>
-        ///     Occurs when raw data is received by the underlying TCP connection.
-        /// </summary>
-        public event EventHandler<DataReceivedEventArgs> DataReceived;
-
         public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
 
         public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
-
-        /// <summary>
-        ///     Occurs when a new message is received.
-        /// </summary>
-        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.
