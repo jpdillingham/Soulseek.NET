@@ -10,42 +10,80 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
+using System.Diagnostics.CodeAnalysis;
+[module: SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:FileMayOnlyContainASingleType", Justification = "Reviewed.")]
+
 namespace Soulseek.NET
 {
     using System;
     using Soulseek.NET.Messaging.Responses;
 
+    /// <summary>
+    ///     Basic event arguments for search events.
+    /// </summary>
     public class SearchEventArgs : EventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
+        /// </summary>
+        /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchEventArgs(Search search)
         {
             SearchText = search.SearchText;
             Token = search.Token;
         }
 
+        /// <summary>
+        ///     Gets the text for which to search.
+        /// </summary>
         public string SearchText { get; private set; }
+
+        /// <summary>
+        ///     Gets the unique identifier for the search.
+        /// </summary>
         public int Token { get; private set; }
     }
 
+    /// <summary>
+    ///     Event arguments for the search response received event.
+    /// </summary>
     public class SearchResponseReceivedEventArgs : SearchEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="search">The search instance with which to initialize data.</param>
+        /// <param name="response">The search response which raised the event.</param>
         internal SearchResponseReceivedEventArgs(Search search, SearchResponse response)
             : base(search)
         {
             Response = response;
         }
 
+        /// <summary>
+        ///     Gets the search response which raised the event.
+        /// </summary>
         public SearchResponse Response { get; private set; }
     }
 
+    /// <summary>
+    ///     Event arguments for the search state changed event.
+    /// </summary>
     public class SearchStateChangedEventArgs : SearchEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchStateChangedEventArgs(Search search)
             : base(search)
         {
             State = search.State;
         }
 
+        /// <summary>
+        ///     Gets the search state.
+        /// </summary>
         public SearchState State { get; private set; }
     }
 }
