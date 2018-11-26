@@ -41,7 +41,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 var peek = queue.TryPeek(out var wait);
 
@@ -77,7 +77,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
@@ -116,7 +116,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             MessageWaiter t = null;
             var ex = Record.Exception(() => t = new MessageWaiter());
 
-            var defaultConst = t.GetNonPublicStaticField<int>("DefaultTimeoutValue");
+            var defaultConst = t.GetField<int>("DefaultTimeoutValue");
 
             Assert.Null(ex);
             Assert.NotNull(t);
@@ -136,7 +136,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
 
                 Assert.IsType<Task<object>>(task1);
@@ -169,7 +169,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             {
                 Task<object> task = waiter.Wait<object>(key.MessageCode, key.Token, timeout);
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
@@ -206,7 +206,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
@@ -238,7 +238,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
@@ -289,7 +289,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
@@ -313,11 +313,11 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter())
             {
-                var maxConst = waiter.GetNonPublicStaticField<int>("MaxTimeoutValue");
+                var maxConst = waiter.GetField<int>("MaxTimeoutValue");
 
                 Task<object> task = waiter.WaitIndefinitely<object>(key.MessageCode, key.Token);
 
-                var waits = waiter.GetNonPublicProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
