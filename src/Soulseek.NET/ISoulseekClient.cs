@@ -27,9 +27,9 @@ namespace Soulseek.NET
         #region Public Events
 
         /// <summary>
-        ///     Occurs when the underlying TCP connection to the server changes state.
+        ///     Occurs when the client changes state.
         /// </summary>
-        event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+        event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         /// <summary>
         ///     Occurs when an active download receives data.
@@ -78,7 +78,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        ConnectionState State { get; }
+        SoulseekClientState State { get; }
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
