@@ -68,14 +68,9 @@ namespace Soulseek.NET
 
         #region Public Events
 
-        /// <summary>
-        ///     Occurs when the underlying TCP connection to the server changes state.
-        /// </summary>
-        public event EventHandler<ConnectionStateChangedEventArgs> ConnectionStateChanged;
+        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
         public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
-
-        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -83,6 +78,11 @@ namespace Soulseek.NET
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
         public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
+
+        /// <summary>
+        ///     Occurs when the client changes state.
+        /// </summary>
+        public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         #endregion Public Events
 
@@ -96,7 +96,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets a value indicating whether a user is currently signed in.
         /// </summary>
-        public bool LoggedIn { get; private set; } = false;
+        public bool LoggedIn => State.HasFlag(SoulseekClientState.LoggedIn);
 
         /// <summary>
         ///     Gets the client options.
@@ -111,7 +111,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        public ConnectionState State => ServerConnection.State;
+        public SoulseekClientState State { get; private set; }
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
@@ -168,7 +168,7 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            if (State != ConnectionState.Connected)
+            if (ServerConnection.State != ConnectionState.Connected)
             {
                 throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {State})");
             }
@@ -226,7 +226,8 @@ namespace Soulseek.NET
             MessageWaiter.CancelAll();
 
             Username = null;
-            LoggedIn = false;
+
+            ChangeState(SoulseekClientState.Disconnected);
         }
 
         /// <summary>
@@ -258,16 +259,14 @@ namespace Soulseek.NET
 
             var loginWait = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
 
-            Console.WriteLine($"Sending login message");
             await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
-            Console.WriteLine($"Login message sent");
 
             var response = await loginWait;
 
             if (response.Succeeded)
             {
                 Username = username;
-                LoggedIn = true;
+                ChangeState(SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
             }
             else
             {
@@ -302,7 +301,7 @@ namespace Soulseek.NET
 
         private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (State != ConnectionState.Connected || !LoggedIn)
+            if (ServerConnection.State != ConnectionState.Connected || !LoggedIn)
             {
                 throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
             }
@@ -518,6 +517,12 @@ namespace Soulseek.NET
 
         #region Private Methods
 
+        private void ChangeState(SoulseekClientState state, string message = null)
+        {
+            State = state;
+            Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(state, message)));
+        }
+
         private string GetKey(params object[] parts)
         {
             return string.Join(":", parts);
@@ -542,12 +547,11 @@ namespace Soulseek.NET
             {
                 ConnectHandler = (conn) =>
                 {
-                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn))).Forget();
+                    ChangeState(SoulseekClientState.Connected);
                 },
                 DisconnectHandler = (conn, message) =>
                 {
                     Disconnect();
-                    Task.Run(() => ConnectionStateChanged?.Invoke(this, new ConnectionStateChangedEventArgs(conn, message))).Forget();
                 },
                 MessageHandler = HandleServerMessage,
             };
