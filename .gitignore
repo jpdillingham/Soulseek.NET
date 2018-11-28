@@ -329,3 +329,5 @@ ASALocalRun/
 # MFractors (Xamarin productivity tool) working folder 
 .mfractor/
 /tests/Soulseek.NET.Tests.Unit/coverage.json
+/tests/Soulseek.NET.Tests.Integration/coverage.cobertura.xml
+/tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml
