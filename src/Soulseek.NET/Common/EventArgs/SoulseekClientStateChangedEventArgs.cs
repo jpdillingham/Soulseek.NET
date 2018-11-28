@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionStateChangedEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClientStateChangedEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,21 +14,21 @@ namespace Soulseek.NET
 {
     using Soulseek.NET.Tcp;
 
-    public class ConnectionStateChangedEventArgs
+    public class SoulseekClientStateChangedEventArgs
     {
-        internal ConnectionStateChangedEventArgs(IConnection connection)
-            : this(connection, null)
+        internal SoulseekClientStateChangedEventArgs(SoulseekClientState state)
+            : this(state, null)
         {
 
         }
 
-        internal ConnectionStateChangedEventArgs(IConnection connection, string message = null)
+        internal SoulseekClientStateChangedEventArgs(SoulseekClientState state, string message = null)
         {
-            State = connection.State;
+            State = state;
             Message = message;
         }
 
-        public ConnectionState State { get; set; }
+        public SoulseekClientState State { get; set; }
         public string Message { get; set; }
     }
 }
