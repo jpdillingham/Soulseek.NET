@@ -12,7 +12,7 @@ steps:
     dotnet test tests/Soulseek.NET.Tests.Unit --configuration $(buildConfiguration) --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura
     dotnet test tests/Soulseek.NET.Tests.Integration --configuration $(buildConfiguration) --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:MergeWtih=$(Build.SourcesDirectory)/tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml
     dotnet tool install dotnet-reportgenerator-globaltool --tool-path . --version 4.0.0-rc4
-    reportgenerator "-reports:$(Build.SourcesDirectory)/tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml" "-targetdir:results" "-reporttypes:HTMLInline;HTMLChart"
+    ./reportgenerator "-reports:$(Build.SourcesDirectory)/tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml" "-targetdir:results" "-reporttypes:HTMLInline;HTMLChart"
   displayName: 'Test and Cover'
 - task: PublishTestResults@2
   inputs:
