@@ -8,7 +8,7 @@ steps:
 - script: dotnet build --configuration $(buildConfiguration)
   displayName: 'Build'
 - script: |
-    mkdir $(Build.SourcesDirectory)\results
+    mkdir $(Build.SourcesDirectory)/results
     dotnet test tests/Soulseek.NET.Tests.Unit --configuration $(buildConfiguration) --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura
     dotnet test tests/Soulseek.NET.Tests.Integration --configuration $(buildConfiguration) --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:MergeWtih=$(Build.SourcesDirectory)/tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml
     dotnet tool install dotnet-reportgenerator-globaltool --tool-path . --version 4.0.0-rc4
@@ -20,6 +20,6 @@ steps:
     testResultsFiles: '**/*.trx'
 - task: PublishCodeCoverageResults@1
   inputs:
-    summaryFileLocation: $(Build.SourcesDirectory)\results\coverage.cobertura.xml
-    reportDirectory: $(Build.SourcesDirectory)\results
+    summaryFileLocation: $(Build.SourcesDirectory)/results/coverage.cobertura.xml
+    reportDirectory: $(Build.SourcesDirectory)/results
     codecoverageTool: cobertura
