@@ -15,7 +15,7 @@
         {
             using (var client = new SoulseekClient())
             {
-                client.ConnectionStateChanged += Client_ServerStateChanged;
+                client.StateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
                 client.SearchStateChanged += Client_SearchStateChanged;
                 client.DownloadProgress += Client_DownloadProgress;
@@ -181,7 +181,7 @@
             //}
         }
 
-        private static void Client_ServerStateChanged(object sender, ConnectionStateChangedEventArgs e)
+        private static void Client_ServerStateChanged(object sender, SoulseekClientStateChangedEventArgs e)
         {
             Console.WriteLine($"Server state changed to {e.State} ({e.Message})");
         }
