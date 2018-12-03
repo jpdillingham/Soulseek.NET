@@ -30,20 +30,20 @@
         public static T GetProperty<T>(this object target, string propertyName)
         {
             var type = target.GetType();
-            var field = type.GetProperty(propertyName, bindingFlags);
+            var property = type.GetProperty(propertyName, bindingFlags);
 
-            if (field == default(FieldInfo))
+            if (property == default(PropertyInfo))
             {
                 throw new ArgumentException($"No such property '{propertyName}' exists on target Type {type.Name}.", nameof(propertyName));
             }
 
             try
             {
-                return (T)field.GetValue(target);
+                return (T)property.GetValue(target);
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to get private property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+                throw new Exception($"Failed to get property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -57,7 +57,7 @@
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to invoke private method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+                throw new Exception($"Failed to invoke method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -71,7 +71,7 @@
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to invoke private method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+                throw new Exception($"Failed to invoke method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -91,7 +91,7 @@
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to inject private field '{fieldName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+                throw new Exception($"Failed to set field '{fieldName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -100,7 +100,7 @@
             var type = target.GetType();
             var property = type.GetProperty(propertyName, bindingFlags);
 
-            if (property == default(FieldInfo))
+            if (property == default(PropertyInfo))
             {
                 throw new ArgumentException($"No such property '{propertyName}' exists on target Type {type.Name}.", nameof(propertyName));
             }
@@ -111,7 +111,7 @@
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to inject property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+                throw new Exception($"Failed to set property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
