@@ -1,5 +1,6 @@
 ﻿namespace Soulseek.NET.Tests.Unit
 {
+    using Newtonsoft.Json;
     using Xunit;
 
     public class SoulseekClientTests
@@ -12,11 +13,21 @@
 
             var defaultServer = s.GetField<string>("DefaultAddress");
             var defaultPort = s.GetField<int>("DefaultPort");
-            var defaultOptions = new SoulseekClientOptions();
 
             Assert.Equal(defaultServer, s.Address);
             Assert.Equal(defaultPort, s.Port);
-            Assert.Equal(defaultOptions, s.Options);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Uses default options with read timeout 0")]
+        public void Uses_Default_Options_With_Read_Timeout_0()
+        {
+            var s = new SoulseekClient();
+
+            var defaultOptions = new SoulseekClientOptions();
+            defaultOptions.ConnectionOptions.ReadTimeout = 0;
+
+            Assert.Equal(JsonConvert.SerializeObject(defaultOptions), JsonConvert.SerializeObject(s.Options));
         }
 
         [Trait("Category", "Instantiation")]
