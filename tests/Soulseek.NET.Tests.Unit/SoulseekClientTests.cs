@@ -19,8 +19,8 @@
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Uses default options with read timeout 0")]
-        public void Uses_Default_Options_With_Read_Timeout_0()
+        [Fact(DisplayName = "Uses default options with read timeout zero")]
+        public void Uses_Default_Options_With_Read_Timeout_Zero()
         {
             var s = new SoulseekClient();
 
@@ -40,6 +40,18 @@
 
             Assert.Null(ex);
             Assert.NotNull(s);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Ensures ReadTimeout is zero")]
+        public void Ensures_ReadTimeout_Is_Zero()
+        {
+            var options = new SoulseekClientOptions();
+            options.ConnectionOptions.ReadTimeout = 5;
+
+            var s = new SoulseekClient(options: options);
+
+            Assert.Equal(0, s.Options.ConnectionOptions.ReadTimeout);
         }
     }
 }
