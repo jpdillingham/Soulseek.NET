@@ -30,6 +30,9 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
+        private const string DefaultAddress = "vps.slsknet.org";
+        private const int DefaultPort = 2271;
+
         #region Public Constructors
 
         /// <summary>
@@ -39,7 +42,7 @@ namespace Soulseek.NET
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
-        public SoulseekClient(string address = "vps.slsknet.org", int port = 2271, SoulseekClientOptions options = null)
+        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
             : this(address, port, options, null, null, null)
         {
         }
@@ -331,7 +334,7 @@ namespace Soulseek.NET
                     },
                     CompleteHandler = (s, state) =>
                     {
-                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s);
+                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s); // searchWait above
                         ActiveSearches.TryRemove(s.Token, out var _);
                         Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
 
