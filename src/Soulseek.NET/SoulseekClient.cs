@@ -61,7 +61,10 @@ namespace Soulseek.NET
         {
             Address = address;
             Port = port;
-            Options = options ?? new SoulseekClientOptions() { ConnectionOptions = new ConnectionOptions() { ReadTimeout = 0 } };
+
+            Options = options ?? new SoulseekClientOptions();
+            Options.ConnectionOptions.ReadTimeout = 0; // no inactivity timeout for server message connection
+
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new MessageWaiter(Options.MessageTimeout);
