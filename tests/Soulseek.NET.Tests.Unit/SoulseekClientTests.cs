@@ -1,6 +1,10 @@
 ﻿namespace Soulseek.NET.Tests.Unit
 {
+    using Moq;
     using Newtonsoft.Json;
+    using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
+    using System;
     using Xunit;
 
     public class SoulseekClientTests
@@ -61,6 +65,25 @@
             var s = new SoulseekClient();
 
             Assert.Equal(SoulseekClientState.Disconnected, s.State);
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected or transitioning")]
+        [InlineData(ConnectionState.Connected)]
+        [InlineData(ConnectionState.Connecting)]
+        [InlineData(ConnectionState.Disconnecting)]
+        public async void Connect_Fails_If_Connected_Or_Transitioning(ConnectionState connectionState)
+        {
+            var c = new Mock<IMessageConnection>();
+            c.Setup(m => m.State).Returns(connectionState);
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+
+            Assert.NotNull(ex);
+            Assert.IsType<SoulseekClientException>(ex);
+            Assert.IsType<ConnectionStateException>(ex.InnerException);
         }
     }
 }
