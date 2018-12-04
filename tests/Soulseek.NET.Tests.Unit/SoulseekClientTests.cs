@@ -53,5 +53,14 @@
 
             Assert.Equal(0, s.Options.ConnectionOptions.ReadTimeout);
         }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "State is Disconnected initially")]
+        public void State_Is_Disconnected_Initially()
+        {
+            var s = new SoulseekClient();
+
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+        }
     }
 }
