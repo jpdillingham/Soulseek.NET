@@ -54,7 +54,7 @@ namespace Soulseek.NET
         internal SoulseekClient(
             string address,
             int port,
-            SoulseekClientOptions options,
+            SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IConnectionManager<IMessageConnection> peerConnectionManager = null,
             IMessageWaiter messageWaiter = null)
@@ -174,7 +174,7 @@ namespace Soulseek.NET
                 throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {State})");
             }
 
-            if (!LoggedIn)
+            if (!State.HasFlag(SoulseekClientState.LoggedIn))
             {
                 throw new LoginException($"A user must be logged in to browse.");
             }
@@ -253,7 +253,7 @@ namespace Soulseek.NET
         /// <exception cref="LoginException">Thrown when the login fails.</exception>
         public async Task LoginAsync(string username, string password)
         {
-            if (LoggedIn)
+            if (State.HasFlag(SoulseekClientState.LoggedIn))
             {
                 throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
@@ -302,7 +302,7 @@ namespace Soulseek.NET
 
         private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (ServerConnection.State != ConnectionState.Connected || !LoggedIn)
+            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
             {
                 throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
             }
