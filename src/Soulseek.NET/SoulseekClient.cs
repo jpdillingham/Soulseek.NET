@@ -100,11 +100,6 @@ namespace Soulseek.NET
         public string Address { get; set; }
 
         /// <summary>
-        ///     Gets a value indicating whether a user is currently signed in.
-        /// </summary>
-        public bool LoggedIn => State.HasFlag(SoulseekClientState.LoggedIn);
-
-        /// <summary>
         ///     Gets the client options.
         /// </summary>
         public SoulseekClientOptions Options { get; private set; }

@@ -61,11 +61,6 @@ namespace Soulseek.NET
         string Address { get; set; }
 
         /// <summary>
-        ///     Gets a value indicating whether a user is currently signed in.
-        /// </summary>
-        bool LoggedIn { get; }
-
-        /// <summary>
         ///     Gets the client options.
         /// </summary>
         SoulseekClientOptions Options { get; }
