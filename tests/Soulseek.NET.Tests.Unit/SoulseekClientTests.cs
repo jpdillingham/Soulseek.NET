@@ -84,5 +84,33 @@
             Assert.NotNull(ex);
             Assert.IsType<ConnectionStateException>(ex);
         }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws when TcpConnection throws")]
+        public async void Connect_Throws_When_TcpConnection_Throws()
+        {
+            var c = new Mock<IMessageConnection>();
+            c.Setup(m => m.ConnectAsync()).Throws(new ConnectionException());
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionException>(ex);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect succeeds when TcpConnection succeeds")]
+        public async void Connect_Succeeds_When_TcpConnection_Succeeds()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+
+            Assert.Null(ex);
+        }
     }
 }
