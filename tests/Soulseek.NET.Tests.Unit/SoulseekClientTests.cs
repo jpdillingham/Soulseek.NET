@@ -82,8 +82,7 @@
             var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
             Assert.NotNull(ex);
-            Assert.IsType<SoulseekClientException>(ex);
-            Assert.IsType<ConnectionStateException>(ex.InnerException);
+            Assert.IsType<ConnectionStateException>(ex);
         }
     }
 }

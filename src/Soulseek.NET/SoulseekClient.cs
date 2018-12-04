@@ -193,12 +193,12 @@ namespace Soulseek.NET
         {
             if (ServerConnection.State == ConnectionState.Connected)
             {
-                throw new SoulseekClientException($"Failed to connect: the client is already connected.", new ConnectionStateException());
+                throw new ConnectionStateException($"Failed to connect; the client is already connected.");
             }
 
             if (ServerConnection.State == ConnectionState.Connecting || ServerConnection.State == ConnectionState.Disconnecting)
             {
-                throw new SoulseekClientException($"Failed to connect: the client is transitioning between states.", new ConnectionStateException());
+                throw new ConnectionStateException($"Failed to connect; the client is transitioning between states.");
             }
 
             try
@@ -207,7 +207,7 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
-                throw new SoulseekClientException($"Failed to connect: {ex.Message}.", ex);
+                throw new ConnectionException($"Failed to connect: {ex.Message}.", ex);
             }
         }
 
