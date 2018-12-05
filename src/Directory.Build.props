@@ -1,0 +1,3 @@
+<Project>
+  <Import Project="$(MSBuildThisFileDirectory)\StyleCop\StyleCop.Import.props" Condition="'$(EnableStyleCop)' == 'true'"/>
+</Project>

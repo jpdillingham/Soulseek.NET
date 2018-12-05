@@ -1,0 +1,22 @@
+<Project>
+  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
+    <CodeAnalysisRuleSet>stylecop.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <StyleCopFiles Include="$(MSBuildThisFileDirectory)\stylecop.json" />
+    <StyleCopFiles Include="$(MSBuildThisFileDirectory)\stylecop.ruleset" />
+
+    <AdditionalFiles Include="@(StyleCopFiles)">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <None Remove="@(StyleCopFiles)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
