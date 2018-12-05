@@ -547,7 +547,16 @@ namespace Soulseek.NET
 
         private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
         {
-            var ipAddress = ResolveIPAddress(address);
+            var ipAddress = default(IPAddress);
+
+            try
+            {
+                ipAddress = address.ResolveIPAddress();
+            }
+            catch (Exception ex)
+            {
+                throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
+            }
 
             return new MessageConnection(MessageConnectionType.Server, ipAddress, Port, options)
             {
