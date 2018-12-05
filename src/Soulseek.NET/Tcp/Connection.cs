@@ -62,13 +62,14 @@ namespace Soulseek.NET.Tcp
 
         #endregion Internal Constructors
 
+        public event EventHandler<EventArgs> Connected;
+        public event EventHandler<EventArgs> Disconnected;
+
         #region Public Properties
 
-        public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
         public object Context { get; set; }
         public Action<IConnection, byte[], int, int> DataReadHandler { get; set; } = (connection, data, bytesRead, bytesTotal) => { };
         public Action<IConnection, byte[], int, int> DataSentHandler { get; set; } = (connection, data, bytesSent, bytesTotal) => { };
-        public Action<IConnection, string> DisconnectHandler { get; set; } = (connection, message) => { };
         public IPAddress IPAddress { get; protected set; }
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
         public ConnectionOptions Options { get; protected set; }
@@ -250,11 +251,11 @@ namespace Soulseek.NET.Tcp
 
             if (State == ConnectionState.Connected)
             {
-                ConnectHandler(this);
+                Connected?.Invoke(this, new EventArgs());
             }
             else if (State == ConnectionState.Disconnected)
             {
-                DisconnectHandler(this, message);
+                Disconnected?.Invoke(this, new EventArgs());
             }
         }
 
