@@ -774,25 +774,6 @@ namespace Soulseek.NET
             }
         }
 
-        private IPAddress ResolveIPAddress(string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                var dns = Dns.GetHostEntry(address);
-
-                if (!dns.AddressList.Any())
-                {
-                    throw new SoulseekClientException($"Unable to resolve hostname {address}.");
-                }
-
-                return dns.AddressList[0];
-            }
-        }
-
         #endregion Private Methods
     }
 }
