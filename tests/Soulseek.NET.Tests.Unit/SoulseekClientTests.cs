@@ -113,6 +113,19 @@
             Assert.Null(ex);
         }
 
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect connects")]
+        public async void Connect_Connects()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+
+            Assert.Null(ex);
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiation throws on a bad address")]
         public void Instantiation_Throws_On_A_Bad_Address()
@@ -121,6 +134,21 @@
 
             Assert.NotNull(ex);
             Assert.IsType<SoulseekClientException>(ex);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect disconnects")]
+        public async void Disconnect_Disconnects()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            await s.ConnectAsync();
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
         }
     }
 }
