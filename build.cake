@@ -16,7 +16,14 @@ Setup<Settings>(ctx =>
 {
     var settings = new Settings(ctx, MakeAbsolute(Directory("./out")));;
     Information("Cleaning up and ensuring directories exist...");
-    DeleteDirectory(settings.BaseOutputDirectory,true);
+    if(DirectoryExists(settings.BaseOutputDirectory))
+        DeleteDirectory(
+            settings.BaseOutputDirectory, 
+            new DeleteDirectorySettings()
+            {
+                Recursive = true
+            }
+        );
     foreach(var directory in settings.AllDirectories())
         EnsureDirectoryExists(directory);
     return settings;
@@ -92,6 +99,12 @@ Task("Publish")
     GetFiles("./out/Packages/**/*.nupkg"),
     (settings, package) =>
     {
+        // This needs some headscratching. You have options galore with this. You could use environment
+        // variables, Azure credential providers, arguments. You should and must decide this for yourself...
+        // I'll leave this as is for you to get familiar with Cake and credential CI stuff. 
+        //
+        // (There's really not much wisdom or experience i can give you here. This stuff is always awkward,
+        // and as a developer you have same kind of common sense when comes to securing your secrets as i do. )
         DotNetCoreNuGetPush(
             package.FullPath,
             new DotNetCoreNuGetPushSettings()

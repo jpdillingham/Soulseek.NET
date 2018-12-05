@@ -16,7 +16,7 @@
       Remember to stay SemVer v2 compatible.
       If you want to attach a more detailed version tag to the DLL, use <InformationalVersion>ANYSTRINGYOUWANT</InformationalVersion>
     -->
-    <Version>1.3.3.3.3.3.7</Version>
+    <Version>1.3.3.7</Version>
     <Description>A .NET Standard client library for the Soulseek network.</Description>
     <RepositoryUrl>https://github.com/jpdillingham/Soulseek.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
