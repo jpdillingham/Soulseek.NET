@@ -21,8 +21,8 @@ namespace Soulseek.NET.Messaging.Tcp
     {
         string Username { get; }
         MessageConnectionType Type { get; }
-        Action<IMessageConnection> ConnectHandler { get; set; }
-        Action<IMessageConnection, string> DisconnectHandler { get; set; }
+        new Action<IMessageConnection> ConnectHandler { get; set; }
+        new Action<IMessageConnection, string> DisconnectHandler { get; set; }
         Action<IMessageConnection, Message> MessageHandler { get; set; }
 
         /// <summary>
