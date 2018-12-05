@@ -32,36 +32,17 @@ namespace Soulseek.NET.Messaging.Tcp
             : base(ipAddress, port, options, tcpClient)
         {
             Type = type;
-            base.ConnectHandler = new Action<IConnection>(async (c) =>
+
+            Connected += async (sender, e) =>
             {
                 Task.Run(() => ReadContinuouslyAsync()).Forget();
                 await SendDeferredMessages();
-            });
+            };
         }
 
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
         private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
-
-        public new Action<IMessageConnection> ConnectHandler
-        {
-            get => base.ConnectHandler;
-            set
-            {
-                base.ConnectHandler = new Action<IConnection>(async (c) =>
-                {
-                    Task.Run(() => ReadContinuouslyAsync()).Forget();
-                    value((IMessageConnection)c);
-                    await SendDeferredMessages();
-                });
-            }
-        }
-
-        public new Action<IMessageConnection, string> DisconnectHandler
-        {
-            get { return base.DisconnectHandler; }
-            set { base.DisconnectHandler = new Action<IConnection, string>((connection, message) => value((IMessageConnection)connection, message)); }
-        }
 
         public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
 
