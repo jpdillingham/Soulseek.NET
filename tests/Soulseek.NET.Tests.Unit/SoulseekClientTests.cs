@@ -112,5 +112,15 @@
 
             Assert.Null(ex);
         }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiation throws on a bad address")]
+        public void Instantiation_Throws_On_A_Bad_Address()
+        {
+            var ex = Record.Exception(() => new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), new SoulseekClientOptions()));
+
+            Assert.NotNull(ex);
+            Assert.IsType<SoulseekClientException>(ex);
+        }
     }
 }
