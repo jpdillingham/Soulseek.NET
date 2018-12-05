@@ -18,13 +18,14 @@ namespace Soulseek.NET.Tcp
 
     internal interface IConnection : IDisposable
     {
+        event EventHandler<EventArgs> Connected;
+        event EventHandler<EventArgs> Disconnected;
+
         #region Public Properties
 
-        Action<IConnection> ConnectHandler { get; set; }
         object Context { get; set; }
         Action<IConnection, byte[], int, int> DataReadHandler { get; set; }
         Action<IConnection, byte[], int, int> DataSentHandler { get; set; }
-        Action<IConnection, string> DisconnectHandler { get; set; }
         IPAddress IPAddress { get; }
         ConnectionKey Key { get; }
         ConnectionOptions Options { get; }
