@@ -396,10 +396,10 @@ namespace Soulseek.NET
                 var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
 
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
+                connection.Disconnected += (sender, e) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, conn.Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                });
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly."));
+                };
 
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
 
@@ -424,10 +424,10 @@ namespace Soulseek.NET
 
                 // establish a message connection to the peer
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                connection.DisconnectHandler += new Action<IConnection, string>((conn, message) =>
+                connection.Disconnected += (sender, e) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                });
+                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly."));
+                };
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
@@ -558,18 +558,19 @@ namespace Soulseek.NET
                 throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
             }
 
-            return new MessageConnection(MessageConnectionType.Server, ipAddress, Port, options)
+            var conn = new MessageConnection(MessageConnectionType.Server, ipAddress, Port, options);
+            conn.Connected += (sender, e) =>
             {
-                ConnectHandler = (conn) =>
-                {
-                    ChangeState(SoulseekClientState.Connected);
-                },
-                DisconnectHandler = (conn, message) =>
-                {
-                    Disconnect();
-                },
-                MessageHandler = HandleServerMessage,
+                ChangeState(SoulseekClientState.Connected);
             };
+
+            conn.Disconnected += (sender, e) =>
+            {
+                Disconnect();
+            };
+            conn.MessageHandler = HandleServerMessage;
+
+            return conn;
         }
 
         private async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
@@ -577,18 +578,21 @@ namespace Soulseek.NET
             var connection = new MessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
             {
                 Context = connectToPeerResponse,
-                ConnectHandler = async (conn) =>
-                {
-                    var context = (ConnectToPeerResponse)conn.Context;
-                    var request = new PierceFirewallRequest(context.Token).ToMessage();
-                    await conn.SendMessageAsync(request, suppressCodeNormalization: true);
-                },
-                DisconnectHandler = async (conn, message) =>
-                {
-                    await PeerConnectionManager.Remove(conn);
-                },
-                MessageHandler = HandlePeerMessage,
             };
+
+            connection.Connected += async (sender, e) =>
+            {
+                var conn = (IMessageConnection)sender;
+                var context = (ConnectToPeerResponse)conn.Context;
+                var request = new PierceFirewallRequest(context.Token).ToMessage();
+                await conn.SendMessageAsync(request, suppressCodeNormalization: true);
+            };
+
+            connection.Disconnected += async (sender, e) =>
+            {
+                await PeerConnectionManager.Remove((IMessageConnection)sender);
+            };
+            connection.MessageHandler = HandlePeerMessage;
 
             await PeerConnectionManager.Add(connection);
             return connection;
@@ -628,16 +632,18 @@ namespace Soulseek.NET
             {
                 connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options)
                 {
-                    ConnectHandler = async (conn) =>
-                    {
-                        var token = new Random().Next(1, 2147483647);
-                        await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
-                    },
-                    DisconnectHandler = async (conn, msg) =>
-                    {
-                        await PeerConnectionManager.Remove(conn);
-                    },
                     MessageHandler = HandlePeerMessage,
+                };
+
+                connection.Connected += async (sender, e) =>
+                {
+                    var token = new Random().Next(1, 2147483647);
+                    await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true);
+                };
+
+                connection.Disconnected += async (sender, e) =>
+                {
+                    await PeerConnectionManager.Remove((IMessageConnection)sender);
                 };
 
                 await PeerConnectionManager.Add(connection);
@@ -656,11 +662,11 @@ namespace Soulseek.NET
 
                 if (ActiveDownloads.TryGetValue(token, out var download))
                 {
-                    connection.DisconnectHandler = (conn, message) =>
+                    connection.Disconnected += (sender, e) =>
                     {
                         if (download.State != DownloadState.Completed)
                         {
-                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly."));
                         }
                     };
 
