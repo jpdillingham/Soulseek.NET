@@ -19,8 +19,8 @@ namespace Soulseek.NET.Tcp
     internal interface IConnection : IDisposable
     {
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
-        event EventHandler<ConnectionStateChangedEventArgs> Connected;
-        event EventHandler<ConnectionStateChangedEventArgs> Disconnected;
+        event EventHandler Connected;
+        event EventHandler<string> Disconnected;
 
         #region Public Properties
 
