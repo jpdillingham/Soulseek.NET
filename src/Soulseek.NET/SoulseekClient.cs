@@ -396,9 +396,9 @@ namespace Soulseek.NET
                 var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
 
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                connection.Disconnected += (sender, e) =>
+                connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
@@ -424,9 +424,9 @@ namespace Soulseek.NET
 
                 // establish a message connection to the peer
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
-                connection.Disconnected += (sender, e) =>
+                connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
+                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
@@ -662,11 +662,11 @@ namespace Soulseek.NET
 
                 if (ActiveDownloads.TryGetValue(token, out var download))
                 {
-                    connection.Disconnected += (sender, e) =>
+                    connection.Disconnected += (sender, message) =>
                     {
                         if (download.State != DownloadState.Completed)
                         {
-                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
+                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                         }
                     };
 
