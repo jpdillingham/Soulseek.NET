@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionDataEventArgs.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,12 +12,29 @@
 
 namespace Soulseek.NET.Tcp
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
+    internal class ConnectionStateChangedEventArgs
+    {
+        internal ConnectionStateChangedEventArgs(ConnectionState state, string message = null)
+        {
+            State = state;
+            Message = message;
+        }
+
+        public ConnectionState State { get; private set; }
+        public string Message { get; private set; }
+    }
 
     internal class ConnectionDataEventArgs
     {
+        internal ConnectionDataEventArgs(byte[] data, int totalLength)
+        {
+            Data = data;
+            TotalLength = totalLength;
+        }
 
+        public byte[] Data { get; private set; }
+        public int CurrentLength => Data.Length;
+        public int TotalLength { get; private set; }
+        public double PercentComplete => CurrentLength / (double)TotalLength;
     }
 }
