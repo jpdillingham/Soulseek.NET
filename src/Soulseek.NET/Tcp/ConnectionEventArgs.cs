@@ -26,14 +26,15 @@ namespace Soulseek.NET.Tcp
 
     internal class ConnectionDataEventArgs
     {
-        internal ConnectionDataEventArgs(byte[] data, int totalLength)
+        internal ConnectionDataEventArgs(byte[] data, int currentLength, int totalLength)
         {
             Data = data;
+            CurrentLength = currentLength;
             TotalLength = totalLength;
         }
 
         public byte[] Data { get; private set; }
-        public int CurrentLength => Data.Length;
+        public int CurrentLength { get; private set; }
         public int TotalLength { get; private set; }
         public double PercentComplete => CurrentLength / (double)TotalLength;
     }

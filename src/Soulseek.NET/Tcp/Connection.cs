@@ -65,12 +65,12 @@ namespace Soulseek.NET.Tcp
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
         public event EventHandler Connected;
         public event EventHandler<string> Disconnected;
+        public event EventHandler<ConnectionDataEventArgs> DataRead;
+        public event EventHandler<ConnectionDataEventArgs> DataSent;
 
         #region Public Properties
 
         public object Context { get; set; }
-        public Action<IConnection, byte[], int, int> DataReadHandler { get; set; } = (connection, data, bytesRead, bytesTotal) => { };
-        public Action<IConnection, byte[], int, int> DataSentHandler { get; set; } = (connection, data, bytesSent, bytesTotal) => { };
         public IPAddress IPAddress { get; protected set; }
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
         public ConnectionOptions Options { get; protected set; }
@@ -197,7 +197,7 @@ namespace Soulseek.NET.Tcp
                 var data = buffer.Take(bytesRead);
                 result.AddRange(data);
 
-                DataReadHandler(this, data.ToArray(), totalBytesRead, count);
+                DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, count));
             }
 
             return result.ToArray();
@@ -229,7 +229,7 @@ namespace Soulseek.NET.Tcp
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
 
-                DataSentHandler(this, bytes, bytes.Length, bytes.Length);
+                DataSent?.Invoke(this, new ConnectionDataEventArgs(bytes, bytes.Length, bytes.Length));
             }
             catch (Exception ex)
             {

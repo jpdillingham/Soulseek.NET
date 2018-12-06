@@ -670,17 +670,17 @@ namespace Soulseek.NET
                         }
                     };
 
-                    connection.DataReadHandler = (conn, data, bytesRead, bytesTotal) =>
+                    connection.DataRead += (sender, e) =>
                     {
-                        var e = new DownloadProgressEventArgs(download, bytesRead);
+                        var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
 
                         if (Options.UseSynchronousDownloadProgressEvents)
                         {
-                            DownloadProgress?.Invoke(this, e); // ensure order; impacts performance.
+                            DownloadProgress?.Invoke(this, eventArgs); // ensure order; impacts performance.
                         }
                         else
                         {
-                            Task.Run(() => DownloadProgress?.Invoke(this, e)).Forget();
+                            Task.Run(() => DownloadProgress?.Invoke(this, eventArgs)).Forget();
                         }
                     };
 

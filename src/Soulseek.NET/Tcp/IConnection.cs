@@ -21,12 +21,12 @@ namespace Soulseek.NET.Tcp
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
         event EventHandler Connected;
         event EventHandler<string> Disconnected;
+        event EventHandler<ConnectionDataEventArgs> DataRead;
+        event EventHandler<ConnectionDataEventArgs> DataSent;
 
         #region Public Properties
 
         object Context { get; set; }
-        Action<IConnection, byte[], int, int> DataReadHandler { get; set; }
-        Action<IConnection, byte[], int, int> DataSentHandler { get; set; }
         IPAddress IPAddress { get; }
         ConnectionKey Key { get; }
         ConnectionOptions Options { get; }
