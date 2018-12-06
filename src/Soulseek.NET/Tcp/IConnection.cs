@@ -22,7 +22,6 @@ namespace Soulseek.NET.Tcp
         event EventHandler Connected;
         event EventHandler<string> Disconnected;
         event EventHandler<ConnectionDataEventArgs> DataRead;
-        event EventHandler<ConnectionDataEventArgs> DataSent;
 
         #region Public Properties
 

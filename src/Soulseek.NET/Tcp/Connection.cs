@@ -66,7 +66,6 @@ namespace Soulseek.NET.Tcp
         public event EventHandler Connected;
         public event EventHandler<string> Disconnected;
         public event EventHandler<ConnectionDataEventArgs> DataRead;
-        public event EventHandler<ConnectionDataEventArgs> DataSent;
 
         #region Public Properties
 
@@ -228,8 +227,6 @@ namespace Soulseek.NET.Tcp
             try
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
-
-                DataSent?.Invoke(this, new ConnectionDataEventArgs(bytes, bytes.Length, bytes.Length));
             }
             catch (Exception ex)
             {
