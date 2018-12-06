@@ -568,7 +568,8 @@ namespace Soulseek.NET
             {
                 Disconnect();
             };
-            conn.MessageHandler = HandleServerMessage;
+
+            conn.MessageRead += HandleServerMessage;
 
             return conn;
         }
@@ -592,7 +593,8 @@ namespace Soulseek.NET
             {
                 await PeerConnectionManager.Remove((IMessageConnection)sender);
             };
-            connection.MessageHandler = HandlePeerMessage;
+
+            connection.MessageRead += HandlePeerMessage;
 
             await PeerConnectionManager.Add(connection);
             return connection;
@@ -630,10 +632,8 @@ namespace Soulseek.NET
 
             if (connection == default(IMessageConnection))
             {
-                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options)
-                {
-                    MessageHandler = HandlePeerMessage,
-                };
+                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
+                connection.MessageRead += HandlePeerMessage;
 
                 connection.Connected += async (sender, e) =>
                 {
@@ -703,9 +703,12 @@ namespace Soulseek.NET
             }
         }
 
-        private void HandlePeerMessage(IMessageConnection connection, Message message)
+        private void HandlePeerMessage(object sender, Message message)
         {
             Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
+
+            var connection = (IMessageConnection)sender;
+
             switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
@@ -744,7 +747,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async void HandleServerMessage(IMessageConnection connection, Message message)
+        private async void HandleServerMessage(object sender, Message message)
         {
             Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
 
