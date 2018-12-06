@@ -12,7 +12,9 @@
 
 namespace Soulseek.NET.Tcp
 {
-    internal class ConnectionStateChangedEventArgs
+    using System;
+
+    internal class ConnectionStateChangedEventArgs : EventArgs
     {
         internal ConnectionStateChangedEventArgs(ConnectionState state, string message = null)
         {
@@ -24,7 +26,7 @@ namespace Soulseek.NET.Tcp
         public string Message { get; private set; }
     }
 
-    internal class ConnectionDataEventArgs
+    internal class ConnectionDataEventArgs : EventArgs
     {
         internal ConnectionDataEventArgs(byte[] data, int currentLength, int totalLength)
         {
