@@ -398,7 +398,7 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, e) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly."));
+                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
                 };
 
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
@@ -426,7 +426,7 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, e) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly."));
+                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
                 };
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
@@ -666,7 +666,7 @@ namespace Soulseek.NET
                     {
                         if (download.State != DownloadState.Completed)
                         {
-                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly."));
+                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
                         }
                     };
 
