@@ -62,8 +62,9 @@ namespace Soulseek.NET.Tcp
 
         #endregion Internal Constructors
 
-        public event EventHandler<EventArgs> Connected;
-        public event EventHandler<EventArgs> Disconnected;
+        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        public event EventHandler<ConnectionStateChangedEventArgs> Connected;
+        public event EventHandler<ConnectionStateChangedEventArgs> Disconnected;
 
         #region Public Properties
 
@@ -249,13 +250,17 @@ namespace Soulseek.NET.Tcp
         {
             State = state;
 
+            var eventArgs = new ConnectionStateChangedEventArgs(state, message);
+
+            StateChanged?.Invoke(this, eventArgs);
+
             if (State == ConnectionState.Connected)
             {
-                Connected?.Invoke(this, new EventArgs());
+                Connected?.Invoke(this, eventArgs);
             }
             else if (State == ConnectionState.Disconnected)
             {
-                Disconnected?.Invoke(this, new EventArgs());
+                Disconnected?.Invoke(this, eventArgs);
             }
         }
 
