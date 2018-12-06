@@ -19,9 +19,10 @@ namespace Soulseek.NET.Messaging.Tcp
 
     internal interface IMessageConnection : IConnection, IDisposable
     {
+        event EventHandler<Message> MessageRead;
+
         string Username { get; }
         MessageConnectionType Type { get; }
-        Action<IMessageConnection, Message> MessageHandler { get; set; }
 
         /// <summary>
         ///     Asynchronously sends the specified <paramref name="message"/> and optionally suppresses code normalization if <paramref name="suppressCodeNormalization"/> is specified.

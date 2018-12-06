@@ -40,13 +40,13 @@ namespace Soulseek.NET.Messaging.Tcp
             };
         }
 
+        public event EventHandler<Message> MessageRead;
+
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
         private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
 
         public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
-
-        public Action<IMessageConnection, Message> MessageHandler { get; set; } = (c, m) => { Console.WriteLine($"[NOT HOOKED UP]"); };
 
         public async Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
@@ -133,7 +133,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
                     NormalizeMessageCode(messageBytes, (int)Type);
 
-                    Task.Run(() => MessageHandler(this, new Message(messageBytes))).Forget();
+                    Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
                     InactivityTimer?.Reset();
                 }
             //}
