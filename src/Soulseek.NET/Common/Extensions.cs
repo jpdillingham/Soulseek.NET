@@ -13,6 +13,7 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Net;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
@@ -73,6 +74,18 @@ namespace Soulseek.NET
                 }
 
                 return hash1 + (hash2 * 1566083941);
+            }
+        }
+
+        public static IPAddress ResolveIPAddress(this string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                return Dns.GetHostEntry(address).AddressList[0];
             }
         }
     }
