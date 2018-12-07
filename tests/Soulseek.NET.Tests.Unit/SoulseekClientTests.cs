@@ -5,6 +5,7 @@
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
     using System;
+    using System.Collections.Concurrent;
     using Xunit;
 
     public class SoulseekClientTests
@@ -136,6 +137,28 @@
 
             Assert.Null(ex);
             Assert.Equal(SoulseekClientState.Disconnected, s.State);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect clears searches")]
+        public async void Disconnect_Clears_Searches()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            await s.ConnectAsync();
+
+            var searches = new ConcurrentDictionary<int, Search>();
+            searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
+            searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
+
+            s.SetProperty("ActiveSearches", searches);
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Empty(searches);
         }
     }
 }
