@@ -160,5 +160,33 @@
             Assert.Equal(SoulseekClientState.Disconnected, s.State);
             Assert.Empty(searches);
         }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect clears downloads")]
+        public async void Disconnect_Clears_Downloads()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            await s.ConnectAsync();
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            activeDownloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
+            activeDownloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
+
+            var queuedDownloads = new ConcurrentDictionary<int, Download>();
+            queuedDownloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
+            queuedDownloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+            s.SetProperty("QueuedDownloads", queuedDownloads);
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Empty(activeDownloads);
+            Assert.Empty(queuedDownloads);
+        }
     }
 }
