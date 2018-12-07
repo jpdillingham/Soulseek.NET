@@ -10,8 +10,8 @@
     public class SoulseekClientTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Uses defaults for minimal constructor")]
-        public void Uses_Defaults_For_Minimal_Constructor()
+        [Fact(DisplayName = "Instantiates with defaults for minimal constructor")]
+        public void Instantiates_With_Defaults_For_Minimal_Constructor()
         {
             var s = new SoulseekClient();
 
@@ -23,8 +23,8 @@
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Uses default options with read timeout zero")]
-        public void Uses_Default_Options_With_Read_Timeout_Zero()
+        [Fact(DisplayName = "Instantiates with read timeout zero")]
+        public void Instantiates_With_Read_Timeout_Zero()
         {
             var s = new SoulseekClient();
 
