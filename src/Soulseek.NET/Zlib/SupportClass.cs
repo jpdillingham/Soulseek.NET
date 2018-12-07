@@ -2,11 +2,12 @@
 #pragma warning disable 
 
 using System;
-
+using System.Diagnostics.CodeAnalysis;
 
 namespace Soulseek.NET.Zlib
 {
-	public class SupportClass
+    [ExcludeFromCodeCoverage]
+    public class SupportClass
 	{
 		/// <summary>
 		/// This method returns the literal value received

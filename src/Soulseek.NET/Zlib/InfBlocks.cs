@@ -46,10 +46,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning disable 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Soulseek.NET.Zlib
 {
-	
-	sealed class InfBlocks
+    [ExcludeFromCodeCoverage]
+    sealed class InfBlocks
 	{
 		private const int MANY = 1440;
 		

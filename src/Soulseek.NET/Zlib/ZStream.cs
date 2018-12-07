@@ -46,9 +46,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning disable 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Soulseek.NET.Zlib
 {
+    [ExcludeFromCodeCoverage]
     sealed public class ZStream
 	{
 		

@@ -46,10 +46,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning disable 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Soulseek.NET.Zlib
 {
-	
-	sealed public class zlibConst
+    [ExcludeFromCodeCoverage]
+    sealed public class zlibConst
 	{
 		private const System.String version_Renamed_Field = "1.0.2";
 		public static System.String version()
