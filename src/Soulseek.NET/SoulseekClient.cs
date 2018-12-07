@@ -229,6 +229,9 @@ namespace Soulseek.NET
                 }
             }
 
+            // todo: clear downloads
+            // todo: clear peer queue
+
             MessageWaiter.CancelAll();
 
             Username = null;
