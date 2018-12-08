@@ -46,6 +46,7 @@ Task("TestWithCoverage")
             {
                 Logger = "trx",
                 ResultsDirectory = settings.TestResultsDirectory,
+                Configuration = "Release",
                 ArgumentCustomization = args =>
                 {
                     args.Append("/p:EnableCoverage=true");
@@ -68,11 +69,10 @@ Task("GenerateCoverageReport")
     settings =>
     {
         ReportGenerator(
-            GetFiles(settings.CoverageResultsDirectory + "/**/*.cobertura.xml"),
-            settings.CoverageReportDirectory,
-            new ReportGeneratorSettings()
-            {
-                ReportTypes = new [] {ReportGeneratorReportType.Html, ReportGeneratorReportType.HtmlSummary}
+            new [] { settings.CoverageResultsDirectory.CombineWithFilePath("coverage.cobertura.xml")},
+            settings.CoverageReportDirectory.FullPath,
+            new ReportGeneratorSettings() {
+                ReportTypes = new [] { ReportGeneratorReportType.HtmlSummary, ReportGeneratorReportType.Html }
             }
         );
     }
@@ -94,7 +94,7 @@ Task("Pack")
 );
 
 Task("Publish")
-.WithCriteria<Settings>((ctx,settings) => settings.ShouldPublish || settings.ForcePublish)
+.WithCriteria<Settings>((ctx,settings) => (settings.ShouldPublish || settings.ForcePublish) && false) //Temporarily locked publish until credential situation has been cleared up
 .DoesForEach<Settings,FilePath>(
     GetFiles("./out/Packages/**/*.nupkg"),
     (settings, package) =>

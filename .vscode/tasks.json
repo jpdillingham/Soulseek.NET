@@ -1,0 +1,32 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            //Use cake task type to automatically use either the bash entrypoint or the powershell entrypoint based on OS
+            "type": "cake",
+            "script": "Build",
+            "group": {
+                "kind": "build",
+                "isDefault": true
+            }
+        },
+        {
+            "type": "cake",
+            "script": "TestWithCoverage",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
+        },
+        {
+            "label": "BuildSampleConsoleApp",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}/examples/Console/Console.csproj"
+            ],
+            "problemMatcher": "$msCompile"
+        }
+    ]
+}
