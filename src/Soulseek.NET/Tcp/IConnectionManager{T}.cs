@@ -28,5 +28,7 @@ namespace Soulseek.NET.Tcp
         T Get(ConnectionKey key);
 
         Task Remove(T connection);
+
+        void RemoveAll();
     }
 }
