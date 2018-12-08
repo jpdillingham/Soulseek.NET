@@ -110,5 +110,17 @@ namespace Soulseek.NET
                 concurrentDictionary.TryRemove(concurrentDictionary.Keys.First(), out var _);
             }
         }
+
+        public static void DequeueAndDisposeAll<T>(this ConcurrentQueue<T> concurrentQueue)
+            where T : IDisposable
+        {
+            while (!concurrentQueue.IsEmpty)
+            {
+                if (concurrentQueue.TryDequeue(out var value))
+                {
+                    value.Dispose();
+                }
+            }
+        }
     }
 }
