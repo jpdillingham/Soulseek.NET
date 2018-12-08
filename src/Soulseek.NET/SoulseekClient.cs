@@ -30,8 +30,12 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
+        #region Private Fields
+
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
+
+        #endregion Private Fields
 
         #region Public Constructors
 
@@ -71,6 +75,18 @@ namespace Soulseek.NET
         }
 
         #endregion Internal Constructors
+
+        #region Private Destructors
+
+        /// <summary>
+        ///     Finalizes an instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
+        ~SoulseekClient()
+        {
+            Dispose(false);
+        }
+
+        #endregion Private Destructors
 
         #region Public Events
 
@@ -239,6 +255,7 @@ namespace Soulseek.NET
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public async Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
@@ -300,78 +317,6 @@ namespace Soulseek.NET
         public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true);
-        }
-
-        private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
-        {
-            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
-            {
-                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
-            }
-
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
-            }
-
-            if (ActiveSearches.ContainsKey(token))
-            {
-                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
-            }
-
-            options = options ?? new SearchOptions();
-
-            try
-            {
-                var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
-
-                var search = new Search(searchText, token, options)
-                {
-                    ResponseHandler = (s, response) =>
-                    {
-                        var e = new SearchResponseReceivedEventArgs(s, response);
-                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
-                    },
-                    CompleteHandler = (s, state) =>
-                    {
-                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s); // searchWait above
-                        ActiveSearches.TryRemove(s.Token, out var _);
-                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
-
-                        if (!waitForCompletion)
-                        {
-                            s.Dispose();
-                        }
-                    }
-                };
-
-                ActiveSearches.TryAdd(search.Token, search);
-                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
-
-                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
-
-                if (!waitForCompletion)
-                {
-                    return default(IEnumerable<SearchResponse>);
-                }
-
-                try
-                {
-                    await searchWait; // completed in CompleteHandler above
-                }
-                catch (OperationCanceledException)
-                {
-                    search.Complete(SearchState.Completed | SearchState.Cancelled);
-                }
-
-                var responses = search.Responses;
-                search.Dispose();
-                return responses;
-            }
-            catch (Exception ex)
-            {
-                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
-            }
         }
 
         #endregion Public Methods
@@ -785,6 +730,78 @@ namespace Soulseek.NET
                 default:
                     Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
                     break;
+            }
+        }
+
+        private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        {
+            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
+            {
+                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
+            }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
+            }
+
+            if (ActiveSearches.ContainsKey(token))
+            {
+                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+            }
+
+            options = options ?? new SearchOptions();
+
+            try
+            {
+                var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
+
+                var search = new Search(searchText, token, options)
+                {
+                    ResponseHandler = (s, response) =>
+                    {
+                        var e = new SearchResponseReceivedEventArgs(s, response);
+                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
+                    },
+                    CompleteHandler = (s, state) =>
+                    {
+                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s); // searchWait above
+                        ActiveSearches.TryRemove(s.Token, out var _);
+                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
+
+                        if (!waitForCompletion)
+                        {
+                            s.Dispose();
+                        }
+                    }
+                };
+
+                ActiveSearches.TryAdd(search.Token, search);
+                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
+
+                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
+
+                if (!waitForCompletion)
+                {
+                    return default(IEnumerable<SearchResponse>);
+                }
+
+                try
+                {
+                    await searchWait; // completed in CompleteHandler above
+                }
+                catch (OperationCanceledException)
+                {
+                    search.Complete(SearchState.Completed | SearchState.Cancelled);
+                }
+
+                var responses = search.Responses;
+                search.Dispose();
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
         }
 
