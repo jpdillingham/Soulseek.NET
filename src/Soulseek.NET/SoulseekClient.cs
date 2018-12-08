@@ -218,19 +218,10 @@ namespace Soulseek.NET
         {
             ServerConnection.Disconnect("Client disconnected.");
 
-            var searches = ActiveSearches;
-            ActiveSearches = new ConcurrentDictionary<int, Search>();
+            ActiveSearches.RemoveAndDisposeAll();
 
-            while (!searches.IsEmpty)
-            {
-                if (searches.TryRemove(searches.Keys.First(), out var search))
-                {
-                    search.Dispose();
-                }
-            }
-
-            // todo: clear downloads
-            // todo: clear peer queue
+            QueuedDownloads.RemoveAll();
+            ActiveDownloads.RemoveAll();
 
             MessageWaiter.CancelAll();
 
