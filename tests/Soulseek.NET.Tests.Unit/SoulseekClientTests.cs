@@ -5,13 +5,14 @@
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
     using System;
+    using System.Collections.Concurrent;
     using Xunit;
 
     public class SoulseekClientTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Uses defaults for minimal constructor")]
-        public void Uses_Defaults_For_Minimal_Constructor()
+        [Fact(DisplayName = "Instantiates with defaults for minimal constructor")]
+        public void Instantiates_With_Defaults_For_Minimal_Constructor()
         {
             var s = new SoulseekClient();
 
@@ -23,8 +24,8 @@
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Uses default options with read timeout zero")]
-        public void Uses_Default_Options_With_Read_Timeout_Zero()
+        [Fact(DisplayName = "Instantiates with read timeout zero")]
+        public void Instantiates_With_Read_Timeout_Zero()
         {
             var s = new SoulseekClient();
 
@@ -136,6 +137,56 @@
 
             Assert.Null(ex);
             Assert.Equal(SoulseekClientState.Disconnected, s.State);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect clears searches")]
+        public async void Disconnect_Clears_Searches()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            await s.ConnectAsync();
+
+            var searches = new ConcurrentDictionary<int, Search>();
+            searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
+            searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
+
+            s.SetProperty("ActiveSearches", searches);
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Empty(searches);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect clears downloads")]
+        public async void Disconnect_Clears_Downloads()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            await s.ConnectAsync();
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            activeDownloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
+            activeDownloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
+
+            var queuedDownloads = new ConcurrentDictionary<int, Download>();
+            queuedDownloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
+            queuedDownloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+            s.SetProperty("QueuedDownloads", queuedDownloads);
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Empty(activeDownloads);
+            Assert.Empty(queuedDownloads);
         }
     }
 }
