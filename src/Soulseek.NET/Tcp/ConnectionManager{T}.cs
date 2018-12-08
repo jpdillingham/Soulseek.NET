@@ -106,6 +106,12 @@ namespace Soulseek.NET.Tcp
             }
         }
 
+        public void RemoveAll()
+        {
+            ConnectionQueue.DequeueAndDisposeAll();
+            Connections.RemoveAndDisposeAll();
+        }
+
         #endregion Internal Methods
 
         #region Protected Methods
@@ -116,21 +122,7 @@ namespace Soulseek.NET.Tcp
             {
                 if (disposing)
                 {
-                    while (!ConnectionQueue.IsEmpty)
-                    {
-                        if (ConnectionQueue.TryDequeue(out var connection))
-                        {
-                            connection.Dispose();
-                        }
-                    }
-
-                    while (!Connections.IsEmpty)
-                    {
-                        if (Connections.TryGetValue(Connections.Keys.First(), out var connection))
-                        {
-                            connection.Dispose();
-                        }
-                    }
+                    RemoveAll();
                 }
 
                 Disposed = true;
