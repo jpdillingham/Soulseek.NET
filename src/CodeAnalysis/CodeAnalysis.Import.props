@@ -1,22 +1,26 @@
 <Project>
-  <PropertyGroup Condition="'$(Configuration)'=='Debug'">
-    <CodeAnalysisRuleSet>stylecop.ruleset</CodeAnalysisRuleSet>
-  </PropertyGroup>
-
   <ItemGroup>
-    <StyleCopFiles Include="$(MSBuildThisFileDirectory)\stylecop.json" />
-    <StyleCopFiles Include="$(MSBuildThisFileDirectory)\stylecop.ruleset" />
-
-    <AdditionalFiles Include="@(StyleCopFiles)">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-    <None Remove="@(StyleCopFiles)" />
-  </ItemGroup>
-
-  <ItemGroup>
+    <!-- StyleCop specific settings -->
+    <CAFiles Include="$(MSBuildThisFileDirectory)StyleCop.json" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
+
+    <!-- FxCop aka Roslyn-Analyzers aka ported VS analyzers -->
+    <PackageReference Include="Microsoft.CodeQuality.Analyzers" Version="2.6.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+
+    <!-- Configure rulesets enabling/disabling introduced roslyn analyzer rules from FxCop and StyleCop -->
+    <CAFiles Include="$(MSBuildThisFileDirectory)CodeAnalysis.ruleset" />
+    <AdditionalFiles Include="@(CAFiles)">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+    <None Include="@(CAFiles)" />
   </ItemGroup>
+  <PropertyGroup>
+    <CodeAnalysisRuleSet>$(MSBuildThisFileDirectory)CodeAnalysis.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
 </Project>
