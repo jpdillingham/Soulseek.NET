@@ -188,5 +188,24 @@
             Assert.Empty(activeDownloads);
             Assert.Empty(queuedDownloads);
         }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect clears peer queue")]
+        public async void Disconnect_Clears_Peer_Queue()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var p = new Mock<IConnectionManager<IMessageConnection>>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object);
+            await s.ConnectAsync();
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+
+            p.Verify(m => m.RemoveAll(), Times.AtLeastOnce);
+        }
     }
 }
