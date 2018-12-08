@@ -214,9 +214,12 @@ namespace Soulseek.NET
         /// <summary>
         ///     Disconnects the client from the server.
         /// </summary>
-        public void Disconnect()
+        /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
+        public void Disconnect(string message = null)
         {
-            ServerConnection.Disconnect("Client disconnected.");
+            ServerConnection.Disconnect(message ?? "Client disconnected.");
+
+            PeerConnectionManager.RemoveAll();
 
             ActiveSearches.RemoveAndDisposeAll();
 
@@ -499,13 +502,11 @@ namespace Soulseek.NET
         {
             if (!Disposed)
             {
+                Disconnect("Client is being disposed.");
+
                 if (disposing)
                 {
                     MessageWaiter.Dispose();
-
-                    var message = "Client is being disposed.";
-
-                    ServerConnection?.Disconnect(message);
                     ServerConnection?.Dispose();
                 }
 
