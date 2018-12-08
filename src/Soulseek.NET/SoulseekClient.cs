@@ -506,6 +506,7 @@ namespace Soulseek.NET
 
                 if (disposing)
                 {
+                    PeerConnectionManager.Dispose();
                     MessageWaiter.Dispose();
                     ServerConnection?.Dispose();
                 }
