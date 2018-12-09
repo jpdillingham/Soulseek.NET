@@ -19,14 +19,10 @@ public class Settings
         yield return PackageOutputDirectory;
     }
     #endregion
-    public bool ForcePublish { get; set; }
-    public bool ShouldPublish => !BuildSystem.IsLocalBuild;
-    
+
     public Settings(ICakeContext context, DirectoryPath baseOutputDirectory)
     {
         this.context = context ?? throw new ArgumentNullException(nameof(context));
         BaseOutputDirectory = baseOutputDirectory ?? throw new ArgumentNullException(nameof(baseOutputDirectory));
     }
-
-    BuildSystem BuildSystem => context.BuildSystem();
 }

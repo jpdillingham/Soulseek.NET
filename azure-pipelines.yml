@@ -6,7 +6,7 @@ jobs:
       vmImage: 'vs2017-win2016'
     steps:
     - powershell: |
-        .\build.ps1 -Target "BuildAndPublish" -Verbosity Diagnostic
+        .\build.ps1 -Target "BuildWithCoverageReport"
       displayName: 'Run build script'
     - task: PublishTestResults@2
       inputs:
@@ -19,6 +19,11 @@ jobs:
         reportDirectory: './out/CoverageReport'
         codecoverageTool: cobertura
       displayName: 'Publish code coverage report'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: './out/Packages/'
+        ArtifactName: Packages
+        ArtifactType: Container
   - job: Linux
     pool:
       vmImage: 'Ubuntu 16.04'

@@ -93,29 +93,6 @@ Task("Pack")
     }
 );
 
-Task("Publish")
-.WithCriteria<Settings>((ctx,settings) => (settings.ShouldPublish || settings.ForcePublish) && false) //Temporarily locked publish until credential situation has been cleared up
-.DoesForEach<Settings,FilePath>(
-    GetFiles("./out/Packages/**/*.nupkg"),
-    (settings, package) =>
-    {
-        // This needs some headscratching. You have options galore with this. You could use environment
-        // variables, Azure credential providers, arguments. You should and must decide this for yourself...
-        // I'll leave this as is for you to get familiar with Cake and credential CI stuff.
-        //
-        // (There's really not much wisdom or experience i can give you here. This stuff is always awkward,
-        // and as a developer you have same kind of common sense when comes to securing your secrets as i do. )
-        DotNetCoreNuGetPush(
-            package.FullPath,
-            new DotNetCoreNuGetPushSettings()
-            {
-                ApiKey = EnvironmentVariable("NUGET_TARGETFEED_APIKEY"),
-                Source = EnvironmentVariable("NUGET_TARGETFEED_URL")
-            }
-        );
-    }
-);
-
 ///////////////////////////////////////////////////////////////////////////////
 // Task Groups
 // These are intended to be the major entrypoints of the build script.
@@ -125,9 +102,9 @@ Task("Build")
 .IsDependentOn("TestWithCoverage")
 .IsDependentOn("Pack");
 
-Task("BuildAndPublish")
+Task("BuildWithCoverageReport")
+.IsDependentOn("TestWithCoverage")
 .IsDependentOn("GenerateCoverageReport")
-.IsDependentOn("Pack")
-.IsDependentOn("Publish");
+.IsDependentOn("Pack");
 
 RunTarget(target);
