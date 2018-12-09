@@ -101,7 +101,7 @@ Task("Publish")
     {
         // This needs some headscratching. You have options galore with this. You could use environment
         // variables, Azure credential providers, arguments. You should and must decide this for yourself...
-        // I'll leave this as is for you to get familiar with Cake and credential CI stuff. 
+        // I'll leave this as is for you to get familiar with Cake and credential CI stuff.
         //
         // (There's really not much wisdom or experience i can give you here. This stuff is always awkward,
         // and as a developer you have same kind of common sense when comes to securing your secrets as i do. )

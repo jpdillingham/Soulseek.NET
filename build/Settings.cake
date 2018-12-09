@@ -20,8 +20,8 @@ public class Settings
     }
     #endregion
     public bool ForcePublish { get; set; }
-    public bool ShouldPublish => !BuildSystem.IsLocalBuild && !IsPullRequest;
-
+    public bool ShouldPublish => !BuildSystem.IsLocalBuild;
+    
     public Settings(ICakeContext context, DirectoryPath baseOutputDirectory)
     {
         this.context = context ?? throw new ArgumentNullException(nameof(context));
@@ -29,13 +29,4 @@ public class Settings
     }
 
     BuildSystem BuildSystem => context.BuildSystem();
-    GitBranch CurrentBranch => context.GitBranchCurrent("./");
-
-    public bool IsPullRequest {
-        get {
-            if (string.IsNullOrEmpty(context.EnvironmentVariable("Build_BuildID")))
-                return context.EnvironmentVariable("Build_SourceBranch").Contains("refs/pull/");
-            return CurrentBranch.RemoteName.Contains("refs/pull/");
-        }
-    }
 }
