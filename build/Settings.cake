@@ -31,8 +31,16 @@ public class Settings
     BuildSystem BuildSystem => context.BuildSystem();
     GitBranch CurrentBranch => context.GitBranchCurrent("./");
 
-    static bool IsPullRequest(GitBranch branch)
+    bool IsPullRequest(GitBranch branch)
     {
-        return branch.RemoteName.Contains("refs/pull/");
+        string branchName;
+        if(BuildSystem.IsLocalBuild)
+            branchName = branch.RemoteName;
+        else if(BuildSystem.IsRunningOnTFS)
+            branchName = BuildSystem.TFBuild.Environment.Repository.Branch;
+        else
+            throw new InvalidOperationException("No Git branch information could be gathered to determine whether this is a PR branch or not.");
+
+        return branchName.Contains("refs/pull/");
     }
 }
