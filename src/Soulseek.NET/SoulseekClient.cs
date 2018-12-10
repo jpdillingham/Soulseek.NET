@@ -233,16 +233,16 @@ namespace Soulseek.NET
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         public void Disconnect(string message = null)
         {
-            ServerConnection.Disconnect(message ?? "Client disconnected.");
+            ServerConnection?.Disconnect(message ?? "Client disconnected.");
 
-            PeerConnectionManager.RemoveAll();
+            PeerConnectionManager?.RemoveAll();
 
-            ActiveSearches.RemoveAndDisposeAll();
+            ActiveSearches?.RemoveAndDisposeAll();
 
-            QueuedDownloads.RemoveAll();
-            ActiveDownloads.RemoveAll();
+            QueuedDownloads?.RemoveAll();
+            ActiveDownloads?.RemoveAll();
 
-            MessageWaiter.CancelAll();
+            MessageWaiter?.CancelAll();
 
             Username = null;
 
@@ -451,8 +451,8 @@ namespace Soulseek.NET
 
                 if (disposing)
                 {
-                    PeerConnectionManager.Dispose();
-                    MessageWaiter.Dispose();
+                    PeerConnectionManager?.Dispose();
+                    MessageWaiter?.Dispose();
                     ServerConnection?.Dispose();
                 }
 
