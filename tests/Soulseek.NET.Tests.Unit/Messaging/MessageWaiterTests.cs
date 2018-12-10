@@ -35,7 +35,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             {
                 var result = Guid.NewGuid();
                 var task = waiter.Wait<Guid>(new WaitKey(MessageCode.ServerLogin));
-                waiter.Complete(MessageCode.ServerLogin, result);
+                waiter.Complete(new WaitKey(MessageCode.ServerLogin), result);
 
                 var waitResult = await task;
 
@@ -57,7 +57,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             using (var waiter = new MessageWaiter())
             {
-                var ex = Record.Exception(() => waiter.Complete<object>(MessageCode.ServerAddPrivilegedUser, null));
+                var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.ServerAddPrivilegedUser), null));
 
                 Assert.Null(ex);
             }
@@ -283,7 +283,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
                 Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode), 999999);
                 object result = null;
 
-                waiter.Throw(key.MessageCode, new InvalidOperationException("error"));
+                waiter.Throw(new WaitKey(key.MessageCode), new InvalidOperationException("error"));
 
                 var ex = Record.Exception(() => result = task.Result);
 
