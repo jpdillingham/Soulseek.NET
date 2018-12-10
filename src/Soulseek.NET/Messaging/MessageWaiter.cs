@@ -155,11 +155,9 @@ namespace Soulseek.NET.Messaging
         /// <param name="timeout">The wait timeout.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        public Task<T> Wait<T>(MessageCode messageCode, string token = null, int? timeout = null, CancellationToken? cancellationToken = null)
+        public Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             timeout = timeout ?? DefaultTimeout;
-
-            var key = new WaitKey(messageCode, token);
 
             var wait = new PendingWait()
             {
@@ -186,9 +184,9 @@ namespace Soulseek.NET.Messaging
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        public Task<T> WaitIndefinitely<T>(MessageCode messageCode, string token = null, CancellationToken? cancellationToken = null)
+        public Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null)
         {
-            return Wait<T>(messageCode, token, MaxTimeoutValue, cancellationToken);
+            return Wait<T>(key, MaxTimeoutValue, cancellationToken);
         }
 
         /// <summary>

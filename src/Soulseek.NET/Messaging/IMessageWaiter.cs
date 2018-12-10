@@ -75,7 +75,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="timeout">The wait timeout.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        Task<T> Wait<T>(MessageCode messageCode, string token = null, int? timeout = null, CancellationToken? cancellationToken = null);
+        Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Adds a new wait for the specified <paramref name="messageCode"/> which does not time out.
@@ -85,7 +85,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        Task<T> WaitIndefinitely<T>(MessageCode messageCode, string token = null, CancellationToken? cancellationToken = null);
+        Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Cancels all waits.
