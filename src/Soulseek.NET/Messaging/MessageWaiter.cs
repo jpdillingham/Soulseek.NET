@@ -76,17 +76,6 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="result">The wait result.</param>
-        public void Complete<T>(MessageCode messageCode, T result)
-        {
-            Complete(messageCode, null, result);
-        }
-
-        /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> and <paramref name="token"/> with
         ///     the specified <paramref name="result"/>.
         /// </summary>
@@ -94,10 +83,8 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="result">The wait result.</param>
-        public void Complete<T>(MessageCode messageCode, string token, T result)
+        public void Complete<T>(WaitKey key, T result)
         {
-            var key = new WaitKey(messageCode, token);
-
             if (Waits.TryGetValue(key, out var queue))
             {
                 if (queue.TryDequeue(out var wait))
@@ -116,26 +103,14 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/>.
-        /// </summary>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="exception">The Exception to throw.</param>
-        public void Throw(MessageCode messageCode, Exception exception)
-        {
-            Throw(messageCode, null, exception);
-        }
-
-        /// <summary>
         ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified
         ///     <paramref name="messageCode"/> and <paramref name="token"/>.
         /// </summary>
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="exception">The Exception to throw.</param>
-        public void Throw(MessageCode messageCode, string token, Exception exception)
+        public void Throw(WaitKey key, Exception exception)
         {
-            var key = new WaitKey(messageCode, token);
-
             if (Waits.TryGetValue(key, out var queue))
             {
                 if (queue.TryDequeue(out var wait))

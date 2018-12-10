@@ -37,24 +37,7 @@ namespace Soulseek.NET.Messaging
         /// <typeparam name="T">The wait result type.</typeparam>
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="result">The wait result.</param>
-        void Complete<T>(MessageCode messageCode, T result);
-
-        /// <summary>
-        ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> and <paramref name="token"/> with
-        ///     the specified <paramref name="result"/>.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="token">The unique wait token.</param>
-        /// <param name="result">The wait result.</param>
-        void Complete<T>(MessageCode messageCode, string token, T result);
-
-        /// <summary>
-        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/>.
-        /// </summary>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="exception">The Exception to throw.</param>
-        void Throw(MessageCode messageCode, Exception exception);
+        void Complete<T>(WaitKey key, T result);
 
         /// <summary>
         ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified
@@ -63,7 +46,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="exception">The Exception to throw.</param>
-        void Throw(MessageCode messageCode, string token, Exception exception);
+        void Throw(WaitKey key, Exception exception);
 
         /// <summary>
         ///     Adds a new wait for the specified <paramref name="messageCode"/> and <paramref name="token"/> and with the
