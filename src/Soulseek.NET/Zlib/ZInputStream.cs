@@ -46,10 +46,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning disable 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Soulseek.NET.Zlib
 {
-	
-	public class ZInputStream:System.IO.BinaryReader
+    [ExcludeFromCodeCoverage]
+    public class ZInputStream:System.IO.BinaryReader
 	{
 		internal void  InitBlock()
 		{

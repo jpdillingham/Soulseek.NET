@@ -46,10 +46,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning disable 
 
 using System;
+using System.Diagnostics.CodeAnalysis;
+
 namespace Soulseek.NET.Zlib
 {
-	
-	sealed class Tree
+    [ExcludeFromCodeCoverage]
+    sealed class Tree
 	{
 		private const int MAX_BITS = 15;
 		private const int BL_CODES = 19;

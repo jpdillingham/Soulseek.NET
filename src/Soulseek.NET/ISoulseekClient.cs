@@ -61,11 +61,6 @@ namespace Soulseek.NET
         string Address { get; set; }
 
         /// <summary>
-        ///     Gets a value indicating whether a user is currently signed in.
-        /// </summary>
-        bool LoggedIn { get; }
-
-        /// <summary>
         ///     Gets the client options.
         /// </summary>
         SoulseekClientOptions Options { get; }
@@ -126,7 +121,8 @@ namespace Soulseek.NET
         /// <summary>
         ///     Disconnects the client from the server.
         /// </summary>
-        void Disconnect();
+        /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
+        void Disconnect(string message = null);
 
         /// <summary>
         ///     Disposes this instance.

@@ -62,13 +62,14 @@ namespace Soulseek.NET.Tcp
 
         #endregion Internal Constructors
 
+        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        public event EventHandler Connected;
+        public event EventHandler<string> Disconnected;
+        public event EventHandler<ConnectionDataEventArgs> DataRead;
+
         #region Public Properties
 
-        public Action<IConnection> ConnectHandler { get; set; } = (connection) => { };
         public object Context { get; set; }
-        public Action<IConnection, byte[], int, int> DataReadHandler { get; set; } = (connection, data, bytesRead, bytesTotal) => { };
-        public Action<IConnection, byte[], int, int> DataSentHandler { get; set; } = (connection, data, bytesSent, bytesTotal) => { };
-        public Action<IConnection, string> DisconnectHandler { get; set; } = (connection, message) => { };
         public IPAddress IPAddress { get; protected set; }
         public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
         public ConnectionOptions Options { get; protected set; }
@@ -146,9 +147,9 @@ namespace Soulseek.NET.Tcp
                 ChangeState(ConnectionState.Disconnecting, message);
 
                 InactivityTimer?.Stop();
-                WatchdogTimer.Stop();
-                Stream.Close();
-                TcpClient.Close();
+                WatchdogTimer?.Stop();
+                Stream?.Close();
+                TcpClient?.Close();
 
                 ChangeState(ConnectionState.Disconnected, message);
             }
@@ -195,7 +196,7 @@ namespace Soulseek.NET.Tcp
                 var data = buffer.Take(bytesRead);
                 result.AddRange(data);
 
-                DataReadHandler(this, data.ToArray(), totalBytesRead, count);
+                DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, count));
             }
 
             return result.ToArray();
@@ -226,8 +227,6 @@ namespace Soulseek.NET.Tcp
             try
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length);
-
-                DataSentHandler(this, bytes, bytes.Length, bytes.Length);
             }
             catch (Exception ex)
             {
@@ -248,13 +247,17 @@ namespace Soulseek.NET.Tcp
         {
             State = state;
 
+            var eventArgs = new ConnectionStateChangedEventArgs(state, message);
+
+            StateChanged?.Invoke(this, eventArgs);
+
             if (State == ConnectionState.Connected)
             {
-                ConnectHandler(this);
+                Connected?.Invoke(this, EventArgs.Empty);
             }
             else if (State == ConnectionState.Disconnected)
             {
-                DisconnectHandler(this, message);
+                Disconnected?.Invoke(this, message);
             }
         }
 

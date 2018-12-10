@@ -76,17 +76,6 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
-        /// </summary>
-        /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="result">The wait result.</param>
-        public void Complete<T>(MessageCode messageCode, T result)
-        {
-            Complete(messageCode, null, result);
-        }
-
-        /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> and <paramref name="token"/> with
         ///     the specified <paramref name="result"/>.
         /// </summary>
@@ -94,10 +83,8 @@ namespace Soulseek.NET.Messaging
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="result">The wait result.</param>
-        public void Complete<T>(MessageCode messageCode, string token, T result)
+        public void Complete<T>(WaitKey key, T result)
         {
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
-
             if (Waits.TryGetValue(key, out var queue))
             {
                 if (queue.TryDequeue(out var wait))
@@ -116,26 +103,14 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="messageCode"/>.
-        /// </summary>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="exception">The Exception to throw.</param>
-        public void Throw(MessageCode messageCode, Exception exception)
-        {
-            Throw(messageCode, null, exception);
-        }
-
-        /// <summary>
         ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified
         ///     <paramref name="messageCode"/> and <paramref name="token"/>.
         /// </summary>
         /// <param name="messageCode">The wait message code.</param>
         /// <param name="token">The unique wait token.</param>
         /// <param name="exception">The Exception to throw.</param>
-        public void Throw(MessageCode messageCode, string token, Exception exception)
+        public void Throw(WaitKey key, Exception exception)
         {
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
-
             if (Waits.TryGetValue(key, out var queue))
             {
                 if (queue.TryDequeue(out var wait))
@@ -155,11 +130,9 @@ namespace Soulseek.NET.Messaging
         /// <param name="timeout">The wait timeout.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        public Task<T> Wait<T>(MessageCode messageCode, string token = null, int? timeout = null, CancellationToken? cancellationToken = null)
+        public Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             timeout = timeout ?? DefaultTimeout;
-
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
 
             var wait = new PendingWait()
             {
@@ -186,9 +159,9 @@ namespace Soulseek.NET.Messaging
         /// <param name="token">A unique token for the wait.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
-        public Task<T> WaitIndefinitely<T>(MessageCode messageCode, string token = null, CancellationToken? cancellationToken = null)
+        public Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null)
         {
-            return Wait<T>(messageCode, token, MaxTimeoutValue, cancellationToken);
+            return Wait<T>(key, MaxTimeoutValue, cancellationToken);
         }
 
         /// <summary>
@@ -263,22 +236,6 @@ namespace Soulseek.NET.Messaging
             ///     The number of seconds after which the wait is to time out.
             /// </summary>
             public int TimeoutAfter;
-        }
-
-        /// <summary>
-        ///     The composite key for the wait dictionary.
-        /// </summary>
-        internal struct WaitKey
-        {
-            /// <summary>
-            ///     The message code of the wait.
-            /// </summary>
-            public MessageCode MessageCode;
-
-            /// <summary>
-            ///     The wait token.
-            /// </summary>
-            public string Token;
         }
     }
 }

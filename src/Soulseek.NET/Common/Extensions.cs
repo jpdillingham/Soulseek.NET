@@ -13,10 +13,13 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Net;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
     using System.Timers;
+    using System.Collections.Concurrent;
+    using System.Linq;
 
     /// <summary>
     ///     Extension methods.
@@ -73,6 +76,50 @@ namespace Soulseek.NET
                 }
 
                 return hash1 + (hash2 * 1566083941);
+            }
+        }
+
+        public static IPAddress ResolveIPAddress(this string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                return Dns.GetHostEntry(address).AddressList[0];
+            }
+        }
+
+        public static void RemoveAndDisposeAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
+            where TValue : IDisposable
+        {
+            while (!concurrentDictionary.IsEmpty)
+            {
+                if (concurrentDictionary.TryRemove(concurrentDictionary.Keys.First(), out var value))
+                {
+                    value.Dispose();
+                }
+            }
+        }
+
+        public static void RemoveAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
+        {
+            while (!concurrentDictionary.IsEmpty)
+            {
+                concurrentDictionary.TryRemove(concurrentDictionary.Keys.First(), out var _);
+            }
+        }
+
+        public static void DequeueAndDisposeAll<T>(this ConcurrentQueue<T> concurrentQueue)
+            where T : IDisposable
+        {
+            while (!concurrentQueue.IsEmpty)
+            {
+                if (concurrentQueue.TryDequeue(out var value))
+                {
+                    value.Dispose();
+                }
             }
         }
     }

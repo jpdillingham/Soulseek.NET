@@ -13,7 +13,7 @@ quality control.
 This library does NOT aim to provide the full functionality required to create 
 a replacement for the desktop client.
 
-The Soulseek network relys on sharing to operate.  If you're using this library to
+The Soulseek network relies on sharing to operate.  If you're using this library to
 download files, you should also run a copy of the desktop client to share a number of 
 files proportional to your download activity.  Taking without giving goes against the
 spirit of the network.
@@ -23,7 +23,7 @@ spirit of the network.
 - [ ] Private messaging
 - [x] Searching the network 
 - [x] Browsing individual user shares
-- [ ] Downloading of files
+- [x] Downloading of files
 
 ## Unsupported Functionality
 
