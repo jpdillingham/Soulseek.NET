@@ -340,7 +340,7 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
@@ -368,13 +368,13 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, GetKey(download.Username, download.Token)), cancellationToken);
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(new WaitKey(MessageCode.PeerTransferRequest, GetKey(download.Username, download.Filename)), cancellationToken);
+                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
@@ -468,11 +468,6 @@ namespace Soulseek.NET
         {
             State = state;
             Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(state, message)));
-        }
-
-        private string GetKey(params object[] parts)
-        {
-            return string.Join(":", parts);
         }
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
@@ -607,7 +602,7 @@ namespace Soulseek.NET
                     {
                         if (download.State != DownloadState.Completed)
                         {
-                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                            MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                         }
                     };
 
@@ -635,7 +630,7 @@ namespace Soulseek.NET
                     download.State = DownloadState.Completed;
                     connection.Disconnect($"Transfer complete.");
 
-                    MessageWaiter.Complete(MessageCode.PeerDownloadResponse, download.WaitKey, bytes);
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);
                 }
             }
             else
@@ -662,17 +657,17 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key.Username, BrowseResponse.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username), BrowseResponse.Parse(message));
                     break;
 
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, GetKey(connection.Username, transferResponse.Token), transferResponse);
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                     break;
 
                 case MessageCode.PeerTransferRequest:
                     var transferRequest = PeerTransferRequestIncoming.Parse(message);
-                    MessageWaiter.Complete(MessageCode.PeerTransferRequest, GetKey(connection.Username, transferRequest.Filename), transferRequest);
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
 
                     break;
 
@@ -697,19 +692,19 @@ namespace Soulseek.NET
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(message.Code, Integer.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), Integer.Parse(message));
                     break;
 
                 case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
                     break;
 
                 case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(message.Code, RoomList.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
                     break;
 
                 case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
                     break;
 
                 case MessageCode.ServerConnectToPeer:
@@ -724,7 +719,7 @@ namespace Soulseek.NET
 
                 case MessageCode.ServerGetPeerAddress:
                     var response = GetPeerAddressResponse.Parse(message);
-                    MessageWaiter.Complete(message.Code, response.Username, response);
+                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
                     break;
 
                 default:
@@ -765,7 +760,7 @@ namespace Soulseek.NET
                     },
                     CompleteHandler = (s, state) =>
                     {
-                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s); // searchWait above
+                        MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token.ToString()), s); // searchWait above
                         ActiveSearches.TryRemove(s.Token, out var _);
                         Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
 
