@@ -96,7 +96,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="result">The wait result.</param>
         public void Complete<T>(MessageCode messageCode, string token, T result)
         {
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
+            var key = new WaitKey(messageCode, token);
 
             if (Waits.TryGetValue(key, out var queue))
             {
@@ -134,7 +134,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="exception">The Exception to throw.</param>
         public void Throw(MessageCode messageCode, string token, Exception exception)
         {
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
+            var key = new WaitKey(messageCode, token);
 
             if (Waits.TryGetValue(key, out var queue))
             {
@@ -159,7 +159,7 @@ namespace Soulseek.NET.Messaging
         {
             timeout = timeout ?? DefaultTimeout;
 
-            var key = new WaitKey() { MessageCode = messageCode, Token = token };
+            var key = new WaitKey(messageCode, token);
 
             var wait = new PendingWait()
             {
@@ -263,22 +263,6 @@ namespace Soulseek.NET.Messaging
             ///     The number of seconds after which the wait is to time out.
             /// </summary>
             public int TimeoutAfter;
-        }
-
-        /// <summary>
-        ///     The composite key for the wait dictionary.
-        /// </summary>
-        internal struct WaitKey
-        {
-            /// <summary>
-            ///     The message code of the wait.
-            /// </summary>
-            public MessageCode MessageCode;
-
-            /// <summary>
-            ///     The wait token.
-            /// </summary>
-            public string Token;
         }
     }
 }
