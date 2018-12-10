@@ -208,13 +208,24 @@
             p.Verify(m => m.RemoveAll(), Times.AtLeastOnce);
         }
 
-        [Trait("Category", "Dispose")]
+        [Trait("Category", "Dispose/Finalize")]
         [Fact(DisplayName = "Disposes without exception")]
-        public async void Disposes_Without_Exception()
+        public void Disposes_Without_Exception()
         {
             var s = new SoulseekClient();
 
             var ex = Record.Exception(() => s.Dispose());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Dispose/Finalize")]
+        [Fact(DisplayName = "Finalizes without exception")]
+        public void Finalizes_Without_Exception()
+        {
+            var s = new SoulseekClient();
+
+            var ex = Record.Exception(() => s.InvokeMethod("Finalize"));
 
             Assert.Null(ex);
         }
