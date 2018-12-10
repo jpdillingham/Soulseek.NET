@@ -147,9 +147,9 @@ namespace Soulseek.NET.Tcp
                 ChangeState(ConnectionState.Disconnecting, message);
 
                 InactivityTimer?.Stop();
-                WatchdogTimer.Stop();
-                Stream.Close();
-                TcpClient.Close();
+                WatchdogTimer?.Stop();
+                Stream?.Close();
+                TcpClient?.Close();
 
                 ChangeState(ConnectionState.Disconnected, message);
             }

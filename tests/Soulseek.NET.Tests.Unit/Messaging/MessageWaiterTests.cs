@@ -34,12 +34,12 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             using (var waiter = new MessageWaiter())
             {
                 var result = Guid.NewGuid();
-                var task = waiter.Wait<Guid>(MessageCode.ServerLogin);
-                waiter.Complete(MessageCode.ServerLogin, result);
+                var task = waiter.Wait<Guid>(new WaitKey(MessageCode.ServerLogin));
+                waiter.Complete(new WaitKey(MessageCode.ServerLogin), result);
 
                 var waitResult = await task;
 
-                var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+                var key = new WaitKey(MessageCode.ServerLogin);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -57,7 +57,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             using (var waiter = new MessageWaiter())
             {
-                var ex = Record.Exception(() => waiter.Complete<object>(MessageCode.ServerAddPrivilegedUser, null));
+                var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.ServerAddPrivilegedUser), null));
 
                 Assert.Null(ex);
             }
@@ -67,12 +67,12 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Expiration ignores non-timed out waits")]
         public void Expiration_Ignores_Non_Timed_Out_Waits()
         {
-            var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+            var key = new WaitKey(MessageCode.ServerLogin);
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(key.MessageCode);
-                Task<object> tast2 = waiter.Wait<object>(key.MessageCode, null, 30);
+                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode));
+                Task<object> task2 = waiter.Wait<object>(new WaitKey(key.MessageCode), 30);
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
@@ -131,10 +131,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             using (var waiter = new MessageWaiter())
             {
-                var task1 = waiter.Wait<object>(MessageCode.ServerLogin);
-                var task2 = waiter.Wait<object>(MessageCode.ServerLogin);
+                var task1 = waiter.Wait<object>(new WaitKey(MessageCode.ServerLogin));
+                var task2 = waiter.Wait<object>(new WaitKey(MessageCode.ServerLogin));
 
-                var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+                var key = new WaitKey(MessageCode.ServerLogin);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -163,11 +163,11 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [InlineData(MessageCode.ServerLogin, "token", 13)]
         public void Wait_Invocation_Creates_Valid_Wait(MessageCode code, string token, int? timeout)
         {
-            var key = new WaitKey() { MessageCode = code, Token = token };
+            var key = new WaitKey(code, token);
 
             using (var waiter = new MessageWaiter())
             {
-                Task<object> task = waiter.Wait<object>(key.MessageCode, key.Token, timeout);
+                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode, key.Token), timeout);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -195,11 +195,11 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Wait throws and is dequeued when timing out")]
         public void Wait_Throws_And_Is_Dequeued_When_Timing_out()
         {
-            var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+            var key = new WaitKey(MessageCode.ServerLogin);
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(key.MessageCode);
+                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode));
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
@@ -227,11 +227,11 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var tcs = new CancellationTokenSource();
             tcs.CancelAfter(100);
 
-            var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+            var key = new WaitKey(MessageCode.ServerLogin);
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(key.MessageCode, null, 999999, tcs.Token);
+                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode), 999999, tcs.Token);
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
@@ -257,13 +257,13 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
         {
             var waiter = new MessageWaiter(0);
-            var loginKey = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = "1" };
-            var loginKey2 = new WaitKey() { MessageCode = MessageCode.ServerLogin, Token = "2" };
-            var leaveKey = new WaitKey() { MessageCode = MessageCode.ServerLeaveRoom };
+            var loginKey = new WaitKey(MessageCode.ServerLogin, "1");
+            var loginKey2 = new WaitKey(MessageCode.ServerLogin, "2");
+            var leaveKey = new WaitKey(MessageCode.ServerLeaveRoom);
 
-            var loginTask = waiter.Wait<object>(loginKey.MessageCode, loginKey.Token);
-            var loginTask2 = waiter.Wait<object>(loginKey2.MessageCode, loginKey2.Token);
-            var leaveTask = waiter.Wait<object>(leaveKey.MessageCode);
+            var loginTask = waiter.Wait<object>(new WaitKey(loginKey.MessageCode, loginKey.Token));
+            var loginTask2 = waiter.Wait<object>(new WaitKey(loginKey2.MessageCode, loginKey2.Token));
+            var leaveTask = waiter.Wait<object>(new WaitKey(leaveKey.MessageCode));
 
             waiter.CancelAll();
 
@@ -276,14 +276,14 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Wait throws and is dequeued when thrown")]
         public void Wait_Throws_And_Is_Dequeued_When_Thrown()
         {
-            var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+            var key = new WaitKey(MessageCode.ServerLogin);
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(key.MessageCode, null, 999999);
+                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode), 999999);
                 object result = null;
 
-                waiter.Throw(key.MessageCode, new InvalidOperationException("error"));
+                waiter.Throw(new WaitKey(key.MessageCode), new InvalidOperationException("error"));
 
                 var ex = Record.Exception(() => result = task.Result);
 
@@ -307,13 +307,13 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "WaitIndefinitely invocation creates Wait with max timeout")]
         public void WaitIndefinitely_Invocation_Creates_Wait_With_Max_Timeout()
         {
-            var key = new WaitKey() { MessageCode = MessageCode.ServerLogin };
+            var key = new WaitKey(MessageCode.ServerLogin);
 
             using (var waiter = new MessageWaiter())
             {
                 var maxConst = waiter.GetField<int>("MaxTimeoutValue");
 
-                Task<object> task = waiter.WaitIndefinitely<object>(key.MessageCode, key.Token);
+                Task<object> task = waiter.WaitIndefinitely<object>(new WaitKey(key.MessageCode, key.Token));
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);

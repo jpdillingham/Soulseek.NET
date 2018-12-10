@@ -18,6 +18,8 @@ namespace Soulseek.NET
     using System.Text;
     using System.Threading.Tasks;
     using System.Timers;
+    using System.Collections.Concurrent;
+    using System.Linq;
 
     /// <summary>
     ///     Extension methods.
@@ -86,6 +88,38 @@ namespace Soulseek.NET
             else
             {
                 return Dns.GetHostEntry(address).AddressList[0];
+            }
+        }
+
+        public static void RemoveAndDisposeAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
+            where TValue : IDisposable
+        {
+            while (!concurrentDictionary.IsEmpty)
+            {
+                if (concurrentDictionary.TryRemove(concurrentDictionary.Keys.First(), out var value))
+                {
+                    value.Dispose();
+                }
+            }
+        }
+
+        public static void RemoveAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
+        {
+            while (!concurrentDictionary.IsEmpty)
+            {
+                concurrentDictionary.TryRemove(concurrentDictionary.Keys.First(), out var _);
+            }
+        }
+
+        public static void DequeueAndDisposeAll<T>(this ConcurrentQueue<T> concurrentQueue)
+            where T : IDisposable
+        {
+            while (!concurrentQueue.IsEmpty)
+            {
+                if (concurrentQueue.TryDequeue(out var value))
+                {
+                    value.Dispose();
+                }
             }
         }
     }

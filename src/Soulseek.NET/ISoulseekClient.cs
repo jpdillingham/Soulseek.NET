@@ -121,7 +121,8 @@ namespace Soulseek.NET
         /// <summary>
         ///     Disconnects the client from the server.
         /// </summary>
-        void Disconnect();
+        /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
+        void Disconnect(string message = null);
 
         /// <summary>
         ///     Disposes this instance.

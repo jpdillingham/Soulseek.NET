@@ -30,8 +30,12 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
+        #region Private Fields
+
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
+
+        #endregion Private Fields
 
         #region Public Constructors
 
@@ -71,6 +75,18 @@ namespace Soulseek.NET
         }
 
         #endregion Internal Constructors
+
+        #region Private Destructors
+
+        /// <summary>
+        ///     Finalizes an instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
+        ~SoulseekClient()
+        {
+            Dispose(false);
+        }
+
+        #endregion Private Destructors
 
         #region Public Events
 
@@ -214,25 +230,19 @@ namespace Soulseek.NET
         /// <summary>
         ///     Disconnects the client from the server.
         /// </summary>
-        public void Disconnect()
+        /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
+        public void Disconnect(string message = null)
         {
-            ServerConnection.Disconnect("Client disconnected.");
+            ServerConnection?.Disconnect(message ?? "Client disconnected.");
 
-            var searches = ActiveSearches;
-            ActiveSearches = new ConcurrentDictionary<int, Search>();
+            PeerConnectionManager?.RemoveAll();
 
-            while (!searches.IsEmpty)
-            {
-                if (searches.TryRemove(searches.Keys.First(), out var search))
-                {
-                    search.Dispose();
-                }
-            }
+            ActiveSearches?.RemoveAndDisposeAll();
 
-            // todo: clear downloads
-            // todo: clear peer queue
+            QueuedDownloads?.RemoveAll();
+            ActiveDownloads?.RemoveAll();
 
-            MessageWaiter.CancelAll();
+            MessageWaiter?.CancelAll();
 
             Username = null;
 
@@ -245,6 +255,7 @@ namespace Soulseek.NET
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public async Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
@@ -266,7 +277,7 @@ namespace Soulseek.NET
                 throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
 
-            var loginWait = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
+            var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
 
             await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
 
@@ -308,78 +319,6 @@ namespace Soulseek.NET
             return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true);
         }
 
-        private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
-        {
-            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
-            {
-                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
-            }
-
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
-            }
-
-            if (ActiveSearches.ContainsKey(token))
-            {
-                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
-            }
-
-            options = options ?? new SearchOptions();
-
-            try
-            {
-                var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
-
-                var search = new Search(searchText, token, options)
-                {
-                    ResponseHandler = (s, response) =>
-                    {
-                        var e = new SearchResponseReceivedEventArgs(s, response);
-                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
-                    },
-                    CompleteHandler = (s, state) =>
-                    {
-                        MessageWaiter.Complete(MessageCode.ServerFileSearch, token.ToString(), s); // searchWait above
-                        ActiveSearches.TryRemove(s.Token, out var _);
-                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
-
-                        if (!waitForCompletion)
-                        {
-                            s.Dispose();
-                        }
-                    }
-                };
-
-                ActiveSearches.TryAdd(search.Token, search);
-                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
-
-                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
-
-                if (!waitForCompletion)
-                {
-                    return default(IEnumerable<SearchResponse>);
-                }
-
-                try
-                {
-                    await searchWait; // completed in CompleteHandler above
-                }
-                catch (OperationCanceledException)
-                {
-                    search.Complete(SearchState.Completed | SearchState.Cancelled);
-                }
-
-                var responses = search.Responses;
-                search.Dispose();
-                return responses;
-            }
-            catch (Exception ex)
-            {
-                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
-            }
-        }
-
         #endregion Public Methods
 
         #region Internal Methods
@@ -396,12 +335,12 @@ namespace Soulseek.NET
         {
             try
             {
-                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
+                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(new WaitKey(MessageCode.PeerBrowseResponse, username), cancellationToken);
 
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage());
@@ -423,19 +362,19 @@ namespace Soulseek.NET
             try
             {
                 var download = new Download(username, filename, token);
-                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(MessageCode.PeerDownloadResponse, download.WaitKey, cancellationToken);
+                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), cancellationToken);
 
                 // establish a message connection to the peer
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, GetKey(download.Username, download.Token), cancellationToken);
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, GetKey(download.Username, download.Filename), cancellationToken);
+                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
@@ -508,13 +447,12 @@ namespace Soulseek.NET
         {
             if (!Disposed)
             {
+                Disconnect("Client is being disposed.");
+
                 if (disposing)
                 {
-                    MessageWaiter.Dispose();
-
-                    var message = "Client is being disposed.";
-
-                    ServerConnection?.Disconnect(message);
+                    PeerConnectionManager?.Dispose();
+                    MessageWaiter?.Dispose();
                     ServerConnection?.Dispose();
                 }
 
@@ -532,14 +470,9 @@ namespace Soulseek.NET
             Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(state, message)));
         }
 
-        private string GetKey(params object[] parts)
-        {
-            return string.Join(":", parts);
-        }
-
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
-            var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
+            var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(new WaitKey(MessageCode.ServerGetPeerAddress, username));
 
             var request = new GetPeerAddressRequest(username);
             await ServerConnection.SendMessageAsync(request.ToMessage());
@@ -669,7 +602,7 @@ namespace Soulseek.NET
                     {
                         if (download.State != DownloadState.Completed)
                         {
-                            MessageWaiter.Throw(MessageCode.PeerDownloadResponse, download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                            MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                         }
                     };
 
@@ -697,7 +630,7 @@ namespace Soulseek.NET
                     download.State = DownloadState.Completed;
                     connection.Disconnect($"Transfer complete.");
 
-                    MessageWaiter.Complete(MessageCode.PeerDownloadResponse, download.WaitKey, bytes);
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);
                 }
             }
             else
@@ -724,17 +657,17 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(MessageCode.PeerBrowseResponse, connection.Key.Username, BrowseResponse.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username), BrowseResponse.Parse(message));
                     break;
 
                 case MessageCode.PeerTransferResponse:
                     var transferResponse = PeerTransferResponseIncoming.Parse(message);
-                    MessageWaiter.Complete(MessageCode.PeerTransferResponse, GetKey(connection.Username, transferResponse.Token), transferResponse);
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                     break;
 
                 case MessageCode.PeerTransferRequest:
                     var transferRequest = PeerTransferRequestIncoming.Parse(message);
-                    MessageWaiter.Complete(MessageCode.PeerTransferRequest, GetKey(connection.Username, transferRequest.Filename), transferRequest);
+                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
 
                     break;
 
@@ -759,19 +692,19 @@ namespace Soulseek.NET
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(message.Code, Integer.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), Integer.Parse(message));
                     break;
 
                 case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(message.Code, LoginResponse.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
                     break;
 
                 case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(message.Code, RoomList.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
                     break;
 
                 case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(message.Code, PrivilegedUserList.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
                     break;
 
                 case MessageCode.ServerConnectToPeer:
@@ -786,12 +719,84 @@ namespace Soulseek.NET
 
                 case MessageCode.ServerGetPeerAddress:
                     var response = GetPeerAddressResponse.Parse(message);
-                    MessageWaiter.Complete(message.Code, response.Username, response);
+                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
                     break;
 
                 default:
                     Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
                     break;
+            }
+        }
+
+        private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        {
+            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
+            {
+                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
+            }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
+            }
+
+            if (ActiveSearches.ContainsKey(token))
+            {
+                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+            }
+
+            options = options ?? new SearchOptions();
+
+            try
+            {
+                var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token.ToString()), cancellationToken);
+
+                var search = new Search(searchText, token, options)
+                {
+                    ResponseHandler = (s, response) =>
+                    {
+                        var e = new SearchResponseReceivedEventArgs(s, response);
+                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
+                    },
+                    CompleteHandler = (s, state) =>
+                    {
+                        MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token.ToString()), s); // searchWait above
+                        ActiveSearches.TryRemove(s.Token, out var _);
+                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
+
+                        if (!waitForCompletion)
+                        {
+                            s.Dispose();
+                        }
+                    }
+                };
+
+                ActiveSearches.TryAdd(search.Token, search);
+                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
+
+                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage());
+
+                if (!waitForCompletion)
+                {
+                    return default(IEnumerable<SearchResponse>);
+                }
+
+                try
+                {
+                    await searchWait; // completed in CompleteHandler above
+                }
+                catch (OperationCanceledException)
+                {
+                    search.Complete(SearchState.Completed | SearchState.Cancelled);
+                }
+
+                var responses = search.Responses;
+                search.Dispose();
+                return responses;
+            }
+            catch (Exception ex)
+            {
+                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
         }
 
