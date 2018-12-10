@@ -207,5 +207,16 @@
 
             p.Verify(m => m.RemoveAll(), Times.AtLeastOnce);
         }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Disposes without exception")]
+        public async void Disposes_Without_Exception()
+        {
+            var s = new SoulseekClient();
+
+            var ex = Record.Exception(() => s.Dispose());
+
+            Assert.Null(ex);
+        }
     }
 }
