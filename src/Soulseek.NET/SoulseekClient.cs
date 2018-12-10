@@ -277,7 +277,7 @@ namespace Soulseek.NET
                 throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
 
-            var loginWait = MessageWaiter.Wait<LoginResponse>(MessageCode.ServerLogin);
+            var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
 
             await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage());
 
@@ -335,7 +335,7 @@ namespace Soulseek.NET
         {
             try
             {
-                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(MessageCode.PeerBrowseResponse, username, cancellationToken);
+                var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(new WaitKey(MessageCode.PeerBrowseResponse, username), cancellationToken);
 
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
                 connection.Disconnected += (sender, message) =>
@@ -362,7 +362,7 @@ namespace Soulseek.NET
             try
             {
                 var download = new Download(username, filename, token);
-                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(MessageCode.PeerDownloadResponse, download.WaitKey, cancellationToken);
+                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), cancellationToken);
 
                 // establish a message connection to the peer
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions);
@@ -373,8 +373,8 @@ namespace Soulseek.NET
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(MessageCode.PeerTransferResponse, GetKey(download.Username, download.Token), cancellationToken);
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(MessageCode.PeerTransferRequest, GetKey(download.Username, download.Filename), cancellationToken);
+                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, GetKey(download.Username, download.Token)), cancellationToken);
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(new WaitKey(MessageCode.PeerTransferRequest, GetKey(download.Username, download.Filename)), cancellationToken);
 
                 // request the file and await the response
                 await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage());
@@ -477,7 +477,7 @@ namespace Soulseek.NET
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
         {
-            var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(MessageCode.ServerGetPeerAddress, username);
+            var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(new WaitKey(MessageCode.ServerGetPeerAddress, username));
 
             var request = new GetPeerAddressRequest(username);
             await ServerConnection.SendMessageAsync(request.ToMessage());
@@ -754,7 +754,7 @@ namespace Soulseek.NET
 
             try
             {
-                var searchWait = MessageWaiter.WaitIndefinitely<Search>(MessageCode.ServerFileSearch, token.ToString(), cancellationToken);
+                var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token.ToString()), cancellationToken);
 
                 var search = new Search(searchText, token, options)
                 {
