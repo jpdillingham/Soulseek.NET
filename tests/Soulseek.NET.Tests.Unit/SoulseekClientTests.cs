@@ -78,21 +78,16 @@
         }
 
         [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect fails if connected or transitioning")]
-        [InlineData(ConnectionState.Connected)]
-        [InlineData(ConnectionState.Connecting)]
-        [InlineData(ConnectionState.Disconnecting)]
-        public async void Connect_Fails_If_Connected_Or_Transitioning(ConnectionState connectionState)
+        [Fact(DisplayName = "Connect fails if connected")]
+        public async void Connect_Fails_If_Connected()
         {
-            var c = new Mock<IMessageConnection>();
-            c.Setup(m => m.State).Returns(connectionState);
-
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
             Assert.NotNull(ex);
-            Assert.IsType<ConnectionStateException>(ex);
+            Assert.IsType<InvalidOperationException>(ex);
         }
 
         [Trait("Category", "Connect")]
@@ -244,6 +239,7 @@
         public async void Login_Throws_On_Null_Username()
         {
             var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(null, Guid.NewGuid().ToString()));
 
@@ -262,6 +258,7 @@
         public async void Login_Throws_On_Bad_Input(string username, string password)
         {
             var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(username, password));
 
