@@ -207,14 +207,9 @@ namespace Soulseek.NET
         /// </exception>
         public async Task ConnectAsync()
         {
-            if (ServerConnection.State == ConnectionState.Connected)
+            if (State.HasFlag(SoulseekClientState.Connected))
             {
-                throw new ConnectionStateException($"Failed to connect; the client is already connected.");
-            }
-
-            if (ServerConnection.State == ConnectionState.Connecting || ServerConnection.State == ConnectionState.Disconnecting)
-            {
-                throw new ConnectionStateException($"Failed to connect; the client is transitioning between states.");
+                throw new InvalidOperationException($"Failed to connect; the client is already connected.");
             }
 
             try
