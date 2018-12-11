@@ -272,9 +272,24 @@ namespace Soulseek.NET
         /// <exception cref="LoginException">Thrown when the login fails.</exception>
         public async Task LoginAsync(string username, string password)
         {
+            if (!State.HasFlag(SoulseekClientState.Connected))
+            {
+                throw new InvalidOperationException($"The client must be connected to log in.");
+            }
+
             if (State.HasFlag(SoulseekClientState.LoggedIn))
             {
-                throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
+                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
+            }
+
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new ArgumentException("Username may not be null or an empty string.", nameof(username));
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                throw new ArgumentException("Password may not be null or an empty string.", nameof(password));
             }
 
             var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
