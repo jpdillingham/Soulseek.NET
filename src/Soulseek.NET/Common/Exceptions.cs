@@ -77,26 +77,6 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class ConnectionStateException : ConnectionException
-    {
-        public ConnectionStateException()
-            : base()
-        {
-        }
-
-        public ConnectionStateException(string message)
-            : base(message)
-        {
-        }
-
-        public ConnectionStateException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
     public class ConnectionWriteException : ConnectionException
     {
         public ConnectionWriteException()

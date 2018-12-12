@@ -185,14 +185,14 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            if (ServerConnection.State != ConnectionState.Connected)
+            if (!State.HasFlag(SoulseekClientState.Connected))
             {
-                throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
             }
 
             if (!State.HasFlag(SoulseekClientState.LoggedIn))
             {
-                throw new LoginException($"A user must be logged in to browse.");
+                throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
             return await BrowseAsync(username, cancellationToken, null);
@@ -740,9 +740,14 @@ namespace Soulseek.NET
 
         private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
+            if (!State.HasFlag(SoulseekClientState.Connected))
             {
-                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
+                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientState.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to search.");
             }
 
             if (string.IsNullOrWhiteSpace(searchText))
