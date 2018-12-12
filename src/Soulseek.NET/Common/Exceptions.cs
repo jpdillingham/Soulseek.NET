@@ -37,66 +37,6 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class ConnectionException : SoulseekClientException
-    {
-        public ConnectionException()
-            : base()
-        {
-        }
-
-        public ConnectionException(string message)
-            : base(message)
-        {
-        }
-
-        public ConnectionException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class ConnectionReadException : ConnectionException
-    {
-        public ConnectionReadException()
-            : base()
-        {
-        }
-
-        public ConnectionReadException(string message)
-            : base(message)
-        {
-        }
-
-        public ConnectionReadException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class ConnectionWriteException : ConnectionException
-    {
-        public ConnectionWriteException()
-            : base()
-        {
-        }
-
-        public ConnectionWriteException(string message)
-            : base(message)
-        {
-        }
-
-        public ConnectionWriteException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
     public class LoginException : SoulseekClientException
     {
         public LoginException()
