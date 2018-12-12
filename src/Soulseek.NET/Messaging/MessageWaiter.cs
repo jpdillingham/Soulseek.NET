@@ -190,22 +190,18 @@ namespace Soulseek.NET.Messaging
             {
                 if (queue.Value.TryPeek(out var nextPendingWait))
                 {
-                    var wait = queue.Key.MessageCode + (queue.Key.Token == null ? string.Empty : $" ({queue.Key.Token}) ");
-
                     if (nextPendingWait.CancellationToken != null && ((CancellationToken)nextPendingWait.CancellationToken).IsCancellationRequested)
                     {
                         if (queue.Value.TryDequeue(out var cancelledWait))
                         {
-                            var message = $"Message wait for {wait} was cancelled.";
-                            cancelledWait.TaskCompletionSource.SetException(new MessageCancelledException(message));
+                            cancelledWait.TaskCompletionSource.SetException(new MessageCancelledException("Message was cancelled."));
                         }
                     }
                     else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
                     {
                         if (queue.Value.TryDequeue(out var timedOutWait))
                         {
-                            var message = $"Message wait for {wait} timed out after {timedOutWait.TimeoutAfter} seconds.";
-                            timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException(message));
+                            timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message timed out after {timedOutWait.TimeoutAfter} seconds."));
                         }
                     }
                 }
