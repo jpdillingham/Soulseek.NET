@@ -68,22 +68,26 @@
             Assert.Equal(SoulseekClientState.Disconnected, s.State);
         }
 
-        [Trait("Category", "Connect")]
-        [Theory(DisplayName = "Connect fails if connected or transitioning")]
-        [InlineData(ConnectionState.Connected)]
-        [InlineData(ConnectionState.Connecting)]
-        [InlineData(ConnectionState.Disconnecting)]
-        public async void Connect_Fails_If_Connected_Or_Transitioning(ConnectionState connectionState)
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Username is null initially")]
+        public void Username_Is_Null_Initially()
         {
-            var c = new Mock<IMessageConnection>();
-            c.Setup(m => m.State).Returns(connectionState);
+            var s = new SoulseekClient();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            Assert.Null(s.Username);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect fails if connected")]
+        public async void Connect_Fails_If_Connected()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
             Assert.NotNull(ex);
-            Assert.IsType<ConnectionStateException>(ex);
+            Assert.IsType<InvalidOperationException>(ex);
         }
 
         [Trait("Category", "Connect")]
@@ -228,6 +232,64 @@
             var ex = Record.Exception(() => s.InvokeMethod("Finalize"));
 
             Assert.Null(ex);
+        }
+
+        [Trait("Category", "Login")]
+        [Fact(DisplayName = "Login throws on null username")]
+        public async void Login_Throws_On_Null_Username()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected);
+
+            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(null, Guid.NewGuid().ToString()));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "Login")]
+        [Theory(DisplayName = "Login throws on bad input")]
+        [InlineData(null, "a")]
+        [InlineData("", "a")]
+        [InlineData("a", null)]
+        [InlineData("a", "")]
+        [InlineData("", "")]
+        [InlineData(null, null)]
+        public async void Login_Throws_On_Bad_Input(string username, string password)
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected);
+
+            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(username, password));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "Login")]
+        [Fact(DisplayName = "Login throws if logged in")]
+        public async void Login_Throws_If_Logged_In()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
+
+            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Login")]
+        [Fact(DisplayName = "Login throws if not connected")]
+        public async void Login_Throws_If_Not_Connected()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientState.Disconnected);
+
+            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
         }
     }
 }

@@ -19,18 +19,12 @@ namespace Soulseek.NET.Messaging
     /// </summary>
     internal class WaitKey
     {
-        public WaitKey(MessageCode messageCode, params object[] tokenParts)
+        public WaitKey(params object[] tokenParts)
         {
-            MessageCode = messageCode;
             TokenParts = tokenParts;
         }
 
         public object[] TokenParts { get; private set; }
-
-        /// <summary>
-        ///     The message code of the wait.
-        /// </summary>
-        public MessageCode MessageCode;
 
         /// <summary>
         ///     The wait token.
@@ -42,8 +36,7 @@ namespace Soulseek.NET.Messaging
             try
             {
                 var key = (WaitKey)obj;
-
-                return MessageCode == key.MessageCode && Token == key.Token;
+                return Token == key.Token;
             }
             catch (Exception)
             {
@@ -53,7 +46,7 @@ namespace Soulseek.NET.Messaging
 
         public override int GetHashCode()
         {
-            return MessageCode.GetHashCode() ^ Token.GetHashCode();
+            return Token.GetHashCode();
         }
     }
 }

@@ -94,7 +94,7 @@ namespace Soulseek.NET.Tcp
         {
             if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
             {
-                throw new ConnectionStateException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
+                throw new InvalidOperationException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
@@ -206,12 +206,12 @@ namespace Soulseek.NET.Tcp
         {
             if (!TcpClient.Connected)
             {
-                throw new ConnectionStateException($"The underlying TcpConnection is closed.");
+                throw new InvalidOperationException($"The underlying TcpConnection is closed.");
             }
 
             if (State != ConnectionState.Connected)
             {
-                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
+                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
             if (bytes == null || bytes.Length == 0)

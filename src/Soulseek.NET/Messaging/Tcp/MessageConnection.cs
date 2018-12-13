@@ -54,7 +54,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
             if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
             {
-                throw new ConnectionStateException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
+                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
             }
 
             if (State == ConnectionState.Pending || State == ConnectionState.Connecting)

@@ -71,8 +71,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode));
-                Task<object> task2 = waiter.Wait<object>(new WaitKey(key.MessageCode), 30);
+                Task<object> task = waiter.Wait<object>(key);
+                Task<object> task2 = waiter.Wait<object>(key, 30);
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
@@ -83,7 +83,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 Assert.NotNull(ex);
                 Assert.IsType<MessageTimeoutException>(ex.InnerException);
-                Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -167,7 +166,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter())
             {
-                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode, key.Token), timeout);
+                Task<object> task = waiter.Wait<object>(key, timeout);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -199,7 +198,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode));
+                Task<object> task = waiter.Wait<object>(key);
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
@@ -210,7 +209,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 Assert.NotNull(ex);
                 Assert.IsType<MessageTimeoutException>(ex.InnerException);
-                Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -231,7 +229,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode), 999999, tcs.Token);
+                Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
@@ -242,7 +240,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
                 Assert.NotNull(ex);
                 Assert.IsType<MessageCancelledException>(ex.InnerException);
-                Assert.Contains(MessageCode.ServerLogin.ToString(), ex.InnerException.Message);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -261,9 +258,9 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var loginKey2 = new WaitKey(MessageCode.ServerLogin, "2");
             var leaveKey = new WaitKey(MessageCode.ServerLeaveRoom);
 
-            var loginTask = waiter.Wait<object>(new WaitKey(loginKey.MessageCode, loginKey.Token));
-            var loginTask2 = waiter.Wait<object>(new WaitKey(loginKey2.MessageCode, loginKey2.Token));
-            var leaveTask = waiter.Wait<object>(new WaitKey(leaveKey.MessageCode));
+            var loginTask = waiter.Wait<object>(loginKey);
+            var loginTask2 = waiter.Wait<object>(loginKey2);
+            var leaveTask = waiter.Wait<object>(leaveKey);
 
             waiter.CancelAll();
 
@@ -280,10 +277,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             using (var waiter = new MessageWaiter(0))
             {
-                Task<object> task = waiter.Wait<object>(new WaitKey(key.MessageCode), 999999);
+                Task<object> task = waiter.Wait<object>(key, 999999);
                 object result = null;
 
-                waiter.Throw(new WaitKey(key.MessageCode), new InvalidOperationException("error"));
+                waiter.Throw(key, new InvalidOperationException("error"));
 
                 var ex = Record.Exception(() => result = task.Result);
 
@@ -313,7 +310,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             {
                 var maxConst = waiter.GetField<int>("MaxTimeoutValue");
 
-                Task<object> task = waiter.WaitIndefinitely<object>(new WaitKey(key.MessageCode, key.Token));
+                Task<object> task = waiter.WaitIndefinitely<object>(key);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);

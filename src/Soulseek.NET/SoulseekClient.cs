@@ -185,14 +185,14 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            if (ServerConnection.State != ConnectionState.Connected)
+            if (!State.HasFlag(SoulseekClientState.Connected))
             {
-                throw new ConnectionStateException($"The server connection must be Connected to browse (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
             }
 
             if (!State.HasFlag(SoulseekClientState.LoggedIn))
             {
-                throw new LoginException($"A user must be logged in to browse.");
+                throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
             return await BrowseAsync(username, cancellationToken, null);
@@ -207,14 +207,9 @@ namespace Soulseek.NET
         /// </exception>
         public async Task ConnectAsync()
         {
-            if (ServerConnection.State == ConnectionState.Connected)
+            if (State.HasFlag(SoulseekClientState.Connected))
             {
-                throw new ConnectionStateException($"Failed to connect; the client is already connected.");
-            }
-
-            if (ServerConnection.State == ConnectionState.Connecting || ServerConnection.State == ConnectionState.Disconnecting)
-            {
-                throw new ConnectionStateException($"Failed to connect; the client is transitioning between states.");
+                throw new InvalidOperationException($"Failed to connect; the client is already connected.");
             }
 
             try
@@ -272,9 +267,24 @@ namespace Soulseek.NET
         /// <exception cref="LoginException">Thrown when the login fails.</exception>
         public async Task LoginAsync(string username, string password)
         {
+            if (!State.HasFlag(SoulseekClientState.Connected))
+            {
+                throw new InvalidOperationException($"The client must be connected to log in.");
+            }
+
             if (State.HasFlag(SoulseekClientState.LoggedIn))
             {
-                throw new LoginException($"Already logged in as {Username}.  Disconnect before logging in again.");
+                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
+            }
+
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new ArgumentException("Username may not be null or an empty string.", nameof(username));
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                throw new ArgumentException("Password may not be null or an empty string.", nameof(password));
             }
 
             var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
@@ -730,9 +740,14 @@ namespace Soulseek.NET
 
         private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (ServerConnection.State != ConnectionState.Connected || !State.HasFlag(SoulseekClientState.LoggedIn))
+            if (!State.HasFlag(SoulseekClientState.Connected))
             {
-                throw new ConnectionStateException($"The server connection must be Connected and a user must be logged in before carrying out operations.");
+                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientState.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to search.");
             }
 
             if (string.IsNullOrWhiteSpace(searchText))
