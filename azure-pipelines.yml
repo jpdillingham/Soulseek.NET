@@ -1,25 +1,39 @@
-pool:
-  vmImage: 'Ubuntu 16.04'
-  
 variables:
   buildConfiguration: 'Release'
-
-steps:
-- script: dotnet build --configuration $(buildConfiguration)
-  displayName: 'Build'
-- script: |
-    dotnet test tests/Soulseek.NET.Tests.Unit --configuration Release --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura
-    dotnet test tests/Soulseek.NET.Tests.Integration --configuration Release --logger trx -p:CollectCoverage=true -p:CoverletOutputFormat=cobertura -p:MergeWtih=./tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml
-    dotnet tool install dotnet-reportgenerator-globaltool --tool-path . --version 4.0.0-rc4
-    ./reportgenerator "-reports:tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml;tests/Soulseek.NET.Tests.Integration/coverage.cobertura.xml" "-targetdir:results" "-reporttypes:HTMLInline;HTMLChart"
-    cp tests/Soulseek.NET.Tests.Unit/coverage.cobertura.xml ./results
-  displayName: 'Test and Cover'
-- task: PublishTestResults@2
-  inputs:
-    testRunner: VSTest
-    testResultsFiles: '**/*.trx'
-- task: PublishCodeCoverageResults@1
-  inputs:
-    summaryFileLocation: $(Build.SourcesDirectory)/results/coverage.cobertura.xml
-    reportDirectory: $(Build.SourcesDirectory)/results
-    codecoverageTool: cobertura
+jobs:
+  - job: Windows
+    pool:
+      vmImage: 'vs2017-win2016'
+    steps:
+    - powershell: |
+        .\build.ps1 -Target "BuildWithCoverageReport"
+      displayName: 'Run build script'
+    - task: PublishTestResults@2
+      inputs:
+        testRunner: VSTest
+        testResultsFiles: 'out/TestResults/**/*.trx'
+      displayName: 'Publish test results'
+    - task: PublishCodeCoverageResults@1
+      inputs:
+        summaryFileLocation: $(Build.SourcesDirectory)/out/Coverage/coverage.cobertura.xml
+        reportDirectory: $(Build.SourcesDirectory)/out/CoverageReport
+        codecoverageTool: cobertura
+      displayName: 'Publish code coverage report'
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: './out/Packages/'
+        ArtifactName: Packages
+        ArtifactType: Container
+  - job: Linux
+    pool:
+      vmImage: 'Ubuntu 16.04'
+    steps:
+    - task: ShellScript@2
+      inputs:
+        scriptPath: build.sh
+      displayName: 'Run build script'
+    - task: PublishTestResults@2
+      inputs:
+        testRunner: VSTest
+        testResultsFiles: 'out/TestResults/**/*.trx'
+      displayName: 'Publish test results'

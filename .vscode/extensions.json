@@ -1,0 +1,8 @@
+{
+    "recommendations": [
+        "ms-vscode.csharp",
+        "cake-build.cake-vscode",
+        "docsmsft.docs-authoring-pack",
+        "ms-vscode.PowerShell"
+    ]
+}

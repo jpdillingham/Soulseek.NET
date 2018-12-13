@@ -1,0 +1,46 @@
+<Project>
+  <PropertyGroup>
+    <TestedTFMs>netcoreapp2.1</TestedTFMs>
+    <!--
+      When developing (or building) on a Windows machine also test against the full framework,
+      because consumers can consume netstandard2.0 from full framework as well
+    -->
+    <TestedTFMs Condition="'$(OS)' == 'Windows_NT'">$(TestedTFMs);net472;net462</TestedTFMs>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <!--
+    This injects "dotnet test" related msbuild infrastructure such as targets
+    and properties like "IsTestable=True". All Test-Projects should have this,
+    so this is a perfect fit for a global rule for all projects inside
+    the "tests/"-Subdirectory.
+  -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsXUnitTestProject)' == 'true'">
+    <PackageReference Include="xunit" Version="2.3.1" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.3.1" />
+  </ItemGroup>
+
+  <!--
+    Code-Coverage:
+    With this Section, everything needed to enable code coverage reporting
+    during testing is passing the EnableCoverage property as true.
+    This also establishes a default output directoy and sets lcov to
+    support "Coverage Gutters" in VSCode as well as cobertura as
+    the more widely accepted format in CICD.
+  -->
+  <ItemGroup Condition="'$(EnableCoverage)' == 'true'">
+    <PackageReference Include="coverlet.msbuild" Version="2.3.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+  </ItemGroup>
+  <PropertyGroup Condition="'$(EnableCoverage)' == 'true'">
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,lcov</CoverletOutputFormat>
+    <CoverletOutput>$(MSBuildProjectDirectory)/bin/cov/</CoverletOutput>
+  </PropertyGroup>
+</Project>
