@@ -1,4 +1,4 @@
-﻿// <copyright file="MessageWaiterTests.cs" company="JP Dillingham">
+﻿// <copyright file="WaiterTests.cs" company="JP Dillingham">
 //     Copyright(C) 2018 JP Dillingham
 //     
 //     This program is free software: you can redistribute it and/or modify
@@ -15,7 +15,7 @@
 //     along with this program.If not, see<https://www.gnu.org/licenses/>.
 // </copyright>
 
-namespace Soulseek.NET.Tests.Unit.Messaging
+namespace Soulseek.NET.Tests.Unit
 {
     using Soulseek.NET.Messaging;
     using System;
@@ -23,15 +23,15 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
-    using static Soulseek.NET.Messaging.MessageWaiter;
+    using static Soulseek.NET.Waiter;
 
-    public class MessageWaiterTests
+    public class WaiterTests
     {
         [Trait("Category", "Wait Completion")]
         [Fact(DisplayName = "Complete dequeues wait")]
         public async Task Complete_Dequeues_Wait()
         {
-            using (var waiter = new MessageWaiter())
+            using (var waiter = new Waiter())
             {
                 var result = Guid.NewGuid();
                 var task = waiter.Wait<Guid>(new WaitKey(MessageCode.ServerLogin));
@@ -55,7 +55,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Complete for missing wait does not throw")]
         public void Complete_For_Missing_Wait_Does_Not_Throw()
         {
-            using (var waiter = new MessageWaiter())
+            using (var waiter = new Waiter())
             {
                 var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.ServerAddPrivilegedUser), null));
 
@@ -69,7 +69,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             var key = new WaitKey(MessageCode.ServerLogin);
 
-            using (var waiter = new MessageWaiter(0))
+            using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key);
                 Task<object> task2 = waiter.Wait<object>(key, 30);
@@ -98,8 +98,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             var timeout = new Random().Next();
 
-            MessageWaiter t = null;
-            var ex = Record.Exception(() => t = new MessageWaiter(timeout));
+            Waiter t = null;
+            var ex = Record.Exception(() => t = new Waiter(timeout));
 
             Assert.Null(ex);
             Assert.NotNull(t);
@@ -112,8 +112,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Instantiate with empty constructor")]
         public void Instantiate_With_Empty_Constructor()
         {
-            MessageWaiter t = null;
-            var ex = Record.Exception(() => t = new MessageWaiter());
+            Waiter t = null;
+            var ex = Record.Exception(() => t = new Waiter());
 
             var defaultConst = t.GetField<int>("DefaultTimeoutValue");
 
@@ -128,7 +128,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Wait for subsequent MessageCode enqueues Wait")]
         public void Wait_For_Subsequent_MessageCode_Enqueues_Wait()
         {
-            using (var waiter = new MessageWaiter())
+            using (var waiter = new Waiter())
             {
                 var task1 = waiter.Wait<object>(new WaitKey(MessageCode.ServerLogin));
                 var task2 = waiter.Wait<object>(new WaitKey(MessageCode.ServerLogin));
@@ -164,7 +164,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             var key = new WaitKey(code, token);
 
-            using (var waiter = new MessageWaiter())
+            using (var waiter = new Waiter())
             {
                 Task<object> task = waiter.Wait<object>(key, timeout);
 
@@ -196,7 +196,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             var key = new WaitKey(MessageCode.ServerLogin);
 
-            using (var waiter = new MessageWaiter(0))
+            using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key);
                 object result = null;
@@ -227,7 +227,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             var key = new WaitKey(MessageCode.ServerLogin);
 
-            using (var waiter = new MessageWaiter(0))
+            using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
                 object result = null;
@@ -253,7 +253,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "All waits are cancelled when CancelAll is invoked")]
         public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
         {
-            var waiter = new MessageWaiter(0);
+            var waiter = new Waiter(0);
             var loginKey = new WaitKey(MessageCode.ServerLogin, "1");
             var loginKey2 = new WaitKey(MessageCode.ServerLogin, "2");
             var leaveKey = new WaitKey(MessageCode.ServerLeaveRoom);
@@ -275,7 +275,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             var key = new WaitKey(MessageCode.ServerLogin);
 
-            using (var waiter = new MessageWaiter(0))
+            using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key, 999999);
                 object result = null;
@@ -306,7 +306,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         {
             var key = new WaitKey(MessageCode.ServerLogin);
 
-            using (var waiter = new MessageWaiter())
+            using (var waiter = new Waiter())
             {
                 var maxConst = waiter.GetField<int>("MaxTimeoutValue");
 

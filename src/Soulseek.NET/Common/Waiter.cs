@@ -1,4 +1,4 @@
-﻿// <copyright file="MessageWaiter.cs" company="JP Dillingham">
+﻿// <copyright file="Waiter.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Messaging
+namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
@@ -21,24 +21,24 @@ namespace Soulseek.NET.Messaging
     /// <summary>
     ///     Enables await-able server messages.
     /// </summary>
-    internal class MessageWaiter : IMessageWaiter
+    internal class Waiter : IWaiter
     {
         private const int DefaultTimeoutValue = 5;
         private const int MaxTimeoutValue = 2147483647;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageWaiter"/> class with the default timeout.
+        ///     Initializes a new instance of the <see cref="Waiter"/> class with the default timeout.
         /// </summary>
-        internal MessageWaiter()
+        internal Waiter()
             : this(DefaultTimeoutValue)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageWaiter"/> class with the specified <paramref name="defaultTimeout"/>.
+        ///     Initializes a new instance of the <see cref="Waiter"/> class with the specified <paramref name="defaultTimeout"/>.
         /// </summary>
         /// <param name="defaultTimeout">The default timeout duration for message waits.</param>
-        internal MessageWaiter(int defaultTimeout)
+        internal Waiter(int defaultTimeout)
         {
             DefaultTimeout = defaultTimeout;
 
