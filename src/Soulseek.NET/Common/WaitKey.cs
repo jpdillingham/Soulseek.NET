@@ -19,18 +19,30 @@ namespace Soulseek.NET
     /// </summary>
     internal class WaitKey
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="WaitKey"/> class.
+        /// </summary>
+        /// <param name="tokenParts">The parts which make up the key.</param>
         public WaitKey(params object[] tokenParts)
         {
             TokenParts = tokenParts;
         }
 
+        /// <summary>
+        ///     Gets the parts which make up the key.
+        /// </summary>
         public object[] TokenParts { get; private set; }
 
         /// <summary>
-        ///     The wait token.
+        ///     Gets the wait token.
         /// </summary>
         public string Token => string.Join(":", TokenParts);
 
+        /// <summary>
+        ///     Compares the specified <paramref name="obj"/> to this instance.
+        /// </summary>
+        /// <param name="obj">The object to which to compare.</param>
+        /// <returns>A value indicating whether the specified object is equal to this instance.</returns>
         public override bool Equals(object obj)
         {
             try
@@ -44,6 +56,10 @@ namespace Soulseek.NET
             }
         }
 
+        /// <summary>
+        ///     Returns the hash code of this instance.
+        /// </summary>
+        /// <returns>The hash code of this instance.</returns>
         public override int GetHashCode()
         {
             return Token.GetHashCode();
