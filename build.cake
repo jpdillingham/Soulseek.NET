@@ -50,6 +50,7 @@ Task("TestWithCoverage")
                 ArgumentCustomization = args =>
                 {
                     args.Append("/p:EnableCoverage=true");
+					args.Append("/p:CoverletOutputFormat=opencover");
                     if(prevProject != null)
                         args.Append($"/p:MergeWith=`{prevProject.GetDirectory().CombineWithFilePath("bin/cov/coverage.xml")}`");
                     return args;
