@@ -62,7 +62,7 @@ namespace Soulseek.NET
         /// <returns>The hash code of this instance.</returns>
         public override int GetHashCode()
         {
-            return Token.GetHashCode();
+            return Token == string.Empty ? 0 : Token.GetHashCode();
         }
     }
 }
