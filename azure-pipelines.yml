@@ -15,9 +15,9 @@ jobs:
       displayName: 'Publish test results'
     - task: PublishCodeCoverageResults@1
       inputs:
-        summaryFileLocation: $(Build.SourcesDirectory)/out/Coverage/coverage.cobertura.xml
+        summaryFileLocation: $(Build.SourcesDirectory)/out/Coverage/coverage.xml
         reportDirectory: $(Build.SourcesDirectory)/out/CoverageReport
-        codecoverageTool: cobertura
+        codecoverageTool: opencover
       displayName: 'Publish code coverage report'
     - task: PublishBuildArtifacts@1
       inputs:
