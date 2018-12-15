@@ -1,5 +1,6 @@
 #load "build/Settings.cake"
 #tool "nuget:?package=ReportGenerator&version=4.0.4"
+#tool "nuget:?package=Codecov&ersion=1.1.0"
 
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS

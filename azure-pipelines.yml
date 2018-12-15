@@ -19,6 +19,9 @@ jobs:
         reportDirectory: $(Build.SourcesDirectory)/out/CoverageReport
         codecoverageTool: cobertura
       displayName: 'Publish code coverage report'
+    - script: |
+        %USERPROFILE%\.nuget\packages\codecov\1.1.0\tools\codecov.exe -f $(Build.SourcesDirectory)/out/Coverage/coverage.cobertura.xml -t $(CODECOV_TOKEN)
+      displayName: 'Upload coverage to codecov.io'
     - task: PublishBuildArtifacts@1
       inputs:
         PathtoPublish: './out/Packages/'
