@@ -101,18 +101,8 @@ namespace Soulseek.NET.Messaging.Tcp
         {
             InactivityTimer?.Reset();
 
-            void log(string s)
-            {
-                if (Type == MessageConnectionType.Server)
-                {
-                    Console.WriteLine(s);
-                }
-            }
-
             var fileBytes = new List<byte>();
 
-            //try
-            //{
             while (true)
             {
                 var message = new List<byte>();
@@ -135,19 +125,6 @@ namespace Soulseek.NET.Messaging.Tcp
                 Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
                 InactivityTimer?.Reset();
             }
-            //}
-            //catch (Exception ex)
-            //{
-            //    if (State != ConnectionState.Connected)
-            //    {
-            //        Disconnect($"Read error: {ex.Message}");
-            //    }
-
-            //    if (Type == ConnectionType.Server)
-            //    {
-            //        log($"Read Error: {ex}");
-            //    }
-            //}
         }
 
         private async Task SendDeferredMessages()

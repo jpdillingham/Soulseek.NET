@@ -13,6 +13,7 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Collections.Generic;
 
     public class DownloadEventArgs : EventArgs
     {
@@ -54,6 +55,6 @@ namespace Soulseek.NET
 
         public DownloadState State { get; private set; }
         public int PlaceInQueue { get; internal set; }
-        public byte[] Data { get; internal set; }
+        public IEnumerable<byte> Data { get; internal set; }
     }
 }
