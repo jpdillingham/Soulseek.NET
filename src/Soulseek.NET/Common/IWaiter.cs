@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Messaging
+namespace Soulseek.NET
 {
     using System;
     using System.Threading;
@@ -19,7 +19,7 @@ namespace Soulseek.NET.Messaging
     /// <summary>
     ///     Enables await-able server messages.
     /// </summary>
-    internal interface IMessageWaiter : IDisposable
+    internal interface IWaiter : IDisposable
     {
         /// <summary>
         ///     Gets the default timeout duration.

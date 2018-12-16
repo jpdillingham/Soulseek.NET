@@ -10,4 +10,8 @@
 
     <ProjectReference Include="..\..\src\Soulseek.NET\Soulseek.NET.csproj" />
   </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Messaging\" />
+  </ItemGroup>
 </Project>

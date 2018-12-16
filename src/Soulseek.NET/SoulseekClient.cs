@@ -61,7 +61,7 @@ namespace Soulseek.NET
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IConnectionManager<IMessageConnection> peerConnectionManager = null,
-            IMessageWaiter messageWaiter = null)
+            IWaiter messageWaiter = null)
         {
             Address = address;
             Port = port;
@@ -71,7 +71,7 @@ namespace Soulseek.NET
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
-            MessageWaiter = messageWaiter ?? new MessageWaiter(Options.MessageTimeout);
+            MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
         }
 
         #endregion Internal Constructors
@@ -142,7 +142,7 @@ namespace Soulseek.NET
         private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
-        private IMessageWaiter MessageWaiter { get; set; }
+        private IWaiter MessageWaiter { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private Random Random { get; set; } = new Random();

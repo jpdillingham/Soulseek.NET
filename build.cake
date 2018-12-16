@@ -1,5 +1,6 @@
 #load "build/Settings.cake"
 #tool "nuget:?package=ReportGenerator&version=4.0.4"
+#tool "nuget:?package=Codecov&ersion=1.1.0"
 
 ///////////////////////////////////////////////////////////////////////////////
 // ARGUMENTS
@@ -50,7 +51,8 @@ Task("TestWithCoverage")
                 ArgumentCustomization = args =>
                 {
                     args.Append("/p:EnableCoverage=true");
-                    if(prevProject != null)
+					args.Append("/p:CoverletOutputFormat=cobertura");
+					if(prevProject != null)
                         args.Append($"/p:MergeWith=`{prevProject.GetDirectory().CombineWithFilePath("bin/cov/coverage.cobertura.xml")}`");
                     return args;
                 }
