@@ -42,11 +42,10 @@ namespace Soulseek.NET.Messaging.Tcp
 
         public event EventHandler<Message> MessageRead;
 
+        public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
         private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
-
-        public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
 
         public async Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
@@ -114,28 +113,28 @@ namespace Soulseek.NET.Messaging.Tcp
 
             //try
             //{
-                while (true)
-                {
-                    var message = new List<byte>();
+            while (true)
+            {
+                var message = new List<byte>();
 
-                    var lengthBytes = await ReadAsync(4);
-                    var length = BitConverter.ToInt32(lengthBytes, 0);
-                    message.AddRange(lengthBytes);
+                var lengthBytes = await ReadAsync(4);
+                var length = BitConverter.ToInt32(lengthBytes, 0);
+                message.AddRange(lengthBytes);
 
-                    var codeBytes = await ReadAsync(4);
-                    var code = BitConverter.ToInt32(codeBytes, 0);
-                    message.AddRange(codeBytes);
+                var codeBytes = await ReadAsync(4);
+                var code = BitConverter.ToInt32(codeBytes, 0);
+                message.AddRange(codeBytes);
 
-                    var payloadBytes = await ReadAsync(length - 4);
-                    message.AddRange(payloadBytes);
+                var payloadBytes = await ReadAsync(length - 4);
+                message.AddRange(payloadBytes);
 
-                    var messageBytes = message.ToArray();
+                var messageBytes = message.ToArray();
 
-                    NormalizeMessageCode(messageBytes, (int)Type);
+                NormalizeMessageCode(messageBytes, (int)Type);
 
-                    Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
-                    InactivityTimer?.Reset();
-                }
+                Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
+                InactivityTimer?.Reset();
+            }
             //}
             //catch (Exception ex)
             //{
