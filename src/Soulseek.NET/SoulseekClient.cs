@@ -435,7 +435,6 @@ namespace Soulseek.NET
                 }
 
                 // todo: handle download failure
-
                 Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
 
                 return download.Data;
@@ -703,7 +702,7 @@ namespace Soulseek.NET
                 case MessageCode.ServerParentMinSpeed:
                 case MessageCode.ServerParentSpeedRatio:
                 case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(new WaitKey(message.Code), Integer.Parse(message));
+                    MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
                     break;
 
                 case MessageCode.ServerLogin:

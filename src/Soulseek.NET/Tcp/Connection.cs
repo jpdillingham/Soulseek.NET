@@ -158,6 +158,7 @@ namespace Soulseek.NET.Tcp
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public async Task<byte[]> ReadAsync(long count)

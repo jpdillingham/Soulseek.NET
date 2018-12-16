@@ -1,4 +1,4 @@
-﻿// <copyright file="Integer.cs" company="JP Dillingham">
+﻿// <copyright file="IntegerResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,7 +12,7 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    public sealed class Integer
+    public sealed class IntegerResponse
     {
         #region Public Methods
 

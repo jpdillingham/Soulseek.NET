@@ -52,6 +52,7 @@ namespace Soulseek.NET.Tcp
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion Public Methods

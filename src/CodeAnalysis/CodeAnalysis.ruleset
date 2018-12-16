@@ -13,6 +13,9 @@
     <Rule Id="CA2214" Action="Warning" />
     <Rule Id="CA2231" Action="Warning" />
     <Rule Id="CA2007" Action="None" />
+    <Rule Id="CA1714" Action="None" />
+    <Rule Id="CA1822" Action="None" />
+    <Rule Id="CA1819" Action="None" />
   </Rules>
   <Rules AnalyzerId="Microsoft.CodeQuality.CSharp.Analyzers" RuleNamespace="Microsoft.CodeQuality.CSharp.Analyzers">
     <Rule Id="CA1001" Action="Warning" />
