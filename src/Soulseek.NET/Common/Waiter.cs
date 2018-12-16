@@ -16,6 +16,7 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Exceptions;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>

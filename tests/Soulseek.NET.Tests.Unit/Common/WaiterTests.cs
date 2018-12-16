@@ -17,6 +17,7 @@
 
 namespace Soulseek.NET.Tests.Unit.Common
 {
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Concurrent;

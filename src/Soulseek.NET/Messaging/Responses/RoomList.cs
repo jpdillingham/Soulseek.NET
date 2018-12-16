@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
+    using Soulseek.NET.Exceptions;
     using System.Collections.Generic;
 
     public static class RoomList

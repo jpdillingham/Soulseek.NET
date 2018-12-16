@@ -1,4 +1,4 @@
-﻿// <copyright file="BrowseException.cs" company="JP Dillingham">
+﻿// <copyright file="DownloadException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,19 +17,19 @@ namespace Soulseek.NET.Exceptions
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class BrowseException : SoulseekClientException
+    public class DownloadException : SoulseekClientException
     {
-        public BrowseException()
+        public DownloadException()
             : base()
         {
         }
 
-        public BrowseException(string message)
+        public DownloadException(string message)
             : base(message)
         {
         }
 
-        public BrowseException(string message, Exception innerException)
+        public DownloadException(string message, Exception innerException)
             : base(message, innerException)
         {
         }

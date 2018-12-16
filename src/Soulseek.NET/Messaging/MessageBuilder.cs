@@ -16,6 +16,7 @@ namespace Soulseek.NET.Messaging
     using System.Collections.Generic;
     using System.Linq;
     using System.Text;
+    using Soulseek.NET.Exceptions;
 
     /// <summary>
     ///     Builds a message.

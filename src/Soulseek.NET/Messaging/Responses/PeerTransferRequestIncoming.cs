@@ -10,6 +10,8 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
+using Soulseek.NET.Exceptions;
+
 namespace Soulseek.NET.Messaging.Responses
 {
     public sealed class PeerTransferRequestIncoming

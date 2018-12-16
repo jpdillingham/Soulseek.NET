@@ -14,6 +14,7 @@ namespace Soulseek.NET.Messaging
 {
     using System;
     using System.Linq;
+    using Soulseek.NET.Exceptions;
 
     /// <summary>
     ///     A message.

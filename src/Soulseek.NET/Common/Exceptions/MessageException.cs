@@ -1,4 +1,4 @@
-﻿// <copyright file="Exceptions.cs" company="JP Dillingham">
+﻿// <copyright file="MessageException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,48 +10,26 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET
+namespace Soulseek.NET.Exceptions
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
 
-
-
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class DownloadException : SoulseekClientException
+    public class MessageException : SoulseekClientException
     {
-        public DownloadException()
+        public MessageException()
             : base()
         {
         }
 
-        public DownloadException(string message)
+        public MessageException(string message)
             : base(message)
         {
         }
 
-        public DownloadException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class LoginException : SoulseekClientException
-    {
-        public LoginException()
-            : base()
-        {
-        }
-
-        public LoginException(string message)
-            : base(message)
-        {
-        }
-
-        public LoginException(string message, Exception innerException)
+        public MessageException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
@@ -99,26 +77,6 @@ namespace Soulseek.NET
 
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class MessageException : SoulseekClientException
-    {
-        public MessageException()
-            : base()
-        {
-        }
-
-        public MessageException(string message)
-            : base(message)
-        {
-        }
-
-        public MessageException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
     public class MessageReadException : MessageException
     {
         public MessageReadException()
@@ -152,26 +110,6 @@ namespace Soulseek.NET
         }
 
         public MessageTimeoutException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class SoulseekClientException : Exception
-    {
-        public SoulseekClientException()
-            : base()
-        {
-        }
-
-        public SoulseekClientException(string message)
-            : base(message)
-        {
-        }
-
-        public SoulseekClientException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
