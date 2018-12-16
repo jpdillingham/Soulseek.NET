@@ -1,4 +1,4 @@
-﻿// <copyright file="IMessageWaiter.cs" company="JP Dillingham">
+﻿// <copyright file="IWaiter.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -32,40 +32,35 @@ namespace Soulseek.NET
         new void Dispose();
 
         /// <summary>
-        ///     Completes the oldest wait matching the specified <paramref name="messageCode"/> with the specified <paramref name="result"/>.
+        ///     Completes the oldest wait matching the specified <paramref name="key"/> with the specified <paramref name="result"/>.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
+        /// <param name="key">The unique WaitKey for the wait.</param>
         /// <param name="result">The wait result.</param>
         void Complete<T>(WaitKey key, T result);
 
         /// <summary>
-        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified
-        ///     <paramref name="messageCode"/> and <paramref name="token"/>.
+        ///     Throws the specified <paramref name="exception"/> on the oldest wait matching the specified <paramref name="key"/>.
         /// </summary>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="token">The unique wait token.</param>
+        /// <param name="key">The unique WaitKey for the wait.</param>
         /// <param name="exception">The Exception to throw.</param>
         void Throw(WaitKey key, Exception exception);
 
         /// <summary>
-        ///     Adds a new wait for the specified <paramref name="messageCode"/> and <paramref name="token"/> and with the
-        ///     specified <paramref name="timeout"/>.
+        ///     Adds a new wait for the specified <paramref name="key"/> and with the specified <paramref name="timeout"/>.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="token">A unique token for the wait.</param>
+        /// <param name="key">A unique WaitKey for the wait.</param>
         /// <param name="timeout">The wait timeout.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
         Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Adds a new wait for the specified <paramref name="messageCode"/> which does not time out.
+        ///     Adds a new wait for the specified <paramref name="key"/> which does not time out.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
-        /// <param name="messageCode">The wait message code.</param>
-        /// <param name="token">A unique token for the wait.</param>
+        /// <param name="key">A unique WaitKey for the wait.</param>
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
         Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null);
