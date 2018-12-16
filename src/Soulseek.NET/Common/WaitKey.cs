@@ -29,14 +29,14 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Gets the parts which make up the key.
-        /// </summary>
-        public object[] TokenParts { get; private set; }
-
-        /// <summary>
         ///     Gets the wait token.
         /// </summary>
         public string Token => string.Join(":", TokenParts);
+
+        /// <summary>
+        ///     Gets the parts which make up the key.
+        /// </summary>
+        public object[] TokenParts { get; private set; }
 
         /// <summary>
         ///     Compares the specified <paramref name="obj"/> to this instance.
