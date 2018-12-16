@@ -15,25 +15,7 @@ namespace Soulseek.NET
     using System;
     using System.Diagnostics.CodeAnalysis;
 
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class BrowseException : SoulseekClientException
-    {
-        public BrowseException()
-            : base()
-        {
-        }
 
-        public BrowseException(string message)
-            : base(message)
-        {
-        }
-
-        public BrowseException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
 
     [ExcludeFromCodeCoverage]
     [Serializable]
@@ -170,26 +152,6 @@ namespace Soulseek.NET
         }
 
         public MessageTimeoutException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class SearchException : SoulseekClientException
-    {
-        public SearchException()
-            : base()
-        {
-        }
-
-        public SearchException(string message)
-            : base(message)
-        {
-        }
-
-        public SearchException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
