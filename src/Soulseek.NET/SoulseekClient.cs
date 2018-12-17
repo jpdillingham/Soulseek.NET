@@ -162,7 +162,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionStateException">
+        /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="ArgumentException">
@@ -203,7 +203,8 @@ namespace Soulseek.NET
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionStateException">
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="ConnectionException">
         ///     Thrown when the client is already connected, or is transitioning between states.
         /// </exception>
         public async Task ConnectAsync()
@@ -315,7 +316,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionStateException">
+        /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="ArgumentException">

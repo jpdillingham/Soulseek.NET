@@ -16,6 +16,7 @@ namespace Soulseek.NET
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Tcp;
 
@@ -93,7 +94,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionStateException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
+        /// <exception cref="ConnectionException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
         /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
@@ -101,10 +102,9 @@ namespace Soulseek.NET
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
-        ///     specified <paramref name="timeout"/> and <paramref name="cancellationToken"/>.
+        ///     specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
-        /// <param name="timeout">The operation timeout, in seconds.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
         Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
@@ -113,7 +113,8 @@ namespace Soulseek.NET
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionStateException">
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="ConnectionException">
         ///     Thrown when the client is already connected, or is transitioning between states.
         /// </exception>
         Task ConnectAsync();
@@ -149,7 +150,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionStateException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
+        /// <exception cref="ConnectionException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
         /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
