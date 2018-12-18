@@ -489,7 +489,7 @@ namespace Soulseek.NET
             await ServerConnection.SendMessageAsync(request.ToMessage());
 
             var address = await addressWait;
-            return new ConnectionKey() { Username = username, IPAddress = address.IPAddress, Port = address.Port, Type = MessageConnectionType.Peer };
+            return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
         }
 
         private IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
