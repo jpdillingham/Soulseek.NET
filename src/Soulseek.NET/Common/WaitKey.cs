@@ -15,7 +15,7 @@ namespace Soulseek.NET
     using System;
 
     /// <summary>
-    ///     The composite key for the wait dictionary.
+    ///     Uniquely identifies a Wait.
     /// </summary>
     internal class WaitKey : IEquatable<WaitKey>
     {
