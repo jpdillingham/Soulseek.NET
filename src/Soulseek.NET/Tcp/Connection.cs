@@ -71,7 +71,7 @@ namespace Soulseek.NET.Tcp
 
         public object Context { get; set; }
         public IPAddress IPAddress { get; protected set; }
-        public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
+        public virtual ConnectionKey Key => new ConnectionKey(IPAddress, Port);
         public ConnectionOptions Options { get; protected set; }
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Pending;

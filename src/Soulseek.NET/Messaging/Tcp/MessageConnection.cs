@@ -42,7 +42,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
         public event EventHandler<Message> MessageRead;
 
-        public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
+        public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
         private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
