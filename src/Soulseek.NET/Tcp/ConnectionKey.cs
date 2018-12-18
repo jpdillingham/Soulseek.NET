@@ -23,6 +23,16 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.
         /// </summary>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        public ConnectionKey(IPAddress ipAddress, int port)
+            : this(null, ipAddress, port, MessageConnectionType.Default)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.
+        /// </summary>
         /// <param name="username">The username associated with the connection.</param>
         /// <param name="ipAddress">The IP address of the connection.</param>
         /// <param name="port">The port of the connection.</param>
