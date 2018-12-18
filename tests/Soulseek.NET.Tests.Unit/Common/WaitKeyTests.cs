@@ -153,7 +153,7 @@ namespace Soulseek.NET.Tests.Unit.Common
 
         [Trait("Category", "Equals")]
         [Fact(DisplayName = "Equals handles boxed instances")]
-        public void Equals_Returns_Handles_Boxed_Instances()
+        public void Equals_Handles_Boxed_Instances()
         {
             var k1 = new WaitKey("foo", 2);
             var k2 = new WaitKey("foo", 2);
