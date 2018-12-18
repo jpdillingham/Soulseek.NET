@@ -7,6 +7,40 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 {
     public class ConnectionKeyTests
     {
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with ip and port")]
+        public void Instantiates_With_IP_And_Port()
+        {
+            var ip = new IPAddress(0x0);
+
+            ConnectionKey k = null;
+            var ex = Record.Exception(() => k = new ConnectionKey(ip, 0));
+
+            Assert.Null(ex);
+            Assert.NotNull(k);
+
+            Assert.Equal(ip, k.IPAddress);
+            Assert.Equal(0, k.Port);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with username, ip, port and type")]
+        public void Instantiates_With_Username_IP_Port_And_Type()
+        {
+            var ip = new IPAddress(0x0);
+
+            ConnectionKey k = null;
+            var ex = Record.Exception(() => k = new ConnectionKey("username", ip, 0, MessageConnectionType.Server));
+
+            Assert.Null(ex);
+            Assert.NotNull(k);
+
+            Assert.Equal("username", k.Username);
+            Assert.Equal(ip, k.IPAddress);
+            Assert.Equal(0, k.Port);
+            Assert.Equal(MessageConnectionType.Server, k.Type);
+        }
+
         public static IEnumerable<object[]> GetHashCodeData => new List<object[]>
         {
             new object[] { null, null, 0, MessageConnectionType.Default },
