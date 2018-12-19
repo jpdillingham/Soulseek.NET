@@ -246,7 +246,7 @@ namespace Soulseek.NET.Tcp
 
         protected void ChangeState(ConnectionState state, string message)
         {
-            var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, state: state, message: message);
+            var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, currentState: state, message: message);
 
             State = state;
 

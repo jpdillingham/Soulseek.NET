@@ -17,14 +17,14 @@ namespace Soulseek.NET.Tcp
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events.
     /// </summary>
-    internal class ConnectionEventArgs : EventArgs
+    internal abstract class ConnectionEventArgs : EventArgs
     {
     }
 
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events raised by the exchange of data with a remote host.
     /// </summary>
-    internal class ConnectionDataEventArgs : ConnectionEventArgs
+    internal sealed class ConnectionDataEventArgs : ConnectionEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionDataEventArgs"/> class.
@@ -52,7 +52,7 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Gets the progress of the data transfer as a percentage of current and total data length.
         /// </summary>
-        public double PercentComplete => CurrentLength / (double)TotalLength;
+        public double PercentComplete => (CurrentLength / (double)TotalLength) * 100d;
 
         /// <summary>
         ///     Gets the total expected length of the data transfer.
@@ -63,7 +63,7 @@ namespace Soulseek.NET.Tcp
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events raised by a change of connection state.
     /// </summary>
-    internal class ConnectionStateChangedEventArgs : ConnectionEventArgs
+    internal sealed class ConnectionStateChangedEventArgs : ConnectionEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionStateChangedEventArgs"/> class.
