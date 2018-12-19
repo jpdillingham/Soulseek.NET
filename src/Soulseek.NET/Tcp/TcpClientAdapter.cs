@@ -13,37 +13,70 @@
 namespace Soulseek.NET.Tcp
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
+    /// <summary>
+    ///     Provides client connections for TCP network services.
+    /// </summary>
+    /// <remarks>
+    ///     This is a pass-through implementation of <see cref="ITcpClient"/> over <see cref="TcpClient"/> intended to enable
+    ///     dependency injection.
+    /// </remarks>
+    [ExcludeFromCodeCoverage]
     internal sealed class TcpClientAdapter : ITcpClient, IDisposable
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class.
+        /// </summary>
+        /// <param name="tcpClient">The optional TcpClient to wrap.</param>
         internal TcpClientAdapter(TcpClient tcpClient = null)
         {
             TcpClient = tcpClient ?? new TcpClient();
         }
 
+        /// <summary>
+        ///     Gets a value indicating whether the client is connected.
+        /// </summary>
         public bool Connected => TcpClient.Connected;
 
         private bool Disposed { get; set; }
         private TcpClient TcpClient { get; set; }
 
+        /// <summary>
+        ///     Closes the client connection.
+        /// </summary>
         public void Close()
         {
             TcpClient.Close();
+            Dispose(false);
         }
 
+        /// <summary>
+        ///     Asynchronously connects to the specified <paramref name="ipAddress"/> and <paramref name="port"/>.
+        /// </summary>
+        /// <param name="ipAddress">The IP address to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task ConnectAsync(IPAddress ipAddress, int port)
         {
             await TcpClient.ConnectAsync(ipAddress, port).ConfigureAwait(false);
         }
 
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="TcpClientAdapter"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
         }
 
+        /// <summary>
+        ///     Returns the <see cref="NetworkStream"/> used to send and receive data.
+        /// </summary>
+        /// <returns>The NetworkStream used to send and receive data.</returns>
         public NetworkStream GetStream()
         {
             return TcpClient.GetStream();
