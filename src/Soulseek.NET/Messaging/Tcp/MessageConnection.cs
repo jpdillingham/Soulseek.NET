@@ -36,7 +36,7 @@ namespace Soulseek.NET.Messaging.Tcp
             Connected += async (sender, e) =>
             {
                 Task.Run(() => ReadContinuouslyAsync()).Forget();
-                await SendDeferredMessages();
+                await SendDeferredMessages().ConfigureAwait(false);
             };
         }
 
@@ -73,7 +73,7 @@ namespace Soulseek.NET.Messaging.Tcp
                         NormalizeMessageCode(bytes, 0 - (int)Type);
                     }
 
-                    await SendAsync(bytes);
+                    await SendAsync(bytes).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -107,15 +107,15 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 var message = new List<byte>();
 
-                var lengthBytes = await ReadAsync(4);
+                var lengthBytes = await ReadAsync(4).ConfigureAwait(false);
                 var length = BitConverter.ToInt32(lengthBytes, 0);
                 message.AddRange(lengthBytes);
 
-                var codeBytes = await ReadAsync(4);
+                var codeBytes = await ReadAsync(4).ConfigureAwait(false);
                 var code = BitConverter.ToInt32(codeBytes, 0);
                 message.AddRange(codeBytes);
 
-                var payloadBytes = await ReadAsync(length - 4);
+                var payloadBytes = await ReadAsync(length - 4).ConfigureAwait(false);
                 message.AddRange(payloadBytes);
 
                 var messageBytes = message.ToArray();
@@ -133,7 +133,7 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 if (DeferredMessages.TryDequeue(out var deferredMessage))
                 {
-                    await SendMessageAsync(deferredMessage.Message, deferredMessage.SuppressCodeNormalization);
+                    await SendMessageAsync(deferredMessage.Message, deferredMessage.SuppressCodeNormalization).ConfigureAwait(false);
                 }
             }
         }

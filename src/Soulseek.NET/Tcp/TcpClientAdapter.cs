@@ -36,7 +36,7 @@ namespace Soulseek.NET.Tcp
 
         public async Task ConnectAsync(IPAddress ipAddress, int port)
         {
-            await TcpClient.ConnectAsync(ipAddress, port);
+            await TcpClient.ConnectAsync(ipAddress, port).ConfigureAwait(false);
         }
 
         public void Dispose()
