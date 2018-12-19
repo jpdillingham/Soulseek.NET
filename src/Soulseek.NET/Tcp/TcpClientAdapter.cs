@@ -55,14 +55,20 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Asynchronously connects to the specified <paramref name="ipAddress"/> and <paramref name="port"/>.
+        ///     Connects the client to a remote TCP host using the specified IP address and port number as an asynchronous operation.
         /// </summary>
-        /// <param name="ipAddress">The IP address to which to connect.</param>
+        /// <param name="address">The IP address to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task ConnectAsync(IPAddress ipAddress, int port)
+        /// <exception cref="ArgumentNullException">Thrown when the address parameter is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the port parameter is not between <see cref="IPEndPoint.MinPort"/> and <see cref="IPEndPoint.MaxPort"/>
+        /// </exception>
+        /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
+        public async Task ConnectAsync(IPAddress address, int port)
         {
-            await TcpClient.ConnectAsync(ipAddress, port).ConfigureAwait(false);
+            await TcpClient.ConnectAsync(address, port).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -77,6 +83,8 @@ namespace Soulseek.NET.Tcp
         ///     Returns the <see cref="NetworkStream"/> used to send and receive data.
         /// </summary>
         /// <returns>The NetworkStream used to send and receive data.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the TCP client is not connected to a remote host.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
         public NetworkStream GetStream()
         {
             return TcpClient.GetStream();
