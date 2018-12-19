@@ -246,9 +246,9 @@ namespace Soulseek.NET.Tcp
 
         protected void ChangeState(ConnectionState state, string message)
         {
-            State = state;
+            var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, state: state, message: message);
 
-            var eventArgs = new ConnectionStateChangedEventArgs(state, message);
+            State = state;
 
             StateChanged?.Invoke(this, eventArgs);
 

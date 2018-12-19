@@ -14,12 +14,24 @@ namespace Soulseek.NET.Tcp
 {
     using System;
 
+    /// <summary>
+    ///     EventArgs for <see cref="Connection"/> events.
+    /// </summary>
     internal class ConnectionEventArgs : EventArgs
     {
     }
 
+    /// <summary>
+    ///     EventArgs for <see cref="Connection"/> events raised by the exchange of data with a remote host.
+    /// </summary>
     internal class ConnectionDataEventArgs : ConnectionEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionDataEventArgs"/> class.
+        /// </summary>
+        /// <param name="data">The data associated with the event.</param>
+        /// <param name="currentLength">The length of the event data.</param>
+        /// <param name="totalLength">The total expected length of the data transfer.</param>
         internal ConnectionDataEventArgs(byte[] data, int currentLength, int totalLength)
         {
             Data = data;
@@ -27,21 +39,58 @@ namespace Soulseek.NET.Tcp
             TotalLength = totalLength;
         }
 
-        public int CurrentLength { get; private set; }
-        public byte[] Data { get; private set; }
+        /// <summary>
+        ///     Gets the length of the event data.
+        /// </summary>
+        public int CurrentLength { get; }
+
+        /// <summary>
+        ///     Gets the data associated with the event.
+        /// </summary>
+        public byte[] Data { get; }
+
+        /// <summary>
+        ///     Gets the progress of the data transfer as a percentage of current and total data length.
+        /// </summary>
         public double PercentComplete => CurrentLength / (double)TotalLength;
-        public int TotalLength { get; private set; }
+
+        /// <summary>
+        ///     Gets the total expected length of the data transfer.
+        /// </summary>
+        public int TotalLength { get; }
     }
 
+    /// <summary>
+    ///     EventArgs for <see cref="Connection"/> events raised by a change of connection state.
+    /// </summary>
     internal class ConnectionStateChangedEventArgs : ConnectionEventArgs
     {
-        internal ConnectionStateChangedEventArgs(ConnectionState state, string message = null)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionStateChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="previousState">The state from which the connection transitioned.</param>
+        /// <param name="currentState">The state to which the connection transitioned.</param>
+        /// <param name="message">The optional message describing the nature of the transition.</param>
+        internal ConnectionStateChangedEventArgs(ConnectionState previousState, ConnectionState currentState, string message = null)
         {
-            State = state;
+            PreviousState = previousState;
+            CurrentState = currentState;
             Message = message;
         }
 
-        public string Message { get; private set; }
-        public ConnectionState State { get; private set; }
+        /// <summary>
+        ///     Gets the state to which the connection transitioned.
+        /// </summary>
+        public ConnectionState CurrentState { get; }
+
+        /// <summary>
+        ///     Gets the optional message describing the nature of the transition.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        ///     Gets the state from which the connection transitioned.
+        /// </summary>
+        public ConnectionState PreviousState { get; }
     }
 }
