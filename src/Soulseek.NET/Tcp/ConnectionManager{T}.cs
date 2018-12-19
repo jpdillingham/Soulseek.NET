@@ -52,6 +52,7 @@ namespace Soulseek.NET.Tcp
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         #endregion Public Methods
@@ -64,7 +65,7 @@ namespace Soulseek.NET.Tcp
             {
                 if (Connections.TryAdd(connection.Key, connection))
                 {
-                    await TryConnectAsync(connection);
+                    await TryConnectAsync(connection).ConfigureAwait(false);
                 }
             }
             else
@@ -101,7 +102,7 @@ namespace Soulseek.NET.Tcp
             {
                 if (!Connections.ContainsKey(nextConnection.Key) && Connections.TryAdd(nextConnection.Key, nextConnection))
                 {
-                    await TryConnectAsync(nextConnection);
+                    await TryConnectAsync(nextConnection).ConfigureAwait(false);
                 }
             }
         }
@@ -137,7 +138,7 @@ namespace Soulseek.NET.Tcp
         {
             try
             {
-                await connection?.ConnectAsync();
+                await connection.ConnectAsync().ConfigureAwait(false);
             }
             catch (Exception)
             {

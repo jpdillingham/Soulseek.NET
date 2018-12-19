@@ -15,6 +15,7 @@ namespace Soulseek.NET.Messaging.Responses
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Soulseek.NET.Exceptions;
 
     public sealed class SearchResponse
     {

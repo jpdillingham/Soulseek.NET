@@ -15,18 +15,74 @@ namespace Soulseek.NET.Tcp
     using System;
     using System.Net;
 
+    /// <summary>
+    ///     Uniquely identifies a <see cref="Connection"/> instance.
+    /// </summary>
     internal class ConnectionKey : IEquatable<ConnectionKey>
     {
-        public string Username { get; set; }
-        public IPAddress IPAddress { get; set; }
-        public int Port { get; set; }
-        public MessageConnectionType Type { get; set; }
-
-        public bool Equals(ConnectionKey other)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.
+        /// </summary>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        public ConnectionKey(IPAddress ipAddress, int port)
+            : this(null, ipAddress, port, MessageConnectionType.Default)
         {
-            return Username == other.Username && IPAddress.ToString() == other.IPAddress.ToString() && Port == other.Port && Type == other.Type;
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.
+        /// </summary>
+        /// <param name="username">The username associated with the connection.</param>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="type">The connection type.</param>
+        public ConnectionKey(string username, IPAddress ipAddress, int port, MessageConnectionType type)
+        {
+            Username = username;
+            IPAddress = ipAddress;
+            Port = port;
+            Type = type;
+        }
+
+        /// <summary>
+        ///     Gets the IP address of the connection.
+        /// </summary>
+        public IPAddress IPAddress { get; private set; }
+
+        /// <summary>
+        ///     Gets the port of the connection.
+        /// </summary>
+        public int Port { get; private set; }
+
+        /// <summary>
+        ///     Gets the connection type.
+        /// </summary>
+        public MessageConnectionType Type { get; private set; }
+
+        /// <summary>
+        ///     Gets the username associated with the connection.
+        /// </summary>
+        public string Username { get; private set; }
+
+        /// <summary>
+        ///     Compares the specified <paramref name="connectionKey"/> to this instance.
+        /// </summary>
+        /// <param name="connectionKey">The ConnectionKey to which to compare.</param>
+        /// <returns>A value indicating whether the specified ConnectionKey is equal to this instance.</returns>
+        public bool Equals(ConnectionKey connectionKey)
+        {
+            return Username == connectionKey.Username &&
+                IPAddress.ToString() == connectionKey.IPAddress.ToString() &&
+                Port == connectionKey.Port &&
+                Type == connectionKey.Type;
+        }
+
+        /// <summary>
+        ///     Compares the specified <paramref name="obj"/> to this instance.
+        /// </summary>
+        /// <param name="obj">The object to which to compare.</param>
+        /// <returns>A value indicating whether the specified object is equal to this instance.</returns>
         public override bool Equals(object obj)
         {
             try
@@ -39,16 +95,15 @@ namespace Soulseek.NET.Tcp
             }
         }
 
+        /// <summary>
+        ///     Returns the hash code of this instance.
+        /// </summary>
+        /// <returns>The hash code of this instance.</returns>
         public override int GetHashCode()
         {
             var u = Username?.GetHashCode() ?? 0;
             var i = IPAddress?.ToString().GetHashCode() ?? 0;
             return u ^ i ^ Port.GetHashCode() ^ Type.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return $"Username: {Username}, IPAddress: {IPAddress}, Port: {Port}, Type: {Type}, HashCode: {GetHashCode()}";
         }
     }
 }

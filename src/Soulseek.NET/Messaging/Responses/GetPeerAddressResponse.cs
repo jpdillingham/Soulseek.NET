@@ -14,6 +14,7 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using System;
     using System.Net;
+    using Soulseek.NET.Exceptions;
 
     public sealed class GetPeerAddressResponse
     {

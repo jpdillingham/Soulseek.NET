@@ -14,19 +14,11 @@ namespace Soulseek.NET.Tcp
 {
     using System;
 
-    internal class ConnectionStateChangedEventArgs : EventArgs
+    internal class ConnectionEventArgs : EventArgs
     {
-        internal ConnectionStateChangedEventArgs(ConnectionState state, string message = null)
-        {
-            State = state;
-            Message = message;
-        }
-
-        public ConnectionState State { get; private set; }
-        public string Message { get; private set; }
     }
 
-    internal class ConnectionDataEventArgs : EventArgs
+    internal class ConnectionDataEventArgs : ConnectionEventArgs
     {
         internal ConnectionDataEventArgs(byte[] data, int currentLength, int totalLength)
         {
@@ -35,9 +27,21 @@ namespace Soulseek.NET.Tcp
             TotalLength = totalLength;
         }
 
-        public byte[] Data { get; private set; }
         public int CurrentLength { get; private set; }
-        public int TotalLength { get; private set; }
+        public byte[] Data { get; private set; }
         public double PercentComplete => CurrentLength / (double)TotalLength;
+        public int TotalLength { get; private set; }
+    }
+
+    internal class ConnectionStateChangedEventArgs : ConnectionEventArgs
+    {
+        internal ConnectionStateChangedEventArgs(ConnectionState state, string message = null)
+        {
+            State = state;
+            Message = message;
+        }
+
+        public string Message { get; private set; }
+        public ConnectionState State { get; private set; }
     }
 }

@@ -71,7 +71,7 @@ namespace Soulseek.NET.Tcp
 
         public object Context { get; set; }
         public IPAddress IPAddress { get; protected set; }
-        public virtual ConnectionKey Key => new ConnectionKey() { IPAddress = IPAddress, Port = Port };
+        public virtual ConnectionKey Key => new ConnectionKey(IPAddress, Port);
         public ConnectionOptions Options { get; protected set; }
         public int Port { get; protected set; }
         public ConnectionState State { get; protected set; } = ConnectionState.Pending;
@@ -115,7 +115,7 @@ namespace Soulseek.NET.Tcp
                     using (cancellationTokenSource.Token.Register(() => taskCompletionSource.TrySetResult(true)))
                     {
                         // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
-                        if (task != await Task.WhenAny(task, taskCompletionSource.Task))
+                        if (task != await Task.WhenAny(task, taskCompletionSource.Task).ConfigureAwait(false))
                         {
                             throw new OperationCanceledException($"Operation timed out after {Options.ConnectTimeout} seconds", cancellationTokenSource.Token);
                         }
@@ -158,6 +158,7 @@ namespace Soulseek.NET.Tcp
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         public async Task<byte[]> ReadAsync(long count)
@@ -165,7 +166,7 @@ namespace Soulseek.NET.Tcp
             try
             {
                 var intCount = (int)count;
-                return await ReadAsync(intCount);
+                return await ReadAsync(intCount).ConfigureAwait(false);
             }
             catch (Exception)
             {
@@ -185,7 +186,7 @@ namespace Soulseek.NET.Tcp
                 var bytesRemaining = count - totalBytesRead;
                 var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead);
+                var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead).ConfigureAwait(false);
 
                 if (bytesRead == 0)
                 {
@@ -226,7 +227,7 @@ namespace Soulseek.NET.Tcp
 
             try
             {
-                await Stream.WriteAsync(bytes, 0, bytes.Length);
+                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

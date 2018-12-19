@@ -36,17 +36,16 @@ namespace Soulseek.NET.Messaging.Tcp
             Connected += async (sender, e) =>
             {
                 Task.Run(() => ReadContinuouslyAsync()).Forget();
-                await SendDeferredMessages();
+                await SendDeferredMessages().ConfigureAwait(false);
             };
         }
 
         public event EventHandler<Message> MessageRead;
 
+        public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
         private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
-
-        public override ConnectionKey Key => new ConnectionKey() { Type = Type, Username = Username, IPAddress = IPAddress, Port = Port };
 
         public async Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false)
         {
@@ -74,7 +73,7 @@ namespace Soulseek.NET.Messaging.Tcp
                         NormalizeMessageCode(bytes, 0 - (int)Type);
                     }
 
-                    await SendAsync(bytes);
+                    await SendAsync(bytes).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
@@ -102,53 +101,30 @@ namespace Soulseek.NET.Messaging.Tcp
         {
             InactivityTimer?.Reset();
 
-            void log(string s)
-            {
-                if (Type == MessageConnectionType.Server)
-                {
-                    Console.WriteLine(s);
-                }
-            }
-
             var fileBytes = new List<byte>();
 
-            //try
-            //{
-                while (true)
-                {
-                    var message = new List<byte>();
+            while (true)
+            {
+                var message = new List<byte>();
 
-                    var lengthBytes = await ReadAsync(4);
-                    var length = BitConverter.ToInt32(lengthBytes, 0);
-                    message.AddRange(lengthBytes);
+                var lengthBytes = await ReadAsync(4).ConfigureAwait(false);
+                var length = BitConverter.ToInt32(lengthBytes, 0);
+                message.AddRange(lengthBytes);
 
-                    var codeBytes = await ReadAsync(4);
-                    var code = BitConverter.ToInt32(codeBytes, 0);
-                    message.AddRange(codeBytes);
+                var codeBytes = await ReadAsync(4).ConfigureAwait(false);
+                var code = BitConverter.ToInt32(codeBytes, 0);
+                message.AddRange(codeBytes);
 
-                    var payloadBytes = await ReadAsync(length - 4);
-                    message.AddRange(payloadBytes);
+                var payloadBytes = await ReadAsync(length - 4).ConfigureAwait(false);
+                message.AddRange(payloadBytes);
 
-                    var messageBytes = message.ToArray();
+                var messageBytes = message.ToArray();
 
-                    NormalizeMessageCode(messageBytes, (int)Type);
+                NormalizeMessageCode(messageBytes, (int)Type);
 
-                    Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
-                    InactivityTimer?.Reset();
-                }
-            //}
-            //catch (Exception ex)
-            //{
-            //    if (State != ConnectionState.Connected)
-            //    {
-            //        Disconnect($"Read error: {ex.Message}");
-            //    }
-
-            //    if (Type == ConnectionType.Server)
-            //    {
-            //        log($"Read Error: {ex}");
-            //    }
-            //}
+                Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
+                InactivityTimer?.Reset();
+            }
         }
 
         private async Task SendDeferredMessages()
@@ -157,7 +133,7 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 if (DeferredMessages.TryDequeue(out var deferredMessage))
                 {
-                    await SendMessageAsync(deferredMessage.Message, deferredMessage.SuppressCodeNormalization);
+                    await SendMessageAsync(deferredMessage.Message, deferredMessage.SuppressCodeNormalization).ConfigureAwait(false);
                 }
             }
         }

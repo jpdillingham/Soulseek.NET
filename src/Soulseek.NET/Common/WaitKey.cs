@@ -15,9 +15,9 @@ namespace Soulseek.NET
     using System;
 
     /// <summary>
-    ///     The composite key for the wait dictionary.
+    ///     Uniquely identifies a Wait.
     /// </summary>
-    internal class WaitKey
+    internal class WaitKey : IEquatable<WaitKey>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="WaitKey"/> class.
@@ -29,14 +29,14 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Gets the parts which make up the key.
-        /// </summary>
-        public object[] TokenParts { get; private set; }
-
-        /// <summary>
         ///     Gets the wait token.
         /// </summary>
         public string Token => string.Join(":", TokenParts);
+
+        /// <summary>
+        ///     Gets the parts which make up the key.
+        /// </summary>
+        public object[] TokenParts { get; private set; }
 
         /// <summary>
         ///     Compares the specified <paramref name="obj"/> to this instance.
@@ -47,13 +47,22 @@ namespace Soulseek.NET
         {
             try
             {
-                var key = (WaitKey)obj;
-                return Token == key.Token;
+                return Equals((WaitKey)obj);
             }
             catch (Exception)
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        ///     Compares the specified <paramref name="waitKey"/> to this instance.
+        /// </summary>
+        /// <param name="waitKey">The WaitKey to which to compare.</param>
+        /// <returns>A value indicating whether the specified WaitKey is equal to this instance.</returns>
+        public bool Equals(WaitKey waitKey)
+        {
+            return Token == waitKey.Token;
         }
 
         /// <summary>

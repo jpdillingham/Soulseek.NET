@@ -16,6 +16,7 @@ namespace Soulseek.NET.Messaging
     using System.IO;
     using System.Linq;
     using System.Text;
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Zlib;
 
     /// <summary>

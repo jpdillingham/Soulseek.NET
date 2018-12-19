@@ -12,6 +12,8 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
+    using Soulseek.NET.Exceptions;
+
     public sealed class PeerTransferRequestIncoming
     {
         private PeerTransferRequestIncoming()

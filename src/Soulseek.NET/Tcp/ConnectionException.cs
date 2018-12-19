@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using Soulseek.NET.Exceptions;
 
     [ExcludeFromCodeCoverage]
     [Serializable]

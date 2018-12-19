@@ -150,5 +150,16 @@ namespace Soulseek.NET.Tests.Unit.Common
             Assert.False(k1.Equals(k2));
             Assert.False(k2.Equals(k1));
         }
+
+        [Trait("Category", "Equals")]
+        [Fact(DisplayName = "Equals handles boxed instances")]
+        public void Equals_Handles_Boxed_Instances()
+        {
+            var k1 = new WaitKey("foo", 2);
+            var k2 = new WaitKey("foo", 2);
+
+            Assert.True(k1.Equals((object)k2));
+            Assert.True(k2.Equals((object)k1));
+        }
     }
 }

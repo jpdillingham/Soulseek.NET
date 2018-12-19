@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Messaging.Responses
 {
     using System.Collections.Generic;
+    using Soulseek.NET.Exceptions;
 
     public sealed class PrivilegedUserList
     {

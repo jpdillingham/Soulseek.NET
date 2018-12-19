@@ -2,6 +2,7 @@
 {
     using Moq;
     using Newtonsoft.Json;
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
     using System;

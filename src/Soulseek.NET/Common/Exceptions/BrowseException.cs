@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerBrowseRequest.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,19 +10,28 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Messaging.Requests
+namespace Soulseek.NET.Exceptions
 {
-    public class PeerBrowseRequest
-    {
-        #region Public Methods
+    using System;
+    using System.Diagnostics.CodeAnalysis;
 
-        public Message ToMessage()
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class BrowseException : SoulseekClientException
+    {
+        public BrowseException()
+            : base()
         {
-            return new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
-                .Build();
         }
 
-        #endregion Public Methods
+        public BrowseException(string message)
+            : base(message)
+        {
+        }
+
+        public BrowseException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
     }
 }

@@ -12,14 +12,11 @@
 
 namespace Soulseek.NET
 {
-    using Soulseek.NET.Tcp;
-
     public class SoulseekClientStateChangedEventArgs
     {
         internal SoulseekClientStateChangedEventArgs(SoulseekClientState state)
             : this(state, null)
         {
-
         }
 
         internal SoulseekClientStateChangedEventArgs(SoulseekClientState state, string message = null)
@@ -28,7 +25,7 @@ namespace Soulseek.NET
             Message = message;
         }
 
-        public SoulseekClientState State { get; set; }
         public string Message { get; set; }
+        public SoulseekClientState State { get; set; }
     }
 }
