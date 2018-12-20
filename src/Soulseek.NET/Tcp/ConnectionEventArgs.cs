@@ -68,9 +68,9 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionStateChangedEventArgs"/> class.
         /// </summary>
-        /// <param name="previousState">The state from which the connection transitioned.</param>
-        /// <param name="currentState">The state to which the connection transitioned.</param>
-        /// <param name="message">The optional message describing the nature of the transition.</param>
+        /// <param name="previousState">The state from which the connection changed.</param>
+        /// <param name="currentState">The state to which the connection changed.</param>
+        /// <param name="message">The optional message describing the nature of the change.</param>
         internal ConnectionStateChangedEventArgs(ConnectionState previousState, ConnectionState currentState, string message = null)
         {
             PreviousState = previousState;
@@ -79,17 +79,17 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Gets the state to which the connection transitioned.
+        ///     Gets the state to which the connection changed.
         /// </summary>
         public ConnectionState CurrentState { get; }
 
         /// <summary>
-        ///     Gets the optional message describing the nature of the transition.
+        ///     Gets the optional message describing the nature of the change.
         /// </summary>
         public string Message { get; }
 
         /// <summary>
-        ///     Gets the state from which the connection transitioned.
+        ///     Gets the state from which the connection changed.
         /// </summary>
         public ConnectionState PreviousState { get; }
     }
