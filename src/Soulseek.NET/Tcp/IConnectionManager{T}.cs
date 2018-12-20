@@ -28,29 +28,30 @@ namespace Soulseek.NET.Tcp
         int Active { get; }
 
         /// <summary>
-        ///     Gets the number of queued connections.
-        /// </summary>
-        int Queued { get; }
-
-        /// <summary>
         ///     Gets the number of allowed concurrent connections.
         /// </summary>
         int ConcurrentConnections { get; }
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager{T}"/>.
+        ///     Gets the number of queued connections.
         /// </summary>
-        new void Dispose();
+        int Queued { get; }
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="connection"/> to the manager.
         /// </summary>
         /// <remarks>
-        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.  Otherwise, it is queued.
+        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.
+        ///     Otherwise, it is queued.
         /// </remarks>
         /// <param name="connection">The connection to add.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         Task AddAsync(T connection);
+
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager{T}"/>.
+        /// </summary>
+        new void Dispose();
 
         /// <summary>
         ///     Returns the connection matching the specified <paramref name="connectionKey"/>
@@ -60,18 +61,16 @@ namespace Soulseek.NET.Tcp
         T Get(ConnectionKey connectionKey);
 
         /// <summary>
-        ///     Asynchronously disposes and removes the specified <paramref name="connection"/> from the manager.
-        /// </summary>
-        /// <remarks>
-        ///     If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.
-        /// </remarks>
-        /// <param name="connection">The connection to remove.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        Task RemoveAsync(T connection);
-
-        /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
         void RemoveAll();
+
+        /// <summary>
+        ///     Asynchronously disposes and removes the specified <paramref name="connection"/> from the manager.
+        /// </summary>
+        /// <remarks>If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.</remarks>
+        /// <param name="connection">The connection to remove.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        Task RemoveAsync(T connection);
     }
 }
