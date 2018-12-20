@@ -13,7 +13,6 @@
 namespace Soulseek.NET.Tcp
 {
     using System;
-    using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
 

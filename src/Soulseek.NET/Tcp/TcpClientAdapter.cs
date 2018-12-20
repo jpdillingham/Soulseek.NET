@@ -29,7 +29,7 @@ namespace Soulseek.NET.Tcp
     internal sealed class TcpClientAdapter : ITcpClient, IDisposable
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class.
+        ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class with an optional <paramref name="tcpClient"/>.
         /// </summary>
         /// <param name="tcpClient">The optional TcpClient to wrap.</param>
         internal TcpClientAdapter(TcpClient tcpClient = null)
