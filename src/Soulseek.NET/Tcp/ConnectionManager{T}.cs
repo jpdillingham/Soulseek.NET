@@ -22,7 +22,7 @@ namespace Soulseek.NET.Tcp
     ///     Manages a queue of <see cref="IConnection"/>
     /// </summary>
     /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
-    internal class ConnectionManager<T> : IConnectionManager<T>, IDisposable
+    internal sealed class ConnectionManager<T> : IConnectionManager<T>, IDisposable
         where T : IConnection
     {
         /// <summary>
@@ -140,7 +140,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!Disposed)
             {
