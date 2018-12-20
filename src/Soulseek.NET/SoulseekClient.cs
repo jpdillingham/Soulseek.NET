@@ -558,7 +558,7 @@ namespace Soulseek.NET
             await connection.ConnectAsync().ConfigureAwait(false);
 
             var request = new PierceFirewallRequest(token);
-            await connection.SendAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
+            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
 
             return connection;
         }
@@ -633,7 +633,7 @@ namespace Soulseek.NET
 
                     download.Connection = connection;
 
-                    await connection.SendAsync(new byte[8]).ConfigureAwait(false);
+                    await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
 
                     var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
 
