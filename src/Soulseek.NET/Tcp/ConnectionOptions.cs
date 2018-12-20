@@ -18,22 +18,35 @@ namespace Soulseek.NET.Tcp
     public class ConnectionOptions
     {
         /// <summary>
-        ///     Gets or sets the read and write buffer size for underlying TCP connections. (Default = 4096).
+        ///     Initializes a new instance of the <see cref="ConnectionOptions"/> class.
         /// </summary>
-        public int BufferSize { get; set; } = 4096;
+        /// <param name="bufferSize">The read and write buffer size for underlying TCP connections.</param>
+        /// <param name="connectTimeout">The connection timeout, in seconds, for client and peer TCP connections.</param>
+        /// <param name="readTimeout">The read timeout, in seconds, for peer TCP connections.</param>
+        public ConnectionOptions(int bufferSize = 4096, int connectTimeout = 5, int readTimeout = 5)
+        {
+            BufferSize = bufferSize;
+            ConnectTimeout = connectTimeout;
+            ReadTimeout = readTimeout;
+        }
 
         /// <summary>
-        ///     Gets or sets the connection timeout, in seconds, for client and peer TCP connections. (Default = 5).
+        ///     Gets the read and write buffer size for underlying TCP connections. (Default = 4096).
         /// </summary>
-        public int ConnectTimeout { get; set; } = 5;
+        public int BufferSize { get; }
 
         /// <summary>
-        ///     Gets or sets the read timeout, in seconds, for peer TCP connections. (Default = 5).
+        ///     Gets the connection timeout, in seconds, for client and peer TCP connections.
+        /// </summary>
+        public int ConnectTimeout { get; }
+
+        /// <summary>
+        ///     Gets the read timeout, in seconds, for peer TCP connections.
         /// </summary>
         /// <remarks>
         ///     Once connected and after reading data, if a no additional data is read within this threshold the connection will be
         ///     forcibly disconnected.
         /// </remarks>
-        public int ReadTimeout { get; set; } = 5;
+        public int ReadTimeout { get; }
     }
 }
