@@ -19,7 +19,7 @@ namespace Soulseek.NET.Messaging.Tcp
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
-
+    
     internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
         internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
@@ -32,6 +32,12 @@ namespace Soulseek.NET.Messaging.Tcp
             : base(ipAddress, port, options, tcpClient)
         {
             Type = type;
+
+            // circumvent the inactivity timer for server connections; this connection is expected to idle.
+            if (Type == MessageConnectionType.Server)
+            {
+                InactivityTimer = null;
+            }
 
             Connected += async (sender, e) =>
             {
@@ -73,7 +79,7 @@ namespace Soulseek.NET.Messaging.Tcp
                         NormalizeMessageCode(bytes, 0 - (int)Type);
                     }
 
-                    await SendAsync(bytes).ConfigureAwait(false);
+                    await WriteAsync(bytes).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {

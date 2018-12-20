@@ -13,37 +13,78 @@
 namespace Soulseek.NET.Tcp
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
+    /// <summary>
+    ///     Provides client connections for TCP network services.
+    /// </summary>
+    /// <remarks>
+    ///     This is a pass-through implementation of <see cref="ITcpClient"/> over <see cref="TcpClient"/> intended to enable
+    ///     dependency injection.
+    /// </remarks>
+    [ExcludeFromCodeCoverage]
     internal sealed class TcpClientAdapter : ITcpClient, IDisposable
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class with an optional <paramref name="tcpClient"/>.
+        /// </summary>
+        /// <param name="tcpClient">The optional TcpClient to wrap.</param>
         internal TcpClientAdapter(TcpClient tcpClient = null)
         {
             TcpClient = tcpClient ?? new TcpClient();
         }
 
+        /// <summary>
+        ///     Gets a value indicating whether the client is connected.
+        /// </summary>
         public bool Connected => TcpClient.Connected;
 
         private bool Disposed { get; set; }
         private TcpClient TcpClient { get; set; }
 
+        /// <summary>
+        ///     Closes the client connection.
+        /// </summary>
         public void Close()
         {
             TcpClient.Close();
+            Dispose(false);
         }
 
-        public async Task ConnectAsync(IPAddress ipAddress, int port)
+        /// <summary>
+        ///     Connects the client to a remote TCP host using the specified IP address and port number as an asynchronous operation.
+        /// </summary>
+        /// <param name="address">The IP address to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the address parameter is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the port parameter is not between <see cref="IPEndPoint.MinPort"/> and <see cref="IPEndPoint.MaxPort"/>
+        /// </exception>
+        /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
+        public async Task ConnectAsync(IPAddress address, int port)
         {
-            await TcpClient.ConnectAsync(ipAddress, port).ConfigureAwait(false);
+            await TcpClient.ConnectAsync(address, port).ConfigureAwait(false);
         }
 
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="TcpClientAdapter"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
         }
 
+        /// <summary>
+        ///     Returns the <see cref="NetworkStream"/> used to send and receive data.
+        /// </summary>
+        /// <returns>The NetworkStream used to send and receive data.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the TCP client is not connected to a remote host.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
         public NetworkStream GetStream()
         {
             return TcpClient.GetStream();

@@ -93,7 +93,7 @@ namespace Soulseek.NET
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ConnectionException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
         /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>

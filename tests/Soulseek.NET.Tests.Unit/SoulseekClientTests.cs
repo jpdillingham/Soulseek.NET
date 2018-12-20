@@ -25,18 +25,6 @@
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with read timeout zero")]
-        public void Instantiates_With_Read_Timeout_Zero()
-        {
-            var s = new SoulseekClient();
-
-            var defaultOptions = new SoulseekClientOptions();
-            defaultOptions.ConnectionOptions.ReadTimeout = 0;
-
-            Assert.Equal(JsonConvert.SerializeObject(defaultOptions), JsonConvert.SerializeObject(s.Options));
-        }
-
-        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates without exception")]
         public void Instantiates_Without_Exception()
         {
@@ -46,18 +34,6 @@
 
             Assert.Null(ex);
             Assert.NotNull(s);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Ensures ReadTimeout is zero")]
-        public void Ensures_ReadTimeout_Is_Zero()
-        {
-            var options = new SoulseekClientOptions();
-            options.ConnectionOptions.ReadTimeout = 5;
-
-            var s = new SoulseekClient(options: options);
-
-            Assert.Equal(0, s.Options.ConnectionOptions.ReadTimeout);
         }
 
         [Trait("Category", "Instantiation")]

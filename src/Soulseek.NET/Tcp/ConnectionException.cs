@@ -16,60 +16,105 @@ namespace Soulseek.NET.Tcp
     using System.Diagnostics.CodeAnalysis;
     using Soulseek.NET.Exceptions;
 
+    /// <summary>
+    ///     Represents errors that occur within a TCP connection.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
     public class ConnectionException : SoulseekClientException
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionException"/> class.
+        /// </summary>
         public ConnectionException()
             : base()
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The Exception message.</param>
         public ConnectionException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with the specified <paramref name="message"/> and <paramref name="innerException"/>.
+        /// </summary>
+        /// <param name="message">The Exception message.</param>
+        /// <param name="innerException">The inner Exception.</param>
         public ConnectionException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
     }
 
+    /// <summary>
+    ///     Represents errors that occur when reading data from a TCP connection.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
     public class ConnectionReadException : ConnectionException
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class.
+        /// </summary>
         public ConnectionReadException()
             : base()
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The Exception message.</param>
         public ConnectionReadException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with the specified <paramref name="message"/> and <paramref name="innerException"/>.
+        /// </summary>
+        /// <param name="message">The Exception message.</param>
+        /// <param name="innerException">The inner Exception.</param>
         public ConnectionReadException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
     }
 
+    /// <summary>
+    ///     Represents errors that occur when writing data to a TCP connection.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
     public class ConnectionWriteException : ConnectionException
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class.
+        /// </summary>
         public ConnectionWriteException()
             : base()
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The Exception message.</param>
         public ConnectionWriteException(string message)
             : base(message)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with the specified <paramref name="message"/> and <paramref name="innerException"/>.
+        /// </summary>
+        /// <param name="message">The Exception message.</param>
+        /// <param name="innerException">The inner Exception.</param>
         public ConnectionWriteException(string message, Exception innerException)
             : base(message, innerException)
         {

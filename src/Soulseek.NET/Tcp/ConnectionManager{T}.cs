@@ -18,48 +18,50 @@ namespace Soulseek.NET.Tcp
     using System.Linq;
     using System.Threading.Tasks;
 
-    internal class ConnectionManager<T> : IConnectionManager<T>, IDisposable
+    /// <summary>
+    ///     Manages a queue of <see cref="IConnection"/>
+    /// </summary>
+    /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
+    internal sealed class ConnectionManager<T> : IConnectionManager<T>, IDisposable
         where T : IConnection
     {
-        #region Internal Constructors
-
-        internal ConnectionManager(int concurrentConnections)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionManager{T}"/> class with the optionally specified number of <paramref name="concurrentConnections"/>.
+        /// </summary>
+        /// <param name="concurrentConnections">The number of allowed concurrent connections.</param>
+        internal ConnectionManager(int concurrentConnections = 500)
         {
             ConcurrentConnections = concurrentConnections;
         }
 
-        #endregion Internal Constructors
-
-        #region Internal Properties
-
+        /// <summary>
+        ///     Gets the number of active connections.
+        /// </summary>
         public int Active => Connections.Count;
+
+        /// <summary>
+        ///     Gets the number of allowed concurrent connections.
+        /// </summary>
+        public int ConcurrentConnections { get; private set; }
+
+        /// <summary>
+        ///     Gets the number of queued connections.
+        /// </summary>
         public int Queued => ConnectionQueue.Count;
 
-        #endregion Internal Properties
-
-        #region Private Properties
-
-        private int ConcurrentConnections { get; set; }
         private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
         private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
-
         private bool Disposed { get; set; }
 
-        #endregion Private Properties
-
-        #region Public Methods
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        public async Task Add(T connection)
+        /// <summary>
+        ///     Asynchronously adds the specified <paramref name="connection"/> to the manager.
+        /// </summary>
+        /// <remarks>
+        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.  Otherwise, it is queued.
+        /// </remarks>
+        /// <param name="connection">The connection to add.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public async Task AddAsync(T connection)
         {
             if (Connections.Count < ConcurrentConnections)
             {
@@ -74,23 +76,54 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        public T Get(ConnectionKey key)
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager{T}"/>.
+        /// </summary>
+        public void Dispose()
         {
-            var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(key));
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Returns the connection matching the specified <paramref name="connectionKey"/>
+        /// </summary>
+        /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
+        /// <returns>The connection matching the specified connection key.</returns>
+        public T Get(ConnectionKey connectionKey)
+        {
+            var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
 
             if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
             {
                 return queuedConnection;
             }
-            else if (Connections.ContainsKey(key))
+            else if (Connections.ContainsKey(connectionKey))
             {
-                return Connections[key];
+                return Connections[connectionKey];
             }
 
             return default(T);
         }
 
-        public async Task Remove(T connection)
+        /// <summary>
+        ///     Disposes and removes all active and queued connections.
+        /// </summary>
+        public void RemoveAll()
+        {
+            ConnectionQueue.DequeueAndDisposeAll();
+            Connections.RemoveAndDisposeAll();
+        }
+
+        /// <summary>
+        ///     Asynchronously disposes and removes the specified <paramref name="connection"/> from the manager.
+        /// </summary>
+        /// <remarks>
+        ///     If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.
+        /// </remarks>
+        /// <param name="connection">The connection to remove.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public async Task RemoveAsync(T connection)
         {
             var key = connection?.Key;
 
@@ -107,17 +140,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        public void RemoveAll()
-        {
-            ConnectionQueue.DequeueAndDisposeAll();
-            Connections.RemoveAndDisposeAll();
-        }
-
-        #endregion Internal Methods
-
-        #region Protected Methods
-
-        protected virtual void Dispose(bool disposing)
+        private void Dispose(bool disposing)
         {
             if (!Disposed)
             {
@@ -130,10 +153,6 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        #endregion Protected Methods
-
-        #region Private Methods
-
         private async Task TryConnectAsync(T connection)
         {
             try
@@ -144,7 +163,5 @@ namespace Soulseek.NET.Tcp
             {
             }
         }
-
-        #endregion Private Methods
     }
 }
