@@ -68,7 +68,6 @@ namespace Soulseek.NET
             Port = port;
 
             Options = options ?? new SoulseekClientOptions();
-            Options.ConnectionOptions.ReadTimeout = 0; // no inactivity timeout for server message connection
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
@@ -538,12 +537,12 @@ namespace Soulseek.NET
 
             connection.Disconnected += async (sender, e) =>
             {
-                await PeerConnectionManager.Remove((IMessageConnection)sender).ConfigureAwait(false);
+                await PeerConnectionManager.RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
             };
 
             connection.MessageRead += HandlePeerMessage;
 
-            await PeerConnectionManager.Add(connection).ConfigureAwait(false);
+            await PeerConnectionManager.AddAsync(connection).ConfigureAwait(false);
             return connection;
         }
 
@@ -572,7 +571,7 @@ namespace Soulseek.NET
             {
                 if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
                 {
-                    await PeerConnectionManager.Remove(connection).ConfigureAwait(false);
+                    await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
                     connection = default(IMessageConnection);
                 }
             }
@@ -590,10 +589,10 @@ namespace Soulseek.NET
 
                 connection.Disconnected += async (sender, e) =>
                 {
-                    await PeerConnectionManager.Remove((IMessageConnection)sender).ConfigureAwait(false);
+                    await PeerConnectionManager.RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
                 };
 
-                await PeerConnectionManager.Add(connection).ConfigureAwait(false);
+                await PeerConnectionManager.AddAsync(connection).ConfigureAwait(false);
             }
 
             return connection;
