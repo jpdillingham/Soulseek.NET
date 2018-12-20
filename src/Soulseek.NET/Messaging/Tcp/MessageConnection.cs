@@ -73,7 +73,7 @@ namespace Soulseek.NET.Messaging.Tcp
                         NormalizeMessageCode(bytes, 0 - (int)Type);
                     }
 
-                    await SendAsync(bytes).ConfigureAwait(false);
+                    await WriteAsync(bytes).ConfigureAwait(false);
                 }
                 catch (Exception ex)
                 {
