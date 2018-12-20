@@ -32,5 +32,16 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(0, c.Active);
             Assert.Equal(0, c.Queued);
         }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Disposes without throwing")]
+        public void Disposes_Without_Throwing()
+        {
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = Record.Exception(() => c.Dispose());
+
+            Assert.Null(ex);
+        }
     }
 }
