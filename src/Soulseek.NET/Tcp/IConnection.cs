@@ -89,20 +89,20 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         /// <param name="count">The number of bytes to read.</param>
         /// <returns>The read bytes.</returns>
-        Task<IEnumerable<byte>> ReadAsync(int count);
+        Task<byte[]> ReadAsync(int count);
 
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="count">The number of bytes to read.</param>
         /// <returns>The read bytes.</returns>
-        Task<IEnumerable<byte>> ReadAsync(long count);
+        Task<byte[]> ReadAsync(long count);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        Task WriteAsync(IEnumerable<byte> bytes);
+        Task WriteAsync(byte[] bytes);
     }
 }

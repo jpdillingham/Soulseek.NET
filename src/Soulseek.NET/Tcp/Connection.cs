@@ -161,7 +161,7 @@ namespace Soulseek.NET.Tcp
             GC.SuppressFinalize(this);
         }
 
-        public async Task<IEnumerable<byte>> ReadAsync(long count)
+        public async Task<byte[]> ReadAsync(long count)
         {
             try
             {
@@ -174,7 +174,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        public async Task<IEnumerable<byte>> ReadAsync(int count)
+        public async Task<byte[]> ReadAsync(int count)
         {
             var result = new List<byte>();
 
@@ -203,10 +203,8 @@ namespace Soulseek.NET.Tcp
             return result.ToArray();
         }
 
-        public async Task WriteAsync(IEnumerable<byte> bytes)
+        public async Task WriteAsync(byte[] bytes)
         {
-            var byteArray = bytes.ToArray();
-
             if (!TcpClient.Connected)
             {
                 throw new InvalidOperationException($"The underlying TcpConnection is closed.");
@@ -217,19 +215,19 @@ namespace Soulseek.NET.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            if (bytes == null || byteArray.Length == 0)
+            if (bytes == null || bytes.Length == 0)
             {
                 throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
             }
 
-            if (byteArray.Length > Options.BufferSize)
+            if (bytes.Length > Options.BufferSize)
             {
                 throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
             }
 
             try
             {
-                await Stream.WriteAsync(byteArray, 0, byteArray.Length).ConfigureAwait(false);
+                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -238,7 +236,7 @@ namespace Soulseek.NET.Tcp
                     Disconnect($"Write error: {ex.Message}");
                 }
 
-                throw new ConnectionWriteException($"Failed to write {byteArray.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
+                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
 
