@@ -32,17 +32,14 @@ namespace Soulseek.NET.Tcp
             Options = options ?? new ConnectionOptions();
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
-            if (Options.ReadTimeout > 0)
+            InactivityTimer = new SystemTimer()
             {
-                InactivityTimer = new SystemTimer()
-                {
-                    Enabled = false,
-                    AutoReset = false,
-                    Interval = Options.ReadTimeout * 1000,
-                };
+                Enabled = false,
+                AutoReset = false,
+                Interval = Options.ReadTimeout * 1000,
+            };
 
-                InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {Options.ReadTimeout} seconds was reached.");
-            }
+            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {Options.ReadTimeout} seconds was reached.");
 
             WatchdogTimer = new SystemTimer()
             {
@@ -176,6 +173,8 @@ namespace Soulseek.NET.Tcp
 
         public async Task<byte[]> ReadAsync(int count)
         {
+            InactivityTimer?.Reset();
+
             var result = new List<byte>();
 
             var buffer = new byte[Options.BufferSize];
@@ -198,6 +197,7 @@ namespace Soulseek.NET.Tcp
                 result.AddRange(data);
 
                 DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, count));
+                InactivityTimer?.Reset();
             }
 
             return result.ToArray();
