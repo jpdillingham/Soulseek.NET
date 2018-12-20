@@ -23,7 +23,12 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var data = new byte[] { 0x0, 0x1, 0x3 };
 
-            var d = new ConnectionDataEventArgs(data, data.Length, 20);
+            ConnectionDataEventArgs d = null;
+
+            var ex = Record.Exception(() => d = new ConnectionDataEventArgs(data, data.Length, 20));
+
+            Assert.Null(ex);
+            Assert.NotNull(d);
 
             Assert.Equal(data, d.Data);
             Assert.Equal(3, d.CurrentLength);
@@ -35,7 +40,12 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "ConnectionStateChangedEventArgs instantiates properly")]
         public void ConnectionStateChangedEventArgs_Instantiates_Properly()
         {
-            var s = new ConnectionStateChangedEventArgs(ConnectionState.Connected, ConnectionState.Disconnected, "foo");
+            ConnectionStateChangedEventArgs s = null;
+
+            var ex = Record.Exception(() => s = new ConnectionStateChangedEventArgs(ConnectionState.Connected, ConnectionState.Disconnected, "foo"));
+
+            Assert.Null(ex);
+            Assert.NotNull(s);
 
             Assert.Equal(ConnectionState.Connected, s.PreviousState);
             Assert.Equal(ConnectionState.Disconnected, s.CurrentState);
@@ -46,7 +56,12 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "ConnectionStateChangedEventArgs message is null if omitted")]
         public void ConnectionStateChangedEventArgs_Message_Is_Null_If_Omitted()
         {
-            var s = new ConnectionStateChangedEventArgs(ConnectionState.Connected, ConnectionState.Disconnected);
+            ConnectionStateChangedEventArgs s = null;
+
+            var ex = Record.Exception(() => s = new ConnectionStateChangedEventArgs(ConnectionState.Connected, ConnectionState.Disconnected));
+
+            Assert.Null(ex);
+            Assert.NotNull(s);
 
             Assert.Equal(ConnectionState.Connected, s.PreviousState);
             Assert.Equal(ConnectionState.Disconnected, s.CurrentState);
