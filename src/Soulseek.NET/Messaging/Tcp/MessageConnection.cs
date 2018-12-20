@@ -33,6 +33,7 @@ namespace Soulseek.NET.Messaging.Tcp
         {
             Type = type;
 
+            // circumvent the inactivity timer for server connections; this connection is expected to idle.
             if (Type == MessageConnectionType.Server)
             {
                 InactivityTimer = null;
