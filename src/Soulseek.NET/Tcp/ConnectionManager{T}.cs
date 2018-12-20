@@ -39,7 +39,7 @@ namespace Soulseek.NET.Tcp
 
         #region Private Properties
 
-        private int ConcurrentConnections { get; set; }
+        public int ConcurrentConnections { get; private set; }
         private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
         private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
 
@@ -59,7 +59,7 @@ namespace Soulseek.NET.Tcp
 
         #region Internal Methods
 
-        public async Task Add(T connection)
+        public async Task AddAsync(T connection)
         {
             if (Connections.Count < ConcurrentConnections)
             {
@@ -90,7 +90,7 @@ namespace Soulseek.NET.Tcp
             return default(T);
         }
 
-        public async Task Remove(T connection)
+        public async Task RemoveAsync(T connection)
         {
             var key = connection?.Key;
 
