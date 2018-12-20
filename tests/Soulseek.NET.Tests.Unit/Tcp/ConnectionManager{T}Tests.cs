@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
+    using Moq;
     using Soulseek.NET.Tcp;
     using Xunit;
 
@@ -42,6 +43,58 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             var ex = Record.Exception(() => c.Dispose());
 
             Assert.Null(ex);
+        }
+
+        [Trait("Category", "Remove")]
+        [Fact(DisplayName = "Removes does not throw on untracked connection")]
+        public async void Removes_Does_Not_Throw_On_Untracked_Connection()
+        {
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(new ConnectionKey(new System.Net.IPAddress(0x0), 1));
+
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.RemoveAsync(mock.Object));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Remove")]
+        [Fact(DisplayName = "Removes does not throw on null connection")]
+        public async void Removes_Does_Not_Throw_On_Null_Connection()
+        {
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.RemoveAsync(null));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Remove")]
+        [Fact(DisplayName = "Removes does not throw on null connection key")]
+        public async void Removes_Does_Not_Throw_On_Null_Connection_Key()
+        {
+            var mock = new Mock<IConnection>();
+
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.RemoveAsync(mock.Object));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Remove")]
+        [Fact(DisplayName = "Removes does not dispose untracked connection")]
+        public async void Removes_Does_Not_Dispose_Untracked_Connection()
+        {
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(new ConnectionKey(new System.Net.IPAddress(0x0), 1));
+
+            var c = new ConnectionManager<IConnection>();
+
+            await c.RemoveAsync(mock.Object);
+
+            mock.Verify(m => m.Dispose(), Times.Never);
         }
     }
 }
