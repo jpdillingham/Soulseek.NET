@@ -49,8 +49,8 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         public int Queued => ConnectionQueue.Count;
 
-        private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
-        private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
+        private ConcurrentQueue<T> ConnectionQueue { get; } = new ConcurrentQueue<T>();
+        private ConcurrentDictionary<ConnectionKey, T> Connections { get; } = new ConcurrentDictionary<ConnectionKey, T>();
         private bool Disposed { get; set; }
 
         /// <summary>
@@ -125,10 +125,19 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task RemoveAsync(T connection)
         {
-            var key = connection?.Key;
+            if (connection == null || connection.Key == null)
+            {
+                return;
+            }
 
-            connection?.Dispose();
-            Connections.TryRemove(key, out var _);
+            if (Connections.TryRemove(connection.Key, out var _))
+            {
+                connection.Dispose();
+            }
+            else
+            {
+                return;
+            }
 
             if (Connections.Count < ConcurrentConnections &&
                 ConnectionQueue.TryDequeue(out var nextConnection))
