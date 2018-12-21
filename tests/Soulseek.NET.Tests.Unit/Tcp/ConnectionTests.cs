@@ -309,5 +309,43 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
         }
+
+        [Trait("Category", "Watchdog")]
+        [Fact(DisplayName = "Watchdog disconnects when TcpClient disconnects")]
+        public async Task Watchdog_Disconnects_When_TcpClient_Disconnects()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(false);
+
+            var c = new Connection(ip, port, tcpClient: t.Object);
+
+            var disconnectRaisedByWatchdog = false;
+            c.Disconnected += (sender, e) => disconnectRaisedByWatchdog = true;
+
+            var timer = c.GetProperty<System.Timers.Timer>("WatchdogTimer");
+            timer.Interval = 1;
+
+            await c.ConnectAsync();
+
+            Assert.Equal(ConnectionState.Connected, c.State);
+
+            var start = DateTime.UtcNow;
+
+            while (!disconnectRaisedByWatchdog)
+            {
+                if ((DateTime.UtcNow - start).TotalMilliseconds > 100)
+                {
+                    throw new Exception("Watchdog didn't disconnect in 100ms");
+                }
+            }
+
+            Assert.True(disconnectRaisedByWatchdog);
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+        }
     }
 }
