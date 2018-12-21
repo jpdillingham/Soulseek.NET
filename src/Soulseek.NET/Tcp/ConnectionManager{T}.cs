@@ -175,6 +175,7 @@ namespace Soulseek.NET.Tcp
             }
             catch (Exception)
             {
+                await RemoveAsync(connection).ConfigureAwait(false);
             }
         }
     }
