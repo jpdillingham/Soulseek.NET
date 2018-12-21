@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,25 +12,9 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
-    using Soulseek.NET.Tcp;
     using Xunit;
 
-    public class ConnectionOptionsTests
+    public class ConnectionTests
     {
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates properly")]
-        public void Instantiates_Properly()
-        {
-            ConnectionOptions o = null;
-
-            var ex = Record.Exception(() => o = new ConnectionOptions(8192, 10, 30));
-
-            Assert.Null(ex);
-            Assert.NotNull(o);
-
-            Assert.Equal(8192, o.BufferSize);
-            Assert.Equal(10, o.ConnectTimeout);
-            Assert.Equal(30, o.ReadTimeout);
-        }
     }
 }
