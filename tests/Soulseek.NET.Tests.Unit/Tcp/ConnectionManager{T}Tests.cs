@@ -18,6 +18,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading.Tasks;
     using Xunit;
 
     public class ConnectionManager_T_Tests
@@ -51,7 +52,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Remove")]
         [Fact(DisplayName = "Removes does not throw on untracked connection")]
-        public async void Removes_Does_Not_Throw_On_Untracked_Connection()
+        public async Task Removes_Does_Not_Throw_On_Untracked_Connection()
         {
             var mock = new Mock<IConnection>();
             mock.Setup(m => m.Key).Returns(new ConnectionKey(new System.Net.IPAddress(0x0), 1));
@@ -65,7 +66,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Remove")]
         [Fact(DisplayName = "Removes does not throw on null connection")]
-        public async void Removes_Does_Not_Throw_On_Null_Connection()
+        public async Task Removes_Does_Not_Throw_On_Null_Connection()
         {
             var c = new ConnectionManager<IConnection>();
 
@@ -76,7 +77,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Remove")]
         [Fact(DisplayName = "Removes does not throw on null connection key")]
-        public async void Removes_Does_Not_Throw_On_Null_Connection_Key()
+        public async Task Removes_Does_Not_Throw_On_Null_Connection_Key()
         {
             var mock = new Mock<IConnection>();
 
@@ -89,7 +90,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Remove")]
         [Fact(DisplayName = "Removes does not dispose untracked connection")]
-        public async void Removes_Does_Not_Dispose_Untracked_Connection()
+        public async Task Removes_Does_Not_Dispose_Untracked_Connection()
         {
             var mock = new Mock<IConnection>();
             mock.Setup(m => m.Key).Returns(new ConnectionKey(new IPAddress(0x0), 1));
@@ -103,7 +104,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Remove")]
         [Fact(DisplayName = "Removes removes given connection")]
-        public async void Removes_Removes_Given_Connection()
+        public async Task Removes_Removes_Given_Connection()
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
@@ -126,7 +127,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Remove")]
         [Fact(DisplayName = "Removes removes given connection, then activates queued")]
-        public async void Removes_Removes_Given_Connection_Then_Activates_Queued()
+        public async Task Removes_Removes_Given_Connection_Then_Activates_Queued()
         {
             var key1 = new ConnectionKey(new IPAddress(0x1), 1);
             var mock1 = new Mock<IConnection>();
@@ -169,7 +170,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Add")]
         [Fact(DisplayName = "Add does not throw on null connection")]
-        public async void Add_Does_Not_Throw_On_Null_Connection()
+        public async Task Add_Does_Not_Throw_On_Null_Connection()
         {
             var c = new ConnectionManager<IConnection>();
 
@@ -182,7 +183,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Add")]
         [Fact(DisplayName = "Add does not throw on null connection key")]
-        public async void Add_Does_Not_Throw_On_Null_Connection_Key()
+        public async Task Add_Does_Not_Throw_On_Null_Connection_Key()
         {
             var mock = new Mock<IConnection>();
 
@@ -197,7 +198,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Add")]
         [Fact(DisplayName = "Add adds given connection and activates immediately")]
-        public async void Add_Adds_Given_Connection_And_Activates_Immediately()
+        public async Task Add_Adds_Given_Connection_And_Activates_Immediately()
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
@@ -217,7 +218,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Add")]
         [Fact(DisplayName = "Add adds given connection and queues")]
-        public async void Add_Adds_Given_Connection_And_Queues()
+        public async Task Add_Adds_Given_Connection_And_Queues()
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
@@ -237,7 +238,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Add")]
         [Fact(DisplayName = "Add adds given connection and removes on connect exception")]
-        public async void Add_Adds_Given_Connection_And_Removes_On_Connect_Exception()
+        public async Task Add_Adds_Given_Connection_And_Removes_On_Connect_Exception()
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
@@ -277,7 +278,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Get")]
         [Fact(DisplayName = "Get returns queued connection")]
-        public async void Get_Returns_Queued_Connection()
+        public async Task Get_Returns_Queued_Connection()
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
@@ -300,7 +301,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
         [Trait("Category", "Get")]
         [Fact(DisplayName = "Get returns active connection")]
-        public async void Get_Returns_Active_Connection()
+        public async Task Get_Returns_Active_Connection()
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 

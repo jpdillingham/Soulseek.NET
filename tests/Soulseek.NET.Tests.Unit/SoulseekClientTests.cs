@@ -7,6 +7,7 @@
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
+    using System.Threading.Tasks;
     using Xunit;
 
     public class SoulseekClientTests
@@ -56,7 +57,7 @@
 
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect fails if connected")]
-        public async void Connect_Fails_If_Connected()
+        public async Task Connect_Fails_If_Connected()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientState.Connected);
@@ -69,7 +70,7 @@
 
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect throws when TcpConnection throws")]
-        public async void Connect_Throws_When_TcpConnection_Throws()
+        public async Task Connect_Throws_When_TcpConnection_Throws()
         {
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync()).Throws(new ConnectionException());
@@ -84,7 +85,7 @@
 
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect succeeds when TcpConnection succeeds")]
-        public async void Connect_Succeeds_When_TcpConnection_Succeeds()
+        public async Task Connect_Succeeds_When_TcpConnection_Succeeds()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -107,7 +108,7 @@
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect disconnects")]
-        public async void Disconnect_Disconnects()
+        public async Task Disconnect_Disconnects()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -122,7 +123,7 @@
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears searches")]
-        public async void Disconnect_Clears_Searches()
+        public async Task Disconnect_Clears_Searches()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -144,7 +145,7 @@
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears downloads")]
-        public async void Disconnect_Clears_Downloads()
+        public async Task Disconnect_Clears_Downloads()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -172,7 +173,7 @@
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears peer queue")]
-        public async void Disconnect_Clears_Peer_Queue()
+        public async Task Disconnect_Clears_Peer_Queue()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -213,7 +214,7 @@
 
         [Trait("Category", "Login")]
         [Fact(DisplayName = "Login throws on null username")]
-        public async void Login_Throws_On_Null_Username()
+        public async Task Login_Throws_On_Null_Username()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientState.Connected);
@@ -232,7 +233,7 @@
         [InlineData("a", "")]
         [InlineData("", "")]
         [InlineData(null, null)]
-        public async void Login_Throws_On_Bad_Input(string username, string password)
+        public async Task Login_Throws_On_Bad_Input(string username, string password)
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientState.Connected);
@@ -245,7 +246,7 @@
 
         [Trait("Category", "Login")]
         [Fact(DisplayName = "Login throws if logged in")]
-        public async void Login_Throws_If_Logged_In()
+        public async Task Login_Throws_If_Logged_In()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
@@ -258,7 +259,7 @@
 
         [Trait("Category", "Login")]
         [Fact(DisplayName = "Login throws if not connected")]
-        public async void Login_Throws_If_Not_Connected()
+        public async Task Login_Throws_If_Not_Connected()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientState.Disconnected);
