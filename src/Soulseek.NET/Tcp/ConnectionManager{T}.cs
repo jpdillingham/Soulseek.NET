@@ -97,15 +97,18 @@ namespace Soulseek.NET.Tcp
         /// <returns>The connection matching the specified connection key.</returns>
         public T Get(ConnectionKey connectionKey)
         {
-            var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
+            if (connectionKey != null)
+            {
+                var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
 
-            if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
-            {
-                return queuedConnection;
-            }
-            else if (Connections.ContainsKey(connectionKey))
-            {
-                return Connections[connectionKey];
+                if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
+                {
+                    return queuedConnection;
+                }
+                else if (Connections.ContainsKey(connectionKey))
+                {
+                    return Connections[connectionKey];
+                }
             }
 
             return default(T);
