@@ -17,6 +17,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Net.Sockets;
+    using System.Threading;
+    using System.Threading.Tasks;
     using Xunit;
 
     public class ConnectionTests
@@ -178,6 +181,85 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Single(eventArgs);
             Assert.Equal("foo", eventArgs[0]);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws when not pending or disconnected")]
+        public async Task Connect_Throws_When_Not_Pending_Or_Disconnected()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+            c.SetProperty("State", ConnectionState.Connected);
+
+            var ex = await Record.ExceptionAsync(async () => await c.ConnectAsync());
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect connects when not connected or transitioning")]
+        public async Task Connect_Connects_When_Not_Connected_Or_Transitioning()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            var c = new Connection(ip, port, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.ConnectAsync());
+
+            Assert.Null(ex);
+            Assert.Equal(ConnectionState.Connected, c.State);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws when timed out")]
+        public async Task Connect_Throws_When_Timed_Out()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => Thread.Sleep(1000)));
+
+            var o = new ConnectionOptions(connectTimeout: 0);
+            var c = new Connection(ip, port, options: o, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.ConnectAsync());
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionException>(ex);
+            Assert.IsType<TimeoutException>(ex.InnerException);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws when TcpClient throws")]
+        public async Task Connect_Throws_When_TcpClient_Throws()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => throw new SocketException()));
+
+            var c = new Connection(ip, port, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.ConnectAsync());
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionException>(ex);
+            Assert.IsType<SocketException>(ex.InnerException);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
         }
     }
 }
