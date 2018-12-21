@@ -26,7 +26,7 @@ namespace Soulseek.NET.Tcp
         where T : IConnection
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionManager{T}"/> class with the optionally specified number of <paramref name="concurrentConnections"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionManager{T}"/> class.
         /// </summary>
         /// <param name="concurrentConnections">The number of allowed concurrent connections.</param>
         internal ConnectionManager(int concurrentConnections = 500)

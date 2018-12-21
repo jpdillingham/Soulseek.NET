@@ -21,10 +21,18 @@ namespace Soulseek.NET.Tcp
     using System.Threading.Tasks;
     using SystemTimer = System.Timers.Timer;
 
+    /// <summary>
+    ///     Provides client connections for TCP network services.
+    /// </summary>
     internal class Connection : IConnection, IDisposable
     {
-        #region Internal Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Connection"/> class.
+        /// </summary>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             IPAddress = ipAddress;
@@ -57,36 +65,85 @@ namespace Soulseek.NET.Tcp
             };
         }
 
-        #endregion Internal Constructors
-
-        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+        /// <summary>
+        ///     Occurs when the connection is connected.
+        /// </summary>
         public event EventHandler Connected;
-        public event EventHandler<string> Disconnected;
+
+        /// <summary>
+        ///     Occurs when data is ready from the connection.
+        /// </summary>
         public event EventHandler<ConnectionDataEventArgs> DataRead;
 
-        #region Public Properties
+        /// <summary>
+        ///     Occurs when the connection is disconnected.
+        /// </summary>
+        public event EventHandler<string> Disconnected;
 
+        /// <summary>
+        ///     Occurs when the connection state changes.
+        /// </summary>
+        public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
+
+        /// <summary>
+        ///     Gets or sets the generic connection context.
+        /// </summary>
         public object Context { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the remote IP address of the connection.
+        /// </summary>
         public IPAddress IPAddress { get; protected set; }
+
+        /// <summary>
+        ///     Gets the unique identifier of the connection.
+        /// </summary>
         public virtual ConnectionKey Key => new ConnectionKey(IPAddress, Port);
+
+        /// <summary>
+        ///     Gets or sets the options for the connection.
+        /// </summary>
         public ConnectionOptions Options { get; protected set; }
+
+        /// <summary>
+        ///     Gets or sets the remote port of the connection.
+        /// </summary>
         public int Port { get; protected set; }
+
+        /// <summary>
+        ///     Gets or sets the current connection state.
+        /// </summary>
         public ConnectionState State { get; protected set; } = ConnectionState.Pending;
 
-        #endregion Public Properties
-
-        #region Protected Properties
-
+        /// <summary>
+        ///     Gets or sets a value indicating whether the object is disposed.
+        /// </summary>
         protected bool Disposed { get; set; } = false;
+
+        /// <summary>
+        ///     Gets or sets the timer used to monitor for transfer inactivity.
+        /// </summary>
         protected SystemTimer InactivityTimer { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the network stream for the connection.
+        /// </summary>
         protected NetworkStream Stream { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the TcpClient used by the connection.
+        /// </summary>
         protected ITcpClient TcpClient { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the timer used to monitor the status of the TcpClient.
+        /// </summary>
         protected SystemTimer WatchdogTimer { get; set; }
 
-        #endregion Protected Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
+        /// </summary>
+        /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task ConnectAsync()
         {
             if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
@@ -137,6 +194,10 @@ namespace Soulseek.NET.Tcp
             }
         }
 
+        /// <summary>
+        ///     Disconnects the client.
+        /// </summary>
+        /// <param name="message">The optional message or reason for the disconnect.</param>
         public void Disconnect(string message = null)
         {
             if (State != ConnectionState.Disconnected && State != ConnectionState.Disconnecting)
@@ -152,26 +213,38 @@ namespace Soulseek.NET.Tcp
             }
         }
 
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnection"/>.
+        /// </summary>
         public void Dispose()
         {
             Dispose(true);
             GC.SuppressFinalize(this);
         }
 
-        public async Task<byte[]> ReadAsync(long count)
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        public async Task<byte[]> ReadAsync(long length)
         {
-            try
-            {
-                var intCount = (int)count;
-                return await ReadAsync(intCount).ConfigureAwait(false);
-            }
-            catch (Exception)
+            // NetworkStream.ReadAsync doesn't support long, so if we were to support this we'd need to split the long up into
+            // int-sized chunks and iterate. that's for later, if ever.
+            if (!int.TryParse(length.ToString(), out var intLength))
             {
                 throw new NotImplementedException($"File sizes exceeding ~2gb are not yet supported.");
             }
+
+            return await ReadAsync(intLength).ConfigureAwait(false);
         }
 
-        public async Task<byte[]> ReadAsync(int count)
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        public async Task<byte[]> ReadAsync(int length)
         {
             InactivityTimer?.Reset();
 
@@ -180,9 +253,9 @@ namespace Soulseek.NET.Tcp
             var buffer = new byte[Options.BufferSize];
             var totalBytesRead = 0;
 
-            while (totalBytesRead < count)
+            while (totalBytesRead < length)
             {
-                var bytesRemaining = count - totalBytesRead;
+                var bytesRemaining = length - totalBytesRead;
                 var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
                 var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead).ConfigureAwait(false);
@@ -196,13 +269,18 @@ namespace Soulseek.NET.Tcp
                 var data = buffer.Take(bytesRead);
                 result.AddRange(data);
 
-                DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, count));
+                DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, length));
                 InactivityTimer?.Reset();
             }
 
             return result.ToArray();
         }
 
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task WriteAsync(byte[] bytes)
         {
             if (!TcpClient.Connected)
@@ -240,10 +318,11 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
+        /// <summary>
+        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally specified <paramref name="message"/>
+        /// </summary>
+        /// <param name="state">The state to which to change.</param>
+        /// <param name="message">The optional message describing the nature of the change.</param>
         protected void ChangeState(ConnectionState state, string message)
         {
             var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, currentState: state, message: message);
@@ -262,6 +341,10 @@ namespace Soulseek.NET.Tcp
             }
         }
 
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnection"/>.
+        /// </summary>
+        /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
         protected void Dispose(bool disposing)
         {
             if (!Disposed)
@@ -277,7 +360,5 @@ namespace Soulseek.NET.Tcp
                 Disposed = true;
             }
         }
-
-        #endregion Protected Methods
     }
 }
