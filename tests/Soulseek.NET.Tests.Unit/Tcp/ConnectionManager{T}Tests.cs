@@ -164,5 +164,73 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             // ensure mock 2 was connected when activated
             mock2.Verify(m => m.ConnectAsync(), Times.Once);
         }
+
+        [Trait("Category", "Add")]
+        [Fact(DisplayName = "Add does not throw on null connection")]
+        public async void Add_Does_Not_Throw_On_Null_Connection()
+        {
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.AddAsync(null));
+
+            Assert.Null(ex);
+            Assert.Equal(0, c.Active);
+            Assert.Equal(0, c.Queued);
+        }
+
+        [Trait("Category", "Add")]
+        [Fact(DisplayName = "Add does not throw on null connection key")]
+        public async void Add_Does_Not_Throw_On_Null_Connection_Key()
+        {
+            var mock = new Mock<IConnection>();
+
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
+
+            Assert.Null(ex);
+            Assert.Equal(0, c.Active);
+            Assert.Equal(0, c.Queued);
+        }
+
+        [Trait("Category", "Add")]
+        [Fact(DisplayName = "Add adds given connection and activates immediately")]
+        public async void Add_Adds_Given_Connection_And_Activates_Immediately()
+        {
+            var key = new ConnectionKey(new IPAddress(0x0), 1);
+
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(key);
+
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
+
+            Assert.Null(ex);
+            Assert.Equal(1, c.Active);
+            Assert.Equal(0, c.Queued);
+
+            mock.Verify(m => m.ConnectAsync(), Times.Once);
+        }
+
+        [Trait("Category", "Add")]
+        [Fact(DisplayName = "Add adds given connection and queues")]
+        public async void Add_Adds_Given_Connection_And_Queues()
+        {
+            var key = new ConnectionKey(new IPAddress(0x0), 1);
+
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(key);
+
+            var c = new ConnectionManager<IConnection>(0); // enqueue all
+
+            var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
+
+            Assert.Null(ex);
+            Assert.Equal(0, c.Active);
+            Assert.Equal(1, c.Queued);
+
+            mock.Verify(m => m.ConnectAsync(), Times.Never);
+        }
     }
 }

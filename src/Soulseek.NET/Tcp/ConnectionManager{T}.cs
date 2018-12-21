@@ -63,6 +63,11 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task AddAsync(T connection)
         {
+            if (connection == null || connection.Key == null)
+            {
+                return;
+            }
+
             if (Connections.Count < ConcurrentConnections)
             {
                 if (Connections.TryAdd(connection.Key, connection))
