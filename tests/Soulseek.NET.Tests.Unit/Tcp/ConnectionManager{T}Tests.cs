@@ -106,7 +106,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
             var mock = new Mock<IConnection>();
-            mock.Setup(m => m.Key).Returns(new ConnectionKey(new IPAddress(0x0), 1));
+            mock.Setup(m => m.Key).Returns(key);
 
             var c = new ConnectionManager<IConnection>();
             await c.AddAsync(mock.Object);
@@ -120,6 +120,49 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Empty(active);
             Assert.False(active.TryGetValue(mock.Object.Key, out var _), "Connection was removed");
             mock.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "Remove")]
+        [Fact(DisplayName = "Removes removes given connection, then activates queued")]
+        public async void Removes_Removes_Given_Connection_Then_Activates_Queued()
+        {
+            var key1 = new ConnectionKey(new IPAddress(0x1), 1);
+            var mock1 = new Mock<IConnection>();
+            mock1.Setup(m => m.Key).Returns(key1);
+
+            var key2 = new ConnectionKey(new IPAddress(0x2), 2);
+            var mock2 = new Mock<IConnection>();
+            mock2.Setup(m => m.Key).Returns(key2);
+
+            var c = new ConnectionManager<IConnection>(1);
+            await c.AddAsync(mock1.Object);
+            await c.AddAsync(mock2.Object);
+
+            var active = c.GetProperty<ConcurrentDictionary<ConnectionKey, IConnection>>("Connections");
+            var queued = c.GetProperty<ConcurrentQueue<IConnection>>("ConnectionQueue");
+
+            // ensure connection 1 was added and immediately activated
+            Assert.Single(active);
+            Assert.True(active.TryGetValue(mock1.Object.Key, out var _), "Connection 1 was added");
+
+            // ensure connection 2 was added and queued
+            Assert.Single(queued);
+            var peek = queued.TryPeek(out var peeked);
+            Assert.True(peeked.Key == key2, "Connection 2 was queued");
+
+            await c.RemoveAsync(mock1.Object);
+
+            Assert.Empty(queued);
+            Assert.Single(active);
+
+            Assert.False(active.TryGetValue(mock1.Object.Key, out var _), "Connection 1 was removed");
+            Assert.True(active.TryGetValue(mock2.Object.Key, out var _), "Connection 2 was activated");
+
+            // ensure mock 1 was disposed when removed
+            mock1.Verify(m => m.Dispose(), Times.Once);
+
+            // ensure mock 2 was connected when activated
+            mock2.Verify(m => m.ConnectAsync(), Times.Once);
         }
     }
 }
