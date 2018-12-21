@@ -49,8 +49,8 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         public int Queued => ConnectionQueue.Count;
 
-        private ConcurrentQueue<T> ConnectionQueue { get; set; } = new ConcurrentQueue<T>();
-        private ConcurrentDictionary<ConnectionKey, T> Connections { get; set; } = new ConcurrentDictionary<ConnectionKey, T>();
+        private ConcurrentQueue<T> ConnectionQueue { get; } = new ConcurrentQueue<T>();
+        private ConcurrentDictionary<ConnectionKey, T> Connections { get; } = new ConcurrentDictionary<ConnectionKey, T>();
         private bool Disposed { get; set; }
 
         /// <summary>
@@ -63,6 +63,11 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task AddAsync(T connection)
         {
+            if (connection == null || connection.Key == null)
+            {
+                return;
+            }
+
             if (Connections.Count < ConcurrentConnections)
             {
                 if (Connections.TryAdd(connection.Key, connection))
@@ -92,15 +97,18 @@ namespace Soulseek.NET.Tcp
         /// <returns>The connection matching the specified connection key.</returns>
         public T Get(ConnectionKey connectionKey)
         {
-            var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
+            if (connectionKey != null)
+            {
+                var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
 
-            if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
-            {
-                return queuedConnection;
-            }
-            else if (Connections.ContainsKey(connectionKey))
-            {
-                return Connections[connectionKey];
+                if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
+                {
+                    return queuedConnection;
+                }
+                else if (Connections.ContainsKey(connectionKey))
+                {
+                    return Connections[connectionKey];
+                }
             }
 
             return default(T);
@@ -125,10 +133,19 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task RemoveAsync(T connection)
         {
-            var key = connection?.Key;
+            if (connection == null || connection.Key == null)
+            {
+                return;
+            }
 
-            connection?.Dispose();
-            Connections.TryRemove(key, out var _);
+            if (Connections.TryRemove(connection.Key, out var _))
+            {
+                connection.Dispose();
+            }
+            else
+            {
+                return;
+            }
 
             if (Connections.Count < ConcurrentConnections &&
                 ConnectionQueue.TryDequeue(out var nextConnection))
@@ -161,6 +178,7 @@ namespace Soulseek.NET.Tcp
             }
             catch (Exception)
             {
+                await RemoveAsync(connection).ConfigureAwait(false);
             }
         }
     }

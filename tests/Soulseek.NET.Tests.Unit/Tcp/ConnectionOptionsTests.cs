@@ -21,7 +21,12 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Instantiates properly")]
         public void Instantiates_Properly()
         {
-            var o = new ConnectionOptions(8192, 10, 30);
+            ConnectionOptions o = null;
+
+            var ex = Record.Exception(() => o = new ConnectionOptions(8192, 10, 30));
+
+            Assert.Null(ex);
+            Assert.NotNull(o);
 
             Assert.Equal(8192, o.BufferSize);
             Assert.Equal(10, o.ConnectTimeout);
