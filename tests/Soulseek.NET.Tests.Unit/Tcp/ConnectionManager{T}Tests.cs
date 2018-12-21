@@ -14,6 +14,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 {
     using Moq;
     using Soulseek.NET.Tcp;
+    using System.Collections.Concurrent;
+    using System.Net;
     using Xunit;
 
     public class ConnectionManager_T_Tests
@@ -88,13 +90,36 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async void Removes_Does_Not_Dispose_Untracked_Connection()
         {
             var mock = new Mock<IConnection>();
-            mock.Setup(m => m.Key).Returns(new ConnectionKey(new System.Net.IPAddress(0x0), 1));
+            mock.Setup(m => m.Key).Returns(new ConnectionKey(new IPAddress(0x0), 1));
 
             var c = new ConnectionManager<IConnection>();
 
             await c.RemoveAsync(mock.Object);
 
             mock.Verify(m => m.Dispose(), Times.Never);
+        }
+
+        [Trait("Category", "Remove")]
+        [Fact(DisplayName = "Removes removes given connection")]
+        public async void Removes_Removes_Given_Connection()
+        {
+            var key = new ConnectionKey(new IPAddress(0x0), 1);
+
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(new ConnectionKey(new IPAddress(0x0), 1));
+
+            var c = new ConnectionManager<IConnection>();
+            await c.AddAsync(mock.Object);
+
+            var active = c.GetProperty<ConcurrentDictionary<ConnectionKey, IConnection>>("Connections");
+
+            Assert.True(active.TryGetValue(mock.Object.Key, out var _), "Connection was added");
+
+            await c.RemoveAsync(mock.Object);
+
+            Assert.Empty(active);
+            Assert.False(active.TryGetValue(mock.Object.Key, out var _), "Connection was removed");
+            mock.Verify(m => m.Dispose(), Times.Once);
         }
     }
 }
