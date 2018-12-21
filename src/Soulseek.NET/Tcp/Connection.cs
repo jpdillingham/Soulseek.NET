@@ -144,6 +144,8 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
         /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the connection is already connected, or is transitioning between states.</exception>
+        /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
         public async Task ConnectAsync()
         {
             if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
@@ -171,7 +173,7 @@ namespace Soulseek.NET.Tcp
                         // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
                         if (task != await Task.WhenAny(task, taskCompletionSource.Task).ConfigureAwait(false))
                         {
-                            throw new OperationCanceledException($"Operation timed out after {Options.ConnectTimeout} seconds", cancellationTokenSource.Token);
+                            throw new TimeoutException($"Operation timed out after {Options.ConnectTimeout} seconds");
                         }
 
                         if (task.Exception?.InnerException != null)
