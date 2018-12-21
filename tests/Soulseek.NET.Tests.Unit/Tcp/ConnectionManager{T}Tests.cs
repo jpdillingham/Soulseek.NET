@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 {
     using Moq;
     using Soulseek.NET.Tcp;
+    using System;
     using System.Collections.Concurrent;
     using System.Net;
     using Xunit;
@@ -231,6 +232,28 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(1, c.Queued);
 
             mock.Verify(m => m.ConnectAsync(), Times.Never);
+        }
+
+        [Trait("Category", "Add")]
+        [Fact(DisplayName = "Add adds given connection and removes on connect exception")]
+        public async void Add_Adds_Given_Connection_And_Removes_On_Connect_Exception()
+        {
+            var key = new ConnectionKey(new IPAddress(0x0), 1);
+
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(key);
+            mock.Setup(m => m.ConnectAsync()).Throws(new Exception());
+
+            var c = new ConnectionManager<IConnection>();
+
+            var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
+
+            Assert.Null(ex);
+            Assert.Equal(0, c.Active);
+            Assert.Equal(0, c.Queued);
+
+            mock.Verify(m => m.ConnectAsync(), Times.Once);
+            mock.Verify(m => m.Dispose(), Times.Once);
         }
     }
 }
