@@ -261,5 +261,53 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
         }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect raises Connected event")]
+        public async Task Connect_Raises_Connected_Event()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            var c = new Connection(ip, port, tcpClient: t.Object);
+
+            var eventArgs = new List<EventArgs>();
+
+            c.Connected += (sender, e) => eventArgs.Add(e);
+
+            await c.ConnectAsync();
+
+            Assert.Equal(ConnectionState.Connected, c.State);
+            Assert.Single(eventArgs);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect raises StateChanged event")]
+        public async Task Connect_Raises_StateChanged_Event()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            var c = new Connection(ip, port, tcpClient: t.Object);
+
+            var eventArgs = new List<ConnectionStateChangedEventArgs>();
+
+            c.StateChanged += (sender, e) => eventArgs.Add(e);
+
+            await c.ConnectAsync();
+
+            Assert.Equal(ConnectionState.Connected, c.State);
+
+            // the event will fire twice, once on transition to Connecting, and again on transition to Connected.
+            Assert.Equal(2, eventArgs.Count);
+            Assert.Equal(ConnectionState.Connecting, eventArgs[0].CurrentState);
+            Assert.Equal(ConnectionState.Connected, eventArgs[1].CurrentState);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+        }
     }
 }
