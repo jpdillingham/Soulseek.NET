@@ -285,7 +285,7 @@ namespace Soulseek.NET.Tcp
         {
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying TcpConnection is closed.");
+                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
             }
 
             if (State != ConnectionState.Connected)
@@ -351,6 +351,7 @@ namespace Soulseek.NET.Tcp
             {
                 if (disposing)
                 {
+                    Disconnect();
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
                     Stream?.Dispose();

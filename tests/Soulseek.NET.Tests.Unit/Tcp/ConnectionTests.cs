@@ -14,6 +14,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 {
     using Moq;
     using Soulseek.NET.Tcp;
+    using System;
+    using System.Collections.Generic;
     using System.Net;
     using Xunit;
 
@@ -35,6 +37,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Equal(ip, c.IPAddress);
             Assert.Equal(port, c.Port);
+            Assert.Equal(new ConnectionKey(ip, port), c.Key);
+            Assert.Equal(ConnectionState.Pending, c.State);
+            Assert.Null(c.Context);
         }
 
         [Trait("Category", "Instantiation")]
@@ -65,6 +70,114 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             var ct = c.GetProperty<ITcpClient>("TcpClient");
 
             Assert.Equal(t.Object, ct);
+        }
+
+        [Trait("Category", "Context")]
+        [Fact(DisplayName = "Context get and set")]
+        public void Context_Get_And_Set()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+
+            var context = Guid.NewGuid();
+
+            c.Context = context;
+
+            Assert.Equal(context, c.Context);
+        }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Disposes without throwing")]
+        public void Disposes_Without_Throwing()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+
+            var ex = Record.Exception(() => c.Dispose());
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnects when disconnected without throwing")]
+        public void Disconnects_When_Not_Connected_Without_Throwing()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+            c.SetProperty("State", ConnectionState.Disconnected);
+
+            var ex = Record.Exception(() => c.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnects when not disconnected")]
+        public void Disconnects_When_Not_Disconnected_Without_Throwing()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+            c.SetProperty("State", ConnectionState.Connected);
+
+            var ex = Record.Exception(() => c.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect raises StateChanged event")]
+        public void Disconnect_Raises_StateChanged_Event()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+            c.SetProperty("State", ConnectionState.Connected);
+
+            var eventArgs = new List<ConnectionStateChangedEventArgs>();
+
+            c.StateChanged += (sender, e) => eventArgs.Add(e);
+
+            c.Disconnect("foo");
+
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+
+            // the event will fire twice, once on transition to Disconnecting, and again on transition to Disconnected.
+            Assert.Equal(2, eventArgs.Count);
+            Assert.Equal(ConnectionState.Disconnecting, eventArgs[0].CurrentState);
+            Assert.Equal(ConnectionState.Disconnected, eventArgs[1].CurrentState);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect raises Disconnected event")]
+        public void Disconnect_Raises_Disconnected_Event()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var c = new Connection(ip, port);
+            c.SetProperty("State", ConnectionState.Connected);
+
+            var eventArgs = new List<string>();
+
+            c.Disconnected += (sender, e) => eventArgs.Add(e);
+
+            c.Disconnect("foo");
+
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+
+            Assert.Single(eventArgs);
+            Assert.Equal("foo", eventArgs[0]);
         }
     }
 }
