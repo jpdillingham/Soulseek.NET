@@ -19,7 +19,7 @@ namespace Soulseek.NET.Messaging.Tcp
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
-    
+
     internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
     {
         internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
