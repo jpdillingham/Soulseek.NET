@@ -16,6 +16,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Net;
     using Xunit;
 
@@ -254,6 +255,70 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             mock.Verify(m => m.ConnectAsync(), Times.Once);
             mock.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        public static IEnumerable<object[]> GetData => new List<object[]>
+        {
+            new object[] { null },
+            new object[] { new ConnectionKey(new IPAddress(0x3), 3) },
+        };
+
+        [Trait("Category", "Get")]
+        [Theory(DisplayName = "Get returns null given null or missing key")]
+        [MemberData(nameof(GetData))]
+        internal void Get_Returns_Null_Given_Null_Or_Missing_Key(ConnectionKey key)
+        {
+            var c = new ConnectionManager<IConnection>();
+
+            var conn = c.Get(key);
+
+            Assert.Null(conn);
+        }
+
+        [Trait("Category", "Get")]
+        [Fact(DisplayName = "Get returns queued connection")]
+        public async void Get_Returns_Queued_Connection()
+        {
+            var key = new ConnectionKey(new IPAddress(0x0), 1);
+
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(key);
+
+            var c = new ConnectionManager<IConnection>(0); // force enqueue
+            await c.AddAsync(mock.Object);
+
+            Assert.Equal(1, c.Queued);
+            Assert.Equal(0, c.Active);
+
+            var conn = c.Get(key);
+
+            Assert.NotNull(conn);
+            Assert.Equal(mock.Object, conn);
+
+            mock.Verify(m => m.ConnectAsync(), Times.Never);
+        }
+
+        [Trait("Category", "Get")]
+        [Fact(DisplayName = "Get returns active connection")]
+        public async void Get_Returns_Active_Connection()
+        {
+            var key = new ConnectionKey(new IPAddress(0x0), 1);
+
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.Key).Returns(key);
+
+            var c = new ConnectionManager<IConnection>();
+            await c.AddAsync(mock.Object);
+
+            Assert.Equal(0, c.Queued);
+            Assert.Equal(1, c.Active);
+
+            var conn = c.Get(key);
+
+            Assert.NotNull(conn);
+            Assert.Equal(mock.Object, conn);
+
+            mock.Verify(m => m.ConnectAsync(), Times.Once);
         }
     }
 }
