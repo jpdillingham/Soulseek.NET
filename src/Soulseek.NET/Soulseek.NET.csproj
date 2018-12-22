@@ -21,6 +21,8 @@
     <PackageTags>Soulseek Network Soulseek.NET JPDillingham</PackageTags>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
     <PackageLicenseUrl>https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE</PackageLicenseUrl>
+    <!-- SonarQube needs this -->
+    <ProjectGuid>{f4d9d870-a509-463b-90d4-8d9d6cc340fb}</ProjectGuid>
   </PropertyGroup>
 
   <ItemGroup>
