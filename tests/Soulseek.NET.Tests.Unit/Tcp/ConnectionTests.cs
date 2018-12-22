@@ -336,9 +336,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             while (!disconnectRaisedByWatchdog)
             {
-                if ((DateTime.UtcNow - start).TotalMilliseconds > 100)
+                if ((DateTime.UtcNow - start).TotalMilliseconds > 1000)
                 {
-                    throw new Exception("Watchdog didn't disconnect in 100ms");
+                    throw new Exception("Watchdog didn't disconnect in 1000ms");
                 }
             }
 
