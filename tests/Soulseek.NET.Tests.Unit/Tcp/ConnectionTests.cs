@@ -226,7 +226,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
-                .Returns(Task.Run(() => Thread.Sleep(1000)));
+                .Returns(Task.Run(() => Thread.Sleep(10000)));
 
             var o = new ConnectionOptions(connectTimeout: 0);
             var c = new Connection(ip, port, options: o, tcpClient: t.Object);
