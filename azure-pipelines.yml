@@ -5,9 +5,21 @@ jobs:
     pool:
       vmImage: 'vs2017-win2016'
     steps:
+    - task: SonarSource.sonarqube.15B84CA1-B62F-4A2A-A403-89B77A063157.SonarQubePrepare@4
+      displayName: 'Prepare analysis on SonarQube'
+      inputs:
+        SonarQube: 'SonarCloud'
+        projectKey: $(SONARCLOUD_TOKEN)
+        projectName: Soulseek.NET
+        projectVersion: '$(AssemblyVersion)'
+        extraProperties: |
+          sonar.organization=jpdillingham
+          sonar.branch.name=$(Build.SourceBranchName)
     - powershell: |
         .\build.ps1 -Target "BuildWithCoverageReport"
       displayName: 'Run build script'
+    - task: SonarSource.sonarqube.6D01813A-9589-4B15-8491-8164AEB38055.SonarQubeAnalyze@4
+      displayName: 'Run code analysis'
     - task: PublishTestResults@2
       inputs:
         testRunner: VSTest
