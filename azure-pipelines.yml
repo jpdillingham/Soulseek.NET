@@ -16,7 +16,7 @@ jobs:
         .\build.ps1 -Target "BuildWithCoverageReport"
       displayName: 'Run build script'
     - task: SonarSource.sonarcloud.ce096e50-6155-4de8-8800-4221aaeed4a1.SonarCloudAnalyze@1
-      displayName: 'Run code analysis'
+      displayName: 'Run SonarCloud code analysis'
     - task: PublishTestResults@2
       inputs:
         testRunner: VSTest
