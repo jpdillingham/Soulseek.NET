@@ -31,8 +31,14 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
+        #region Private Fields
+
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
+
+        #endregion Private Fields
+
+        #region Public Constructors
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
@@ -45,6 +51,10 @@ namespace Soulseek.NET
             : this(address, port, options, null, null, null)
         {
         }
+
+        #endregion Public Constructors
+
+        #region Internal Constructors
 
         internal SoulseekClient(
             string address,
@@ -64,6 +74,10 @@ namespace Soulseek.NET
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
         }
 
+        #endregion Internal Constructors
+
+        #region Private Destructors
+
         /// <summary>
         ///     Finalizes an instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
@@ -71,6 +85,10 @@ namespace Soulseek.NET
         {
             Dispose(false);
         }
+
+        #endregion Private Destructors
+
+        #region Public Events
 
         public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
@@ -87,6 +105,10 @@ namespace Soulseek.NET
         ///     Occurs when the client changes state.
         /// </summary>
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
+
+        #endregion Public Events
+
+        #region Public Properties
 
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
@@ -113,6 +135,10 @@ namespace Soulseek.NET
         /// </summary>
         public string Username { get; private set; }
 
+        #endregion Public Properties
+
+        #region Private Properties
+
         private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
@@ -121,6 +147,10 @@ namespace Soulseek.NET
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
+
+        #endregion Private Properties
+
+        #region Public Methods
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -282,6 +312,35 @@ namespace Soulseek.NET
             return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
         }
 
+        #endregion Public Methods
+
+        #region Protected Methods
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        /// <param name="disposing">A value indicating whether disposal is in progress.</param>
+        protected virtual void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                Disconnect("Client is being disposed.");
+
+                if (disposing)
+                {
+                    PeerConnectionManager?.Dispose();
+                    MessageWaiter?.Dispose();
+                    ServerConnection?.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
+
+        #endregion Protected Methods
+
+        #region Private Methods
+
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
         ///     specified <paramref name="cancellationToken"/> and <paramref name="connection"/>.
@@ -290,7 +349,7 @@ namespace Soulseek.NET
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="connection">The peer connection over which to send the browse request.</param>
         /// <returns>The operation response.</returns>
-        internal async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
             {
@@ -313,7 +372,13 @@ namespace Soulseek.NET
             }
         }
 
-        internal async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        private void ChangeState(SoulseekClientState state, string message = null)
+        {
+            State = state;
+            Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(state, message)));
+        }
+
+        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             // todo: check arguments
             // todo: implement overall exception handling
@@ -391,33 +456,6 @@ namespace Soulseek.NET
             {
                 throw new BrowseException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
-        }
-
-        /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        /// <param name="disposing">A value indicating whether disposal is in progress.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!Disposed)
-            {
-                Disconnect("Client is being disposed.");
-
-                if (disposing)
-                {
-                    PeerConnectionManager?.Dispose();
-                    MessageWaiter?.Dispose();
-                    ServerConnection?.Dispose();
-                }
-
-                Disposed = true;
-            }
-        }
-
-        private void ChangeState(SoulseekClientState state, string message = null)
-        {
-            State = state;
-            Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(state, message)));
         }
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username)
@@ -751,5 +789,7 @@ namespace Soulseek.NET
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
         }
+
+        #endregion Private Methods
     }
 }
