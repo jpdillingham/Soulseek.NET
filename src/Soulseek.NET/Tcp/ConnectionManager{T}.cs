@@ -148,12 +148,10 @@ namespace Soulseek.NET.Tcp
             }
 
             if (Connections.Count < ConcurrentConnections &&
-                ConnectionQueue.TryDequeue(out var nextConnection))
+                ConnectionQueue.TryDequeue(out var nextConnection) &&
+                Connections.TryAdd(nextConnection.Key, nextConnection))
             {
-                if (!Connections.ContainsKey(nextConnection.Key) && Connections.TryAdd(nextConnection.Key, nextConnection))
-                {
-                    await TryConnectAsync(nextConnection).ConfigureAwait(false);
-                }
+                await TryConnectAsync(nextConnection).ConfigureAwait(false);
             }
         }
 
