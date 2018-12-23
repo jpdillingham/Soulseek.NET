@@ -106,12 +106,9 @@ namespace Soulseek.NET
         /// <param name="exception">The Exception to throw.</param>
         public void Throw(WaitKey key, Exception exception)
         {
-            if (Waits.TryGetValue(key, out var queue))
+            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
             {
-                if (queue.TryDequeue(out var wait))
-                {
-                    wait.TaskCompletionSource.SetException(exception);
-                }
+                wait.TaskCompletionSource.SetException(exception);
             }
         }
 
@@ -189,12 +186,9 @@ namespace Soulseek.NET
                             cancelledWait.TaskCompletionSource.SetException(new MessageCancelledException("Message was cancelled."));
                         }
                     }
-                    else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow)
+                    else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && queue.Value.TryDequeue(out var timedOutWait))
                     {
-                        if (queue.Value.TryDequeue(out var timedOutWait))
-                        {
-                            timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message timed out after {timedOutWait.TimeoutAfter} seconds."));
-                        }
+                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
                 }
             }
