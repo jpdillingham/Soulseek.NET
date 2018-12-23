@@ -31,7 +31,6 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
-
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
 
@@ -124,37 +123,13 @@ namespace Soulseek.NET
         private IMessageConnection ServerConnection { get; set; }
 
         /// <summary>
-        ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/>
-        ///     and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
-        /// </exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public async Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
-        {
-            await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: false).ConfigureAwait(false);
-        }
-
-        /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
         ///     specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation response.</returns>
-        public async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientState.Connected))
             {
@@ -166,7 +141,7 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            return await BrowseAsync(username, cancellationToken, null).ConfigureAwait(false);
+            return BrowseInternalAsync(username, cancellationToken, null);
         }
 
         /// <summary>
@@ -225,9 +200,9 @@ namespace Soulseek.NET
             GC.SuppressFinalize(this);
         }
 
-        public async Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
         {
-            return await DownloadAsync(username, filename, token, cancellationToken, null).ConfigureAwait(false);
+            return DownloadInternalAsync(username, filename, token, cancellationToken, null);
         }
 
         /// <summary>
@@ -270,6 +245,7 @@ namespace Soulseek.NET
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="waitForCompletion">A value indicating whether the search should wait completion before returning.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
@@ -281,9 +257,29 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true).ConfigureAwait(false);
+            if (!State.HasFlag(SoulseekClientState.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientState.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to search.");
+            }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
+            }
+
+            if (ActiveSearches.ContainsKey(token))
+            {
+                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+            }
+
+            return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
         }
 
         /// <summary>
@@ -294,7 +290,7 @@ namespace Soulseek.NET
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="connection">The peer connection over which to send the browse request.</param>
         /// <returns>The operation response.</returns>
-        internal async Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        internal async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
             {
@@ -317,7 +313,7 @@ namespace Soulseek.NET
             }
         }
 
-        internal async Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        internal async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             // todo: check arguments
             // todo: implement overall exception handling
@@ -698,30 +694,6 @@ namespace Soulseek.NET
                 throw new LoginException($"Failed to log in as {username}: {response.Message}");
             }
         }
-        private Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
-        {
-            if (!State.HasFlag(SoulseekClientState.Connected))
-            {
-                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientState.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to search.");
-            }
-
-            if (string.IsNullOrWhiteSpace(searchText))
-            {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
-            }
-
-            if (ActiveSearches.ContainsKey(token))
-            {
-                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
-            }
-
-            return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
-        }
 
         private async Task<IEnumerable<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
@@ -779,6 +751,5 @@ namespace Soulseek.NET
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
         }
-
     }
 }
