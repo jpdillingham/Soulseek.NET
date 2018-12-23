@@ -14,6 +14,8 @@ namespace Soulseek.NET.Exceptions
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.Runtime.Serialization;
+    using System.Security.Permissions;
 
     [ExcludeFromCodeCoverage]
     [Serializable]
@@ -31,6 +33,11 @@ namespace Soulseek.NET.Exceptions
 
         public SoulseekClientException(string message, Exception innerException)
             : base(message, innerException)
+        {
+        }
+
+        protected SoulseekClientException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }

@@ -14,6 +14,8 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.Runtime.Serialization;
+    using System.Security.Permissions;
     using Soulseek.NET.Exceptions;
 
     /// <summary>
@@ -47,6 +49,11 @@ namespace Soulseek.NET.Tcp
         /// <param name="innerException">The inner Exception.</param>
         public ConnectionException(string message, Exception innerException)
             : base(message, innerException)
+        {
+        }
+
+        protected ConnectionException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }
@@ -84,6 +91,11 @@ namespace Soulseek.NET.Tcp
             : base(message, innerException)
         {
         }
+
+        protected ConnectionReadException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
     }
 
     /// <summary>
@@ -117,6 +129,11 @@ namespace Soulseek.NET.Tcp
         /// <param name="innerException">The inner Exception.</param>
         public ConnectionWriteException(string message, Exception innerException)
             : base(message, innerException)
+        {
+        }
+
+        protected ConnectionWriteException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }

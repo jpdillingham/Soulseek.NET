@@ -14,11 +14,6 @@ namespace Soulseek.NET
 {
     public class SoulseekClientStateChangedEventArgs
     {
-        internal SoulseekClientStateChangedEventArgs(SoulseekClientState state)
-            : this(state, null)
-        {
-        }
-
         internal SoulseekClientStateChangedEventArgs(SoulseekClientState state, string message = null)
         {
             State = state;
