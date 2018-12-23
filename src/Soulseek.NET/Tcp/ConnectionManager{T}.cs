@@ -22,7 +22,7 @@ namespace Soulseek.NET.Tcp
     ///     Manages a queue of <see cref="IConnection"/>
     /// </summary>
     /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
-    internal sealed class ConnectionManager<T> : IConnectionManager<T>, IDisposable
+    internal sealed class ConnectionManager<T> : IConnectionManager<T>
         where T : IConnection
     {
         /// <summary>
@@ -148,12 +148,10 @@ namespace Soulseek.NET.Tcp
             }
 
             if (Connections.Count < ConcurrentConnections &&
-                ConnectionQueue.TryDequeue(out var nextConnection))
+                ConnectionQueue.TryDequeue(out var nextConnection) &&
+                Connections.TryAdd(nextConnection.Key, nextConnection))
             {
-                if (!Connections.ContainsKey(nextConnection.Key) && Connections.TryAdd(nextConnection.Key, nextConnection))
-                {
-                    await TryConnectAsync(nextConnection).ConfigureAwait(false);
-                }
+                await TryConnectAsync(nextConnection).ConfigureAwait(false);
             }
         }
 

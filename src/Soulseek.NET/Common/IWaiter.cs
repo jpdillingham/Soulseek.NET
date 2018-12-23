@@ -27,11 +27,6 @@ namespace Soulseek.NET
         int DefaultTimeout { get; }
 
         /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        new void Dispose();
-
-        /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="key"/> with the specified <paramref name="result"/>.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>

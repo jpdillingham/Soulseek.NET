@@ -103,7 +103,7 @@ namespace Soulseek.NET
         /// <returns>The value of the specified attribute.</returns>
         public int? GetAttributeValue(FileAttributeType type)
         {
-            return AttributeList.Where(a => a.Type == type).SingleOrDefault()?.Value;
+            return AttributeList.SingleOrDefault(a => a.Type == type)?.Value;
         }
 
         #endregion Public Methods

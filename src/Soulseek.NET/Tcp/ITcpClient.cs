@@ -20,7 +20,7 @@ namespace Soulseek.NET.Tcp
     /// <summary>
     ///     Provides client connections for TCP network services.
     /// </summary>
-    internal interface ITcpClient
+    internal interface ITcpClient : IDisposable
     {
         /// <summary>
         ///     Gets a value indicating whether the underlying <see cref="Socket"/> for an <see cref="ITcpClient"/> is connected to
@@ -46,11 +46,6 @@ namespace Soulseek.NET.Tcp
         /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
         Task ConnectAsync(IPAddress address, int port);
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="ITcpClient"/>.
-        /// </summary>
-        void Dispose();
 
         /// <summary>
         ///     Returns the <see cref="NetworkStream"/> used to send and receive data.

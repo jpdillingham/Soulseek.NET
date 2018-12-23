@@ -14,6 +14,7 @@ namespace Soulseek.NET.Exceptions
 {
     using System;
     using System.Diagnostics.CodeAnalysis;
+    using System.Runtime.Serialization;
 
     [ExcludeFromCodeCoverage]
     [Serializable]
@@ -31,6 +32,11 @@ namespace Soulseek.NET.Exceptions
 
         public MessageException(string message, Exception innerException)
             : base(message, innerException)
+        {
+        }
+
+        protected MessageException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }
@@ -53,6 +59,11 @@ namespace Soulseek.NET.Exceptions
             : base(message, innerException)
         {
         }
+
+        protected MessageBuildException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
     }
 
     [ExcludeFromCodeCoverage]
@@ -71,6 +82,11 @@ namespace Soulseek.NET.Exceptions
 
         public MessageCancelledException(string message, Exception innerException)
             : base(message, innerException)
+        {
+        }
+
+        protected MessageCancelledException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }
@@ -93,6 +109,11 @@ namespace Soulseek.NET.Exceptions
             : base(message, innerException)
         {
         }
+
+        protected MessageReadException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
     }
 
     [ExcludeFromCodeCoverage]
@@ -111,6 +132,11 @@ namespace Soulseek.NET.Exceptions
 
         public MessageTimeoutException(string message, Exception innerException)
             : base(message, innerException)
+        {
+        }
+
+        protected MessageTimeoutException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
         {
         }
     }

@@ -56,13 +56,13 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Compares the specified <paramref name="waitKey"/> to this instance.
+        ///     Compares the specified <paramref name="other"/> WaitKey to this instance.
         /// </summary>
-        /// <param name="waitKey">The WaitKey to which to compare.</param>
+        /// <param name="other">The WaitKey to which to compare.</param>
         /// <returns>A value indicating whether the specified WaitKey is equal to this instance.</returns>
-        public bool Equals(WaitKey waitKey)
+        public bool Equals(WaitKey other)
         {
-            return Token == waitKey.Token;
+            return Token == other.Token;
         }
 
         /// <summary>

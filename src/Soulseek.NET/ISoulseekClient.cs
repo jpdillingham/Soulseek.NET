@@ -23,7 +23,7 @@ namespace Soulseek.NET
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
-    public interface ISoulseekClient
+    public interface ISoulseekClient : IDisposable
     {
         #region Public Events
 
@@ -74,7 +74,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        SoulseekClientState State { get; }
+        SoulseekClientStates State { get; }
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
@@ -84,21 +84,6 @@ namespace Soulseek.NET
         #endregion Public Properties
 
         #region Public Methods
-
-        /// <summary>
-        ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
-        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="ConnectionException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
-        /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task BeginSearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -125,11 +110,6 @@ namespace Soulseek.NET
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         void Disconnect(string message = null);
 
-        /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        void Dispose();
-
         Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -149,12 +129,13 @@ namespace Soulseek.NET
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="waitForCompletion">A value indicating whether the search should wait completion before returning.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
         /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true);
 
         #endregion Public Methods
     }

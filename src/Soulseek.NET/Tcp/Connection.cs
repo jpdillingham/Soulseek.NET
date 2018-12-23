@@ -24,7 +24,7 @@ namespace Soulseek.NET.Tcp
     /// <summary>
     ///     Provides client connections for TCP network services.
     /// </summary>
-    internal class Connection : IConnection, IDisposable
+    internal class Connection : IConnection
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Connection"/> class.
@@ -63,6 +63,14 @@ namespace Soulseek.NET.Tcp
                     Disconnect($"The server connection was closed unexpectedly.");
                 }
             };
+        }
+
+        /// <summary>
+        ///     Finalizes an instance of the <see cref="Connection"/> class.
+        /// </summary>
+        ~Connection()
+        {
+            Dispose(false);
         }
 
         /// <summary>
@@ -144,7 +152,9 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the connection is already connected, or is transitioning between states.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection is already connected, or is transitioning between states.
+        /// </exception>
         /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
         public async Task ConnectAsync()
         {
@@ -283,7 +293,7 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteAsync(byte[] bytes)
+        public Task WriteAsync(byte[] bytes)
         {
             if (!TcpClient.Connected)
             {
@@ -305,23 +315,12 @@ namespace Soulseek.NET.Tcp
                 throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
             }
 
-            try
-            {
-                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                if (State != ConnectionState.Connected)
-                {
-                    Disconnect($"Write error: {ex.Message}");
-                }
-
-                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
-            }
+            return WriteInternalAsync(bytes);
         }
 
         /// <summary>
-        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally specified <paramref name="message"/>
+        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally
+        ///     specified <paramref name="message"/>
         /// </summary>
         /// <param name="state">The state to which to change.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>
@@ -344,10 +343,10 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnection"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="Connection"/>.
         /// </summary>
         /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (!Disposed)
             {
@@ -361,6 +360,23 @@ namespace Soulseek.NET.Tcp
                 }
 
                 Disposed = true;
+            }
+        }
+
+        private async Task WriteInternalAsync(byte[] bytes)
+        {
+            try
+            {
+                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (State != ConnectionState.Connected)
+                {
+                    Disconnect($"Write error: {ex.Message}");
+                }
+
+                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
     }

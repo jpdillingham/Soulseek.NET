@@ -15,10 +15,8 @@ namespace Soulseek.NET.Messaging.Responses
     using System.Collections.Generic;
     using Soulseek.NET.Exceptions;
 
-    public sealed class PrivilegedUserList
+    public static class PrivilegedUserList
     {
-        #region Public Methods
-
         public static IEnumerable<string> Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -38,7 +36,5 @@ namespace Soulseek.NET.Messaging.Responses
 
             return list.AsReadOnly();
         }
-
-        #endregion Public Methods
     }
 }

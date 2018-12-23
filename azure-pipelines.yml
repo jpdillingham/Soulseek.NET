@@ -24,11 +24,13 @@ jobs:
         testRunner: VSTest
         testResultsFiles: 'out/TestResults/**/*.trx'
       displayName: 'Publish test results'
+    # this task enables the code coverage functionality in Azure Devops. AD does not currently support opencover, and SonarQube doesn't support cobertura, so this is disabled for now.
+    # uncomment this if AD ever adds opencover support.
     # - task: PublishCodeCoverageResults@1
     #   inputs:
     #     summaryFileLocation: $(Build.SourcesDirectory)/out/Coverage/coverage.opencover.xml
     #     reportDirectory: $(Build.SourcesDirectory)/out/CoverageReport
-    #     codecoverageTool: cobertura
+    #     codecoverageTool: opencover
     #   displayName: 'Publish code coverage report'
     - script: |
         %USERPROFILE%\.nuget\packages\codecov\1.1.0\tools\codecov.exe -f $(Build.SourcesDirectory)/out/Coverage/coverage.opencover.xml -t $(CODECOV_TOKEN)

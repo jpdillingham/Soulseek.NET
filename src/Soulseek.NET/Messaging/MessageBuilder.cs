@@ -32,7 +32,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>The built message.</returns>
         public Message Build()
         {
-            var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count()));
+            var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count));
             withLength.AddRange(Bytes);
             return new Message(withLength.ToArray());
         }
@@ -106,10 +106,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteInteger(int value)
         {
-            EnsureInitialized();
-
-            Bytes.AddRange(BitConverter.GetBytes(value));
-            return this;
+            return WriteLong(value);
         }
 
         /// <summary>

@@ -18,21 +18,26 @@ namespace Soulseek.NET
     ///     Soulseek client state.
     /// </summary>
     [Flags]
-    public enum SoulseekClientState
+    public enum SoulseekClientStates
     {
+        /// <summary>
+        ///     None.
+        /// </summary>
+        None = 0,
+
         /// <summary>
         ///     Disconnected.
         /// </summary>
-        Disconnected = 0,
+        Disconnected = 1,
 
         /// <summary>
         ///     Connected.
         /// </summary>
-        Connected = 1,
+        Connected = 2,
 
         /// <summary>
         ///     Connected and logged in.
         /// </summary>
-        LoggedIn = 2
+        LoggedIn = 4
     }
 }

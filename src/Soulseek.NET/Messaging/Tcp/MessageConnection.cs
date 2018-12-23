@@ -20,7 +20,7 @@ namespace Soulseek.NET.Messaging.Tcp
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
 
-    internal sealed class MessageConnection : Connection, IDisposable, IMessageConnection
+    internal sealed class MessageConnection : Connection, IMessageConnection
     {
         internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : this(type, ipAddress, port, options, tcpClient)
@@ -107,8 +107,6 @@ namespace Soulseek.NET.Messaging.Tcp
         {
             InactivityTimer?.Reset();
 
-            var fileBytes = new List<byte>();
-
             while (true)
             {
                 var message = new List<byte>();
@@ -118,7 +116,6 @@ namespace Soulseek.NET.Messaging.Tcp
                 message.AddRange(lengthBytes);
 
                 var codeBytes = await ReadAsync(4).ConfigureAwait(false);
-                var code = BitConverter.ToInt32(codeBytes, 0);
                 message.AddRange(codeBytes);
 
                 var payloadBytes = await ReadAsync(length - 4).ConfigureAwait(false);

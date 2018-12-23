@@ -66,16 +66,16 @@ namespace Soulseek.NET.Tcp
         public string Username { get; private set; }
 
         /// <summary>
-        ///     Compares the specified <paramref name="connectionKey"/> to this instance.
+        ///     Compares the specified <paramref name="other"/> ConnectionKey to this instance.
         /// </summary>
-        /// <param name="connectionKey">The ConnectionKey to which to compare.</param>
+        /// <param name="other">The ConnectionKey to which to compare.</param>
         /// <returns>A value indicating whether the specified ConnectionKey is equal to this instance.</returns>
-        public bool Equals(ConnectionKey connectionKey)
+        public bool Equals(ConnectionKey other)
         {
-            return Username == connectionKey.Username &&
-                IPAddress.ToString() == connectionKey.IPAddress.ToString() &&
-                Port == connectionKey.Port &&
-                Type == connectionKey.Type;
+            return Username == other.Username &&
+                IPAddress.ToString() == other.IPAddress.ToString() &&
+                Port == other.Port &&
+                Type == other.Type;
         }
 
         /// <summary>

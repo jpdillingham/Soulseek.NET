@@ -17,7 +17,7 @@ namespace Soulseek.NET.Messaging.Tcp
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
 
-    internal interface IMessageConnection : IConnection, IDisposable
+    internal interface IMessageConnection : IConnection
     {
         event EventHandler<Message> MessageRead;
 

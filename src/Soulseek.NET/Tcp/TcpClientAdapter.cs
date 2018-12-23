@@ -26,7 +26,7 @@ namespace Soulseek.NET.Tcp
     ///     dependency injection.
     /// </remarks>
     [ExcludeFromCodeCoverage]
-    internal sealed class TcpClientAdapter : ITcpClient, IDisposable
+    internal sealed class TcpClientAdapter : ITcpClient
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class with an optional <paramref name="tcpClient"/>.

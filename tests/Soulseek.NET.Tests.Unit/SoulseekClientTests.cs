@@ -43,7 +43,7 @@
         {
             var s = new SoulseekClient();
 
-            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
         }
 
         [Trait("Category", "Instantiation")]
@@ -60,7 +60,7 @@
         public async Task Connect_Fails_If_Connected()
         {
             var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientState.Connected);
+            s.SetProperty("State", SoulseekClientStates.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -118,7 +118,7 @@
             var ex = Record.Exception(() => s.Disconnect());
 
             Assert.Null(ex);
-            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
         }
 
         [Trait("Category", "Disconnect")]
@@ -139,7 +139,7 @@
             var ex = Record.Exception(() => s.Disconnect());
 
             Assert.Null(ex);
-            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
             Assert.Empty(searches);
         }
 
@@ -166,7 +166,7 @@
             var ex = Record.Exception(() => s.Disconnect());
 
             Assert.Null(ex);
-            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
             Assert.Empty(activeDownloads);
             Assert.Empty(queuedDownloads);
         }
@@ -185,7 +185,7 @@
             var ex = Record.Exception(() => s.Disconnect());
 
             Assert.Null(ex);
-            Assert.Equal(SoulseekClientState.Disconnected, s.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
             p.Verify(m => m.RemoveAll(), Times.AtLeastOnce);
         }
@@ -217,7 +217,7 @@
         public async Task Login_Throws_On_Null_Username()
         {
             var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientState.Connected);
+            s.SetProperty("State", SoulseekClientStates.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(null, Guid.NewGuid().ToString()));
 
@@ -236,7 +236,7 @@
         public async Task Login_Throws_On_Bad_Input(string username, string password)
         {
             var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientState.Connected);
+            s.SetProperty("State", SoulseekClientStates.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(username, password));
 
@@ -249,7 +249,7 @@
         public async Task Login_Throws_If_Logged_In()
         {
             var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
 
@@ -262,7 +262,7 @@
         public async Task Login_Throws_If_Not_Connected()
         {
             var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientState.Disconnected);
+            s.SetProperty("State", SoulseekClientStates.Disconnected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
 
