@@ -12,6 +12,8 @@ jobs:
         organization: 'jpdillingham-github'
         projectKey: 'jpdillingham_Soulseek.NET'
         projectName: Soulseek.NET
+        extraProperties: |
+          sonar.cs.cobertura.reportsPaths=$(Build.SourcesDirectory)/out/Coverage/coverage.cobertura.xml
     - powershell: |
         .\build.ps1 -Target "BuildWithCoverageReport"
       displayName: 'Run build script'
