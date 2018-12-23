@@ -66,6 +66,14 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
+        ///     Finalizes an instance of the <see cref="Connection"/> class.
+        /// </summary>
+        ~Connection()
+        {
+            Dispose(false);
+        }
+
+        /// <summary>
         ///     Occurs when the connection is connected.
         /// </summary>
         public event EventHandler Connected;
@@ -144,7 +152,9 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the connection is already connected, or is transitioning between states.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection is already connected, or is transitioning between states.
+        /// </exception>
         /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
         public async Task ConnectAsync()
         {
@@ -321,7 +331,8 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally specified <paramref name="message"/>
+        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally
+        ///     specified <paramref name="message"/>
         /// </summary>
         /// <param name="state">The state to which to change.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>
@@ -344,10 +355,10 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnection"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="Connection"/>.
         /// </summary>
         /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
-        protected void Dispose(bool disposing)
+        protected virtual void Dispose(bool disposing)
         {
             if (!Disposed)
             {

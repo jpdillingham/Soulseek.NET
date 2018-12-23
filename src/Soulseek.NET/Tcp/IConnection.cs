@@ -84,11 +84,6 @@ namespace Soulseek.NET.Tcp
         void Disconnect(string message = null);
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnection"/>.
-        /// </summary>
-        new void Dispose();
-
-        /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
