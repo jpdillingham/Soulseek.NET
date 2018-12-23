@@ -415,7 +415,7 @@ namespace Soulseek.NET
                 else
                 {
                     // todo: get place in line
-                    download.State = DownloadState.Queued;
+                    download.State = DownloadStates.Queued;
                     QueuedDownloads.TryAdd(download.Token, download);
 
                     Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
@@ -428,7 +428,7 @@ namespace Soulseek.NET
 
                     QueuedDownloads.TryRemove(download.Token, out var _);
 
-                    download.State = DownloadState.InProgress;
+                    download.State = DownloadStates.InProgress;
                     ActiveDownloads.TryAdd(download.RemoteToken, download);
 
                     Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
@@ -442,7 +442,7 @@ namespace Soulseek.NET
                 }
                 catch (OperationCanceledException)
                 {
-                    download.State = DownloadState.Cancelled;
+                    download.State = DownloadStates.Completed | DownloadStates.Cancelled;
                     download.Connection.Disconnect("Transfer cancelled.");
                     download.Connection.Dispose();
                 }
@@ -585,7 +585,7 @@ namespace Soulseek.NET
                 {
                     connection.Disconnected += (sender, message) =>
                     {
-                        if (download.State != DownloadState.Completed)
+                        if (!Enum.HasFlag(download.State, DownloadStates.Completed))
                         {
                             MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                         }
@@ -612,7 +612,7 @@ namespace Soulseek.NET
                     var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
 
                     download.Data = bytes;
-                    download.State = DownloadState.Completed;
+                    download.State = DownloadStates.Completed;
                     connection.Disconnect($"Transfer complete.");
 
                     MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);

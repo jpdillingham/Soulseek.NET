@@ -18,36 +18,41 @@ namespace Soulseek.NET
     ///     Download state.
     /// </summary>
     [Flags]
-    public enum DownloadState
+    public enum DownloadStates
     {
+        /// <summary>
+        ///     None.
+        /// </summary>
+        None = 0,
+
         /// <summary>
         ///     Queued remotely.
         /// </summary>
-        Queued = 0,
+        Queued = 1,
 
         /// <summary>
         ///     In progress.
         /// </summary>
-        InProgress = 1,
+        InProgress = 2,
 
         /// <summary>
         ///     Completed.
         /// </summary>
-        Completed = 2,
+        Completed = 4,
 
         /// <summary>
         ///     Completed due to cancellation.
         /// </summary>
-        Cancelled = 4,
+        Cancelled = 8,
 
         /// <summary>
         ///     Completed due to timeout.
         /// </summary>
-        TimedOut = 8,
+        TimedOut = 16,
 
         /// <summary>
         ///     Completed due to transfer error.
         /// </summary>
-        Error = 16,
+        Error = 32,
     }
 }
