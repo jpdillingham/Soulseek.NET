@@ -12,15 +12,17 @@
 
 namespace Soulseek.NET
 {
-    public class SoulseekClientStateChangedEventArgs
+    using System;
+
+    public class SoulseekClientStateChangedEventArgs : EventArgs
     {
-        internal SoulseekClientStateChangedEventArgs(SoulseekClientState state, string message = null)
+        internal SoulseekClientStateChangedEventArgs(SoulseekClientStates state, string message = null)
         {
             State = state;
             Message = message;
         }
 
         public string Message { get; set; }
-        public SoulseekClientState State { get; set; }
+        public SoulseekClientStates State { get; set; }
     }
 }

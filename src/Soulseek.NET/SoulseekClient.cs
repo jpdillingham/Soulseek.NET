@@ -128,7 +128,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        public SoulseekClientState State { get; private set; }
+        public SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
@@ -161,12 +161,12 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            if (!State.HasFlag(SoulseekClientState.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected))
             {
                 throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
             }
 
-            if (!State.HasFlag(SoulseekClientState.LoggedIn))
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
@@ -184,7 +184,7 @@ namespace Soulseek.NET
         /// </exception>
         public async Task ConnectAsync()
         {
-            if (State.HasFlag(SoulseekClientState.Connected))
+            if (State.HasFlag(SoulseekClientStates.Connected))
             {
                 throw new InvalidOperationException($"Failed to connect; the client is already connected.");
             }
@@ -218,7 +218,7 @@ namespace Soulseek.NET
 
             Username = null;
 
-            ChangeState(SoulseekClientState.Disconnected);
+            ChangeState(SoulseekClientStates.Disconnected);
         }
 
         /// <summary>
@@ -244,12 +244,12 @@ namespace Soulseek.NET
         /// <exception cref="LoginException">Thrown when the login fails.</exception>
         public Task LoginAsync(string username, string password)
         {
-            if (!State.HasFlag(SoulseekClientState.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected))
             {
                 throw new InvalidOperationException($"The client must be connected to log in.");
             }
 
-            if (State.HasFlag(SoulseekClientState.LoggedIn))
+            if (State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
@@ -289,12 +289,12 @@ namespace Soulseek.NET
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (!State.HasFlag(SoulseekClientState.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected))
             {
                 throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
             }
 
-            if (!State.HasFlag(SoulseekClientState.LoggedIn))
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"A user must be logged in to search.");
             }
@@ -372,7 +372,7 @@ namespace Soulseek.NET
             }
         }
 
-        private void ChangeState(SoulseekClientState state, string message = null)
+        private void ChangeState(SoulseekClientStates state, string message = null)
         {
             State = state;
             Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(state, message)));
@@ -485,7 +485,7 @@ namespace Soulseek.NET
             var conn = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
             conn.Connected += (sender, e) =>
             {
-                ChangeState(SoulseekClientState.Connected);
+                ChangeState(SoulseekClientStates.Connected);
             };
 
             conn.Disconnected += (sender, e) =>
@@ -724,7 +724,7 @@ namespace Soulseek.NET
             if (response.Succeeded)
             {
                 Username = username;
-                ChangeState(SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
+                ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
             }
             else
             {

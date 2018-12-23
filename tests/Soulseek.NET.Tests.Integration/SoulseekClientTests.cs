@@ -14,7 +14,7 @@ namespace Soulseek.NET.Tests.Integration
             var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
 
             Assert.Null(ex);
-            Assert.Equal(SoulseekClientState.Connected, client.State);
+            Assert.Equal(SoulseekClientStates.Connected, client.State);
         }
 
         [Trait("Category", "Connectivity")]
@@ -27,7 +27,7 @@ namespace Soulseek.NET.Tests.Integration
             var ex = Record.Exception(() => client.Disconnect());
 
             Assert.Null(ex);
-            Assert.Equal(SoulseekClientState.Disconnected, client.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, client.State);
         }
     }
 }

@@ -53,7 +53,7 @@ namespace Soulseek.NET
             Data = download.Data;
         }
 
-        public DownloadState State { get; private set; }
+        public DownloadStates State { get; private set; }
         public int PlaceInQueue { get; internal set; }
         public IEnumerable<byte> Data { get; internal set; }
     }

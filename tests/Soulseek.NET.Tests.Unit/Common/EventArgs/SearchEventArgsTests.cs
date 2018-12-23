@@ -50,13 +50,13 @@ namespace Soulseek.NET.Tests.Unit.Common.EventArgs
             var token = new Random().Next();
 
             var search = new Search(searchText, token, new SearchOptions());
-            search.SetProperty("State", SearchState.Completed);
+            search.SetProperty("State", SearchStates.Completed);
 
             var e = new SearchStateChangedEventArgs(search);
 
             Assert.Equal(searchText, e.SearchText);
             Assert.Equal(token, e.Token);
-            Assert.Equal(SearchState.Completed, e.State);
+            Assert.Equal(SearchStates.Completed, e.State);
         }
     }
 }

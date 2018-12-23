@@ -84,6 +84,6 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the search state.
         /// </summary>
-        public SearchState State { get; private set; }
+        public SearchStates State { get; private set; }
     }
 }
