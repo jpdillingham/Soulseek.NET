@@ -107,8 +107,6 @@ namespace Soulseek.NET.Messaging.Tcp
         {
             InactivityTimer?.Reset();
 
-            var fileBytes = new List<byte>();
-
             while (true)
             {
                 var message = new List<byte>();
@@ -118,7 +116,6 @@ namespace Soulseek.NET.Messaging.Tcp
                 message.AddRange(lengthBytes);
 
                 var codeBytes = await ReadAsync(4).ConfigureAwait(false);
-                var code = BitConverter.ToInt32(codeBytes, 0);
                 message.AddRange(codeBytes);
 
                 var payloadBytes = await ReadAsync(length - 4).ConfigureAwait(false);

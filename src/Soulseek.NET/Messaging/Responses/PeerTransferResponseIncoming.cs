@@ -47,7 +47,7 @@ namespace Soulseek.NET.Messaging.Responses
             var response = new PeerTransferResponseIncoming()
             {
                 Token = reader.ReadInteger(),
-                Allowed = reader.ReadByte() == 1 ? true : false,
+                Allowed = reader.ReadByte() == 1,
             };
 
             if (response.Allowed)
