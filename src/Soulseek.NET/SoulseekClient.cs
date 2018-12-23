@@ -31,14 +31,9 @@ namespace Soulseek.NET
     /// </summary>
     public class SoulseekClient : IDisposable, ISoulseekClient
     {
-        #region Private Fields
 
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
@@ -51,10 +46,6 @@ namespace Soulseek.NET
             : this(address, port, options, null, null, null)
         {
         }
-
-        #endregion Public Constructors
-
-        #region Internal Constructors
 
         internal SoulseekClient(
             string address,
@@ -74,10 +65,6 @@ namespace Soulseek.NET
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
         }
 
-        #endregion Internal Constructors
-
-        #region Private Destructors
-
         /// <summary>
         ///     Finalizes an instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
@@ -85,10 +72,6 @@ namespace Soulseek.NET
         {
             Dispose(false);
         }
-
-        #endregion Private Destructors
-
-        #region Public Events
 
         public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
@@ -105,10 +88,6 @@ namespace Soulseek.NET
         ///     Occurs when the client changes state.
         /// </summary>
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
@@ -135,10 +114,6 @@ namespace Soulseek.NET
         /// </summary>
         public string Username { get; private set; }
 
-        #endregion Public Properties
-
-        #region Private Properties
-
         private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
@@ -147,10 +122,6 @@ namespace Soulseek.NET
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         /// <summary>
         ///     Asynchronously begins a search for the specified <paramref name="searchText"/> and unique <paramref name="token"/>
@@ -266,7 +237,7 @@ namespace Soulseek.NET
         /// <param name="password">The password with which to log in.</param>
         /// <returns>A Task representing the operation.</returns>
         /// <exception cref="LoginException">Thrown when the login fails.</exception>
-        public async Task LoginAsync(string username, string password)
+        public Task LoginAsync(string username, string password)
         {
             if (!State.HasFlag(SoulseekClientState.Connected))
             {
@@ -288,22 +259,7 @@ namespace Soulseek.NET
                 throw new ArgumentException("Password may not be null or an empty string.", nameof(password));
             }
 
-            var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
-
-            await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
-
-            var response = await loginWait.ConfigureAwait(false);
-
-            if (response.Succeeded)
-            {
-                Username = username;
-                ChangeState(SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
-            }
-            else
-            {
-                Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                throw new LoginException($"Failed to log in as {username}: {response.Message}");
-            }
+            return LoginInternalAsync(username, password);
         }
 
         /// <summary>
@@ -329,10 +285,6 @@ namespace Soulseek.NET
         {
             return await SearchAsync(searchText, token, options, cancellationToken, waitForCompletion: true).ConfigureAwait(false);
         }
-
-        #endregion Public Methods
-
-        #region Internal Methods
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -445,10 +397,6 @@ namespace Soulseek.NET
             }
         }
 
-        #endregion Internal Methods
-
-        #region Protected Methods
-
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -469,10 +417,6 @@ namespace Soulseek.NET
                 Disposed = true;
             }
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         private void ChangeState(SoulseekClientState state, string message = null)
         {
@@ -504,7 +448,7 @@ namespace Soulseek.NET
                 throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
             }
 
-            var conn = new MessageConnection(MessageConnectionType.Server, ipAddress, Port, options);
+            var conn = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
             conn.Connected += (sender, e) =>
             {
                 ChangeState(SoulseekClientState.Connected);
@@ -567,13 +511,10 @@ namespace Soulseek.NET
             var key = await GetPeerConnectionKeyAsync(username).ConfigureAwait(false);
             var connection = PeerConnectionManager.Get(key);
 
-            if (connection != default(IMessageConnection))
+            if (connection != default(IMessageConnection) && (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected))
             {
-                if (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected)
-                {
-                    await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
-                    connection = default(IMessageConnection);
-                }
+                await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
+                connection = default(IMessageConnection);
             }
 
             if (connection == default(IMessageConnection))
@@ -738,7 +679,26 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        private async Task LoginInternalAsync(string username, string password)
+        {
+            var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
+
+            await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
+
+            var response = await loginWait.ConfigureAwait(false);
+
+            if (response.Succeeded)
+            {
+                Username = username;
+                ChangeState(SoulseekClientState.Connected | SoulseekClientState.LoggedIn);
+            }
+            else
+            {
+                Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                throw new LoginException($"Failed to log in as {username}: {response.Message}");
+            }
+        }
+        private Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
             if (!State.HasFlag(SoulseekClientState.Connected))
             {
@@ -760,6 +720,11 @@ namespace Soulseek.NET
                 throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
             }
 
+            return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
+        }
+
+        private async Task<IEnumerable<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        {
             options = options ?? new SearchOptions();
 
             try
@@ -815,6 +780,5 @@ namespace Soulseek.NET
             }
         }
 
-        #endregion Private Methods
     }
 }
