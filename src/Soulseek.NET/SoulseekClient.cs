@@ -585,7 +585,7 @@ namespace Soulseek.NET
                 {
                     connection.Disconnected += (sender, message) =>
                     {
-                        if (!Enum.HasFlag(download.State, DownloadStates.Completed))
+                        if (!download.State.HasFlag(DownloadStates.Completed))
                         {
                             MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                         }
@@ -777,7 +777,7 @@ namespace Soulseek.NET
                 }
                 catch (OperationCanceledException)
                 {
-                    search.Complete(SearchState.Completed | SearchState.Cancelled);
+                    search.Complete(SearchStates.Completed | SearchStates.Cancelled);
                 }
 
                 var responses = search.Responses;

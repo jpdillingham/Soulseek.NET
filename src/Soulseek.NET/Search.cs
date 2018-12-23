@@ -47,7 +47,7 @@ namespace Soulseek.NET
                 AutoReset = false,
             };
 
-            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchState.Completed | SearchState.TimedOut); };
+            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.Completed | SearchStates.TimedOut); };
             SearchTimeoutTimer.Reset();
         }
 
@@ -74,12 +74,12 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the state of the search.
         /// </summary>
-        public SearchState State { get; private set; } = SearchState.InProgress;
+        public SearchStates State { get; private set; } = SearchStates.InProgress;
 
         /// <summary>
         ///     Gets or sets the action invoked upon completion of the search.
         /// </summary>
-        public Action<Search, SearchState> CompleteHandler { get; set; } = (search, state) => { };
+        public Action<Search, SearchStates> CompleteHandler { get; set; } = (search, state) => { };
 
         /// <summary>
         ///     Gets or sets the action invoked upon receipt of a search response.
@@ -104,7 +104,7 @@ namespace Soulseek.NET
         /// <param name="response">The response to add.</param>
         internal void AddResponse(SearchResponse response)
         {
-            if (State == SearchState.InProgress && response.Token == Token && ResponseMeetsOptionCriteria(response))
+            if (State.HasFlag(SearchStates.InProgress) && response.Token == Token && ResponseMeetsOptionCriteria(response))
             {
                 response.ParseFiles();
 
@@ -117,7 +117,7 @@ namespace Soulseek.NET
 
                 if (resultCount >= Options.FileLimit)
                 {
-                    Complete(SearchState.Completed | SearchState.FileLimitReached);
+                    Complete(SearchStates.Completed | SearchStates.FileLimitReached);
                     return;
                 }
 
@@ -133,7 +133,7 @@ namespace Soulseek.NET
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
-        internal void Complete(SearchState state)
+        internal void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
             State = state;
