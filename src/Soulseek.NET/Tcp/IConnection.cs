@@ -84,18 +84,23 @@ namespace Soulseek.NET.Tcp
         void Disconnect(string message = null);
 
         /// <summary>
-        ///     Asynchronously reads the specified number of bytes from the connection.
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnection"/>.
         /// </summary>
-        /// <param name="count">The number of bytes to read.</param>
-        /// <returns>The read bytes.</returns>
-        Task<byte[]> ReadAsync(int count);
+        new void Dispose();
 
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
-        /// <param name="count">The number of bytes to read.</param>
+        /// <param name="length">The number of bytes to read.</param>
         /// <returns>The read bytes.</returns>
-        Task<byte[]> ReadAsync(long count);
+        Task<byte[]> ReadAsync(int length);
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        Task<byte[]> ReadAsync(long length);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
