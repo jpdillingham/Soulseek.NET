@@ -293,7 +293,7 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteAsync(byte[] bytes)
+        public Task WriteAsync(byte[] bytes)
         {
             if (!TcpClient.Connected)
             {
@@ -315,19 +315,7 @@ namespace Soulseek.NET.Tcp
                 throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
             }
 
-            try
-            {
-                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                if (State != ConnectionState.Connected)
-                {
-                    Disconnect($"Write error: {ex.Message}");
-                }
-
-                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
-            }
+            return WriteInternalAsync(bytes);
         }
 
         /// <summary>
@@ -372,6 +360,23 @@ namespace Soulseek.NET.Tcp
                 }
 
                 Disposed = true;
+            }
+        }
+
+        private async Task WriteInternalAsync(byte[] bytes)
+        {
+            try
+            {
+                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                if (State != ConnectionState.Connected)
+                {
+                    Disconnect($"Write error: {ex.Message}");
+                }
+
+                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
     }
