@@ -14,6 +14,7 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Diagnostics;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
@@ -44,7 +45,7 @@ namespace Soulseek.NET
         /// <param name="task">The task to continue.</param>
         public static void Forget(this Task task)
         {
-            task.ContinueWith(t => { throw new Exception($"Thread Error: {t.Exception.Message}", t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+            task.ContinueWith(t => { Debug.WriteLine($"Forgotten Thread Error: {t.Exception.Message}", t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         public static int GetStableHashCode(this string str)

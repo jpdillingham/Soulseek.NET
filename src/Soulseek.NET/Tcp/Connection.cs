@@ -24,7 +24,7 @@ namespace Soulseek.NET.Tcp
     /// <summary>
     ///     Provides client connections for TCP network services.
     /// </summary>
-    internal class Connection : IConnection, IDisposable
+    internal class Connection : IConnection
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Connection"/> class.

@@ -47,12 +47,12 @@
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
 
-                        await client.BeginSearchAsync(search, token, new SearchOptions()
+                        await client.SearchAsync(search, token, new SearchOptions()
                         {
                             FilterFiles = false,
                             FilterResponses = false,
                             FileLimit = 100000,
-                        });
+                        }, waitForCompletion: false);
 
                         Console.WriteLine($"Search for {search} started.");
                     }

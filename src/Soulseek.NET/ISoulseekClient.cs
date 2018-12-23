@@ -23,7 +23,7 @@ namespace Soulseek.NET
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
-    public interface ISoulseekClient
+    public interface ISoulseekClient : IDisposable
     {
         #region Public Events
 
@@ -109,11 +109,6 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         void Disconnect(string message = null);
-
-        /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        void Dispose();
 
         Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null);
 

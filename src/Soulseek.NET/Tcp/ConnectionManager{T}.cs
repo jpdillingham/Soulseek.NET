@@ -22,7 +22,7 @@ namespace Soulseek.NET.Tcp
     ///     Manages a queue of <see cref="IConnection"/>
     /// </summary>
     /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
-    internal sealed class ConnectionManager<T> : IConnectionManager<T>, IDisposable
+    internal sealed class ConnectionManager<T> : IConnectionManager<T>
         where T : IConnection
     {
         /// <summary>

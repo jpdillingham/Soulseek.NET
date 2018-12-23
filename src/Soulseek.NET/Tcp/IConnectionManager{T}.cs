@@ -49,11 +49,6 @@ namespace Soulseek.NET.Tcp
         Task AddAsync(T connection);
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager{T}"/>.
-        /// </summary>
-        new void Dispose();
-
-        /// <summary>
         ///     Returns the connection matching the specified <paramref name="connectionKey"/>
         /// </summary>
         /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>

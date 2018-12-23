@@ -29,7 +29,7 @@ namespace Soulseek.NET
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
-    public class SoulseekClient : IDisposable, ISoulseekClient
+    public class SoulseekClient : ISoulseekClient
     {
         #region Private Fields
 
