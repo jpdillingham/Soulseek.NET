@@ -84,12 +84,9 @@ namespace Soulseek.NET
         /// <param name="result">The wait result.</param>
         public void Complete<T>(WaitKey key, T result)
         {
-            if (Waits.TryGetValue(key, out var queue))
+            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
             {
-                if (queue.TryDequeue(out var wait))
-                {
-                    ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
-                }
+                ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
             }
         }
 
