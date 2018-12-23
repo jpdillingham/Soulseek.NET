@@ -51,9 +51,9 @@ Task("TestWithCoverage")
                 ArgumentCustomization = args =>
                 {
                     args.Append("/p:EnableCoverage=true");
-					args.Append("/p:CoverletOutputFormat=cobertura");
+					args.Append("/p:CoverletOutputFormat=opencover");
 					if(prevProject != null)
-                        args.Append($"/p:MergeWith=`{prevProject.GetDirectory().CombineWithFilePath("bin/cov/coverage.cobertura.xml")}`");
+                        args.Append($"/p:MergeWith=`{prevProject.GetDirectory().CombineWithFilePath("bin/cov/coverage.opencover.xml")}`");
                     return args;
                 }
             };
@@ -71,7 +71,7 @@ Task("GenerateCoverageReport")
     settings =>
     {
         ReportGenerator(
-            new [] { settings.CoverageResultsDirectory.CombineWithFilePath("coverage.cobertura.xml")},
+            new [] { settings.CoverageResultsDirectory.CombineWithFilePath("coverage.opencover.xml")},
             settings.CoverageReportDirectory.FullPath,
             new ReportGeneratorSettings() {
                 ReportTypes = new [] { ReportGeneratorReportType.HtmlSummary, ReportGeneratorReportType.Html }

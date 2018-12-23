@@ -29,7 +29,7 @@
     With this Section, everything needed to enable code coverage reporting
     during testing is passing the EnableCoverage property as true.
     This also establishes a default output directoy and sets lcov to
-    support "Coverage Gutters" in VSCode as well as cobertura as
+    support "Coverage Gutters" in VSCode as well as opencover as
     the more widely accepted format in CICD.
   -->
   <ItemGroup Condition="'$(EnableCoverage)' == 'true'">
@@ -40,7 +40,7 @@
   </ItemGroup>
   <PropertyGroup Condition="'$(EnableCoverage)' == 'true'">
     <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>cobertura,lcov</CoverletOutputFormat>
+    <CoverletOutputFormat>opencover,lcov</CoverletOutputFormat>
     <CoverletOutput>$(MSBuildProjectDirectory)/bin/cov/</CoverletOutput>
   </PropertyGroup>
 </Project>
