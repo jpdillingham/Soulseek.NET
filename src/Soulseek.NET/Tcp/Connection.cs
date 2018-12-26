@@ -295,6 +295,11 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public Task WriteAsync(byte[] bytes)
         {
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
+            }
+
             if (!TcpClient.Connected)
             {
                 throw new InvalidOperationException($"The underlying Tcp connection is closed.");
@@ -303,16 +308,6 @@ namespace Soulseek.NET.Tcp
             if (State != ConnectionState.Connected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
-            }
-
-            if (bytes == null || bytes.Length == 0)
-            {
-                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
-            }
-
-            if (bytes.Length > Options.BufferSize)
-            {
-                throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
             }
 
             return WriteInternalAsync(bytes);
