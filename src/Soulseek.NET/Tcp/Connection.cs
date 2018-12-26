@@ -136,7 +136,7 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Gets or sets the network stream for the connection.
         /// </summary>
-        protected NetworkStream Stream { get; set; }
+        protected INetworkStream Stream { get; set; }
 
         /// <summary>
         ///     Gets or sets the TcpClient used by the connection.
@@ -366,11 +366,6 @@ namespace Soulseek.NET.Tcp
             }
             catch (Exception ex)
             {
-                if (State != ConnectionState.Connected)
-                {
-                    Disconnect($"Write error: {ex.Message}");
-                }
-
                 throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
