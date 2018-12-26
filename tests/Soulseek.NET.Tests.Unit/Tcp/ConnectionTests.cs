@@ -409,9 +409,13 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Write throws if Stream throws")]
         public async Task Write_Throws_If_Stream_Throws()
         {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Throws(new SocketException());
+
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
-            //t.Setup(m => m.GetStream()).Returns()
+            t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
             await c.ConnectAsync();
@@ -419,7 +423,29 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
 
             Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+            Assert.IsType<ConnectionWriteException>(ex);
+            Assert.IsType<SocketException>(ex.InnerException);
+
+            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write does not throw given good input and if Stream does not throw")]
+        public async Task Write_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+            Assert.Null(ex);
+
+            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
     }
 }
