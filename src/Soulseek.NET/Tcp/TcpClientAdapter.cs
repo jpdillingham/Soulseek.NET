@@ -85,9 +85,9 @@ namespace Soulseek.NET.Tcp
         /// <returns>The NetworkStream used to send and receive data.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the TCP client is not connected to a remote host.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
-        public NetworkStream GetStream()
+        public INetworkStream GetStream()
         {
-            return TcpClient.GetStream();
+            return new NetworkStreamAdapter(TcpClient.GetStream());
         }
 
         private void Dispose(bool disposing)
