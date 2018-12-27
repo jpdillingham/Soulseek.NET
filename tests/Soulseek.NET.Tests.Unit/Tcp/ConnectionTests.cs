@@ -626,7 +626,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
 
-        [Trait("Category", "Connect")]
+        [Trait("Category", "Read")]
         [Fact(DisplayName = "Read raises DataRead event")]
         public async Task Read_Raises_DataRead_Event()
         {
@@ -657,6 +657,34 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(3, eventArgs[2].TotalLength);
 
             s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(3));
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read times out on inactivity")]
+        public async Task Read_Times_Out_On_Inactivity()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 
+                {
+                    Thread.Sleep(1000);
+                    return 1;
+                }));
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
+
+            await c.ConnectAsync();
+            await c.ReadAsync(1);
+
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+
+            s.Verify(m => m.Close(), Times.Once);
         }
     }
 }
