@@ -256,36 +256,24 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
         /// <returns>The read bytes.</returns>
-        public async Task<byte[]> ReadAsync(int length)
+        public Task<byte[]> ReadAsync(int length)
         {
-            InactivityTimer?.Reset();
-
-            var result = new List<byte>();
-
-            var buffer = new byte[Options.BufferSize];
-            var totalBytesRead = 0;
-
-            while (totalBytesRead < length)
+            if (length <= 0)
             {
-                var bytesRemaining = length - totalBytesRead;
-                var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
-
-                var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead).ConfigureAwait(false);
-
-                if (bytesRead == 0)
-                {
-                    Disconnect($"Remote connection closed.");
-                }
-
-                totalBytesRead += bytesRead;
-                var data = buffer.Take(bytesRead);
-                result.AddRange(data);
-
-                DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, length));
-                InactivityTimer?.Reset();
+                throw new ArgumentException($"The requested length must be greater than zero.");
             }
 
-            return result.ToArray();
+            if (!TcpClient.Connected)
+            {
+                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
+            }
+
+            if (State != ConnectionState.Connected)
+            {
+                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
+            }
+
+            return ReadInternalAsync(length);
         }
 
         /// <summary>
@@ -355,6 +343,46 @@ namespace Soulseek.NET.Tcp
                 }
 
                 Disposed = true;
+            }
+        }
+
+        private async Task<byte[]> ReadInternalAsync(int length)
+        {
+            InactivityTimer?.Reset();
+
+            var result = new List<byte>();
+
+            var buffer = new byte[Options.BufferSize];
+            var totalBytesRead = 0;
+
+            try
+            {
+                while (totalBytesRead < length)
+                {
+                    var bytesRemaining = length - totalBytesRead;
+                    var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
+
+                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead).ConfigureAwait(false);
+
+                    if (bytesRead == 0)
+                    {
+                        Disconnect($"Remote connection closed.");
+                        break;
+                    }
+
+                    totalBytesRead += bytesRead;
+                    var data = buffer.Take(bytesRead);
+                    result.AddRange(data);
+
+                    DataRead?.Invoke(this, new ConnectionDataEventArgs(data.ToArray(), totalBytesRead, length));
+                    InactivityTimer?.Reset();
+                }
+
+                return result.ToArray();
+            }
+            catch (Exception ex)
+            {
+                throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
 
