@@ -258,6 +258,11 @@ namespace Soulseek.NET.Tcp
         /// <returns>The read bytes.</returns>
         public Task<byte[]> ReadAsync(int length)
         {
+            if (length <= 0)
+            {
+                throw new ArgumentException($"The requested length must be greater than zero.");
+            }
+
             if (!TcpClient.Connected)
             {
                 throw new InvalidOperationException($"The underlying Tcp connection is closed.");
