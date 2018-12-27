@@ -367,6 +367,7 @@ namespace Soulseek.NET.Tcp
                     if (bytesRead == 0)
                     {
                         Disconnect($"Remote connection closed.");
+                        break;
                     }
 
                     totalBytesRead += bytesRead;
