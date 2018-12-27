@@ -603,5 +603,27 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
         }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read disconnects if Stream returns 0")]
+        public async Task Read_Disconnects_If_Stream_Returns_0()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 0));
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            await c.ReadAsync(1);
+
+            Assert.Equal(ConnectionState.Disconnected, c.State);
+
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(1));
+        }
     }
 }
