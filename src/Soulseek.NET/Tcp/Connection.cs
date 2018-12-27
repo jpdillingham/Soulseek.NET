@@ -136,7 +136,7 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Gets or sets the network stream for the connection.
         /// </summary>
-        protected NetworkStream Stream { get; set; }
+        protected INetworkStream Stream { get; set; }
 
         /// <summary>
         ///     Gets or sets the TcpClient used by the connection.
@@ -295,6 +295,11 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public Task WriteAsync(byte[] bytes)
         {
+            if (bytes == null || bytes.Length == 0)
+            {
+                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
+            }
+
             if (!TcpClient.Connected)
             {
                 throw new InvalidOperationException($"The underlying Tcp connection is closed.");
@@ -303,16 +308,6 @@ namespace Soulseek.NET.Tcp
             if (State != ConnectionState.Connected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
-            }
-
-            if (bytes == null || bytes.Length == 0)
-            {
-                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
-            }
-
-            if (bytes.Length > Options.BufferSize)
-            {
-                throw new NotImplementedException($"Write payloads exceeding the configured buffer size are not yet supported.");
             }
 
             return WriteInternalAsync(bytes);
@@ -371,11 +366,6 @@ namespace Soulseek.NET.Tcp
             }
             catch (Exception ex)
             {
-                if (State != ConnectionState.Connected)
-                {
-                    Disconnect($"Write error: {ex.Message}");
-                }
-
                 throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }

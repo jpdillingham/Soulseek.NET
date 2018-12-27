@@ -106,7 +106,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteInteger(int value)
         {
-            return WriteLong(value);
+            return WriteBytes(BitConverter.GetBytes(value));
         }
 
         /// <summary>
@@ -116,10 +116,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteLong(long value)
         {
-            EnsureInitialized();
-
-            Bytes.AddRange(BitConverter.GetBytes(value));
-            return this;
+            return WriteBytes(BitConverter.GetBytes(value));
         }
 
         /// <summary>

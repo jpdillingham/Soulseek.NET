@@ -347,5 +347,105 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
         }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws given null bytes")]
+        public async Task Write_Throws_Given_Null_Bytes()
+        {
+            var c = new Connection(new IPAddress(0x0), 1);
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws given zero bytes")]
+        public async Task Write_Throws_Given_Zero_Bytes()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[0]));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws if TcpClient is not connected")]
+        public async Task Write_Throws_If_TcpClient_Is_Not_Connected()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(false);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws if connection is not connected")]
+        public async Task Write_Throws_If_Connection_Is_Not_Connected()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws if Stream throws")]
+        public async Task Write_Throws_If_Stream_Throws()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Throws(new SocketException());
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionWriteException>(ex);
+            Assert.IsType<SocketException>(ex.InnerException);
+
+            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write does not throw given good input and if Stream does not throw")]
+        public async Task Write_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+            Assert.Null(ex);
+
+            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
     }
 }
