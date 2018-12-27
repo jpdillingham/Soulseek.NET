@@ -623,7 +623,40 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(1));
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Read raises DataRead event")]
+        public async Task Read_Raises_DataRead_Event()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var eventArgs = new List<ConnectionDataEventArgs>();
+
+            c.DataRead += (sender, e) => eventArgs.Add(e);
+
+            await c.ConnectAsync();
+
+            await c.ReadAsync(3);
+
+            Assert.Equal(3, eventArgs.Count);
+            Assert.Equal(1, eventArgs[0].CurrentLength);
+            Assert.Equal(3, eventArgs[0].TotalLength);
+            Assert.Equal(2, eventArgs[1].CurrentLength);
+            Assert.Equal(3, eventArgs[1].TotalLength);
+            Assert.Equal(3, eventArgs[2].CurrentLength);
+            Assert.Equal(3, eventArgs[2].TotalLength);
+
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(3));
         }
     }
 }
