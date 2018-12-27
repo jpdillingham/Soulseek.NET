@@ -447,5 +447,161 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read throws if TcpClient is not connected")]
+        public async Task Read_Throws_If_TcpClient_Is_Not_Connected()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(false);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read throws if connection is not connected")]
+        public async Task Read_Throws_If_Connection_Is_Not_Connected()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read throws if length is long and larger than int")]
+        public async Task Read_Throws_If_Length_Is_Long_And_Larger_Than_Int()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            long length = 2147483648; // max = 2147483647
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length)); 
+
+            Assert.NotNull(ex);
+            Assert.IsType<NotImplementedException>(ex);
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read does not throw if length is long and fits in int")]
+        public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Fits_In_Int()
+        {
+            long length = 2147483647; // max = 2147483647
+            
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => (int)length));
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+
+            Assert.Null(ex);
+
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read does not throw given good input and if Stream does not throw")]
+        public async Task Read_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+            Assert.Null(ex);
+
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read loops over Stream.ReadAsync on partial read")]
+        public async Task Read_Loops_Over_Stream_ReadAsync_On_Partial_Read()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            await c.ReadAsync(3);
+
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(3));
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read throws if Stream throws")]
+        public async Task Read_Throws_If_Stream_Throws()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Throws(new SocketException());
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionReadException>(ex);
+            Assert.IsType<SocketException>(ex.InnerException);
+
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read throws given bad length")]
+        [InlineData(0)]
+        [InlineData(-1)]
+        public async Task Read_Throws_Given_Bad_Length(int length)
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
     }
 }
