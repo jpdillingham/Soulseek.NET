@@ -12,25 +12,29 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Acknowledges the reciept of a private message.
+    /// </summary>
     public class AcknowledgePrivateMessageRequest
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AcknowledgePrivateMessageRequest"/> class.
+        /// </summary>
+        /// <param name="id">The id of the private message to acknowledge.</param>
         public AcknowledgePrivateMessageRequest(int id)
         {
             Id = id;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets the id of the private message to acknowledge.
+        /// </summary>
+        public int Id { get; }
 
-        #region Public Properties
-
-        public int Id { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
@@ -38,7 +42,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(Id)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }
