@@ -12,10 +12,17 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Initializes a peer connection.
+    /// </summary>
     public class PeerInitRequest
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerInitRequest"/> class.
+        /// </summary>
+        /// <param name="username">The username of the peer.</param>
+        /// <param name="transferType">The transfer type (P or F)</param>
+        /// <param name="token">The unique token for the connection.</param>
         public PeerInitRequest(string username, string transferType, int token)
         {
             Username = username;
@@ -23,18 +30,25 @@ namespace Soulseek.NET.Messaging.Requests
             Token = token;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets the unique token for the connection.
+        /// </summary>
+        public int Token { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the transfer type (P or F)
+        /// </summary>
+        public string TransferType { get; }
 
-        public int Token { get; set; }
-        public string TransferType { get; set; }
-        public string Username { get; set; }
+        /// <summary>
+        ///     Gets tue username of the peer.
+        /// </summary>
+        public string Username { get; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
@@ -44,7 +58,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(Token)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }
