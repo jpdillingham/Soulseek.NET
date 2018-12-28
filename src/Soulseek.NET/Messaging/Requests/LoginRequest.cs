@@ -12,30 +12,51 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Logs in to the server.
+    /// </summary>
     public class LoginRequest
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LoginRequest"/> class.
+        /// </summary>
+        /// <param name="username">The username.</param>
+        /// <param name="password">The password.</param>
         public LoginRequest(string username, string password)
         {
             Username = username;
             Password = password;
         }
 
-        #endregion Public Constructors
-
-        #region Public Properties
-
+        /// <summary>
+        ///     Gets the MD5 hash of the username and password.
+        /// </summary>
         public string Hash => $"{Username}{Password}".ToMD5Hash();
+
+        /// <summary>
+        ///     Gets the minor client version.
+        /// </summary>
         public int MinorVersion => 1;
-        public string Password { get; set; }
-        public string Username { get; set; }
+
+        /// <summary>
+        ///     Gets the password.
+        /// </summary>
+        public string Password { get; }
+
+        /// <summary>
+        ///     Gets the username.
+        /// </summary>
+        public string Username { get; }
+
+        /// <summary>
+        ///     Gets the client version.
+        /// </summary>
         public int Version => 181;
 
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
@@ -47,7 +68,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(MinorVersion)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }
