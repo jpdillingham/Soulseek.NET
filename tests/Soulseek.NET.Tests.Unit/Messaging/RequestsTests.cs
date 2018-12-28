@@ -72,5 +72,43 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.Equal(name, reader.ReadString());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "LoginRequest")]
+        [Fact(DisplayName = "LoginRequest instantiates properly")]
+        public void LoginRequest_Instantiates_Properly()
+        {
+            var name = Guid.NewGuid().ToString();
+            var password = Guid.NewGuid().ToString();
+            var a = new LoginRequest(name, password);
+
+            Assert.Equal(name, a.Username);
+            Assert.Equal(password, a.Password);
+            Assert.NotEmpty(a.Hash);
+            Assert.NotEqual(0, a.Version);
+            Assert.NotEqual(0, a.MinorVersion);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "LoginRequest")]
+        [Fact(DisplayName = "LoginRequest constructs the correct Message")]
+        public void LoginRequest_Constructs_The_Correct_Message()
+        {
+            var name = Guid.NewGuid().ToString();
+            var password = Guid.NewGuid().ToString();
+            var a = new LoginRequest(name, password);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.ServerLogin, msg.Code);
+            Assert.Equal(name.Length + password.Length + a.Hash.Length + 24, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(name, reader.ReadString());
+            Assert.Equal(password, reader.ReadString());
+            Assert.Equal(a.Version, reader.ReadInteger());
+            Assert.Equal(a.Hash, reader.ReadString());
+            Assert.Equal(a.MinorVersion, reader.ReadInteger());
+        }
     }
 }
