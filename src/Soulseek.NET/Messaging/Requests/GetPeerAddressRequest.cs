@@ -12,25 +12,29 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Requests the address of a peer.
+    /// </summary>
     public class GetPeerAddressRequest
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="GetPeerAddressRequest"/> class.
+        /// </summary>
+        /// <param name="username">The username of the requested peer.</param>
         public GetPeerAddressRequest(string username)
         {
             Username = username;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets the username of the requested peer.
+        /// </summary>
+        public string Username { get; }
 
-        #region Public Properties
-
-        public string Username { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
@@ -38,7 +42,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteString(Username)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }

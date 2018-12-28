@@ -45,5 +45,32 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.Equal(num, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "GetPeerAddressRequest")]
+        [Fact(DisplayName = "GetPeerAddressRequest instantiates properly")]
+        public void GetPeerAddressRequest_Instantiates_Properly()
+        {
+            var name = Guid.NewGuid().ToString();
+            var a = new GetPeerAddressRequest(name);
+
+            Assert.Equal(name, a.Username);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "GetPeerAddressRequest")]
+        [Fact(DisplayName = "GetPeerAddressRequest constructs the correct Message")]
+        public void GetPeerAddressRequest_Constructs_The_Correct_Message()
+        {
+            var name = Guid.NewGuid().ToString();
+            var msg = new GetPeerAddressRequest(name).ToMessage();
+
+            Assert.Equal(MessageCode.ServerGetPeerAddress, msg.Code);
+            Assert.Equal(name.Length + 8, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(name, reader.ReadString());
+        }
     }
 }
