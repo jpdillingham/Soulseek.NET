@@ -12,17 +12,20 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Requests the shared file list from a peer.
+    /// </summary>
     public class PeerBrowseRequest
     {
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }

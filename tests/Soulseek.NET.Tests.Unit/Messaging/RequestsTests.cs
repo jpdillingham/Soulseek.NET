@@ -110,5 +110,24 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(a.Hash, reader.ReadString());
             Assert.Equal(a.MinorVersion, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerBrowseRequest")]
+        [Fact(DisplayName = "PeerBrowseRequest instantiates properly")]
+        public void PeerBrowseRequest_Instantiates_Properly()
+        {
+            var a = new PeerBrowseRequest();
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerBrowseRequest")]
+        [Fact(DisplayName = "PeerBrowseRequest constructs the correct Message")]
+        public void PeerBrowseRequest_Constructs_The_Correct_Message()
+        {
+            var msg = new PeerBrowseRequest().ToMessage();
+
+            Assert.Equal(MessageCode.PeerBrowseRequest, msg.Code);
+            Assert.Equal(4, msg.Length);
+        }
     }
 }
