@@ -15,6 +15,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 {
     using Soulseek.NET.Messaging.Requests;
     using System;
+    using System.Linq;
     using Xunit;
 
     public class RequestsTests
@@ -128,6 +129,40 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.Equal(MessageCode.PeerBrowseRequest, msg.Code);
             Assert.Equal(4, msg.Length);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerInitRequest")]
+        [Fact(DisplayName = "PeerInitRequest instantiates properly")]
+        public void PeerInitRequest_Instantiates_Properly()
+        {
+            var name = Guid.NewGuid().ToString();
+            var token = new Random().Next();
+            var a = new PeerInitRequest(name, "P", token);
+
+            Assert.Equal(name, a.Username);
+            Assert.Equal("P", a.TransferType);
+            Assert.Equal(token, a.Token);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerInitRequest")]
+        [Fact(DisplayName = "PeerInitRequest constructs the correct Message")]
+        public void PeerInitRequest_Constructs_The_Correct_Message()
+        {
+            var name = Guid.NewGuid().ToString();
+            var token = new Random().Next();
+            var a = new PeerInitRequest(name, "P", token);
+            var msg = a.ToMessage();
+
+            Assert.Equal(0x1, (byte)msg.Code);
+            Assert.Equal(1 + 4 + name.Length + "P".Length + 8, msg.Length);
+
+            var reader = msg.ToPeerMessageReader();
+
+            Assert.Equal(name, reader.ReadString());
+            Assert.Equal("P", reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
         }
     }
 }
