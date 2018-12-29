@@ -667,7 +667,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns(Task.Run(() => 
                 {
-                    Thread.Sleep(1000);
+                    Thread.Sleep(2000);
                     return 1;
                 }));
 
