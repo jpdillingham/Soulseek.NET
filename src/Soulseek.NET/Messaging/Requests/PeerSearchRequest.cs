@@ -12,36 +12,43 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Requests a search from a peer.
+    /// </summary>
     public class PeerSearchRequest
     {
-        #region Public Constructors
-
-        public PeerSearchRequest(int token, string searchText)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerSearchRequest"/> class.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="ticket">The unique token for the search.</param>
+        public PeerSearchRequest(string searchText, int ticket)
         {
-            Token = token;
+            Ticket = ticket;
             SearchText = searchText;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets the text for which to search.
+        /// </summary>
+        public string SearchText { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the unique token for the search.
+        /// </summary>
+        public int Ticket { get; }
 
-        public string SearchText { get; set; }
-        public int Token { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
                 .Code(MessageCode.PeerSearchRequest)
-                .WriteInteger(Token)
+                .WriteInteger(Ticket)
                 .WriteString(SearchText)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }
