@@ -12,10 +12,18 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Responds to a transfer request from a peer.
+    /// </summary>
     public class PeerTransferResponseOutgoing
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerTransferResponseOutgoing"/> class.
+        /// </summary>
+        /// <param name="token">The unique transfer token.</param>
+        /// <param name="allowed">A value indicating whether the transfer is allowed to begin.</param>
+        /// <param name="fileSize">The file size in bytes.</param>
+        /// <param name="message">The reason the transfer is disallowed, if applicable.</param>
         public PeerTransferResponseOutgoing(int token, bool allowed, int fileSize, string message)
         {
             Token = token;
@@ -24,19 +32,30 @@ namespace Soulseek.NET.Messaging.Requests
             Message = message;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets a value indicating whether the transfer is allowed to begin.
+        /// </summary>
+        public bool Allowed { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the file size in bytes.
+        /// </summary>
+        public int FileSize { get; }
 
-        public int Token { get; private set; }
-        public bool Allowed { get; private set; }
-        public int FileSize { get; private set; }
-        public string Message { get; private set; }
+        /// <summary>
+        ///     Gets the reason the transfer is disallowed, if applicable.
+        /// </summary>
+        public string Message { get; }
 
-        #endregion Public Properties
+        /// <summary>
+        ///     Gets the unique transfer token.
+        /// </summary>
+        public int Token { get; }
 
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
@@ -46,7 +65,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(FileSize)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }
