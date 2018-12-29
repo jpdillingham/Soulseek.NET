@@ -163,5 +163,37 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal("P", reader.ReadString());
             Assert.Equal(token, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerSearchRequest")]
+        [Fact(DisplayName = "PeerSearchRequest instantiates properly")]
+        public void PeerSearchRequest_Instantiates_Properly()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new PeerSearchRequest(text, ticket);
+
+            Assert.Equal(text, a.SearchText);
+            Assert.Equal(ticket, a.Ticket);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerSearchRequest")]
+        [Fact(DisplayName = "PeerSearchRequest constructs the correct Message")]
+        public void PeerSearchRequest_Constructs_The_Correct_Message()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new PeerSearchRequest(text, ticket);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerSearchRequest, msg.Code);
+            Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(ticket, reader.ReadInteger());
+            Assert.Equal(text, reader.ReadString());
+        }
     }
 }
