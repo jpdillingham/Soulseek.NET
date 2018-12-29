@@ -281,5 +281,33 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(size, reader.ReadInteger());
             Assert.Equal(message, reader.ReadString());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PierceFirewallRequest")]
+        [Fact(DisplayName = "PierceFirewallRequest instantiates properly")]
+        public void PierceFirewallRequest_Instantiates_Properly()
+        {
+            var token = new Random().Next();
+            var a = new PierceFirewallRequest(token);
+
+            Assert.Equal(token, a.Token);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PierceFirewallRequest")]
+        [Fact(DisplayName = "PierceFirewallRequest constructs the correct Message")]
+        public void PierceFirewallRequest_Constructs_The_Correct_Message()
+        {
+            var token = new Random().Next();
+            var a = new PierceFirewallRequest(token);
+            var msg = a.ToMessage();
+
+            Assert.Equal(0x0, (byte)msg.Code);
+            Assert.Equal(1 + 4, msg.Length);
+
+            var reader = msg.ToPeerMessageReader();
+
+            Assert.Equal(token, reader.ReadInteger());
+        }
     }
 }
