@@ -309,5 +309,37 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.Equal(token, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SearchRequest")]
+        [Fact(DisplayName = "SearchRequest instantiates properly")]
+        public void SearchRequest_Instantiates_Properly()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new SearchRequest(text, ticket);
+
+            Assert.Equal(text, a.SearchText);
+            Assert.Equal(ticket, a.Ticket);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "SearchRequest")]
+        [Fact(DisplayName = "SearchRequest constructs the correct Message")]
+        public void SearchRequest_Constructs_The_Correct_Message()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new SearchRequest(text, ticket);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.ServerFileSearch, msg.Code);
+            Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(ticket, reader.ReadInteger());
+            Assert.Equal(text, reader.ReadString());
+        }
     }
 }
