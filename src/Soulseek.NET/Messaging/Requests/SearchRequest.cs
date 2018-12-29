@@ -12,27 +12,36 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Requests a distributed search.
+    /// </summary>
     public class SearchRequest
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchRequest"/> class.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="ticket">The unique token for the search.</param>
         public SearchRequest(string searchText, int ticket)
         {
             SearchText = searchText;
             Ticket = ticket;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets the text for which to search.
+        /// </summary>
+        public string SearchText { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the unique ticket for the search.
+        /// </summary>
+        public int Ticket { get; }
 
-        public string SearchText { get; set; }
-        public int Ticket { get; set; }
-
-        #endregion Public Properties
-
-        #region Internal Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         internal Message ToMessage()
         {
             return new MessageBuilder()
@@ -41,7 +50,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteString(SearchText)
                 .Build();
         }
-
-        #endregion Internal Methods
     }
 }
