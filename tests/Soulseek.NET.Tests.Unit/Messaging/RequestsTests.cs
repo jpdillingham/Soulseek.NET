@@ -239,5 +239,47 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(file, reader.ReadString());
             Assert.Equal(size, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerTransferResponseOutgoing")]
+        [Fact(DisplayName = "PeerTransferResponseOutgoing instantiates properly")]
+        public void PeerTransferResponseOutgoing_Instantiates_Properly()
+        {
+            var rnd = new Random();
+
+            var token = rnd.Next();
+            var size = rnd.Next();
+            var message = Guid.NewGuid().ToString();
+            var a = new PeerTransferResponseOutgoing(token, true, size, message);
+
+            Assert.Equal(token, a.Token);
+            Assert.True(a.Allowed);
+            Assert.Equal(size, a.FileSize);
+            Assert.Equal(message, a.Message);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerTransferResponseOutgoing")]
+        [Fact(DisplayName = "PeerTransferResponseOutgoing constructs the correct Message")]
+        public void PeerTransferResponseOutgoing_Constructs_The_Correct_Message()
+        {
+            var rnd = new Random();
+
+            var token = rnd.Next();
+            var size = rnd.Next();
+            var message = Guid.NewGuid().ToString();
+            var a = new PeerTransferResponseOutgoing(token, true, size, message);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
+            Assert.Equal(4 + 4 + 1 + 4 + 4 + message.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(1, reader.ReadByte());
+            Assert.Equal(size, reader.ReadInteger());
+            Assert.Equal(message, reader.ReadString());
+        }
     }
 }
