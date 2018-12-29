@@ -63,6 +63,7 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(Token)
                 .WriteByte((byte)(Allowed ? 1 : 0))
                 .WriteInteger(FileSize)
+                .WriteString(Message)
                 .Build();
         }
     }
