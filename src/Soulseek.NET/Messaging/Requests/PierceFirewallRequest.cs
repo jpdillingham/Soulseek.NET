@@ -12,25 +12,29 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    /// <summary>
+    ///     Pierces a peer's firewall.
+    /// </summary>
     public class PierceFirewallRequest
     {
-        #region Public Constructors
-
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PierceFirewallRequest"/> class.
+        /// </summary>
+        /// <param name="token">The unique token for the connection.</param>
         public PierceFirewallRequest(int token)
         {
             Token = token;
         }
 
-        #endregion Public Constructors
+        /// <summary>
+        ///     Gets the unique token for the connection.
+        /// </summary>
+        public int Token { get; }
 
-        #region Public Properties
-
-        public int Token { get; set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
             return new MessageBuilder()
@@ -38,7 +42,5 @@ namespace Soulseek.NET.Messaging.Requests
                 .WriteInteger(Token)
                 .Build();
         }
-
-        #endregion Public Methods
     }
 }
