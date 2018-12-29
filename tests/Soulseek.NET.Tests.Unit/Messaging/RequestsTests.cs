@@ -1,5 +1,4 @@
-﻿using Soulseek.NET.Messaging;
-// <copyright file="RequestsTests.cs" company="JP Dillingham">
+﻿// <copyright file="RequestsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,9 +12,9 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
-    using Soulseek.NET.Messaging.Requests;
     using System;
-    using System.Linq;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Requests;
     using Xunit;
 
     public class RequestsTests
