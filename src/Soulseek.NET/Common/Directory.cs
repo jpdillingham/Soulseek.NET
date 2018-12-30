@@ -22,19 +22,26 @@ namespace Soulseek.NET
         /// <summary>
         ///     Initializes a new instance of the <see cref="Directory"/> class.
         /// </summary>
-        internal Directory()
+        /// <param name="directoryname">The directory name.</param>
+        /// <param name="fileCount">The number of files.</param>
+        /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
+        public Directory(string directoryname, int fileCount, List<File> fileList = null)
         {
+            Directoryname = directoryname;
+            FileCount = fileCount;
+
+            FileList = fileList ?? new List<File>();
         }
 
         /// <summary>
         ///     Gets the directory name.
         /// </summary>
-        public string Directoryname { get; internal set; }
+        public string Directoryname { get; }
 
         /// <summary>
         ///     Gets the number of files within the directory.
         /// </summary>
-        public int FileCount { get; internal set; }
+        public int FileCount { get; }
 
         /// <summary>
         ///     Gets the collection of files contained within the directory.
@@ -42,8 +49,8 @@ namespace Soulseek.NET
         public IEnumerable<File> Files => FileList.AsReadOnly();
 
         /// <summary>
-        ///     Gets or sets the list of files contained within the directory.
+        ///     Gets the list of files contained within the directory.
         /// </summary>
-        internal List<File> FileList { get; set; } = new List<File>();
+        private List<File> FileList { get; }
     }
 }
