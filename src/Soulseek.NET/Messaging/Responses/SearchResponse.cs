@@ -120,27 +120,31 @@ namespace Soulseek.NET.Messaging.Responses
 
             for (int i = 0; i < count; i++)
             {
-                var file = new File
-                {
-                    Code = reader.ReadByte(),
-                    Filename = reader.ReadString(),
-                    Size = reader.ReadLong(),
-                    Extension = reader.ReadString(),
-                    AttributeCount = reader.ReadInteger()
-                };
+                var file = new File(
+                    code: reader.ReadByte(),
+                    filename: reader.ReadString(),
+                    size: reader.ReadLong(),
+                    extension: reader.ReadString(),
+                    attributeCount: reader.ReadInteger());
+
+                var attributeList = new List<FileAttribute>();
 
                 for (int j = 0; j < file.AttributeCount; j++)
                 {
-                    var attribute = new FileAttribute
-                    {
-                        Type = (FileAttributeType)reader.ReadInteger(),
-                        Value = reader.ReadInteger()
-                    };
+                    var attribute = new FileAttribute(
+                        type: (FileAttributeType)reader.ReadInteger(),
+                        value: reader.ReadInteger());
 
-                    file.AttributeList.Add(attribute);
+                    attributeList.Add(attribute);
                 }
 
-                files.Add(file);
+                files.Add(new File(
+                    code: file.Code,
+                    filename: file.Filename,
+                    size: file.Size,
+                    extension: file.Extension,
+                    attributeCount: file.AttributeCount,
+                    attributeList: attributeList));
             }
 
             return files;
