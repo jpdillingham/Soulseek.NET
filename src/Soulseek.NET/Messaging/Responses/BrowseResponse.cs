@@ -69,11 +69,11 @@ namespace Soulseek.NET.Messaging.Responses
 
                 for (int i = 0; i < temp.DirectoryCount; i++)
                 {
-                    var dir = new Directory
-                    {
-                        Directoryname = reader.ReadString(),
-                        FileCount = reader.ReadInteger(),
-                    };
+                    var dir = new Directory(
+                        directoryname: reader.ReadString(),
+                        fileCount: reader.ReadInteger());
+
+                    var fileList = new List<File>();
 
                     for (int j = 0; j < dir.FileCount; j++)
                     {
@@ -95,7 +95,7 @@ namespace Soulseek.NET.Messaging.Responses
                             attributeList.Add(attribute);
                         }
 
-                        dir.FileList.Add(new File(
+                        fileList.Add(new File(
                             code: file.Code,
                             filename: file.Filename,
                             size: file.Size,
@@ -104,7 +104,10 @@ namespace Soulseek.NET.Messaging.Responses
                             attributeList: attributeList));
                     }
 
-                    temp.DirectoryList.Add(dir);
+                    temp.DirectoryList.Add(new Directory(
+                        directoryname: dir.Directoryname,
+                        fileCount: dir.FileCount,
+                        fileList: fileList));
                 }
             }
             catch (Exception)
