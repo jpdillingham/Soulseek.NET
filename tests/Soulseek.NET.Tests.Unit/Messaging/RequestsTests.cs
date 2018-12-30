@@ -1,5 +1,4 @@
-﻿using Soulseek.NET.Messaging;
-// <copyright file="RequestsTests.cs" company="JP Dillingham">
+﻿// <copyright file="RequestsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,9 +12,9 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
-    using Soulseek.NET.Messaging.Requests;
     using System;
-    using System.Linq;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Requests;
     using Xunit;
 
     public class RequestsTests
@@ -163,6 +162,184 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(name, reader.ReadString());
             Assert.Equal("P", reader.ReadString());
             Assert.Equal(token, reader.ReadInteger());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerSearchRequest")]
+        [Fact(DisplayName = "PeerSearchRequest instantiates properly")]
+        public void PeerSearchRequest_Instantiates_Properly()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new PeerSearchRequest(text, ticket);
+
+            Assert.Equal(text, a.SearchText);
+            Assert.Equal(ticket, a.Ticket);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerSearchRequest")]
+        [Fact(DisplayName = "PeerSearchRequest constructs the correct Message")]
+        public void PeerSearchRequest_Constructs_The_Correct_Message()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new PeerSearchRequest(text, ticket);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerSearchRequest, msg.Code);
+            Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(ticket, reader.ReadInteger());
+            Assert.Equal(text, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerTransferRequestOutgoing")]
+        [Fact(DisplayName = "PeerTransferRequestOutgoing instantiates properly")]
+        public void PeerTransferRequestOutgoing_Instantiates_Properly()
+        {
+            var rnd = new Random();
+
+            var dir = TransferDirection.Download;
+            var token = rnd.Next();
+            var file = Guid.NewGuid().ToString();
+            var size = rnd.Next();
+            var a = new PeerTransferRequestOutgoing(dir, token, file, size);
+
+            Assert.Equal(dir, a.Direction);
+            Assert.Equal(token, a.Token);
+            Assert.Equal(file, a.Filename);
+            Assert.Equal(size, a.FileSize);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerTransferRequestOutgoing")]
+        [Fact(DisplayName = "PeerTransferRequestOutgoing constructs the correct Message")]
+        public void PeerTransferRequestOutgoing_Constructs_The_Correct_Message()
+        {
+            var rnd = new Random();
+
+            var dir = TransferDirection.Download;
+            var token = rnd.Next();
+            var file = Guid.NewGuid().ToString();
+            var size = rnd.Next();
+            var a = new PeerTransferRequestOutgoing(dir, token, file, size);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerTransferRequest, msg.Code);
+            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 4, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(0, reader.ReadInteger()); // direction
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(file, reader.ReadString());
+            Assert.Equal(size, reader.ReadInteger());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerTransferResponseOutgoing")]
+        [Fact(DisplayName = "PeerTransferResponseOutgoing instantiates properly")]
+        public void PeerTransferResponseOutgoing_Instantiates_Properly()
+        {
+            var rnd = new Random();
+
+            var token = rnd.Next();
+            var size = rnd.Next();
+            var message = Guid.NewGuid().ToString();
+            var a = new PeerTransferResponseOutgoing(token, true, size, message);
+
+            Assert.Equal(token, a.Token);
+            Assert.True(a.Allowed);
+            Assert.Equal(size, a.FileSize);
+            Assert.Equal(message, a.Message);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerTransferResponseOutgoing")]
+        [Fact(DisplayName = "PeerTransferResponseOutgoing constructs the correct Message")]
+        public void PeerTransferResponseOutgoing_Constructs_The_Correct_Message()
+        {
+            var rnd = new Random();
+
+            var token = rnd.Next();
+            var size = rnd.Next();
+            var message = Guid.NewGuid().ToString();
+            var a = new PeerTransferResponseOutgoing(token, true, size, message);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
+            Assert.Equal(4 + 4 + 1 + 4 + 4 + message.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(1, reader.ReadByte());
+            Assert.Equal(size, reader.ReadInteger());
+            Assert.Equal(message, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PierceFirewallRequest")]
+        [Fact(DisplayName = "PierceFirewallRequest instantiates properly")]
+        public void PierceFirewallRequest_Instantiates_Properly()
+        {
+            var token = new Random().Next();
+            var a = new PierceFirewallRequest(token);
+
+            Assert.Equal(token, a.Token);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PierceFirewallRequest")]
+        [Fact(DisplayName = "PierceFirewallRequest constructs the correct Message")]
+        public void PierceFirewallRequest_Constructs_The_Correct_Message()
+        {
+            var token = new Random().Next();
+            var a = new PierceFirewallRequest(token);
+            var msg = a.ToMessage();
+
+            Assert.Equal(0x0, (byte)msg.Code);
+            Assert.Equal(1 + 4, msg.Length);
+
+            var reader = msg.ToPeerMessageReader();
+
+            Assert.Equal(token, reader.ReadInteger());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SearchRequest")]
+        [Fact(DisplayName = "SearchRequest instantiates properly")]
+        public void SearchRequest_Instantiates_Properly()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new SearchRequest(text, ticket);
+
+            Assert.Equal(text, a.SearchText);
+            Assert.Equal(ticket, a.Ticket);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "SearchRequest")]
+        [Fact(DisplayName = "SearchRequest constructs the correct Message")]
+        public void SearchRequest_Constructs_The_Correct_Message()
+        {
+            var text = Guid.NewGuid().ToString();
+            var ticket = new Random().Next();
+            var a = new SearchRequest(text, ticket);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.ServerFileSearch, msg.Code);
+            Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(ticket, reader.ReadInteger());
+            Assert.Equal(text, reader.ReadString());
         }
     }
 }
