@@ -642,7 +642,17 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerBrowseResponse:
-                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username), BrowseResponse.Parse(message));
+                    var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username);
+
+                    if (BrowseResponse.TryParse(message, out var browseResponse))
+                    {
+                        MessageWaiter.Complete(browseWaitKey, browseResponse);
+                    }
+                    else
+                    {
+                        MessageWaiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response."));
+                    }
+
                     break;
 
                 case MessageCode.PeerTransferResponse:
