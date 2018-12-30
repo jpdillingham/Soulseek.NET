@@ -20,18 +20,25 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class File
     {
-        #region Internal Constructors
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="File"/> class.
         /// </summary>
-        internal File()
+        /// <param name="code">The file code.</param>
+        /// <param name="filename">The file name.</param>
+        /// <param name="extension">The file extension.</param>
+        /// <param name="size">The file size in bytes.</param>
+        /// <param name="attributeCount">The number of file <see cref="FileAttribute"/> s.</param>
+        /// <param name="attributeList">The optional list of <see cref="FileAttribute"/> s.</param>
+        public File(int code, string filename, long size, string extension, int attributeCount, List<FileAttribute> attributeList = null)
         {
+            Code = code;
+            Filename = filename;
+            Size = size;
+            Extension = extension;
+            AttributeCount = attributeCount;
+
+            AttributeList = attributeList ?? new List<FileAttribute>();
         }
-
-        #endregion Internal Constructors
-
-        #region Public Properties
 
         /// <summary>
         ///     Gets the number of file <see cref="FileAttribute"/> s.
@@ -56,17 +63,17 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the file code.
         /// </summary>
-        public int Code { get; internal set; }
+        public int Code { get; }
 
         /// <summary>
         ///     Gets the file extension.
         /// </summary>
-        public string Extension { get; internal set; }
+        public string Extension { get; }
 
         /// <summary>
         ///     Gets the file name.
         /// </summary>
-        public string Filename { get; internal set; }
+        public string Filename { get; }
 
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.Length"/> attribute.
@@ -79,22 +86,14 @@ namespace Soulseek.NET
         public int? SampleRate => GetAttributeValue(FileAttributeType.SampleRate);
 
         /// <summary>
-        ///     Gets the file size.
+        ///     Gets the file size in bytes.
         /// </summary>
-        public long Size { get; internal set; }
-
-        #endregion Public Properties
-
-        #region Internal Properties
+        public long Size { get; }
 
         /// <summary>
-        ///     Gets or sets the internal list of file attributes.
+        ///     Gets the internal list of file attributes.
         /// </summary>
-        internal List<FileAttribute> AttributeList { get; set; } = new List<FileAttribute>();
-
-        #endregion Internal Properties
-
-        #region Public Methods
+        private List<FileAttribute> AttributeList { get; }
 
         /// <summary>
         ///     Returns the value of the specified attribute <paramref name="type"/>.
@@ -105,7 +104,5 @@ namespace Soulseek.NET
         {
             return AttributeList.SingleOrDefault(a => a.Type == type)?.Value;
         }
-
-        #endregion Public Methods
     }
 }
