@@ -14,47 +14,43 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using Soulseek.NET.Exceptions;
 
+    /// <summary>
+    ///     The response to a peer browse request.
+    /// </summary>
     public sealed class BrowseResponse
     {
-        #region Internal Constructors
-
-        internal BrowseResponse()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="BrowseResponse"/> class.
+        /// </summary>
+        /// <param name="directoryCount">The optional directory count.</param>
+        /// <param name="directoryList">The optional directory list.</param>
+        public BrowseResponse(int directoryCount, List<Directory> directoryList = null)
         {
+            DirectoryCount = directoryCount;
+            DirectoryList = directoryList ?? new List<Directory>();
         }
 
-        #endregion Internal Constructors
+        /// <summary>
+        ///     Gets the list of directories.
+        /// </summary>
+        public IEnumerable<Directory> Directories => DirectoryList.AsReadOnly();
 
-        #region Public Properties
-
-        public IEnumerable<Directory> Directories
-        {
-            get
-            {
-                return DirectoryList.AsReadOnly();
-            }
-
-            internal set
-            {
-                DirectoryList = value.ToList();
-            }
-        }
-
+        /// <summary>
+        ///     Gets the number of directories.
+        /// </summary>
         public int DirectoryCount { get; internal set; }
 
-        #endregion Public Properties
+        private List<Directory> DirectoryList { get; }
 
-        #region Private Properties
-
-        private List<Directory> DirectoryList { get; set; } = new List<Directory>();
-
-        #endregion Private Properties
-
-        #region Public Methods
-
-        public static BrowseResponse Parse(Message message)
+        /// <summary>
+        ///     Parses a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <param name="response">The parsed <see cref="BrowseResponse"/>.</param>
+        /// <returns>A value indicating whether the operation was successful.</returns>
+        public static bool TryParse(Message message, out BrowseResponse response)
         {
             var reader = new MessageReader(message);
 
@@ -63,60 +59,62 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Shares Response (expected: {(int)MessageCode.PeerBrowseResponse}, received: {(int)reader.Code}");
             }
 
+            BrowseResponse temp;
+
             try
             {
                 reader.Decompress();
+
+                temp = new BrowseResponse(reader.ReadInteger());
+
+                for (int i = 0; i < temp.DirectoryCount; i++)
+                {
+                    var dir = new Directory
+                    {
+                        Directoryname = reader.ReadString(),
+                        FileCount = reader.ReadInteger(),
+                    };
+
+                    for (int j = 0; j < dir.FileCount; j++)
+                    {
+                        var file = new File(
+                            code: reader.ReadByte(),
+                            filename: reader.ReadString(),
+                            size: reader.ReadLong(),
+                            extension: reader.ReadString(),
+                            attributeCount: reader.ReadInteger());
+
+                        var attributeList = new List<FileAttribute>();
+
+                        for (int k = 0; k < file.AttributeCount; k++)
+                        {
+                            var attribute = new FileAttribute(
+                                type: (FileAttributeType)reader.ReadInteger(),
+                                value: reader.ReadInteger());
+
+                            attributeList.Add(attribute);
+                        }
+
+                        dir.FileList.Add(new File(
+                            code: file.Code,
+                            filename: file.Filename,
+                            size: file.Size,
+                            extension: file.Extension,
+                            attributeCount: file.AttributeCount,
+                            attributeList: attributeList));
+                    }
+
+                    temp.DirectoryList.Add(dir);
+                }
             }
             catch (Exception)
             {
-                // discard result if it fails to decompress
-                return null;
+                response = null;
+                return false;
             }
 
-            var response = new BrowseResponse
-            {
-                DirectoryCount = reader.ReadInteger(),
-            };
-
-            for (int i = 0; i < response.DirectoryCount; i++)
-            {
-                var dir = new Directory
-                {
-                    Directoryname = reader.ReadString(),
-                    FileCount = reader.ReadInteger(),
-                };
-
-                for (int j = 0; j < dir.FileCount; j++)
-                {
-                    var file = new File
-                    {
-                        Code = reader.ReadByte(),
-                        Filename = reader.ReadString(),
-                        Size = reader.ReadLong(),
-                        Extension = reader.ReadString(),
-                        AttributeCount = reader.ReadInteger()
-                    };
-
-                    for (int k = 0; k < file.AttributeCount; k++)
-                    {
-                        var attribute = new FileAttribute
-                        {
-                            Type = (FileAttributeType)reader.ReadInteger(),
-                            Value = reader.ReadInteger()
-                        };
-
-                        file.AttributeList.Add(attribute);
-                    }
-
-                    dir.FileList.Add(file);
-                }
-
-                response.DirectoryList.Add(dir);
-            }
-
-            return response;
+            response = temp;
+            return true;
         }
-
-        #endregion Public Methods
     }
 }
