@@ -12,7 +12,6 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    using System;
     using System.Collections.Generic;
     using Soulseek.NET.Exceptions;
 
