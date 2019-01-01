@@ -1,4 +1,4 @@
-﻿// <copyright file="ResponsesTests.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using Soulseek.NET.Zlib;
     using Xunit;
 
-    public class ResponsesTests
+    public class BrowseResponseTests
     {
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
@@ -82,6 +82,87 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
             Assert.IsType<ZStreamException>(ex.InnerException);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse returns empty response given empty message")]
+        public void BrowseResponse_Returns_Empty_Response_Given_Empty_Message()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(0)
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default(BrowseResponse);
+            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+
+            Assert.Equal(0, r.DirectoryCount);
+            Assert.Empty(r.Directories);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse handles empty directory")]
+        public void BrowseResponse_Handles_Empty_Directory()
+        {
+            var name = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(1) // directory count
+                .WriteString(name) // first directory name
+                .WriteInteger(0) // first directory file count
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default(BrowseResponse);
+            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+
+            Assert.Equal(1, r.DirectoryCount);
+            Assert.Single(r.Directories);
+
+            var d = r.Directories.ToList();
+
+            Assert.Equal(name, d[0].Directoryname);
+            Assert.Equal(0, d[0].FileCount);
+            Assert.Empty(d[0].Files);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse handles multiple empty directories")]
+        public void BrowseResponse_Handles_Multiple_Empty_Directories()
+        {
+            var name = Guid.NewGuid().ToString();
+            var name2 = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(2) // directory count
+                .WriteString(name) // first directory name
+                .WriteInteger(0) // first directory file count
+                .WriteString(name2) // dir 2 name
+                .WriteInteger(0) // dir 2 file count
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default(BrowseResponse);
+            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+
+            Assert.Equal(2, r.DirectoryCount);
+            Assert.Equal(2, r.Directories.Count());
+
+            var d = r.Directories.ToList();
+
+            Assert.Equal(name, d[0].Directoryname);
+            Assert.Equal(0, d[0].FileCount);
+            Assert.Empty(d[0].Files);
+
+            Assert.Equal(name2, d[1].Directoryname);
+            Assert.Equal(0, d[1].FileCount);
+            Assert.Empty(d[1].Files);
         }
     }
 }
