@@ -48,76 +48,64 @@ namespace Soulseek.NET.Messaging.Responses
         ///     Parses a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
-        /// <param name="response">The parsed <see cref="BrowseResponse"/>.</param>
         /// <returns>A value indicating whether the operation was successful.</returns>
-        public static bool TryParse(Message message, out BrowseResponse response)
+        public static BrowseResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
             if (reader.Code != MessageCode.PeerBrowseResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Shares Response (expected: {(int)MessageCode.PeerBrowseResponse}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Peer Browse Response (expected: {(int)MessageCode.PeerBrowseResponse}, received: {(int)reader.Code}");
             }
 
-            BrowseResponse temp;
+            BrowseResponse response = new BrowseResponse(reader.ReadInteger());
 
-            try
+            reader.Decompress();
+
+            for (int i = 0; i < response.DirectoryCount; i++)
             {
-                reader.Decompress();
+                var dir = new Directory(
+                    directoryname: reader.ReadString(),
+                    fileCount: reader.ReadInteger());
 
-                temp = new BrowseResponse(reader.ReadInteger());
+                var fileList = new List<File>();
 
-                for (int i = 0; i < temp.DirectoryCount; i++)
+                for (int j = 0; j < dir.FileCount; j++)
                 {
-                    var dir = new Directory(
-                        directoryname: reader.ReadString(),
-                        fileCount: reader.ReadInteger());
+                    var file = new File(
+                        code: reader.ReadByte(),
+                        filename: reader.ReadString(),
+                        size: reader.ReadLong(),
+                        extension: reader.ReadString(),
+                        attributeCount: reader.ReadInteger());
 
-                    var fileList = new List<File>();
+                    var attributeList = new List<FileAttribute>();
 
-                    for (int j = 0; j < dir.FileCount; j++)
+                    for (int k = 0; k < file.AttributeCount; k++)
                     {
-                        var file = new File(
-                            code: reader.ReadByte(),
-                            filename: reader.ReadString(),
-                            size: reader.ReadLong(),
-                            extension: reader.ReadString(),
-                            attributeCount: reader.ReadInteger());
+                        var attribute = new FileAttribute(
+                            type: (FileAttributeType)reader.ReadInteger(),
+                            value: reader.ReadInteger());
 
-                        var attributeList = new List<FileAttribute>();
-
-                        for (int k = 0; k < file.AttributeCount; k++)
-                        {
-                            var attribute = new FileAttribute(
-                                type: (FileAttributeType)reader.ReadInteger(),
-                                value: reader.ReadInteger());
-
-                            attributeList.Add(attribute);
-                        }
-
-                        fileList.Add(new File(
-                            code: file.Code,
-                            filename: file.Filename,
-                            size: file.Size,
-                            extension: file.Extension,
-                            attributeCount: file.AttributeCount,
-                            attributeList: attributeList));
+                        attributeList.Add(attribute);
                     }
 
-                    temp.DirectoryList.Add(new Directory(
-                        directoryname: dir.Directoryname,
-                        fileCount: dir.FileCount,
-                        fileList: fileList));
+                    fileList.Add(new File(
+                        code: file.Code,
+                        filename: file.Filename,
+                        size: file.Size,
+                        extension: file.Extension,
+                        attributeCount: file.AttributeCount,
+                        attributeList: attributeList));
                 }
-            }
-            catch (Exception)
-            {
-                response = null;
-                return false;
+
+                response.DirectoryList.Add(new Directory(
+                    directoryname: dir.Directoryname,
+                    fileCount: dir.FileCount,
+                    fileList: fileList));
             }
 
-            response = temp;
-            return true;
+            return response;
         }
     }
 }
