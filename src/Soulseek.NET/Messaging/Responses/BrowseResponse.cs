@@ -58,9 +58,9 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Browse Response (expected: {(int)MessageCode.PeerBrowseResponse}, received: {(int)reader.Code}");
             }
 
-            BrowseResponse response = new BrowseResponse(reader.ReadInteger());
-
             reader.Decompress();
+
+            BrowseResponse response = new BrowseResponse(reader.ReadInteger());
 
             for (int i = 0; i < response.DirectoryCount; i++)
             {
