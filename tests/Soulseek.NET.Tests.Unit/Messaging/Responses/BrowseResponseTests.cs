@@ -132,37 +132,44 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles multiple empty directories")]
-        public void BrowseResponse_Handles_Multiple_Empty_Directories()
+        [Fact(DisplayName = "BrowseResponse handles files with no attributes")]
+        public void BrowseResponse_Handles_Files_With_No_Attributes()
         {
             var name = Guid.NewGuid().ToString();
-            var name2 = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
-                .WriteInteger(2) // directory count
+                .WriteInteger(1) // directory count
                 .WriteString(name) // first directory name
-                .WriteInteger(0) // first directory file count
-                .WriteString(name2) // dir 2 name
-                .WriteInteger(0) // dir 2 file count
+                .WriteInteger(1) // first directory file count
+                .WriteByte(0x0) // file code
+                .WriteString("foo") // name
+                .WriteLong(12) // size 
+                .WriteString("bar") // extension
+                .WriteInteger(0) // attribute count
                 .Compress()
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
-            Assert.Equal(2, r.DirectoryCount);
-            Assert.Equal(2, r.Directories.Count());
+            Assert.Equal(1, r.DirectoryCount);
+            Assert.Single(r.Directories);
 
             var d = r.Directories.ToList();
 
             Assert.Equal(name, d[0].Directoryname);
-            Assert.Equal(0, d[0].FileCount);
-            Assert.Empty(d[0].Files);
+            Assert.Equal(1, d[0].FileCount);
+            Assert.Single(d[0].Files);
 
-            Assert.Equal(name2, d[1].Directoryname);
-            Assert.Equal(0, d[1].FileCount);
-            Assert.Empty(d[1].Files);
+            var f = d[0].Files.ToList();
+
+            Assert.Equal(0x0, f[0].Code);
+            Assert.Equal("foo", f[0].Filename);
+            Assert.Equal(12, f[0].Size);
+            Assert.Equal("bar", f[0].Extension);
+            Assert.Equal(0, f[0].AttributeCount);
+            Assert.Empty(f[0].Attributes);
         }
 
         [Trait("Category", "Parse")]
