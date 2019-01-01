@@ -84,7 +84,16 @@ namespace Soulseek.NET.Messaging
         /// <returns>This MessageReader.</returns>
         public MessageReader Decompress()
         {
-            Decompress(Payload, out byte[] decompressedPayload);
+            byte[] decompressedPayload;
+
+            try
+            {
+                Decompress(Payload, out decompressedPayload);
+            }
+            catch (Exception ex)
+            {
+                throw new MessageReadException($"Failed to decompress message payload.", ex);
+            }
 
             Message = new MessageBuilder()
                 .Code(Code)

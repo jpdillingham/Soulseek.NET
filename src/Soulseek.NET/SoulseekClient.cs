@@ -643,14 +643,13 @@ namespace Soulseek.NET
 
                 case MessageCode.PeerBrowseResponse:
                     var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username);
-
-                    if (BrowseResponse.TryParse(message, out var browseResponse))
+                    try
                     {
-                        MessageWaiter.Complete(browseWaitKey, browseResponse);
+                        MessageWaiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        MessageWaiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response."));
+                        MessageWaiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
                     }
 
                     break;
