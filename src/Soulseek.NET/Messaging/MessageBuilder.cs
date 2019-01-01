@@ -14,16 +14,19 @@ namespace Soulseek.NET.Messaging
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Text;
     using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Zlib;
 
     /// <summary>
     ///     Builds a message.
     /// </summary>
     public class MessageBuilder
     {
-        private List<byte> Bytes { get; set; } = new List<byte>();
+        private List<byte> CodeBytes { get; set; } = new List<byte>();
+        private List<byte> PayloadBytes { get; set; } = new List<byte>();
         private bool Initialized { get; set; } = false;
 
         /// <summary>
@@ -32,8 +35,9 @@ namespace Soulseek.NET.Messaging
         /// <returns>The built message.</returns>
         public Message Build()
         {
-            var withLength = new List<byte>(BitConverter.GetBytes(Bytes.Count));
-            withLength.AddRange(Bytes);
+            var withLength = new List<byte>(BitConverter.GetBytes(CodeBytes.Count + PayloadBytes.Count));
+            withLength.AddRange(CodeBytes);
+            withLength.AddRange(PayloadBytes);
             return new Message(withLength.ToArray());
         }
 
@@ -51,7 +55,7 @@ namespace Soulseek.NET.Messaging
 
             Initialized = true;
 
-            Bytes.AddRange(BitConverter.GetBytes((int)code));
+            CodeBytes = BitConverter.GetBytes((int)code).ToList();
             return this;
         }
 
@@ -69,7 +73,7 @@ namespace Soulseek.NET.Messaging
 
             Initialized = true;
 
-            Bytes.Add(code);
+            CodeBytes = new[] { code }.ToList();
             return this;
         }
 
@@ -82,7 +86,7 @@ namespace Soulseek.NET.Messaging
         {
             EnsureInitialized();
 
-            Bytes.Add(value);
+            PayloadBytes.Add(value);
             return this;
         }
 
@@ -95,7 +99,7 @@ namespace Soulseek.NET.Messaging
         {
             EnsureInitialized();
 
-            Bytes.AddRange(bytes);
+            PayloadBytes.AddRange(bytes);
             return this;
         }
 
@@ -128,9 +132,52 @@ namespace Soulseek.NET.Messaging
         {
             EnsureInitialized();
 
-            Bytes.AddRange(BitConverter.GetBytes(value.Length));
-            Bytes.AddRange(Encoding.ASCII.GetBytes(value));
+            PayloadBytes.AddRange(BitConverter.GetBytes(value.Length));
+            PayloadBytes.AddRange(Encoding.ASCII.GetBytes(value));
             return this;
+        }
+
+        public MessageBuilder Compress()
+        {
+            byte[] compressedBytes;
+
+            try
+            {
+                Compress(PayloadBytes.ToArray(), out compressedBytes);
+            }
+            catch (Exception ex)
+            {
+                throw new MessageBuildException($"Failed to compress message payload.", ex);
+            }
+
+            PayloadBytes = compressedBytes.ToList();
+
+            return this;
+        }
+
+        private void Compress(byte[] inData, out byte[] outData)
+        {
+            void copyStream(Stream input, Stream output)
+            {
+                byte[] buffer = new byte[2000];
+                int len;
+
+                while ((len = input.Read(buffer, 0, 2000)) > 0)
+                {
+                    output.Write(buffer, 0, len);
+                }
+
+                output.Flush();
+            }
+
+            using (MemoryStream outMemoryStream = new MemoryStream())
+            using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
+            using (Stream inMemoryStream = new MemoryStream(inData))
+            {
+                copyStream(inMemoryStream, outZStream);
+                outZStream.finish();
+                outData = outMemoryStream.ToArray();
+            }
         }
 
         private void EnsureInitialized()
