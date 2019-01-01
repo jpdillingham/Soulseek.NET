@@ -13,12 +13,75 @@
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Zlib;
     using Xunit;
 
     public class ResponsesTests
     {
+        [Trait("Category", "Instantiation")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse instantiates properly")]
+        public void BrowseResponse_Instantiates_Properly()
+        {
+            var num = new Random().Next();
+            var a = new BrowseResponse(num);
 
+            Assert.Equal(num, a.DirectoryCount);
+            Assert.Empty(a.Directories);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse instantiates with the given directory list")]
+        public void BrowseResponse_Instantiates_With_The_Given_Directory_List()
+        {
+            var num = new Random().Next();
+
+            var dir = new Directory("foo", 1);
+            var list = new List<Directory>(new[] { dir });
+            
+            var a = new BrowseResponse(num, list);
+
+            Assert.Equal(num, a.DirectoryCount);
+            Assert.Single(a.Directories);
+            Assert.Equal(dir, a.Directories.ToList()[0]);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse throws on code mismatch")]
+        public void BrowseResponse_Throws_On_Code_Mismatch()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerDownloadResponse)
+                .Build();
+
+            var ex = Record.Exception(() => BrowseResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageException>(ex);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse throws on uncompressed payload")]
+        public void BrowseResponse_Throws_On_Uncompressed_Payload()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteBytes(new byte[] { 0x0, 0x1, 0x2, 0x3 })
+                .Build();
+
+            var ex = Record.Exception(() => BrowseResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+            Assert.IsType<ZStreamException>(ex.InnerException);
+        }
     }
 }
