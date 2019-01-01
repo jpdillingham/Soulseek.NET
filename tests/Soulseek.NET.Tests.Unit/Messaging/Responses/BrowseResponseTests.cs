@@ -164,5 +164,134 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(0, d[1].FileCount);
             Assert.Empty(d[1].Files);
         }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "BrowseResponse handles a complete response")]
+        public void BrowseResponse_Handles_A_Complete_Response()
+        {
+            var dirs = new List<Directory>();
+
+            for (int i = 0; i < 5; i++)
+            {
+                dirs.Add(GetRandomDirectory(i));
+            }
+
+            var builder = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(dirs.Count);
+
+            foreach (var dir in dirs)
+            {
+                BuildDirectory(builder, dir);
+            }
+
+            var msg = builder
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default(BrowseResponse);
+            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+
+            Assert.Equal(dirs.Count, r.DirectoryCount);
+            Assert.Equal(dirs.Count, r.Directories.Count());
+
+            var msgDirs = r.Directories.ToList();
+
+            for (int i = 0; i < msgDirs.Count; i++)
+            {
+                Assert.Equal(dirs[i].Directoryname, msgDirs[i].Directoryname);
+                Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
+
+                var files = dirs[i].Files.ToList();
+                var msgFiles = msgDirs[i].Files.ToList();
+
+                for (int j = 0; j < msgDirs[i].FileCount; j++)
+                {
+                    Assert.Equal(files[j].Code, msgFiles[j].Code);
+                    Assert.Equal(files[j].Filename, msgFiles[j].Filename);
+                    Assert.Equal(files[j].Size, msgFiles[j].Size);
+                    Assert.Equal(files[j].Extension, msgFiles[j].Extension);
+                    Assert.Equal(files[j].AttributeCount, msgFiles[j].AttributeCount);
+
+                    var attr = files[j].Attributes.ToList();
+                    var msgAttr = files[j].Attributes.ToList();
+
+                    for (int k = 0; k < msgFiles[j].AttributeCount; k++)
+                    {
+                        Assert.Equal(attr[k].Type, msgAttr[k].Type);
+                        Assert.Equal(attr[k].Value, msgAttr[k].Value);
+                    }
+                }
+            }
+        }
+
+        private Random Random { get; } = new Random();
+
+        private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
+        {
+            builder
+                .WriteString(dir.Directoryname)
+                .WriteInteger(dir.FileCount);
+
+            foreach (var file in dir.Files)
+            {
+                builder
+                    .WriteByte((byte)file.Code)
+                    .WriteString(file.Filename)
+                    .WriteLong(file.Size)
+                    .WriteString(file.Extension)
+                    .WriteInteger(file.AttributeCount);
+
+                foreach (var attribute in file.Attributes)
+                {
+                    builder
+                        .WriteInteger((int)attribute.Type)
+                        .WriteInteger(attribute.Value);
+                }
+            }
+
+            return builder;
+        }
+
+        private FileAttribute GetRandomFileAttribute()
+        {
+            return new FileAttribute(
+                type: (FileAttributeType)Random.Next(6),
+                value: Random.Next());
+        }
+
+        private File GetRandomFile(int attributeCount)
+        {
+            var attributeList = new List<FileAttribute>();
+
+            for (int i = 0; i < attributeCount; i++)
+            {
+                attributeList.Add(GetRandomFileAttribute());
+            }
+
+            return new File(
+                code: Random.Next(2),
+                filename: Guid.NewGuid().ToString(),
+                size: Random.Next(),
+                extension: Guid.NewGuid().ToString(),
+                attributeCount: attributeCount,
+                attributeList: attributeList);
+        }
+
+        private Directory GetRandomDirectory(int fileCount)
+        {
+            var fileList = new List<File>();
+
+            for (int i = 0; i < fileCount; i++)
+            {
+                fileList.Add(GetRandomFile(Random.Next(5)));
+            }
+
+            return new Directory(
+                directoryname: Guid.NewGuid().ToString(),
+                fileCount: fileCount,
+                fileList: fileList);
+        }
     }
 }
