@@ -51,10 +51,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Instantiate throws exception given too short data")]
         public void Instantiate_Throws_Exception_Given_Too_Short_Data()
         {
-            var ex = Record.Exception(() => new Message(null));
+            var ex = Record.Exception(() => new Message(new byte[] { 0x0, 0x1, 0x2, 0x3 }));
 
             Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(new byte[] { 0x0, 0x1, 0x2, 0x3 });
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
     }
 }
