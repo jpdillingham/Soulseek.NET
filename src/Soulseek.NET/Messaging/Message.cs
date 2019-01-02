@@ -14,7 +14,6 @@ namespace Soulseek.NET.Messaging
 {
     using System;
     using System.Linq;
-    using Soulseek.NET.Exceptions;
 
     /// <summary>
     ///     A message.
@@ -26,7 +25,7 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="bytes">The byte array with which to initialize the message.</param>
         /// <exception cref="ArgumentNullException">Thrown when the specified byte array is null or empty.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the length of the specified byte array is less than the minimum length (5 bytes).</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the length of the specified byte array is less than the minimum length (8 bytes).</exception>
         public Message(byte[] bytes)
         {
             if (bytes == default(byte[]) || bytes.Length == 0)
@@ -34,9 +33,9 @@ namespace Soulseek.NET.Messaging
                 throw new ArgumentNullException(nameof(bytes), "Invalid attempt to create a new Message with a null or empty byte array.");
             }
 
-            if (bytes.Length < 5)
+            if (bytes.Length < 8)
             {
-                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to create a new Message with a byte array smaller than the minimum size (5 bytes)");
+                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to create a new Message with a byte array smaller than the minimum size (8 bytes)");
             }
 
             Bytes = bytes;
@@ -70,28 +69,12 @@ namespace Soulseek.NET.Messaging
 
         private MessageCode GetCode()
         {
-            try
-            {
-                var retVal = BitConverter.ToInt32(Bytes, 4);
-                return (MessageCode)retVal;
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read the message code of the message.", ex);
-            }
+            return (MessageCode)BitConverter.ToInt32(Bytes, 4);
         }
 
         private int GetLength()
         {
-            try
-            {
-                var retVal = BitConverter.ToInt32(Bytes, 0);
-                return retVal;
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read the message length.", ex);
-            }
+            return BitConverter.ToInt32(Bytes, 0);
         }
 
         private byte[] GetPayload()
