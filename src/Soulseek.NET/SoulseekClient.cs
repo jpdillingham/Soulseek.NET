@@ -510,7 +510,7 @@ namespace Soulseek.NET
                 var conn = (IMessageConnection)sender;
                 var context = (ConnectToPeerResponse)conn.Context;
                 var request = new PierceFirewallRequest(context.Token).ToMessage();
-                await conn.SendMessageAsync(request, suppressCodeNormalization: true).ConfigureAwait(false);
+                await conn.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
             };
 
             connection.Disconnected += async (sender, e) =>
@@ -559,7 +559,7 @@ namespace Soulseek.NET
                 connection.Connected += async (sender, e) =>
                 {
                     var token = new Random().Next(1, 2147483647);
-                    await connection.SendMessageAsync(new PeerInitRequest(Username, "P", token).ToMessage(), suppressCodeNormalization: true).ConfigureAwait(false);
+                    await connection.WriteAsync(new PeerInitRequest(Username, "P", token).ToMessage().ToByteArray()).ConfigureAwait(false);
                 };
 
                 connection.Disconnected += async (sender, e) =>
