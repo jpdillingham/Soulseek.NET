@@ -25,8 +25,20 @@ namespace Soulseek.NET.Messaging
         ///     Initializes a new instance of the <see cref="Message"/> class from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array with which to initialize the message.</param>
+        /// <exception cref="ArgumentNullException">Thrown when the specified byte array is null or empty.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the length of the specified byte array is less than the minimum length (5 bytes).</exception>
         public Message(byte[] bytes)
         {
+            if (bytes == default(byte[]) || bytes.Length == 0)
+            {
+                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to create a new Message with a null or empty byte array.");
+            }
+
+            if (bytes.Length < 5)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to create a new Message with a byte array smaller than the minimum size (5 bytes)");
+            }
+
             Bytes = bytes;
         }
 
