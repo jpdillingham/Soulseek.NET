@@ -68,15 +68,6 @@ namespace Soulseek.NET.Messaging
             return Bytes;
         }
 
-        /// <summary>
-        ///     Returns a <see cref="MessageReader"/> for the message.
-        /// </summary>
-        /// <returns>The MessageReader for the message.</returns>
-        public MessageReader ToReader()
-        {
-            return new MessageReader(this);
-        }
-
         private MessageCode GetCode()
         {
             try
