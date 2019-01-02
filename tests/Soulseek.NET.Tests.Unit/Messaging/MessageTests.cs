@@ -56,5 +56,39 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Fact(DisplayName = "ToByteArray returns given bytes")]
+        public void ToByteArray_Returns_Given_Bytes()
+        {
+            var num = new Random().Next();
+            var bytes = new MessageBuilder()
+                .Code(MessageCode.ServerLogin)
+                .WriteInteger(num)
+                .Build()
+                .ToByteArray();
+
+            var msg = new Message(bytes);
+
+            Assert.Equal(bytes, msg.ToByteArray());
+        }
+
+        [Trait("Category", "Properties")]
+        [Fact(DisplayName = "Properties return expected data")]
+        public void Properties_Return_Expected_Data()
+        {
+            var num = new Random().Next();
+            var bytes = new MessageBuilder()
+                .Code(MessageCode.ServerLogin)
+                .WriteInteger(num)
+                .Build()
+                .ToByteArray();
+
+            var msg = new Message(bytes);
+
+            Assert.Equal(MessageCode.ServerLogin, msg.Code);
+            Assert.Equal(8, msg.Length);
+            Assert.Equal(BitConverter.GetBytes(num), msg.Payload);
+        }
     }
 }
