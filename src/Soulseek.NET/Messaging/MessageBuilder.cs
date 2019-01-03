@@ -36,6 +36,11 @@ namespace Soulseek.NET.Messaging
         /// <returns>The built message.</returns>
         public Message Build()
         {
+            if (CodeBytes.Count == 0)
+            {
+                throw new InvalidOperationException($"Unable to build the message without having set the message Code.");
+            }
+
             var withLength = new List<byte>(BitConverter.GetBytes(CodeBytes.Count + PayloadBytes.Count));
             withLength.AddRange(CodeBytes);
             withLength.AddRange(PayloadBytes);
@@ -69,6 +74,7 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <returns>This MessageBuilder.</returns>
         /// <exception cref="InvalidOperationException">Thrown when attempting to compress an empty message.</exception>
+        /// <exception cref="MessageCompressionException">Thrown when an error is encountered while compressing the message payload.</exception>
         public MessageBuilder Compress()
         {
             if (PayloadBytes.Count == 0)
@@ -78,14 +84,7 @@ namespace Soulseek.NET.Messaging
 
             byte[] compressedBytes;
 
-            try
-            {
-                Compress(PayloadBytes.ToArray(), out compressedBytes);
-            }
-            catch (Exception ex)
-            {
-                throw new MessageBuildException($"Failed to compress message payload.", ex);
-            }
+            Compress(PayloadBytes.ToArray(), out compressedBytes);
 
             PayloadBytes = compressedBytes.ToList();
             Compressed = true;
@@ -174,9 +173,16 @@ namespace Soulseek.NET.Messaging
             using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
             using (Stream inMemoryStream = new MemoryStream(inData))
             {
-                copyStream(inMemoryStream, outZStream);
-                outZStream.finish();
-                outData = outMemoryStream.ToArray();
+                try
+                {
+                    copyStream(inMemoryStream, outZStream);
+                    outZStream.finish();
+                    outData = outMemoryStream.ToArray();
+                }
+                catch (Exception ex)
+                {
+                    throw new MessageCompressionException($"Failed to compress the message payload.", ex);
+                }
             }
         }
     }
