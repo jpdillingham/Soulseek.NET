@@ -60,5 +60,8 @@ namespace Soulseek.NET.Zlib
 		public ZStreamException(System.String s):base(s)
 		{
 		}
+        public ZStreamException(System.String s, Exception e):base(s, e)
+        {
+        }
 	}
 }
