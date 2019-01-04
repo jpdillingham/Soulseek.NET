@@ -18,6 +18,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using System.Collections.Generic;
     using System.Linq;
     using System.Reflection;
+    using System.Text;
     using Xunit;
 
     public class MessageBuilderTests
@@ -153,7 +154,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.IsType<MessageCompressionException>(ex.InnerException.InnerException);
         }
 
-        [Trait("Category", "WriteBytes")]
+        [Trait("Category", "Write")]
         [Fact(DisplayName = "WriteBytes throws InvalidOperationException when payload has been compressed")]
         public void WriteBytes_Throws_When_Payload_Has_Been_Compressed()
         {
@@ -168,7 +169,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        [Trait("Category", "WriteBytes")]
+        [Trait("Category", "Write")]
         [Fact(DisplayName = "WriteBytes throws ArgumentNullException given null byte array")]
         public void WriteBytes_Throws_Given_Null_Byte_Array()
         {
@@ -180,7 +181,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.IsType<ArgumentNullException>(ex);
         }
 
-        [Trait("Category", "WriteBytes")]
+        [Trait("Category", "Write")]
         [Fact(DisplayName = "WriteBytes writes given bytes")]
         public void WriteBytes_Writes_Given_Bytes()
         {
@@ -195,7 +196,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(bytes.ToList(), payload);
         }
 
-        [Trait("Category", "WriteBytes")]
+        [Trait("Category", "Write")]
         [Fact(DisplayName = "WriteBytes appends given bytes")]
         public void WriteBytes_Appends_Given_Bytes()
         {
@@ -216,6 +217,71 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(bytes.ToList(), payload1);
             Assert.Equal(6, payload2.Count);
             Assert.Equal(bytes2, payload2);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "WriteByte writes given byte")]
+        public void WriteByte_Writes_Given_Byte()
+        {
+            var data = (byte)0x0;
+
+            var builder = new MessageBuilder();
+            builder.WriteByte(data);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            Assert.Single(payload);
+            Assert.Equal(new[] { data }.ToList(), payload);
+        }
+
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "WriteInteger writes given int")]
+        public void WriteInteger_Writes_Given_Int()
+        {
+            var data = new Random().Next();
+
+            var builder = new MessageBuilder();
+            builder.WriteInteger(data);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            Assert.Equal(4, payload.Count);
+            Assert.Equal(BitConverter.GetBytes(data).ToList(), payload);
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "WriteLong writes given long")]
+        public void WriteLong_Writes_Given_Long()
+        {
+            var data = (long)(new Random().Next());
+
+            var builder = new MessageBuilder();
+            builder.WriteLong(data);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            Assert.Equal(8, payload.Count);
+            Assert.Equal(BitConverter.GetBytes(data).ToList(), payload);
+        }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteString writes given string prepended with length")]
+        public void WriteString_Writes_Given_String_Prepended_With_Length()
+        {
+            var data = Guid.NewGuid().ToString();
+
+            var builder = new MessageBuilder();
+            builder.WriteString(data);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            var expectedBytes = new List<byte>();
+            expectedBytes.AddRange(BitConverter.GetBytes(data.Length));
+            expectedBytes.AddRange(Encoding.ASCII.GetBytes(data));
+
+            Assert.Equal(expectedBytes.Count, payload.Count);
+            Assert.Equal(expectedBytes, payload);
         }
     }
 }
