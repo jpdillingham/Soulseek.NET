@@ -109,6 +109,11 @@ namespace Soulseek.NET.Messaging
                 throw new InvalidOperationException("Unable to write additional data after message has been compressed.");
             }
 
+            if (bytes == null)
+            {
+                throw new ArgumentNullException(nameof(bytes), "The specified byte array is null.");
+            }
+
             PayloadBytes.AddRange(bytes);
             return this;
         }
@@ -168,11 +173,9 @@ namespace Soulseek.NET.Messaging
                 using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
                 using (Stream inMemoryStream = new MemoryStream(inData))
                 {
-
                     copyStream(inMemoryStream, outZStream);
                     outZStream.finish();
                     outData = outMemoryStream.ToArray();
-
                 }
             }
             catch (Exception ex)
