@@ -47,7 +47,7 @@
             }
         }
 
-        public static void InvokeMethod(this object target, string methodName, params object[] args)
+        public static void InvokeMethod(this object target, string methodName, BindingFlags bindingFlags, params object[] args)
         {
             var type = target.GetType();
 
@@ -61,7 +61,12 @@
             }
         }
 
-        public static T InvokeMethod<T>(this object target, string methodName, params object[] args)
+        public static void InvokeMethod(this object target, string methodName, params object[] args)
+        {
+            InvokeMethod(target, methodName, bindingFlags, args);
+        }
+
+        public static T InvokeMethod<T>(this object target, string methodName, BindingFlags bindingFlags, params object[] args)
         {
             var type = target.GetType();
 
@@ -72,6 +77,34 @@
             catch (Exception ex)
             {
                 throw new Exception($"Failed to invoke method '{methodName}' on target Type {type.Name}.  See inner Exception for details.", ex);
+            }
+        }
+
+        public static T InvokeMethod<T>(this object target, string methodName, params object[] args)
+        {
+            return InvokeMethod<T>(target, methodName, bindingFlags, args);
+        }
+
+        public static void RaiseEvent(this object target, string eventName, object eventArgs)
+        {
+            var type = target.GetType();
+            var @event = (MulticastDelegate)type.GetField(eventName, bindingFlags)?.GetValue(target);
+
+            if (@event == null)
+            {
+                throw new ArgumentException($"No such event '{eventName}' exists on target Type {type.Name}.", nameof(eventName));
+            }
+
+            try
+            {
+                foreach (var handler in @event?.GetInvocationList())
+                {
+                    handler.Method.Invoke(handler.Target, new object[] { target, eventArgs });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Failed to raise event '{eventName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
@@ -112,29 +145,6 @@
             catch (Exception ex)
             {
                 throw new Exception($"Failed to set property '{propertyName}' on target Type {type.Name}.  See inner Exception for details.", ex);
-            }
-        }
-
-        public static void RaiseEvent(this object target, string eventName, object eventArgs)
-        {
-            var type = target.GetType();
-            var @event = (MulticastDelegate)type.GetField(eventName, bindingFlags)?.GetValue(target);
-
-            if (@event == null)
-            {
-                throw new ArgumentException($"No such event '{eventName}' exists on target Type {type.Name}.", nameof(eventName));
-            }
-
-            try
-            {
-                foreach (var handler in @event?.GetInvocationList())
-                {
-                    handler.Method.Invoke(handler.Target, new object[] { target, eventArgs });
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Failed to raise event '{eventName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
         }
 
