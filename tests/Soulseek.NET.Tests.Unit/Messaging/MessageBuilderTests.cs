@@ -152,5 +152,70 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex.InnerException.InnerException);
             Assert.IsType<MessageCompressionException>(ex.InnerException.InnerException);
         }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteBytes throws InvalidOperationException when payload has been compressed")]
+        public void WriteBytes_Throws_When_Payload_Has_Been_Compressed()
+        {
+            var builder = new MessageBuilder();
+            builder.Code(MessageCode.PeerBrowseRequest);
+            builder.WriteString("foo");
+            builder.Compress();
+
+            var ex = Record.Exception(() => builder.WriteBytes(new byte[] { 0x0 }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteBytes throws ArgumentNullException given null byte array")]
+        public void WriteBytes_Throws_Given_Null_Byte_Array()
+        {
+            var builder = new MessageBuilder();
+
+            var ex = Record.Exception(() => builder.WriteBytes(null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentNullException>(ex);
+        }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteBytes writes given bytes")]
+        public void WriteBytes_Writes_Given_Bytes()
+        {
+            var bytes = new byte[] { 0x0, 0x1, 0x2 };
+
+            var builder = new MessageBuilder();
+            builder.WriteBytes(bytes);
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+
+            Assert.Equal(3, payload.Count);
+            Assert.Equal(bytes.ToList(), payload);
+        }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteBytes appends given bytes")]
+        public void WriteBytes_Appends_Given_Bytes()
+        {
+            var bytes = new byte[] { 0x0, 0x1, 0x2 };
+
+            var builder = new MessageBuilder();
+            builder.WriteBytes(bytes);
+
+            var payload1 = builder.GetProperty<List<byte>>("PayloadBytes").ToList();
+
+            builder.WriteBytes(bytes);
+
+            var payload2 = builder.GetProperty<List<byte>>("PayloadBytes").ToList();
+            var bytes2 = bytes.ToList();
+            bytes2.AddRange(bytes);
+
+            Assert.Equal(3, payload1.Count);
+            Assert.Equal(bytes.ToList(), payload1);
+            Assert.Equal(6, payload2.Count);
+            Assert.Equal(bytes2, payload2);
+        }
     }
 }
