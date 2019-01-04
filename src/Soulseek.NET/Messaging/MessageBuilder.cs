@@ -70,6 +70,11 @@ namespace Soulseek.NET.Messaging
                 throw new InvalidOperationException($"Unable to compress an empty message.");
             }
 
+            if (Compressed)
+            {
+                throw new InvalidOperationException("The message has already been compressed.");
+            }
+
             byte[] compressedBytes;
 
             Compress(PayloadBytes.ToArray(), out compressedBytes);
@@ -157,20 +162,22 @@ namespace Soulseek.NET.Messaging
                 output.Flush();
             }
 
-            using (MemoryStream outMemoryStream = new MemoryStream())
-            using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
-            using (Stream inMemoryStream = new MemoryStream(inData))
+            try
             {
-                try
+                using (MemoryStream outMemoryStream = new MemoryStream())
+                using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
+                using (Stream inMemoryStream = new MemoryStream(inData))
                 {
+
                     copyStream(inMemoryStream, outZStream);
                     outZStream.finish();
                     outData = outMemoryStream.ToArray();
+
                 }
-                catch (Exception ex)
-                {
-                    throw new MessageCompressionException($"Failed to compress the message payload.", ex);
-                }
+            }
+            catch (Exception ex)
+            {
+                throw new MessageCompressionException($"Failed to compress the message payload.", ex);
             }
         }
     }
