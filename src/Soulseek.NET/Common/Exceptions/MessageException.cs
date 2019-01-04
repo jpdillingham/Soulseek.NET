@@ -68,6 +68,31 @@ namespace Soulseek.NET.Exceptions
 
     [ExcludeFromCodeCoverage]
     [Serializable]
+    public class MessageCompressionException : MessageException
+    {
+        public MessageCompressionException()
+            : base()
+        {
+        }
+
+        public MessageCompressionException(string message)
+            : base(message)
+        {
+        }
+
+        public MessageCompressionException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        protected MessageCompressionException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
+    [ExcludeFromCodeCoverage]
+    [Serializable]
     public class MessageCancelledException : MessageException
     {
         public MessageCancelledException()

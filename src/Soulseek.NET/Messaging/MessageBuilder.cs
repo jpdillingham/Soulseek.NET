@@ -26,8 +26,8 @@ namespace Soulseek.NET.Messaging
     public class MessageBuilder
     {
         private List<byte> CodeBytes { get; set; } = new List<byte>();
+        private bool Compressed { get; set; } = false;
         private List<byte> PayloadBytes { get; set; } = new List<byte>();
-        private bool Initialized { get; set; } = false;
 
         /// <summary>
         ///     Builds the message.
@@ -35,6 +35,11 @@ namespace Soulseek.NET.Messaging
         /// <returns>The built message.</returns>
         public Message Build()
         {
+            if (CodeBytes.Count == 0)
+            {
+                throw new InvalidOperationException($"Unable to build the message without having set the message Code.");
+            }
+
             var withLength = new List<byte>(BitConverter.GetBytes(CodeBytes.Count + PayloadBytes.Count));
             withLength.AddRange(CodeBytes);
             withLength.AddRange(PayloadBytes);
@@ -48,32 +53,35 @@ namespace Soulseek.NET.Messaging
         /// <returns>This MessageBuilder.</returns>
         public MessageBuilder Code(MessageCode code)
         {
-            if (Initialized)
-            {
-                throw new MessageBuildException($"The Message Code may only be set once.");
-            }
-
-            Initialized = true;
-
             CodeBytes = BitConverter.GetBytes((int)code).ToList();
             return this;
         }
 
         /// <summary>
-        ///     Sets the single-byte message code.
+        ///     Compresses the message payload.
         /// </summary>
-        /// <param name="code">The desired single-byte message code.</param>
         /// <returns>This MessageBuilder.</returns>
-        public MessageBuilder Code(byte code)
+        /// <exception cref="InvalidOperationException">Thrown when attempting to compress an empty message.</exception>
+        /// <exception cref="MessageCompressionException">Thrown when an error is encountered while compressing the message payload.</exception>
+        public MessageBuilder Compress()
         {
-            if (Initialized)
+            if (PayloadBytes.Count == 0)
             {
-                throw new MessageBuildException($"The Message Code may only be set once.");
+                throw new InvalidOperationException($"Unable to compress an empty message.");
             }
 
-            Initialized = true;
+            if (Compressed)
+            {
+                throw new InvalidOperationException("The message has already been compressed.");
+            }
 
-            CodeBytes = new[] { code }.ToList();
+            byte[] compressedBytes;
+
+            Compress(PayloadBytes.ToArray(), out compressedBytes);
+
+            PayloadBytes = compressedBytes.ToList();
+            Compressed = true;
+
             return this;
         }
 
@@ -82,12 +90,10 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
         public MessageBuilder WriteByte(byte value)
         {
-            EnsureInitialized();
-
-            PayloadBytes.Add(value);
-            return this;
+            return WriteBytes(new[] { value });
         }
 
         /// <summary>
@@ -95,9 +101,18 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
         /// <returns>This MessageBuilder.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
         public MessageBuilder WriteBytes(byte[] bytes)
         {
-            EnsureInitialized();
+            if (Compressed)
+            {
+                throw new InvalidOperationException("Unable to write additional data after message has been compressed.");
+            }
+
+            if (bytes == null)
+            {
+                throw new ArgumentNullException(nameof(bytes), "The specified byte array is null.");
+            }
 
             PayloadBytes.AddRange(bytes);
             return this;
@@ -108,6 +123,7 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
         public MessageBuilder WriteInteger(int value)
         {
             return WriteBytes(BitConverter.GetBytes(value));
@@ -118,6 +134,7 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
         public MessageBuilder WriteLong(long value)
         {
             return WriteBytes(BitConverter.GetBytes(value));
@@ -128,31 +145,11 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
         public MessageBuilder WriteString(string value)
         {
-            EnsureInitialized();
-
-            PayloadBytes.AddRange(BitConverter.GetBytes(value.Length));
-            PayloadBytes.AddRange(Encoding.ASCII.GetBytes(value));
-            return this;
-        }
-
-        public MessageBuilder Compress()
-        {
-            byte[] compressedBytes;
-
-            try
-            {
-                Compress(PayloadBytes.ToArray(), out compressedBytes);
-            }
-            catch (Exception ex)
-            {
-                throw new MessageBuildException($"Failed to compress message payload.", ex);
-            }
-
-            PayloadBytes = compressedBytes.ToList();
-
-            return this;
+            return WriteBytes(BitConverter.GetBytes(value.Length))
+                .WriteBytes(Encoding.ASCII.GetBytes(value));
         }
 
         private void Compress(byte[] inData, out byte[] outData)
@@ -170,21 +167,20 @@ namespace Soulseek.NET.Messaging
                 output.Flush();
             }
 
-            using (MemoryStream outMemoryStream = new MemoryStream())
-            using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
-            using (Stream inMemoryStream = new MemoryStream(inData))
+            try
             {
-                copyStream(inMemoryStream, outZStream);
-                outZStream.finish();
-                outData = outMemoryStream.ToArray();
+                using (MemoryStream outMemoryStream = new MemoryStream())
+                using (ZOutputStream outZStream = new ZOutputStream(outMemoryStream, zlibConst.Z_DEFAULT_COMPRESSION))
+                using (Stream inMemoryStream = new MemoryStream(inData))
+                {
+                    copyStream(inMemoryStream, outZStream);
+                    outZStream.finish();
+                    outData = outMemoryStream.ToArray();
+                }
             }
-        }
-
-        private void EnsureInitialized()
-        {
-            if (!Initialized)
+            catch (Exception ex)
             {
-                throw new MessageBuildException($"The Message must be initialized with a Code prior to writing data.");
+                throw new MessageCompressionException($"Failed to compress the message payload.", ex);
             }
         }
     }

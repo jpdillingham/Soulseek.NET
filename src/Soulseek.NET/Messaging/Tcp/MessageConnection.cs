@@ -51,9 +51,9 @@ namespace Soulseek.NET.Messaging.Tcp
         public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
-        private ConcurrentQueue<DeferredMessage> DeferredMessages { get; set; } = new ConcurrentQueue<DeferredMessage>();
+        private ConcurrentQueue<Message> DeferredMessages { get; set; } = new ConcurrentQueue<Message>();
 
-        public async Task<bool> SendMessageAsync(Message message, bool suppressCodeNormalization = false)
+        public async Task<bool> SendMessageAsync(Message message)
         {
             var deferred = false;
 
@@ -64,8 +64,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
             if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
             {
-                var deferredMessage = new DeferredMessage() { Message = message, SuppressCodeNormalization = suppressCodeNormalization };
-                DeferredMessages.Enqueue(deferredMessage);
+                DeferredMessages.Enqueue(message);
                 deferred = true;
             }
             else if (State == ConnectionState.Connected)
@@ -74,11 +73,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
                 try
                 {
-                    if (!suppressCodeNormalization)
-                    {
-                        NormalizeMessageCode(bytes, 0 - (int)Type);
-                    }
-
+                    NormalizeMessageCode(bytes, 0 - (int)Type);
                     await WriteAsync(bytes).ConfigureAwait(false);
                 }
                 catch (Exception ex)
@@ -136,15 +131,9 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 if (DeferredMessages.TryDequeue(out var deferredMessage))
                 {
-                    await SendMessageAsync(deferredMessage.Message, deferredMessage.SuppressCodeNormalization).ConfigureAwait(false);
+                    await SendMessageAsync(deferredMessage).ConfigureAwait(false);
                 }
             }
-        }
-
-        internal struct DeferredMessage
-        {
-            public Message Message;
-            public bool SuppressCodeNormalization;
         }
     }
 }

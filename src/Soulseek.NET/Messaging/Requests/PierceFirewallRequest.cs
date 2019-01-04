@@ -12,6 +12,9 @@
 
 namespace Soulseek.NET.Messaging.Requests
 {
+    using System;
+    using System.Collections.Generic;
+
     /// <summary>
     ///     Pierces a peer's firewall.
     /// </summary>
@@ -37,10 +40,13 @@ namespace Soulseek.NET.Messaging.Requests
         /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
-            return new MessageBuilder()
-                .Code((byte)0x0)
-                .WriteInteger(Token)
-                .Build();
+            var bytes = new List<byte> { 0x0 };
+
+            bytes.AddRange(BitConverter.GetBytes(Token));
+
+            bytes.InsertRange(0, BitConverter.GetBytes(bytes.Count));
+
+            return new Message(bytes.ToArray());
         }
     }
 }
