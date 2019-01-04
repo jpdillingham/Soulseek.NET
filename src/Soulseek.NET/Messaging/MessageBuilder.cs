@@ -27,7 +27,6 @@ namespace Soulseek.NET.Messaging
     {
         private List<byte> CodeBytes { get; set; } = new List<byte>();
         private bool Compressed { get; set; } = false;
-        private bool Initialized { get; set; } = false;
         private List<byte> PayloadBytes { get; set; } = new List<byte>();
 
         /// <summary>
