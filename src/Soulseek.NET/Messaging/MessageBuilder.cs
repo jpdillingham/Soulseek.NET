@@ -58,17 +58,6 @@ namespace Soulseek.NET.Messaging
         }
 
         /// <summary>
-        ///     Sets the single-byte message code.
-        /// </summary>
-        /// <param name="code">The desired single-byte message code.</param>
-        /// <returns>This MessageBuilder.</returns>
-        public MessageBuilder Code(byte code)
-        {
-            CodeBytes = new[] { code }.ToList();
-            return this;
-        }
-
-        /// <summary>
         ///     Compresses the message payload.
         /// </summary>
         /// <returns>This MessageBuilder.</returns>
