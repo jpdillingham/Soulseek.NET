@@ -28,6 +28,31 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Null(ex);
         }
 
+        [Trait("Category", "Build")]
+        [Fact(DisplayName = "Build throws when code not set")]
+        public void Build_Throws_When_Code_Not_Set()
+        {
+            var builder = new MessageBuilder();
+
+            var ex = Record.Exception(() => builder.Build());
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Build")]
+        [Fact(DisplayName = "Build returns empty message when empty")]
+        public void Build_Returns_Empty_Message_When_Empty()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            Assert.Equal(MessageCode.PeerBrowseRequest, msg.Code);
+            Assert.Equal(4, msg.Length);
+            Assert.Empty(msg.Payload);
+        }
+
         [Trait("Category", "Compress")]
         [Fact(DisplayName = "Compress produces valid data")]
         public void Compression_Works()
