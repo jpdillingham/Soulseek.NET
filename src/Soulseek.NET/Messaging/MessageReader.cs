@@ -30,7 +30,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="message">The message with which to initialize the reader.</param>
         public MessageReader(Message message)
         {
-            Message = message;
+            Message = message ?? throw new ArgumentNullException(nameof(message), "Invalid attempt to initialize MessageReader with a null Message");
         }
 
         /// <summary>
@@ -38,8 +38,18 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="bytes">The byte array with which to initialize the reader.</param>
         public MessageReader(byte[] bytes)
-            : this(new Message(bytes))
         {
+            if (bytes == null)
+            {
+                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to initialize MessageReader with a null byte array.");
+            }
+
+            if (bytes.Length < 8)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to initialize MessageReader with byte array of length less than the minimum (8 bytes).");
+            }
+
+            Message = new Message(bytes);
         }
 
         /// <summary>
