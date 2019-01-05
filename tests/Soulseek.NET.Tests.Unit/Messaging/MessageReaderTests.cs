@@ -61,5 +61,44 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex);
             Assert.IsType<ArgumentNullException>(ex);
         }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates properly given valid Message")]
+        public void Instantiates_Properly_Given_Valid_Message()
+        {
+            var num = new Random().Next();
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(num)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(MessageCode.PeerBrowseRequest, reader.Code);
+            Assert.Equal(BitConverter.GetBytes(num), reader.Payload);
+            Assert.Equal(0, reader.Position);
+            Assert.Equal(num, reader.ReadInteger());
+            Assert.Equal(4, reader.Position);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates properly given valid byte array")]
+        public void Instantiates_Properly_Given_Valid_Byte_Array()
+        {
+            var num = new Random().Next();
+            var msgBytes = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(num)
+                .Build()
+                .ToByteArray();
+
+            var reader = new MessageReader(msgBytes);
+
+            Assert.Equal(MessageCode.PeerBrowseRequest, reader.Code);
+            Assert.Equal(BitConverter.GetBytes(num), reader.Payload);
+            Assert.Equal(0, reader.Position);
+            Assert.Equal(num, reader.ReadInteger());
+            Assert.Equal(4, reader.Position);
+        }
     }
 }
