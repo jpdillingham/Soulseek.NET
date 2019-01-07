@@ -15,6 +15,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using System;
+    using System.Text;
     using Xunit;
 
     public class MessageReaderTests
@@ -175,7 +176,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadInteger")]
-        [Fact(DisplayName = "ReadInteger throws MessageReadException if no data")]
+        [Fact(DisplayName = "ReadInteger throws MessageReadException given no data")]
         public void ReadInteger_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
@@ -206,7 +207,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadLong")]
-        [Fact(DisplayName = "ReadLong throws MessageReadException if no data")]
+        [Fact(DisplayName = "ReadLong throws MessageReadException given no data")]
         public void ReadLong_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
@@ -239,7 +240,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadByte")]
-        [Fact(DisplayName = "ReadByte throws MessageReadException if no data")]
+        [Fact(DisplayName = "ReadByte throws MessageReadException given no data")]
         public void ReadByte_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
@@ -297,7 +298,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadBytes")]
-        [Fact(DisplayName = "ReadBytes throws MessageReadException if no data")]
+        [Fact(DisplayName = "ReadBytes throws MessageReadException given no data")]
         public void ReadBytes_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
@@ -313,7 +314,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadBytes")]
-        [Fact(DisplayName = "ReadBytes throws MessageReadException if length greater than payload length")]
+        [Fact(DisplayName = "ReadBytes throws MessageReadException given length greater than payload length")]
         public void ReadBytes_Throws_MessageReadException_If_Length_Greater_Than_Payload_Length()
         {
             var msg = new MessageBuilder()
@@ -330,7 +331,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadBytes")]
-        [Fact(DisplayName = "ReadBytes from nonzero position throws MessageReadException if length greater than payload length")]
+        [Fact(DisplayName = "ReadBytes from nonzero position throws MessageReadException given length greater than payload length")]
         public void ReadBytes_From_Nonzero_Position_Throws_MessageReadException_If_Length_Greater_Than_Payload_Length()
         {
             var msg = new MessageBuilder()
@@ -363,6 +364,77 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var reader = new MessageReader(msg);
 
             Assert.Equal(str, reader.ReadString());
+        }
+
+        [Trait("Category", "ReadString")]
+        [Fact(DisplayName = "ReadString returns empty string given empty string")]
+        public void ReadString_Returns_Empty_String_Given_Empty_String()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteString(string.Empty)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(string.Empty, reader.ReadString());
+        }
+
+        [Trait("Category", "ReadString")]
+        [Fact(DisplayName = "ReadString from nonzero position returns expected data")]
+        public void ReadString_From_Nonzero_Position_Returns_Expected_Data()
+        {
+            var str = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(42)
+                .WriteString(str)
+                .Build();
+
+            var reader = new MessageReader(msg);
+            var num = reader.ReadInteger();
+
+            Assert.Equal(str, reader.ReadString());
+        }
+
+        [Trait("Category", "ReadString")]
+        [Fact(DisplayName = "ReadString throws MessageReadException given no data")]
+        public void ReadString_Throws_MessageReadException_Given_No_Data()
+        {
+            var str = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadString());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "ReadString")]
+        [Fact(DisplayName = "ReadString throws MessageReadException given mismatched string length and data")]
+        public void ReadString_Throws_MessageReadException_Given_Mismatched_String_Length_And_Data()
+        {
+            var str = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger((str.Length * 8) + 1)
+                .WriteBytes(Encoding.ASCII.GetBytes(str))
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadString());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+            Assert.Contains("extends beyond", ex.Message); // fragile, call the cops idc.
         }
     }
 }
