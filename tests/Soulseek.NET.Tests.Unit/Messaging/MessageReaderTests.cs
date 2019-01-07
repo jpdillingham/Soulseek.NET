@@ -275,6 +275,28 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "ReadBytes")]
+        [Fact(DisplayName = "ReadBytes from nonzero position returns expected data")]
+        public void ReadBytes_From_Nonzero_Position_Returns_Expected_Data()
+        {
+            var rand = new Random();
+
+            var bytes = new byte[rand.Next(100)];
+            new Random().NextBytes(bytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteString("foo")
+                .WriteBytes(bytes)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var str = reader.ReadString();
+
+            Assert.Equal(bytes, reader.ReadBytes(bytes.Length));
+        }
+
+        [Trait("Category", "ReadBytes")]
         [Fact(DisplayName = "ReadBytes throws MessageReadException if no data")]
         public void ReadBytes_Throws_MessageReadException_If_No_Data()
         {
@@ -300,6 +322,26 @@ namespace Soulseek.NET.Tests.Unit.Messaging
                 .Build();
 
             var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadBytes(4));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "ReadBytes")]
+        [Fact(DisplayName = "ReadBytes from nonzero position throws MessageReadException if length greater than payload length")]
+        public void ReadBytes_From_Nonzero_Position_Throws_MessageReadException_If_Length_Greater_Than_Payload_Length()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(42)
+                .WriteBytes(new byte[] { 0x0, 0x1, 0x2 })
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var integer = reader.ReadInteger();
 
             var ex = Record.Exception(() => reader.ReadBytes(4));
 
