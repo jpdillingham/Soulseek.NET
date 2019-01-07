@@ -143,16 +143,15 @@ namespace Soulseek.NET.Messaging
                 throw new MessageReadException($"Requested bytes extend beyond the length of the message payload.");
             }
 
-            try
+            var retVal = Payload.Skip(Position).Take(count).ToArray();
+
+            if (retVal.Length != count)
             {
-                var retVal = Payload.Skip(Position).Take(count).ToArray();
-                Position += count;
-                return retVal;
+                throw new MessageReadException($"Failed to read the requested number of bytes from position {Position} of the message.");
             }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read a byte from position {Position} of the message.", ex);
-            }
+
+            Position += count;
+            return retVal;
         }
 
         /// <summary>
