@@ -77,12 +77,12 @@ namespace Soulseek.NET.Messaging
         {
             if (position < 0)
             {
-                throw new MessageReadException($"Attempt to seek to a negative position.");
+                throw new ArgumentOutOfRangeException(nameof(position), $"Attempt to seek to a negative position.");
             }
 
             if (position > Payload.Length)
             {
-                throw new MessageReadException($"Seek to position {position} would extend beyond the length of the message.");
+                throw new ArgumentOutOfRangeException(nameof(position), $"Seek to position {position} would extend beyond the length of the message.");
             }
 
             Position = position;
