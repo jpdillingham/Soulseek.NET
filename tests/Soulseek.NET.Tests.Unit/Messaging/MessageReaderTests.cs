@@ -220,5 +220,41 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
+
+        [Trait("Category", "ReadByte")]
+        [Fact(DisplayName = "ReadByte returns expected data")]
+        public void ReadByte_Returns_Expected_Data()
+        {
+            var bytes = new byte[1];
+            new Random().NextBytes(bytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteByte(bytes[0])
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(bytes[0], reader.ReadByte());
+        }
+
+        [Trait("Category", "ReadByte")]
+        [Fact(DisplayName = "ReadByte throws MessageReadException if no data")]
+        public void ReadByte_Throws_MessageReadException_If_No_Data()
+        {
+            var bytes = new byte[1];
+            new Random().NextBytes(bytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadByte());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
     }
 }
