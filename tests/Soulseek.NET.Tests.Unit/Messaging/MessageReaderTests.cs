@@ -242,9 +242,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "ReadByte throws MessageReadException if no data")]
         public void ReadByte_Throws_MessageReadException_If_No_Data()
         {
-            var bytes = new byte[1];
-            new Random().NextBytes(bytes);
-
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
@@ -252,6 +249,59 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var reader = new MessageReader(msg);
 
             var ex = Record.Exception(() => reader.ReadByte());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "ReadBytes")]
+        [Fact(DisplayName = "ReadBytes returns expected data")]
+        public void ReadBytes_Returns_Expected_Data()
+        {
+            var rand = new Random();
+
+            var bytes = new byte[rand.Next(100)];
+            new Random().NextBytes(bytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteBytes(bytes)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(bytes.Length, reader.Payload.Length);
+            Assert.Equal(bytes, reader.ReadBytes(bytes.Length));
+        }
+
+        [Trait("Category", "ReadBytes")]
+        [Fact(DisplayName = "ReadBytes throws MessageReadException if no data")]
+        public void ReadBytes_Throws_MessageReadException_If_No_Data()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadBytes(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "ReadBytes")]
+        [Fact(DisplayName = "ReadBytes throws MessageReadException if length greater than payload length")]
+        public void ReadBytes_Throws_MessageReadException_If_Length_Greater_Than_Payload_Length()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteBytes(new byte[] { 0x0, 0x1, 0x2 })
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadBytes(4));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
