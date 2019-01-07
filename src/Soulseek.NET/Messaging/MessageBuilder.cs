@@ -111,7 +111,7 @@ namespace Soulseek.NET.Messaging
 
             if (bytes == null)
             {
-                throw new ArgumentNullException(nameof(bytes), "The specified byte array is null.");
+                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to write a null byte array to message.");
             }
 
             PayloadBytes.AddRange(bytes);

@@ -30,7 +30,7 @@ namespace Soulseek.NET.Messaging
         /// <param name="message">The message with which to initialize the reader.</param>
         public MessageReader(Message message)
         {
-            Message = message;
+            Message = message ?? throw new ArgumentNullException(nameof(message), "Invalid attempt to initialize MessageReader with a null Message");
         }
 
         /// <summary>
@@ -38,8 +38,18 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         /// <param name="bytes">The byte array with which to initialize the reader.</param>
         public MessageReader(byte[] bytes)
-            : this(new Message(bytes))
         {
+            if (bytes == null)
+            {
+                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to initialize MessageReader with a null byte array.");
+            }
+
+            if (bytes.Length < 8)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to initialize MessageReader with byte array of length less than the minimum (8 bytes).");
+            }
+
+            Message = new Message(bytes);
         }
 
         /// <summary>
@@ -67,12 +77,12 @@ namespace Soulseek.NET.Messaging
         {
             if (position < 0)
             {
-                throw new MessageReadException($"Attempt to seek to a negative position.");
+                throw new ArgumentOutOfRangeException(nameof(position), $"Attempt to seek to a negative position.");
             }
 
             if (position > Payload.Length)
             {
-                throw new MessageReadException($"Seek to position {position} would extend beyond the length of the message.");
+                throw new ArgumentOutOfRangeException(nameof(position), $"Seek to position {position} would extend beyond the length of the message.");
             }
 
             Position = position;
@@ -128,16 +138,14 @@ namespace Soulseek.NET.Messaging
         /// <returns>The read bytes.</returns>
         public byte[] ReadBytes(int count)
         {
-            try
+            if (count > Payload.Length - Position)
             {
-                var retVal = Payload.Skip(Position).Take(count).ToArray();
-                Position += count;
-                return retVal;
+                throw new MessageReadException($"Requested bytes extend beyond the length of the message payload.");
             }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read a byte from position {Position} of the message.", ex);
-            }
+
+            var retVal = Payload.Skip(Position).Take(count).ToArray();
+            Position += count;
+            return retVal;
         }
 
         /// <summary>
@@ -182,34 +190,17 @@ namespace Soulseek.NET.Messaging
         /// <returns>The read string.</returns>
         public string ReadString()
         {
-            var length = 0;
+            var length = ReadInteger();
 
-            try
+            if (length > Payload.Length - Position)
             {
-                length = ReadInteger();
-                var bytes = Payload.Skip(Position).Take(length).ToArray();
-                var retVal = Encoding.ASCII.GetString(bytes);
-                Position += length;
-                return retVal;
+                throw new MessageReadException($"Specified string extends beyond the length of the message payload.");
             }
-            catch (MessageReadException ex)
-            {
-                throw new MessageReadException($"Failed to read the length of the requested string from position {Position} of the message.", ex);
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read a string of length {length} from position {Position} of the message.", ex);
-            }
-        }
 
-        /// <summary>
-        ///     Returns the head of the reader to the beginning of the message payload.
-        /// </summary>
-        /// <returns>This MessageReader.</returns>
-        public MessageReader Reset()
-        {
-            Position = 0;
-            return this;
+            var bytes = Payload.Skip(Position).Take(length).ToArray();
+            var retVal = Encoding.ASCII.GetString(bytes);
+            Position += length;
+            return retVal;
         }
 
         private void Decompress(byte[] inData, out byte[] outData)
