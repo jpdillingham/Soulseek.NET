@@ -212,16 +212,6 @@ namespace Soulseek.NET.Messaging
             }
         }
 
-        /// <summary>
-        ///     Returns the head of the reader to the beginning of the message payload.
-        /// </summary>
-        /// <returns>This MessageReader.</returns>
-        public MessageReader Reset()
-        {
-            Position = 0;
-            return this;
-        }
-
         private void Decompress(byte[] inData, out byte[] outData)
         {
             void copyStream(Stream input, Stream output)
