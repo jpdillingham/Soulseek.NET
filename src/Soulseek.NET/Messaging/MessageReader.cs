@@ -138,7 +138,7 @@ namespace Soulseek.NET.Messaging
         /// <returns>The read bytes.</returns>
         public byte[] ReadBytes(int count)
         {
-            if (count > Position + Payload.Length)
+            if (count > Payload.Length - Position)
             {
                 throw new MessageReadException($"Requested bytes extend beyond the length of the message payload.");
             }
@@ -190,23 +190,23 @@ namespace Soulseek.NET.Messaging
         /// <returns>The read string.</returns>
         public string ReadString()
         {
-            var length = 0;
-
             try
             {
-                length = ReadInteger();
+                var length = ReadInteger();
+
+                if (length > Payload.Length - Position)
+                {
+                    throw new MessageReadException($"Specified string extends beyond the length of the message payload.");
+                }
+
                 var bytes = Payload.Skip(Position).Take(length).ToArray();
                 var retVal = Encoding.ASCII.GetString(bytes);
                 Position += length;
                 return retVal;
             }
-            catch (MessageReadException ex)
-            {
-                throw new MessageReadException($"Failed to read the length of the requested string from position {Position} of the message.", ex);
-            }
             catch (Exception ex)
             {
-                throw new MessageReadException($"Failed to read a string of length {length} from position {Position} of the message.", ex);
+                throw new MessageReadException($"Failed to read a string from position {Position} of the message: {ex.Message}", ex);
             }
         }
 
