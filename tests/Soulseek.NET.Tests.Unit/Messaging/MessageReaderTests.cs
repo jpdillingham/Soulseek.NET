@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using System;
     using Xunit;
@@ -106,13 +107,12 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         public void Seek_Changes_Position()
         {
             var num = new Random().Next();
-            var msgBytes = new MessageBuilder()
+            var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .WriteInteger(num)
-                .Build()
-                .ToByteArray();
+                .Build();
 
-            var reader = new MessageReader(msgBytes);
+            var reader = new MessageReader(msg);
 
             var initial = reader.Position;
 
@@ -127,13 +127,12 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         public void Seek_Throws_ArgumentOutOfRangeException_On_Negative()
         {
             var num = new Random().Next();
-            var msgBytes = new MessageBuilder()
+            var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .WriteInteger(num)
-                .Build()
-                .ToByteArray();
+                .Build();
 
-            var reader = new MessageReader(msgBytes);
+            var reader = new MessageReader(msg);
 
             var ex = Record.Exception(() => reader.Seek(-1));
 
@@ -147,18 +146,79 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         public void Seek_Throws_ArgumentOutOfRangeException_On_Too_Large()
         {
             var num = new Random().Next();
-            var msgBytes = new MessageBuilder()
+            var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .WriteInteger(num)
-                .Build()
-                .ToByteArray();
+                .Build();
 
-            var reader = new MessageReader(msgBytes);
+            var reader = new MessageReader(msg);
 
             var ex = Record.Exception(() => reader.Seek(5));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "ReadInteger")]
+        [Fact(DisplayName = "ReadInteger returns expected data")]
+        public void ReadInteger_Returns_Expected_Data()
+        {
+            var num = new Random().Next();
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(num)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(num, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ReadInteger")]
+        [Fact(DisplayName = "ReadInteger throws MessageReadException if no data")]
+        public void ReadInteger_Throws_MessageReadException_If_No_Data()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadInteger());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "ReadLong")]
+        [Fact(DisplayName = "ReadLong returns expected data")]
+        public void ReadLong_Returns_Expected_Data()
+        {
+            var num = new Random().Next();
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteLong((long)num)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(num, reader.ReadLong());
+        }
+
+        [Trait("Category", "ReadLong")]
+        [Fact(DisplayName = "ReadLong throws MessageReadException if no data")]
+        public void ReadLong_Throws_MessageReadException_If_No_Data()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.ReadLong());
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
         }
     }
 }
