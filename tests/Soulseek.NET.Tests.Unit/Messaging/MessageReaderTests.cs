@@ -306,5 +306,21 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
+
+        [Trait("Category", "ReadString")]
+        [Fact(DisplayName = "ReadString returns expected data")]
+        public void ReadString_Returns_Expected_Data()
+        {
+            var str = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteString(str)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(str, reader.ReadString());
+        }
     }
 }
