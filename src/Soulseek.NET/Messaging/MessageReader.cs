@@ -190,24 +190,17 @@ namespace Soulseek.NET.Messaging
         /// <returns>The read string.</returns>
         public string ReadString()
         {
-            try
-            {
-                var length = ReadInteger();
+            var length = ReadInteger();
 
-                if (length > Payload.Length - Position)
-                {
-                    throw new MessageReadException($"Specified string extends beyond the length of the message payload.");
-                }
-
-                var bytes = Payload.Skip(Position).Take(length).ToArray();
-                var retVal = Encoding.ASCII.GetString(bytes);
-                Position += length;
-                return retVal;
-            }
-            catch (Exception ex)
+            if (length > Payload.Length - Position)
             {
-                throw new MessageReadException($"Failed to read a string from position {Position} of the message: {ex.Message}", ex);
+                throw new MessageReadException($"Specified string extends beyond the length of the message payload.");
             }
+
+            var bytes = Payload.Skip(Position).Take(length).ToArray();
+            var retVal = Encoding.ASCII.GetString(bytes);
+            Position += length;
+            return retVal;
         }
 
         private void Decompress(byte[] inData, out byte[] outData)
