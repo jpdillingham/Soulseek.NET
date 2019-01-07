@@ -138,6 +138,11 @@ namespace Soulseek.NET.Messaging
         /// <returns>The read bytes.</returns>
         public byte[] ReadBytes(int count)
         {
+            if (count > Position + Payload.Length)
+            {
+                throw new MessageReadException($"Requested bytes extend beyond the length of the message payload.");
+            }
+
             try
             {
                 var retVal = Payload.Skip(Position).Take(count).ToArray();
