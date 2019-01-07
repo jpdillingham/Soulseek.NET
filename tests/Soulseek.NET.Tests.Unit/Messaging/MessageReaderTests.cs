@@ -100,5 +100,65 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(num, reader.ReadInteger());
             Assert.Equal(4, reader.Position);
         }
+
+        [Trait("Category", "Seek")]
+        [Fact(DisplayName = "Seek changes position")]
+        public void Seek_Changes_Position()
+        {
+            var num = new Random().Next();
+            var msgBytes = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(num)
+                .Build()
+                .ToByteArray();
+
+            var reader = new MessageReader(msgBytes);
+
+            var initial = reader.Position;
+
+            reader.Seek(2);
+
+            Assert.Equal(0, initial);
+            Assert.Equal(2, reader.Position);
+        }
+
+        [Trait("Category", "Seek")]
+        [Fact(DisplayName = "Seek throws ArgumentOutOfRangeException on negative")]
+        public void Seek_Throws_ArgumentOutOfRangeException_On_Negative()
+        {
+            var num = new Random().Next();
+            var msgBytes = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(num)
+                .Build()
+                .ToByteArray();
+
+            var reader = new MessageReader(msgBytes);
+
+            var ex = Record.Exception(() => reader.Seek(-1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+
+        [Trait("Category", "Seek")]
+        [Fact(DisplayName = "Seek throws ArgumentOutOfRangeException on too large")]
+        public void Seek_Throws_ArgumentOutOfRangeException_On_Too_Large()
+        {
+            var num = new Random().Next();
+            var msgBytes = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(num)
+                .Build()
+                .ToByteArray();
+
+            var reader = new MessageReader(msgBytes);
+
+            var ex = Record.Exception(() => reader.Seek(5));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
     }
 }
