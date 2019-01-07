@@ -144,12 +144,6 @@ namespace Soulseek.NET.Messaging
             }
 
             var retVal = Payload.Skip(Position).Take(count).ToArray();
-
-            if (retVal.Length != count)
-            {
-                throw new MessageReadException($"Failed to read the requested number of bytes from position {Position} of the message.");
-            }
-
             Position += count;
             return retVal;
         }
