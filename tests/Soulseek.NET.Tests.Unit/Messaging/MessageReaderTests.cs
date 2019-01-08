@@ -15,6 +15,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using System;
+    using System.Reflection;
     using System.Text;
     using Xunit;
 
@@ -466,7 +467,56 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Decompress throws InvalidOperationException on empty payload")]
         public void Decompress_Throws_InvalidOperationException_On_Empty_Payload()
         {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerInfoRequest)
+                .Build();
 
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.Decompress());
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Decompress")]
+        [Fact(DisplayName = "Decompress throws InvalidOperationException when already decompressed")]
+        public void Decompress_Throws_InvalidOperationException_When_Already_Decompressed()
+        {
+            var txt = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerInfoRequest)
+                .WriteString(txt)
+                .Compress()
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            reader.Decompress();
+
+            var ex = Record.Exception(() => reader.Decompress());
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "Decompress")]
+        [Fact(DisplayName = "Decompress throws MessageCompressionException on compression exception")]
+        public void Decompress_Throws_MessageCompressionException_On_Compression_Exception()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerInfoRequest)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            var ex = Record.Exception(() => reader.InvokeMethod("Decompress", BindingFlags.NonPublic | BindingFlags.Instance, null, null));
+
+            Assert.NotNull(ex);
+            Assert.NotNull(ex.InnerException);
+            Assert.NotNull(ex.InnerException.InnerException);
+            Assert.IsType<MessageCompressionException>(ex.InnerException.InnerException);
         }
     }
 }
