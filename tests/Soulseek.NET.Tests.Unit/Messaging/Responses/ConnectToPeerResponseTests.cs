@@ -1,0 +1,48 @@
+﻿// <copyright file="ConnectToPeerResponseTests.cs" company="JP Dillingham">
+//     Copyright (c) JP Dillingham. All rights reserved.
+//
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
+//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//
+//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
+//
+//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+// </copyright>
+
+namespace Soulseek.NET.Tests.Unit.Messaging.Responses
+{
+    using Soulseek.NET.Messaging.Responses;
+    using System;
+    using System.Net;
+    using Xunit;
+
+    public class ConnectToPeerResponseTests
+    {
+        private string RandomGuid => Guid.NewGuid().ToString();
+        private Random Random = new Random();
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with the given data")]
+        public void Instantiates_With_The_Given_Data()
+        {
+            var un = RandomGuid;
+            var type = RandomGuid;
+            var ip = new IPAddress(Random.Next(1024));
+            var port = Random.Next();
+            var token = Random.Next();
+
+            ConnectToPeerResponse response = null;
+
+            var ex = Record.Exception(() => response = new ConnectToPeerResponse(un, type, ip, port, token));
+
+            Assert.Null(ex);
+
+            Assert.Equal(un, response.Username);
+            Assert.Equal(type, response.Type);
+            Assert.Equal(ip, response.IPAddress);
+            Assert.Equal(port, response.Port);
+            Assert.Equal(token, response.Token);
+        }
+    }
+}
