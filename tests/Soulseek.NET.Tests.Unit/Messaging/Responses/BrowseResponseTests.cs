@@ -80,7 +80,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var ex = Record.Exception(() => BrowseResponse.Parse(msg));
 
             Assert.NotNull(ex);
-            Assert.IsType<MessageReadException>(ex);
+            Assert.IsType<MessageCompressionException>(ex);
             Assert.IsType<ZStreamException>(ex.InnerException);
         }
 
