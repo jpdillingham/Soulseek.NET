@@ -132,6 +132,28 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "Parse throws MessageReadException on missing data")]
+        public void Parse_Throws_MessageReadException_On_Missing_Data()
+        {
+            var name = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(1) // directory count
+                .WriteString(name) // first directory name
+                // missing count
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default(BrowseResponse);
+            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
         [Fact(DisplayName = "Parse handles files with no attributes")]
         public void Parse_Handles_Files_With_No_Attributes()
         {
