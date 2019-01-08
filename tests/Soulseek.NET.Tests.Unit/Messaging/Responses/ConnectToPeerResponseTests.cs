@@ -12,6 +12,8 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 {
+    using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Responses;
     using System;
     using System.Net;
@@ -43,6 +45,36 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             Assert.Equal(ip, response.IPAddress);
             Assert.Equal(port, response.Port);
             Assert.Equal(token, response.Token);
+        }
+
+        [Trait("Category", "Parse")]
+        [Fact(DisplayName = "Parse throws MessageExcepton on code mismatch")]
+        public void Parse_Throws_MessageException_On_Code_Mismatch()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var ex = Record.Exception(() => ConnectToPeerResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageException>(ex);
+        }
+
+        [Trait("Category", "Parse")]
+        [Fact(DisplayName = "Parse throws MessageReadException on missing data")]
+        public void Parse_Throws_MessageReadException_On_Missing_Data()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString("foo")
+                .WriteString("F")
+                .Build();
+
+            var ex = Record.Exception(() => ConnectToPeerResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
         }
     }
 }
