@@ -76,5 +76,37 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
+
+        [Trait("Category", "Parse")]
+        [Fact(DisplayName = "Parse returns expected data")]
+        public void Parse_Returns_Expected_Data()
+        {
+            var un = RandomGuid;
+            var type = RandomGuid;
+
+            var ip = new IPAddress(Random.Next(1024));
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var port = Random.Next();
+            var token = Random.Next();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString(un)
+                .WriteString(type)
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var response = ConnectToPeerResponse.Parse(msg);
+
+            Assert.Equal(un, response.Username);
+            Assert.Equal(type, response.Type);
+            Assert.Equal(ip, response.IPAddress);
+            Assert.Equal(port, response.Port);
+            Assert.Equal(token, response.Token);
+        }
     }
 }
