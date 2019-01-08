@@ -47,7 +47,7 @@ namespace Soulseek.NET.Messaging.Responses
         ///     Parses a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
-        /// <returns>A value indicating whether the operation was successful.</returns>
+        /// <returns>The parsed instance.</returns>
         public static BrowseResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
