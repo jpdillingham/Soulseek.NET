@@ -16,28 +16,58 @@ namespace Soulseek.NET.Messaging.Responses
     using System.Net;
     using Soulseek.NET.Exceptions;
 
-    public sealed class ConnectToPeerResponse
+    /// <summary>
+    ///     A server response which solicits a peer connection.
+    /// </summary>
+    internal sealed class ConnectToPeerResponse
     {
-        #region Private Constructors
-
-        private ConnectToPeerResponse()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectToPeerResponse"/> class.
+        /// </summary>
+        /// <param name="username">The username of the peer.</param>
+        /// <param name="type">The connection type ('P' for message or 'F' for transfer).</param>
+        /// <param name="ipAddress">The IP address to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
+        /// <param name="token">The unique connection token.</param>
+        internal ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token)
         {
+            Username = username;
+            Type = type;
+            IPAddress = ipAddress;
+            Port = port;
+            Token = token;
         }
 
-        #endregion Private Constructors
+        /// <summary>
+        ///     Gets the IP address to which to connect.
+        /// </summary>
+        public IPAddress IPAddress { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the port to which to connect.
+        /// </summary>
+        public int Port { get; }
 
-        public IPAddress IPAddress { get; private set; }
-        public int Port { get; private set; }
-        public int Token { get; private set; }
-        public string Type { get; private set; }
-        public string Username { get; private set; }
+        /// <summary>
+        ///     Gets the unique connection token.
+        /// </summary>
+        public int Token { get; }
 
-        #endregion Public Properties
+        /// <summary>
+        ///     Gets the connection type ('P' for message or 'F' for transfer).
+        /// </summary>
+        public string Type { get; }
 
-        #region Public Methods
+        /// <summary>
+        ///     Gets the username of the peer.
+        /// </summary>
+        public string Username { get; }
 
+        /// <summary>
+        ///     Parses a new instance of <see cref="ConnectToPeerResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static ConnectToPeerResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -47,22 +77,17 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Connect To Peer response (expected: {(int)MessageCode.ServerConnectToPeer}, received: {(int)reader.Code}");
             }
 
-            var response = new ConnectToPeerResponse
-            {
-                Username = reader.ReadString(),
-                Type = reader.ReadString()
-            };
+            var username = reader.ReadString();
+            var type = reader.ReadString();
 
             var ipBytes = reader.ReadBytes(4);
             Array.Reverse(ipBytes);
-            response.IPAddress = new IPAddress(ipBytes);
+            var ipAddress = new IPAddress(ipBytes);
 
-            response.Port = reader.ReadInteger();
-            response.Token = reader.ReadInteger();
+            var port = reader.ReadInteger();
+            var token = reader.ReadInteger();
 
-            return response;
+            return new ConnectToPeerResponse(username, type, ipAddress, port, token);
         }
-
-        #endregion Public Methods
     }
 }
