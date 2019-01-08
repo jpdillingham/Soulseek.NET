@@ -25,8 +25,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
     {
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse instantiates properly")]
-        public void BrowseResponse_Instantiates_Properly()
+        [Fact(DisplayName = "Instantiates with given data")]
+        public void Instantiates_With_Given_Data()
         {
             var num = new Random().Next();
             var a = new BrowseResponse(num);
@@ -37,8 +37,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse instantiates with the given directory list")]
-        public void BrowseResponse_Instantiates_With_The_Given_Directory_List()
+        [Fact(DisplayName = "Instantiates with the given directory list")]
+        public void Instantiates_With_The_Given_Directory_List()
         {
             var num = new Random().Next();
 
@@ -54,8 +54,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse throws on code mismatch")]
-        public void BrowseResponse_Throws_On_Code_Mismatch()
+        [Fact(DisplayName = "Throws MessageException on code mismatch")]
+        public void Throws_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerDownloadResponse)
@@ -69,8 +69,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse throws on uncompressed payload")]
-        public void BrowseResponse_Throws_On_Uncompressed_Payload()
+        [Fact(DisplayName = "Throws MessageCompressionException on uncompressed payload")]
+        public void Throws_On_Uncompressed_Payload()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
@@ -86,8 +86,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse returns empty response given empty message")]
-        public void BrowseResponse_Returns_Empty_Response_Given_Empty_Message()
+        [Fact(DisplayName = "Returns empty response given empty message")]
+        public void Returns_Empty_Response_Given_Empty_Message()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
@@ -104,8 +104,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles empty directory")]
-        public void BrowseResponse_Handles_Empty_Directory()
+        [Fact(DisplayName = "Handles empty directory")]
+        public void Handles_Empty_Directory()
         {
             var name = Guid.NewGuid().ToString();
 
@@ -132,8 +132,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles files with no attributes")]
-        public void BrowseResponse_Handles_Files_With_No_Attributes()
+        [Fact(DisplayName = "Handles files with no attributes")]
+        public void Handles_Files_With_No_Attributes()
         {
             var name = Guid.NewGuid().ToString();
 
@@ -174,8 +174,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles a complete response")]
-        public void BrowseResponse_Handles_A_Complete_Response()
+        [Fact(DisplayName = "Handles a complete response")]
+        public void Handles_A_Complete_Response()
         {
             var dirs = new List<Directory>();
 
