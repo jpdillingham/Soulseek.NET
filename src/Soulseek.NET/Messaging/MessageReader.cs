@@ -67,6 +67,7 @@ namespace Soulseek.NET.Messaging
         /// </summary>
         public int Position { get; private set; } = 0;
 
+        private bool Decompressed { get; set; } = false;
         private Message Message { get; set; }
 
         /// <summary>
@@ -99,21 +100,21 @@ namespace Soulseek.NET.Messaging
                 throw new InvalidOperationException($"Unable to decompress an empty message.");
             }
 
+            if (Decompressed)
+            {
+                throw new InvalidOperationException($"The message has already been decompressed.");
+            }
+
             byte[] decompressedPayload;
 
-            try
-            {
-                Decompress(Payload, out decompressedPayload);
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to decompress message payload.", ex);
-            }
+            Decompress(Payload, out decompressedPayload);
 
             Message = new MessageBuilder()
                 .Code(Code)
                 .WriteBytes(decompressedPayload)
                 .Build();
+
+            Decompressed = true;
 
             return this;
         }
@@ -223,13 +224,20 @@ namespace Soulseek.NET.Messaging
                 output.Flush();
             }
 
-            using (var outMemoryStream = new MemoryStream())
-            using (var outZStream = new ZOutputStream(outMemoryStream))
-            using (var inMemoryStream = new MemoryStream(inData))
+            try
             {
-                copyStream(inMemoryStream, outZStream);
-                outZStream.finish();
-                outData = outMemoryStream.ToArray();
+                using (var outMemoryStream = new MemoryStream())
+                using (var outZStream = new ZOutputStream(outMemoryStream))
+                using (var inMemoryStream = new MemoryStream(inData))
+                {
+                    copyStream(inMemoryStream, outZStream);
+                    outZStream.finish();
+                    outData = outMemoryStream.ToArray();
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new MessageCompressionException($"Failed to decompress the message payload.", ex);
             }
         }
     }
