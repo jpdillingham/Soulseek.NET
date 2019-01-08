@@ -54,8 +54,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Throws MessageException on code mismatch")]
-        public void Throws_On_Code_Mismatch()
+        [Fact(DisplayName = "Parse throws MessageException on code mismatch")]
+        public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerDownloadResponse)
@@ -69,8 +69,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Throws MessageCompressionException on uncompressed payload")]
-        public void Throws_On_Uncompressed_Payload()
+        [Fact(DisplayName = "Parse throws MessageCompressionException on uncompressed payload")]
+        public void Parse_Throws_MessageCompressionException_On_Uncompressed_Payload()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
@@ -86,8 +86,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Returns empty response given empty message")]
-        public void Returns_Empty_Response_Given_Empty_Message()
+        [Fact(DisplayName = "Parse returns empty response given empty message")]
+        public void Parse_Returns_Empty_Response_Given_Empty_Message()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
@@ -104,8 +104,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Handles empty directory")]
-        public void Handles_Empty_Directory()
+        [Fact(DisplayName = "Parse handles empty directory")]
+        public void Parse_Handles_Empty_Directory()
         {
             var name = Guid.NewGuid().ToString();
 
@@ -132,8 +132,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Handles files with no attributes")]
-        public void Handles_Files_With_No_Attributes()
+        [Fact(DisplayName = "Parse handles files with no attributes")]
+        public void Parse_Handles_Files_With_No_Attributes()
         {
             var name = Guid.NewGuid().ToString();
 
@@ -174,8 +174,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "Handles a complete response")]
-        public void Handles_A_Complete_Response()
+        [Fact(DisplayName = "Parse handles a complete response")]
+        public void Parse_Handles_A_Complete_Response()
         {
             var dirs = new List<Directory>();
 
