@@ -436,5 +436,37 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.IsType<MessageReadException>(ex);
             Assert.Contains("extends beyond", ex.Message); // fragile, call the cops idc.
         }
+
+        [Trait("Category", "Decompress")]
+        [Fact(DisplayName = "Decompress produces valid data")]
+        public void Decompress_Produces_Valid_Data()
+        {
+            var txt = Guid.NewGuid().ToString();
+            var num = new Random().Next();
+            var txt2 = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerInfoRequest)
+                .WriteString(txt)
+                .WriteInteger(num)
+                .WriteString(txt2)
+                .Compress()
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            reader.Decompress();
+
+            Assert.Equal(txt, reader.ReadString());
+            Assert.Equal(num, reader.ReadInteger());
+            Assert.Equal(txt2, reader.ReadString());
+        }
+
+        [Trait("Category", "Decompress")]
+        [Fact(DisplayName = "Decompress throws InvalidOperationException on empty payload")]
+        public void Decompress_Throws_InvalidOperationException_On_Empty_Payload()
+        {
+
+        }
     }
 }

@@ -94,6 +94,11 @@ namespace Soulseek.NET.Messaging
         /// <returns>This MessageReader.</returns>
         public MessageReader Decompress()
         {
+            if (Payload.Length == 0)
+            {
+                throw new InvalidOperationException($"Unable to decompress an empty message.");
+            }
+
             byte[] decompressedPayload;
 
             try
