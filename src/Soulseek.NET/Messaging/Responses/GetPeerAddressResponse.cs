@@ -16,26 +16,44 @@ namespace Soulseek.NET.Messaging.Responses
     using System.Net;
     using Soulseek.NET.Exceptions;
 
-    public sealed class GetPeerAddressResponse
+    /// <summary>
+    ///     The response to a request for a peer's address.
+    /// </summary>
+    internal sealed class GetPeerAddressResponse
     {
-        #region Private Constructors
-
-        private GetPeerAddressResponse()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="GetPeerAddressResponse"/> class.
+        /// </summary>
+        /// <param name="username">The requested peer username.</param>
+        /// <param name="ipAddress">The IP address of the peer.</param>
+        /// <param name="port">The port on which the peer is listening.</param>
+        internal GetPeerAddressResponse(string username, IPAddress ipAddress, int port)
         {
+            Username = username;
+            IPAddress = ipAddress;
+            Port = port;
         }
 
-        #endregion Private Constructors
+        /// <summary>
+        ///     Gets the IP address of the peer.
+        /// </summary>
+        public IPAddress IPAddress { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the port on which the peer is listening.
+        /// </summary>
+        public int Port { get; }
 
-        public IPAddress IPAddress { get; private set; }
-        public int Port { get; private set; }
-        public string Username { get; private set; }
+        /// <summary>
+        ///     Gets the requested peer username.
+        /// </summary>
+        public string Username { get; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Parses a new instance of <see cref="GetPeerAddressResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static GetPeerAddressResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -45,20 +63,15 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Get Peer Address response (expected: {(int)MessageCode.ServerGetPeerAddress}, received: {(int)reader.Code}.");
             }
 
-            var response = new GetPeerAddressResponse()
-            {
-                Username = reader.ReadString(),
-            };
+            var username = reader.ReadString();
 
             var ipBytes = reader.ReadBytes(4);
             Array.Reverse(ipBytes);
-            response.IPAddress = new IPAddress(ipBytes);
+            var ipAddress = new IPAddress(ipBytes);
 
-            response.Port = reader.ReadInteger();
+            var port = reader.ReadInteger();
 
-            return response;
+            return new GetPeerAddressResponse(username, ipAddress, port);
         }
-
-        #endregion Public Methods
     }
 }

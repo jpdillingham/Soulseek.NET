@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Tests.Unit.Messaging
+namespace Soulseek.NET.Tests.Unit.Messaging.Responses
 {
     using System;
     using System.Collections.Generic;
@@ -25,8 +25,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
     {
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse instantiates properly")]
-        public void BrowseResponse_Instantiates_Properly()
+        [Fact(DisplayName = "Instantiates with given data")]
+        public void Instantiates_With_Given_Data()
         {
             var num = new Random().Next();
             var a = new BrowseResponse(num);
@@ -37,8 +37,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse instantiates with the given directory list")]
-        public void BrowseResponse_Instantiates_With_The_Given_Directory_List()
+        [Fact(DisplayName = "Instantiates with the given directory list")]
+        public void Instantiates_With_The_Given_Directory_List()
         {
             var num = new Random().Next();
 
@@ -54,8 +54,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse throws on code mismatch")]
-        public void BrowseResponse_Throws_On_Code_Mismatch()
+        [Fact(DisplayName = "Parse throws MessageException on code mismatch")]
+        public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerDownloadResponse)
@@ -69,8 +69,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse throws on uncompressed payload")]
-        public void BrowseResponse_Throws_On_Uncompressed_Payload()
+        [Fact(DisplayName = "Parse throws MessageCompressionException on uncompressed payload")]
+        public void Parse_Throws_MessageCompressionException_On_Uncompressed_Payload()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
@@ -86,8 +86,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse returns empty response given empty message")]
-        public void BrowseResponse_Returns_Empty_Response_Given_Empty_Message()
+        [Fact(DisplayName = "Parse returns empty response given empty message")]
+        public void Parse_Returns_Empty_Response_Given_Empty_Message()
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseResponse)
@@ -104,8 +104,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles empty directory")]
-        public void BrowseResponse_Handles_Empty_Directory()
+        [Fact(DisplayName = "Parse handles empty directory")]
+        public void Parse_Handles_Empty_Directory()
         {
             var name = Guid.NewGuid().ToString();
 
@@ -132,8 +132,30 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles files with no attributes")]
-        public void BrowseResponse_Handles_Files_With_No_Attributes()
+        [Fact(DisplayName = "Parse throws MessageReadException on missing data")]
+        public void Parse_Throws_MessageReadException_On_Missing_Data()
+        {
+            var name = Guid.NewGuid().ToString();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(1) // directory count
+                .WriteString(name) // first directory name
+                // missing count
+                .Compress()
+                .Build();
+
+            BrowseResponse r = default(BrowseResponse);
+            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
+
+        [Trait("Category", "Parse")]
+        [Trait("Response", "BrowseResponse")]
+        [Fact(DisplayName = "Parse handles files with no attributes")]
+        public void Parse_Handles_Files_With_No_Attributes()
         {
             var name = Guid.NewGuid().ToString();
 
@@ -174,8 +196,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
         [Trait("Category", "Parse")]
         [Trait("Response", "BrowseResponse")]
-        [Fact(DisplayName = "BrowseResponse handles a complete response")]
-        public void BrowseResponse_Handles_A_Complete_Response()
+        [Fact(DisplayName = "Parse handles a complete response")]
+        public void Parse_Handles_A_Complete_Response()
         {
             var dirs = new List<Directory>();
 
