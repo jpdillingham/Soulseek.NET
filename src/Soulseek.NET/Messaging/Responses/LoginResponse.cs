@@ -16,26 +16,44 @@ namespace Soulseek.NET.Messaging.Responses
     using System.Net;
     using Soulseek.NET.Exceptions;
 
-    public sealed class LoginResponse
+    /// <summary>
+    ///     The response to a login request.
+    /// </summary>
+    internal sealed class LoginResponse
     {
-        #region Private Constructors
-
-        private LoginResponse()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="LoginResponse"/> class.
+        /// </summary>
+        /// <param name="succeeded">A value indicating whether the login was successful.</param>
+        /// <param name="message">The reason for a login failure.</param>
+        /// <param name="ipAddress">The client IP address, if the login was successful.</param>
+        internal LoginResponse(bool succeeded, string message, IPAddress ipAddress = null)
         {
+            Succeeded = succeeded;
+            Message = message;
+            IPAddress = ipAddress;
         }
 
-        #endregion Private Constructors
+        /// <summary>
+        ///     Gets the client IP address, if the login was successful.
+        /// </summary>
+        public IPAddress IPAddress { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the reason for a login failure.
+        /// </summary>
+        public string Message { get; }
 
-        public string IPAddress { get; private set; }
-        public string Message { get; private set; }
-        public bool Succeeded { get; private set; }
+        /// <summary>
+        ///     Gets a value indicating whether the login was successful.
+        /// </summary>
+        public bool Succeeded { get; }
 
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Parses a new instance of <see cref="LoginResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static LoginResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -45,22 +63,19 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.ServerLogin}, received: {(int)reader.Code}");
             }
 
-            var response = new LoginResponse
-            {
-                Succeeded = reader.ReadByte() == 1,
-                Message = reader.ReadString()
-            };
+            var succeeded = reader.ReadByte() == 1;
+            var msg = reader.ReadString();
 
-            if (response.Succeeded)
+            var ipAddress = default(IPAddress);
+
+            if (succeeded)
             {
                 var ipBytes = reader.ReadBytes(4);
                 Array.Reverse(ipBytes);
-                response.IPAddress = new IPAddress(ipBytes).ToString();
+                ipAddress = new IPAddress(ipBytes);
             }
 
-            return response;
+            return new LoginResponse(succeeded, msg, ipAddress);
         }
-
-        #endregion Public Methods
     }
 }
