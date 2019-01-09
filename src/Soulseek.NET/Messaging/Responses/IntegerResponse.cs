@@ -12,8 +12,16 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
+    /// <summary>
+    ///     A simple integer response.
+    /// </summary>
     public static class IntegerResponse
     {
+        /// <summary>
+        ///     Parses a new instance of <see cref="IntegerResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static int Parse(Message message)
         {
             var reader = new MessageReader(message);
