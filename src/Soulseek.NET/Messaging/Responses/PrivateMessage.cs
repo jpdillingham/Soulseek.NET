@@ -13,41 +13,81 @@
 namespace Soulseek.NET.Messaging.Responses
 {
     using System;
+    using Soulseek.NET.Exceptions;
 
-    public sealed class PrivateMessage
+    /// <summary>
+    ///     An incoming private message.
+    /// </summary>
+    internal sealed class PrivateMessage
     {
-        #region Public Properties
-
-        public int Id { get; private set; }
-        public bool IsAdmin { get; private set; }
-        public string Message { get; private set; }
-        public DateTime Timestamp { get; private set; }
-        public string Username { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
-        public static PrivateMessage Parse(Message message)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessage"/> class.
+        /// </summary>
+        /// <param name="id">The unique id of the message.</param>
+        /// <param name="timestamp">The timestamp at which the message was sent.</param>
+        /// <param name="username">The username of the peer which sent the message.</param>
+        /// <param name="message">The message content.</param>
+        /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
+        internal PrivateMessage(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
         {
-            var response = new PrivateMessage();
-
-            var reader = new MessageReader(message);
-
-            response.Id = reader.ReadInteger();
-
-            var timestamp = reader.ReadInteger();
-
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            response.Timestamp = epoch.AddSeconds(timestamp).ToLocalTime();
-
-            response.Username = reader.ReadString();
-            response.Message = reader.ReadString();
-            response.IsAdmin = reader.ReadByte() == 1;
-
-            return response;
+            Id = id;
+            Timestamp = timestamp;
+            Username = username;
+            Message = message;
+            IsAdmin = isAdmin;
         }
 
-        #endregion Public Methods
+        /// <summary>
+        ///     Gets the unique id of the message.
+        /// </summary>
+        public int Id { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the message was sent by an administrator.
+        /// </summary>
+        public bool IsAdmin { get; }
+
+        /// <summary>
+        ///     Gets the message content.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        ///     Gets the timestamp at which the message was sent.
+        /// </summary>
+        public DateTime Timestamp { get; }
+
+        /// <summary>
+        ///     Gets the username of the peer which sent the message.
+        /// </summary>
+        public string Username { get; }
+
+        /// <summary>
+        ///     Parses a new instance of <see cref="PrivateMessage"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
+        public static PrivateMessage Parse(Message message)
+        {
+            var reader = new MessageReader(message);
+
+            if (reader.Code != MessageCode.ServerPrivateMessages)
+            {
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.ServerPrivateMessages}, received: {(int)reader.Code}.");
+            }
+
+            var id = reader.ReadInteger();
+
+            var timestampSeconds = reader.ReadInteger();
+
+            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            var timestamp = epoch.AddSeconds(timestampSeconds).ToLocalTime();
+
+            var username = reader.ReadString();
+            var msg = reader.ReadString();
+            var isAdmin = reader.ReadByte() == 1;
+
+            return new PrivateMessage(id, timestamp, username, msg, isAdmin);
+        }
     }
 }
