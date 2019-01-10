@@ -14,25 +14,37 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using Soulseek.NET.Exceptions;
 
-    public sealed class PeerQueueFailedResponse
+    /// <summary>
+    ///     The response received when an attempt to queue a file for downloading has failed.
+    /// </summary>
+    internal sealed class PeerQueueFailedResponse
     {
-        #region Private Constructors
-
-        private PeerQueueFailedResponse()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerQueueFailedResponse"/> class.
+        /// </summary>
+        /// <param name="filename">The filename which failed to be queued.</param>
+        /// <param name="message">The reason for the failure.</param>
+        internal PeerQueueFailedResponse(string filename, string message)
         {
+            Filename = filename;
+            Message = message;
         }
 
-        #endregion Private Constructors
+        /// <summary>
+        ///     Gets the filename which failed to be queued.
+        /// </summary>
+        public string Filename { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the reason for the failure.
+        /// </summary>
+        public string Message { get; }
 
-        public string Filename { get; private set; }
-        public string Message { get; private set; }
-
-        #endregion Public Properties
-
-        #region Public Methods
-
+        /// <summary>
+        ///     Parses a new instance of <see cref="PeerQueueFailedResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static PeerQueueFailedResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -42,15 +54,10 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.PeerQueueFailed}, received: {(int)reader.Code}.");
             }
 
-            var response = new PeerQueueFailedResponse()
-            {
-                Filename = reader.ReadString(),
-                Message = reader.ReadString(),
-            };
+            var filename = reader.ReadString();
+            var msg = reader.ReadString();
 
-            return response;
+            return new PeerQueueFailedResponse(filename, msg);
         }
-
-        #endregion Public Methods
     }
 }
