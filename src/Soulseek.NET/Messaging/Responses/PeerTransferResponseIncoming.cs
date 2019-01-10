@@ -14,27 +14,51 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using Soulseek.NET.Exceptions;
 
-    public sealed class PeerTransferResponseIncoming
+    /// <summary>
+    ///     An incoming response to a peer transfer request.
+    /// </summary>
+    internal sealed class PeerTransferResponseIncoming
     {
-        #region Private Constructors
-
-        private PeerTransferResponseIncoming()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerTransferResponseIncoming"/> class.
+        /// </summary>
+        /// <param name="token">The unique token for the transfer.</param>
+        /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
+        /// <param name="fileSize">The size of the file being transferred, if allowed.</param>
+        /// <param name="message">The reason the transfer was disallowed, if applicable.</param>
+        internal PeerTransferResponseIncoming(int token, bool allowed, int fileSize, string message)
         {
+            Token = token;
+            Allowed = allowed;
+            FileSize = fileSize;
+            Message = message;
         }
 
-        #endregion Private Constructors
+        /// <summary>
+        ///     Gets a value indicating whether the transfer is allowed.
+        /// </summary>
+        public bool Allowed { get; }
 
-        #region Public Properties
+        /// <summary>
+        ///     Gets the size of the file being transferred, if allowed.
+        /// </summary>
+        public int FileSize { get; }
 
-        public int Token { get; private set; }
-        public bool Allowed { get; private set; }
-        public int FileSize { get; private set; }
-        public string Message { get; private set; }
+        /// <summary>
+        ///     Gets the reason the transfer was disallowed, if applicable.
+        /// </summary>
+        public string Message { get; }
 
-        #endregion Public Properties
+        /// <summary>
+        ///     Gets the unique token for the transfer.
+        /// </summary>
+        public int Token { get; }
 
-        #region Public Methods
-
+        /// <summary>
+        ///     Parses a new instance of <see cref="PeerTransferResponseIncoming"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static PeerTransferResponseIncoming Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -44,24 +68,22 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.PeerTransferResponse}, received: {(int)reader.Code}.");
             }
 
-            var response = new PeerTransferResponseIncoming()
-            {
-                Token = reader.ReadInteger(),
-                Allowed = reader.ReadByte() == 1,
-            };
+            var token = reader.ReadInteger();
+            var allowed = reader.ReadByte() == 1;
 
-            if (response.Allowed)
+            int fileSize = default(int);
+            string msg = default(string);
+
+            if (allowed)
             {
-                response.FileSize = reader.ReadInteger();
+                fileSize = reader.ReadInteger();
             }
             else
             {
-                response.Message = reader.ReadString();
+                msg = reader.ReadString();
             }
 
-            return response;
+            return new PeerTransferResponseIncoming(token, allowed, fileSize, msg);
         }
-
-        #endregion Public Methods
     }
 }
