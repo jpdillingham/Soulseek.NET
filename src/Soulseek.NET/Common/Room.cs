@@ -17,29 +17,25 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class Room
     {
-        #region Internal Constructors
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="Room"/> class.
         /// </summary>
-        internal Room()
+        /// <param name="name">The room name.</param>
+        /// <param name="userCount">The number of users in the room.</param>
+        internal Room(string name, int userCount)
         {
+            Name = name;
+            UserCount = userCount;
         }
-
-        #endregion Internal Constructors
-
-        #region Public Properties
 
         /// <summary>
         ///     Gets the name of the room.
         /// </summary>
-        public string Name { get; internal set; }
+        public string Name { get; }
 
         /// <summary>
         ///     Gets the number of users in the room.
         /// </summary>
-        public int UserCount { get; internal set; }
-
-        #endregion Public Properties
+        public int UserCount { get; }
     }
 }
