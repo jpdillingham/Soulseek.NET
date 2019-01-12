@@ -102,7 +102,7 @@ namespace Soulseek.NET
         /// <returns>The value of the specified attribute.</returns>
         public int? GetAttributeValue(FileAttributeType type)
         {
-            return AttributeList.SingleOrDefault(a => a.Type == type)?.Value;
+            return AttributeList.FirstOrDefault(a => a.Type == type)?.Value;
         }
     }
 }
