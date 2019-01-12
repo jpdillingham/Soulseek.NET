@@ -1,4 +1,4 @@
-﻿// <copyright file="IntegerResponse.cs" company="JP Dillingham">
+﻿// <copyright file="FileAttributeTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,22 +10,25 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Messaging.Responses
+namespace Soulseek.NET.Tests.Unit.Common
 {
-    /// <summary>
-    ///     A simple integer response.
-    /// </summary>
-    public static class IntegerResponse
+    using AutoFixture.Xunit2;
+    using Xunit;
+
+    public class FileAttributeTests
     {
-        /// <summary>
-        ///     Parses a new instance of <see cref="IntegerResponse"/> from the specified <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static int Parse(Message message)
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName ="Instantiates with the given data"), AutoData]
+        public void Instantiates_With_The_Given_Data(FileAttributeType type, int value)
         {
-            var reader = new MessageReader(message);
-            return reader.ReadInteger();
+            var fa = default(FileAttribute);
+
+            var ex = Record.Exception(() => fa = new FileAttribute(type, value));
+
+            Assert.Null(ex);
+
+            Assert.Equal(type, fa.Type);
+            Assert.Equal(value, fa.Value);
         }
     }
 }

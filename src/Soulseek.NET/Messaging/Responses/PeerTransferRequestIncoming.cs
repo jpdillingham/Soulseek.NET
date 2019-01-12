@@ -14,17 +14,51 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using Soulseek.NET.Exceptions;
 
-    public sealed class PeerTransferRequestIncoming
+    /// <summary>
+    ///     An incoming request to transfer a file.
+    /// </summary>
+    internal sealed class PeerTransferRequestIncoming
     {
-        private PeerTransferRequestIncoming()
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerTransferRequestIncoming"/> class.
+        /// </summary>
+        /// <param name="direction">The direction of the transfer (download, upload).</param>
+        /// <param name="token">The unique token for the transfer.</param>
+        /// <param name="filename">The name of the file being transferred.</param>
+        /// <param name="fileSize">The size of the file being transferred.</param>
+        internal PeerTransferRequestIncoming(TransferDirection direction, int token, string filename, int fileSize)
         {
+            Direction = direction;
+            Token = token;
+            Filename = filename;
+            FileSize = fileSize;
         }
 
-        public TransferDirection Direction { get; private set; }
-        public string Filename { get; private set; }
-        public int FileSize { get; private set; }
-        public int Token { get; private set; }
+        /// <summary>
+        ///     Gets the direction of the transfer (download, upload).
+        /// </summary>
+        public TransferDirection Direction { get; }
 
+        /// <summary>
+        ///     Gets the name of the file being transferred.
+        /// </summary>
+        public string Filename { get; }
+
+        /// <summary>
+        ///     Gets the size of the file being transferred.
+        /// </summary>
+        public int FileSize { get; }
+
+        /// <summary>
+        ///     Gets the unique token for the transfer.
+        /// </summary>
+        public int Token { get; }
+
+        /// <summary>
+        ///     Parses a new instance of <see cref="PeerTransferRequestIncoming"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static PeerTransferRequestIncoming Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -34,15 +68,12 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Transfer Request response (expected: {(int)MessageCode.PeerTransferRequest}, received: {(int)reader.Code}.");
             }
 
-            var response = new PeerTransferRequestIncoming()
-            {
-                Direction = (TransferDirection)reader.ReadInteger(),
-                Token = reader.ReadInteger(),
-                Filename = reader.ReadString(),
-                FileSize = reader.ReadInteger(),
-            };
+            var direction = (TransferDirection)reader.ReadInteger();
+            var token = reader.ReadInteger();
+            var filename = reader.ReadString();
+            var fileSize = reader.ReadInteger();
 
-            return response;
+            return new PeerTransferRequestIncoming(direction, token, filename, fileSize);
         }
     }
 }

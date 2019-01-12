@@ -15,10 +15,16 @@ namespace Soulseek.NET.Messaging.Responses
     using System.Collections.Generic;
     using Soulseek.NET.Exceptions;
 
+    /// <summary>
+    ///     A list of available chat rooms.
+    /// </summary>
     public static class RoomList
     {
-        #region Public Methods
-
+        /// <summary>
+        ///     Parses a new instance of <see cref="RoomList"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static IEnumerable<Room> Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -29,23 +35,23 @@ namespace Soulseek.NET.Messaging.Responses
             }
 
             var roomCount = reader.ReadInteger();
-            var list = new List<Room>();
+            var roomNames = new List<string>();
 
             for (int i = 0; i < roomCount; i++)
             {
-                list.Add(new Room() { Name = reader.ReadString() });
+                roomNames.Add(reader.ReadString());
             }
 
             var userCountCount = reader.ReadInteger();
+            var rooms = new List<Room>();
 
             for (int i = 0; i < userCountCount; i++)
             {
-                list[i].UserCount = reader.ReadInteger();
+                var count = reader.ReadInteger();
+                rooms.Add(new Room(roomNames[i], count));
             }
 
-            return list.AsReadOnly();
+            return rooms.AsReadOnly();
         }
-
-        #endregion Public Methods
     }
 }

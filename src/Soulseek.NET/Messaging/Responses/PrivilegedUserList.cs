@@ -15,8 +15,16 @@ namespace Soulseek.NET.Messaging.Responses
     using System.Collections.Generic;
     using Soulseek.NET.Exceptions;
 
+    /// <summary>
+    ///     A list of the privileged users on the server.
+    /// </summary>
     public static class PrivilegedUserList
     {
+        /// <summary>
+        ///     Parses a new instance of <see cref="PrivilegedUserList"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static IEnumerable<string> Parse(Message message)
         {
             var reader = new MessageReader(message);

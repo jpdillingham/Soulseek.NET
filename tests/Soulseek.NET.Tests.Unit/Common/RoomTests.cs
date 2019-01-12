@@ -1,4 +1,4 @@
-﻿// <copyright file="IntegerResponse.cs" company="JP Dillingham">
+﻿// <copyright file="RoomTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,22 +10,28 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Messaging.Responses
+namespace Soulseek.NET.Tests.Unit.Common
 {
-    /// <summary>
-    ///     A simple integer response.
-    /// </summary>
-    public static class IntegerResponse
+    using System;
+    using Xunit;
+
+    public class RoomTests
     {
-        /// <summary>
-        ///     Parses a new instance of <see cref="IntegerResponse"/> from the specified <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static int Parse(Message message)
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName ="Instantiates with the given data")]
+        public void Instantiates_With_The_Given_Data()
         {
-            var reader = new MessageReader(message);
-            return reader.ReadInteger();
+            var name = Guid.NewGuid().ToString();
+            var num = new Random().Next();
+
+            var room = default(Room);
+
+            var ex = Record.Exception(() => room = new Room(name, num));
+
+            Assert.Null(ex);
+
+            Assert.Equal(name, room.Name);
+            Assert.Equal(num, room.UserCount);
         }
     }
 }
