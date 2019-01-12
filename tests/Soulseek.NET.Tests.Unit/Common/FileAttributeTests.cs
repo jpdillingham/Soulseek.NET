@@ -12,7 +12,6 @@
 
 namespace Soulseek.NET.Tests.Unit.Common
 {
-    using AutoFixture;
     using AutoFixture.Xunit2;
     using Xunit;
 
