@@ -102,18 +102,18 @@ namespace Soulseek.NET
         ///     Adds the specified <paramref name="response"/> to the list of responses after applying the filters specified in the search options.
         /// </summary>
         /// <param name="response">The response to add.</param>
-        internal void AddResponse(SearchResponse response)
+        internal void AddResponse(SearchResponseSlim slimResponse)
         {
-            if (State.HasFlag(SearchStates.InProgress) && response.Token == Token && ResponseMeetsOptionCriteria(response))
+            if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
-                response.ParseFiles();
+                var fullResponse = new SearchResponse(slimResponse);
 
                 if (Options.FilterFiles)
                 {
-                    response.Files = response.Files.Where(f => FileMeetsOptionCriteria(f));
+                    fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
                 }
 
-                Interlocked.Add(ref resultCount, response.Files.Count());
+                Interlocked.Add(ref resultCount, fullResponse.Files.Count());
 
                 if (resultCount >= Options.FileLimit)
                 {
@@ -121,9 +121,9 @@ namespace Soulseek.NET
                     return;
                 }
 
-                ResponseList.Add(response);
+                ResponseList.Add(fullResponse);
 
-                Task.Run(() => ResponseHandler(this, response)).Forget();
+                Task.Run(() => ResponseHandler(this, fullResponse)).Forget();
 
                 SearchTimeoutTimer.Reset();
             }
@@ -195,7 +195,7 @@ namespace Soulseek.NET
             return true;
         }
 
-        private bool ResponseMeetsOptionCriteria(SearchResponse response)
+        private bool ResponseMeetsOptionCriteria(SearchResponseSlim response)
         {
             if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||
