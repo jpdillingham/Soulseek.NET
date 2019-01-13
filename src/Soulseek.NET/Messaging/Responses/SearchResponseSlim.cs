@@ -98,7 +98,7 @@ namespace Soulseek.NET.Messaging.Responses
             var token = reader.ReadInteger();
             var fileCount = reader.ReadInteger();
 
-            // the following properties are positioned at the end of the response, past the files. there are 8 unused (or unknown)
+            // the following properties are positioned at the end of the response, past the files. there are 4 unused (or unknown)
             // bytes at the end of the message. seek the reader past the files.
             var position = reader.Position;
             reader.Seek(reader.Payload.Length - 17);
