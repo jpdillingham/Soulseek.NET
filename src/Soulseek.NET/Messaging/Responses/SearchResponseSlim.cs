@@ -22,6 +22,16 @@ namespace Soulseek.NET.Messaging.Responses
     /// <remarks>Files may be retrieved using the message reader provided by <see cref="MessageReader"/>.</remarks>
     internal sealed class SearchResponseSlim
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponseSlim"/> class.
+        /// </summary>
+        /// <param name="username">The username of the responding peer.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="fileCount">The number of files contained within the result.</param>
+        /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
+        /// <param name="uploadSpeed">The upload speed of the peer.</param>
+        /// <param name="queueLength">The length of the peer's upload queue.</param>
+        /// <param name="messageReader">The MessageReader instance used to parse the file list.</param>
         internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader messageReader)
         {
             Username = username;
@@ -33,14 +43,46 @@ namespace Soulseek.NET.Messaging.Responses
             MessageReader = messageReader;
         }
 
+        /// <summary>
+        ///     Gets the number of files contained within the result.
+        /// </summary>
         public int FileCount { get; }
+
+        /// <summary>
+        ///     Gets the number of free upload slots for the peer.
+        /// </summary>
         public int FreeUploadSlots { get; }
+
+        /// <summary>
+        ///     Gets the MessageReader instance used to parse the file list.
+        /// </summary>
         public MessageReader MessageReader { get; }
+
+        /// <summary>
+        ///     Gets the length of the peer's upload queue.
+        /// </summary>
         public long QueueLength { get; }
+
+        /// <summary>
+        ///     Gets the unique search token.
+        /// </summary>
         public int Token { get; }
+
+        /// <summary>
+        ///     Gets the upload speed of the peer.
+        /// </summary>
         public int UploadSpeed { get; }
+
+        /// <summary>
+        ///     Gets the username of the responding peer.
+        /// </summary>
         public string Username { get; }
 
+        /// <summary>
+        ///     Parses a new instance of <see cref="SearchResponseSlim"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         internal static SearchResponseSlim Parse(Message message)
         {
             var reader = new MessageReader(message);
@@ -56,13 +98,16 @@ namespace Soulseek.NET.Messaging.Responses
             var token = reader.ReadInteger();
             var fileCount = reader.ReadInteger();
 
+            // the following properties are positioned at the end of the response, past the files. there are 8 unused (or unknown)
+            // bytes at the end of the message. seek the reader past the files.
             var position = reader.Position;
-            reader.Seek(reader.Payload.Length - 17); // there are 8 unused bytes at the end of each message
+            reader.Seek(reader.Payload.Length - 17);
 
             var freeUploadSlots = reader.ReadByte();
             var uploadSpeed = reader.ReadInteger();
             var queueLength = reader.ReadLong();
 
+            // seek the reader back to the start of the file list.
             reader.Seek(position);
             var messageReader = reader;
 
