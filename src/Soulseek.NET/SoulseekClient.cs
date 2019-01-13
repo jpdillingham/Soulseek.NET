@@ -633,7 +633,7 @@ namespace Soulseek.NET
             switch (message.Code)
             {
                 case MessageCode.PeerSearchResponse:
-                    var searchResponse = SearchResponse.Parse(message);
+                    var searchResponse = SearchResponseSlim.Parse(message);
                     if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
                     {
                         search.AddResponse(searchResponse);
