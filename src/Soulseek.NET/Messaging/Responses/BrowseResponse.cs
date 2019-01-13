@@ -39,7 +39,7 @@ namespace Soulseek.NET.Messaging.Responses
         /// <summary>
         ///     Gets the number of directories.
         /// </summary>
-        public int DirectoryCount { get; internal set; }
+        public int DirectoryCount { get; }
 
         private List<Directory> DirectoryList { get; }
 
@@ -59,9 +59,10 @@ namespace Soulseek.NET.Messaging.Responses
 
             reader.Decompress();
 
-            BrowseResponse response = new BrowseResponse(reader.ReadInteger());
+            var directoryCount = reader.ReadInteger();
+            var directoryList = new List<Directory>();
 
-            for (int i = 0; i < response.DirectoryCount; i++)
+            for (int i = 0; i < directoryCount; i++)
             {
                 var dir = new Directory(
                     directoryname: reader.ReadString(),
@@ -98,13 +99,13 @@ namespace Soulseek.NET.Messaging.Responses
                         attributeList: attributeList));
                 }
 
-                response.DirectoryList.Add(new Directory(
+                directoryList.Add(new Directory(
                     directoryname: dir.Directoryname,
                     fileCount: dir.FileCount,
                     fileList: fileList));
             }
 
-            return response;
+            return new BrowseResponse(directoryCount, directoryList);
         }
     }
 }
