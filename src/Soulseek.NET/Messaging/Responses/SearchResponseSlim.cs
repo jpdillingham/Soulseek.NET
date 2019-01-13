@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponse.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseSlim.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,7 +12,6 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    using System;
     using Soulseek.NET.Exceptions;
 
     /// <summary>
@@ -21,7 +20,7 @@ namespace Soulseek.NET.Messaging.Responses
     ///     determine whether the response is to be thrown out.
     /// </summary>
     /// <remarks>Files may be retrieved using the message reader provided by <see cref="MessageReader"/>.</remarks>
-    public sealed class SearchResponseSlim
+    internal sealed class SearchResponseSlim
     {
         internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader messageReader)
         {
@@ -42,7 +41,7 @@ namespace Soulseek.NET.Messaging.Responses
         public int UploadSpeed { get; }
         public string Username { get; }
 
-        public static SearchResponseSlim Parse(Message message)
+        internal static SearchResponseSlim Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -51,15 +50,7 @@ namespace Soulseek.NET.Messaging.Responses
                 throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
             }
 
-            try
-            {
-                reader.Decompress();
-            }
-            catch (Exception)
-            {
-                // discard result if it fails to decompress
-                return null;
-            }
+            reader.Decompress();
 
             var username = reader.ReadString();
             var token = reader.ReadInteger();
