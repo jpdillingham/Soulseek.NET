@@ -99,9 +99,9 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Adds the specified <paramref name="response"/> to the list of responses after applying the filters specified in the search options.
+        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in the search options.
         /// </summary>
-        /// <param name="response">The response to add.</param>
+        /// <param name="slimResponse">The response to add.</param>
         internal void AddResponse(SearchResponseSlim slimResponse)
         {
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
