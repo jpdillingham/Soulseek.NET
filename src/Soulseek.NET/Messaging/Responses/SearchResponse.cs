@@ -14,8 +14,21 @@ namespace Soulseek.NET.Messaging.Responses
 {
     using System.Collections.Generic;
 
+    /// <summary>
+    ///     A response to a file search.
+    /// </summary>
     public sealed class SearchResponse
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        /// </summary>
+        /// <param name="username">The username of the responding peer.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="fileCount">The number of files contained within the result.</param>
+        /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
+        /// <param name="uploadSpeed">The upload speed of the peer.</param>
+        /// <param name="queueLength">The length of the peer's upload queue.</param>
+        /// <param name="fileList">The optional file list.</param>
         public SearchResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, List<File> fileList = null)
         {
             Username = username;
@@ -27,29 +40,73 @@ namespace Soulseek.NET.Messaging.Responses
             FileList = fileList ?? new List<File>();
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        /// </summary>
+        /// <param name="slimResponse">The SearchResponseSlim instance from which to initialize this SearchResponse.</param>
         internal SearchResponse(SearchResponseSlim slimResponse)
             : this(slimResponse.Username, slimResponse.Token, slimResponse.FileCount, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength)
         {
             FileList = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        /// </summary>
+        /// <param name="response">The SearchResponse instance from which to initialize this SearchResponse.</param>
+        /// <param name="fileList">The file list with which to replace the file list in the specified <paramref name="response"/>.</param>
         internal SearchResponse(SearchResponse response, List<File> fileList)
             : this(response.Username, response.Token, response.FileCount, response.FreeUploadSlots, response.UploadSpeed, response.QueueLength, fileList)
         {
         }
 
+        /// <summary>
+        ///     Gets the number of files contained within the result.
+        /// </summary>
         public int FileCount { get; }
 
+        /// <summary>
+        ///     Gets the list of files.
+        /// </summary>
         public IEnumerable<File> Files => FileList.AsReadOnly();
 
+        /// <summary>
+        ///     Gets the number of free upload slots for the peer.
+        /// </summary>
         public int FreeUploadSlots { get; }
+
+        /// <summary>
+        ///     Gets the MessageReader instance used to parse the file list.
+        /// </summary>
+        public MessageReader MessageReader { get; }
+
+        /// <summary>
+        ///     Gets the length of the peer's upload queue.
+        /// </summary>
         public long QueueLength { get; }
+
+        /// <summary>
+        ///     Gets the unique search token.
+        /// </summary>
         public int Token { get; }
+
+        /// <summary>
+        ///     Gets the upload speed of the peer.
+        /// </summary>
         public int UploadSpeed { get; }
+
+        /// <summary>
+        ///     Gets the username of the responding peer.
+        /// </summary>
         public string Username { get; }
 
         private List<File> FileList { get; set; }
 
+        /// <summary>
+        ///     Parses a new instance of <see cref="SearchResponse"/> from the specified <paramref name="message"/>.
+        /// </summary>
+        /// <param name="message">The message from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
         public static SearchResponse Parse(Message message)
         {
             var slim = SearchResponseSlim.Parse(message);
@@ -91,6 +148,5 @@ namespace Soulseek.NET.Messaging.Responses
 
             return files;
         }
-
     }
 }
