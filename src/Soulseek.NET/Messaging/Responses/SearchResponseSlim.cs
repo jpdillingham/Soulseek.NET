@@ -31,6 +31,7 @@ namespace Soulseek.NET.Messaging.Responses
             FreeUploadSlots = freeUploadSlots;
             UploadSpeed = uploadSpeed;
             QueueLength = queueLength;
+            MessageReader = messageReader;
         }
 
         public int FileCount { get; }
