@@ -12,107 +12,49 @@
 
 namespace Soulseek.NET.Messaging.Responses
 {
-    using System;
     using System.Collections.Generic;
-    using System.Linq;
-    using Soulseek.NET.Exceptions;
 
     public sealed class SearchResponse
     {
-        #region Internal Constructors
+        public SearchResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, List<File> fileList = null)
+        {
+            Username = username;
+            Token = token;
+            FileCount = fileCount;
+            FreeUploadSlots = freeUploadSlots;
+            UploadSpeed = uploadSpeed;
+            QueueLength = queueLength;
+            FileList = fileList ?? new List<File>();
+        }
 
-        internal SearchResponse()
+        internal SearchResponse(SearchResponseSlim slimResponse)
+            : this(slimResponse.Username, slimResponse.Token, slimResponse.FileCount, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength)
+        {
+            FileList = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
+        }
+
+        internal SearchResponse(SearchResponse response, List<File> fileList)
+            : this(response.Username, response.Token, response.FileCount, response.FreeUploadSlots, response.UploadSpeed, response.QueueLength, fileList)
         {
         }
 
-        #endregion Internal Constructors
+        public int FileCount { get; }
 
-        #region Public Properties
+        public IEnumerable<File> Files => FileList.AsReadOnly();
 
-        public int FileCount { get; internal set; }
-
-        public IEnumerable<File> Files
-        {
-            get
-            {
-                return FileList.AsReadOnly();
-            }
-
-            internal set
-            {
-                FileList = value.ToList();
-            }
-        }
-
-        public int FreeUploadSlots { get; internal set; }
-        public long QueueLength { get; internal set; }
-        public int Token { get; internal set; }
-        public int UploadSpeed { get; internal set; }
-        public string Username { get; internal set; }
-
-        #endregion Public Properties
-
-        #region Private Properties
+        public int FreeUploadSlots { get; }
+        public long QueueLength { get; }
+        public int Token { get; }
+        public int UploadSpeed { get; }
+        public string Username { get; }
 
         private List<File> FileList { get; set; }
-        private MessageReader MessageReader { get; set; }
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         public static SearchResponse Parse(Message message)
         {
-            var reader = new MessageReader(message);
-
-            if (reader.Code != MessageCode.PeerSearchResponse)
-            {
-                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
-            }
-
-            try
-            {
-                reader.Decompress();
-            }
-            catch (Exception)
-            {
-                // discard result if it fails to decompress
-                return null;
-            }
-
-            var response = new SearchResponse
-            {
-                Username = reader.ReadString(),
-                Token = reader.ReadInteger(),
-                FileCount = reader.ReadInteger()
-            };
-
-            var position = reader.Position;
-
-            reader.Seek(reader.Payload.Length - 17); // there are 8 unused bytes at the end of each message
-
-            response.FreeUploadSlots = reader.ReadByte();
-            response.UploadSpeed = reader.ReadInteger();
-            response.QueueLength = reader.ReadLong();
-
-            reader.Seek(position);
-            response.MessageReader = reader;
-
-            return response;
+            var slim = SearchResponseSlim.Parse(message);
+            return new SearchResponse(slim);
         }
-
-        #endregion Public Methods
-
-        #region Internal Methods
-
-        internal void ParseFiles()
-        {
-            FileList = ParseFiles(MessageReader, FileCount);
-        }
-
-        #endregion Internal Methods
-
-        #region Private Methods
 
         private static List<File> ParseFiles(MessageReader reader, int count)
         {
@@ -150,6 +92,5 @@ namespace Soulseek.NET.Messaging.Responses
             return files;
         }
 
-        #endregion Private Methods
     }
 }
