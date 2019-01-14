@@ -24,7 +24,7 @@ namespace Soulseek.NET.Messaging.Responses
         /// </summary>
         /// <param name="username">The username of the responding peer.</param>
         /// <param name="token">The unique search token.</param>
-        /// <param name="fileCount">The number of files contained within the result.</param>
+        /// <param name="fileCount">The number of files contained within the result, as counted by the original response.</param>
         /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
@@ -61,7 +61,8 @@ namespace Soulseek.NET.Messaging.Responses
         }
 
         /// <summary>
-        ///     Gets the number of files contained within the result.
+        ///     Gets the number of files contained within the result, as counted by the original response from the peer and prior
+        ///     to filtering. For the filtered count, check the length of <see cref="Files"/>.
         /// </summary>
         public int FileCount { get; }
 
