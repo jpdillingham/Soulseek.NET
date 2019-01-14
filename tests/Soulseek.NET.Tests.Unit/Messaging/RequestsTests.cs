@@ -197,50 +197,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerTransferRequestOutgoing")]
-        [Fact(DisplayName = "PeerTransferRequestOutgoing instantiates properly")]
-        public void PeerTransferRequestOutgoing_Instantiates_Properly()
-        {
-            var rnd = new Random();
-
-            var dir = TransferDirection.Download;
-            var token = rnd.Next();
-            var file = Guid.NewGuid().ToString();
-            var size = rnd.Next();
-            var a = new PeerTransferRequestOutgoing(dir, token, file, size);
-
-            Assert.Equal(dir, a.Direction);
-            Assert.Equal(token, a.Token);
-            Assert.Equal(file, a.Filename);
-            Assert.Equal(size, a.FileSize);
-        }
-
-        [Trait("Category", "ToMessage")]
-        [Trait("Request", "PeerTransferRequestOutgoing")]
-        [Fact(DisplayName = "PeerTransferRequestOutgoing constructs the correct Message")]
-        public void PeerTransferRequestOutgoing_Constructs_The_Correct_Message()
-        {
-            var rnd = new Random();
-
-            var dir = TransferDirection.Download;
-            var token = rnd.Next();
-            var file = Guid.NewGuid().ToString();
-            var size = rnd.Next();
-            var a = new PeerTransferRequestOutgoing(dir, token, file, size);
-            var msg = a.ToMessage();
-
-            Assert.Equal(MessageCode.PeerTransferRequest, msg.Code);
-            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 4, msg.Length);
-
-            var reader = new MessageReader(msg);
-
-            Assert.Equal(0, reader.ReadInteger()); // direction
-            Assert.Equal(token, reader.ReadInteger());
-            Assert.Equal(file, reader.ReadString());
-            Assert.Equal(size, reader.ReadInteger());
-        }
-
-        [Trait("Category", "Instantiation")]
         [Trait("Request", "PeerTransferResponseOutgoing")]
         [Fact(DisplayName = "PeerTransferResponseOutgoing instantiates properly")]
         public void PeerTransferResponseOutgoing_Instantiates_Properly()

@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferRequestIncomingTests.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferRequestTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
     using System;
     using Xunit;
 
-    public class PeerTransferRequestIncomingTests
+    public class PeerTransferRequestTests
     {
         private Random Random { get; } = new Random();
 
@@ -31,9 +31,9 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             var file = Guid.NewGuid().ToString();
             var size = Random.Next();
 
-            PeerTransferRequestIncoming response = null;
+            PeerTransferRequest response = null;
 
-            var ex = Record.Exception(() => response = new PeerTransferRequestIncoming(dir, token, file, size));
+            var ex = Record.Exception(() => response = new PeerTransferRequest(dir, token, file, size));
 
             Assert.Null(ex);
 
@@ -51,7 +51,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferRequestIncoming.Parse(msg));
+            var ex = Record.Exception(() => PeerTransferRequest.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -65,7 +65,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
                 .Code(MessageCode.PeerTransferRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferRequestIncoming.Parse(msg));
+            var ex = Record.Exception(() => PeerTransferRequest.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -88,12 +88,36 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
                 .WriteInteger(size)
                 .Build();
 
-            var response = PeerTransferRequestIncoming.Parse(msg);
+            var response = PeerTransferRequest.Parse(msg);
 
             Assert.Equal(dir, (int)response.Direction);
             Assert.Equal(token, response.Token);
             Assert.Equal(file, response.Filename);
             Assert.Equal(size, response.FileSize);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Fact(DisplayName = "ToMessage constructs the correct Message")]
+        public void ToMessage_Constructs_The_Correct_Message()
+        {
+            var rnd = new Random();
+
+            var dir = TransferDirection.Download;
+            var token = rnd.Next();
+            var file = Guid.NewGuid().ToString();
+            var size = rnd.Next();
+            var a = new PeerTransferRequest(dir, token, file, size);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerTransferRequest, msg.Code);
+            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 4, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(0, reader.ReadInteger()); // direction
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(file, reader.ReadString());
+            Assert.Equal(size, reader.ReadInteger());
         }
     }
 }
