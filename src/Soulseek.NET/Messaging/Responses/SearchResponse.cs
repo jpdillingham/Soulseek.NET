@@ -76,11 +76,6 @@ namespace Soulseek.NET.Messaging.Responses
         public int FreeUploadSlots { get; }
 
         /// <summary>
-        ///     Gets the MessageReader instance used to parse the file list.
-        /// </summary>
-        public MessageReader MessageReader { get; }
-
-        /// <summary>
         ///     Gets the length of the peer's upload queue.
         /// </summary>
         public long QueueLength { get; }
