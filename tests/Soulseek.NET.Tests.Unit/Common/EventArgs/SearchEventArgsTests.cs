@@ -1,4 +1,4 @@
-﻿using Soulseek.NET.Messaging.Responses;
+﻿using Soulseek.NET.Messaging.Messages;
 using System;
 using Xunit;
 

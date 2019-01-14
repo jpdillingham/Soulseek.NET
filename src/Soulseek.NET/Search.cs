@@ -17,7 +17,7 @@ namespace Soulseek.NET
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Messages;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
