@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferRequestIncoming.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,16 +17,16 @@ namespace Soulseek.NET.Messaging.Responses
     /// <summary>
     ///     An incoming request to transfer a file.
     /// </summary>
-    internal sealed class PeerTransferRequestIncoming
+    internal sealed class PeerTransferRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerTransferRequestIncoming"/> class.
+        ///     Initializes a new instance of the <see cref="PeerTransferRequest"/> class.
         /// </summary>
         /// <param name="direction">The direction of the transfer (download, upload).</param>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="filename">The name of the file being transferred.</param>
         /// <param name="fileSize">The size of the file being transferred.</param>
-        internal PeerTransferRequestIncoming(TransferDirection direction, int token, string filename, int fileSize)
+        internal PeerTransferRequest(TransferDirection direction, int token, string filename, int fileSize = 0)
         {
             Direction = direction;
             Token = token;
@@ -55,11 +55,11 @@ namespace Soulseek.NET.Messaging.Responses
         public int Token { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerTransferRequestIncoming"/> from the specified <paramref name="message"/>.
+        ///     Parses a new instance of <see cref="PeerTransferRequest"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerTransferRequestIncoming Parse(Message message)
+        public static PeerTransferRequest Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -73,7 +73,22 @@ namespace Soulseek.NET.Messaging.Responses
             var filename = reader.ReadString();
             var fileSize = reader.ReadInteger();
 
-            return new PeerTransferRequestIncoming(direction, token, filename, fileSize);
+            return new PeerTransferRequest(direction, token, filename, fileSize);
+        }
+
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
+        public Message ToMessage()
+        {
+            return new MessageBuilder()
+                .Code(MessageCode.PeerTransferRequest)
+                .WriteInteger((int)Direction)
+                .WriteInteger(Token)
+                .WriteString(Filename)
+                .WriteInteger(FileSize)
+                .Build();
         }
     }
 }

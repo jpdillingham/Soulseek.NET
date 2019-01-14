@@ -398,10 +398,10 @@ namespace Soulseek.NET
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
                 var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
-                await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
+                await connection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
 
                 var incomingResponse = await incomingResponseWait.ConfigureAwait(false);
 
@@ -660,7 +660,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerTransferRequest:
-                    var transferRequest = PeerTransferRequestIncoming.Parse(message);
+                    var transferRequest = PeerTransferRequest.Parse(message);
                     MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
 
                     break;
