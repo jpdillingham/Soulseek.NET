@@ -705,7 +705,7 @@ namespace Soulseek.NET
                     await HandleConnectToPeer(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
                     break;
 
-                case MessageCode.ServerPrivateMessages:
+                case MessageCode.ServerPrivateMessage:
                     var pm = PrivateMessage.Parse(message);
                     Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
                     await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);

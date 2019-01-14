@@ -57,7 +57,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerPrivateMessages)
+                .Code(MessageCode.ServerPrivateMessage)
                 .Build();
 
             var ex = Record.Exception(() => PrivateMessage.Parse(msg));
@@ -74,7 +74,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerPrivateMessages)
+                .Code(MessageCode.ServerPrivateMessage)
                 .WriteInteger(id)
                 .WriteInteger(timeOffset)
                 .WriteString(username)

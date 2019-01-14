@@ -71,9 +71,9 @@ namespace Soulseek.NET.Messaging.Responses
         {
             var reader = new MessageReader(message);
 
-            if (reader.Code != MessageCode.ServerPrivateMessages)
+            if (reader.Code != MessageCode.ServerPrivateMessage)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.ServerPrivateMessages}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.ServerPrivateMessage}, received: {(int)reader.Code}.");
             }
 
             var id = reader.ReadInteger();

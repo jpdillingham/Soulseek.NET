@@ -80,7 +80,7 @@ namespace Soulseek.NET.Messaging
         /// <summary>
         ///     22
         /// </summary>
-        ServerPrivateMessages = 10022,
+        ServerPrivateMessage = 10022,
 
         /// <summary>
         ///     23
