@@ -17,6 +17,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Zlib;
+    using System.Linq;
     using Xunit;
 
     public class SearchResponseTests
@@ -85,6 +86,41 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             Assert.IsType<MessageReadException>(ex);
         }
 
+        [Trait("Category", "Parse")]
+        [Fact(DisplayName = "Parse throws MessageReadException on file count mismatch")]
+        public void Parse_Throws_MessageReadException_On_File_Count_Mismatch()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString("foo")
+                .WriteInteger(0)
+                .WriteInteger(20) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(0x20) // code
+                .WriteString("filename2") // filename
+                .WriteLong(30) // size
+                .WriteString("ext2") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitRate) // attribute[0].type
+                .WriteInteger(40) // attribute[0].value
+                .WriteByte(0)
+                .WriteInteger(0)
+                .WriteLong(0)
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Compress()
+                .Build();
+
+            var ex = Record.Exception(() => SearchResponse.Parse(msg));
+
+            Assert.NotNull(ex);
+            Assert.IsType<MessageReadException>(ex);
+        }
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
@@ -117,6 +153,167 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
             Assert.Equal(uploadSpeed, r.UploadSpeed);
             Assert.Equal(queueLength, r.QueueLength);
+
+            Assert.Single(r.Files);
+
+            var file = r.Files.ToList()[0];
+
+            Assert.Equal(0x2, file.Code);
+            Assert.Equal("filename", file.Filename);
+            Assert.Equal(3, file.Size);
+            Assert.Equal("ext", file.Extension);
+            Assert.Equal(1, file.AttributeCount);
+            Assert.Single(file.Attributes);
+            Assert.Equal(FileAttributeType.BitDepth, file.Attributes.ToList()[0].Type);
+            Assert.Equal(4, file.Attributes.ToList()[0].Value);
+        }
+
+        [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse handles empty responses"), AutoData]
+        public void Parse_Handles_Empty_Responses(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(0) // file count
+                .WriteByte(freeUploadSlots)
+                .WriteInteger(uploadSpeed)
+                .WriteLong(queueLength)
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Compress()
+                .Build();
+
+            var r = SearchResponse.Parse(msg);
+
+            Assert.Equal(username, r.Username);
+            Assert.Equal(token, r.Token);
+            Assert.Equal(0, r.FileCount);
+            Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
+            Assert.Equal(uploadSpeed, r.UploadSpeed);
+            Assert.Equal(queueLength, r.QueueLength);
+
+            Assert.Empty(r.Files);
+        }
+
+        [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse handles multiple files"), AutoData]
+        public void Parse_Handles_Multiple_Files(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(2) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(0x20) // code
+                .WriteString("filename2") // filename
+                .WriteLong(30) // size
+                .WriteString("ext2") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitRate) // attribute[0].type
+                .WriteInteger(40) // attribute[0].value
+                .WriteByte(freeUploadSlots)
+                .WriteInteger(uploadSpeed)
+                .WriteLong(queueLength)
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Compress()
+                .Build();
+
+            var r = SearchResponse.Parse(msg);
+
+            Assert.Equal(2, r.Files.Count());
+
+            var file = r.Files.ToList();
+
+            Assert.Equal(0x2, file[0].Code);
+            Assert.Equal("filename", file[0].Filename);
+            Assert.Equal(3, file[0].Size);
+            Assert.Equal("ext", file[0].Extension);
+            Assert.Equal(1, file[0].AttributeCount);
+            Assert.Single(file[0].Attributes);
+            Assert.Equal(FileAttributeType.BitDepth, file[0].Attributes.ToList()[0].Type);
+            Assert.Equal(4, file[0].Attributes.ToList()[0].Value);
+
+            Assert.Equal(0x20, file[1].Code);
+            Assert.Equal("filename2", file[1].Filename);
+            Assert.Equal(30, file[1].Size);
+            Assert.Equal("ext2", file[1].Extension);
+            Assert.Equal(1, file[1].AttributeCount);
+            Assert.Single(file[1].Attributes);
+            Assert.Equal(FileAttributeType.BitRate, file[1].Attributes.ToList()[0].Type);
+            Assert.Equal(40, file[1].Attributes.ToList()[0].Value);
+        }
+
+        [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse handles empty attributes"), AutoData]
+        public void Parse_Handles_Empty_Attributes(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(1) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(0) // attribute count
+                .WriteByte(freeUploadSlots)
+                .WriteInteger(uploadSpeed)
+                .WriteLong(queueLength)
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Compress()
+                .Build();
+
+            var r = SearchResponse.Parse(msg);
+
+            Assert.Single(r.Files);
+            Assert.Empty(r.Files.ToList()[0].Attributes);
+        }
+
+        [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse handles multiple attributes"), AutoData]
+        public void Parse_Handles_Multiple_Attributes(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(1) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(2) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteInteger((int)FileAttributeType.BitRate) // attribute[0].type
+                .WriteInteger(5) // attribute[0].value
+                .WriteByte(freeUploadSlots)
+                .WriteInteger(uploadSpeed)
+                .WriteLong(queueLength)
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Compress()
+                .Build();
+
+            var r = SearchResponse.Parse(msg);
+
+            Assert.Single(r.Files);
+
+            var file = r.Files.ToList()[0];
+
+            Assert.Equal(FileAttributeType.BitDepth, file.Attributes.ToList()[0].Type);
+            Assert.Equal(4, file.Attributes.ToList()[0].Value);
+
+            Assert.Equal(FileAttributeType.BitRate, file.Attributes.ToList()[1].Type);
+            Assert.Equal(5, file.Attributes.ToList()[1].Value);
         }
     }
 }
