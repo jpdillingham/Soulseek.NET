@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferResponseIncomingTests.cs" company="JP Dillingham">
+﻿// <copyright file="PeerTransferResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
     using System;
     using Xunit;
 
-    public class PeerTransferResponseIncomingTests
+    public class PeerTransferResponseTests
     {
         private Random Random { get; } = new Random();
 
@@ -31,9 +31,9 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
             var msg = Guid.NewGuid().ToString();
             var size = Random.Next();
 
-            PeerTransferResponseIncoming response = null;
+            PeerTransferResponse response = null;
 
-            var ex = Record.Exception(() => response = new PeerTransferResponseIncoming(token, allowed, size, msg));
+            var ex = Record.Exception(() => response = new PeerTransferResponse(token, allowed, size, msg));
 
             Assert.Null(ex);
 
@@ -51,7 +51,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferResponseIncoming.Parse(msg));
+            var ex = Record.Exception(() => PeerTransferResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -65,7 +65,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerTransferResponse)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferResponseIncoming.Parse(msg));
+            var ex = Record.Exception(() => PeerTransferResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -85,7 +85,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .WriteInteger(size)
                 .Build();
 
-            var response = PeerTransferResponseIncoming.Parse(msg);
+            var response = PeerTransferResponse.Parse(msg);
 
             Assert.Equal(token, response.Token);
             Assert.True(response.Allowed);
@@ -107,11 +107,35 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .WriteString(message)
                 .Build();
 
-            var response = PeerTransferResponseIncoming.Parse(msg);
+            var response = PeerTransferResponse.Parse(msg);
 
             Assert.Equal(token, response.Token);
             Assert.False(response.Allowed);
             Assert.Equal(message, response.Message);
         }
+
+        [Trait("Category", "ToMessage")]
+        [Fact(DisplayName = "ToMessage constructs the correct Message")]
+        public void ToMessage_Constructs_The_Correct_Message()
+        {
+            var rnd = new Random();
+
+            var token = rnd.Next();
+            var size = rnd.Next();
+            var message = Guid.NewGuid().ToString();
+            var a = new PeerTransferResponse(token, true, size, message);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
+            Assert.Equal(4 + 4 + 1 + 4 + 4 + message.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(1, reader.ReadByte());
+            Assert.Equal(size, reader.ReadInteger());
+            Assert.Equal(message, reader.ReadString());
+        }
+
     }
 }

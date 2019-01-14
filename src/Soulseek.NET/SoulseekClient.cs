@@ -396,7 +396,7 @@ namespace Soulseek.NET
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
+                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
                 var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
@@ -432,7 +432,7 @@ namespace Soulseek.NET
 
                     Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
 
-                    await connection.SendMessageAsync(new PeerTransferResponseOutgoing(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
+                    await connection.SendMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
                 }
 
                 try
@@ -654,7 +654,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerTransferResponse:
-                    var transferResponse = PeerTransferResponseIncoming.Parse(message);
+                    var transferResponse = PeerTransferResponse.Parse(message);
                     MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                     break;
 
