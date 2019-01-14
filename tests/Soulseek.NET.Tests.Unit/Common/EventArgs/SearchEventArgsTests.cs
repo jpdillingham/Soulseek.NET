@@ -32,7 +32,7 @@ namespace Soulseek.NET.Tests.Unit.Common.EventArgs
 
             var search = new Search(searchText, token, new SearchOptions());
 
-            var response = new SearchResponse();
+            var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
 
             var e = new SearchResponseReceivedEventArgs(search, response);
 
