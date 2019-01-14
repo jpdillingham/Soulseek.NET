@@ -95,7 +95,7 @@ namespace Soulseek.NET.Messaging.Responses
         /// </summary>
         public string Username { get; }
 
-        private List<File> FileList { get; set; }
+        private List<File> FileList { get; }
 
         /// <summary>
         ///     Parses a new instance of <see cref="SearchResponse"/> from the specified <paramref name="message"/>.
