@@ -17,7 +17,7 @@ namespace Soulseek.NET
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Exceptions;
-    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Tcp;
 
     /// <summary>

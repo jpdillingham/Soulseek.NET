@@ -21,8 +21,7 @@ namespace Soulseek.NET
     using System.Threading.Tasks;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Requests;
-    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
 
@@ -397,11 +396,11 @@ namespace Soulseek.NET
 
                 // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
                 // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponseIncoming>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequestIncoming>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
+                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
-                await connection.SendMessageAsync(new PeerTransferRequestOutgoing(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
+                await connection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
 
                 var incomingResponse = await incomingResponseWait.ConfigureAwait(false);
 
@@ -433,7 +432,7 @@ namespace Soulseek.NET
 
                     Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
 
-                    await connection.SendMessageAsync(new PeerTransferResponseOutgoing(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
+                    await connection.SendMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
                 }
 
                 try
@@ -655,12 +654,12 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.PeerTransferResponse:
-                    var transferResponse = PeerTransferResponseIncoming.Parse(message);
+                    var transferResponse = PeerTransferResponse.Parse(message);
                     MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                     break;
 
                 case MessageCode.PeerTransferRequest:
-                    var transferRequest = PeerTransferRequestIncoming.Parse(message);
+                    var transferRequest = PeerTransferRequest.Parse(message);
                     MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
 
                     break;
@@ -705,7 +704,7 @@ namespace Soulseek.NET
                     await HandleConnectToPeer(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
                     break;
 
-                case MessageCode.ServerPrivateMessages:
+                case MessageCode.ServerPrivateMessage:
                     var pm = PrivateMessage.Parse(message);
                     Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
                     await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);

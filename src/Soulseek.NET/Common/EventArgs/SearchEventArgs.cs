@@ -16,7 +16,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Soulseek.NET
 {
     using System;
-    using Soulseek.NET.Messaging.Responses;
+    using Soulseek.NET.Messaging.Messages;
 
     /// <summary>
     ///     Basic event arguments for search events.
