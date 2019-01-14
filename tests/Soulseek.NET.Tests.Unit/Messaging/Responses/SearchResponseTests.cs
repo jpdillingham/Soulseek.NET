@@ -17,6 +17,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Responses;
     using Soulseek.NET.Zlib;
+    using System.Collections.Generic;
     using System.Linq;
     using Xunit;
 
@@ -38,6 +39,27 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Responses
             Assert.Equal(freeUploadSlots, r.FreeUploadSlots);
             Assert.Equal(uploadSpeed, r.UploadSpeed);
             Assert.Equal(queueLength, r.QueueLength);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with given response and list"), AutoData]
+        public void Instantiates_With_Given_Response_And_List(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var messageReader = new MessageReader(new byte[8]);
+
+            var r1 = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength);
+
+            var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext", 0) });
+
+            Assert.Empty(r1.Files);
+            Assert.Single(r2.Files);
+
+            Assert.Equal(r1.Username, r2.Username);
+            Assert.Equal(r1.Token, r2.Token);
+            Assert.Equal(r1.FileCount, r2.FileCount);
+            Assert.Equal(r1.FreeUploadSlots, r2.FreeUploadSlots);
+            Assert.Equal(r1.UploadSpeed, r2.UploadSpeed);
+            Assert.Equal(r1.QueueLength, r2.QueueLength);
         }
 
         [Trait("Category", "Parse")]
