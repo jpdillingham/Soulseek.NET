@@ -12,9 +12,41 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 {
+    using AutoFixture.Xunit2;
+    using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
+    using System.Net;
     using Xunit;
 
     public class MessageConnectionTests
     {
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
+        public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPAddress ipAddress, int port, ConnectionOptions options)
+        {
+            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options);
+
+            Assert.Equal(MessageConnectionType.Peer, c.Type);
+            Assert.Equal(username, c.Username);
+            Assert.Equal(ipAddress, c.IPAddress);
+            Assert.Equal(port, c.Port);
+            Assert.Equal(options, c.Options);
+
+            Assert.Equal(new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer), c.Key);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates server connection with given IP"), AutoData]
+        public void Instantiates_Peer_Connection_With_Given_IP(IPAddress ipAddress, int port, ConnectionOptions options)
+        {
+            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
+
+            Assert.Equal(MessageConnectionType.Server, c.Type);
+            Assert.Equal(ipAddress, c.IPAddress);
+            Assert.Equal(port, c.Port);
+            Assert.Equal(options, c.Options);
+
+            Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port, MessageConnectionType.Server), c.Key);
+        }
     }
 }
