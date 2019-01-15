@@ -175,5 +175,36 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
+
+        [Trait("Category", "Deferred Messages")]
+        [Theory(DisplayName = "Deferred messages are sent on connected"), AutoData]
+        public async Task Deferred_Messages_Are_Sent_On_Connected(string username, IPAddress ipAddress, int port)
+        {
+            var streamMock = new Mock<INetworkStream>();
+
+            var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(s => s.Connected).Returns(true);
+            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
+
+            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+
+            await c.SendMessageAsync(msg);
+            await c.SendMessageAsync(msg);
+
+            var deferred1 = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages").Count;
+
+            await c.ConnectAsync();
+
+            var deferred2 = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages");
+
+            Assert.Equal(2, deferred1);
+            Assert.Empty(deferred2);
+
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
+        }
     }
 }
