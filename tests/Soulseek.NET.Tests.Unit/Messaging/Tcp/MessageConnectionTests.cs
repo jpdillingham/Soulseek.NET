@@ -63,9 +63,9 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port, MessageConnectionType.Server), c.Key);
         }
 
-        [Trait("Category", "SendMessageAsync")]
-        [Theory(DisplayName = "SendMessageAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task SendMessageAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteMessageAsync")]
+        [Theory(DisplayName = "WriteMessageAsync throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteMessageAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
@@ -74,15 +74,15 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
             c.SetProperty("State", ConnectionState.Disconnected);
 
-            var ex = await Record.ExceptionAsync(async () => await c.SendMessageAsync(msg));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        [Trait("Category", "SendMessageAsync")]
-        [Theory(DisplayName = "SendMessageAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task SendMessageAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteMessageAsync")]
+        [Theory(DisplayName = "WriteMessageAsync throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteMessageAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
@@ -91,15 +91,15 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
             c.SetProperty("State", ConnectionState.Disconnecting);
 
-            var ex = await Record.ExceptionAsync(async () => await c.SendMessageAsync(msg));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        [Trait("Category", "SendMessageAsync")]
-        [Theory(DisplayName = "SendMessageAsync defers when pending"), AutoData]
-        public async Task SendMessageAsync_Defers_When_Pending(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteMessageAsync")]
+        [Theory(DisplayName = "WriteMessageAsync defers when pending"), AutoData]
+        public async Task WriteMessageAsync_Defers_When_Pending(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
@@ -107,16 +107,16 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
 
-            await c.SendMessageAsync(msg);
+            await c.WriteMessageAsync(msg);
 
             var deferred = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages");
 
             Assert.Single(deferred);
         }
 
-        [Trait("Category", "SendMessageAsync")]
-        [Theory(DisplayName = "SendMessageAsync defers when connecting"), AutoData]
-        public async Task SendMessageAsync_Defers_When_Connecting(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteMessageAsync")]
+        [Theory(DisplayName = "WriteMessageAsync defers when connecting"), AutoData]
+        public async Task WriteMessageAsync_Defers_When_Connecting(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
@@ -125,16 +125,16 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
             c.SetProperty("State", ConnectionState.Connecting);
 
-            await c.SendMessageAsync(msg);
+            await c.WriteMessageAsync(msg);
 
             var deferred = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages");
 
             Assert.Single(deferred);
         }
 
-        [Trait("Category", "SendMessageAsync")]
-        [Theory(DisplayName = "SendMessageAsync writes when connected"), AutoData]
-        public async Task SendMessageAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteMessageAsync")]
+        [Theory(DisplayName = "WriteMessageAsync writes when connected"), AutoData]
+        public async Task WriteMessageAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
@@ -151,14 +151,14 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
             await c.ConnectAsync();
 
-            await c.SendMessageAsync(msg);
+            await c.WriteMessageAsync(msg);
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
 
-        [Trait("Category", "SendMessageAsync")]
-        [Theory(DisplayName = "SendMessageAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
-        public async Task SendMessageAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
+        [Trait("Category", "WriteMessageAsync")]
+        [Theory(DisplayName = "WriteMessageAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
+        public async Task WriteMessageAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>())).Throws(new IOException());
@@ -177,7 +177,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             await c.ConnectAsync();
 
-            var ex = await Record.ExceptionAsync(async () => await c.SendMessageAsync(msg));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<ConnectionWriteException>(ex);
@@ -204,8 +204,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
 
-            await c.SendMessageAsync(msg);
-            await c.SendMessageAsync(msg);
+            await c.WriteMessageAsync(msg);
+            await c.WriteMessageAsync(msg);
 
             var deferred1 = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages").Count;
 
