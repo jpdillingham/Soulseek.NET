@@ -17,18 +17,31 @@ namespace Soulseek.NET.Messaging.Tcp
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
 
+    /// <summary>
+    ///     Provides client connections to the Soulseek network.
+    /// </summary>
     internal interface IMessageConnection : IConnection
     {
+        /// <summary>
+        ///     Occurs when a new message is received.
+        /// </summary>
         event EventHandler<Message> MessageRead;
 
+        /// <summary>
+        ///     Gets the username of the peer associated with the connection, if applicable.
+        /// </summary>
         string Username { get; }
+
+        /// <summary>
+        ///     Gets the connection type (Peer, Server).
+        /// </summary>
         MessageConnectionType Type { get; }
 
         /// <summary>
-        ///     Asynchronously sends the specified <paramref name="message"/>.
+        ///     Asynchronously writes the specified message to the connection.
         /// </summary>
-        /// <param name="message">The message to send.</param>
-        /// <returns>A value indicating whether the write was deferred until the connection is established instead of being sent immediately.</returns>
-        Task SendMessageAsync(Message message);
+        /// <param name="message">The message to write.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        Task WriteMessageAsync(Message message);
     }
 }
