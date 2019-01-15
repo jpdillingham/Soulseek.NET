@@ -51,12 +51,10 @@ namespace Soulseek.NET.Messaging.Tcp
         public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
         public MessageConnectionType Type { get; private set; }
         public string Username { get; private set; } = string.Empty;
-        private ConcurrentQueue<Message> DeferredMessages { get; set; } = new ConcurrentQueue<Message>();
+        private ConcurrentQueue<Message> DeferredMessages { get; } = new ConcurrentQueue<Message>();
 
-        public async Task<bool> SendMessageAsync(Message message)
+        public async Task SendMessageAsync(Message message)
         {
-            var deferred = false;
-
             if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
@@ -65,29 +63,14 @@ namespace Soulseek.NET.Messaging.Tcp
             if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
             {
                 DeferredMessages.Enqueue(message);
-                deferred = true;
             }
             else if (State == ConnectionState.Connected)
             {
                 var bytes = message.ToByteArray();
 
-                try
-                {
-                    NormalizeMessageCode(bytes, 0 - (int)Type);
-                    await WriteAsync(bytes).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (State != ConnectionState.Connected)
-                    {
-                        Disconnect($"Write error: {ex.Message}");
-                    }
-
-                    throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
-                }
+                NormalizeMessageCode(bytes, 0 - (int)Type);
+                await WriteAsync(bytes).ConfigureAwait(false);
             }
-
-            return deferred;
         }
 
         private void NormalizeMessageCode(byte[] messageBytes, int newCode)
