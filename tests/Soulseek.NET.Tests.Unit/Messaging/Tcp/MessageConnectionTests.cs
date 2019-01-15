@@ -218,5 +218,19 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
         }
+
+        [Trait("Category", "Code Normalization")]
+        [Theory(DisplayName = "Codes normalized for server connections"), AutoData]
+        public async Task Codes_Normalized_For_Server_Connections(IPAddress ipAddress, int port)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "Code Normalization")]
+        [Theory(DisplayName = "Codes normalized for peer connections"), AutoData]
+        public async Task Codes_Normalized_For_Peer_Connections(IPAddress ipAddress, int port)
+        {
+            Assert.True(false);
+        }
     }
 }
