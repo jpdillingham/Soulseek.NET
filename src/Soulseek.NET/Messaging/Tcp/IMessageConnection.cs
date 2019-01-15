@@ -29,6 +29,6 @@ namespace Soulseek.NET.Messaging.Tcp
         /// </summary>
         /// <param name="message">The message to send.</param>
         /// <returns>A value indicating whether the write was deferred until the connection is established instead of being sent immediately.</returns>
-        Task<bool> SendMessageAsync(Message message);
+        Task SendMessageAsync(Message message);
     }
 }
