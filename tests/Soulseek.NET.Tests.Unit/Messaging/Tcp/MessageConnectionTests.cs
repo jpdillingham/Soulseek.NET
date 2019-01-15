@@ -21,12 +21,19 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
     using System.Collections.Concurrent;
     using System.IO;
     using System.Net;
-    using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class MessageConnectionTests
     {
+        private ITestOutputHelper Output { get; }
+
+        public MessageConnectionTests(ITestOutputHelper output)
+        {
+            Output = output;
+        }
+
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
         public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPAddress ipAddress, int port, ConnectionOptions options)
@@ -149,10 +156,12 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
         [Trait("Category", "SendMessageAsync")]
         [Theory(DisplayName = "SendMessageAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
-        public async Task SendMessageAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(string username, IPAddress ipAddress, int port)
+        public async Task SendMessageAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>())).Throws(new IOException());
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
             tcpMock.Setup(s => s.Connected).Returns(true);
@@ -162,10 +171,9 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
 
-            c.SetProperty("Stream", streamMock.Object);
-            c.SetProperty("State", ConnectionState.Connected); 
+            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.SendMessageAsync(msg));
 
@@ -178,9 +186,11 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
         [Trait("Category", "Deferred Messages")]
         [Theory(DisplayName = "Deferred messages are sent on connected"), AutoData]
-        public async Task Deferred_Messages_Are_Sent_On_Connected(string username, IPAddress ipAddress, int port)
+        public async Task Deferred_Messages_Are_Sent_On_Connected(IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
             tcpMock.Setup(s => s.Connected).Returns(true);
@@ -190,7 +200,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
 
             await c.SendMessageAsync(msg);
             await c.SendMessageAsync(msg);
