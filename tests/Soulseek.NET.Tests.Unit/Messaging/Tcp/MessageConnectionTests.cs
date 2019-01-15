@@ -137,6 +137,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         public async Task SendMessageAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
             tcpMock.Setup(s => s.Connected).Returns(true);
