@@ -123,8 +123,6 @@ namespace Soulseek.NET.Messaging.Tcp
 
         private async Task ReadContinuouslyAsync()
         {
-            InactivityTimer?.Reset();
-
             while (true)
             {
                 var message = new List<byte>();
@@ -144,7 +142,6 @@ namespace Soulseek.NET.Messaging.Tcp
                 NormalizeMessageCode(messageBytes, (int)Type);
 
                 Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
-                InactivityTimer?.Reset();
             }
         }
 
