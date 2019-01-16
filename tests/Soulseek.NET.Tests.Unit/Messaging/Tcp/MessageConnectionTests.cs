@@ -21,6 +21,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
     using System.Collections.Concurrent;
     using System.IO;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
     using Xunit.Abstractions;
@@ -285,7 +286,46 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
         public async Task ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
         {
-            Assert.True(false);
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerInfoRequest)
+                .Build();
+
+            int callCount = 0;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Callback<byte[], int, int>((bytes, offset, length) =>
+                {
+                    if (callCount % 2 == 0)
+                    {
+                        var data = BitConverter.GetBytes(4);
+                        Array.Copy(data, bytes, data.Length);
+                    }
+                    else if (callCount % 2 == 1)
+                    {
+                        var data = BitConverter.GetBytes((int)MessageCode.PeerInfoRequest - 20000);
+                        Array.Copy(data, bytes, data.Length);
+                    }
+
+                    callCount++;
+                })
+                .Returns(Task.Run(() => 4));
+
+            var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(s => s.Connected).Returns(true);
+            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+            Message readMessage = null;
+
+            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+
+            c.MessageRead += (sender, e) => readMessage = e;
+
+            await c.ConnectAsync();
+
+            Thread.Sleep(500); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+
+            Assert.Equal(MessageCode.PeerInfoRequest, readMessage?.Code);
         }
     }
 }
