@@ -141,7 +141,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
                 NormalizeMessageCode(messageBytes, (int)Type);
 
-                Task.Run(() => MessageRead?.Invoke(this, new Message(messageBytes))).Forget();
+                MessageRead?.Invoke(this, new Message(messageBytes));
             }
         }
 
