@@ -258,9 +258,9 @@ namespace Soulseek.NET.Tcp
         /// <returns>The read bytes.</returns>
         public Task<byte[]> ReadAsync(int length)
         {
-            if (length <= 0)
+            if (length < 0)
             {
-                throw new ArgumentException($"The requested length must be greater than zero.");
+                throw new ArgumentException($"The requested length must be greater than or equal to zero.");
             }
 
             if (!TcpClient.Connected)
