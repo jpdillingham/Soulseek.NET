@@ -279,7 +279,27 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             Assert.Equal((int)MessageCode.PeerInfoRequest - 20000, code);
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+        }
 
+        [Trait("Category", "ReadContinuouslyAsync")]
+        [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
+        public async Task ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "ReadContinuouslyAsync")]
+        [Theory(DisplayName = "ReadContinuouslyAsync times out on inactivity"), AutoData]
+        public async Task ReadContinuouslyAsync_Times_Out_On_Inactivity(string username, IPAddress ipAddress, int port)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "ReadContinuouslyAsync")]
+        [Theory(DisplayName = "ReadContinuouslyAsync resets inactivity timer on read"), AutoData]
+        public async Task ReadContinuouslyAsync_Resets_Inacivity_Timer_On_Read(string username, IPAddress ipAddress, int port)
+        {
+            Assert.True(false);
         }
     }
 }
