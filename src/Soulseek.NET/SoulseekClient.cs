@@ -360,7 +360,7 @@ namespace Soulseek.NET
                     MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.SendMessageAsync(new PeerBrowseRequest().ToMessage()).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage()).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
                 return response;
@@ -400,7 +400,7 @@ namespace Soulseek.NET
                 var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
-                await connection.SendMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
 
                 var incomingResponse = await incomingResponseWait.ConfigureAwait(false);
 
@@ -432,7 +432,7 @@ namespace Soulseek.NET
 
                     Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
 
-                    await connection.SendMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
+                    await connection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
                 }
 
                 try
@@ -462,7 +462,7 @@ namespace Soulseek.NET
             var addressWait = MessageWaiter.Wait<GetPeerAddressResponse>(new WaitKey(MessageCode.ServerGetPeerAddress, username));
 
             var request = new GetPeerAddressRequest(username);
-            await ServerConnection.SendMessageAsync(request.ToMessage()).ConfigureAwait(false);
+            await ServerConnection.WriteMessageAsync(request.ToMessage()).ConfigureAwait(false);
 
             var address = await addressWait.ConfigureAwait(false);
             return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
@@ -707,7 +707,7 @@ namespace Soulseek.NET
                 case MessageCode.ServerPrivateMessage:
                     var pm = PrivateMessage.Parse(message);
                     Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
-                    await ServerConnection.SendMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
+                    await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
@@ -725,7 +725,7 @@ namespace Soulseek.NET
         {
             var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
 
-            await ServerConnection.SendMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
+            await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
 
             var response = await loginWait.ConfigureAwait(false);
 
@@ -772,7 +772,7 @@ namespace Soulseek.NET
                 ActiveSearches.TryAdd(search.Token, search);
                 Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
 
-                await ServerConnection.SendMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage()).ConfigureAwait(false);
+                await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage()).ConfigureAwait(false);
 
                 if (!waitForCompletion)
                 {

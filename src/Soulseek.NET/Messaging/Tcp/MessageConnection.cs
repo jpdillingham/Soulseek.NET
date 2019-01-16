@@ -20,14 +20,34 @@ namespace Soulseek.NET.Messaging.Tcp
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
 
+    /// <summary>
+    ///     Provides client connections to the Soulseek network.
+    /// </summary>
     internal sealed class MessageConnection : Connection, IMessageConnection
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
+        /// </summary>
+        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : this(type, ipAddress, port, options, tcpClient)
         {
             Username = username;
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
+        /// </summary>
+        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         internal MessageConnection(MessageConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(ipAddress, port, options, tcpClient)
         {
@@ -46,17 +66,35 @@ namespace Soulseek.NET.Messaging.Tcp
             };
         }
 
+        /// <summary>
+        ///     Occurs when a new message is received.
+        /// </summary>
         public event EventHandler<Message> MessageRead;
 
+        /// <summary>
+        ///     Gets the unique identifier for the connection.
+        /// </summary>
         public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
+
+        /// <summary>
+        ///     Gets the connection type (Peer, Server).
+        /// </summary>
         public MessageConnectionType Type { get; private set; }
+
+        /// <summary>
+        ///     Gets the username of the peer associated with the connection, if applicable.
+        /// </summary>
         public string Username { get; private set; } = string.Empty;
-        private ConcurrentQueue<Message> DeferredMessages { get; set; } = new ConcurrentQueue<Message>();
 
-        public async Task<bool> SendMessageAsync(Message message)
+        private ConcurrentQueue<Message> DeferredMessages { get; } = new ConcurrentQueue<Message>();
+
+        /// <summary>
+        ///     Asynchronously writes the specified message to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public async Task WriteMessageAsync(Message message)
         {
-            var deferred = false;
-
             if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
@@ -65,29 +103,14 @@ namespace Soulseek.NET.Messaging.Tcp
             if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
             {
                 DeferredMessages.Enqueue(message);
-                deferred = true;
             }
             else if (State == ConnectionState.Connected)
             {
                 var bytes = message.ToByteArray();
 
-                try
-                {
-                    NormalizeMessageCode(bytes, 0 - (int)Type);
-                    await WriteAsync(bytes).ConfigureAwait(false);
-                }
-                catch (Exception ex)
-                {
-                    if (State != ConnectionState.Connected)
-                    {
-                        Disconnect($"Write error: {ex.Message}");
-                    }
-
-                    throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
-                }
+                NormalizeMessageCode(bytes, 0 - (int)Type);
+                await WriteAsync(bytes).ConfigureAwait(false);
             }
-
-            return deferred;
         }
 
         private void NormalizeMessageCode(byte[] messageBytes, int newCode)
@@ -131,7 +154,7 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 if (DeferredMessages.TryDequeue(out var deferredMessage))
                 {
-                    await SendMessageAsync(deferredMessage).ConfigureAwait(false);
+                    await WriteMessageAsync(deferredMessage).ConfigureAwait(false);
                 }
             }
         }
