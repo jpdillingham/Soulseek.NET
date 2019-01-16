@@ -223,14 +223,63 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         [Theory(DisplayName = "Codes normalized for server connections"), AutoData]
         public async Task Codes_Normalized_For_Server_Connections(IPAddress ipAddress, int port)
         {
-            Assert.True(false);
+            int code = 0;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
+            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Callback<byte[], int, int>((bytes, offset, length) => code = BitConverter.ToInt32(bytes, 4))
+                .Returns(Task.CompletedTask);
+
+            var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(s => s.Connected).Returns(true);
+            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerAddUser)
+                .Build();
+
+            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
+            await c.ConnectAsync();
+
+            await c.WriteMessageAsync(msg);
+
+            Assert.Equal((int)MessageCode.ServerAddUser - 10000, code);
+
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
         }
 
         [Trait("Category", "Code Normalization")]
         [Theory(DisplayName = "Codes normalized for peer connections"), AutoData]
-        public async Task Codes_Normalized_For_Peer_Connections(IPAddress ipAddress, int port)
+        public async Task Codes_Normalized_For_Peer_Connections(string username, IPAddress ipAddress, int port)
         {
-            Assert.True(false);
+            int code = 0;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => 1));
+            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Callback<byte[], int, int>((bytes, offset, length) => code = BitConverter.ToInt32(bytes, 4))
+                .Returns(Task.CompletedTask);
+
+            var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(s => s.Connected).Returns(true);
+            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerInfoRequest)
+                .Build();
+
+            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            await c.ConnectAsync();
+
+            await c.WriteMessageAsync(msg);
+
+            Assert.Equal((int)MessageCode.PeerInfoRequest - 20000, code);
+
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+
         }
     }
 }
