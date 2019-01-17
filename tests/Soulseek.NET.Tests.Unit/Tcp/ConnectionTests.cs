@@ -327,6 +327,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var timer = c.GetProperty<System.Timers.Timer>("WatchdogTimer");
             timer.Interval = 1;
+            timer.Reset();
 
             await c.ConnectAsync();
 
@@ -336,9 +337,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             while (!disconnectRaisedByWatchdog)
             {
-                if ((DateTime.UtcNow - start).TotalMilliseconds > 2000)
+                if ((DateTime.UtcNow - start).TotalMilliseconds > 5000)
                 {
-                    throw new Exception("Watchdog didn't disconnect in 2000ms");
+                    throw new Exception("Watchdog didn't disconnect in 5000ms");
                 }
             }
 
