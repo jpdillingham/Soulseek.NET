@@ -695,11 +695,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns(Task.Run(() => 
-                {
-                    Thread.Sleep(2000);
-                    return 1;
-                }));
+                .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
@@ -711,6 +707,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             await c.ConnectAsync();
             await c.ReadAsync(1);
+
+            Thread.Sleep(500);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 
