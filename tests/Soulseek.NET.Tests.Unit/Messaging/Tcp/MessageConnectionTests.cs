@@ -323,7 +323,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             await c.ConnectAsync();
 
-            Thread.Sleep(500); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+            Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
             Assert.Equal(MessageCode.PeerInfoRequest, readMessage?.Code);
         }
