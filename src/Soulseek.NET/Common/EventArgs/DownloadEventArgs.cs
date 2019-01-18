@@ -50,11 +50,9 @@ namespace Soulseek.NET
         {
             State = download.State;
             PlaceInQueue = download.PlaceInQueue;
-            Data = download.Data;
         }
 
         public DownloadStates State { get; private set; }
         public int PlaceInQueue { get; internal set; }
-        public IEnumerable<byte> Data { get; internal set; }
     }
 }

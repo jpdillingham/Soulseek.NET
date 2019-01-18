@@ -327,6 +327,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var timer = c.GetProperty<System.Timers.Timer>("WatchdogTimer");
             timer.Interval = 1;
+            timer.Reset();
 
             await c.ConnectAsync();
 
@@ -336,9 +337,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             while (!disconnectRaisedByWatchdog)
             {
-                if ((DateTime.UtcNow - start).TotalMilliseconds > 1000)
+                if ((DateTime.UtcNow - start).TotalMilliseconds > 5000)
                 {
-                    throw new Exception("Watchdog didn't disconnect in 1000ms");
+                    throw new Exception("Watchdog didn't disconnect in 5000ms");
                 }
             }
 
@@ -588,10 +589,40 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Theory(DisplayName = "Read throws given bad length")]
-        [InlineData(0)]
+        [Fact(DisplayName = "Read does not throw given zero length")]
+        public async Task Read_Does_Not_Throw_Given_Zero_Length()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(0));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read returns empty byte array given zero length")]
+        public async Task Read_Returns_Empty_Byte_Array_Given_Zero_Length()
+        {
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            await c.ConnectAsync();
+
+            var bytes = await c.ReadAsync(0);
+
+            Assert.Empty(bytes);
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read throws given negative length")]
+        [InlineData(-12151353)]
         [InlineData(-1)]
-        public async Task Read_Throws_Given_Bad_Length(int length)
+        public async Task Read_Throws_Given_Negative_Length(int length)
         {
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
@@ -665,11 +696,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns(Task.Run(() => 
-                {
-                    Thread.Sleep(2000);
-                    return 1;
-                }));
+                .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
@@ -681,6 +708,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             await c.ConnectAsync();
             await c.ReadAsync(1);
+
+            Thread.Sleep(500);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 

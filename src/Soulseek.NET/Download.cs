@@ -16,11 +16,12 @@ namespace Soulseek.NET
 
     internal class Download
     {
-        internal Download(string username, string filename, int token)
+        internal Download(string username, string filename, int token, int size = 0)
         {
             Username = username;
             Filename = filename;
             Token = token;
+            Size = size;
         }
 
         public string Username { get; private set; }
