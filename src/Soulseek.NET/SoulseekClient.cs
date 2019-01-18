@@ -162,7 +162,7 @@ namespace Soulseek.NET
         {
             if (string.IsNullOrEmpty(username))
             {
-                throw new ArgumentNullException(nameof(username), $"The specified username is null or empty.");
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected))
@@ -249,12 +249,12 @@ namespace Soulseek.NET
         {
             if (string.IsNullOrEmpty(username))
             {
-                throw new ArgumentNullException(nameof(username), $"The specified username is null or empty.");
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
             }
 
             if (string.IsNullOrEmpty(filename))
             {
-                throw new ArgumentNullException(nameof(filename), $"The specified filename is null or empty.");
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace.", nameof(filename));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected))
