@@ -229,6 +229,17 @@ namespace Soulseek.NET
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/> and with the optionally specified <paramref name="token"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <remarks>
+        ///     If no <paramref name="token"/> is specified, one will be randomly generated internally.
+        /// </remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including a byte array containing the file contents.</returns>
         public Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
         {
             return DownloadInternalAsync(username, filename, token, cancellationToken, null);
