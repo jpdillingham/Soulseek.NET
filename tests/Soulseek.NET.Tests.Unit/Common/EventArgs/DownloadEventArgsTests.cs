@@ -45,7 +45,7 @@ namespace Soulseek.NET.Tests.Unit.Common.EventArgs
 
         [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadStateChangedEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, DownloadStates downloadStates)
+        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadStates downloadStates)
         {
             var dl = new Download(username, filename, token);
             var d = new DownloadStateChangedEventArgs(downloadStates, dl);
