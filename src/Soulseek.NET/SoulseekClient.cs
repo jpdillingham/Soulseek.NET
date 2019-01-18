@@ -413,11 +413,10 @@ namespace Soulseek.NET
                 }
                 else
                 {
-                    // todo: get place in line
                     download.State = DownloadStates.Queued;
                     QueuedDownloads.TryAdd(download.Token, download);
 
-                    Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
+                    Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(DownloadStates.None, download))).Forget();
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var incomingRequest = await incomingRequestWait.ConfigureAwait(false);
@@ -430,7 +429,7 @@ namespace Soulseek.NET
                     download.State = DownloadStates.InProgress;
                     ActiveDownloads.TryAdd(download.RemoteToken, download);
 
-                    Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
+                    Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(DownloadStates.Queued, download))).Forget();
 
                     await connection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
                 }
@@ -438,6 +437,7 @@ namespace Soulseek.NET
                 try
                 {
                     download.Data = await downloadWait.ConfigureAwait(false); // completed within ConnectToPeerResponse handling
+                    download.State = DownloadStates.Completed;
                 }
                 catch (OperationCanceledException)
                 {
@@ -447,7 +447,7 @@ namespace Soulseek.NET
                 }
 
                 // todo: handle download failure
-                Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(download))).Forget();
+                Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(DownloadStates.InProgress, download))).Forget();
 
                 return download.Data;
             }
