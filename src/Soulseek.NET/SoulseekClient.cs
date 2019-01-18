@@ -247,6 +247,7 @@ namespace Soulseek.NET
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
         {
+
             if (string.IsNullOrEmpty(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
@@ -267,7 +268,26 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            var tokenInternal = token ?? Random.Next();
+            bool tokenExists(int t) => QueuedDownloads.ContainsKey(t) || ActiveDownloads.Any(d => d.Value.Token == t);
+            int tokenInternal;
+
+            if (token != null)
+            {
+                if (tokenExists((int)token))
+                {
+                    throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
+                }
+
+                tokenInternal = (int)token;
+            }
+            else
+            {
+                do
+                {
+                    tokenInternal = Random.Next();
+                }
+                while (tokenExists(tokenInternal));
+            }
 
             return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken, null);
         }
