@@ -60,7 +60,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets or sets the state of the download.
         /// </summary>
-        public DownloadStates State { get; set; } = DownloadStates.Queued;
+        public DownloadStates State { get; set; } = DownloadStates.None;
 
         /// <summary>
         ///     Gets the unique token for thr transfer.
