@@ -14,25 +14,72 @@ namespace Soulseek.NET
 {
     using Soulseek.NET.Tcp;
 
+    /// <summary>
+    ///     A single file download.
+    /// </summary>
     internal class Download
     {
-        internal Download(string username, string filename, int token, int size = 0)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Download"/> class.
+        /// </summary>
+        /// <param name="username">The username of the peer from which the file is to be downloaded.</param>
+        /// <param name="filename">The filename of the file to be downloaded.</param>
+        /// <param name="token">The unique token for the transfer.</param>
+        internal Download(string username, string filename, int token)
         {
             Username = username;
             Filename = filename;
             Token = token;
-            Size = size;
         }
 
-        public string Username { get; private set; }
-        public string Filename { get; private set; }
-        public int Token { get; private set; }
-        public int RemoteToken { get; set; }
-        public int Size { get; set; }
-        public int PlaceInQueue { get; set; }
-        public DownloadStates State { get; set; } = DownloadStates.Queued;
-        public byte[] Data { get; set; }
+        /// <summary>
+        ///     Gets or sets the connection used for the transfer.
+        /// </summary>
         public IConnection Connection { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the data downloaded.
+        /// </summary>
+        public byte[] Data { get; set; }
+
+        /// <summary>
+        ///     Gets the filename of the file to be downloaded.
+        /// </summary>
+        public string Filename { get; }
+
+        /// <summary>
+        ///     Gets or sets the current place of the download in the remote queue.
+        /// </summary>
+        public int PlaceInQueue { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the remote unique token for the transfer.
+        /// </summary>
+        public int RemoteToken { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the size of the file to be downloaded, in bytes.
+        /// </summary>
+        public int Size { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the state of the download.
+        /// </summary>
+        public DownloadStates State { get; set; } = DownloadStates.Queued;
+
+        /// <summary>
+        ///     Gets the unique token for thr transfer.
+        /// </summary>
+        public int Token { get; }
+
+        /// <summary>
+        ///     Gets the username of the peer from which the file is to be downloaded.
+        /// </summary>
+        public string Username { get; }
+
+        /// <summary>
+        ///     Gets tue unique wait key for the download.
+        /// </summary>
         public string WaitKey => $"{Username}:{Filename}:{Token}";
     }
 }
