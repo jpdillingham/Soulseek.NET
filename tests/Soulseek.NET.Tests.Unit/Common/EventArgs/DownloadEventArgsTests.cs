@@ -27,7 +27,7 @@ namespace Soulseek.NET.Tests.Unit.Common.EventArgs
             Assert.Equal(dl.Username, d.Username);
             Assert.Equal(dl.Filename, d.Filename);
             Assert.Equal(dl.Token, d.Token);
-            Assert.Equal(dl.Size, d.Size);
+            Assert.Equal(dl.State, d.State);
         }
 
         [Trait("Category", "DownloadProgressEventArgs Instantiation")]
@@ -35,10 +35,22 @@ namespace Soulseek.NET.Tests.Unit.Common.EventArgs
         internal void DownloadProgressEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, int bytesDownloaded)
         {
             var dl = new Download(username, filename, token);
+            dl.Size = size;
+
             var d = new DownloadProgressEventArgs(dl, bytesDownloaded);
 
             Assert.Equal(bytesDownloaded, d.BytesDownloaded);
             Assert.Equal((bytesDownloaded / (double)size) * 100, d.PercentComplete);
+        }
+
+        [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]
+        [Theory(DisplayName = "DownloadStateChangedEventArgs Instantiates with the given data"), AutoData]
+        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, DownloadStates downloadStates)
+        {
+            var dl = new Download(username, filename, token);
+            var d = new DownloadStateChangedEventArgs(downloadStates, dl);
+
+            Assert.Equal(downloadStates, d.PreviousState);
         }
     }
 }
