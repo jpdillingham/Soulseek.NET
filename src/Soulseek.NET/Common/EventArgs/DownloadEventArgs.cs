@@ -13,46 +13,97 @@
 namespace Soulseek.NET
 {
     using System;
-    using System.Collections.Generic;
 
+    /// <summary>
+    ///     Generic event arguments for download events.
+    /// </summary>
     public class DownloadEventArgs : EventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DownloadEventArgs"/> class.
+        /// </summary>
+        /// <param name="download">The download which raised the event.</param>
         internal DownloadEventArgs(Download download)
         {
             Username = download.Username;
             Filename = download.Filename;
             Token = download.Token;
             Size = download.Size;
+            State = download.State;
         }
 
-        public string Username { get; private set; }
-        public string Filename { get; private set; }
-        public int Token { get; private set; }
-        public int Size { get; private set; }
+        /// <summary>
+        ///     Gets the filename of the file to be downloaded.
+        /// </summary>
+        public string Filename { get; }
+
+        /// <summary>
+        ///     Gets the size of the file to be downloaded, in bytes.
+        /// </summary>
+        public int Size { get; }
+
+        /// <summary>
+        ///     Gets the state of the download.
+        /// </summary>
+        public DownloadStates State { get; }
+
+        /// <summary>
+        ///     Gets the unique token for thr transfer.
+        /// </summary>
+        public int Token { get; }
+
+        /// <summary>
+        ///     Gets the username of the peer from which the file is to be downloaded.
+        /// </summary>
+        public string Username { get; }
     }
 
-    public class DownloadProgressEventArgs : DownloadEventArgs
+    /// <summary>
+    ///     Event arguments for events raised by an update to download progress.
+    /// </summary>
+    public sealed class DownloadProgressEventArgs : DownloadEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DownloadProgressEventArgs"/> class.
+        /// </summary>
+        /// <param name="download">The download which raised the event.</param>
+        /// <param name="bytesDownloaded">The total number of bytes read.</param>
         internal DownloadProgressEventArgs(Download download, int bytesDownloaded)
             : base(download)
         {
             BytesDownloaded = bytesDownloaded;
         }
 
-        public int BytesDownloaded { get; private set; }
+        /// <summary>
+        ///     Gets the total number of bytes read.
+        /// </summary>
+        public int BytesDownloaded { get; }
+
+        /// <summary>
+        ///     Gets the current progress in percent.
+        /// </summary>
         public double PercentComplete => (BytesDownloaded / (double)Size) * 100;
     }
 
-    public class DownloadStateChangedEventArgs : DownloadEventArgs
+    /// <summary>
+    ///     Event arguments for events raised by a change in download state.
+    /// </summary>
+    public sealed class DownloadStateChangedEventArgs : DownloadEventArgs
     {
-        internal DownloadStateChangedEventArgs(Download download)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DownloadStateChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="previousState">The previous state of the download.</param>
+        /// <param name="download">The download which raised the event.</param>
+        internal DownloadStateChangedEventArgs(DownloadStates previousState, Download download)
             : base(download)
         {
-            State = download.State;
-            PlaceInQueue = download.PlaceInQueue;
+            PreviousState = previousState;
         }
 
-        public DownloadStates State { get; private set; }
-        public int PlaceInQueue { get; internal set; }
+        /// <summary>
+        ///     Gets the previous state of the download.
+        /// </summary>
+        public DownloadStates PreviousState { get; }
     }
 }
