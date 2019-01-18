@@ -160,6 +160,11 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new ArgumentNullException(nameof(username), $"The specified username is null or empty.");
+            }
+
             if (!State.HasFlag(SoulseekClientStates.Connected))
             {
                 throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
@@ -240,9 +245,31 @@ namespace Soulseek.NET
         /// <param name="token">The unique download token.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
-        public Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
         {
-            return DownloadInternalAsync(username, filename, token, cancellationToken, null);
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new ArgumentNullException(nameof(username), $"The specified username is null or empty.");
+            }
+
+            if (string.IsNullOrEmpty(filename))
+            {
+                throw new ArgumentNullException(nameof(filename), $"The specified filename is null or empty.");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
+            }
+
+            var tokenInternal = token ?? Random.Next();
+
+            return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken, null);
         }
 
         /// <summary>
