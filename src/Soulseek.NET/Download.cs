@@ -48,11 +48,6 @@ namespace Soulseek.NET
         public string Filename { get; }
 
         /// <summary>
-        ///     Gets or sets the current place of the download in the remote queue.
-        /// </summary>
-        public int PlaceInQueue { get; set; }
-
-        /// <summary>
         ///     Gets or sets the remote unique token for the transfer.
         /// </summary>
         public int RemoteToken { get; set; }
