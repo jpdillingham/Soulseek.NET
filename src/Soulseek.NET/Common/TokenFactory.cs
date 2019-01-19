@@ -17,17 +17,17 @@ namespace Soulseek.NET
     /// <summary>
     ///     Generates unique tokens for network operations.
     /// </summary>
-    public static class TokenFactory
+    public class TokenFactory : ITokenFactory
     {
         private const int MaxValue = 2147483647;
         private const int MaxIterations = 1000;
-        private static readonly Random Random = new Random();
+        private readonly Random random = new Random();
 
         /// <summary>
         ///     Gets a new unique token.
         /// </summary>
         /// <returns>The new unique token.</returns>
-        public static int GetToken()
+        public int GetToken()
         {
             return GetToken(s => false);
         }
@@ -37,7 +37,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="collisionCheck">The function used to check for token collisions.</param>
         /// <returns>The new unique token.</returns>
-        public static int GetToken(Func<int, bool> collisionCheck)
+        public int GetToken(Func<int, bool> collisionCheck)
         {
             var iterations = 0;
             int token;
@@ -49,7 +49,7 @@ namespace Soulseek.NET
                     throw new TimeoutException($"Failed to find an unused token after {MaxIterations} attempts.");
                 }
 
-                token = Random.Next(1, MaxValue);
+                token = random.Next(1, MaxValue);
                 iterations++;
             }
             while (collisionCheck(token));
@@ -63,7 +63,7 @@ namespace Soulseek.NET
         /// <param name="collisionCheck">The function used to check for token collisions.</param>
         /// <param name="token">The new unique token.</param>
         /// <returns>A value indicating whether the creation was successful.</returns>
-        public static bool TryGetToken(Func<int, bool> collisionCheck, out int? token)
+        public bool TryGetToken(Func<int, bool> collisionCheck, out int? token)
         {
             token = null;
 
