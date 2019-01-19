@@ -21,7 +21,7 @@ namespace Soulseek.NET.Tests.Unit
         public void Returns_A_token_Given_No_Collision()
         {
             int t = 0;
-            var ex = Record.Exception(() => t = TokenFactory.GetToken());
+            var ex = Record.Exception(() => t = new TokenFactory().GetToken());
 
             Assert.Null(ex);
             Assert.NotEqual(0, t);
@@ -32,7 +32,7 @@ namespace Soulseek.NET.Tests.Unit
         public void Throws_TimeoutException_Given_forced_Collision()
         {
             int t = 0;
-            var ex = Record.Exception(() => t = TokenFactory.GetToken(s => true));
+            var ex = Record.Exception(() => t = new TokenFactory().GetToken(s => true));
 
             Assert.NotNull(ex);
             Assert.Equal(0, t);
@@ -42,7 +42,7 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "Returns false given forced collision")]
         public void Returns_False_Given_Forced_Collision()
         {
-            var ok = TokenFactory.TryGetToken(s => true, out var token);
+            var ok = new TokenFactory().TryGetToken(s => true, out var token);
 
             Assert.False(ok);
         }
@@ -51,7 +51,7 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "Nulls token given forced collision")]
         public void Nulls_Token_Given_Forced_Collision()
         {
-            TokenFactory.TryGetToken(s => true, out var token);
+            new TokenFactory().TryGetToken(s => true, out var token);
 
             Assert.Null(token);
         }
@@ -60,7 +60,7 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "Returns true given no collision")]
         public void Returns_True_Given_No_Collision()
         {
-            var ok = TokenFactory.TryGetToken(s => false, out var token);
+            var ok = new TokenFactory().TryGetToken(s => false, out var token);
 
             Assert.True(ok);
         }
@@ -69,7 +69,7 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "Sets token given no collision")]
         public void Sets_Token_Given_No_Collision()
         {
-            var ok = TokenFactory.TryGetToken(s => false, out var token);
+            var ok = new TokenFactory().TryGetToken(s => false, out var token);
 
             Assert.NotNull(token);
             Assert.NotEqual(0, token);
