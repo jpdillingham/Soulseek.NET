@@ -248,12 +248,12 @@ namespace Soulseek.NET
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
         {
 
-            if (string.IsNullOrEmpty(username))
+            if (string.IsNullOrWhiteSpace(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
             }
 
-            if (string.IsNullOrEmpty(filename))
+            if (string.IsNullOrWhiteSpace(filename))
             {
                 throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace.", nameof(filename));
             }
