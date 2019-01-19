@@ -282,11 +282,12 @@ namespace Soulseek.NET
             }
             else
             {
-                do
+                if (!TokenFactory.TryGetToken(tokenExists, out var generatedToken))
                 {
-                    tokenInternal = Random.Next();
+                    throw new SoulseekClientException($"Unable to generate a unique token for the download.");
                 }
-                while (tokenExists(tokenInternal));
+
+                tokenInternal = (int)generatedToken;
             }
 
             return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken, null);
