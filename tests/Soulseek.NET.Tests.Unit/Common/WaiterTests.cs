@@ -15,7 +15,7 @@
 //     along with this program.If not, see<https://www.gnu.org/licenses/>.
 // </copyright>
 
-namespace Soulseek.NET.Tests.Unit.Common
+namespace Soulseek.NET.Tests.Unit
 {
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;

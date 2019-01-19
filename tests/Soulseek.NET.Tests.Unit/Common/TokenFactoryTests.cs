@@ -13,7 +13,7 @@
 using Soulseek.NET.Common;
 using Xunit;
 
-namespace Soulseek.NET.Tests.Unit.Common
+namespace Soulseek.NET.Tests.Unit
 {
     public class TokenFactoryTests
     {

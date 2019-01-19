@@ -2,7 +2,7 @@
 using System;
 using Xunit;
 
-namespace Soulseek.NET.Tests.Unit.Common.EventArgs
+namespace Soulseek.NET.Tests.Unit
 {
     public class SearchEventArgsTests
     {
