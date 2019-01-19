@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Common
+namespace Soulseek.NET
 {
     using System;
 
@@ -55,6 +55,27 @@ namespace Soulseek.NET.Common
             while (collisionCheck(token));
 
             return token;
+        }
+
+        /// <summary>
+        ///     Gets a new unique token after checking for collisions using the specified <paramref name="collisionCheck"/>.
+        /// </summary>
+        /// <param name="collisionCheck">The function used to check for token collisions.</param>
+        /// <param name="token">The new unique token.</param>
+        /// <returns>A value indicating whether the creation was successful.</returns>
+        public static bool TryGetToken(Func<int, bool> collisionCheck, out int? token)
+        {
+            token = null;
+
+            try
+            {
+                token = GetToken(collisionCheck);
+                return true;
+            }
+            catch (TimeoutException)
+            {
+                return false;
+            }
         }
     }
 }
