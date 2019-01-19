@@ -286,7 +286,7 @@ namespace Soulseek.NET
             {
                 if (!TokenFactory.TryGetToken(tokenExists, out var generatedToken))
                 {
-                    throw new SoulseekClientException($"Unable to generate a unique token for the download.");
+                    throw new DownloadException($"Unable to generate a unique token for the download.");
                 }
 
                 tokenInternal = (int)generatedToken;
@@ -513,7 +513,7 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
-                throw new BrowseException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
         }
 
