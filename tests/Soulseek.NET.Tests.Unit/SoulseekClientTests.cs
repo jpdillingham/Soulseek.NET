@@ -1,7 +1,6 @@
 ﻿namespace Soulseek.NET.Tests.Unit
 {
     using Moq;
-    using Newtonsoft.Json;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
@@ -268,6 +267,63 @@
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
+        }
+        
+        [Trait("Category", "Download")]
+        [Theory(DisplayName = "Download throws ArgumentException given bad username")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Download_Throws_ArgumentException_Given_Bad_Username(string username)
+        {
+            var s = new SoulseekClient();
+
+            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "Download")]
+        [Theory(DisplayName = "Download throws ArgumentException given bad filename")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Download_Throws_ArgumentException_Given_Bad_Filename(string filename)
+        {
+            var s = new SoulseekClient();
+
+            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", filename));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "Download")]
+        [Fact(DisplayName = "Download throws InvalidOperationException when not connected")]
+        public async Task Download_Throws_InvalidOperationException_When_Not_Connected()
+        {
+            var s = new SoulseekClient();
+
+            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+            Assert.Contains("Connected", ex.Message);
+        }
+
+        [Trait("Category", "Download")]
+        [Fact(DisplayName = "Download throws InvalidOperationException when not logged in")]
+        public async Task Download_Throws_InvalidOperationException_When_Not_Logged_In()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected);
+
+            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+            Assert.Contains("logged in", ex.Message);
         }
     }
 }
