@@ -250,7 +250,6 @@ namespace Soulseek.NET
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
         {
-
             if (string.IsNullOrWhiteSpace(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
@@ -441,7 +440,6 @@ namespace Soulseek.NET
 
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
-            // todo: check arguments
             // todo: implement overall exception handling
             // todo: catch OperationCancelledException
             try
