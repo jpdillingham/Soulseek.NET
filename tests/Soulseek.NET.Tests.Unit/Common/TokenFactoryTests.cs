@@ -10,7 +10,6 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-using Soulseek.NET.Common;
 using Xunit;
 
 namespace Soulseek.NET.Tests.Unit
@@ -37,6 +36,43 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.Equal(0, t);
+        }
+
+        [Trait("Category", "TryGetToken")]
+        [Fact(DisplayName = "Returns false given forced collision")]
+        public void Returns_False_Given_Forced_Collision()
+        {
+            var ok = TokenFactory.TryGetToken(s => true, out var token);
+
+            Assert.False(ok);
+        }
+
+        [Trait("Category", "TryGetToken")]
+        [Fact(DisplayName = "Nulls token given forced collision")]
+        public void Nulls_Token_Given_Forced_Collision()
+        {
+            TokenFactory.TryGetToken(s => true, out var token);
+
+            Assert.Null(token);
+        }
+
+        [Trait("Category", "TryGetToken")]
+        [Fact(DisplayName = "Returns true given no collision")]
+        public void Returns_True_Given_No_Collision()
+        {
+            var ok = TokenFactory.TryGetToken(s => false, out var token);
+
+            Assert.True(ok);
+        }
+
+        [Trait("Category", "TryGetToken")]
+        [Fact(DisplayName = "Sets token given no collision")]
+        public void Sets_Token_Given_No_Collision()
+        {
+            var ok = TokenFactory.TryGetToken(s => false, out var token);
+
+            Assert.NotNull(token);
+            Assert.NotEqual(0, token);
         }
     }
 }
