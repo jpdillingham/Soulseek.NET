@@ -1,17 +1,19 @@
 ﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
-//     Copyright (c) JP Dillingham. All rights reserved.
-//
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-//
-//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
-//
-//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+//     Copyright (c) JP Dillingham. All rights reserved. // This program is free software: you can redistribute it and/or modify it
+//     under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the
+//     License, or (at your option) any later version. // This program is distributed in the hope that it will be useful, but
+//     WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU
+//     General Public License for more details. // You should have received a copy of the GNU General Public License along with
+//     this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
 namespace Soulseek.NET
 {
+    using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -19,25 +21,14 @@ namespace Soulseek.NET
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Exceptions;
-    using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Messages;
-    using Soulseek.NET.Messaging.Tcp;
-    using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
     public class SoulseekClient : ISoulseekClient
     {
-        #region Private Fields
-
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
-
-        #endregion Private Fields
-
-        #region Public Constructors
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
@@ -50,10 +41,6 @@ namespace Soulseek.NET
             : this(address, port, options, null, null, null)
         {
         }
-
-        #endregion Public Constructors
-
-        #region Internal Constructors
 
         internal SoulseekClient(
             string address,
@@ -75,10 +62,6 @@ namespace Soulseek.NET
             TokenFactory = tokenFactory ?? new TokenFactory();
         }
 
-        #endregion Internal Constructors
-
-        #region Private Destructors
-
         /// <summary>
         ///     Finalizes an instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
@@ -86,10 +69,6 @@ namespace Soulseek.NET
         {
             Dispose(false);
         }
-
-        #endregion Private Destructors
-
-        #region Public Events
 
         public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
@@ -106,10 +85,6 @@ namespace Soulseek.NET
         ///     Occurs when the client changes state.
         /// </summary>
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
-
-        #endregion Public Events
-
-        #region Public Properties
 
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
@@ -136,10 +111,6 @@ namespace Soulseek.NET
         /// </summary>
         public string Username { get; private set; }
 
-        #endregion Public Properties
-
-        #region Private Properties
-
         private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private bool Disposed { get; set; } = false;
@@ -149,10 +120,6 @@ namespace Soulseek.NET
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
-
-        #endregion Private Properties
-
-        #region Public Methods
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -238,11 +205,10 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/> and with the optionally specified <paramref name="token"/> and <paramref name="cancellationToken"/>.
+        ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     and with the optionally specified <paramref name="token"/> and <paramref name="cancellationToken"/>.
         /// </summary>
-        /// <remarks>
-        ///     If no <paramref name="token"/> is specified, one will be randomly generated internally.
-        /// </remarks>
+        /// <remarks>If no <paramref name="token"/> is specified, one will be randomly generated internally.</remarks>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
@@ -372,10 +338,6 @@ namespace Soulseek.NET
             return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
         }
 
-        #endregion Public Methods
-
-        #region Protected Methods
-
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -396,10 +358,6 @@ namespace Soulseek.NET
                 Disposed = true;
             }
         }
-
-        #endregion Protected Methods
-
-        #region Private Methods
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -585,15 +543,10 @@ namespace Soulseek.NET
 
         private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            return await GetTransferConnectionAsync(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, connectToPeerResponse.Token, options).ConfigureAwait(false);
-        }
-
-        private async Task<IConnection> GetTransferConnectionAsync(IPAddress ipAddress, int port, int token, ConnectionOptions options)
-        {
-            var connection = new Connection(ipAddress, port, options);
+            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
             await connection.ConnectAsync().ConfigureAwait(false);
 
-            var request = new PierceFirewallRequest(token);
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
 
             return connection;
@@ -632,6 +585,23 @@ namespace Soulseek.NET
             return connection;
         }
 
+        private async Task HandleConnectToPeer(ConnectToPeerResponse response)
+        {
+            if (response.Type == "F")
+            {
+                // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
+                // any other identifying information about the file.
+                if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
+                {
+                    await HandleDownload(response).ConfigureAwait(false);
+                }
+            }
+            else
+            {
+                await GetSolicitedPeerConnectionAsync(response, Options.PeerConnectionOptions).ConfigureAwait(false);
+            }
+        }
+
         private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
         {
             var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
@@ -664,7 +634,7 @@ namespace Soulseek.NET
 
                 download.Connection = connection;
 
-                // write an empty 8 byte array to initiate the transfer.  not sure what this is; identified via WireShark.
+                // write an empty 8 byte array to initiate the transfer. not sure what this is; identified via WireShark.
                 await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
 
                 var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
@@ -674,22 +644,6 @@ namespace Soulseek.NET
                 connection.Disconnect($"Transfer complete.");
 
                 MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);
-            }
-        }
-
-        private async Task HandleConnectToPeer(ConnectToPeerResponse response)
-        {
-            if (response.Type == "F")
-            {
-                // ensure that we are expecting at least one file from this user before we connect to them
-                if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
-                {
-                    await HandleDownload(response).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                await GetSolicitedPeerConnectionAsync(response, Options.PeerConnectionOptions).ConfigureAwait(false);
             }
         }
 
@@ -867,7 +821,5 @@ namespace Soulseek.NET
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
         }
-
-        #endregion Private Methods
     }
 }
