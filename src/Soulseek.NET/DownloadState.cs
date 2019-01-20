@@ -17,6 +17,10 @@ namespace Soulseek.NET
     /// <summary>
     ///     Download state.
     /// </summary>
+    /// <remarks>
+    ///     The Completed state will be accompanied by one other flag consisting of <see cref="Successful"/>,
+    ///     <see cref="Cancelled"/>, <see cref="TimedOut"/> or <see cref="Errored"/>.
+    /// </remarks>
     [Flags]
     public enum DownloadStates
     {
@@ -36,23 +40,28 @@ namespace Soulseek.NET
         InProgress = 2,
 
         /// <summary>
-        ///     Completed.
+        ///     Completed; check remaining state flags for disposition.
         /// </summary>
         Completed = 4,
 
         /// <summary>
+        ///     Completed due to a successful transfer.
+        /// </summary>
+        Successful = 8,
+
+        /// <summary>
         ///     Completed due to cancellation.
         /// </summary>
-        Cancelled = 8,
+        Cancelled = 16,
 
         /// <summary>
         ///     Completed due to timeout.
         /// </summary>
-        TimedOut = 16,
+        TimedOut = 32,
 
         /// <summary>
         ///     Completed due to transfer error.
         /// </summary>
-        Error = 32,
+        Errored = 64,
     }
 }
