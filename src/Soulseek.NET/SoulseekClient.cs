@@ -604,6 +604,7 @@ namespace Soulseek.NET
 
         private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
         {
+            // connect to the peer and retrieve the remote token.  we can't use errors here to fail a download since we don't know which file we are downloading until we have successfully retrieved the remote token.
             var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
             var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
@@ -612,9 +613,13 @@ namespace Soulseek.NET
             {
                 connection.Disconnected += (sender, message) =>
                 {
-                    if (!download.State.HasFlag(DownloadStates.Completed))
+                    if (download.State.HasFlag(DownloadStates.Successful))
                     {
-                        MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                        MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), download.Data);
+                    }
+                    else
+                    {
+                        MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Transfer failed: {message}"));
                     }
                 };
 
@@ -634,16 +639,22 @@ namespace Soulseek.NET
 
                 download.Connection = connection;
 
-                // write an empty 8 byte array to initiate the transfer. not sure what this is; identified via WireShark.
-                await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
+                try
+                {
+                    // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
+                    await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
 
-                var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
+                    var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
 
-                download.Data = bytes;
-                download.State = DownloadStates.Completed;
-                connection.Disconnect($"Transfer complete.");
-
-                MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);
+                    download.Data = bytes;
+                    download.State = DownloadStates.Completed | DownloadStates.Successful;
+                    connection.Disconnect($"Transfer complete.");
+                }
+                catch (Exception ex)
+                {
+                    download.State = DownloadStates.Completed | DownloadStates.Errored;
+                    connection.Disconnect(ex.Message);
+                }
             }
         }
 
