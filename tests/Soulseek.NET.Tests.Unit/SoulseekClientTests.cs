@@ -269,12 +269,12 @@
             Assert.IsType<InvalidOperationException>(ex);
         }
         
-        [Trait("Category", "Download")]
-        [Theory(DisplayName = "Download throws ArgumentException given bad username")]
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad username")]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public async Task Download_Throws_ArgumentException_Given_Bad_Username(string username)
+        public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Username(string username)
         {
             var s = new SoulseekClient();
 
@@ -284,12 +284,12 @@
             Assert.IsType<ArgumentException>(ex);
         }
 
-        [Trait("Category", "Download")]
-        [Theory(DisplayName = "Download throws ArgumentException given bad filename")]
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad filename")]
         [InlineData(null)]
         [InlineData("")]
         [InlineData("   ")]
-        public async Task Download_Throws_ArgumentException_Given_Bad_Filename(string filename)
+        public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Filename(string filename)
         {
             var s = new SoulseekClient();
 
@@ -299,9 +299,9 @@
             Assert.IsType<ArgumentException>(ex);
         }
 
-        [Trait("Category", "Download")]
-        [Fact(DisplayName = "Download throws InvalidOperationException when not connected")]
-        public async Task Download_Throws_InvalidOperationException_When_Not_Connected()
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws InvalidOperationException when not connected")]
+        public async Task DownloadAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
             var s = new SoulseekClient();
 
@@ -312,9 +312,9 @@
             Assert.Contains("Connected", ex.Message);
         }
 
-        [Trait("Category", "Download")]
-        [Fact(DisplayName = "Download throws InvalidOperationException when not logged in")]
-        public async Task Download_Throws_InvalidOperationException_When_Not_Logged_In()
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws InvalidOperationException when not logged in")]
+        public async Task DownloadAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected);
@@ -324,6 +324,43 @@
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
             Assert.Contains("logged in", ex.Message);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws ArgumentException when token used")]
+        public async Task DownloadAsync_Throws_ArgumentException_When_Token_Used()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var queued = new ConcurrentDictionary<int, Download>();
+            queued.TryAdd(1, new Download("foo", "bar", 1));
+
+            s.SetProperty("QueuedDownloads", queued);
+
+            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.Contains("token", ex.Message);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws DownloadException on token generation failure")]
+        public async Task DownloadAsync_Throws_DownloadException_On_Token_Generation_Failure()
+        {
+            var tokenFactory= new Mock<ITokenFactory>();
+            tokenFactory.Setup(m => m.TryGetToken(It.IsAny<Func<int, bool>>(), out It.Ref<int?>.IsAny))
+                .Returns(false);
+
+            var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: tokenFactory.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<DownloadException>(ex);
+            Assert.Contains("Unable to generate a unique token", ex.Message);
         }
     }
 }
