@@ -635,10 +635,10 @@ namespace Soulseek.NET
         private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
         {
             var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
-            var tokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var token = BitConverter.ToInt32(tokenBytes, 0);
+            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
 
-            if (ActiveDownloads.TryGetValue(token, out var download))
+            if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
                 connection.Disconnected += (sender, message) =>
                 {
@@ -664,6 +664,7 @@ namespace Soulseek.NET
 
                 download.Connection = connection;
 
+                // write an empty 8 byte array to initiate the transfer.  not sure what this is; identified via WireShark.
                 await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
 
                 var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
@@ -680,7 +681,7 @@ namespace Soulseek.NET
         {
             if (response.Type == "F")
             {
-                // we can't 
+                // ensure that we are expecting at least one file from this user before we connect to them
                 if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
                 {
                     await HandleDownload(response).ConfigureAwait(false);
