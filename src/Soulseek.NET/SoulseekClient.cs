@@ -632,49 +632,58 @@ namespace Soulseek.NET
             return connection;
         }
 
+        private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
+        {
+            var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
+            var tokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+            var token = BitConverter.ToInt32(tokenBytes, 0);
+
+            if (ActiveDownloads.TryGetValue(token, out var download))
+            {
+                connection.Disconnected += (sender, message) =>
+                {
+                    if (!download.State.HasFlag(DownloadStates.Completed))
+                    {
+                        MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    }
+                };
+
+                connection.DataRead += (sender, e) =>
+                {
+                    var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
+
+                    if (Options.UseSynchronousDownloadProgressEvents)
+                    {
+                        DownloadProgress?.Invoke(this, eventArgs); // ensure order; impacts performance.
+                    }
+                    else
+                    {
+                        Task.Run(() => DownloadProgress?.Invoke(this, eventArgs)).Forget();
+                    }
+                };
+
+                download.Connection = connection;
+
+                await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
+
+                var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
+
+                download.Data = bytes;
+                download.State = DownloadStates.Completed;
+                connection.Disconnect($"Transfer complete.");
+
+                MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);
+            }
+        }
+
         private async Task HandleConnectToPeer(ConnectToPeerResponse response)
         {
-            if (response.Type == "F" && !ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
+            if (response.Type == "F")
             {
-                var connection = await GetTransferConnectionAsync(response, Options.TransferConnectionOptions).ConfigureAwait(false);
-                var tokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-                var token = BitConverter.ToInt32(tokenBytes, 0);
-
-                if (ActiveDownloads.TryGetValue(token, out var download))
+                // we can't 
+                if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
                 {
-                    connection.Disconnected += (sender, message) =>
-                    {
-                        if (!download.State.HasFlag(DownloadStates.Completed))
-                        {
-                            MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                        }
-                    };
-
-                    connection.DataRead += (sender, e) =>
-                    {
-                        var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
-
-                        if (Options.UseSynchronousDownloadProgressEvents)
-                        {
-                            DownloadProgress?.Invoke(this, eventArgs); // ensure order; impacts performance.
-                        }
-                        else
-                        {
-                            Task.Run(() => DownloadProgress?.Invoke(this, eventArgs)).Forget();
-                        }
-                    };
-
-                    download.Connection = connection;
-
-                    await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
-
-                    var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
-
-                    download.Data = bytes;
-                    download.State = DownloadStates.Completed;
-                    connection.Disconnect($"Transfer complete.");
-
-                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), bytes);
+                    await HandleDownload(response).ConfigureAwait(false);
                 }
             }
             else
