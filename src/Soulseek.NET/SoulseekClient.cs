@@ -604,13 +604,18 @@ namespace Soulseek.NET
 
         private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
         {
-            // connect to the peer and retrieve the remote token.  we can't use errors here to fail a download since we don't know which file we are downloading until we have successfully retrieved the remote token.
             var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
             var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
 
             if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
+                connection.DataRead += (sender, e) =>
+                {
+                    var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
+                    DownloadProgress?.Invoke(this, eventArgs);
+                };
+
                 connection.Disconnected += (sender, message) =>
                 {
                     if (download.State.HasFlag(DownloadStates.Successful))
@@ -620,20 +625,6 @@ namespace Soulseek.NET
                     else
                     {
                         MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Transfer failed: {message}"));
-                    }
-                };
-
-                connection.DataRead += (sender, e) =>
-                {
-                    var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
-
-                    if (Options.UseSynchronousDownloadProgressEvents)
-                    {
-                        DownloadProgress?.Invoke(this, eventArgs); // ensure order; impacts performance.
-                    }
-                    else
-                    {
-                        Task.Run(() => DownloadProgress?.Invoke(this, eventArgs)).Forget();
                     }
                 };
 
