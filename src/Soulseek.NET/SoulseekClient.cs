@@ -419,16 +419,16 @@ namespace Soulseek.NET
                 var download = new Download(username, filename, token);
                 var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), cancellationToken);
 
-                // establish a message connection to the peer
+                // establish a message connection to the peer so that we can request the file
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
                 connection.Disconnected += (sender, message) =>
                 {
                     MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                // prepare two waits; one for the transfer response and another for the eventual transfer request sent when the
-                // peer is ready to send the file.
-                var incomingResponseWait = MessageWaiter.WaitIndefinitely<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken);
+                // prepare two waits; one for the transfer response to confirm that our request is acknowledge and another for the eventual transfer request sent when the
+                // peer is ready to send the file. the response message should be returned immediately, while the request will be sent only when we've reached the front of the queue.
+                var incomingResponseWait = MessageWaiter.Wait<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token));
                 var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file and await the response
@@ -438,17 +438,17 @@ namespace Soulseek.NET
 
                 if (incomingResponse.Allowed)
                 {
-                    // in testing, peers have, without exception, returned Allowed = false, Message = Queued for this request,
+                    // in testing peers have, without exception, returned Allowed = false, Message = Queued for this request,
                     // regardless of number of available slots and/or queue depth. this condition is likely only used when
                     // uploading to a peer, which is not supported.
                     throw new DownloadException($"A condition believed to be unreachable (PeerTransferResponseIncoming.Allowed = true) was reached.  Please report this in a GitHub issue and provide context.");
                 }
                 else
                 {
-                    download.State = DownloadStates.Queued;
                     QueuedDownloads.TryAdd(download.Token, download);
+                    download.State = DownloadStates.Queued;
 
-                    Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(DownloadStates.None, download))).Forget();
+                    DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.None, download: download));
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var incomingRequest = await incomingRequestWait.ConfigureAwait(false);
@@ -458,18 +458,17 @@ namespace Soulseek.NET
 
                     QueuedDownloads.TryRemove(download.Token, out var _);
 
-                    download.State = DownloadStates.InProgress;
                     ActiveDownloads.TryAdd(download.RemoteToken, download);
+                    download.State = DownloadStates.InProgress;
 
-                    Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(DownloadStates.Queued, download))).Forget();
+                    DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
                     await connection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
                 }
 
                 try
                 {
-                    download.Data = await downloadWait.ConfigureAwait(false); // completed within ConnectToPeerResponse handling
-                    download.State = DownloadStates.Completed;
+                    download.Data = await downloadWait.ConfigureAwait(false); // completed by HandleDownload()
                 }
                 catch (OperationCanceledException)
                 {
@@ -478,8 +477,7 @@ namespace Soulseek.NET
                     download.Connection.Dispose();
                 }
 
-                // todo: handle download failure
-                Task.Run(() => DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(DownloadStates.InProgress, download))).Forget();
+                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
 
                 return download.Data;
             }
