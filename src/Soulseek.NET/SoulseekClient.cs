@@ -417,13 +417,13 @@ namespace Soulseek.NET
             try
             {
                 download = new Download(username, filename, token);
-                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), cancellationToken);
+                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                 // establish a message connection to the peer so that we can request the file
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledge and another for the eventual transfer request sent when the
@@ -636,11 +636,11 @@ namespace Soulseek.NET
                 {
                     if (download.State.HasFlag(DownloadStates.Successful))
                     {
-                        MessageWaiter.Complete(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), download.Data);
+                        MessageWaiter.Complete(download.WaitKey, download.Data);
                     }
                     else
                     {
-                        MessageWaiter.Throw(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), new ConnectionException($"Transfer failed: {message}"));
+                        MessageWaiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
                     }
                 };
 
