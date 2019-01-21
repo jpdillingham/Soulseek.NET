@@ -490,16 +490,6 @@ namespace Soulseek.NET.Messaging
         /// <summary>
         ///     41
         /// </summary>
-        PeerUploadResponse = 20041,
-
-        /// <summary>
-        ///     41
-        /// </summary>
-        PeerDownloadResponse = 20041,
-
-        /// <summary>
-        ///     41
-        /// </summary>
         PeerTransferResponse = 20041,
 
         /// <summary>
