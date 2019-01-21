@@ -47,7 +47,7 @@ namespace Soulseek.NET.Tests.Unit
         {
             var d = new Download(username, filename, token);
 
-            Assert.Equal($"{username}:{filename}:{token}", d.WaitKey);
+            Assert.Equal(new WaitKey(username, filename, token), d.WaitKey);
         }
     }
 }
