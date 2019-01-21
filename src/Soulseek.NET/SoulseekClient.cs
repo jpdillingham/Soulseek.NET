@@ -417,7 +417,6 @@ namespace Soulseek.NET
             try
             {
                 download = new Download(username, filename, token);
-                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                 // establish a message connection to the peer so that we can request the file
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
@@ -426,15 +425,16 @@ namespace Soulseek.NET
                     MessageWaiter.Throw(download.WaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
+                var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken); // completed by HandleDownload()
+
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledge and another for the eventual transfer request sent when the
                 // peer is ready to send the file. the response message should be returned immediately, while the request will be sent only when we've reached the front of the queue.
-                var incomingResponseWait = MessageWaiter.Wait<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token));
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
+                var incomingResponseWait = MessageWaiter.Wait<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken: cancellationToken); // completed by HandlePeerMessage()
+                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken); // completed by HandlePeerMessage()
 
-                // request the file and await the response
                 await connection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
 
-                var incomingResponse = await incomingResponseWait.ConfigureAwait(false);
+                var incomingResponse = await incomingResponseWait.ConfigureAwait(false); // completed by HandlePeerMessage()
 
                 if (incomingResponse.Allowed)
                 {
@@ -451,7 +451,7 @@ namespace Soulseek.NET
                     DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.None, download: download));
 
                     // wait for the peer to respond that they are ready to start the transfer
-                    var incomingRequest = await incomingRequestWait.ConfigureAwait(false);
+                    var incomingRequest = await incomingRequestWait.ConfigureAwait(false); // completed by HandlePeerMessage()
 
                     download.Size = incomingRequest.FileSize;
                     download.RemoteToken = incomingRequest.Token;
