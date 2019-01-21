@@ -45,6 +45,16 @@ namespace Soulseek.NET
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
+        /// <param name="address">The address of the server to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
+        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
+        /// <param name="serverConnection">The IMessageConnection instance to use.</param>
+        /// <param name="peerConnectionManager">The IConnectionManager instance to use.</param>
+        /// <param name="messageWaiter">The IWaiter instance to use.</param>
+        /// <param name="tokenFactory">The ITokenFactory to use.</param>
         internal SoulseekClient(
             string address,
             int port,
