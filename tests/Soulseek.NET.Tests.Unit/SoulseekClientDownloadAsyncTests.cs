@@ -246,5 +246,38 @@
             Assert.IsType<DownloadException>(ex);
             Assert.IsType<MessageCancelledException>(ex.InnerException);
         }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws DownloadException on download cancellation")]
+        public async Task DownloadAsync_Throws_DownloadException_On_Download_Cancellation()
+        {
+            var options = new SoulseekClientOptions() { };
+            options.MessageTimeout = 5;
+
+            var response = new PeerTransferResponse(1, false, 1, "");
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
+            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromException<byte[]>(new MessageCancelledException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+
+            Assert.NotNull(ex);
+            Assert.IsType<DownloadException>(ex);
+            Assert.IsType<MessageCancelledException>(ex.InnerException);
+        }
     }
 }
