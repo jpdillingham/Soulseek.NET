@@ -75,6 +75,6 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets tue unique wait key for the download.
         /// </summary>
-        public string WaitKey => $"{Username}:{Filename}:{Token}";
+        public WaitKey WaitKey => new WaitKey(Username, Filename, Token);
     }
 }
