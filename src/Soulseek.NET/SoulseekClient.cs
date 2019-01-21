@@ -412,11 +412,11 @@ namespace Soulseek.NET
 
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
-            // todo: implement overall exception handling
-            // todo: catch OperationCancelledException
+            Download download = null;
+
             try
             {
-                var download = new Download(username, filename, token);
+                download = new Download(username, filename, token);
                 var downloadWait = MessageWaiter.WaitIndefinitely<byte[]>(new WaitKey(MessageCode.PeerDownloadResponse, download.WaitKey), cancellationToken);
 
                 // establish a message connection to the peer so that we can request the file
@@ -478,11 +478,15 @@ namespace Soulseek.NET
                 }
 
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
+                ActiveDownloads.TryRemove(download.RemoteToken, out var _);
 
                 return download.Data;
             }
             catch (Exception ex)
             {
+                QueuedDownloads.TryRemove(download.Token, out var _);
+                ActiveDownloads.TryRemove(download.RemoteToken, out var _);
+
                 throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
         }
