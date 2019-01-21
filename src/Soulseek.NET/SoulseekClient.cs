@@ -466,28 +466,33 @@ namespace Soulseek.NET
                     await connection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
                 }
 
-                try
-                {
-                    download.Data = await downloadWait.ConfigureAwait(false); // completed by HandleDownload()
-                }
-                catch (OperationCanceledException)
-                {
-                    download.State = DownloadStates.Completed | DownloadStates.Cancelled;
-                    download.Connection.Disconnect("Transfer cancelled.");
-                    download.Connection.Dispose();
-                }
-
-                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
-                ActiveDownloads.TryRemove(download.RemoteToken, out var _);
-
+                download.Data = await downloadWait.ConfigureAwait(false); // completed by HandleDownload()
                 return download.Data;
+            }
+            catch (OperationCanceledException ex)
+            {
+                download.State = DownloadStates.Cancelled;
+                download.Connection?.Disconnect("Transfer cancelled.");
+
+                throw new DownloadException($"Download of file {filename} from user {username} was cancelled.", ex);
             }
             catch (Exception ex)
             {
+                download.State = DownloadStates.Errored;
+                download.Connection?.Disconnect("Transfer error.");
+
+                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+            }
+            finally
+            {
+                download.Connection?.Dispose();
+
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryRemove(download.RemoteToken, out var _);
 
-                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                var previousState = download.State;
+                download.State = download.State | DownloadStates.Completed;
+                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: previousState, download: download));
             }
         }
 
@@ -654,12 +659,11 @@ namespace Soulseek.NET
                     var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
 
                     download.Data = bytes;
-                    download.State = DownloadStates.Completed | DownloadStates.Successful;
+                    download.State = DownloadStates.Successful;
                     connection.Disconnect($"Transfer complete.");
                 }
                 catch (Exception ex)
                 {
-                    download.State = DownloadStates.Completed | DownloadStates.Errored;
                     connection.Disconnect(ex.Message);
                 }
             }
