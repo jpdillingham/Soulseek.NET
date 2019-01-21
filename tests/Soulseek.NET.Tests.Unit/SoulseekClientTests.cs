@@ -431,21 +431,22 @@
 
             var response = new PeerTransferResponse(1, true, 1, "");
 
+            var waitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w == new WaitKey(MessageCode.PeerTransferResponse, "username", 1)), null, null))
-                .Returns(Task<PeerTransferResponse>.FromResult(response));
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(waitKey)), null, null))
+                .Returns(Task.FromResult(response));
 
             var conn = new Mock<IMessageConnection>();
 
             var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            //var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
-            await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object);
-
-            //Assert.NotNull(ex);
-            //Assert.IsType<DownloadException>(ex);
-            //Assert.IsType<MessageTimeoutException>(ex.InnerException);
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+            
+            Assert.NotNull(ex);
+            Assert.IsType<DownloadException>(ex);
+            Assert.Contains("unreachable", ex.Message);
         }
     }
 }
