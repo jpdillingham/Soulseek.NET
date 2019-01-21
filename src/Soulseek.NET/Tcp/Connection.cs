@@ -66,14 +66,6 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Finalizes an instance of the <see cref="Connection"/> class.
-        /// </summary>
-        ~Connection()
-        {
-            Dispose(false);
-        }
-
-        /// <summary>
         ///     Occurs when the connection is connected.
         /// </summary>
         public event EventHandler Connected;

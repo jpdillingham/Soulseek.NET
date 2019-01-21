@@ -76,15 +76,13 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Finalizes an instance of the <see cref="SoulseekClient"/> class.
+        ///     Occurs when an active download receives data.
         /// </summary>
-        ~SoulseekClient()
-        {
-            Dispose(false);
-        }
-
         public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
 
+        /// <summary>
+        ///     Occurs when a download changes state.
+        /// </summary>
         public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
 
         /// <summary>
@@ -92,6 +90,9 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<SearchResponseReceivedEventArgs> SearchResponseReceived;
 
+        /// <summary>
+        ///     Occurs when a search changes state.
+        /// </summary>
         public event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
 
         /// <summary>
