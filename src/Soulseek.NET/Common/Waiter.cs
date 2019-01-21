@@ -16,7 +16,6 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Exceptions;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
@@ -183,12 +182,12 @@ namespace Soulseek.NET
                     {
                         if (queue.Value.TryDequeue(out var cancelledWait))
                         {
-                            cancelledWait.TaskCompletionSource.SetException(new MessageCancelledException("Message was cancelled."));
+                            cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled."));
                         }
                     }
                     else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && queue.Value.TryDequeue(out var timedOutWait))
                     {
-                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
                 }
             }
