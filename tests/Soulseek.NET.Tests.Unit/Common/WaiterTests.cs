@@ -83,7 +83,7 @@ namespace Soulseek.NET.Tests.Unit
                 queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
-                Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.IsType<TimeoutException>(ex.InnerException);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -209,7 +209,7 @@ namespace Soulseek.NET.Tests.Unit
                 queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
-                Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.IsType<TimeoutException>(ex.InnerException);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -240,7 +240,7 @@ namespace Soulseek.NET.Tests.Unit
                 queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
-                Assert.IsType<MessageCancelledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
