@@ -122,7 +122,7 @@
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.IsType<MessageTimeoutException>(ex.InnerException);
+            Assert.IsType<TimeoutException>(ex.InnerException);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -162,7 +162,7 @@
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.IsType<MessageTimeoutException>(ex.InnerException);
+            Assert.IsType<TimeoutException>(ex.InnerException);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -266,7 +266,7 @@
             waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
-                .Returns(Task.FromException<byte[]>(new MessageCancelledException()));
+                .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
 
             var conn = new Mock<IMessageConnection>();
 
@@ -277,7 +277,7 @@
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.IsType<MessageCancelledException>(ex.InnerException);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
     }
 }
