@@ -17,7 +17,6 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
-    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using System;
     using System.Collections.Concurrent;
@@ -59,6 +58,18 @@ namespace Soulseek.NET.Tests.Unit
             using (var waiter = new Waiter())
             {
                 var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.ServerAddPrivilegedUser), null));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Wait Completion")]
+        [Fact(DisplayName = "Non generic Complete for missing wait does not throw")]
+        public void Non_Generic_Complete_For_Missing_Wait_Does_Not_Throw()
+        {
+            using (var waiter = new Waiter())
+            {
+                var ex = Record.Exception(() => waiter.Complete(new WaitKey(MessageCode.ServerAddPrivilegedUser)));
 
                 Assert.Null(ex);
             }
@@ -168,6 +179,42 @@ namespace Soulseek.NET.Tests.Unit
             using (var waiter = new Waiter())
             {
                 Task<object> task = waiter.Wait<object>(key, timeout);
+
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.IsType<Task<object>>(task);
+                Assert.NotNull(task);
+                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Single(queue);
+                Assert.NotEqual(new DateTime(), wait.DateTime);
+
+                if (timeout != null)
+                {
+                    Assert.Equal(timeout, wait.TimeoutAfter);
+                }
+            }
+        }
+
+        [Trait("Category", "Wait Creation")]
+        [Theory(DisplayName = "Non generic Wait invocation creates valid Wait")]
+        [InlineData(MessageCode.ServerLogin, null, null)]
+        [InlineData(MessageCode.ServerLogin, "token", null)]
+        [InlineData(MessageCode.ServerLogin, null, 13)]
+        [InlineData(MessageCode.ServerLogin, "token", 13)]
+        public void Non_Generic_Wait_Invocation_Creates_Valid_Wait(MessageCode code, string token, int? timeout)
+        {
+            var key = new WaitKey(code, token);
+
+            using (var waiter = new Waiter())
+            {
+                Task task = waiter.Wait(key, timeout);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -312,6 +359,36 @@ namespace Soulseek.NET.Tests.Unit
                 var maxConst = waiter.GetField<int>("MaxTimeoutValue");
 
                 Task<object> task = waiter.WaitIndefinitely<object>(key);
+
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                queue.TryPeek(out var wait);
+
+                Assert.IsType<Task<object>>(task);
+                Assert.NotNull(task);
+                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+
+                Assert.NotEmpty(waits);
+                Assert.Single(waits);
+
+                Assert.NotNull(queue);
+                Assert.Single(queue);
+                Assert.NotEqual(new DateTime(), wait.DateTime);
+                Assert.Equal(maxConst, wait.TimeoutAfter);
+            }
+        }
+
+        [Trait("Category", "Wait Creation")]
+        [Fact(DisplayName = "Non generic WaitIndefinitely invocation creates Wait with max timeout")]
+        public void Non_Generic_WaitIndefinitely_Invocation_Creates_Wait_With_Max_Timeout()
+        {
+            var key = new WaitKey(MessageCode.ServerLogin);
+
+            using (var waiter = new Waiter())
+            {
+                var maxConst = waiter.GetField<int>("MaxTimeoutValue");
+
+                Task task = waiter.WaitIndefinitely(key);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
