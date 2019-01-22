@@ -265,6 +265,8 @@
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
 
