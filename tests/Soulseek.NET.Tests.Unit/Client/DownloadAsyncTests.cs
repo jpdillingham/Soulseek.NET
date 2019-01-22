@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Tests.Unit
+﻿namespace Soulseek.NET.Tests.Unit.Client
 {
     using Moq;
     using Soulseek.NET.Exceptions;
@@ -12,7 +12,7 @@
     using System.Threading.Tasks;
     using Xunit;
 
-    public class SoulseekClientDownloadAsyncTests
+    public class DownloadAsyncTests
     {
         [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad username")]
