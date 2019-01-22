@@ -16,7 +16,6 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.NET.Exceptions;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
@@ -90,6 +89,11 @@ namespace Soulseek.NET
             }
         }
 
+        public void Complete(WaitKey key)
+        {
+            Complete<object>(key, null);
+        }
+
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -110,6 +114,11 @@ namespace Soulseek.NET
             {
                 wait.TaskCompletionSource.SetException(exception);
             }
+        }
+
+        public Task Wait(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
+        {
+            return Wait<object>(key, timeout, cancellationToken);
         }
 
         /// <summary>
@@ -139,6 +148,11 @@ namespace Soulseek.NET
             });
 
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
+        }
+
+        public Task WaitIndefinitely(WaitKey key, CancellationToken? cancellationToken = null)
+        {
+            return WaitIndefinitely<object>(key, cancellationToken);
         }
 
         /// <summary>
@@ -183,12 +197,12 @@ namespace Soulseek.NET
                     {
                         if (queue.Value.TryDequeue(out var cancelledWait))
                         {
-                            cancelledWait.TaskCompletionSource.SetException(new MessageCancelledException("Message was cancelled."));
+                            cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled."));
                         }
                     }
                     else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && queue.Value.TryDequeue(out var timedOutWait))
                     {
-                        timedOutWait.TaskCompletionSource.SetException(new MessageTimeoutException($"Message timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
                 }
             }

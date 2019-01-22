@@ -30,19 +30,6 @@ namespace Soulseek.NET
         public int ConcurrentPeerConnections { get; set; } = 500;
 
         /// <summary>
-        ///     Gets or sets a value indicating whether download progress events are invoked synchronously.
-        /// </summary>
-        /// <remarks>
-        ///     <para>
-        ///         If this option is not set, events may not be received in the proper order.
-        ///     </para>
-        ///     <para>
-        ///         Enabling this option may impact download performance.
-        ///     </para>
-        /// </remarks>
-        public bool UseSynchronousDownloadProgressEvents { get; set; } = false;
-
-        /// <summary>
         ///     Gets or sets the options for the server message connection.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; set; } = new ConnectionOptions();

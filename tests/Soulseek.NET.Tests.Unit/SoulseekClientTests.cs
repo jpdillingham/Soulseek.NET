@@ -1,12 +1,14 @@
 ﻿namespace Soulseek.NET.Tests.Unit
 {
     using Moq;
-    using Newtonsoft.Json;
     using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using Xunit;
 

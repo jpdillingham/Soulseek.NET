@@ -15,7 +15,7 @@
 //     along with this program.If not, see<https://www.gnu.org/licenses/>.
 // </copyright>
 
-namespace Soulseek.NET.Tests.Unit.Common
+namespace Soulseek.NET.Tests.Unit
 {
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
@@ -83,7 +83,7 @@ namespace Soulseek.NET.Tests.Unit.Common
                 queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
-                Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.IsType<TimeoutException>(ex.InnerException);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -209,7 +209,7 @@ namespace Soulseek.NET.Tests.Unit.Common
                 queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
-                Assert.IsType<MessageTimeoutException>(ex.InnerException);
+                Assert.IsType<TimeoutException>(ex.InnerException);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
@@ -240,7 +240,7 @@ namespace Soulseek.NET.Tests.Unit.Common
                 queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
-                Assert.IsType<MessageCancelledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
 
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);

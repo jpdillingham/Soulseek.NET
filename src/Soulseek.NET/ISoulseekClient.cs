@@ -110,7 +110,18 @@ namespace Soulseek.NET
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         void Disconnect(string message = null);
 
-        Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null);
+        /// <summary>
+        ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/> and with the optionally specified <paramref name="token"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <remarks>
+        ///     If no <paramref name="token"/> is specified, one will be randomly generated internally.
+        /// </remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including a byte array containing the file contents.</returns>
+        Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.

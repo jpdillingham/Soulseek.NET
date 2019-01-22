@@ -58,7 +58,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerDownloadResponse)
+                .Code(MessageCode.PeerTransferResponse)
                 .Build();
 
             var ex = Record.Exception(() => BrowseResponse.Parse(msg));

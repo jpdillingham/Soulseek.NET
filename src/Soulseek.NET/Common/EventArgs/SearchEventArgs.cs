@@ -19,7 +19,7 @@ namespace Soulseek.NET
     using Soulseek.NET.Messaging.Messages;
 
     /// <summary>
-    ///     Basic event arguments for search events.
+    ///     Generic event arguments for search events.
     /// </summary>
     public class SearchEventArgs : EventArgs
     {
@@ -45,7 +45,7 @@ namespace Soulseek.NET
     }
 
     /// <summary>
-    ///     Event arguments for the search response received event.
+    ///     Event arguments for events raised when a search response is received.
     /// </summary>
     public class SearchResponseReceivedEventArgs : SearchEventArgs
     {
@@ -67,7 +67,7 @@ namespace Soulseek.NET
     }
 
     /// <summary>
-    ///     Event arguments for the search state changed event.
+    ///     Event arguments for events raised by a change in search state.
     /// </summary>
     public class SearchStateChangedEventArgs : SearchEventArgs
     {
