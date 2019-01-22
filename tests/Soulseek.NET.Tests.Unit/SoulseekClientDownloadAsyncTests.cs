@@ -351,5 +351,12 @@
             Assert.Null(ex);
             Assert.Equal(data, downloadedData);
         }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync raises Download events")]
+        public async Task DownloadAsync_Raises_Download_Events()
+        {
+            Assert.True(false);
+        }
     }
 }
