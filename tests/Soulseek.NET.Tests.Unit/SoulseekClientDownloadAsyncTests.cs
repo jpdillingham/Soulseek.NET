@@ -314,5 +314,42 @@
             Assert.IsType<DownloadException>(ex);
             Assert.IsType<TimeoutException>(ex.InnerException);
         }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync returns expected data on completion")]
+        public async Task DownloadAsync_Returns_Expected_Data_On_Completion()
+        {
+            var options = new SoulseekClientOptions() { };
+            options.MessageTimeout = 5;
+
+            var response = new PeerTransferResponse(1, false, 1, "");
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
+            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult<byte[]>(data));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            byte[] downloadedData = null;
+            var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+
+            Assert.Null(ex);
+            Assert.Equal(data, downloadedData);
+        }
     }
 }
