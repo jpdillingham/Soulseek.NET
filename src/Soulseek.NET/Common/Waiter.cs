@@ -89,6 +89,11 @@ namespace Soulseek.NET
             }
         }
 
+        public void Complete(WaitKey key)
+        {
+            Complete<object>(key, null);
+        }
+
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -109,6 +114,11 @@ namespace Soulseek.NET
             {
                 wait.TaskCompletionSource.SetException(exception);
             }
+        }
+
+        public Task Wait(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
+        {
+            return Wait<object>(key, timeout, cancellationToken);
         }
 
         /// <summary>
@@ -138,6 +148,11 @@ namespace Soulseek.NET
             });
 
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
+        }
+
+        public Task WaitIndefinitely(WaitKey key, CancellationToken? cancellationToken = null)
+        {
+            return WaitIndefinitely<object>(key, cancellationToken);
         }
 
         /// <summary>
