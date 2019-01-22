@@ -8,7 +8,7 @@
     using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
-    using System.Threading;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
     using Xunit;
 
@@ -353,10 +353,189 @@
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync raises Download events")]
-        public async Task DownloadAsync_Raises_Download_Events()
+        [Fact(DisplayName = "DownloadAsync raises expected events on success")]
+        public async Task DownloadAsync_Raises_Expected_Events_On_Success()
         {
-            Assert.True(false);
+            var options = new SoulseekClientOptions() { };
+            options.MessageTimeout = 5;
+
+            var response = new PeerTransferResponse(1, false, 1, "");
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
+            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult<byte[]>(data));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var events = new List<DownloadStateChangedEventArgs>();
+
+            s.DownloadStateChanged += (sender, e) =>
+            {
+                events.Add(e);
+            };
+
+            await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object);
+
+            Assert.Equal(5, events.Count);
+
+            Assert.Equal(DownloadStates.None, events[0].PreviousState);
+            Assert.Equal(DownloadStates.Queued, events[0].State);
+
+            Assert.Equal(DownloadStates.Queued, events[1].PreviousState);
+            Assert.Equal(DownloadStates.Initializing, events[1].State);
+
+            Assert.Equal(DownloadStates.Initializing, events[2].PreviousState);
+            Assert.Equal(DownloadStates.InProgress, events[2].State);
+
+            Assert.Equal(DownloadStates.InProgress, events[3].PreviousState);
+            Assert.Equal(DownloadStates.Succeeded, events[3].State);
+
+            Assert.Equal(DownloadStates.Succeeded, events[4].PreviousState);
+            Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[4].State);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync raises Download events on failure")]
+        public async Task DownloadAsync_Raises_Expected_Final_Event_On_Failure()
+        {
+            var options = new SoulseekClientOptions() { };
+            options.MessageTimeout = 5;
+
+            var response = new PeerTransferResponse(1, false, 1, "");
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
+            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromException<byte[]>(new MessageReadException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var events = new List<DownloadStateChangedEventArgs>();
+
+            s.DownloadStateChanged += (sender, e) =>
+            {
+                events.Add(e);
+            };
+
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+
+            Assert.Equal(DownloadStates.Errored, events[events.Count - 1].PreviousState);
+            Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync raises Download events on timeout")]
+        public async Task DownloadAsync_Raises_Expected_Final_Event_On_Timeout()
+        {
+            var options = new SoulseekClientOptions() { };
+            options.MessageTimeout = 5;
+
+            var response = new PeerTransferResponse(1, false, 1, "");
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
+            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromException<byte[]>(new TimeoutException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var events = new List<DownloadStateChangedEventArgs>();
+
+            s.DownloadStateChanged += (sender, e) =>
+            {
+                events.Add(e);
+            };
+
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+
+            Assert.Equal(DownloadStates.TimedOut, events[events.Count - 1].PreviousState);
+            Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync raises Download events on cancellation")]
+        public async Task DownloadAsync_Raises_Expected_Final_Event_On_Cancellation()
+        {
+            var options = new SoulseekClientOptions() { };
+            options.MessageTimeout = 5;
+
+            var response = new PeerTransferResponse(1, false, 1, "");
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+
+            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var events = new List<DownloadStateChangedEventArgs>();
+
+            s.DownloadStateChanged += (sender, e) =>
+            {
+                events.Add(e);
+            };
+
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+
+            Assert.Equal(DownloadStates.Cancelled, events[events.Count - 1].PreviousState);
+            Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
         }
     }
 }
