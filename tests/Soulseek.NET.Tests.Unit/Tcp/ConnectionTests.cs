@@ -709,7 +709,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             await c.ConnectAsync();
             await c.ReadAsync(1);
 
-            Thread.Sleep(500);
+            Thread.Sleep(1000);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 

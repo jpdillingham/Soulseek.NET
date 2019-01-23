@@ -449,7 +449,7 @@ namespace Soulseek.NET
 
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryAdd(download.RemoteToken, download);
-                download.State = DownloadStates.InProgress;
+                download.State = DownloadStates.Initializing;
 
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
@@ -460,7 +460,14 @@ namespace Soulseek.NET
 
                 await downloadStartWait.ConfigureAwait(false); // completed by HandleDownload()
 
+                download.State = DownloadStates.InProgress;
+                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
+
                 download.Data = await downloadCompletionWait.ConfigureAwait(false); // completed by HandleDownload()
+
+                download.State = DownloadStates.Succeeded;
+                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
+
                 return download.Data;
             }
             catch (OperationCanceledException ex)
@@ -469,6 +476,13 @@ namespace Soulseek.NET
                 download.Connection?.Disconnect("Transfer cancelled.");
 
                 throw new DownloadException($"Download of file {filename} from user {username} was cancelled.", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                download.State = DownloadStates.TimedOut;
+                download.Connection?.Disconnect("Transfer timed out.");
+
+                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
@@ -635,9 +649,13 @@ namespace Soulseek.NET
 
                 connection.Disconnected += (sender, message) =>
                 {
-                    if (download.State.HasFlag(DownloadStates.Successful))
+                    if (download.State.HasFlag(DownloadStates.Succeeded))
                     {
                         MessageWaiter.Complete(download.WaitKey, download.Data);
+                    }
+                    else if (download.State.HasFlag(DownloadStates.TimedOut))
+                    {
+                        MessageWaiter.Throw(download.WaitKey, new TimeoutException(message));
                     }
                     else
                     {
@@ -655,8 +673,13 @@ namespace Soulseek.NET
                     var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
 
                     download.Data = bytes;
-                    download.State = DownloadStates.Successful;
-                    connection.Disconnect($"Transfer complete.");
+                    download.State = DownloadStates.Succeeded;
+                    connection.Disconnect("Transfer complete.");
+                }
+                catch (TimeoutException)
+                {
+                    download.State = DownloadStates.TimedOut;
+                    connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.ReadTimeout} seconds of inactivity.");
                 }
                 catch (Exception ex)
                 {

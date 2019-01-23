@@ -141,7 +141,7 @@
 
         private static void Client_DownloadStateChanged(object sender, DownloadStateChangedEventArgs e)
         {
-            Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.State}");
+            Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.PreviousState} ==> {e.State}");
         }
 
         private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)

@@ -89,6 +89,10 @@ namespace Soulseek.NET
             }
         }
 
+        /// <summary>
+        ///     Completes the oldest wait matching the specified <paramref name="key"/>.
+        /// </summary>
+        /// <param name="key">The unique WaitKey for the wait.</param>
         public void Complete(WaitKey key)
         {
             Complete<object>(key, null);
@@ -116,6 +120,13 @@ namespace Soulseek.NET
             }
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="key"/> and with the specified <paramref name="timeout"/>.
+        /// </summary>
+        /// <param name="key">A unique WaitKey for the wait.</param>
+        /// <param name="timeout">The wait timeout.</param>
+        /// <param name="cancellationToken">The cancellation token for the wait.</param>
+        /// <returns>A Task representing the wait.</returns>
         public Task Wait(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             return Wait<object>(key, timeout, cancellationToken);
@@ -150,6 +161,12 @@ namespace Soulseek.NET
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
         }
 
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="key"/> which does not time out.
+        /// </summary>
+        /// <param name="key">A unique WaitKey for the wait.</param>
+        /// <param name="cancellationToken">The cancellation token for the wait.</param>
+        /// <returns>A Task representing the wait.</returns>
         public Task WaitIndefinitely(WaitKey key, CancellationToken? cancellationToken = null)
         {
             return WaitIndefinitely<object>(key, cancellationToken);

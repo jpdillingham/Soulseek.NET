@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Tests.Unit
+﻿namespace Soulseek.NET.Tests.Unit.Client
 {
     using Moq;
     using Soulseek.NET.Exceptions;

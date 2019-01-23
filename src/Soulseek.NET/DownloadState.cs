@@ -18,7 +18,7 @@ namespace Soulseek.NET
     ///     Download state.
     /// </summary>
     /// <remarks>
-    ///     The Completed state will be accompanied by one other flag consisting of <see cref="Successful"/>,
+    ///     The Completed state will be accompanied by one other flag consisting of <see cref="Succeeded"/>,
     ///     <see cref="Cancelled"/>, <see cref="TimedOut"/> or <see cref="Errored"/>.
     /// </remarks>
     [Flags]
@@ -35,33 +35,38 @@ namespace Soulseek.NET
         Queued = 1,
 
         /// <summary>
+        ///     Initializing.
+        /// </summary>
+        Initializing = 2,
+
+        /// <summary>
         ///     In progress.
         /// </summary>
-        InProgress = 2,
+        InProgress = 4,
 
         /// <summary>
         ///     Completed; check remaining state flags for disposition.
         /// </summary>
-        Completed = 4,
+        Completed = 8,
 
         /// <summary>
         ///     Completed due to a successful transfer.
         /// </summary>
-        Successful = 8,
+        Succeeded = 16,
 
         /// <summary>
         ///     Completed due to cancellation.
         /// </summary>
-        Cancelled = 16,
+        Cancelled = 32,
 
         /// <summary>
         ///     Completed due to timeout.
         /// </summary>
-        TimedOut = 32,
+        TimedOut = 64,
 
         /// <summary>
         ///     Completed due to transfer error.
         /// </summary>
-        Errored = 64,
+        Errored = 128,
     }
 }
