@@ -632,9 +632,9 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
+        private async Task HandleDownload(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
-            var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
+            connection = connection ?? await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
             var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
 
