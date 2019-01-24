@@ -9,9 +9,23 @@
 //
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
-namespace Soulseek.NET.Tests.Unit.Common.EventArgs
+namespace Soulseek.NET.Tests.Unit
 {
+    using AutoFixture.Xunit2;
+    using Xunit;
+
     public class SoulseekClientEventArgsTests
     {
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "SoulseekClientStateChangedEventArgs")]
+        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
+        public void SoulseekClientStateChangedEventArgs_Instantiates_With_The_Given_Data(SoulseekClientStates previousState, SoulseekClientStates state, string message)
+        {
+            var s = new SoulseekClientStateChangedEventArgs(previousState, state, message);
+
+            Assert.Equal(previousState, s.PreviousState);
+            Assert.Equal(state, s.State);
+            Assert.Equal(message, s.Message);
+        }
     }
 }
