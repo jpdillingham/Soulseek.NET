@@ -10,10 +10,12 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
+using AutoFixture.Xunit2;
 using Moq;
 using Soulseek.NET.Messaging.Messages;
 using Soulseek.NET.Tcp;
 using System;
+using System.Collections.Concurrent;
 using System.Net;
 using System.Threading.Tasks;
 using Xunit;
@@ -36,6 +38,31 @@ namespace Soulseek.NET.Tests.Unit.Client
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
 
             Assert.Null(ex);
+        }
+
+        [Trait("Category", "HandleDownloadAsync")]
+        [Theory(DisplayName = "Completes 'start' wait"), AutoData]
+        public async Task Completes_Start_Wait(string username, string filename, int token, int remoteToken)
+        {
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
+
+            var waiter = new Mock<IWaiter>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            var download = new Download(username, filename, token);
+            activeDownloads.TryAdd(remoteToken, download);
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+
+            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+
+            waiter.Verify(m => m.Complete(download.WaitKey), Times.Once);
         }
     }
 }
