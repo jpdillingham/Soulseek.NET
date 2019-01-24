@@ -615,7 +615,7 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task HandleConnectToPeer(ConnectToPeerResponse response)
+        private async Task HandleConnectToPeerAsync(ConnectToPeerResponse response)
         {
             if (response.Type == "F")
             {
@@ -623,7 +623,7 @@ namespace Soulseek.NET
                 // any other identifying information about the file.
                 if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
                 {
-                    await HandleDownload(response).ConfigureAwait(false);
+                    await HandleDownloadAsync(response).ConfigureAwait(false);
                 }
             }
             else
@@ -632,7 +632,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task HandleDownload(ConnectToPeerResponse downloadResponse, IConnection connection = null)
+        private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
             connection = connection ?? await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
@@ -767,7 +767,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await HandleConnectToPeer(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
+                    await HandleConnectToPeerAsync(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
                     break;
 
                 case MessageCode.ServerPrivateMessage:
