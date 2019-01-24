@@ -640,7 +640,7 @@ namespace Soulseek.NET
 
             if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
-                MessageWaiter.Complete(download.WaitKey);
+                MessageWaiter.Complete(download.WaitKey); // complete the "download start" wait
 
                 connection.DataRead += (sender, e) =>
                 {

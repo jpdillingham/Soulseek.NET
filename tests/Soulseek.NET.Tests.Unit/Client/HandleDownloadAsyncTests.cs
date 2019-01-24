@@ -10,9 +10,32 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
+using Moq;
+using Soulseek.NET.Messaging.Messages;
+using Soulseek.NET.Tcp;
+using System;
+using System.Net;
+using System.Threading.Tasks;
+using Xunit;
+
 namespace Soulseek.NET.Tests.Unit.Client
 {
     public class HandleDownloadAsyncTests
     {
+        [Trait("Category", "HandleDownloadAsync")]
+        [Fact(DisplayName = "Does not throw on download missing from ActiveDownloads")]
+        public async Task Does_Not_Throw_On_Download_Missing_From_ActiveDownloads()
+        {
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(1)));
+
+            var s = new SoulseekClient("127.0.0.1", 1, null);
+            var r = new ConnectToPeerResponse("username", "F", IPAddress.Parse("127.0.0.1"), 1, 1);
+
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
+
+            Assert.Null(ex);
+        }
     }
 }
