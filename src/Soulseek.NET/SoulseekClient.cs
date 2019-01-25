@@ -15,6 +15,7 @@ namespace Soulseek.NET
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -635,8 +636,19 @@ namespace Soulseek.NET
         private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
             connection = connection ?? await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+
+            int remoteToken = 0;
+
+            try
+            {
+                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}");
+                return;
+            }
 
             if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
