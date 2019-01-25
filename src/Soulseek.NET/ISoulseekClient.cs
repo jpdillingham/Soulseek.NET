@@ -35,7 +35,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Occurs when an active download receives data.
         /// </summary>
-        event EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
 
         /// <summary>
         ///     Occurs when a download changes state.

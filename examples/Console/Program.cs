@@ -18,7 +18,7 @@
                 client.StateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
                 client.SearchStateChanged += Client_SearchStateChanged;
-                client.DownloadProgress += Client_DownloadProgress;
+                client.DownloadProgressUpdated += Client_DownloadProgress;
                 client.DownloadStateChanged += Client_DownloadStateChanged;
 
                 await client.ConnectAsync();
@@ -151,7 +151,7 @@
 
         private static ConcurrentDictionary<string, double> Progress { get; set; } = new ConcurrentDictionary<string, double>();
 
-        private static void Client_DownloadProgress(object sender, DownloadProgressEventArgs e)
+        private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
         {
             var key = $"{e.Username}:{e.Filename}:{e.Token}";
             Progress.AddOrUpdate(key, e.PercentComplete, (k, v) =>

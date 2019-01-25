@@ -79,7 +79,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Occurs when an active download receives data.
         /// </summary>
-        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
 
         /// <summary>
         ///     Occurs when a download changes state.
@@ -655,8 +655,8 @@ namespace Soulseek.NET
 
                 connection.DataRead += (sender, e) =>
                 {
-                    var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
-                    DownloadProgress?.Invoke(this, eventArgs);
+                    var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
+                    DownloadProgressUpdated?.Invoke(this, eventArgs);
                 };
 
                 connection.Disconnected += (sender, message) =>
