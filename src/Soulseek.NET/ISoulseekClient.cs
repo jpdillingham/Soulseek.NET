@@ -28,9 +28,9 @@ namespace Soulseek.NET
         #region Public Events
 
         /// <summary>
-        ///     Occurs when the client changes state.
+        ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
+        event EventHandler<DiagnosticMessageGeneratedEventArgs> DiagnosticMessageGenerated;
 
         /// <summary>
         ///     Occurs when an active download receives data.
@@ -51,6 +51,11 @@ namespace Soulseek.NET
         ///     Occurs when a search changes state.
         /// </summary>
         event EventHandler<SearchStateChangedEventArgs> SearchStateChanged;
+
+        /// <summary>
+        ///     Occurs when the client changes state.
+        /// </summary>
+        event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         #endregion Public Events
 
