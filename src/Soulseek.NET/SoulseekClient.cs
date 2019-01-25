@@ -77,6 +77,11 @@ namespace Soulseek.NET
         }
 
         /// <summary>
+        ///     Occurs when an internal diagnostic message is generated.
+        /// </summary>
+        public event EventHandler<DiagnosticMessageGeneratedEventArgs> DiagnosticMessageGenerated;
+
+        /// <summary>
         ///     Occurs when an active download receives data.
         /// </summary>
         public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
@@ -633,6 +638,13 @@ namespace Soulseek.NET
             }
         }
 
+        private void Debug(DiagnosticMessageLevel level, string message, Exception exception = null)
+        {
+            // todo: swallow messages that fall beneath the configured diganostics level
+            var e = new DiagnosticMessageGeneratedEventArgs(level, message, exception);
+            DiagnosticMessageGenerated?.Invoke(this, e);
+        }
+
         private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
             int remoteToken = 0;
@@ -645,7 +657,8 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
-                Debug.WriteLine($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}");
+
+                Debug(DiagnosticMessageLevel.Warning, $"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
                 return;
             }
 
