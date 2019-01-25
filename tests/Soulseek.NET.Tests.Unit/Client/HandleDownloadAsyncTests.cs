@@ -64,5 +64,42 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             waiter.Verify(m => m.Complete(download.WaitKey), Times.Once);
         }
+
+        [Trait("Category", "HandleDownloadAsync")]
+        [Theory(DisplayName = "Timeout disconnects and does not throw"), AutoData]
+        public async Task Timeout_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
+        {
+            var reads = 0;
+            string message = null;
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+                .Callback<int>(c => reads++)
+                .Returns(() =>
+                {
+                    return reads == 1 ?
+                        Task.FromResult(BitConverter.GetBytes(remoteToken)) :
+                        Task.FromException<byte[]>(new TimeoutException());
+                });
+            conn.Setup(m => m.Disconnect(It.IsAny<string>()))
+                .Callback<string>(str => message = str);
+
+            var waiter = new Mock<IWaiter>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            var download = new Download(username, filename, token);
+            activeDownloads.TryAdd(remoteToken, download);
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+
+            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
+
+            conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
+            Assert.Contains("timed out", message);
+        }
     }
 }
