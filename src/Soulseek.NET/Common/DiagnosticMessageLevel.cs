@@ -1,4 +1,4 @@
-﻿namespace Soulseek.NET.Common
+﻿namespace Soulseek
 {
     public enum DiagnosticMessageLevel
     {

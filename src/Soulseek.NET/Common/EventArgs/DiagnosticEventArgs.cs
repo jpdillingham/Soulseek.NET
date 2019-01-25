@@ -1,5 +1,5 @@
-﻿namespace Soulseek.NET.Common.EventArgs
-{
+﻿namespace Soulseek.NET
+{ 
     using System;
     using System.Collections.Generic;
     using System.Text;
