@@ -17,6 +17,7 @@ using Soulseek.NET.Tcp;
 using System;
 using System.Collections.Concurrent;
 using System.Net;
+using System.Threading;
 using System.Threading.Tasks;
 using Xunit;
 
@@ -64,7 +65,6 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             waiter.Verify(m => m.Complete(download.WaitKey), Times.Once);
         }
-
 
         [Trait("Category", "HandleDownloadAsync")]
         [Theory(DisplayName = "Does not throw on remote token read Exception"), AutoData]
@@ -166,6 +166,34 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
             Assert.Contains("fake exception", message);
+        }
+
+        [Trait("Category", "HandleDownloadAsync")]
+        [Theory(DisplayName = "Raises DownloadProgressUpdated event on data read"), AutoData]
+        public async Task Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, string filename, int token, int remoteToken, int bytesDownloaded)
+        {
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)))
+                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(new byte[0], bytesDownloaded, 1));
+
+            DownloadProgressUpdatedEventArgs e = null;
+
+            var s = new SoulseekClient("127.0.0.1", 1, null);
+            s.DownloadProgressUpdated += (sender, args) => { e = args; };
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            var download = new Download(username, filename, token);
+            activeDownloads.TryAdd(remoteToken, download);
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+
+            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+
+            Assert.NotNull(e);
+            Assert.Equal(bytesDownloaded, e.BytesDownloaded);
         }
     }
 }
