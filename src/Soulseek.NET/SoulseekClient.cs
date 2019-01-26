@@ -15,7 +15,6 @@ namespace Soulseek.NET
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Diagnostics;
     using System.Linq;
     using System.Net;
     using System.Threading;
@@ -63,7 +62,8 @@ namespace Soulseek.NET
             IMessageConnection serverConnection = null,
             IConnectionManager<IMessageConnection> peerConnectionManager = null,
             IWaiter messageWaiter = null,
-            ITokenFactory tokenFactory = null)
+            ITokenFactory tokenFactory = null,
+            IDiagnosticMessageFactory diagnosticMessageFactory = null)
         {
             Address = address;
             Port = port;
@@ -74,7 +74,10 @@ namespace Soulseek.NET
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
+            Diagnostics = diagnosticMessageFactory ?? new DiagnosticMessageFactory(this, DiagnosticMessageGenerated);
         }
+
+        private IDiagnosticMessageFactory Diagnostics { get; }
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
@@ -638,13 +641,6 @@ namespace Soulseek.NET
             }
         }
 
-        private void Debug(DiagnosticMessageLevel level, string message, Exception exception = null)
-        {
-            // todo: swallow messages that fall beneath the configured diganostics level
-            var e = new DiagnosticMessageGeneratedEventArgs(level, message, exception);
-            DiagnosticMessageGenerated?.Invoke(this, e);
-        }
-
         private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
             int remoteToken = 0;
@@ -657,8 +653,7 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
-
-                Debug(DiagnosticMessageLevel.Warning, $"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
+                Diagnostics.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
                 return;
             }
 
