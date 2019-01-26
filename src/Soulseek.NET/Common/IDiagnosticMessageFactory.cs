@@ -20,18 +20,10 @@ namespace Soulseek.NET
     internal interface IDiagnosticMessageFactory
     {
         /// <summary>
-        ///     Create an <see cref="DiagnosticMessageLevel.Error"/> diagnostic message.
+        ///     Create a <see cref="DiagnosticMessageLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
-        /// <param name="exception">An optional Exception.</param>
-        void Error(string message, Exception exception = null);
-
-        /// <summary>
-        ///     Create a <see cref="DiagnosticMessageLevel.Warning"/> diagnostic message.
-        /// </summary>
-        /// <param name="message">The desired message.</param>
-        /// <param name="exception">An optional Exception.</param>
-        void Warning(string message, Exception exception = null);
+        void Debug(string message);
 
         /// <summary>
         ///     Create an <see cref="DiagnosticMessageLevel.Info"/> diagnostic message.
@@ -40,9 +32,10 @@ namespace Soulseek.NET
         void Info(string message);
 
         /// <summary>
-        ///     Create a <see cref="DiagnosticMessageLevel.Debug"/> diagnostic message.
+        ///     Create a <see cref="DiagnosticMessageLevel.Warning"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
-        void Debug(string message);
+        /// <param name="exception">An optional Exception.</param>
+        void Warning(string message, Exception exception = null);
     }
 }
