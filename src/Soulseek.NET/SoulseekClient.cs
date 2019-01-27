@@ -62,7 +62,8 @@ namespace Soulseek.NET
             IMessageConnection serverConnection = null,
             IConnectionManager<IMessageConnection> peerConnectionManager = null,
             IWaiter messageWaiter = null,
-            ITokenFactory tokenFactory = null)
+            ITokenFactory tokenFactory = null,
+            IDiagnosticMessageFactory diagnosticMessageFactory = null)
         {
             Address = address;
             Port = port;
@@ -73,12 +74,20 @@ namespace Soulseek.NET
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
+            Diagnostics = diagnosticMessageFactory ?? new DiagnosticMessageFactory(this, DiagnosticMessageGenerated);
         }
+
+        private IDiagnosticMessageFactory Diagnostics { get; }
+
+        /// <summary>
+        ///     Occurs when an internal diagnostic message is generated.
+        /// </summary>
+        public event EventHandler<DiagnosticMessageGeneratedEventArgs> DiagnosticMessageGenerated;
 
         /// <summary>
         ///     Occurs when an active download receives data.
         /// </summary>
-        public event EventHandler<DownloadProgressEventArgs> DownloadProgress;
+        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
 
         /// <summary>
         ///     Occurs when a download changes state.
@@ -615,7 +624,7 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task HandleConnectToPeer(ConnectToPeerResponse response)
+        private async Task HandleConnectToPeerAsync(ConnectToPeerResponse response)
         {
             if (response.Type == "F")
             {
@@ -623,7 +632,7 @@ namespace Soulseek.NET
                 // any other identifying information about the file.
                 if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
                 {
-                    await HandleDownload(response).ConfigureAwait(false);
+                    await HandleDownloadAsync(response).ConfigureAwait(false);
                 }
             }
             else
@@ -632,20 +641,30 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task HandleDownload(ConnectToPeerResponse downloadResponse)
+        private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
-            var connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+            int remoteToken = 0;
+
+            try
+            {
+                connection = connection ?? await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
+                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+            }
+            catch (Exception ex)
+            {
+                Diagnostics.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
+                return;
+            }
 
             if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
-                MessageWaiter.Complete(download.WaitKey);
+                MessageWaiter.Complete(download.WaitKey); // complete the "download start" wait
 
                 connection.DataRead += (sender, e) =>
                 {
-                    var eventArgs = new DownloadProgressEventArgs(download, e.CurrentLength);
-                    DownloadProgress?.Invoke(this, eventArgs);
+                    var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
+                    DownloadProgressUpdated?.Invoke(this, eventArgs);
                 };
 
                 connection.Disconnected += (sender, message) =>
@@ -767,7 +786,7 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await HandleConnectToPeer(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
+                    await HandleConnectToPeerAsync(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
                     break;
 
                 case MessageCode.ServerPrivateMessage:

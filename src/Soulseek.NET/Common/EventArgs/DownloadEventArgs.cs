@@ -61,14 +61,14 @@ namespace Soulseek.NET
     /// <summary>
     ///     Event arguments for events raised by an update to download progress.
     /// </summary>
-    public sealed class DownloadProgressEventArgs : DownloadEventArgs
+    public sealed class DownloadProgressUpdatedEventArgs : DownloadEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadProgressEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="DownloadProgressUpdatedEventArgs"/> class.
         /// </summary>
         /// <param name="download">The download which raised the event.</param>
         /// <param name="bytesDownloaded">The total number of bytes read.</param>
-        internal DownloadProgressEventArgs(Download download, int bytesDownloaded)
+        internal DownloadProgressUpdatedEventArgs(Download download, int bytesDownloaded)
             : base(download)
         {
             BytesDownloaded = bytesDownloaded;

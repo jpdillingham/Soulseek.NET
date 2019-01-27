@@ -18,8 +18,9 @@
                 client.StateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
                 client.SearchStateChanged += Client_SearchStateChanged;
-                client.DownloadProgress += Client_DownloadProgress;
+                client.DownloadProgressUpdated += Client_DownloadProgress;
                 client.DownloadStateChanged += Client_DownloadStateChanged;
+                client.DiagnosticMessageGenerated += Client_DiagnosticMessageGenerated;
 
                 await client.ConnectAsync();
 
@@ -139,6 +140,11 @@
             }
         }
 
+        private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticMessageGeneratedEventArgs e)
+        {
+            Console.WriteLine($"[DIAGNOSTICS] [{e.Level}]: {e.Message}");
+        }
+
         private static void Client_DownloadStateChanged(object sender, DownloadStateChangedEventArgs e)
         {
             Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.PreviousState} ==> {e.State}");
@@ -151,7 +157,7 @@
 
         private static ConcurrentDictionary<string, double> Progress { get; set; } = new ConcurrentDictionary<string, double>();
 
-        private static void Client_DownloadProgress(object sender, DownloadProgressEventArgs e)
+        private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
         {
             var key = $"{e.Username}:{e.Filename}:{e.Token}";
             Progress.AddOrUpdate(key, e.PercentComplete, (k, v) =>
