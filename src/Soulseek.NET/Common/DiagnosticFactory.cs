@@ -24,13 +24,13 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="source">The source object which originates diagnostic messages.</param>
         /// <param name="eventHandler">The event handler used to raise diagnostics events.</param>
-        public DiagnosticFactory(object source, EventHandler<DiagnosticMessageGeneratedEventArgs> eventHandler)
+        public DiagnosticFactory(object source, EventHandler<DiagnosticGeneratedEventArgs> eventHandler)
         {
             Source = source;
             EventHandler = eventHandler;
         }
 
-        private EventHandler<DiagnosticMessageGeneratedEventArgs> EventHandler { get; }
+        private EventHandler<DiagnosticGeneratedEventArgs> EventHandler { get; }
         private object Source { get; }
 
         /// <summary>
@@ -63,7 +63,7 @@ namespace Soulseek.NET
 
         private void RaiseEvent(DiagnosticLevel level, string message, Exception exception = null)
         {
-            var e = new DiagnosticMessageGeneratedEventArgs(level, message, exception);
+            var e = new DiagnosticGeneratedEventArgs(level, message, exception);
             EventHandler?.Invoke(Source, e);
         }
     }
