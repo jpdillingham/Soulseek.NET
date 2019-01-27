@@ -23,14 +23,17 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="DiagnosticFactory"/> class.
         /// </summary>
         /// <param name="source">The source object which originates diagnostic messages.</param>
+        /// <param name="minimumLevel">The minimum level of messages to generate.</param>
         /// <param name="eventHandler">The event handler used to raise diagnostics events.</param>
-        public DiagnosticFactory(object source, EventHandler<DiagnosticGeneratedEventArgs> eventHandler)
+        public DiagnosticFactory(object source, DiagnosticLevel minimumLevel, EventHandler<DiagnosticGeneratedEventArgs> eventHandler)
         {
             Source = source;
+            MinimumLevel = minimumLevel;
             EventHandler = eventHandler;
         }
 
         private EventHandler<DiagnosticGeneratedEventArgs> EventHandler { get; }
+        private DiagnosticLevel MinimumLevel { get; }
         private object Source { get; }
 
         /// <summary>
@@ -63,8 +66,11 @@ namespace Soulseek.NET
 
         private void RaiseEvent(DiagnosticLevel level, string message, Exception exception = null)
         {
-            var e = new DiagnosticGeneratedEventArgs(level, message, exception);
-            EventHandler?.Invoke(Source, e);
+            if (level >= MinimumLevel)
+            {
+                var e = new DiagnosticGeneratedEventArgs(level, message, exception);
+                EventHandler?.Invoke(Source, e);
+            }
         }
     }
 }
