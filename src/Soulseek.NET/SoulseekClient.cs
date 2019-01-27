@@ -75,7 +75,7 @@ namespace Soulseek.NET
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
-            Diagnostics = diagnosticFactory ?? new DiagnosticFactory(this, DiagnosticGenerated);
+            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, DiagnosticGenerated);
         }
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
-        private IDiagnosticFactory Diagnostics { get; }
+        private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private IWaiter MessageWaiter { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
@@ -653,7 +653,7 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
-                Diagnostics.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
+                Diagnostic.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
                 return;
             }
 
