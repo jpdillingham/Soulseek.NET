@@ -230,5 +230,75 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             waiter.Verify(m => m.Complete(download.WaitKey, data), Times.Once);
         }
+
+        [Trait("Category", "HandleDownloadAsync")]
+        [Theory(DisplayName = "Completes download wait with TimeoutException on timeout"), AutoData]
+        public async Task Completes_Download_Wait_With_TimeoutException_On_Timeout(string username, string filename, int token, int remoteToken)
+        {
+            var reads = 0;
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+                .Callback<int>(c => reads++)
+                .Returns(() =>
+                {
+                    return reads == 1 ?
+                        Task.FromResult(BitConverter.GetBytes(remoteToken)) :
+                        Task.FromException<byte[]>(new TimeoutException());
+                });
+            conn.Setup(m => m.Disconnect(It.IsAny<string>()))
+                .Raises(m => m.Disconnected += null, this, string.Empty);
+
+            var waiter = new Mock<IWaiter>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            var download = new Download(username, filename, token);
+            activeDownloads.TryAdd(remoteToken, download);
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+
+            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+
+            waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TimeoutException>()), Times.Once);
+        }
+
+        [Trait("Category", "HandleDownloadAsync")]
+        [Theory(DisplayName = "Completes download wait with ConnectionException on exception"), AutoData]
+        public async Task Completes_Download_Wait_With_ConnectionException_On_Exception(string username, string filename, int token, int remoteToken)
+        {
+            var reads = 0;
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+                .Callback<int>(c => reads++)
+                .Returns(() =>
+                {
+                    return reads == 1 ?
+                        Task.FromResult(BitConverter.GetBytes(remoteToken)) :
+                        Task.FromException<byte[]>(new ConnectionReadException());
+                });
+            conn.Setup(m => m.Disconnect(It.IsAny<string>()))
+                .Raises(m => m.Disconnected += null, this, string.Empty);
+
+            var waiter = new Mock<IWaiter>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+
+            var activeDownloads = new ConcurrentDictionary<int, Download>();
+            var download = new Download(username, filename, token);
+            activeDownloads.TryAdd(remoteToken, download);
+
+            s.SetProperty("ActiveDownloads", activeDownloads);
+
+            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+
+            waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<ConnectionException>()), Times.Once);
+        }
     }
 }
