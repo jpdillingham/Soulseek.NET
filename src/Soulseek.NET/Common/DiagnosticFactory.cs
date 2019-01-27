@@ -1,4 +1,4 @@
-﻿// <copyright file="DiagnosticMessageFactory.cs" company="JP Dillingham">
+﻿// <copyright file="DiagnosticFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,14 +17,14 @@ namespace Soulseek.NET
     /// <summary>
     ///     Creates diagnostic messages.
     /// </summary>
-    internal class DiagnosticMessageFactory : IDiagnosticMessageFactory
+    internal class DiagnosticFactory : IDiagnosticFactory
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DiagnosticMessageFactory"/> class.
+        ///     Initializes a new instance of the <see cref="DiagnosticFactory"/> class.
         /// </summary>
         /// <param name="source">The source object which originates diagnostic messages.</param>
         /// <param name="eventHandler">The event handler used to raise diagnostics events.</param>
-        public DiagnosticMessageFactory(object source, EventHandler<DiagnosticMessageGeneratedEventArgs> eventHandler)
+        public DiagnosticFactory(object source, EventHandler<DiagnosticMessageGeneratedEventArgs> eventHandler)
         {
             Source = source;
             EventHandler = eventHandler;
@@ -34,34 +34,34 @@ namespace Soulseek.NET
         private object Source { get; }
 
         /// <summary>
-        ///     Creates a <see cref="DiagnosticMessageLevel.Debug"/> diagnostic message.
+        ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         public void Debug(string message)
         {
-            RaiseEvent(DiagnosticMessageLevel.Debug, message);
+            RaiseEvent(DiagnosticLevel.Debug, message);
         }
 
         /// <summary>
-        ///     Creates an <see cref="DiagnosticMessageLevel.Info"/> diagnostic message.
+        ///     Creates an <see cref="DiagnosticLevel.Info"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         public void Info(string message)
         {
-            RaiseEvent(DiagnosticMessageLevel.Info, message);
+            RaiseEvent(DiagnosticLevel.Info, message);
         }
 
         /// <summary>
-        ///     Creates a <see cref="DiagnosticMessageLevel.Warning"/> diagnostic message.
+        ///     Creates a <see cref="DiagnosticLevel.Warning"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         /// <param name="exception">An optional Exception.</param>
         public void Warning(string message, Exception exception = null)
         {
-            RaiseEvent(DiagnosticMessageLevel.Warning, message, exception);
+            RaiseEvent(DiagnosticLevel.Warning, message, exception);
         }
 
-        private void RaiseEvent(DiagnosticMessageLevel level, string message, Exception exception = null)
+        private void RaiseEvent(DiagnosticLevel level, string message, Exception exception = null)
         {
             var e = new DiagnosticMessageGeneratedEventArgs(level, message, exception);
             EventHandler?.Invoke(Source, e);
