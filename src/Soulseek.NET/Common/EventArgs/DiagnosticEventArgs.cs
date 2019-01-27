@@ -14,12 +14,24 @@ namespace Soulseek.NET
 {
     using System;
 
+    /// <summary>
+    ///     Generic event arguments for diagnostic events.
+    /// </summary>
     public class DiagnosticEventArgs : EventArgs
     {
     }
 
+    /// <summary>
+    ///     Event arguments for events raised by diagnostic messages.
+    /// </summary>
     public class DiagnosticGeneratedEventArgs : DiagnosticEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DiagnosticGeneratedEventArgs"/> class.
+        /// </summary>
+        /// <param name="level">The digagnostic level of the event.</param>
+        /// <param name="message">The event message.</param>
+        /// <param name="exception">The Exception associated with the event, if applicable.</param>
         public DiagnosticGeneratedEventArgs(DiagnosticLevel level, string message, Exception exception = null)
         {
             Level = level;
@@ -27,9 +39,24 @@ namespace Soulseek.NET
             Exception = exception;
         }
 
+        /// <summary>
+        ///     Gets the diagnostic level of the event.
+        /// </summary>
         public DiagnosticLevel Level { get; }
+
+        /// <summary>
+        ///     Gets the event message.
+        /// </summary>
         public string Message { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether an <see cref="Exception"/> is included with the event.
+        /// </summary>
         public bool IncludesException => Exception == null;
+
+        /// <summary>
+        ///     Gets the Exception associated with the event, if applicable.
+        /// </summary>
         public Exception Exception { get; }
     }
 }
