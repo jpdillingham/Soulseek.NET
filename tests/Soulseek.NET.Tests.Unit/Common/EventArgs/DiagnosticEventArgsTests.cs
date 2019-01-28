@@ -27,5 +27,25 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(message, e.Message);
             Assert.Equal(exception, e.Exception);
         }
+
+        [Trait("Category", "DiagnosticEventArgs Instantiation")]
+        [Theory(DisplayName = "DiagnosticEventArgs Instantiates with null Exception given null"), AutoFixture.Xunit2.AutoData]
+        public void Instantiates_With_Null_Exception_Given_Null(DiagnosticLevel level, string message)
+        {
+            var e = new DiagnosticGeneratedEventArgs(level, message);
+
+            Assert.Equal(level, e.Level);
+            Assert.Equal(message, e.Message);
+            Assert.Null(e.Exception);
+        }
+
+        [Trait("Category", "DiagnosticEventArgs Properties")]
+        [Theory(DisplayName = "DiagnosticEventArgs IncludesException returns false given null Exception"), AutoFixture.Xunit2.AutoData]
+        public void IncludesException_Returns_False_Given_Null_Exception(DiagnosticLevel level, string message)
+        {
+            var e = new DiagnosticGeneratedEventArgs(level, message);
+
+            Assert.False(e.IncludesException);
+        }
     }
 }
