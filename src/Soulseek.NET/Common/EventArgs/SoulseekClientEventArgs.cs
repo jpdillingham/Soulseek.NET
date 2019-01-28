@@ -35,6 +35,7 @@ namespace Soulseek.NET
         internal SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null)
         {
             State = state;
+            PreviousState = previousState;
             Message = message;
         }
 
