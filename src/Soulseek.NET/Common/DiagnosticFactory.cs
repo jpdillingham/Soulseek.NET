@@ -66,7 +66,7 @@ namespace Soulseek.NET
 
         private void RaiseEvent(DiagnosticLevel level, string message, Exception exception = null)
         {
-            if (level >= MinimumLevel)
+            if (level <= MinimumLevel)
             {
                 var e = new DiagnosticGeneratedEventArgs(level, message, exception);
                 EventHandler?.Invoke(Source, e);
