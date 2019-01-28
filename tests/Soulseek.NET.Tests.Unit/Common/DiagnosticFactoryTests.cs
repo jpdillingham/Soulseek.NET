@@ -28,5 +28,40 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(level, d.GetProperty<DiagnosticLevel>("MinimumLevel"));
             Assert.Equal(handler, d.GetProperty<EventHandler<DiagnosticGeneratedEventArgs>>("EventHandler"));
         }
+
+        [Trait("Category", "Debug")]
+        [Theory(DisplayName = "Raises event on debug"), AutoData]
+        public void Raises_Event_On_Debug(string message)
+        {
+            DiagnosticGeneratedEventArgs e = null;
+
+            var d = new DiagnosticFactory(this, DiagnosticLevel.Debug, (sender, args) =>
+            {
+                e = args;
+            });
+
+            d.Debug(message);
+
+            Assert.Equal(message, e.Message);
+            Assert.Equal(DiagnosticLevel.Debug, e.Level);
+            Assert.False(e.IncludesException);
+            Assert.Null(e.Exception);
+        }
+
+        [Trait("Category", "Debug")]
+        [Theory(DisplayName = "Does not raise event on debug when level is > Debug"), AutoData]
+        public void Does_Not_Raise_Event_On_Debug_When_Level_Is_Gt_Debug(string message)
+        {
+            DiagnosticGeneratedEventArgs e = null;
+
+            var d = new DiagnosticFactory(this, DiagnosticLevel.Info, (sender, args) =>
+            {
+                e = args;
+            });
+
+            d.Debug(message);
+
+            Assert.Null(e);
+        }
     }
 }
