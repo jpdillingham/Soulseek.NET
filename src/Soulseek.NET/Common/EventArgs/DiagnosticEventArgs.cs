@@ -52,7 +52,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets a value indicating whether an <see cref="Exception"/> is included with the event.
         /// </summary>
-        public bool IncludesException => Exception == null;
+        public bool IncludesException => Exception != null;
 
         /// <summary>
         ///     Gets the Exception associated with the event, if applicable.
