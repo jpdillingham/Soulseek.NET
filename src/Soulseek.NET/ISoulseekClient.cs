@@ -30,7 +30,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        event EventHandler<DiagnosticMessageGeneratedEventArgs> DiagnosticMessageGenerated;
+        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
         ///     Occurs when an active download receives data.

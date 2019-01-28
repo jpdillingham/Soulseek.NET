@@ -1,4 +1,4 @@
-﻿// <copyright file="IDiagnosticMessageFactory.cs" company="JP Dillingham">
+﻿// <copyright file="IDiagnosticFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,22 +17,22 @@ namespace Soulseek.NET
     /// <summary>
     ///     Creates diagnostic messages.
     /// </summary>
-    internal interface IDiagnosticMessageFactory
+    internal interface IDiagnosticFactory
     {
         /// <summary>
-        ///     Creates a <see cref="DiagnosticMessageLevel.Debug"/> diagnostic message.
+        ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         void Debug(string message);
 
         /// <summary>
-        ///     Creates an <see cref="DiagnosticMessageLevel.Info"/> diagnostic message.
+        ///     Creates an <see cref="DiagnosticLevel.Info"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         void Info(string message);
 
         /// <summary>
-        ///     Creates a <see cref="DiagnosticMessageLevel.Warning"/> diagnostic message.
+        ///     Creates a <see cref="DiagnosticLevel.Warning"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
         /// <param name="exception">An optional Exception.</param>
