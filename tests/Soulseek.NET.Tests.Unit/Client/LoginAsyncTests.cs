@@ -19,8 +19,8 @@ namespace Soulseek.NET.Tests.Unit.Client
     public class LoginAsyncTests
     {
         [Trait("Category", "LoginAsync")]
-        [Fact(DisplayName = "Login throws on null username")]
-        public async Task Login_Throws_On_Null_Username()
+        [Fact(DisplayName = "Login throws ArgumentException on null username")]
+        public async Task Login_Throws_ArgumentException_On_Null_Username()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected);
@@ -32,14 +32,14 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Theory(DisplayName = "Login throws on bad input")]
+        [Theory(DisplayName = "Login throws ArgumentException on bad input")]
         [InlineData(null, "a")]
         [InlineData("", "a")]
         [InlineData("a", null)]
         [InlineData("a", "")]
         [InlineData("", "")]
         [InlineData(null, null)]
-        public async Task Login_Throws_On_Bad_Input(string username, string password)
+        public async Task Login_Throws_ArgumentException_On_Bad_Input(string username, string password)
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected);
@@ -51,8 +51,8 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Fact(DisplayName = "Login throws if logged in")]
-        public async Task Login_Throws_If_Logged_In()
+        [Fact(DisplayName = "Login throws InvalidOperationException if logged in")]
+        public async Task Login_Throws_InvalidOperationException_If_Logged_In()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -64,8 +64,8 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Fact(DisplayName = "Login throws if not connected")]
-        public async Task Login_Throws_If_Not_Connected()
+        [Fact(DisplayName = "Login throws InvalidOperationException if not connected")]
+        public async Task Login_Throws_InvalidOperationException_If_Not_Connected()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Disconnected);
