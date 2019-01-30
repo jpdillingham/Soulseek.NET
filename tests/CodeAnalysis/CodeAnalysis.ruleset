@@ -20,6 +20,7 @@
     <Rule Id="CA1711" Action="None" />
     <Rule Id="CA1725" Action="Warning" />
     <Rule Id="CA1707" Action="None" />
+    <Rule Id="CA1030" Action="None" />
   </Rules>
   <Rules AnalyzerId="Microsoft.CodeQuality.CSharp.Analyzers" RuleNamespace="Microsoft.CodeQuality.CSharp.Analyzers">
     <Rule Id="CA1001" Action="Warning" />
@@ -32,5 +33,10 @@
     <Rule Id="SA1600" Action="Info" />
     <Rule Id="SA1652" Action="None" />
     <Rule Id="SA1133" Action="None" />
+    <Rule Id="SA1201" Action="None" />
+    <Rule Id="SA1129" Action="None" />
+  </Rules>
+  <Rules AnalyzerId="SonarAnalyzer.CSharp" RuleNamespace="SonarAnalyzer.CSharp">
+    <Rule Id="S3241" Action="None" />
   </Rules>
 </RuleSet>

@@ -142,7 +142,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
 
-
         [Trait("Category", "Seek")]
         [Fact(DisplayName = "Seek throws ArgumentOutOfRangeException on too large")]
         public void Seek_Throws_ArgumentOutOfRangeException_On_Too_Large()

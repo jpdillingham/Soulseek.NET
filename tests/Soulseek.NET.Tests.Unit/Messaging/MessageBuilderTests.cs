@@ -234,7 +234,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.Equal(new[] { data }.ToList(), payload);
         }
 
-
         [Trait("Category", "Write")]
         [Fact(DisplayName = "WriteInteger writes given int")]
         public void WriteInteger_Writes_Given_Int()
@@ -254,7 +253,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "WriteLong writes given long")]
         public void WriteLong_Writes_Given_Long()
         {
-            var data = (long)(new Random().Next());
+            var data = (long)new Random().Next();
 
             var builder = new MessageBuilder();
             builder.WriteLong(data);

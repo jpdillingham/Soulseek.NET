@@ -86,7 +86,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
             Assert.IsType<MessageReadException>(ex);
         }
 
-
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
         public void Parse_Returns_Expected_Data(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)

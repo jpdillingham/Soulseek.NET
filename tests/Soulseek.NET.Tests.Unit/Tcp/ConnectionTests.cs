@@ -492,7 +492,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             long length = 2147483648; // max = 2147483647
 
-            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length)); 
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
             Assert.NotNull(ex);
             Assert.IsType<NotImplementedException>(ex);
@@ -503,7 +503,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Fits_In_Int()
         {
             long length = 2147483647; // max = 2147483647
-            
+
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns(Task.Run(() => (int)length));

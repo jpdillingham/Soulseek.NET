@@ -168,7 +168,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .WriteInteger(1) // first directory file count
                 .WriteByte(0x0) // file code
                 .WriteString("foo") // name
-                .WriteLong(12) // size 
+                .WriteLong(12) // size
                 .WriteString("bar") // extension
                 .WriteInteger(0) // attribute count
                 .Compress()

@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManager{T}Tests.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionManagerTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
     using Soulseek.NET.Tcp;
     using Xunit;
 
-    public class ConnectionManager_T_Tests
+    public class ConnectionManagerTests
     {
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates properly")]

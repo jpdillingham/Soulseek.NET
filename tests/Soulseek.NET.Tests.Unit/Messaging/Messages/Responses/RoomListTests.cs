@@ -73,7 +73,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
             var response = RoomList.Parse(builder.Build()).ToList();
 
             Assert.Equal(rooms.Count, response.Count);
-            
+
             for (int i = 0; i < rooms.Count; i++)
             {
                 Assert.Equal(rooms[i].Name, response[i].Name);

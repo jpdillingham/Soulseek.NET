@@ -106,7 +106,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on token generation failure")]
         public async Task DownloadAsync_Throws_DownloadException_On_Token_Generation_Failure()
         {
-            var tokenFactory= new Mock<ITokenFactory>();
+            var tokenFactory = new Mock<ITokenFactory>();
             tokenFactory.Setup(m => m.TryGetToken(It.IsAny<Func<int, bool>>(), out It.Ref<int?>.IsAny))
                 .Returns(false);
 
@@ -184,7 +184,6 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, true, 1, "");
             var waitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var waiter = new Mock<IWaiter>();
@@ -210,7 +209,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, true, 1, "");
+            var response = new PeerTransferResponse(1, true, 1, string.Empty);
             var waitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var waiter = new Mock<IWaiter>();
@@ -223,7 +222,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
-            
+
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
             Assert.Contains("unreachable", ex.Message);
@@ -236,10 +235,8 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
-
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
@@ -266,11 +263,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
@@ -314,7 +310,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromException<object>(new TimeoutException()));
-            
+
             var conn = new Mock<IMessageConnection>();
 
             var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
