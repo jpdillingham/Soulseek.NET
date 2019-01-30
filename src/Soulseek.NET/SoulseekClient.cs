@@ -153,7 +153,7 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrEmpty(username))
+            if (string.IsNullOrWhiteSpace(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
             }
