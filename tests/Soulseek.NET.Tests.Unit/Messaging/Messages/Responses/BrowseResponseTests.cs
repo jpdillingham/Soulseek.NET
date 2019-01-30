@@ -23,6 +23,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
     public class BrowseResponseTests
     {
+        private Random Random { get; } = new Random();
+
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
         [Fact(DisplayName = "Instantiates with given data")]
@@ -44,7 +46,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
             var dir = new Directory("foo", 1);
             var list = new List<Directory>(new[] { dir });
-            
+
             var a = new BrowseResponse(num, list);
 
             Assert.Equal(num, a.DirectoryCount);
@@ -254,8 +256,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 }
             }
         }
-
-        private Random Random { get; } = new Random();
 
         private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
         {

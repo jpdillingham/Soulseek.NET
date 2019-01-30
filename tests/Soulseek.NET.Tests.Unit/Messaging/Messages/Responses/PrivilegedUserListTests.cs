@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivilegedUserListTests.cs" company="JP Dillingham">
+﻿// <copyright file="PriviligedUserListTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,10 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System.Linq;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System.Linq;
     using Xunit;
 
     public class PrivilegedUserListTests

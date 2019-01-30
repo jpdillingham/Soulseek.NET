@@ -12,11 +12,11 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
-    using Soulseek.NET.Exceptions;
-    using Soulseek.NET.Messaging;
     using System;
     using System.Reflection;
     using System.Text;
+    using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Messaging;
     using Xunit;
 
     public class MessageReaderTests

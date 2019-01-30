@@ -12,11 +12,11 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System;
     using AutoFixture.Xunit2;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System;
     using Xunit;
 
     public class PrivateMessageTests

@@ -12,8 +12,8 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
-    using Soulseek.NET.Messaging;
     using System.Linq;
+    using Soulseek.NET.Messaging;
 
     public static class Extensions
     {

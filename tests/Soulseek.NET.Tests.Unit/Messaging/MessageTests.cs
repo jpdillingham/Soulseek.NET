@@ -12,8 +12,8 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
-    using Soulseek.NET.Messaging;
     using System;
+    using Soulseek.NET.Messaging;
     using Xunit;
 
     public class MessageTests

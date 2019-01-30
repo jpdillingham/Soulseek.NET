@@ -12,10 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System;
     using Xunit;
 
     public class PeerTransferResponseTests
@@ -136,6 +136,5 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
             Assert.Equal(size, reader.ReadInteger());
             Assert.Equal(message, reader.ReadString());
         }
-
     }
 }

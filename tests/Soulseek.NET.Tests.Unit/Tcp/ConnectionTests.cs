@@ -12,14 +12,14 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
-    using Moq;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
+    using Moq;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class ConnectionTests

@@ -12,13 +12,13 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
-    using Moq;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
+    using Moq;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class ConnectionManager_T_Tests
@@ -258,24 +258,6 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             mock.Verify(m => m.Dispose(), Times.Once);
         }
 
-        public static IEnumerable<object[]> GetData => new List<object[]>
-        {
-            new object[] { null },
-            new object[] { new ConnectionKey(new IPAddress(0x3), 3) },
-        };
-
-        [Trait("Category", "Get")]
-        [Theory(DisplayName = "Get returns null given null or missing key")]
-        [MemberData(nameof(GetData))]
-        internal void Get_Returns_Null_Given_Null_Or_Missing_Key(ConnectionKey key)
-        {
-            var c = new ConnectionManager<IConnection>();
-
-            var conn = c.Get(key);
-
-            Assert.Null(conn);
-        }
-
         [Trait("Category", "Get")]
         [Fact(DisplayName = "Get returns queued connection")]
         public async Task Get_Returns_Queued_Connection()
@@ -320,6 +302,24 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(mock.Object, conn);
 
             mock.Verify(m => m.ConnectAsync(), Times.Once);
+        }
+
+        public static IEnumerable<object[]> GetData => new List<object[]>
+        {
+            new object[] { null },
+            new object[] { new ConnectionKey(new IPAddress(0x3), 3) },
+        };
+
+        [Trait("Category", "Get")]
+        [Theory(DisplayName = "Get returns null given null or missing key")]
+        [MemberData(nameof(GetData))]
+        internal void Get_Returns_Null_Given_Null_Or_Missing_Key(ConnectionKey key)
+        {
+            var c = new ConnectionManager<IConnection>();
+
+            var conn = c.Get(key);
+
+            Assert.Null(conn);
         }
     }
 }

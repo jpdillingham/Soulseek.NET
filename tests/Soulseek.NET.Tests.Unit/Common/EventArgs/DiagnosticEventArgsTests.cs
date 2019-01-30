@@ -10,11 +10,11 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-using System;
-using Xunit;
-
 namespace Soulseek.NET.Tests.Unit
 {
+    using System;
+    using Xunit;
+
     public class DiagnosticEventArgsTests
     {
         [Trait("Category", "DiagnosticEventArgs Instantiation")]
