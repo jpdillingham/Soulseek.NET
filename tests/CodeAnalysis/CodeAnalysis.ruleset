@@ -31,5 +31,6 @@
     <Rule Id="SA1516" Action="None" />
     <Rule Id="SA1600" Action="Info" />
     <Rule Id="SA1652" Action="None" />
+    <Rule Id="SA1133" Action="None" />
   </Rules>
 </RuleSet>
