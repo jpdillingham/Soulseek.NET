@@ -808,21 +808,28 @@ namespace Soulseek.NET
 
         private async Task LoginInternalAsync(string username, string password)
         {
-            var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
-
-            await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
-
-            var response = await loginWait.ConfigureAwait(false);
-
-            if (response.Succeeded)
+            try
             {
-                Username = username;
-                ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
+
+                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
+
+                var response = await loginWait.ConfigureAwait(false);
+
+                if (response.Succeeded)
+                {
+                    Username = username;
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                }
+                else
+                {
+                    Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                    throw new LoginException($"The server rejected login attempt: {response.Message}");
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                throw new LoginException($"Failed to log in as {username}: {response.Message}");
+                throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
             }
         }
 

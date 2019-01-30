@@ -4,7 +4,6 @@
     using Soulseek.NET;
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
@@ -20,7 +19,7 @@
                 client.SearchStateChanged += Client_SearchStateChanged;
                 client.DownloadProgressUpdated += Client_DownloadProgress;
                 client.DownloadStateChanged += Client_DownloadStateChanged;
-                client.DiagnosticMessageGenerated += Client_DiagnosticMessageGenerated;
+                client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
 
                 await client.ConnectAsync();
 
@@ -140,7 +139,7 @@
             }
         }
 
-        private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticMessageGeneratedEventArgs e)
+        private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)
         {
             Console.WriteLine($"[DIAGNOSTICS] [{e.Level}]: {e.Message}");
         }
