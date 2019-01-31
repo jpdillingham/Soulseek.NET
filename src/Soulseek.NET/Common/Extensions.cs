@@ -28,8 +28,13 @@ namespace Soulseek.NET
     /// </summary>
     public static class Extensions
     {
+        /// <summary>
+        ///     Dequeues and disposes of all instances within the specified <see cref="ConcurrentQueue{T}"/>.
+        /// </summary>
+        /// <typeparam name="T">The contained type of the queue.</typeparam>
+        /// <param name="concurrentQueue">The queue from which to dequeue and dispose.</param>
         public static void DequeueAndDisposeAll<T>(this ConcurrentQueue<T> concurrentQueue)
-                    where T : IDisposable
+            where T : IDisposable
         {
             while (!concurrentQueue.IsEmpty)
             {
@@ -49,6 +54,12 @@ namespace Soulseek.NET
             task.ContinueWith(t => { Debug.WriteLine($"Forgotten Thread Error: {t.Exception.Message}", t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
+        /// <summary>
+        ///     Removes all instances within the specified <see cref="ConcurrentDictionary{TKey, TValue}"/>.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+        /// <typeparam name="TValue">The type of the dictionary value.</typeparam>
+        /// <param name="concurrentDictionary">The dictionary from which to remove.</param>
         public static void RemoveAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
         {
             while (!concurrentDictionary.IsEmpty)
@@ -57,6 +68,12 @@ namespace Soulseek.NET
             }
         }
 
+        /// <summary>
+        ///     Removes and disposes of all instances within the specified <see cref="ConcurrentDictionary{TKey, TValue}"/>.
+        /// </summary>
+        /// <typeparam name="TKey">The type of the dictionary key.</typeparam>
+        /// <typeparam name="TValue">The type of the dictionary value.</typeparam>
+        /// <param name="concurrentDictionary">The dictionary from which to remove.</param>
         public static void RemoveAndDisposeAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
                     where TValue : IDisposable
         {
@@ -79,6 +96,11 @@ namespace Soulseek.NET
             timer.Start();
         }
 
+        /// <summary>
+        ///     Resolves the IP address in the given string to an instance of <see cref="IPAddress"/>.
+        /// </summary>
+        /// <param name="address">The IP address string to resolve.</param>
+        /// <returns>The resolved IPAddress.</returns>
         public static IPAddress ResolveIPAddress(this string address)
         {
             if (IPAddress.TryParse(address, out IPAddress ip))
