@@ -15,6 +15,7 @@ namespace Soulseek.NET
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics;
+    using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
@@ -95,6 +96,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="str">The string to hash.</param>
         /// <returns>The MD5 hash of the input string.</returns>
+        [SuppressMessage("Microsoft.NetCore.CSharp.Analyzers", "CA5351", Justification = "Required by the Soulseek protocol.")]
         public static string ToMD5Hash(this string str)
         {
             using (MD5 md5 = MD5.Create())

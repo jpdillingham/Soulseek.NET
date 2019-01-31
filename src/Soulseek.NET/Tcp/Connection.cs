@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
@@ -235,7 +236,7 @@ namespace Soulseek.NET.Tcp
         {
             // NetworkStream.ReadAsync doesn't support long, so if we were to support this we'd need to split the long up into
             // int-sized chunks and iterate. that's for later, if ever.
-            if (!int.TryParse(length.ToString(), out var intLength))
+            if (!int.TryParse(length.ToString(CultureInfo.InvariantCulture), out var intLength))
             {
                 throw new NotImplementedException($"File sizes exceeding ~2gb are not yet supported.");
             }
