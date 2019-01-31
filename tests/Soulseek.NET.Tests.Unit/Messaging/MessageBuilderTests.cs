@@ -138,7 +138,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("already", ex.Message);
+            Assert.Contains("already", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "Compress")]

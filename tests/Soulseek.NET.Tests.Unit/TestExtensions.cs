@@ -15,7 +15,7 @@ namespace Soulseek.NET.Tests.Unit
     using System.Linq;
     using Soulseek.NET.Messaging;
 
-    public static class Extensions
+    public static class TestExtensions
     {
         /// <summary>
         ///     Pads the code of the given message with 3 bytes to make it compatible with <see cref="MessageReader"/>, and returns

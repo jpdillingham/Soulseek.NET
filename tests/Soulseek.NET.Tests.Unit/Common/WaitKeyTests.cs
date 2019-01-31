@@ -114,7 +114,7 @@ namespace Soulseek.NET.Tests.Unit
 
             foreach (var part in parts)
             {
-                Assert.Contains(part.ToString(), k.Token);
+                Assert.Contains(part.ToString(), k.Token, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 

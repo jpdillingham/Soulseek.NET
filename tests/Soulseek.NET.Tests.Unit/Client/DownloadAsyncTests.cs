@@ -66,7 +66,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("Connected", ex.Message);
+            Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -80,7 +80,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("logged in", ex.Message);
+            Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -99,7 +99,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
-            Assert.Contains("token", ex.Message);
+            Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -117,7 +117,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.Contains("Unable to generate a unique token", ex.Message);
+            Assert.Contains("Unable to generate a unique token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -225,7 +225,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.Contains("unreachable", ex.Message);
+            Assert.Contains("unreachable", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -297,11 +297,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
@@ -330,11 +329,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
 
             var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
@@ -367,11 +365,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
 
             var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 

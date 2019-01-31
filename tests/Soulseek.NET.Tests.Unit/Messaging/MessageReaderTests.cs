@@ -435,7 +435,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
-            Assert.Contains("extends beyond", ex.Message); // fragile, call the cops idc.
+            Assert.Contains("extends beyond", ex.Message, StringComparison.InvariantCultureIgnoreCase); // fragile, call the cops idc.
         }
 
         [Trait("Category", "Decompress")]

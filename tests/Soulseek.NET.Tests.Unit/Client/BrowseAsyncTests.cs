@@ -43,7 +43,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("Connected", ex.Message);
+            Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "BrowseAsync")]
@@ -57,7 +57,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("logged in", ex.Message);
+            Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
     }
 }

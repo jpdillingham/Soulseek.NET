@@ -126,7 +126,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
-            Assert.Contains("timed out", message);
+            Assert.Contains("timed out", message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "HandleDownloadAsync")]
@@ -164,7 +164,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
-            Assert.Contains("fake exception", message);
+            Assert.Contains("fake exception", message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "HandleDownloadAsync")]
