@@ -151,6 +151,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             // ensure connection 2 was added and queued
             Assert.Single(queued);
             var peek = queued.TryPeek(out var peeked);
+
+            Assert.True(peek);
             Assert.True(peeked.Key == key2, "Connection 2 was queued");
 
             await c.RemoveAsync(mock1.Object);

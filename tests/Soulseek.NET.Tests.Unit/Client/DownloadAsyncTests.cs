@@ -538,6 +538,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
 
+            Assert.NotNull(ex);
+            Assert.IsType<DownloadException>(ex);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
+
             Assert.Equal(DownloadStates.Cancelled, events[events.Count - 1].PreviousState);
             Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
         }

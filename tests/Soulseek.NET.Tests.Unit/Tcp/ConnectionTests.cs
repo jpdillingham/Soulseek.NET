@@ -704,7 +704,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
+            c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
 
             await c.ConnectAsync();
             await c.ReadAsync(1);

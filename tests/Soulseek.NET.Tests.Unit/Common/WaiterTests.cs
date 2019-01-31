@@ -40,6 +40,7 @@ namespace Soulseek.NET.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 var peek = queue.TryPeek(out var wait);
 
+                Assert.Equal(result, waitResult);
                 Assert.NotNull(queue);
                 Assert.Empty(queue);
                 Assert.False(peek);
@@ -79,7 +80,6 @@ namespace Soulseek.NET.Tests.Unit
             using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key);
-                Task<object> task2 = waiter.Wait<object>(key, 30);
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);

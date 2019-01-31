@@ -292,7 +292,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             var reader = new MessageReader(msg);
 
-            var str = reader.ReadString();
+            reader.ReadString();
 
             Assert.Equal(bytes, reader.ReadBytes(bytes.Length));
         }
@@ -403,8 +403,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "ReadString throws MessageReadException given no data")]
         public void ReadString_Throws_MessageReadException_Given_No_Data()
         {
-            var str = Guid.NewGuid().ToString();
-
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();

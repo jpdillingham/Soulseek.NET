@@ -97,7 +97,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_When_Disallowed()
         {
             var token = Random.Next();
-            var size = Random.Next();
+
             var message = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
