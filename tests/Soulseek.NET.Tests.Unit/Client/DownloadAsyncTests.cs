@@ -188,7 +188,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(waitKey)), null, null))
-                .Returns(Task.FromException<PeerTransferResponse>(new MessageCancelledException()));
+                .Returns(Task.FromException<PeerTransferResponse>(new OperationCanceledException()));
 
             var conn = new Mock<IMessageConnection>();
 
@@ -199,7 +199,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.IsType<MessageCancelledException>(ex.InnerException);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -242,7 +242,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), null))
-                .Returns(Task.FromException<PeerTransferRequest>(new MessageCancelledException()));
+                .Returns(Task.FromException<PeerTransferRequest>(new OperationCanceledException()));
 
             var conn = new Mock<IMessageConnection>();
 
@@ -253,7 +253,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
-            Assert.IsType<MessageCancelledException>(ex.InnerException);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
 
         [Trait("Category", "DownloadAsync")]
