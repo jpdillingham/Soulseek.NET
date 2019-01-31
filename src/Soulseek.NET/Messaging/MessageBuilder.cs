@@ -75,9 +75,7 @@ namespace Soulseek.NET.Messaging
                 throw new InvalidOperationException("The message has already been compressed.");
             }
 
-            byte[] compressedBytes;
-
-            Compress(PayloadBytes.ToArray(), out compressedBytes);
+            Compress(PayloadBytes.ToArray(), out var compressedBytes);
 
             PayloadBytes = compressedBytes.ToList();
             Compressed = true;
