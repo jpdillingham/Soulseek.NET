@@ -15,7 +15,6 @@ namespace Soulseek.NET.Tcp
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.Serialization;
-    using System.Security.Permissions;
     using Soulseek.NET.Exceptions;
 
     /// <summary>
@@ -34,24 +33,33 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with the specified <paramref name="message"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with a specified error message.
         /// </summary>
-        /// <param name="message">The Exception message.</param>
+        /// <param name="message">The message that describes the error.</param>
         public ConnectionException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with the specified <paramref name="message"/> and <paramref name="innerException"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
-        /// <param name="message">The Exception message.</param>
-        /// <param name="innerException">The inner Exception.</param>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
+        ///     exception is specified.
+        /// </param>
         public ConnectionException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected ConnectionException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -74,24 +82,33 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with the specified <paramref name="message"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with a specified error message.
         /// </summary>
-        /// <param name="message">The Exception message.</param>
+        /// <param name="message">The message that describes the error.</param>
         public ConnectionReadException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with the specified <paramref name="message"/> and <paramref name="innerException"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
-        /// <param name="message">The Exception message.</param>
-        /// <param name="innerException">The inner Exception.</param>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
+        ///     exception is specified.
+        /// </param>
         public ConnectionReadException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionReadException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected ConnectionReadException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
@@ -114,24 +131,33 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with the specified <paramref name="message"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with a specified error message.
         /// </summary>
-        /// <param name="message">The Exception message.</param>
+        /// <param name="message">The message that describes the error.</param>
         public ConnectionWriteException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with the specified <paramref name="message"/> and <paramref name="innerException"/>.
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
-        /// <param name="message">The Exception message.</param>
-        /// <param name="innerException">The inner Exception.</param>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
+        ///     exception is specified.
+        /// </param>
         public ConnectionWriteException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
         protected ConnectionWriteException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
