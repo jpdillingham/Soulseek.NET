@@ -16,6 +16,9 @@ namespace Soulseek.NET.Exceptions
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.Serialization;
 
+    /// <summary>
+    ///     Represents errors that occur when handling network messages.
+    /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
     public class MessageException : SoulseekClientException
@@ -36,31 +39,6 @@ namespace Soulseek.NET.Exceptions
         }
 
         protected MessageException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class MessageBuildException : MessageException
-    {
-        public MessageBuildException()
-            : base()
-        {
-        }
-
-        public MessageBuildException(string message)
-            : base(message)
-        {
-        }
-
-        public MessageBuildException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-
-        protected MessageBuildException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
@@ -111,31 +89,6 @@ namespace Soulseek.NET.Exceptions
         }
 
         protected MessageReadException(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
-    }
-
-    [ExcludeFromCodeCoverage]
-    [Serializable]
-    public class MessageTimeoutException : MessageException
-    {
-        public MessageTimeoutException()
-            : base()
-        {
-        }
-
-        public MessageTimeoutException(string message)
-            : base(message)
-        {
-        }
-
-        public MessageTimeoutException(string message, Exception innerException)
-            : base(message, innerException)
-        {
-        }
-
-        protected MessageTimeoutException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
