@@ -174,7 +174,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IConnection>();
             conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)))
-                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(new byte[0], bytesDownloaded, 1));
+                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(Array.Empty<byte>(), bytesDownloaded, 1));
 
             DownloadProgressUpdatedEventArgs e = null;
 

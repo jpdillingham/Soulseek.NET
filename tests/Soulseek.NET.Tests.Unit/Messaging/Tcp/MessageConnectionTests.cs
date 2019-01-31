@@ -286,10 +286,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
         public async Task ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
         {
-            var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoRequest)
-                .Build();
-
             int callCount = 0;
 
             var streamMock = new Mock<INetworkStream>();

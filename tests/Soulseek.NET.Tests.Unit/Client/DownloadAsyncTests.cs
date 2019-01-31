@@ -419,18 +419,15 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync raises Download events on failure")]
-        public async Task DownloadAsync_Raises_Expected_Final_Event_On_Failure()
+        public async Task DownloadAsync_Raises_Download_Events_On_Failure()
         {
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
@@ -456,6 +453,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
 
+            Assert.NotNull(ex);
+            Assert.IsType<DownloadException>(ex);
+            Assert.IsType<MessageReadException>(ex.InnerException);
+
             Assert.Equal(DownloadStates.Errored, events[events.Count - 1].PreviousState);
             Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
         }
@@ -467,13 +468,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
@@ -499,6 +497,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
 
+            Assert.NotNull(ex);
+            Assert.IsType<DownloadException>(ex);
+            Assert.IsType<TimeoutException>(ex.InnerException);
+
             Assert.Equal(DownloadStates.TimedOut, events[events.Count - 1].PreviousState);
             Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
         }
@@ -510,13 +512,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions() { };
             options.MessageTimeout = 5;
 
-            var response = new PeerTransferResponse(1, false, 1, "");
+            var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
             var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
-            var requestWaitKey = new WaitKey(MessageCode.PeerTransferRequest, "username", "filename");
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))

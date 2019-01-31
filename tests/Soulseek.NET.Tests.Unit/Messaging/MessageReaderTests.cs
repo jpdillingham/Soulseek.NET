@@ -47,7 +47,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Instantiation throws ArgumentOutOfRangeException given empty byte array")]
         public void Instantiation_Throws_ArgumentOutOfRangeException_Given_Empty_Byte_Array()
         {
-            byte[] bytes = new byte[0];
+            byte[] bytes = Array.Empty<byte>();
             var ex = Record.Exception(() => new MessageReader(bytes));
 
             Assert.NotNull(ex);
@@ -346,6 +346,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             var ex = Record.Exception(() => reader.ReadBytes(4));
 
+            Assert.Equal(42, integer);
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
@@ -393,7 +394,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
                 .Build();
 
             var reader = new MessageReader(msg);
-            var num = reader.ReadInteger();
+            reader.ReadInteger();
 
             Assert.Equal(str, reader.ReadString());
         }

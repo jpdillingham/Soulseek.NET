@@ -370,7 +370,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[0]));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(Array.Empty<byte>()));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);

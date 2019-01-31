@@ -27,9 +27,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         {
             var messageReader = new MessageReader(new byte[8]);
 
-            SearchResponseSlim r = null;
-
-            var ex = Record.Exception(() => r = new SearchResponseSlim(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength, messageReader));
+            var r = new SearchResponseSlim(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength, messageReader);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);

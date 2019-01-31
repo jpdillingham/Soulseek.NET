@@ -98,8 +98,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(0, r.DirectoryCount);
             Assert.Empty(r.Directories);
         }
@@ -120,8 +122,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(1, r.DirectoryCount);
             Assert.Single(r.Directories);
 
@@ -175,8 +179,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(1, r.DirectoryCount);
             Assert.Single(r.Directories);
 
@@ -222,8 +228,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(dirs.Count, r.DirectoryCount);
             Assert.Equal(dirs.Count, r.Directories.Count());
 

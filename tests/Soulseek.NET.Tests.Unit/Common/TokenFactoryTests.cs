@@ -71,6 +71,7 @@ namespace Soulseek.NET.Tests.Unit
         {
             var ok = new TokenFactory().TryGetToken(s => false, out var token);
 
+            Assert.True(ok);
             Assert.NotNull(token);
             Assert.NotEqual(0, token);
         }
