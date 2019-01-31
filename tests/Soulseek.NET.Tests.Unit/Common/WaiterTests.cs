@@ -80,6 +80,8 @@ namespace Soulseek.NET.Tests.Unit
             using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key);
+                waiter.Wait<object>(key, 30);
+
                 object result = null;
 
                 var ex = Record.Exception(() => result = task.Result);
