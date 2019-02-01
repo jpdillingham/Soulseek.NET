@@ -14,12 +14,15 @@ namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
     using System.Collections.Generic;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class BrowseAsyncTests
@@ -87,8 +90,8 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseAsync")]
-        [Fact(DisplayName = "BrowseAsync throws BrowseException/OperationCancelledException on cancellation")]
-        public async Task BrowseAsync_Throws_BrowseException_OperationCancelledException_On_Cancellation()
+        [Fact(DisplayName = "BrowseAsync throws BrowseException on cancellation")]
+        public async Task BrowseAsync_Throws_BrowseException_On_Cancellation()
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
@@ -105,6 +108,46 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.NotNull(ex);
             Assert.IsType<BrowseException>(ex);
             Assert.IsType<OperationCanceledException>(ex.InnerException);
+        }
+
+        [Trait("Category", "BrowseAsync")]
+        [Fact(DisplayName = "BrowseAsync throws BrowseException on write exception")]
+        public async Task BrowseAsync_Throws_BrowseException_On_Write_Exception()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Throws(new ConnectionWriteException());
+
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            BrowseResponse result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object));
+
+            Assert.NotNull(ex);
+            Assert.IsType<BrowseException>(ex);
+            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+        }
+
+        [Trait("Category", "BrowseAsync")]
+        [Fact(DisplayName = "BrowseAsync throws BrowseException on disconnect")]
+        public async Task BrowseAsync_Throws_BrowseException_On_Disconnect()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask)
+                .Raises(m => m.Disconnected += null, this, string.Empty);
+
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            BrowseResponse result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object));
+
+            Assert.NotNull(ex);
+            Assert.IsType<BrowseException>(ex);
+            Assert.IsType<ConnectionException>(ex.InnerException);
+            Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
         }
     }
 }
