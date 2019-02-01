@@ -13,7 +13,12 @@
 namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Messaging.Tcp;
     using Xunit;
 
     public class BrowseAsyncTests
@@ -58,6 +63,26 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
             Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        [Trait("Category", "BrowseAsync")]
+        [Theory(DisplayName = "BrowseAsync returns expected response on success"), AutoData]
+        public async Task BrowseAsync_Returns_Expected_Response_On_Success(List<Directory> directories)
+        {
+            var response = new BrowseResponse(directories.Count, directories);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(response));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object);
+
+            Assert.Equal(response, result);
         }
     }
 }
