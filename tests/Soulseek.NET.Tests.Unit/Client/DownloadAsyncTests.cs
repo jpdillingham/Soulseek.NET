@@ -124,8 +124,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on peer message connection timeout")]
         public async Task DownloadAsync_Throws_DownloadException_On_Peer_Message_Connection_Timeout()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 1;
+            var options = new SoulseekClientOptions(messageTimeout: 1);
 
             var s = new SoulseekClient("127.0.0.1", 1, options);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -141,8 +140,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException when WriteMessageAsync throws")]
         public async Task DownloadAsync_Throws_DownloadException_When_WriteMessageAsync_Throws()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 1;
+            var options = new SoulseekClientOptions(messageTimeout: 1);
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
@@ -162,8 +160,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferResponse timeout")]
         public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferResponse_Timeout()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 1;
+            var options = new SoulseekClientOptions(messageTimeout: 1);
 
             var conn = new Mock<IMessageConnection>();
 
@@ -181,8 +178,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferResponse cancellation")]
         public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferResponse_Cancellation()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var waitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
 
@@ -206,8 +202,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferResponse allowed")]
         public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferResponse_Allowed()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, true, 1, string.Empty);
             var waitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -232,8 +227,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferRequest cancellation")]
         public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferRequest_Cancellation()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -260,8 +254,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on download cancellation")]
         public async Task DownloadAsync_Throws_DownloadException_On_Download_Cancellation()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -294,8 +287,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync throws DownloadException on download start timeout")]
         public async Task DownloadAsync_Throws_DownloadException_On_Download_Start_Timeout()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -326,8 +318,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync returns expected data on completion")]
         public async Task DownloadAsync_Returns_Expected_Data_On_Completion()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -362,8 +353,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync raises expected events on success")]
         public async Task DownloadAsync_Raises_Expected_Events_On_Success()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -418,8 +408,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync raises Download events on failure")]
         public async Task DownloadAsync_Raises_Download_Events_On_Failure()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -462,8 +451,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync raises Download events on timeout")]
         public async Task DownloadAsync_Raises_Expected_Final_Event_On_Timeout()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
@@ -506,8 +494,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "DownloadAsync raises Download events on cancellation")]
         public async Task DownloadAsync_Raises_Expected_Final_Event_On_Cancellation()
         {
-            var options = new SoulseekClientOptions() { };
-            options.MessageTimeout = 5;
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new PeerTransferResponse(1, false, 1, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
