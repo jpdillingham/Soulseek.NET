@@ -74,6 +74,7 @@ namespace Soulseek.NET
         ///     Gets the options for the server message connection.
         /// </summary>
         public ConnectionOptions ServerConnectionOptions { get; }
+
         /// <summary>
         ///     Gets the options for peer transfer connections.
         /// </summary>
