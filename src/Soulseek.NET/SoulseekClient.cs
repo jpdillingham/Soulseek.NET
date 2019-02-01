@@ -549,7 +549,7 @@ namespace Soulseek.NET
                 Disconnect();
             };
 
-            conn.MessageRead += HandleServerMessage;
+            conn.MessageRead += ServerConnection_MessageRead;
 
             return conn;
         }
@@ -574,7 +574,7 @@ namespace Soulseek.NET
                 await PeerConnectionManager.RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
             };
 
-            connection.MessageRead += HandlePeerMessage;
+            connection.MessageRead += PeerConnection_MessageRead;
 
             await PeerConnectionManager.AddAsync(connection).ConfigureAwait(false);
             return connection;
@@ -605,7 +605,7 @@ namespace Soulseek.NET
             if (connection == default(IMessageConnection))
             {
                 connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
-                connection.MessageRead += HandlePeerMessage;
+                connection.MessageRead += PeerConnection_MessageRead;
 
                 connection.Connected += async (sender, e) =>
                 {
@@ -708,7 +708,34 @@ namespace Soulseek.NET
             }
         }
 
-        private void HandlePeerMessage(object sender, Message message)
+        private async Task LoginInternalAsync(string username, string password)
+        {
+            try
+            {
+                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
+
+                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
+
+                var response = await loginWait.ConfigureAwait(false);
+
+                if (response.Succeeded)
+                {
+                    Username = username;
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                }
+                else
+                {
+                    Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                    throw new LoginException($"The server rejected login attempt: {response.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
+            }
+        }
+
+        private void PeerConnection_MessageRead(object sender, Message message)
         {
             Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
 
@@ -758,78 +785,6 @@ namespace Soulseek.NET
                 default:
                     Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
-            }
-        }
-
-        private async void HandleServerMessage(object sender, Message message)
-        {
-            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
-
-            switch (message.Code)
-            {
-                case MessageCode.ServerParentMinSpeed:
-                case MessageCode.ServerParentSpeedRatio:
-                case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
-                    break;
-
-                case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
-                    break;
-
-                case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
-                    break;
-
-                case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
-                    break;
-
-                case MessageCode.ServerConnectToPeer:
-                    await HandleConnectToPeerAsync(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
-                    break;
-
-                case MessageCode.ServerPrivateMessage:
-                    var pm = PrivateMessage.Parse(message);
-                    Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
-                    await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
-                    break;
-
-                case MessageCode.ServerGetPeerAddress:
-                    var response = GetPeerAddressResponse.Parse(message);
-                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
-                    break;
-
-                default:
-                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
-                    break;
-            }
-        }
-
-        private async Task LoginInternalAsync(string username, string password)
-        {
-            try
-            {
-                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
-
-                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
-
-                var response = await loginWait.ConfigureAwait(false);
-
-                if (response.Succeeded)
-                {
-                    Username = username;
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                }
-                else
-                {
-                    Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                    throw new LoginException($"The server rejected login attempt: {response.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
             }
         }
 
@@ -887,6 +842,51 @@ namespace Soulseek.NET
             catch (Exception ex)
             {
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+            }
+        }
+
+        private async void ServerConnection_MessageRead(object sender, Message message)
+        {
+            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
+
+            switch (message.Code)
+            {
+                case MessageCode.ServerParentMinSpeed:
+                case MessageCode.ServerParentSpeedRatio:
+                case MessageCode.ServerWishlistInterval:
+                    MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
+                    break;
+
+                case MessageCode.ServerLogin:
+                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
+                    break;
+
+                case MessageCode.ServerRoomList:
+                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
+                    break;
+
+                case MessageCode.ServerPrivilegedUsers:
+                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
+                    break;
+
+                case MessageCode.ServerConnectToPeer:
+                    await HandleConnectToPeerAsync(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
+                    break;
+
+                case MessageCode.ServerPrivateMessage:
+                    var pm = PrivateMessage.Parse(message);
+                    Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
+                    await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
+                    break;
+
+                case MessageCode.ServerGetPeerAddress:
+                    var response = GetPeerAddressResponse.Parse(message);
+                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
+                    break;
+
+                default:
+                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
+                    break;
             }
         }
     }
