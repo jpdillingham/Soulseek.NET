@@ -17,6 +17,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Xunit;
@@ -83,6 +84,27 @@ namespace Soulseek.NET.Tests.Unit.Client
             var result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object);
 
             Assert.Equal(response, result);
+        }
+
+        [Trait("Category", "BrowseAsync")]
+        [Fact(DisplayName = "BrowseAsync throws BrowseException/OperationCancelledException on cancellation")]
+        public async Task BrowseAsync_Throws_BrowseException_OperationCancelledException_On_Cancellation()
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            BrowseResponse result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object));
+
+            Assert.NotNull(ex);
+            Assert.IsType<BrowseException>(ex);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
     }
 }
