@@ -399,7 +399,7 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage()).ConfigureAwait(false);
