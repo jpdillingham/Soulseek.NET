@@ -23,6 +23,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
     public class BrowseResponseTests
     {
+        private Random Random { get; } = new Random();
+
         [Trait("Category", "Instantiation")]
         [Trait("Response", "BrowseResponse")]
         [Fact(DisplayName = "Instantiates with given data")]
@@ -44,7 +46,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
             var dir = new Directory("foo", 1);
             var list = new List<Directory>(new[] { dir });
-            
+
             var a = new BrowseResponse(num, list);
 
             Assert.Equal(num, a.DirectoryCount);
@@ -96,8 +98,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(0, r.DirectoryCount);
             Assert.Empty(r.Directories);
         }
@@ -118,8 +122,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(1, r.DirectoryCount);
             Assert.Single(r.Directories);
 
@@ -166,15 +172,17 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .WriteInteger(1) // first directory file count
                 .WriteByte(0x0) // file code
                 .WriteString("foo") // name
-                .WriteLong(12) // size 
+                .WriteLong(12) // size
                 .WriteString("bar") // extension
                 .WriteInteger(0) // attribute count
                 .Compress()
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(1, r.DirectoryCount);
             Assert.Single(r.Directories);
 
@@ -220,8 +228,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
+
             var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
 
+            Assert.Null(ex);
             Assert.Equal(dirs.Count, r.DirectoryCount);
             Assert.Equal(dirs.Count, r.Directories.Count());
 
@@ -254,8 +264,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
                 }
             }
         }
-
-        private Random Random { get; } = new Random();
 
         private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
         {

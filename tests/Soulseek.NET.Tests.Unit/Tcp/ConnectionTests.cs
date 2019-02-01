@@ -12,14 +12,14 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
-    using Moq;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
+    using Moq;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class ConnectionTests
@@ -370,7 +370,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[0]));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(Array.Empty<byte>()));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
@@ -492,7 +492,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             long length = 2147483648; // max = 2147483647
 
-            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length)); 
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
             Assert.NotNull(ex);
             Assert.IsType<NotImplementedException>(ex);
@@ -503,7 +503,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Fits_In_Int()
         {
             long length = 2147483647; // max = 2147483647
-            
+
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns(Task.Run(() => (int)length));
@@ -704,12 +704,12 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
+            c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
 
             await c.ConnectAsync();
             await c.ReadAsync(1);
 
-            Thread.Sleep(1000);
+            Thread.Sleep(2000);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 

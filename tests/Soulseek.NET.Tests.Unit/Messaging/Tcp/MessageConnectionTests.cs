@@ -12,28 +12,28 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 {
-    using AutoFixture.Xunit2;
-    using Moq;
-    using Soulseek.NET.Messaging;
-    using Soulseek.NET.Messaging.Tcp;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using Xunit;
     using Xunit.Abstractions;
 
     public class MessageConnectionTests
     {
-        private ITestOutputHelper Output { get; }
-
         public MessageConnectionTests(ITestOutputHelper output)
         {
             Output = output;
         }
+
+        private ITestOutputHelper Output { get; }
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
@@ -286,10 +286,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
         public async Task ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
         {
-            var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoRequest)
-                .Build();
-
             int callCount = 0;
 
             var streamMock = new Mock<INetworkStream>();

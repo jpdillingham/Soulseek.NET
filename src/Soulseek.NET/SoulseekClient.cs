@@ -153,7 +153,7 @@ namespace Soulseek.NET
         /// <returns>The operation response.</returns>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrEmpty(username))
+            if (string.IsNullOrWhiteSpace(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
             }
@@ -399,7 +399,7 @@ namespace Soulseek.NET
                 connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
                 connection.Disconnected += (sender, message) =>
                 {
-                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, ((IMessageConnection)sender).Key.Username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
                 await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage()).ConfigureAwait(false);
@@ -839,7 +839,7 @@ namespace Soulseek.NET
 
             try
             {
-                var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token.ToString()), cancellationToken);
+                var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
 
                 var search = new Search(searchText, token, options)
                 {
@@ -850,7 +850,7 @@ namespace Soulseek.NET
                     },
                     CompleteHandler = (s, state) =>
                     {
-                        MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token.ToString()), s); // searchWait above
+                        MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), s); // searchWait above
                         ActiveSearches.TryRemove(s.Token, out var _);
                         Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
 

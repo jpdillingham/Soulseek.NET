@@ -10,10 +10,10 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-using Xunit;
-
 namespace Soulseek.NET.Tests.Unit
 {
+    using Xunit;
+
     public class TokenFactoryTests
     {
         [Trait("Category", "GetToken")]
@@ -71,6 +71,7 @@ namespace Soulseek.NET.Tests.Unit
         {
             var ok = new TokenFactory().TryGetToken(s => false, out var token);
 
+            Assert.True(ok);
             Assert.NotNull(token);
             Assert.NotEqual(0, token);
         }

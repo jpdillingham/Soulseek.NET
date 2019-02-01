@@ -10,12 +10,12 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-using AutoFixture.Xunit2;
-using System;
-using Xunit;
-
 namespace Soulseek.NET.Tests.Unit
 {
+    using System;
+    using AutoFixture.Xunit2;
+    using Xunit;
+
     public class DiagnosticFactoryTests
     {
         [Trait("Category", "Instantiation")]

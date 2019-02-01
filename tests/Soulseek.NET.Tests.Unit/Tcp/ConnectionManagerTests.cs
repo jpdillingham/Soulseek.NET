@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManager{T}Tests.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionManagerTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,16 +12,16 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
-    using Moq;
-    using Soulseek.NET.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
+    using Moq;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
-    public class ConnectionManager_T_Tests
+    public class ConnectionManagerTests
     {
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates properly")]
@@ -151,6 +151,8 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             // ensure connection 2 was added and queued
             Assert.Single(queued);
             var peek = queued.TryPeek(out var peeked);
+
+            Assert.True(peek);
             Assert.True(peeked.Key == key2, "Connection 2 was queued");
 
             await c.RemoveAsync(mock1.Object);
@@ -258,24 +260,6 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             mock.Verify(m => m.Dispose(), Times.Once);
         }
 
-        public static IEnumerable<object[]> GetData => new List<object[]>
-        {
-            new object[] { null },
-            new object[] { new ConnectionKey(new IPAddress(0x3), 3) },
-        };
-
-        [Trait("Category", "Get")]
-        [Theory(DisplayName = "Get returns null given null or missing key")]
-        [MemberData(nameof(GetData))]
-        internal void Get_Returns_Null_Given_Null_Or_Missing_Key(ConnectionKey key)
-        {
-            var c = new ConnectionManager<IConnection>();
-
-            var conn = c.Get(key);
-
-            Assert.Null(conn);
-        }
-
         [Trait("Category", "Get")]
         [Fact(DisplayName = "Get returns queued connection")]
         public async Task Get_Returns_Queued_Connection()
@@ -320,6 +304,24 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(mock.Object, conn);
 
             mock.Verify(m => m.ConnectAsync(), Times.Once);
+        }
+
+        public static IEnumerable<object[]> GetData => new List<object[]>
+        {
+            new object[] { null },
+            new object[] { new ConnectionKey(new IPAddress(0x3), 3) },
+        };
+
+        [Trait("Category", "Get")]
+        [Theory(DisplayName = "Get returns null given null or missing key")]
+        [MemberData(nameof(GetData))]
+        internal void Get_Returns_Null_Given_Null_Or_Missing_Key(ConnectionKey key)
+        {
+            var c = new ConnectionManager<IConnection>();
+
+            var conn = c.Get(key);
+
+            Assert.Null(conn);
         }
     }
 }

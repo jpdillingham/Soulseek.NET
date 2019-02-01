@@ -12,17 +12,17 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System;
+    using System.Net;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System;
-    using System.Net;
     using Xunit;
 
     public class ConnectToPeerResponseTests
     {
         private string RandomGuid => Guid.NewGuid().ToString();
-        private Random Random = new Random();
+        private Random Random { get; } = new Random();
 
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with the given data")]

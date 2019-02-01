@@ -12,10 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System;
     using Xunit;
 
     public class PeerTransferResponseTests
@@ -97,7 +97,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_When_Disallowed()
         {
             var token = Random.Next();
-            var size = Random.Next();
+
             var message = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
@@ -136,6 +136,5 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
             Assert.Equal(size, reader.ReadInteger());
             Assert.Equal(message, reader.ReadString());
         }
-
     }
 }

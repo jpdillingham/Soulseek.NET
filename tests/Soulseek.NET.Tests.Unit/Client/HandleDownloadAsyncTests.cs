@@ -10,19 +10,18 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-using AutoFixture.Xunit2;
-using Moq;
-using Soulseek.NET.Messaging.Messages;
-using Soulseek.NET.Tcp;
-using System;
-using System.Collections.Concurrent;
-using System.Net;
-using System.Threading;
-using System.Threading.Tasks;
-using Xunit;
-
 namespace Soulseek.NET.Tests.Unit.Client
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Net;
+    using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Tcp;
+    using Xunit;
+
     public class HandleDownloadAsyncTests
     {
         [Trait("Category", "HandleDownloadAsync")]
@@ -127,7 +126,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
-            Assert.Contains("timed out", message);
+            Assert.Contains("timed out", message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "HandleDownloadAsync")]
@@ -165,7 +164,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
-            Assert.Contains("fake exception", message);
+            Assert.Contains("fake exception", message, StringComparison.InvariantCultureIgnoreCase);
         }
 
         [Trait("Category", "HandleDownloadAsync")]
@@ -175,7 +174,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IConnection>();
             conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)))
-                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(new byte[0], bytesDownloaded, 1));
+                .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(Array.Empty<byte>(), bytesDownloaded, 1));
 
             DownloadProgressUpdatedEventArgs e = null;
 

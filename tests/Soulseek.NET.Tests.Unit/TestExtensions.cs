@@ -1,4 +1,4 @@
-﻿// <copyright file="Extensions.cs" company="JP Dillingham">
+﻿// <copyright file="TestExtensions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,10 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
-    using Soulseek.NET.Messaging;
     using System.Linq;
+    using Soulseek.NET.Messaging;
 
-    public static class Extensions
+    public static class TestExtensions
     {
         /// <summary>
         ///     Pads the code of the given message with 3 bytes to make it compatible with <see cref="MessageReader"/>, and returns

@@ -12,13 +12,13 @@
 
 namespace Soulseek.NET.Tests.Unit.Client
 {
+    using System;
+    using System.Collections.Concurrent;
+    using System.Threading.Tasks;
     using Moq;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
-    using System;
-    using System.Collections.Concurrent;
-    using System.Threading.Tasks;
     using Xunit;
 
     public class SoulseekClientTests

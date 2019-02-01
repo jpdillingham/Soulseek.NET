@@ -12,13 +12,15 @@
     <Rule Id="CA2200" Action="Warning" />
     <Rule Id="CA2214" Action="Warning" />
     <Rule Id="CA2231" Action="Warning" />
-    <Rule Id="CA2007" Action="Warning" />
+    <Rule Id="CA2007" Action="None" />
     <Rule Id="CA1714" Action="Warning" />
     <Rule Id="CA1822" Action="None" />
     <Rule Id="CA1819" Action="None" />
     <Rule Id="CA1717" Action="Warning" />
     <Rule Id="CA1711" Action="None" />
     <Rule Id="CA1725" Action="Warning" />
+    <Rule Id="CA1707" Action="None" />
+    <Rule Id="CA1030" Action="None" />
   </Rules>
   <Rules AnalyzerId="Microsoft.CodeQuality.CSharp.Analyzers" RuleNamespace="Microsoft.CodeQuality.CSharp.Analyzers">
     <Rule Id="CA1001" Action="Warning" />
@@ -29,11 +31,12 @@
     <Rule Id="SA1124" Action="None" />
     <Rule Id="SA1516" Action="None" />
     <Rule Id="SA1600" Action="Info" />
-  </Rules>
-  <Rules AnalyzerId="Microsoft.NetCore.Analyzers" RuleNamespace="Microsoft.NetCore.Analyzers">
-    <Rule Id="CA2008" Action="None" />
+    <Rule Id="SA1652" Action="None" />
+    <Rule Id="SA1133" Action="None" />
+    <Rule Id="SA1201" Action="None" />
+    <Rule Id="SA1129" Action="None" />
   </Rules>
   <Rules AnalyzerId="SonarAnalyzer.CSharp" RuleNamespace="SonarAnalyzer.CSharp">
-    <Rule Id="S107" Action="None" />
+    <Rule Id="S3241" Action="None" />
   </Rules>
 </RuleSet>

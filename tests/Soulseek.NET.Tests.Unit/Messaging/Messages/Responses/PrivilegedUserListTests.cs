@@ -12,10 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System.Linq;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System.Linq;
     using Xunit;
 
     public class PrivilegedUserListTests

@@ -12,13 +12,13 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using AutoFixture.Xunit2;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Zlib;
-    using System.Collections.Generic;
-    using System.Linq;
     using Xunit;
 
     public class SearchResponseTests
@@ -27,11 +27,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Given_Data(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
-            var messageReader = new MessageReader(new byte[8]);
-
-            SearchResponse r = null;
-
-            var ex = Record.Exception(() => r = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength));
+            var r = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);
@@ -45,8 +41,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with given response and list"), AutoData]
         public void Instantiates_With_Given_Response_And_List(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
-            var messageReader = new MessageReader(new byte[8]);
-
             var r1 = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength);
 
             var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext", 0) });

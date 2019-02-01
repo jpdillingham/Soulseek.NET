@@ -12,11 +12,11 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 {
+    using System.Collections.Generic;
+    using System.Linq;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
-    using System.Collections.Generic;
-    using System.Linq;
     using Xunit;
 
     public class RoomListTests
@@ -73,7 +73,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
             var response = RoomList.Parse(builder.Build()).ToList();
 
             Assert.Equal(rooms.Count, response.Count);
-            
+
             for (int i = 0; i < rooms.Count; i++)
             {
                 Assert.Equal(rooms[i].Name, response[i].Name);

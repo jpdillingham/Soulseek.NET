@@ -12,11 +12,11 @@
 
 namespace Soulseek.NET.Tests.Unit.Messaging
 {
-    using Soulseek.NET.Exceptions;
-    using Soulseek.NET.Messaging;
     using System;
     using System.Reflection;
     using System.Text;
+    using Soulseek.NET.Exceptions;
+    using Soulseek.NET.Messaging;
     using Xunit;
 
     public class MessageReaderTests
@@ -47,7 +47,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "Instantiation throws ArgumentOutOfRangeException given empty byte array")]
         public void Instantiation_Throws_ArgumentOutOfRangeException_Given_Empty_Byte_Array()
         {
-            byte[] bytes = new byte[0];
+            byte[] bytes = Array.Empty<byte>();
             var ex = Record.Exception(() => new MessageReader(bytes));
 
             Assert.NotNull(ex);
@@ -141,7 +141,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
-
 
         [Trait("Category", "Seek")]
         [Fact(DisplayName = "Seek throws ArgumentOutOfRangeException on too large")]
@@ -293,7 +292,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             var reader = new MessageReader(msg);
 
-            var str = reader.ReadString();
+            reader.ReadString();
 
             Assert.Equal(bytes, reader.ReadBytes(bytes.Length));
         }
@@ -347,6 +346,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             var ex = Record.Exception(() => reader.ReadBytes(4));
 
+            Assert.Equal(42, integer);
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
@@ -394,7 +394,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
                 .Build();
 
             var reader = new MessageReader(msg);
-            var num = reader.ReadInteger();
+            reader.ReadInteger();
 
             Assert.Equal(str, reader.ReadString());
         }
@@ -403,8 +403,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging
         [Fact(DisplayName = "ReadString throws MessageReadException given no data")]
         public void ReadString_Throws_MessageReadException_Given_No_Data()
         {
-            var str = Guid.NewGuid().ToString();
-
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
@@ -435,7 +433,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
-            Assert.Contains("extends beyond", ex.Message); // fragile, call the cops idc.
+            Assert.Contains("extends beyond", ex.Message, StringComparison.InvariantCultureIgnoreCase); // fragile, call the cops idc.
         }
 
         [Trait("Category", "Decompress")]

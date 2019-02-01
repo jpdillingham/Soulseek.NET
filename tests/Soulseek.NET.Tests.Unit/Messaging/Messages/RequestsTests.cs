@@ -116,7 +116,11 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         [Fact(DisplayName = "PeerBrowseRequest instantiates properly")]
         public void PeerBrowseRequest_Instantiates_Properly()
         {
-            var a = new PeerBrowseRequest();
+            PeerBrowseRequest a = null;
+
+            var ex = Record.Exception(() => a = new PeerBrowseRequest());
+
+            Assert.Null(ex);
         }
 
         [Trait("Category", "ToMessage")]

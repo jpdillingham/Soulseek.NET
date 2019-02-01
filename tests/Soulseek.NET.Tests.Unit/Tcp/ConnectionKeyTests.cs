@@ -12,9 +12,9 @@
 
 namespace Soulseek.NET.Tests.Unit.Tcp
 {
-    using Soulseek.NET.Tcp;
     using System.Collections.Generic;
     using System.Net;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class ConnectionKeyTests

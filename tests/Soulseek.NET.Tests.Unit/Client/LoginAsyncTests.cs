@@ -12,6 +12,8 @@
 
 namespace Soulseek.NET.Tests.Unit.Client
 {
+    using System;
+    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.NET.Exceptions;
@@ -19,8 +21,6 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
-    using System;
-    using System.Threading.Tasks;
     using Xunit;
 
     public class LoginAsyncTests
@@ -101,7 +101,6 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
             Assert.Equal(user, s.Username);
         }
-
 
         [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync disconnects and throws LoginException on failure"), AutoData]
