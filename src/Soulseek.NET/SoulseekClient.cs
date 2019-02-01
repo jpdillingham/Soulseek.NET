@@ -71,7 +71,7 @@ namespace Soulseek.NET
 
             Options = options ?? new SoulseekClientOptions();
 
-            ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
+            ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
