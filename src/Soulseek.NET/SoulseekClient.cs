@@ -79,6 +79,11 @@ namespace Soulseek.NET
         }
 
         /// <summary>
+        ///     Occurs when a private message is received.
+        /// </summary>
+        public event EventHandler<PrivateMessage> PrivateMessageReceived;
+
+        /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
@@ -875,8 +880,13 @@ namespace Soulseek.NET
 
                 case MessageCode.ServerPrivateMessage:
                     var pm = PrivateMessage.Parse(message);
-                    Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
-                    await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
+                    PrivateMessageReceived?.Invoke(this, pm);
+
+                    if (Options.AutoAcknowledgePrivateMessages)
+                    {
+                        await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
+                    }
+
                     break;
 
                 case MessageCode.ServerGetPeerAddress:
