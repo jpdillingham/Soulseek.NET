@@ -18,7 +18,6 @@ namespace Soulseek.NET
     using System.Threading.Tasks;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Messages;
-    using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -41,6 +40,11 @@ namespace Soulseek.NET
         ///     Occurs when a download changes state.
         /// </summary>
         event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
+
+        /// <summary>
+        ///     Occurs when a private message is received.
+        /// </summary>
+        event EventHandler<PrivateMessage> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -89,6 +93,9 @@ namespace Soulseek.NET
         #endregion Public Properties
 
         #region Public Methods
+
+        Task SendPrivateMessageAsync(string username, string message);
+        Task AcknowledgePrivateMessageAsync(int privateMessageId);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
