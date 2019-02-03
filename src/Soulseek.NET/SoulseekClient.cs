@@ -79,11 +79,6 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Occurs when a private message is received.
-        /// </summary>
-        public event EventHandler<PrivateMessage> PrivateMessageReceived;
-
-        /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
@@ -98,6 +93,10 @@ namespace Soulseek.NET
         /// </summary>
         public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
 
+        /// <summary>
+        ///     Occurs when a private message is received.
+        /// </summary>
+        public event EventHandler<PrivateMessage> PrivateMessageReceived;
         /// <summary>
         ///     Occurs when a new search result is received.
         /// </summary>
@@ -148,6 +147,26 @@ namespace Soulseek.NET
         private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
+
+        /// <summary>
+        ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
+        /// </summary>
+        /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
+        /// <returns>A Task representing the operation.</returns>
+        public Task AcknowledgePrivateMessageAsync(int privateMessageId)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
+            }
+
+            return AcknowledgePrivateMessageAsync(privateMessageId);
+        }
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -367,6 +386,37 @@ namespace Soulseek.NET
         }
 
         /// <summary>
+        ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The message to send.</param>
+        /// <param name="message">The user to which the message is to be sent.</param>
+        /// <returns>A Task representing the operation.</returns>
+        public Task SendPrivateMessageAsync(string username, string message)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace.", nameof(message));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
+            }
+
+            return SendPrivateMessageInternalAsync(username, message);
+        }
+
+        /// <summary>
         ///     Disposes this instance.
         /// </summary>
         /// <param name="disposing">A value indicating whether disposal is in progress.</param>
@@ -385,6 +435,11 @@ namespace Soulseek.NET
 
                 Disposed = true;
             }
+        }
+
+        private async Task AcknowledgePrivateMessageInternalAsync(int privateMessageId)
+        {
+            await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToMessage()).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -848,6 +903,11 @@ namespace Soulseek.NET
             {
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
+        }
+
+        private async Task SendPrivateMessageInternalAsync(string username, string message)
+        {
+            await ServerConnection.WriteMessageAsync(new PrivateMessageRequest(username, message).ToMessage()).ConfigureAwait(false);
         }
 
         private async void ServerConnection_MessageRead(object sender, Message message)
