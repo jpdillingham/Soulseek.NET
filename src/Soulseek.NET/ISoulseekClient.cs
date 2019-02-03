@@ -94,7 +94,11 @@ namespace Soulseek.NET
 
         #region Public Methods
 
-        Task SendPrivateMessageAsync(string username, string message);
+        /// <summary>
+        ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
+        /// </summary>
+        /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
+        /// <returns>A Task representing the operation.</returns>
         Task AcknowledgePrivateMessageAsync(int privateMessageId);
 
         /// <summary>
@@ -160,6 +164,13 @@ namespace Soulseek.NET
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true);
 
+        /// <summary>
+        ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The message to send.</param>
+        /// <param name="message">The user to which the message is to be sent.</param>
+        /// <returns>A Task representing the operation.</returns>
+        Task SendPrivateMessageAsync(string username, string message);
         #endregion Public Methods
     }
 }
