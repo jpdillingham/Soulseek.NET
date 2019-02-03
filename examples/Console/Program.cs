@@ -2,6 +2,7 @@
 {
     using Newtonsoft.Json;
     using Soulseek.NET;
+    using Soulseek.NET.Messaging.Messages;
     using System;
     using System.Collections.Concurrent;
     using System.IO;
@@ -20,6 +21,7 @@
                 client.DownloadProgressUpdated += Client_DownloadProgress;
                 client.DownloadStateChanged += Client_DownloadStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
                 await client.ConnectAsync();
 
@@ -33,6 +35,15 @@
                     {
                         client.Disconnect();
                         return;
+                    }
+                    else if (cmd.StartsWith("msg"))
+                    {
+                        var arr = cmd.Split(' ');
+
+                        var peer = arr.Skip(1).Take(1).FirstOrDefault();
+                        var message = arr.Skip(2).Take(999);
+
+                        await client.SendPrivateMessageAsync(peer, string.Join(' ', message));
                     }
                     else if (cmd.StartsWith("browse"))
                     {
@@ -137,6 +148,11 @@
                     }
                 }
             }
+        }
+
+        private static void Client_PrivateMessageReceived(object sender, PrivateMessage e)
+        {
+            Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }
 
         private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)
