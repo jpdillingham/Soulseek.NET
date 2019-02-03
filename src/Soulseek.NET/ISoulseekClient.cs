@@ -167,8 +167,8 @@ namespace Soulseek.NET
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
         /// </summary>
-        /// <param name="username">The message to send.</param>
-        /// <param name="message">The user to which the message is to be sent.</param>
+        /// <param name="username">The user to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
         /// <returns>A Task representing the operation.</returns>
         Task SendPrivateMessageAsync(string username, string message);
         #endregion Public Methods
