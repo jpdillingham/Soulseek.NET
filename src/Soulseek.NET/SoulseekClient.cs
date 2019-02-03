@@ -154,6 +154,8 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
         /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
         public Task AcknowledgePrivateMessageAsync(int privateMessageId)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected))
@@ -176,6 +178,9 @@ namespace Soulseek.NET
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation response.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -201,9 +206,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
-        /// <exception cref="ConnectionException">
-        ///     Thrown when the client is already connected, or is transitioning between states.
-        /// </exception>
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
         public async Task ConnectAsync()
         {
             if (State.HasFlag(SoulseekClientStates.Connected))
@@ -262,6 +265,9 @@ namespace Soulseek.NET
         /// <param name="token">The unique download token.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -315,19 +321,11 @@ namespace Soulseek.NET
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
         /// <returns>A Task representing the operation.</returns>
-        /// <exception cref="LoginException">Thrown when the login fails.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="LoginException">Thrown when the login fails, or when an exception is encountered during the operation.</exception>
         public Task LoginAsync(string username, string password)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException($"The client must be connected to log in.");
-            }
-
-            if (State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
-            }
-
             if (string.IsNullOrEmpty(username))
             {
                 throw new ArgumentException("Username may not be null or an empty string.", nameof(username));
@@ -336,6 +334,16 @@ namespace Soulseek.NET
             if (string.IsNullOrEmpty(password))
             {
                 throw new ArgumentException("Password may not be null or an empty string.", nameof(password));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The client must be connected to log in.");
+            }
+
+            if (State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
 
             return LoginInternalAsync(username, password);
@@ -351,28 +359,18 @@ namespace Soulseek.NET
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="waitForCompletion">A value indicating whether the search should wait completion before returning.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="SearchException">Thrown when an exception is encountered during the operation.</exception>
         public Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to search.");
-            }
-
             if (string.IsNullOrWhiteSpace(searchText))
             {
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
@@ -381,6 +379,16 @@ namespace Soulseek.NET
             if (ActiveSearches.ContainsKey(token))
             {
                 throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to search.");
             }
 
             return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
@@ -392,6 +400,9 @@ namespace Soulseek.NET
         /// <param name="username">The user to which the message is to be sent.</param>
         /// <param name="message">The message to send.</param>
         /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
         public Task SendPrivateMessageAsync(string username, string message)
         {
             if (string.IsNullOrWhiteSpace(username))
