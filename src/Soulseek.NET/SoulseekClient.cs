@@ -97,6 +97,7 @@ namespace Soulseek.NET
         ///     Occurs when a private message is received.
         /// </summary>
         public event EventHandler<PrivateMessage> PrivateMessageReceived;
+
         /// <summary>
         ///     Occurs when a new search result is received.
         /// </summary>
@@ -165,7 +166,7 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            return AcknowledgePrivateMessageAsync(privateMessageId);
+            return AcknowledgePrivateMessageInternalAsync(privateMessageId);
         }
 
         /// <summary>
@@ -439,17 +440,16 @@ namespace Soulseek.NET
 
         private async Task AcknowledgePrivateMessageInternalAsync(int privateMessageId)
         {
-            await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToMessage()).ConfigureAwait(false);
+            try
+            {
+                await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToMessage()).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new PrivateMessageException($"Failed to send an acknowledgement for private message id {privateMessageId}: {ex.Message}", ex);
+            }
         }
 
-        /// <summary>
-        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
-        ///     specified <paramref name="cancellationToken"/> and <paramref name="connection"/>.
-        /// </summary>
-        /// <param name="username">The user to browse.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <param name="connection">The peer connection over which to send the browse request.</param>
-        /// <returns>The operation response.</returns>
         private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
@@ -907,7 +907,14 @@ namespace Soulseek.NET
 
         private async Task SendPrivateMessageInternalAsync(string username, string message)
         {
-            await ServerConnection.WriteMessageAsync(new PrivateMessageRequest(username, message).ToMessage()).ConfigureAwait(false);
+            try
+            {
+                await ServerConnection.WriteMessageAsync(new PrivateMessageRequest(username, message).ToMessage()).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
+            }
         }
 
         private async void ServerConnection_MessageRead(object sender, Message message)
@@ -944,7 +951,7 @@ namespace Soulseek.NET
 
                     if (Options.AutoAcknowledgePrivateMessages)
                     {
-                        await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
+                        await AcknowledgePrivateMessageInternalAsync(pm.Id).ConfigureAwait(false);
                     }
 
                     break;
