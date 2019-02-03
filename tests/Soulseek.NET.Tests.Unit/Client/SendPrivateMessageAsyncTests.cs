@@ -35,7 +35,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws InvalidOperationException when not logged in")]
-        public async Task Acknowledge_Throws_InvalidOperationException_When_Not_Logged_In()
+        public async Task AcknowledgePrivateMessageAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected);
@@ -48,7 +48,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync does not throw when write does not throw")]
-        public async Task Acknowledge_Does_Not_Throw_When_Write_Does_Not_Throw()
+        public async Task AcknowledgePrivateMessageAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -60,7 +60,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws PrivateMessageException when write throws")]
-        public async Task Acknowledge_Throws_PrivateMessageException_When_Write_Throws()
+        public async Task AcknowledgePrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
@@ -70,6 +70,80 @@ namespace Soulseek.NET.Tests.Unit.Client
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<PrivateMessageException>(ex);
+            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync throws InvalidOperationException when not connected")]
+        public async Task SendPrivateMessageAsync_Throws_InvalidOperationException_When_Not_Connected()
+        {
+            var s = new SoulseekClient();
+
+            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync throws InvalidOperationException when not logged in")]
+        public async Task SendPrivateMessageAsync_Throws_InvalidOperationException_When_Not_Logged_In()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected);
+
+            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+
+            Assert.NotNull(ex);
+            Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Theory(DisplayName = "SendPrivateMessageAsync throws ArgumentException given bad input")]
+        [InlineData(null, "message")]
+        [InlineData("  ", "message")]
+        [InlineData("", "message")]
+        [InlineData("username", null)]
+        [InlineData("username", "  ")]
+        [InlineData("username", "")]
+        public async Task SendPrivateMessageAsync_Throws_(string username, string message)
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected);
+
+            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync(username, message));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync does not throw when write does not throw")]
+        public async Task SendPrivateMessageAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
+        {
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync throws PrivateMessageException when write throws")]
+        public async Task SendPrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Throws(new ConnectionWriteException());
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
 
             Assert.NotNull(ex);
             Assert.IsType<PrivateMessageException>(ex);
