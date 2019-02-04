@@ -694,23 +694,6 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task HandleConnectToPeerAsync(ConnectToPeerResponse response)
-        {
-            if (response.Type == "F")
-            {
-                // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
-                // any other identifying information about the file.
-                if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
-                {
-                    await HandleDownloadAsync(response).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                await GetSolicitedPeerConnectionAsync(response, Options.PeerConnectionOptions).ConfigureAwait(false);
-            }
-        }
-
         private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
         {
             int remoteToken = 0;
@@ -952,7 +935,22 @@ namespace Soulseek.NET
                     break;
 
                 case MessageCode.ServerConnectToPeer:
-                    await HandleConnectToPeerAsync(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
+                    var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+
+                    if (connectToPeerResponse.Type == "F")
+                    {
+                        // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
+                        // any other identifying information about the file.
+                        if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
+                        {
+                            await HandleDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                        }
+                    }
+                    else
+                    {
+                        await GetSolicitedPeerConnectionAsync(connectToPeerResponse, Options.PeerConnectionOptions).ConfigureAwait(false);
+                    }
+
                     break;
 
                 case MessageCode.ServerPrivateMessage:
