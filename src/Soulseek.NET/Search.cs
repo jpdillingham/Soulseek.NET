@@ -34,11 +34,11 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchOptions options)
+        public Search(string searchText, int token, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
-            Options = options;
+            Options = options ?? new SearchOptions();
 
             SearchTimeoutTimer = new SystemTimer()
             {
@@ -54,7 +54,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the options for the search.
         /// </summary>
-        public SearchOptions Options { get; private set; }
+        public SearchOptions Options { get; }
 
         /// <summary>
         ///     Gets the collection of responses received from peers.
@@ -64,12 +64,12 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the text for which to search.
         /// </summary>
-        public string SearchText { get; private set; }
+        public string SearchText { get; }
 
         /// <summary>
         ///     Gets the unique identifier for the search.
         /// </summary>
-        public int Token { get; private set; }
+        public int Token { get; }
 
         /// <summary>
         ///     Gets the state of the search.

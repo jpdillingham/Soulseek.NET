@@ -71,7 +71,7 @@ namespace Soulseek.NET
 
             Options = options ?? new SoulseekClientOptions();
 
-            ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ConnectionOptions);
+            ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
@@ -92,6 +92,11 @@ namespace Soulseek.NET
         ///     Occurs when a download changes state.
         /// </summary>
         public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
+
+        /// <summary>
+        ///     Occurs when a private message is received.
+        /// </summary>
+        public event EventHandler<PrivateMessage> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -140,9 +145,30 @@ namespace Soulseek.NET
         private IWaiter MessageWaiter { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private Random Random { get; set; } = new Random();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
+
+        /// <summary>
+        ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
+        /// </summary>
+        /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
+        /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
+        public Task AcknowledgePrivateMessageAsync(int privateMessageId)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
+            }
+
+            return AcknowledgePrivateMessageInternalAsync(privateMessageId);
+        }
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -151,6 +177,9 @@ namespace Soulseek.NET
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation response.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -176,9 +205,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
-        /// <exception cref="ConnectionException">
-        ///     Thrown when the client is already connected, or is transitioning between states.
-        /// </exception>
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
         public async Task ConnectAsync()
         {
             if (State.HasFlag(SoulseekClientStates.Connected))
@@ -237,6 +264,9 @@ namespace Soulseek.NET
         /// <param name="token">The unique download token.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -290,19 +320,11 @@ namespace Soulseek.NET
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
         /// <returns>A Task representing the operation.</returns>
-        /// <exception cref="LoginException">Thrown when the login fails.</exception>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="LoginException">Thrown when the login fails, or when an exception is encountered during the operation.</exception>
         public Task LoginAsync(string username, string password)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException($"The client must be connected to log in.");
-            }
-
-            if (State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
-            }
-
             if (string.IsNullOrEmpty(username))
             {
                 throw new ArgumentException("Username may not be null or an empty string.", nameof(username));
@@ -311,6 +333,16 @@ namespace Soulseek.NET
             if (string.IsNullOrEmpty(password))
             {
                 throw new ArgumentException("Password may not be null or an empty string.", nameof(password));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The client must be connected to log in.");
+            }
+
+            if (State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
             }
 
             return LoginInternalAsync(username, password);
@@ -326,28 +358,18 @@ namespace Soulseek.NET
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <param name="waitForCompletion">A value indicating whether the search should wait completion before returning.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="SearchException">Thrown when an exception is encountered during the operation.</exception>
         public Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to search.");
-            }
-
             if (string.IsNullOrWhiteSpace(searchText))
             {
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
@@ -358,7 +380,51 @@ namespace Soulseek.NET
                 throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
             }
 
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to search.");
+            }
+
             return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
+        }
+
+        /// <summary>
+        ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
+        /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SendPrivateMessageAsync(string username, string message)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace.", nameof(message));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
+            }
+
+            return SendPrivateMessageInternalAsync(username, message);
         }
 
         /// <summary>
@@ -382,14 +448,18 @@ namespace Soulseek.NET
             }
         }
 
-        /// <summary>
-        ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
-        ///     specified <paramref name="cancellationToken"/> and <paramref name="connection"/>.
-        /// </summary>
-        /// <param name="username">The user to browse.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <param name="connection">The peer connection over which to send the browse request.</param>
-        /// <returns>The operation response.</returns>
+        private async Task AcknowledgePrivateMessageInternalAsync(int privateMessageId)
+        {
+            try
+            {
+                await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToMessage()).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new PrivateMessageException($"Failed to send an acknowledgement for private message id {privateMessageId}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
         {
             try
@@ -549,7 +619,7 @@ namespace Soulseek.NET
                 Disconnect();
             };
 
-            conn.MessageRead += HandleServerMessage;
+            conn.MessageRead += ServerConnection_MessageRead;
 
             return conn;
         }
@@ -574,15 +644,15 @@ namespace Soulseek.NET
                 await PeerConnectionManager.RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
             };
 
-            connection.MessageRead += HandlePeerMessage;
+            connection.MessageRead += PeerConnection_MessageRead;
 
             await PeerConnectionManager.AddAsync(connection).ConfigureAwait(false);
             return connection;
         }
 
-        private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
+        private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, IConnection connection = null)
         {
-            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            connection = connection ?? new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
             await connection.ConnectAsync().ConfigureAwait(false);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
@@ -605,7 +675,7 @@ namespace Soulseek.NET
             if (connection == default(IMessageConnection))
             {
                 connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
-                connection.MessageRead += HandlePeerMessage;
+                connection.MessageRead += PeerConnection_MessageRead;
 
                 connection.Connected += async (sender, e) =>
                 {
@@ -622,23 +692,6 @@ namespace Soulseek.NET
             }
 
             return connection;
-        }
-
-        private async Task HandleConnectToPeerAsync(ConnectToPeerResponse response)
-        {
-            if (response.Type == "F")
-            {
-                // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
-                // any other identifying information about the file.
-                if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == response.Username))
-                {
-                    await HandleDownloadAsync(response).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                await GetSolicitedPeerConnectionAsync(response, Options.PeerConnectionOptions).ConfigureAwait(false);
-            }
         }
 
         private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
@@ -708,7 +761,34 @@ namespace Soulseek.NET
             }
         }
 
-        private void HandlePeerMessage(object sender, Message message)
+        private async Task LoginInternalAsync(string username, string password)
+        {
+            try
+            {
+                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
+
+                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
+
+                var response = await loginWait.ConfigureAwait(false);
+
+                if (response.Succeeded)
+                {
+                    Username = username;
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                }
+                else
+                {
+                    Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                    throw new LoginException($"The server rejected login attempt: {response.Message}");
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
+            }
+        }
+
+        private void PeerConnection_MessageRead(object sender, Message message)
         {
             Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
 
@@ -758,78 +838,6 @@ namespace Soulseek.NET
                 default:
                     Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
                     break;
-            }
-        }
-
-        private async void HandleServerMessage(object sender, Message message)
-        {
-            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
-
-            switch (message.Code)
-            {
-                case MessageCode.ServerParentMinSpeed:
-                case MessageCode.ServerParentSpeedRatio:
-                case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
-                    break;
-
-                case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
-                    break;
-
-                case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
-                    break;
-
-                case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
-                    break;
-
-                case MessageCode.ServerConnectToPeer:
-                    await HandleConnectToPeerAsync(ConnectToPeerResponse.Parse(message)).ConfigureAwait(false);
-                    break;
-
-                case MessageCode.ServerPrivateMessage:
-                    var pm = PrivateMessage.Parse(message);
-                    Console.WriteLine($"[{pm.Timestamp}][{pm.Username}]: {pm.Message}");
-                    await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(pm.Id).ToMessage()).ConfigureAwait(false);
-                    break;
-
-                case MessageCode.ServerGetPeerAddress:
-                    var response = GetPeerAddressResponse.Parse(message);
-                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
-                    break;
-
-                default:
-                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
-                    break;
-            }
-        }
-
-        private async Task LoginInternalAsync(string username, string password)
-        {
-            try
-            {
-                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
-
-                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage()).ConfigureAwait(false);
-
-                var response = await loginWait.ConfigureAwait(false);
-
-                if (response.Succeeded)
-                {
-                    Username = username;
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                }
-                else
-                {
-                    Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                    throw new LoginException($"The server rejected login attempt: {response.Message}");
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
             }
         }
 
@@ -887,6 +895,83 @@ namespace Soulseek.NET
             catch (Exception ex)
             {
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+            }
+        }
+
+        private async Task SendPrivateMessageInternalAsync(string username, string message)
+        {
+            try
+            {
+                await ServerConnection.WriteMessageAsync(new PrivateMessageRequest(username, message).ToMessage()).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async void ServerConnection_MessageRead(object sender, Message message)
+        {
+            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
+
+            switch (message.Code)
+            {
+                case MessageCode.ServerParentMinSpeed:
+                case MessageCode.ServerParentSpeedRatio:
+                case MessageCode.ServerWishlistInterval:
+                    MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
+                    break;
+
+                case MessageCode.ServerLogin:
+                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
+                    break;
+
+                case MessageCode.ServerRoomList:
+                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
+                    break;
+
+                case MessageCode.ServerPrivilegedUsers:
+                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
+                    break;
+
+                case MessageCode.ServerConnectToPeer:
+                    var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+
+                    if (connectToPeerResponse.Type == "F")
+                    {
+                        // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
+                        // any other identifying information about the file.
+                        if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
+                        {
+                            await HandleDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                        }
+                    }
+                    else
+                    {
+                        await GetSolicitedPeerConnectionAsync(connectToPeerResponse, Options.PeerConnectionOptions).ConfigureAwait(false);
+                    }
+
+                    break;
+
+                case MessageCode.ServerPrivateMessage:
+                    var pm = PrivateMessage.Parse(message);
+                    PrivateMessageReceived?.Invoke(this, pm);
+
+                    if (Options.AutoAcknowledgePrivateMessages)
+                    {
+                        await AcknowledgePrivateMessageInternalAsync(pm.Id).ConfigureAwait(false);
+                    }
+
+                    break;
+
+                case MessageCode.ServerGetPeerAddress:
+                    var response = GetPeerAddressResponse.Parse(message);
+                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
+                    break;
+
+                default:
+                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
+                    break;
             }
         }
     }

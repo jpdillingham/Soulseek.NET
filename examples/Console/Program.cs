@@ -2,6 +2,7 @@
 {
     using Newtonsoft.Json;
     using Soulseek.NET;
+    using Soulseek.NET.Messaging.Messages;
     using System;
     using System.Collections.Concurrent;
     using System.IO;
@@ -20,6 +21,7 @@
                 client.DownloadProgressUpdated += Client_DownloadProgress;
                 client.DownloadStateChanged += Client_DownloadStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
                 await client.ConnectAsync();
 
@@ -34,6 +36,15 @@
                         client.Disconnect();
                         return;
                     }
+                    else if (cmd.StartsWith("msg"))
+                    {
+                        var arr = cmd.Split(' ');
+
+                        var peer = arr.Skip(1).Take(1).FirstOrDefault();
+                        var message = arr.Skip(2).Take(999);
+
+                        await client.SendPrivateMessageAsync(peer, string.Join(' ', message));
+                    }
                     else if (cmd.StartsWith("browse"))
                     {
                         var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
@@ -47,12 +58,11 @@
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
 
-                        await client.SearchAsync(search, token, new SearchOptions()
-                        {
-                            FilterFiles = false,
-                            FilterResponses = false,
-                            FileLimit = 100000,
-                        }, waitForCompletion: false);
+                        await client.SearchAsync(search, token, new SearchOptions(
+                                filterFiles: false,
+                                filterResponses: false,
+                                fileLimit: 100000),
+                            waitForCompletion: false);
 
                         Console.WriteLine($"Search for {search} started.");
                     }
@@ -60,12 +70,10 @@
                     {
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
-                        var result = await client.SearchAsync(search, token, new SearchOptions()
-                        {
-                            FilterFiles = false,
-                            FilterResponses = false,
-                            FileLimit = 100000,
-                        });
+                        var result = await client.SearchAsync(search, token, new SearchOptions(
+                            filterFiles: false,
+                            filterResponses: false,
+                            fileLimit: 100000));
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
@@ -137,6 +145,11 @@
                     }
                 }
             }
+        }
+
+        private static void Client_PrivateMessageReceived(object sender, PrivateMessage e)
+        {
+            Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }
 
         private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)

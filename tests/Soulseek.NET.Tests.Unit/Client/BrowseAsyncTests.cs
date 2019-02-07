@@ -14,7 +14,6 @@ namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
     using System.Collections.Generic;
-    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -22,7 +21,6 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
-    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class BrowseAsyncTests
