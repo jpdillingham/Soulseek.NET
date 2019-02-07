@@ -12,10 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit.Client
 {
-    using AutoFixture.Xunit2;
     using System;
     using System.Collections.Concurrent;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Xunit;
 
     public class SearchAsyncTests
