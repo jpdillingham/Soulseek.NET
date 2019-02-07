@@ -33,11 +33,17 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
+        /// <param name="responseHandler">The action invoked upon receipt of a search response.</param>
+        /// <param name="completeHandler">The action invoked upon completion of the search.</param>
         /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchOptions options = null)
+        public Search(string searchText, int token, Action<Search, SearchResponse> responseHandler = null, Action<Search, SearchStates> completeHandler = null, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
+
+            ResponseHandler = responseHandler ?? ((search, response) => { });
+            CompleteHandler = completeHandler ?? ((search, state) => { });
+
             Options = options ?? new SearchOptions();
 
             SearchTimeoutTimer = new SystemTimer()
@@ -77,14 +83,14 @@ namespace Soulseek.NET
         public SearchStates State { get; set; } = SearchStates.None;
 
         /// <summary>
-        ///     Gets or sets the action invoked upon completion of the search.
+        ///     Gets the action invoked upon completion of the search.
         /// </summary>
-        public Action<Search, SearchStates> CompleteHandler { get; set; } = (search, state) => { };
+        public Action<Search, SearchStates> CompleteHandler { get; }
 
         /// <summary>
-        ///     Gets or sets the action invoked upon receipt of a search response.
+        ///     Gets the action invoked upon receipt of a search response.
         /// </summary>
-        public Action<Search, SearchResponse> ResponseHandler { get; set; } = (search, response) => { };
+        public Action<Search, SearchResponse> ResponseHandler { get; }
 
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();

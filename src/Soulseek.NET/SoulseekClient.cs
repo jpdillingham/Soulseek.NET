@@ -849,14 +849,15 @@ namespace Soulseek.NET
             {
                 var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
 
-                var search = new Search(searchText, token, options)
-                {
-                    ResponseHandler = (s, response) =>
+                var search = new Search(
+                    searchText,
+                    token,
+                    responseHandler: (s, response) =>
                     {
                         var e = new SearchResponseReceivedEventArgs(s, response);
                         Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
                     },
-                    CompleteHandler = (s, state) =>
+                    completeHandler: (s, state) =>
                     {
                         MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), s); // searchWait above
                         ActiveSearches.TryRemove(s.Token, out var _);
@@ -867,8 +868,8 @@ namespace Soulseek.NET
                         {
                             s.Dispose();
                         }
-                    }
-                };
+                    },
+                    options: options);
 
                 ActiveSearches.TryAdd(search.Token, search);
 
