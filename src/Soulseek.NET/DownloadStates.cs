@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchState.cs" company="JP Dillingham">
+﻿// <copyright file="DownloadStates.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,10 +15,14 @@ namespace Soulseek.NET
     using System;
 
     /// <summary>
-    ///     Search state.
+    ///     Download state.
     /// </summary>
+    /// <remarks>
+    ///     The Completed state will be accompanied by one other flag consisting of <see cref="Succeeded"/>,
+    ///     <see cref="Cancelled"/>, <see cref="TimedOut"/> or <see cref="Errored"/>.
+    /// </remarks>
     [Flags]
-    public enum SearchStates
+    public enum DownloadStates
     {
         /// <summary>
         ///     None.
@@ -26,31 +30,43 @@ namespace Soulseek.NET
         None = 0,
 
         /// <summary>
-        ///     In progress.
+        ///     Queued remotely.
         /// </summary>
-        InProgress = 1,
+        Queued = 1,
 
         /// <summary>
-        ///     Completed.
+        ///     Initializing.
         /// </summary>
-        Completed = 2,
+        Initializing = 2,
+
+        /// <summary>
+        ///     In progress.
+        /// </summary>
+        InProgress = 4,
+
+        /// <summary>
+        ///     Completed; check remaining state flags for disposition.
+        /// </summary>
+        Completed = 8,
+
+        /// <summary>
+        ///     Completed due to a successful transfer.
+        /// </summary>
+        Succeeded = 16,
 
         /// <summary>
         ///     Completed due to cancellation.
         /// </summary>
-        Cancelled = 4,
+        Cancelled = 32,
 
         /// <summary>
-        ///     Completed due to the timeout value specified in search options having been reached.
+        ///     Completed due to timeout.
         /// </summary>
-        /// <remarks>
-        ///     The timeout duration is from the time of the last response.
-        /// </remarks>
-        TimedOut = 8,
+        TimedOut = 64,
 
         /// <summary>
-        ///     Completed due to the file limit specified in search options having been reached.
+        ///     Completed due to transfer error.
         /// </summary>
-        FileLimitReached = 16,
+        Errored = 128,
     }
 }
