@@ -72,9 +72,9 @@ namespace Soulseek.NET
         public int Token { get; }
 
         /// <summary>
-        ///     Gets the state of the search.
+        ///     Gets or sets the state of the search.
         /// </summary>
-        public SearchStates State { get; private set; } = SearchStates.InProgress;
+        public SearchStates State { get; set; } = SearchStates.None;
 
         /// <summary>
         ///     Gets or sets the action invoked upon completion of the search.
