@@ -58,12 +58,11 @@
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
 
-                        await client.SearchAsync(search, token, new SearchOptions()
-                        {
-                            FilterFiles = false,
-                            FilterResponses = false,
-                            FileLimit = 100000,
-                        }, waitForCompletion: false);
+                        await client.SearchAsync(search, token, new SearchOptions(
+                                filterFiles: false,
+                                filterResponses: false,
+                                fileLimit: 100000),
+                            waitForCompletion: false);
 
                         Console.WriteLine($"Search for {search} started.");
                     }
@@ -71,12 +70,10 @@
                     {
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
-                        var result = await client.SearchAsync(search, token, new SearchOptions()
-                        {
-                            FilterFiles = false,
-                            FilterResponses = false,
-                            FileLimit = 100000,
-                        });
+                        var result = await client.SearchAsync(search, token, new SearchOptions(
+                            filterFiles: false,
+                            filterResponses: false,
+                            fileLimit: 100000));
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
