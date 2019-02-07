@@ -12,7 +12,9 @@
 
 namespace Soulseek.NET.Tests.Unit.Client
 {
+    using AutoFixture.Xunit2;
     using System;
+    using System.Collections.Concurrent;
     using System.Threading.Tasks;
     using Xunit;
 
@@ -53,12 +55,31 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task SearchAsync_Throws_ArgumentException_Given_Bad_Search_Text(string search)
         {
             var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(search, 0));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
             Assert.Equal("searchText", ((ArgumentException)ex).ParamName);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync throws ArgumentException given a token in use"), AutoData]
+        public async Task SearchAsync_Throws_ArgumentException_Given_A_Token_In_Use(string text, int token)
+        {
+            var dict = new ConcurrentDictionary<int, Search>();
+            dict.TryAdd(token, new Search(text, token, new SearchOptions()));
+
+            var s = new SoulseekClient();
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            s.SetProperty("ActiveSearches", dict);
+
+            var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, token));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.Equal("token", ((ArgumentException)ex).ParamName);
         }
     }
 }
