@@ -34,8 +34,8 @@ namespace Soulseek.NET
         /// <param name="message">The message associated with the change in state, if applicable.</param>
         internal SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null)
         {
-            State = state;
             PreviousState = previousState;
+            State = state;
             Message = message;
         }
 

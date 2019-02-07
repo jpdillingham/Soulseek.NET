@@ -10,9 +10,6 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-using System.Diagnostics.CodeAnalysis;
-[module: SuppressMessage("StyleCop.CSharp.MaintainabilityRules", "SA1402:FileMayOnlyContainASingleType", Justification = "Reviewed.")]
-
 namespace Soulseek.NET
 {
     using System;
@@ -36,18 +33,18 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the text for which to search.
         /// </summary>
-        public string SearchText { get; private set; }
+        public string SearchText { get; }
 
         /// <summary>
         ///     Gets the unique identifier for the search.
         /// </summary>
-        public int Token { get; private set; }
+        public int Token { get; }
     }
 
     /// <summary>
     ///     Event arguments for events raised when a search response is received.
     /// </summary>
-    public class SearchResponseReceivedEventArgs : SearchEventArgs
+    public sealed class SearchResponseReceivedEventArgs : SearchEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
@@ -63,27 +60,34 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the search response which raised the event.
         /// </summary>
-        public SearchResponse Response { get; private set; }
+        public SearchResponse Response { get; }
     }
 
     /// <summary>
     ///     Event arguments for events raised by a change in search state.
     /// </summary>
-    public class SearchStateChangedEventArgs : SearchEventArgs
+    public sealed class SearchStateChangedEventArgs : SearchEventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.
         /// </summary>
+        /// <param name="previousState">The previous state of the client.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchStateChangedEventArgs(Search search)
+        internal SearchStateChangedEventArgs(SearchStates previousState, Search search)
             : base(search)
         {
+            PreviousState = previousState;
             State = search.State;
         }
 
         /// <summary>
         ///     Gets the search state.
         /// </summary>
-        public SearchStates State { get; private set; }
+        public SearchStates State { get; }
+
+        /// <summary>
+        ///     Gets the previous search state.
+        /// </summary>
+        public SearchStates PreviousState { get; }
     }
 }
