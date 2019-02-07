@@ -44,5 +44,21 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<InvalidOperationException>(ex);
             Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync throws ArgumentException given bad search text")]
+        [InlineData("")]
+        [InlineData(null)]
+        [InlineData(" ")]
+        public async Task SearchAsync_Throws_ArgumentException_Given_Bad_Search_Text(string search)
+        {
+            var s = new SoulseekClient();
+
+            var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(search, 0));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.Equal("searchText", ((ArgumentException)ex).ParamName);
+        }
     }
 }
