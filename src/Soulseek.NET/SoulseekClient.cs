@@ -860,7 +860,8 @@ namespace Soulseek.NET
                     {
                         MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), s); // searchWait above
                         ActiveSearches.TryRemove(s.Token, out var _);
-                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
+
+                        SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: s));
 
                         if (!waitForCompletion)
                         {
@@ -870,9 +871,14 @@ namespace Soulseek.NET
                 };
 
                 ActiveSearches.TryAdd(search.Token, search);
-                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
+
+                search.State = SearchStates.Requested;
+                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.None, search: search));
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage()).ConfigureAwait(false);
+
+                search.State = SearchStates.InProgress;
+                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.Requested, search: search));
 
                 if (!waitForCompletion)
                 {
