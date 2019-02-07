@@ -533,16 +533,28 @@ namespace Soulseek.NET
 
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
+                // change the following line to await a ConnectToPeerResponse
                 var downloadStartWait = MessageWaiter.Wait(download.WaitKey, cancellationToken: cancellationToken);
                 var downloadCompletionWait = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken); // completed by HandleDownload()
 
+                // respond to the peer that we are ready to accept the file
                 await connection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
 
+                // fetch the CTPR from the wait here
                 await downloadStartWait.ConfigureAwait(false); // completed by HandleDownload()
 
                 download.State = DownloadStates.InProgress;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
 
+
+
+
+                // stick the code from HandleDownloadAsync() here
+
+
+
+
+                // wait for the transfer to complete
                 download.Data = await downloadCompletionWait.ConfigureAwait(false); // completed by HandleDownload()
 
                 download.State = DownloadStates.Succeeded;
