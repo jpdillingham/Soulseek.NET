@@ -28,8 +28,18 @@ namespace Soulseek.NET
         private int resultCount = 0;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Search"/> class with the specified <paramref name="searchText"/> and
-        ///     optionally specified <paramref name="token"/> and <paramref name="options"/>.
+        ///     Initializes a new instance of the <see cref="Search"/> class.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The options for the search.</param>
+        public Search(string searchText, int token, SearchOptions options = null)
+            : this(searchText, token, (search, response) => { }, (search, state) => { }, options)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Search"/> class.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
