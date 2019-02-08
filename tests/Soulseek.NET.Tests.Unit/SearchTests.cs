@@ -20,7 +20,7 @@ namespace Soulseek.NET.Tests.Unit
     public class SearchTests
     {
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
+        [Theory(DisplayName = "Instantiates with expected data"), AutoData]
         public void Instantiates_With_Expected_Data(string searchText, int token, SearchOptions options)
         {
             var s = new Search(searchText, token, options);
@@ -28,6 +28,9 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(searchText, s.SearchText);
             Assert.Equal(token, s.Token);
             Assert.Equal(options, s.Options);
+
+            Assert.Equal(SearchStates.None, s.State);
+            Assert.Empty(s.Responses);
         }
 
         [Trait("Category", "Instantiation")]
@@ -41,9 +44,6 @@ namespace Soulseek.NET.Tests.Unit
         {
             var s = new Search(searchText, token, responseHandler, completeHandler, options);
 
-            Assert.Equal(searchText, s.SearchText);
-            Assert.Equal(token, s.Token);
-            Assert.Equal(options, s.Options);
             Assert.Equal(responseHandler, s.GetProperty<Action<Search, SearchResponse>>("ResponseHandler"));
             Assert.Equal(completeHandler, s.GetProperty<Action<Search, SearchStates>>("CompleteHandler"));
         }
