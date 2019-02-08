@@ -47,5 +47,16 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(responseHandler, s.GetProperty<Action<Search, SearchResponse>>("ResponseHandler"));
             Assert.Equal(completeHandler, s.GetProperty<Action<Search, SearchStates>>("CompleteHandler"));
         }
+
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Disposes without throwing")]
+        public void Disposes_Without_Throwing()
+        {
+            var s = new Search("foo", 42);
+
+            var ex = Record.Exception(() => s.Dispose());
+
+            Assert.Null(ex);
+        }
     }
 }
