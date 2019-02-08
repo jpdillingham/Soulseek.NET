@@ -46,7 +46,7 @@ namespace Soulseek.NET
         /// <param name="responseHandler">The action invoked upon receipt of a search response.</param>
         /// <param name="completeHandler">The action invoked upon completion of the search.</param>
         /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, Action<Search, SearchResponse> responseHandler = null, Action<Search, SearchStates> completeHandler = null, SearchOptions options = null)
+        public Search(string searchText, int token, Action<Search, SearchResponse> responseHandler, Action<Search, SearchStates> completeHandler, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
