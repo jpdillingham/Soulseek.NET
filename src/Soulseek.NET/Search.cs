@@ -83,26 +83,18 @@ namespace Soulseek.NET
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets the unique identifier for the search.
-        /// </summary>
-        public int Token { get; }
-
-        /// <summary>
         ///     Gets or sets the state of the search.
         /// </summary>
         public SearchStates State { get; set; } = SearchStates.None;
 
         /// <summary>
-        ///     Gets the action invoked upon completion of the search.
+        ///     Gets the unique identifier for the search.
         /// </summary>
-        public Action<Search, SearchStates> CompleteHandler { get; }
+        public int Token { get; }
 
-        /// <summary>
-        ///     Gets the action invoked upon receipt of a search response.
-        /// </summary>
-        public Action<Search, SearchResponse> ResponseHandler { get; }
-
+        private Action<Search, SearchStates> CompleteHandler { get; }
         private bool Disposed { get; set; } = false;
+        private Action<Search, SearchResponse> ResponseHandler { get; }
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
 
