@@ -121,7 +121,7 @@ namespace Soulseek.NET
                     fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
                 }
 
-                Interlocked.Add(ref resultCount, fullResponse.Files.Count());
+                Interlocked.Add(ref resultCount, fullResponse.Files.Count);
 
                 if (resultCount >= Options.FileLimit)
                 {

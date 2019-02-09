@@ -25,7 +25,7 @@ namespace Soulseek.NET.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IEnumerable<string> Parse(Message message)
+        public static IReadOnlyCollection<string> Parse(Message message)
         {
             var reader = new MessageReader(message);
 

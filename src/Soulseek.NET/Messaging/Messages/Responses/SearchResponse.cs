@@ -12,7 +12,9 @@
 
 namespace Soulseek.NET.Messaging.Messages
 {
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     ///     A response to a file search.
@@ -29,7 +31,7 @@ namespace Soulseek.NET.Messaging.Messages
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="fileList">The optional file list.</param>
-        public SearchResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, List<File> fileList = null)
+        public SearchResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList = null)
         {
             Username = username;
             Token = token;
@@ -37,7 +39,7 @@ namespace Soulseek.NET.Messaging.Messages
             FreeUploadSlots = freeUploadSlots;
             UploadSpeed = uploadSpeed;
             QueueLength = queueLength;
-            FileList = fileList ?? new List<File>();
+            FileList = fileList ?? Array.Empty<File>();
         }
 
         /// <summary>
@@ -69,7 +71,7 @@ namespace Soulseek.NET.Messaging.Messages
         /// <summary>
         ///     Gets the list of files.
         /// </summary>
-        public IEnumerable<File> Files => FileList.AsReadOnly();
+        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the number of free upload slots for the peer.
@@ -96,7 +98,7 @@ namespace Soulseek.NET.Messaging.Messages
         /// </summary>
         public string Username { get; }
 
-        private List<File> FileList { get; }
+        private IEnumerable<File> FileList { get; }
 
         /// <summary>
         ///     Parses a new instance of <see cref="SearchResponse"/> from the specified <paramref name="message"/>.
@@ -109,7 +111,7 @@ namespace Soulseek.NET.Messaging.Messages
             return new SearchResponse(slim);
         }
 
-        private static List<File> ParseFiles(MessageReader reader, int count)
+        private static IReadOnlyCollection<File> ParseFiles(MessageReader reader, int count)
         {
             var files = new List<File>();
 
@@ -142,7 +144,7 @@ namespace Soulseek.NET.Messaging.Messages
                     attributeList: attributeList));
             }
 
-            return files;
+            return files.AsReadOnly();
         }
     }
 }
