@@ -82,5 +82,32 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.True(invoked);
         }
+
+        [Trait("Category", "ResponseMeetsOptionCriteria")]
+        [Fact(DisplayName = "Response filter returns true when FilterResponses option is false")]
+        public void Response_Filter_Returns_True_When_FilterResponses_Option_Is_False()
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: false));
+            var response = new SearchResponseSlim("u", 1, 1, 1, 1, 1, null);
+
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
+
+            Assert.True(filter);
+        }
+
+        [Trait("Category", "ResponseMeetsOptionCriteria")]
+        [Theory(DisplayName = "Response filter respects MinimumResponseFileCount option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void Response_Filter_Respects_MinimumResponseFileCount_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: option));
+            var response = new SearchResponseSlim("u", 1, actual, 1, 1, 1, null);
+
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
+
+            Assert.Equal(expected, filter);
+        }
     }
 }
