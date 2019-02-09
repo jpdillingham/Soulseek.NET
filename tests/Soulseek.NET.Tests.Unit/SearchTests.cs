@@ -58,5 +58,29 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Null(ex);
         }
+
+        [Trait("Category", "Complete")]
+        [Fact(DisplayName = "Complete sets state")]
+        public void Complete_Sets_State()
+        {
+            var s = new Search("foo", 42);
+
+            s.Complete(SearchStates.Cancelled);
+
+            Assert.True(s.State.HasFlag(SearchStates.Completed));
+            Assert.True(s.State.HasFlag(SearchStates.Cancelled));
+        }
+
+        [Trait("Category", "Complete")]
+        [Fact(DisplayName = "Complete sets state")]
+        public void Complete_Invokes_CompleteHandler()
+        {
+            bool invoked = false;
+            var s = new Search("foo", 42, (search, res) => { }, (search, state) => { invoked = true; });
+
+            s.Complete(SearchStates.Cancelled);
+
+            Assert.True(invoked);
+        }
     }
 }

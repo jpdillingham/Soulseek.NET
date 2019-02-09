@@ -892,7 +892,7 @@ namespace Soulseek.NET
                 }
                 catch (OperationCanceledException)
                 {
-                    search.Complete(SearchStates.Completed | SearchStates.Cancelled);
+                    search.Complete(SearchStates.Cancelled);
                 }
 
                 var responses = search.Responses;
