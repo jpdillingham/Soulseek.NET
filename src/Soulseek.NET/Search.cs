@@ -110,7 +110,7 @@ namespace Soulseek.NET
         ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void AddResponse(SearchResponseSlim slimResponse)
+        public void AddResponse(SearchResponseSlim slimResponse)
         {
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
@@ -141,7 +141,7 @@ namespace Soulseek.NET
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
-        internal void Complete(SearchStates state)
+        public void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
             State = state;
