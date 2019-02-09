@@ -171,7 +171,7 @@ namespace Soulseek.NET
 
             bool fileHasIgnoredExtension(File f)
             {
-                return (Options.IgnoredFileExtensions != null) && Options.IgnoredFileExtensions.Any(e => e == System.IO.Path.GetExtension(f.Filename));
+                return (Options.IgnoredFileExtensions != null) && Options.IgnoredFileExtensions.Any(e => e == f.Extension);
             }
 
             if (file.Size < Options.MinimumFileSize || fileHasIgnoredExtension(file))
