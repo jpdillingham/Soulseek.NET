@@ -244,7 +244,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
             var r = SearchResponse.Parse(msg);
 
-            Assert.Equal(2, r.Files.Count());
+            Assert.Equal(2, r.Files.Count);
 
             var file = r.Files.ToList();
 

@@ -233,7 +233,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
             Assert.Null(ex);
             Assert.Equal(dirs.Count, r.DirectoryCount);
-            Assert.Equal(dirs.Count, r.Directories.Count());
+            Assert.Equal(dirs.Count, r.Directories.Count);
 
             var msgDirs = r.Directories.ToList();
 
