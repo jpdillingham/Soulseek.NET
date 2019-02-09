@@ -75,7 +75,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the collection of responses received from peers.
         /// </summary>
-        public IEnumerable<SearchResponse> Responses => ResponseList.AsReadOnly();
+        public IReadOnlyCollection<SearchResponse> Responses => ResponseList.AsReadOnly();
 
         /// <summary>
         ///     Gets the text for which to search.

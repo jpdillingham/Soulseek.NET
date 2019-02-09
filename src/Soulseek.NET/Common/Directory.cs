@@ -12,7 +12,9 @@
 
 namespace Soulseek.NET
 {
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
 
     /// <summary>
     ///     A file directory within a peer's shared files.
@@ -25,12 +27,12 @@ namespace Soulseek.NET
         /// <param name="directoryname">The directory name.</param>
         /// <param name="fileCount">The number of files.</param>
         /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
-        public Directory(string directoryname, int fileCount, List<File> fileList = null)
+        public Directory(string directoryname, int fileCount, IEnumerable<File> fileList = null)
         {
             Directoryname = directoryname;
             FileCount = fileCount;
 
-            FileList = fileList ?? new List<File>();
+            FileList = fileList ?? Array.Empty<File>();
         }
 
         /// <summary>
@@ -46,11 +48,11 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the collection of files contained within the directory.
         /// </summary>
-        public IEnumerable<File> Files => FileList.AsReadOnly();
+        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the list of files contained within the directory.
         /// </summary>
-        private List<File> FileList { get; }
+        private IEnumerable<File> FileList { get; }
     }
 }

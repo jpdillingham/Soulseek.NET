@@ -368,7 +368,7 @@ namespace Soulseek.NET
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -841,7 +841,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IEnumerable<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
             options = options ?? new SearchOptions();
 
@@ -883,7 +883,7 @@ namespace Soulseek.NET
 
                 if (!waitForCompletion)
                 {
-                    return default(IEnumerable<SearchResponse>);
+                    return default(IReadOnlyCollection<SearchResponse>);
                 }
 
                 try
