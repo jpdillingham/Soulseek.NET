@@ -63,7 +63,7 @@ namespace Soulseek.NET
                 AutoReset = false,
             };
 
-            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.Completed | SearchStates.TimedOut); };
+            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
             SearchTimeoutTimer.Reset();
         }
 
@@ -125,7 +125,7 @@ namespace Soulseek.NET
 
                 if (resultCount >= Options.FileLimit)
                 {
-                    Complete(SearchStates.Completed | SearchStates.FileLimitReached);
+                    Complete(SearchStates.FileLimitReached);
                     return;
                 }
 
@@ -144,7 +144,7 @@ namespace Soulseek.NET
         public void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
-            State = state;
+            State = SearchStates.Completed | state;
             CompleteHandler(this, state);
         }
 
