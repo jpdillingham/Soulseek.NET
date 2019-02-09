@@ -209,7 +209,7 @@ namespace Soulseek.NET
                     response.FileCount < Options.MinimumResponseFileCount ||
                     response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
                     response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
-                    response.QueueLength > Options.MaximumPeerQueueLength))
+                    response.QueueLength >= Options.MaximumPeerQueueLength))
             {
                 return false;
             }
