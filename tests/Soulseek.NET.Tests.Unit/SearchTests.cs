@@ -109,5 +109,50 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Equal(expected, filter);
         }
+
+        [Trait("Category", "ResponseMeetsOptionCriteria")]
+        [Theory(DisplayName = "Response filter respects MinimumPeerFreeUploadSlots option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void Response_Filter_Respects_MinimumPeerFreeUploadSlots_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
+            var response = new SearchResponseSlim("u", 1, 1, actual, 1, 1, null);
+
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "ResponseMeetsOptionCriteria")]
+        [Theory(DisplayName = "Response filter respects MinimumPeerUploadSpeed option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void Response_Filter_Respects_MinimumPeerUploadSpeed_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumPeerUploadSpeed: option));
+            var response = new SearchResponseSlim("u", 1, 1, 1, actual, 1, null);
+
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "ResponseMeetsOptionCriteria")]
+        [Theory(DisplayName = "Response filter respects MaximumPeerQueueLength option")]
+        [InlineData(0, 1, true)]
+        [InlineData(1, 1, false)]
+        [InlineData(1, 0, false)]
+        public void Response_Filter_Respects_MaximumPeerQueueLength_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, maximumPeerQueueLength: option));
+            var response = new SearchResponseSlim("u", 1, 1, 1, 1, actual, null);
+
+            var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
+
+            Assert.Equal(expected, filter);
+        }
     }
 }
