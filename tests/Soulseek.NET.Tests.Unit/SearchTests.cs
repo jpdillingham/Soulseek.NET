@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Tests.Unit
 {
     using System;
+    using System.Linq;
     using AutoFixture.Xunit2;
     using Soulseek.NET.Messaging.Messages;
     using Xunit;
@@ -151,6 +152,135 @@ namespace Soulseek.NET.Tests.Unit
             var response = new SearchResponseSlim("u", 1, 1, 1, 1, actual, null);
 
             var filter = s.InvokeMethod<bool>("ResponseMeetsOptionCriteria", response);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Fact(DisplayName = "File filter returns true when FilterFiles option is false")]
+        public void File_Filter_Returns_True_When_FilterFiles_Option_Is_False()
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: false));
+            var file = new File(1, "name", 1, "ext", 0);
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.True(filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects IgnoredFileExtensions option")]
+        [InlineData("mp3", true)]
+        [InlineData("m4a", false)]
+        public void File_Filter_Respects_IgnoredFileExtensions_Option(string extension, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, ignoredFileExtensions: new[] { "m4a" }));
+            var file = new File(1, "name", 1, extension, 0);
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects MinimumFileSize option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void File_Filter_Respects_MinimumFileSize_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, minimumFileSize: option));
+            var file = new File(1, "name", actual, "ext", 0);
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects MinimumFileBitRate option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void File_Filter_Respects_MinimumFileBitRate_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, minimumFileBitRate: option));
+            var file = new File(1, "name", 1, "ext", 1, new[] { new FileAttribute(FileAttributeType.BitRate, actual) });
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects IncludeConstantBitRate option")]
+        [InlineData(320, true, true)]
+        [InlineData(320, false, false)]
+        public void File_Filter_Respects_IncludeConstantBitRate_Option(int actual, bool option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, includeConstantBitRate: option));
+            var file = new File(1, "name", 1, "ext", 1, new[] { new FileAttribute(FileAttributeType.BitRate, actual) });
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects IncludeVariableBitRate option")]
+        [InlineData(234, true, true)]
+        [InlineData(234, false, false)]
+        public void File_Filter_Respects_IncludeVariableBitRate_Option(int actual, bool option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, includeVariableBitRate: option));
+            var file = new File(1, "name", 1, "ext", 1, new[] { new FileAttribute(FileAttributeType.BitRate, actual) });
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects MinimumFileLength option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void File_Filter_Respects_MinimumFileLength_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, minimumFileLength: option));
+            var file = new File(1, "name", 1, "ext", 1, new[] { new FileAttribute(FileAttributeType.Length, actual) });
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects MinimumFileBitDepth option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void File_Filter_Respects_MinimumFileBitDepth_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, minimumFileBitDepth: option));
+            var file = new File(1, "name", 1, "ext", 1, new[] { new FileAttribute(FileAttributeType.BitDepth, actual) });
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects MinimumFileSampleRate option")]
+        [InlineData(0, 1, false)]
+        [InlineData(1, 1, true)]
+        [InlineData(1, 0, true)]
+        public void File_Filter_Respects_MinimumFileSampleRate_Option(int actual, int option, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, minimumFileSampleRate: option));
+            var file = new File(1, "name", 1, "ext", 1, new[] { new FileAttribute(FileAttributeType.SampleRate, actual) });
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
 
             Assert.Equal(expected, filter);
         }
