@@ -119,6 +119,11 @@ namespace Soulseek.NET
                 if (Options.FilterFiles)
                 {
                     fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
+
+                    if (fullResponse.FileCount < Options.MinimumResponseFileCount)
+                    {
+                        return;
+                    }
                 }
 
                 Interlocked.Add(ref resultCount, fullResponse.Files.Count);
@@ -132,7 +137,6 @@ namespace Soulseek.NET
                 ResponseList.Add(fullResponse);
 
                 ResponseHandler(this, fullResponse);
-
                 SearchTimeoutTimer.Reset();
             }
         }
