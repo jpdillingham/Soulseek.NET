@@ -365,8 +365,8 @@ namespace Soulseek.NET.Tests.Unit
         }
 
         [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse ignores response when all files are filtered"), AutoData]
-        public void AddResponse_Ignores_Response_When_All_Files_Are_Filtered(string username, int token, byte code, string filename, int size, string extension)
+        [Theory(DisplayName = "AddResponse ignores response when all files are filtered and response filtering is enabled"), AutoData]
+        public void AddResponse_Ignores_Response_When_All_Files_Are_Filtered_And_Response_Filtering_Is_Enabled(string username, int token, byte code, string filename, int size, string extension)
         {
             var options = new SearchOptions(
                     filterResponses: true,
@@ -402,6 +402,46 @@ namespace Soulseek.NET.Tests.Unit
             s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.Empty(s.Responses);
+        }
+
+        [Trait("Category", "AddResponse")]
+        [Theory(DisplayName = "AddResponse adds response when all files are filtered and response filtering is disabled"), AutoData]
+        public void AddResponse_Ignores_Response_When_All_Files_Are_Filtered_And_Response_Filtering_Is_Disabled(string username, int token, byte code, string filename, int size, string extension)
+        {
+            var options = new SearchOptions(
+                    filterResponses: false,
+                    minimumResponseFileCount: 1,
+                    filterFiles: true,
+                    minimumFileBitDepth: 44);
+
+            var s = new Search("foo", token, options);
+
+            s.State = SearchStates.InProgress;
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token) // token
+                .WriteInteger(1) // file count
+                .WriteByte(code) // code
+                .WriteString(filename) // filename
+                .WriteLong(size) // size
+                .WriteString(extension) // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1) // free upload slots
+                .WriteInteger(1) // upload speed
+                .WriteLong(0) // queue length
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Build();
+
+            var reader = new MessageReader(msg);
+            reader.Seek(username.Length + 12); // seek to the start of the file lists
+
+            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+
+            Assert.Single(s.Responses);
         }
     }
 }
