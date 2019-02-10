@@ -15,6 +15,7 @@ namespace Soulseek.NET.Tests.Unit
     using System;
     using System.Linq;
     using AutoFixture.Xunit2;
+    using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Xunit;
 
@@ -319,6 +320,48 @@ namespace Soulseek.NET.Tests.Unit
             s.AddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
+        }
+
+        [Trait("Category", "AddResponse")]
+        [Theory(DisplayName = "AddResponse adds response"), AutoData]
+        public void AddResponse_Adds_Response(string username, int token, byte code, string filename, int size, string extension)
+        {
+            var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
+            s.State = SearchStates.InProgress;
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token) // token
+                .WriteInteger(1) // file count
+                .WriteByte(code) // code
+                .WriteString(filename) // filename
+                .WriteLong(size) // size
+                .WriteString(extension) // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1) // free upload slots
+                .WriteInteger(1) // upload speed
+                .WriteLong(0) // queue length
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Build();
+
+            var reader = new MessageReader(msg);
+            reader.Seek(username.Length + 12); // seek to the start of the file list
+
+            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+
+            Assert.Single(s.Responses);
+
+            var responses = s.Responses.ToList();
+            var response = responses[0];
+            var files = response.Files.ToList();
+
+            Assert.Equal(1, response.FileCount);
+            Assert.Equal(username, response.Username);
+            Assert.Equal(filename, files[0].Filename);
+            Assert.Equal(size, files[0].Size);
         }
     }
 }
