@@ -57,8 +57,8 @@ namespace Soulseek.NET.Messaging.Messages
         /// </summary>
         /// <param name="response">The SearchResponse instance from which to initialize this SearchResponse.</param>
         /// <param name="fileList">The file list with which to replace the file list in the specified <paramref name="response"/>.</param>
-        internal SearchResponse(SearchResponse response, List<File> fileList)
-            : this(response.Username, response.Token, response.FileCount, response.FreeUploadSlots, response.UploadSpeed, response.QueueLength, fileList)
+        internal SearchResponse(SearchResponse response, IEnumerable<File> fileList)
+            : this(response.Username, response.Token, fileList.Count(), response.FreeUploadSlots, response.UploadSpeed, response.QueueLength, fileList)
         {
         }
 
