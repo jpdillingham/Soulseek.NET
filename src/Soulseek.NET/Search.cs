@@ -115,15 +115,11 @@ namespace Soulseek.NET
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
                 var fullResponse = new SearchResponse(slimResponse);
+                fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
 
-                if (Options.FilterFiles)
+                if (Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount)
                 {
-                    fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
-
-                    if (fullResponse.FileCount < Options.MinimumResponseFileCount)
-                    {
-                        return;
-                    }
+                    return;
                 }
 
                 Interlocked.Add(ref resultCount, fullResponse.Files.Count);
