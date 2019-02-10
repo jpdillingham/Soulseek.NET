@@ -111,6 +111,16 @@ namespace Soulseek.NET.Messaging.Messages
             return new SearchResponse(slim);
         }
 
+        /// <summary>
+        ///     Parses the list of files contained within the <paramref name="reader"/>.
+        /// </summary>
+        /// <remarks>
+        ///     Requires that the provided MessageReader has been "rewound" to the start of the file list, which is equal to the
+        ///     length of the username plus 12.
+        /// </remarks>
+        /// <param name="reader">The reader from which to parse the file list.</param>
+        /// <param name="count">The expected number of files.</param>
+        /// <returns>The list of parsed files.</returns>
         private static IReadOnlyCollection<File> ParseFiles(MessageReader reader, int count)
         {
             var files = new List<File>();
