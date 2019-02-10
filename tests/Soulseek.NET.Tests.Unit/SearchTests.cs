@@ -284,5 +284,41 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Equal(expected, filter);
         }
+
+        [Trait("Category", "AddResponse")]
+        [Fact(DisplayName = "AddResponse ignores response when search is not in progress")]
+        public void AddResponse_Ignores_Response_When_Search_Is_Not_In_Progress()
+        {
+            var s = new Search("foo", 42);
+            s.State = SearchStates.Completed;
+
+            s.AddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
+
+            Assert.Empty(s.Responses);
+        }
+
+        [Trait("Category", "AddResponse")]
+        [Fact(DisplayName = "AddResponse ignores response when token does not match")]
+        public void AddResponse_Ignores_Response_When_Token_Does_Not_Match()
+        {
+            var s = new Search("foo", 42);
+            s.State = SearchStates.InProgress;
+
+            s.AddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
+
+            Assert.Empty(s.Responses);
+        }
+
+        [Trait("Category", "AddResponse")]
+        [Fact(DisplayName = "AddResponse ignores response when response criteria not met")]
+        public void AddResponse_Ignores_Response_When_Response_Criteria_Not_Met()
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
+            s.State = SearchStates.InProgress;
+
+            s.AddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
+
+            Assert.Empty(s.Responses);
+        }
     }
 }
