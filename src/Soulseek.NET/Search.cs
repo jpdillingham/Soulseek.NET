@@ -131,7 +131,7 @@ namespace Soulseek.NET
 
                 ResponseList.Add(fullResponse);
 
-                Task.Run(() => ResponseHandler(this, fullResponse)).Forget();
+                ResponseHandler(this, fullResponse);
 
                 SearchTimeoutTimer.Reset();
             }
