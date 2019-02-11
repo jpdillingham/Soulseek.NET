@@ -855,7 +855,7 @@ namespace Soulseek.NET
                     responseHandler: (s, response) =>
                     {
                         var e = new SearchResponseReceivedEventArgs(s, response);
-                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
+                        SearchResponseReceived?.Invoke(this, e);
                     },
                     completeHandler: (s, state) =>
                     {
