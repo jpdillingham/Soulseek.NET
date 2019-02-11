@@ -443,5 +443,47 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Single(s.Responses);
         }
+
+        [Trait("Category", "AddResponse")]
+        [Theory(DisplayName = "AddResponse completes search when file limit reached"), AutoData]
+        public void AddResponse_Completes_Search_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
+        {
+            var options = new SearchOptions(
+                    filterResponses: false,
+                    minimumResponseFileCount: 1,
+                    fileLimit: 1);
+
+            var completedState = SearchStates.None;
+
+            var s = new Search("foo", token, (search, response) => { }, (search, state) => { completedState = state;  }, options);
+
+            s.State = SearchStates.InProgress;
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token) // token
+                .WriteInteger(1) // file count
+                .WriteByte(code) // code
+                .WriteString(filename) // filename
+                .WriteLong(size) // size
+                .WriteString(extension) // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1) // free upload slots
+                .WriteInteger(1) // upload speed
+                .WriteLong(0) // queue length
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Build();
+
+            var reader = new MessageReader(msg);
+            reader.Seek(username.Length + 12); // seek to the start of the file lists
+
+            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+
+            Assert.True(completedState.HasFlag(SearchStates.Completed));
+            Assert.True(completedState.HasFlag(SearchStates.FileLimitReached));
+        }
     }
 }
