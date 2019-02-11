@@ -66,6 +66,9 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Reset();
         }
 
+        public event EventHandler<SearchResponse> ResponseRecieved;
+        public event EventHandler<SearchStates> Completed;
+
         /// <summary>
         ///     Gets the options for the search.
         /// </summary>
@@ -126,6 +129,7 @@ namespace Soulseek.NET
                 ResponseList.Add(fullResponse);
 
                 ResponseHandler(this, fullResponse);
+                ResponseRecieved?.Invoke(this, fullResponse);
                 SearchTimeoutTimer.Reset();
 
                 if (resultCount >= Options.FileLimit)
@@ -144,6 +148,7 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
             CompleteHandler(this, State);
+            Completed?.Invoke(this, State);
         }
 
         private void Dispose(bool disposing)
