@@ -35,21 +35,6 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Empty(s.Responses);
         }
 
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with the given delegates"), AutoData]
-        internal void Instantiates_With_Given_Delegates(
-            string searchText,
-            int token,
-            Action<Search, SearchResponse> responseHandler,
-            Action<Search, SearchStates> completeHandler,
-            SearchOptions options)
-        {
-            var s = new Search(searchText, token, responseHandler, completeHandler, options);
-
-            Assert.Equal(responseHandler, s.GetProperty<Action<Search, SearchResponse>>("ResponseHandler"));
-            Assert.Equal(completeHandler, s.GetProperty<Action<Search, SearchStates>>("CompleteHandler"));
-        }
-
         [Trait("Category", "Dispose")]
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
@@ -78,11 +63,11 @@ namespace Soulseek.NET.Tests.Unit
         public void Complete_Invokes_CompleteHandler()
         {
             bool invoked = false;
-            var s = new Search("foo", 42, (search, res) => { }, (search, state) => { invoked = true; });
+            var s = new Search("foo", 42);
 
             s.Complete(SearchStates.Cancelled);
 
-            Assert.True(invoked);
+            Assert.False(true);
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -445,8 +430,8 @@ namespace Soulseek.NET.Tests.Unit
         }
 
         [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse completes search when file limit reached"), AutoData]
-        public void AddResponse_Completes_Search_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
+        [Theory(DisplayName = "AddResponse completes search and invokes completed event when file limit reached"), AutoData]
+        public void AddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
         {
             var options = new SearchOptions(
                     filterResponses: false,
@@ -455,7 +440,7 @@ namespace Soulseek.NET.Tests.Unit
 
             var completedState = SearchStates.None;
 
-            var s = new Search("foo", token, (search, response) => { }, (search, state) => { completedState = state;  }, options);
+            var s = new Search("foo", token, options);
 
             s.State = SearchStates.InProgress;
 
@@ -487,12 +472,12 @@ namespace Soulseek.NET.Tests.Unit
         }
 
         [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse invokes response handler"), AutoData]
-        public void AddResponse_Invokes_Response_Handler(string username, int token, byte code, string filename, int size, string extension)
+        [Theory(DisplayName = "AddResponse invokes response received event"), AutoData]
+        public void AddResponse_Invokes_Response_Received_Event_Handler(string username, int token, byte code, string filename, int size, string extension)
         {
             SearchResponse addResponse = null;
 
-            var s = new Search("foo", token, (search, res) => { addResponse = res; }, (search, state) => { }, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1));
+            var s = new Search("foo", token, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1));
             s.State = SearchStates.InProgress;
 
             var msg = new MessageBuilder()
