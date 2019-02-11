@@ -368,7 +368,7 @@ namespace Soulseek.NET
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -841,7 +841,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IEnumerable<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
             options = options ?? new SearchOptions();
 
@@ -849,34 +849,41 @@ namespace Soulseek.NET
             {
                 var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
 
-                var search = new Search(searchText, token, options)
-                {
-                    ResponseHandler = (s, response) =>
+                var search = new Search(
+                    searchText,
+                    token,
+                    responseHandler: (s, response) =>
                     {
                         var e = new SearchResponseReceivedEventArgs(s, response);
                         Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
                     },
-                    CompleteHandler = (s, state) =>
+                    completeHandler: (s, state) =>
                     {
                         MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), s); // searchWait above
                         ActiveSearches.TryRemove(s.Token, out var _);
-                        Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(s))).Forget();
+
+                        SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: s));
 
                         if (!waitForCompletion)
                         {
                             s.Dispose();
                         }
-                    }
-                };
+                    },
+                    options: options);
 
                 ActiveSearches.TryAdd(search.Token, search);
-                Task.Run(() => SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(search))).Forget();
+
+                search.State = SearchStates.Requested;
+                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.None, search: search));
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage()).ConfigureAwait(false);
 
+                search.State = SearchStates.InProgress;
+                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.Requested, search: search));
+
                 if (!waitForCompletion)
                 {
-                    return default(IEnumerable<SearchResponse>);
+                    return default(IReadOnlyCollection<SearchResponse>);
                 }
 
                 try
@@ -885,7 +892,7 @@ namespace Soulseek.NET
                 }
                 catch (OperationCanceledException)
                 {
-                    search.Complete(SearchStates.Completed | SearchStates.Cancelled);
+                    search.Complete(SearchStates.Cancelled);
                 }
 
                 var responses = search.Responses;

@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET
 {
+    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -29,7 +30,7 @@ namespace Soulseek.NET
         /// <param name="size">The file size in bytes.</param>
         /// <param name="attributeCount">The number of file <see cref="FileAttribute"/> s.</param>
         /// <param name="attributeList">The optional list of <see cref="FileAttribute"/> s.</param>
-        public File(int code, string filename, long size, string extension, int attributeCount, List<FileAttribute> attributeList = null)
+        public File(int code, string filename, long size, string extension, int attributeCount, IEnumerable<FileAttribute> attributeList = null)
         {
             Code = code;
             Filename = filename;
@@ -37,7 +38,7 @@ namespace Soulseek.NET
             Extension = extension;
             AttributeCount = attributeCount;
 
-            AttributeList = attributeList ?? new List<FileAttribute>();
+            AttributeList = attributeList ?? Array.Empty<FileAttribute>();
         }
 
         /// <summary>
@@ -48,7 +49,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the file attributes.
         /// </summary>
-        public IEnumerable<FileAttribute> Attributes => AttributeList.AsReadOnly();
+        public IReadOnlyCollection<FileAttribute> Attributes => AttributeList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.BitDepth"/> attribute.
@@ -93,7 +94,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the internal list of file attributes.
         /// </summary>
-        private List<FileAttribute> AttributeList { get; }
+        private IEnumerable<FileAttribute> AttributeList { get; }
 
         /// <summary>
         ///     Returns the value of the specified attribute <paramref name="type"/>.

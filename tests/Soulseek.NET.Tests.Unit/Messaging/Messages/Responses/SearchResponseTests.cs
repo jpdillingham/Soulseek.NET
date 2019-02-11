@@ -38,7 +38,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given response and list"), AutoData]
+        [Theory(DisplayName = "Instantiates with given response and list, replacing filecount with list length"), AutoData]
         public void Instantiates_With_Given_Response_And_List(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var r1 = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength);
@@ -50,7 +50,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
             Assert.Equal(r1.Username, r2.Username);
             Assert.Equal(r1.Token, r2.Token);
-            Assert.Equal(r1.FileCount, r2.FileCount);
+            Assert.Equal(1, r2.FileCount);
             Assert.Equal(r1.FreeUploadSlots, r2.FreeUploadSlots);
             Assert.Equal(r1.UploadSpeed, r2.UploadSpeed);
             Assert.Equal(r1.QueueLength, r2.QueueLength);
@@ -244,7 +244,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Messages
 
             var r = SearchResponse.Parse(msg);
 
-            Assert.Equal(2, r.Files.Count());
+            Assert.Equal(2, r.Files.Count);
 
             var file = r.Files.ToList();
 

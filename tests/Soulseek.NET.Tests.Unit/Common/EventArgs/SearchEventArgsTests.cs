@@ -64,10 +64,11 @@ namespace Soulseek.NET.Tests.Unit
             var search = new Search(searchText, token, new SearchOptions());
             search.SetProperty("State", SearchStates.Completed);
 
-            var e = new SearchStateChangedEventArgs(search);
+            var e = new SearchStateChangedEventArgs(SearchStates.None, search);
 
             Assert.Equal(searchText, e.SearchText);
             Assert.Equal(token, e.Token);
+            Assert.Equal(SearchStates.None, e.PreviousState);
             Assert.Equal(SearchStates.Completed, e.State);
         }
     }
