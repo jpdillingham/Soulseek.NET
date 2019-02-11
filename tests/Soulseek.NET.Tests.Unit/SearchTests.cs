@@ -485,5 +485,41 @@ namespace Soulseek.NET.Tests.Unit
             Assert.True(completedState.HasFlag(SearchStates.Completed));
             Assert.True(completedState.HasFlag(SearchStates.FileLimitReached));
         }
+
+        [Trait("Category", "AddResponse")]
+        [Theory(DisplayName = "AddResponse invokes response handler"), AutoData]
+        public void AddResponse_Invokes_Response_Handler(string username, int token, byte code, string filename, int size, string extension)
+        {
+            SearchResponse addResponse = null;
+
+            var s = new Search("foo", token, (search, res) => { addResponse = res; }, (search, state) => { }, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1));
+            s.State = SearchStates.InProgress;
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerSearchResponse)
+                .WriteString(username)
+                .WriteInteger(token) // token
+                .WriteInteger(1) // file count
+                .WriteByte(code) // code
+                .WriteString(filename) // filename
+                .WriteLong(size) // size
+                .WriteString(extension) // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1) // free upload slots
+                .WriteInteger(1) // upload speed
+                .WriteLong(0) // queue length
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Build();
+
+            var reader = new MessageReader(msg);
+            reader.Seek(username.Length + 12); // seek to the start of the file list
+
+            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+
+            Assert.NotNull(addResponse);
+            Assert.Equal(filename, addResponse.Files.ToList()[0].Filename);
+        }
     }
 }
