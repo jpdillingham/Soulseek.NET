@@ -48,10 +48,12 @@ namespace Soulseek.NET
         /// <summary>
         ///     Continue a task and report an Exception if one is raised.
         /// </summary>
+        /// <typeparam name="T">The type of Exception to throw.</typeparam>
         /// <param name="task">The task to continue.</param>
-        public static void Forget(this Task task)
+        public static void ForgetButThrowWhenFaulted<T>(this Task task)
+            where T : Exception
         {
-            task.ContinueWith(t => { Debug.WriteLine($"Forgotten Thread Error: {t.Exception.Message}", t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+            task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
         }
 
         /// <summary>
