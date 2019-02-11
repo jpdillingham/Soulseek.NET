@@ -16,7 +16,6 @@ namespace Soulseek.NET
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
-    using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Messages;
     using SystemTimer = System.Timers.Timer;
 
@@ -124,16 +123,15 @@ namespace Soulseek.NET
 
                 Interlocked.Add(ref resultCount, fullResponse.Files.Count);
 
-                if (resultCount >= Options.FileLimit)
-                {
-                    Complete(SearchStates.FileLimitReached);
-                    return;
-                }
-
                 ResponseList.Add(fullResponse);
 
                 ResponseHandler(this, fullResponse);
                 SearchTimeoutTimer.Reset();
+
+                if (resultCount >= Options.FileLimit)
+                {
+                    Complete(SearchStates.FileLimitReached);
+                }
             }
         }
 
@@ -145,7 +143,7 @@ namespace Soulseek.NET
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
-            CompleteHandler(this, state);
+            CompleteHandler(this, State);
         }
 
         private void Dispose(bool disposing)
