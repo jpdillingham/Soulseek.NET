@@ -658,9 +658,9 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, IConnection connection = null)
+        private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options)
         {
-            connection = connection ?? new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
             await connection.ConnectAsync().ConfigureAwait(false);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
