@@ -95,5 +95,45 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Verify(m => m.ConnectAsync(), Times.Once);
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>()), Times.Once);
         }
+
+        [Trait("Category", "GetSolicitedPeerConnectionAsync")]
+        [Theory(DisplayName = "Returns expected IMessageConnection instance"), AutoData]
+        public async Task GetSolicitedPeerConnectionAsync_Returns_IMessageConnection_Instance(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
+            var options = new ConnectionOptions();
+
+            var s = new SoulseekClient();
+
+            IMessageConnection conn = null;
+
+            var ex = await Record.ExceptionAsync(async () => conn = await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options));
+
+            Assert.Null(ex);
+            Assert.NotNull(conn);
+
+            Assert.Equal(username, conn.Username);
+            Assert.Equal(ipAddress, conn.IPAddress);
+            Assert.Equal(port, conn.Port);
+            Assert.Equal(ctpr, conn.Context);
+        }
+
+        [Trait("Category", "GetSolicitedPeerConnectionAsync")]
+        [Theory(DisplayName = "Adds instance to PeerConnectionManager"), AutoData]
+        public async Task GetSolicitedPeerConnectionAsync_Adds_Instance_To_PeerConnectionManager(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
+            var options = new ConnectionOptions();
+
+            var pcm = new Mock<IConnectionManager<IMessageConnection>>();
+            pcm.Setup(m => m.AddAsync(It.IsAny<IMessageConnection>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: pcm.Object);
+
+            await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options);
+
+            pcm.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
+        }
     }
 }
