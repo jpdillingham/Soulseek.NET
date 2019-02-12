@@ -136,9 +136,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<TimeoutException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException when WriteMessageAsync throws")]
-        public async Task DownloadAsync_Throws_DownloadException_When_WriteMessageAsync_Throws()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException when WriteMessageAsync throws")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_When_WriteMessageAsync_Throws()
         {
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
@@ -156,9 +156,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<ConnectionWriteException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferResponse timeout")]
-        public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferResponse_Timeout()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferResponse timeout")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_On_PeerTransferResponse_Timeout()
         {
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
@@ -174,9 +174,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<TimeoutException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferResponse cancellation")]
-        public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferResponse_Cancellation()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferResponse cancellation")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_On_PeerTransferResponse_Cancellation()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -198,9 +198,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferResponse allowed")]
-        public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferResponse_Allowed()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferResponse allowed")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_On_PeerTransferResponse_Allowed()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -223,9 +223,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Contains("unreachable", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on PeerTransferRequest cancellation")]
-        public async Task DownloadAsync_Throws_DownloadException_On_PeerTransferRequest_Cancellation()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferRequest cancellation")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_On_PeerTransferRequest_Cancellation()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -250,9 +250,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on download cancellation")]
-        public async Task DownloadAsync_Throws_DownloadException_On_Download_Cancellation()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException on download cancellation")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_On_Download_Cancellation()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -283,9 +283,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on download start timeout")]
-        public async Task DownloadAsync_Throws_DownloadException_On_Download_Start_Timeout()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync throws DownloadException on download start timeout")]
+        public async Task DownloadInternalAsync_Throws_DownloadException_On_Download_Start_Timeout()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -314,9 +314,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<TimeoutException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync returns expected data on completion")]
-        public async Task DownloadAsync_Returns_Expected_Data_On_Completion()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync returns expected data on completion")]
+        public async Task DownloadInternalAsync_Returns_Expected_Data_On_Completion()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -349,9 +349,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(data, downloadedData);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync raises expected events on success")]
-        public async Task DownloadAsync_Raises_Expected_Events_On_Success()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync raises expected events on success")]
+        public async Task DownloadInternalAsync_Raises_Expected_Events_On_Success()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -404,9 +404,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[4].State);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync raises Download events on failure")]
-        public async Task DownloadAsync_Raises_Download_Events_On_Failure()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync raises Download events on failure")]
+        public async Task DownloadInternalAsync_Raises_Download_Events_On_Failure()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -447,9 +447,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync raises Download events on timeout")]
-        public async Task DownloadAsync_Raises_Expected_Final_Event_On_Timeout()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync raises Download events on timeout")]
+        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Timeout()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -490,9 +490,9 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
         }
 
-        [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync raises Download events on cancellation")]
-        public async Task DownloadAsync_Raises_Expected_Final_Event_On_Cancellation()
+        [Trait("Category", "DownloadInternalAsync")]
+        [Fact(DisplayName = "DownloadInternalAsync raises Download events on cancellation")]
+        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation()
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
