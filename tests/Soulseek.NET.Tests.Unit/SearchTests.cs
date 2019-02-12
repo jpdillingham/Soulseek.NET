@@ -276,8 +276,10 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "AddResponse ignores response when search is not in progress")]
         public void AddResponse_Ignores_Response_When_Search_Is_Not_In_Progress()
         {
-            var s = new Search("foo", 42);
-            s.State = SearchStates.Completed;
+            var s = new Search("foo", 42)
+            {
+                State = SearchStates.Completed
+            };
 
             s.AddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
 
@@ -288,8 +290,10 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "AddResponse ignores response when token does not match")]
         public void AddResponse_Ignores_Response_When_Token_Does_Not_Match()
         {
-            var s = new Search("foo", 42);
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", 42)
+            {
+                State = SearchStates.InProgress
+            };
 
             s.AddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
 
@@ -300,8 +304,10 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "AddResponse ignores response when response criteria not met")]
         public void AddResponse_Ignores_Response_When_Response_Criteria_Not_Met()
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1));
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
+            {
+                State = SearchStates.InProgress
+            };
 
             s.AddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
 
@@ -312,8 +318,10 @@ namespace Soulseek.NET.Tests.Unit
         [Theory(DisplayName = "AddResponse adds response"), AutoData]
         public void AddResponse_Adds_Response(string username, int token, byte code, string filename, int size, string extension)
         {
-            var s = new Search("foo", token, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1));
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", token, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1))
+            {
+                State = SearchStates.InProgress
+            };
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
@@ -360,9 +368,10 @@ namespace Soulseek.NET.Tests.Unit
                     filterFiles: true,
                     minimumFileBitDepth: 44);
 
-            var s = new Search("foo", token, options);
-
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", token, options)
+            {
+                State = SearchStates.InProgress
+            };
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
@@ -400,9 +409,10 @@ namespace Soulseek.NET.Tests.Unit
                     filterFiles: true,
                     minimumFileBitDepth: 44);
 
-            var s = new Search("foo", token, options);
-
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", token, options)
+            {
+                State = SearchStates.InProgress
+            };
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
@@ -479,8 +489,11 @@ namespace Soulseek.NET.Tests.Unit
         {
             SearchResponse addResponse = null;
 
-            var s = new Search("foo", token, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1));
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", token, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1))
+            {
+                State = SearchStates.InProgress
+            };
+
             s.ResponseRecieved += (sender, response) => addResponse = response;
 
             var msg = new MessageBuilder()
