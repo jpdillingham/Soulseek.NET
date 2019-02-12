@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Tcp
 {
+    using Soulseek.NET.Messaging.Tcp;
     using System;
     using System.Net;
 
