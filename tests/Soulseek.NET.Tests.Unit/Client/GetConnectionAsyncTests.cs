@@ -97,7 +97,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "GetSolicitedPeerConnectionAsync")]
-        [Theory(DisplayName = "Returns expected IMessageConnection instance"), AutoData]
+        [Theory(DisplayName = "GetSolicitedPeerConnectionAsync returns expected IMessageConnection instance"), AutoData]
         public async Task GetSolicitedPeerConnectionAsync_Returns_IMessageConnection_Instance(string username, IPAddress ipAddress, int port, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
@@ -119,7 +119,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "GetSolicitedPeerConnectionAsync")]
-        [Theory(DisplayName = "Adds instance to PeerConnectionManager"), AutoData]
+        [Theory(DisplayName = "GetSolicitedPeerConnectionAsync adds instance to PeerConnectionManager"), AutoData]
         public async Task GetSolicitedPeerConnectionAsync_Adds_Instance_To_PeerConnectionManager(string username, IPAddress ipAddress, int port, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
@@ -134,6 +134,38 @@ namespace Soulseek.NET.Tests.Unit.Client
             await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options);
 
             pcm.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
+        }
+
+        [Trait("Category", "GetUnsolicitedPeerConnectionAsync")]
+        [Theory(DisplayName = "GetUnsolicitedPeerConnectionAsync returns new connection if not existing"), AutoData]
+        public async Task GetUnsolicitedPeerConnectionAsync_Returns_New_Connection_If_Not_Existing(string name, IPAddress ipAddress, int port)
+        {
+            var options = new ConnectionOptions();
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(name, ipAddress, port)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, messageWaiter: waiter.Object);
+
+            var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", name, options);
+
+            Assert.NotNull(conn);
+            Assert.Equal(name, conn.Username);
+            Assert.Equal(ipAddress, conn.IPAddress);
+            Assert.Equal(port, conn.Port);
+            Assert.Equal(options, conn.Options);
+        }
+
+        [Trait("Category", "GetUnsolicitedPeerConnectionAsync")]
+        [Theory(DisplayName = "GetUnsolicitedPeerConnectionAsync returns existing connection if existing and not disconnected"), AutoData]
+        public async Task GetUnsolicitedPeerConnectionAsync_Returns_Existing_Connection_If_Existing_And_Not_Disconnected(string name, IPAddress ipAddress, int port)
+        {
+            Assert.Equal(string.Empty, name);
         }
     }
 }
