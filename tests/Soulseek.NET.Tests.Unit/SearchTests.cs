@@ -59,15 +59,16 @@ namespace Soulseek.NET.Tests.Unit
         }
 
         [Trait("Category", "Complete")]
-        [Fact(DisplayName = "Complete sets state")]
-        public void Complete_Invokes_CompleteHandler()
+        [Fact(DisplayName = "Complete invokes complete event")]
+        public void Complete_Invokes_Complete_Event()
         {
             bool invoked = false;
             var s = new Search("foo", 42);
+            s.Completed += (sender, state) => { invoked = true; };
 
             s.Complete(SearchStates.Cancelled);
 
-            Assert.False(true);
+            Assert.True(invoked);
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -441,6 +442,7 @@ namespace Soulseek.NET.Tests.Unit
             var completedState = SearchStates.None;
 
             var s = new Search("foo", token, options);
+            s.Completed += (sender, state) => completedState = state;
 
             s.State = SearchStates.InProgress;
 
@@ -479,6 +481,7 @@ namespace Soulseek.NET.Tests.Unit
 
             var s = new Search("foo", token, new SearchOptions(filterFiles: false, filterResponses: true, minimumResponseFileCount: 1));
             s.State = SearchStates.InProgress;
+            s.ResponseRecieved += (sender, response) => addResponse = response;
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
