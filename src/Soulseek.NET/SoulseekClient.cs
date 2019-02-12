@@ -61,6 +61,7 @@ namespace Soulseek.NET
             int port,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
+            IConnectionFactory connectionFactory = null,
             IConnectionManager<IMessageConnection> peerConnectionManager = null,
             IWaiter messageWaiter = null,
             ITokenFactory tokenFactory = null,
@@ -72,6 +73,7 @@ namespace Soulseek.NET
             Options = options ?? new SoulseekClientOptions();
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
@@ -143,6 +145,7 @@ namespace Soulseek.NET
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private IWaiter MessageWaiter { get; set; }
+        private IConnectionFactory ConnectionFactory { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private IMessageConnection ServerConnection { get; set; }
