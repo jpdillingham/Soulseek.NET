@@ -59,13 +59,17 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.Port)
                 .Returns(port);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var response = new ConnectToPeerResponse(username, type, ipAddress, port, token);
 
-            var s = new SoulseekClient();
+            var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
 
             IConnection result = null;
 
-            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options));
 
             Assert.Null(ex);
             Assert.Equal(response.IPAddress, result.IPAddress);
@@ -86,11 +90,15 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
                 .Returns(Task.CompletedTask);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var response = new ConnectToPeerResponse(username, type, ipAddress, port, token);
 
-            var s = new SoulseekClient();
+            var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
 
-            await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options, conn.Object);
+            await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options);
 
             conn.Verify(m => m.ConnectAsync(), Times.Once);
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>()), Times.Once);
