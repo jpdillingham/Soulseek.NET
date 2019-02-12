@@ -864,7 +864,7 @@ namespace Soulseek.NET
                     }
                 };
 
-                search.ResponseRecieved += (_, response) =>
+                search.ResponseReceived += (_, response) =>
                 {
                     var e = new SearchResponseReceivedEventArgs(search, response);
                     SearchResponseReceived?.Invoke(this, e);

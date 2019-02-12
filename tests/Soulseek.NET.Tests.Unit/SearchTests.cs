@@ -494,7 +494,7 @@ namespace Soulseek.NET.Tests.Unit
                 State = SearchStates.InProgress
             };
 
-            s.ResponseRecieved += (sender, response) => addResponse = response;
+            s.ResponseReceived += (sender, response) => addResponse = response;
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)

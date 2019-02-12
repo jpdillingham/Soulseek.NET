@@ -50,7 +50,14 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Reset();
         }
 
-        public event EventHandler<SearchResponse> ResponseRecieved;
+        /// <summary>
+        ///     Occurs when a new search result is received.
+        /// </summary>
+        public event EventHandler<SearchResponse> ResponseReceived;
+
+        /// <summary>
+        ///     Occurs when the search is completed.
+        /// </summary>
         public event EventHandler<SearchStates> Completed;
 
         /// <summary>
@@ -110,7 +117,7 @@ namespace Soulseek.NET
 
                 ResponseList.Add(fullResponse);
 
-                ResponseRecieved?.Invoke(this, fullResponse);
+                ResponseReceived?.Invoke(this, fullResponse);
                 SearchTimeoutTimer.Reset();
 
                 if (resultCount >= Options.FileLimit)
