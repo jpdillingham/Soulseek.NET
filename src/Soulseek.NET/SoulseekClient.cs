@@ -849,27 +849,26 @@ namespace Soulseek.NET
             {
                 var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
 
-                var search = new Search(
-                    searchText,
-                    token,
-                    responseHandler: (s, response) =>
-                    {
-                        var e = new SearchResponseReceivedEventArgs(s, response);
-                        Task.Run(() => SearchResponseReceived?.Invoke(this, e)).Forget();
-                    },
-                    completeHandler: (s, state) =>
-                    {
-                        MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), s); // searchWait above
-                        ActiveSearches.TryRemove(s.Token, out var _);
+                var search = new Search(searchText, token, options);
 
-                        SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: s));
+                search.Completed += (_, state) =>
+                {
+                    MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), search); // searchWait above
+                    ActiveSearches.TryRemove(search.Token, out var _);
 
-                        if (!waitForCompletion)
-                        {
-                            s.Dispose();
-                        }
-                    },
-                    options: options);
+                    SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
+
+                    if (!waitForCompletion)
+                    {
+                        search.Dispose();
+                    }
+                };
+
+                search.ResponseReceived += (_, response) =>
+                {
+                    var e = new SearchResponseReceivedEventArgs(search, response);
+                    SearchResponseReceived?.Invoke(this, e);
+                };
 
                 ActiveSearches.TryAdd(search.Token, search);
 

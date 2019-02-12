@@ -33,25 +33,9 @@ namespace Soulseek.NET
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
         public Search(string searchText, int token, SearchOptions options = null)
-            : this(searchText, token, (search, response) => { }, (search, state) => { }, options)
-        {
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="Search"/> class.
-        /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="responseHandler">The action invoked upon receipt of a search response.</param>
-        /// <param name="completeHandler">The action invoked upon completion of the search.</param>
-        /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, Action<Search, SearchResponse> responseHandler, Action<Search, SearchStates> completeHandler, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
-
-            ResponseHandler = responseHandler ?? ((search, response) => { });
-            CompleteHandler = completeHandler ?? ((search, state) => { });
 
             Options = options ?? new SearchOptions();
 
@@ -65,6 +49,16 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
             SearchTimeoutTimer.Reset();
         }
+
+        /// <summary>
+        ///     Occurs when a new search result is received.
+        /// </summary>
+        public event EventHandler<SearchResponse> ResponseReceived;
+
+        /// <summary>
+        ///     Occurs when the search is completed.
+        /// </summary>
+        public event EventHandler<SearchStates> Completed;
 
         /// <summary>
         ///     Gets the options for the search.
@@ -91,9 +85,7 @@ namespace Soulseek.NET
         /// </summary>
         public int Token { get; }
 
-        private Action<Search, SearchStates> CompleteHandler { get; }
         private bool Disposed { get; set; } = false;
-        private Action<Search, SearchResponse> ResponseHandler { get; }
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
 
@@ -125,7 +117,7 @@ namespace Soulseek.NET
 
                 ResponseList.Add(fullResponse);
 
-                ResponseHandler(this, fullResponse);
+                ResponseReceived?.Invoke(this, fullResponse);
                 SearchTimeoutTimer.Reset();
 
                 if (resultCount >= Options.FileLimit)
@@ -143,7 +135,7 @@ namespace Soulseek.NET
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
-            CompleteHandler(this, State);
+            Completed?.Invoke(this, State);
         }
 
         private void Dispose(bool disposing)
