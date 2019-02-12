@@ -52,6 +52,8 @@ namespace Soulseek.NET
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
+        /// <param name="messageConnectionFactory">The IMessageConnectionFactory instance to use.</param>
+        /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
         /// <param name="peerConnectionManager">The IConnectionManager instance to use.</param>
         /// <param name="messageWaiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory to use.</param>
@@ -61,6 +63,7 @@ namespace Soulseek.NET
             int port,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
+            IMessageConnectionFactory messageConnectionFactory = null,
             IConnectionFactory connectionFactory = null,
             IConnectionManager<IMessageConnection> peerConnectionManager = null,
             IWaiter messageWaiter = null,
@@ -73,6 +76,7 @@ namespace Soulseek.NET
             Options = options ?? new SoulseekClientOptions();
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
+            MessageConnectionFactory = MessageConnectionFactory ?? new MessageConnectionFactory();
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
@@ -144,6 +148,7 @@ namespace Soulseek.NET
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
+        private IMessageConnectionFactory MessageConnectionFactory { get; set; }
         private IWaiter MessageWaiter { get; set; }
         private IConnectionFactory ConnectionFactory { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
