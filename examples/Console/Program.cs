@@ -1,6 +1,7 @@
 ﻿namespace Console
 {
     using Newtonsoft.Json;
+    using Soulseek;
     using Soulseek.NET;
     using Soulseek.NET.Messaging.Messages;
     using System;
@@ -13,7 +14,7 @@
     {
         static async Task Main(string[] args)
         {
-            using (var client = new SoulseekClient())
+            using (var client = new SoulseekClient(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug)))
             {
                 client.StateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
@@ -116,7 +117,7 @@
                         });
 
                         await task;
-                        
+
                         Console.WriteLine($"All files complete.");
                     }
                     else if (cmd.StartsWith("download"))
