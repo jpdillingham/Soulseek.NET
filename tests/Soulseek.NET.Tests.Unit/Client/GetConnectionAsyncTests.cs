@@ -171,7 +171,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "GetUnsolicitedPeerConnectionAsync")]
         [Theory(DisplayName = "GetUnsolicitedPeerConnectionAsync returns existing connection if existing and not disconnected"), AutoData]
-        public async Task GetUnsolicitedPeerConnectionAsync_Returns_Existing_Connection_If_Existing_And_Not_Disconnected(string username, IPAddress ipAddress, int port, int token)
+        public async Task GetUnsolicitedPeerConnectionAsync_Returns_Existing_Connection_If_Existing_And_Not_Disconnected(string username, IPAddress ipAddress, int port)
         {
             var options = new ConnectionOptions();
             var existingConn = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options);
@@ -197,7 +197,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "GetUnsolicitedPeerConnectionAsync")]
         [Theory(DisplayName = "GetUnsolicitedPeerConnectionAsync removes disconnected connection"), AutoData]
-        public async Task GetUnsolicitedPeerConnectionAsync_Removes_Disconnected_Connection(string username, IPAddress ipAddress, int port, int token)
+        public async Task GetUnsolicitedPeerConnectionAsync_Removes_Disconnected_Connection(string username, IPAddress ipAddress, int port)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
