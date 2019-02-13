@@ -1,4 +1,4 @@
-﻿// <copyright file="MessageConnectionType.cs" company="JP Dillingham">
+﻿// <copyright file="IConnectionFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,29 +10,22 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Messaging.Tcp
+namespace Soulseek.NET.Tcp
 {
+    using System.Net;
+
     /// <summary>
-    ///     Message connection type.
+    ///     Creates <see cref="Connection"/> instances.
     /// </summary>
-    /// <remarks>
-    ///     Used to normalize message codes.
-    /// </remarks>
-    public enum MessageConnectionType
+    internal interface IConnectionFactory
     {
         /// <summary>
-        ///     Default type.
+        ///     Gets a <see cref="Connection"/> instance.
         /// </summary>
-        Default = 0,
-
-        /// <summary>
-        ///     Server.
-        /// </summary>
-        Server = 10000,
-
-        /// <summary>
-        ///     Peer.
-        /// </summary>
-        Peer = 20000,
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <returns>The created Connection.</returns>
+        IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null);
     }
 }

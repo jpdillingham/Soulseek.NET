@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Net;
+    using Soulseek.NET.Messaging.Tcp;
 
     /// <summary>
     ///     Uniquely identifies a <see cref="Connection"/> instance.
