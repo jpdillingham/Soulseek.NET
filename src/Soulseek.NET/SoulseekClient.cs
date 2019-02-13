@@ -33,6 +33,11 @@ namespace Soulseek.NET
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
 
+        public SoulseekClient(SoulseekClientOptions options)
+            : this(DefaultAddress, DefaultPort, options)
+        {
+        }
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
         ///     and <paramref name="port"/>.
@@ -41,7 +46,7 @@ namespace Soulseek.NET
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
-            : this(address, port, options, null, null, null)
+            : this(address, port, options, null)
         {
         }
 
@@ -76,12 +81,14 @@ namespace Soulseek.NET
             Options = options ?? new SoulseekClientOptions();
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
-            MessageConnectionFactory = MessageConnectionFactory ?? new MessageConnectionFactory();
+            MessageConnectionFactory = messageConnectionFactory ?? new MessageConnectionFactory();
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, DiagnosticGenerated);
+
+            Diagnostic.DiagnosticGenerated += DiagnosticGenerated;
         }
 
         /// <summary>
@@ -798,9 +805,8 @@ namespace Soulseek.NET
 
         private void PeerConnection_MessageRead(object sender, Message message)
         {
-            Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
-
             var connection = (IMessageConnection)sender;
+            Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 
             switch (message.Code)
             {
@@ -844,7 +850,7 @@ namespace Soulseek.NET
                     break;
 
                 default:
-                    Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
+                    Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
                     break;
             }
         }
@@ -926,7 +932,7 @@ namespace Soulseek.NET
 
         private async void ServerConnection_MessageRead(object sender, Message message)
         {
-            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
+            Diagnostic.Debug($"Server message received: {message.Code}");
 
             switch (message.Code)
             {
@@ -984,7 +990,7 @@ namespace Soulseek.NET
                     break;
 
                 default:
-                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
+                    Diagnostic.Debug($"Unhandled server message: {message.Code}; {message.Payload.Length} bytes");
                     break;
             }
         }
