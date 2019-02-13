@@ -27,12 +27,22 @@ namespace Soulseek.NET
         int DefaultTimeout { get; }
 
         /// <summary>
+        ///     Cancels all waits.
+        /// </summary>
+        void CancelAll();
+
+        /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="key"/> with the specified <paramref name="result"/>.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
         /// <param name="key">The unique WaitKey for the wait.</param>
         /// <param name="result">The wait result.</param>
         void Complete<T>(WaitKey key, T result);
+
+        /// <summary>
+        ///     Completes the oldest wait matching the specified <paramref name="key"/>.
+        /// </summary>
+        /// <param name="key">The unique WaitKey for the wait.</param>
         void Complete(WaitKey key);
 
         /// <summary>
@@ -51,6 +61,14 @@ namespace Soulseek.NET
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
         Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Adds a new wait for the specified <paramref name="key"/> and with the specified <paramref name="timeout"/>.
+        /// </summary>
+        /// <param name="key">A unique WaitKey for the wait.</param>
+        /// <param name="timeout">The wait timeout.</param>
+        /// <param name="cancellationToken">The cancellation token for the wait.</param>
+        /// <returns>A Task representing the wait.</returns>
         Task Wait(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -61,11 +79,13 @@ namespace Soulseek.NET
         /// <param name="cancellationToken">The cancellation token for the wait.</param>
         /// <returns>A Task representing the wait.</returns>
         Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null);
-        Task WaitIndefinitely(WaitKey key, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Cancels all waits.
+        ///     Adds a new wait for the specified <paramref name="key"/> which does not time out.
         /// </summary>
-        void CancelAll();
+        /// <param name="key">A unique WaitKey for the wait.</param>
+        /// <param name="cancellationToken">The cancellation token for the wait.</param>
+        /// <returns>A Task representing the wait.</returns>
+        Task WaitIndefinitely(WaitKey key, CancellationToken? cancellationToken = null);
     }
 }
