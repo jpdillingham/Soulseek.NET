@@ -682,7 +682,7 @@ namespace Soulseek.NET
 
             if (connection == default(IMessageConnection))
             {
-                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
+                connection = MessageConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
                 connection.MessageRead += PeerConnection_MessageRead;
 
                 connection.Connected += async (sender, e) =>
