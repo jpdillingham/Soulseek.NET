@@ -19,6 +19,8 @@ namespace Soulseek.NET
     /// </summary>
     internal interface IDiagnosticFactory
     {
+        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+
         /// <summary>
         ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>

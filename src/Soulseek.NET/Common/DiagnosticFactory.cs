@@ -32,6 +32,8 @@ namespace Soulseek.NET
             EventHandler = eventHandler;
         }
 
+        public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+
         private EventHandler<DiagnosticGeneratedEventArgs> EventHandler { get; }
         private DiagnosticLevel MinimumLevel { get; }
         private object Source { get; }
@@ -69,7 +71,8 @@ namespace Soulseek.NET
             if (level <= MinimumLevel)
             {
                 var e = new DiagnosticGeneratedEventArgs(level, message, exception);
-                EventHandler?.Invoke(Source, e);
+                Console.WriteLine($"Trying to fire event...");
+                DiagnosticGenerated?.Invoke(Source, e);
             }
         }
     }
