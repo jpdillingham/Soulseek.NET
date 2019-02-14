@@ -902,7 +902,7 @@ namespace Soulseek.NET
 
                 try
                 {
-                    await searchWait.ConfigureAwait(false); // completed in CompleteHandler above
+                    search = await searchWait.ConfigureAwait(false); // completed in CompleteHandler above
                 }
                 catch (OperationCanceledException)
                 {
