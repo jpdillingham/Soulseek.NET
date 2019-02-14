@@ -406,6 +406,8 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to search.");
             }
 
+            options = options ?? new SearchOptions();
+
             return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
         }
 
@@ -856,10 +858,8 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            options = options ?? new SearchOptions();
-
             try
             {
                 var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
