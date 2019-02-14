@@ -90,36 +90,27 @@ namespace Soulseek.NET
         private SystemTimer SearchTimeoutTimer { get; set; }
 
         /// <summary>
-        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after parsing the files within it and
-        ///     applying the filters specified in the search options.
+        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in
+        ///     the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
         public void AddResponse(SearchResponseSlim slimResponse)
         {
-            AddResponse(new SearchResponse(slimResponse));
-        }
-
-        /// <summary>
-        ///     Adds the specified <paramref name="response"/> to the list of responses after applying the filters specified in the
-        ///     search options.
-        /// </summary>
-        /// <param name="response">The response to add.</param>
-        public void AddResponse(SearchResponse response)
-        {
-            if (State.HasFlag(SearchStates.InProgress) && response.Token == Token && ResponseMeetsOptionCriteria(response))
+            if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
-                response = new SearchResponse(response, response.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
+                var fullResponse = new SearchResponse(slimResponse);
+                fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
 
-                if (Options.FilterResponses && response.FileCount < Options.MinimumResponseFileCount)
+                if (Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount)
                 {
                     return;
                 }
 
-                Interlocked.Add(ref resultCount, response.Files.Count);
+                Interlocked.Add(ref resultCount, fullResponse.Files.Count);
 
-                ResponseList.Add(response);
+                ResponseList.Add(fullResponse);
 
-                ResponseReceived?.Invoke(this, response);
+                ResponseReceived?.Invoke(this, fullResponse);
                 SearchTimeoutTimer.Reset();
 
                 if (resultCount >= Options.FileLimit)
@@ -203,7 +194,7 @@ namespace Soulseek.NET
             return true;
         }
 
-        private bool ResponseMeetsOptionCriteria(SearchResponse response)
+        private bool ResponseMeetsOptionCriteria(SearchResponseSlim response)
         {
             if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||
