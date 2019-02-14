@@ -98,7 +98,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var search = new Search(searchText, token, options);
             search.State = SearchStates.InProgress;
-            search.AddResponse(response);
+            search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
