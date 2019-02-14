@@ -51,14 +51,14 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Occurs when a new search result is received.
-        /// </summary>
-        public event EventHandler<SearchResponse> ResponseReceived;
-
-        /// <summary>
         ///     Occurs when the search is completed.
         /// </summary>
         public event EventHandler<SearchStates> Completed;
+
+        /// <summary>
+        ///     Occurs when a new search result is received.
+        /// </summary>
+        public event EventHandler<SearchResponse> ResponseReceived;
 
         /// <summary>
         ///     Gets the options for the search.
@@ -90,15 +90,8 @@ namespace Soulseek.NET
         private SystemTimer SearchTimeoutTimer { get; set; }
 
         /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-        }
-
-        /// <summary>
-        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in the search options.
+        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in
+        ///     the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
         public void AddResponse(SearchResponseSlim slimResponse)
@@ -136,6 +129,14 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
             Completed?.Invoke(this, State);
+        }
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
         }
 
         private void Dispose(bool disposing)

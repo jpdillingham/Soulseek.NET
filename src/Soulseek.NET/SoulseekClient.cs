@@ -34,14 +34,22 @@ namespace Soulseek.NET
         private const int DefaultPort = 2271;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
-        ///     and <paramref name="port"/>.
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
+        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
+        public SoulseekClient(SoulseekClientOptions options)
+            : this(DefaultAddress, DefaultPort, options)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
-            : this(address, port, options, null, null, null)
+            : this(address, port, options, null)
         {
         }
 
@@ -76,12 +84,12 @@ namespace Soulseek.NET
             Options = options ?? new SoulseekClientOptions();
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
-            MessageConnectionFactory = MessageConnectionFactory ?? new MessageConnectionFactory();
+            MessageConnectionFactory = messageConnectionFactory ?? new MessageConnectionFactory();
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory();
-            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, DiagnosticGenerated);
+            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>
@@ -398,6 +406,8 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to search.");
             }
 
+            options = options ?? new SearchOptions();
+
             return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
         }
 
@@ -682,7 +692,7 @@ namespace Soulseek.NET
 
             if (connection == default(IMessageConnection))
             {
-                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
+                connection = MessageConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
                 connection.MessageRead += PeerConnection_MessageRead;
 
                 connection.Connected += async (sender, e) =>
@@ -798,9 +808,8 @@ namespace Soulseek.NET
 
         private void PeerConnection_MessageRead(object sender, Message message)
         {
-            Console.WriteLine($"[PEER MESSAGE]: {message.Code}");
-
             var connection = (IMessageConnection)sender;
+            Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 
             switch (message.Code)
             {
@@ -844,15 +853,13 @@ namespace Soulseek.NET
                     break;
 
                 default:
-                    Console.WriteLine($"Unknown message: [{connection.IPAddress}] {message.Code}: {message.Payload.Length} bytes");
+                    Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
                     break;
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
-            options = options ?? new SearchOptions();
-
             try
             {
                 var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
@@ -895,7 +902,7 @@ namespace Soulseek.NET
 
                 try
                 {
-                    await searchWait.ConfigureAwait(false); // completed in CompleteHandler above
+                    search = await searchWait.ConfigureAwait(false); // completed in CompleteHandler above
                 }
                 catch (OperationCanceledException)
                 {
@@ -926,7 +933,7 @@ namespace Soulseek.NET
 
         private async void ServerConnection_MessageRead(object sender, Message message)
         {
-            Console.WriteLine($"[SERVER MESSAGE]: {message.Code}");
+            Diagnostic.Debug($"Server message received: {message.Code}");
 
             switch (message.Code)
             {
@@ -984,7 +991,7 @@ namespace Soulseek.NET
                     break;
 
                 default:
-                    Console.WriteLine($"Unknown message: {message.Code}: {message.Payload.Length} bytes");
+                    Diagnostic.Debug($"Unhandled server message: {message.Code}; {message.Payload.Length} bytes");
                     break;
             }
         }

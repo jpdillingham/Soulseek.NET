@@ -14,8 +14,15 @@ namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.NET.Messaging;
+    using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Messaging.Tcp;
     using Xunit;
 
     public class SearchAsyncTests
@@ -80,6 +87,38 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
             Assert.Equal("token", ((ArgumentException)ex).ParamName);
+        }
+
+        [Trait("Category", "SearchInternalAsync")]
+        [Theory(DisplayName = "SearchInternalAsync returns completed search"), AutoData]
+        public async Task SearchInternalAsync_Returns_Completed_Search(string searchText, int token)
+        {
+            var options = new SearchOptions();
+            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+
+            var search = new Search(searchText, token, options);
+            search.State = SearchStates.InProgress;
+            search.SetProperty("ResponseList", new List<SearchResponse>() { response });
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromResult(search));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
+
+            IReadOnlyCollection<SearchResponse> responses = null;
+            var ex = await Record.ExceptionAsync(async () => responses = await s.InvokeMethod<Task<IReadOnlyCollection<SearchResponse>>>("SearchInternalAsync", searchText, token, options, null, true));
+
+            var res = responses.ToList()[0];
+
+            Assert.Null(ex);
+
+            Assert.Equal(response.Username, res.Username);
+            Assert.Equal(response.Token, res.Token);
         }
     }
 }
