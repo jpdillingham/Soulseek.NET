@@ -33,14 +33,17 @@ namespace Soulseek.NET
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
+        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         public SoulseekClient(SoulseekClientOptions options)
             : this(DefaultAddress, DefaultPort, options)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class with the specified <paramref name="address"/>
-        ///     and <paramref name="port"/>.
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
