@@ -871,10 +871,9 @@ namespace Soulseek.NET
                     MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), search); // searchWait above
                     ActiveSearches.TryRemove(search.Token, out var _);
 
-                    SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
-
                     if (!waitForCompletion)
                     {
+                        SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
                         search.Dispose();
                     }
                 };
@@ -917,10 +916,9 @@ namespace Soulseek.NET
             }
             finally
             {
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
-
                 if (waitForCompletion)
                 {
+                    SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
                     search.Dispose();
                 }
             }
