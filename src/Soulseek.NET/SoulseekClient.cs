@@ -912,10 +912,13 @@ namespace Soulseek.NET
             }
             catch (Exception ex)
             {
+                search.Complete(SearchStates.Errored);
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
             }
             finally
             {
+                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
+
                 if (waitForCompletion)
                 {
                     search.Dispose();
