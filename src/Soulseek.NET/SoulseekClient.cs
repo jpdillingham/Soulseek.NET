@@ -860,21 +860,20 @@ namespace Soulseek.NET
 
         private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
         {
+            var search = new Search(searchText, token, options);
+
             try
             {
                 var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
-
-                var search = new Search(searchText, token, options);
 
                 search.Completed += (_, state) =>
                 {
                     MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), search); // searchWait above
                     ActiveSearches.TryRemove(search.Token, out var _);
 
-                    SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
-
                     if (!waitForCompletion)
                     {
+                        SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
                         search.Dispose();
                     }
                 };
@@ -900,22 +899,28 @@ namespace Soulseek.NET
                     return default(IReadOnlyCollection<SearchResponse>);
                 }
 
-                try
-                {
-                    search = await searchWait.ConfigureAwait(false); // completed in CompleteHandler above
-                }
-                catch (OperationCanceledException)
-                {
-                    search.Complete(SearchStates.Cancelled);
-                }
+                search = await searchWait.ConfigureAwait(false);
 
                 var responses = search.Responses;
-                search.Dispose();
                 return responses;
+            }
+            catch (OperationCanceledException ex)
+            {
+                search.Complete(SearchStates.Cancelled);
+                throw new SearchException($"Search for {searchText} ({token}) was cancelled.", ex);
             }
             catch (Exception ex)
             {
+                search.Complete(SearchStates.Errored);
                 throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+            }
+            finally
+            {
+                if (waitForCompletion)
+                {
+                    SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
+                    search.Dispose();
+                }
             }
         }
 

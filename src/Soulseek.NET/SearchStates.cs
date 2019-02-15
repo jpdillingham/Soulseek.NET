@@ -57,5 +57,10 @@ namespace Soulseek.NET
         ///     Completed due to the file limit specified in search options having been reached.
         /// </summary>
         FileLimitReached = 32,
+
+        /// <summary>
+        ///     Completed due to error.
+        /// </summary>
+        Errored = 64,
     }
 }

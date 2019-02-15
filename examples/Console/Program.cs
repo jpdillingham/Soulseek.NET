@@ -8,6 +8,7 @@
     using System.Collections.Concurrent;
     using System.IO;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class Program
@@ -69,12 +70,14 @@
                     }
                     else if (cmd.StartsWith("search"))
                     {
+                        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300));
+
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
                         var result = await client.SearchAsync(search, token, new SearchOptions(
                             filterFiles: false,
                             filterResponses: false,
-                            fileLimit: 100000));
+                            fileLimit: 10000), cts.Token, true);
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
