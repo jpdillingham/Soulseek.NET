@@ -12,14 +12,14 @@
 
 namespace Soulseek.NET.Tests.Unit.Client
 {
+    using System;
+    using System.Net;
+    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
-    using System;
-    using System.Net;
-    using System.Threading.Tasks;
     using Xunit;
 
     public class ServerConnection_MessageReadTests
@@ -136,8 +136,6 @@ namespace Soulseek.NET.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
 
-            var ack = new AcknowledgePrivateMessageRequest(id);
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id)))
                 .Returns(Task.CompletedTask);
@@ -156,6 +154,61 @@ namespace Soulseek.NET.Tests.Unit.Client
             s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
             conn.Verify(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles IntegerResponse messages")]
+        [InlineData(MessageCode.ServerParentMinSpeed)]
+        [InlineData(MessageCode.ServerParentSpeedRatio)]
+        [InlineData(MessageCode.ServerWishlistInterval)]
+        public void Handles_IntegerResponse_Messages(MessageCode code)
+        {
+            int value = new Random().Next();
+            int? result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<int>()))
+                .Callback<WaitKey, int>((key, response) => result = response);
+
+            var msg = new MessageBuilder()
+                .Code(code)
+                .WriteInteger(value)
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            Assert.Equal(value, result);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ServerLogin"), AutoData]
+        public void Handles_ServerLogin(bool success, string message, IPAddress ip)
+        {
+            LoginResponse result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<LoginResponse>()))
+                .Callback<WaitKey, LoginResponse>((key, response) => result = response);
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerLogin)
+                .WriteByte((byte)(success ? 1 : 0))
+                .WriteString(message)
+                .WriteBytes(ipBytes)
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            Assert.Equal(success, result.Succeeded);
+            Assert.Equal(message, result.Message);
+            Assert.Equal(ip, result.IPAddress);
         }
     }
 }
