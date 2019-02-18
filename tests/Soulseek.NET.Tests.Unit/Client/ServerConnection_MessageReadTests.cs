@@ -16,8 +16,10 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Moq;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Messaging.Tcp;
     using System;
     using System.Net;
+    using System.Threading.Tasks;
     using Xunit;
 
     public class ServerConnection_MessageReadTests
@@ -89,6 +91,71 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(username, result.Username);
             Assert.Equal(ip, result.IPAddress);
             Assert.Equal(port, result.Port);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivateMessageReceived event on ServerPrivateMessage"), AutoData]
+        public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
+        {
+            var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerPrivateMessage)
+                .WriteInteger(id)
+                .WriteInteger(timeOffset)
+                .WriteString(username)
+                .WriteString(message)
+                .WriteByte((byte)(isAdmin ? 1 : 0))
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options: options, serverConnection: conn.Object);
+
+            PrivateMessage response = null;
+            s.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            Assert.NotNull(response);
+            Assert.Equal(id, response.Id);
+            Assert.Equal(timestamp, response.Timestamp);
+            Assert.Equal(username, response.Username);
+            Assert.Equal(message, response.Message);
+            Assert.Equal(isAdmin, response.IsAdmin);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
+        public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
+        {
+            var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
+
+            var ack = new AcknowledgePrivateMessageRequest(id);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id)))
+                .Returns(Task.CompletedTask);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerPrivateMessage)
+                .WriteInteger(id)
+                .WriteInteger(timeOffset)
+                .WriteString(username)
+                .WriteString(message)
+                .WriteByte((byte)(isAdmin ? 1 : 0))
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, options: options, serverConnection: conn.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            conn.Verify(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id)), Times.Once);
         }
     }
 }
