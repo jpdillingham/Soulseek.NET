@@ -14,7 +14,6 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Diagnostics;
     using System.Diagnostics.CodeAnalysis;
     using System.Linq;
     using System.Net;
