@@ -13,6 +13,8 @@
 namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -209,6 +211,34 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(success, result.Succeeded);
             Assert.Equal(message, result.Message);
             Assert.Equal(ip, result.IPAddress);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ServerRoomList"), AutoData]
+        public void Handles_ServerRoomList(List<Room> rooms)
+        {
+            IReadOnlyCollection<Room> result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
+                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .Code(MessageCode.ServerRoomList)
+                .WriteInteger(rooms.Count);
+
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, builder.Build());
+
+            foreach (var room in rooms)
+            {
+                Assert.Contains(result, r => r.Name == room.Name);
+            }
         }
     }
 }
