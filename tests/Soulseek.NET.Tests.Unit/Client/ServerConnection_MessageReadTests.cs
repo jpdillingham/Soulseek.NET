@@ -240,5 +240,36 @@ namespace Soulseek.NET.Tests.Unit.Client
                 Assert.Contains(result, r => r.Name == room.Name);
             }
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ServerPrivilegedUsers"), AutoData]
+        public void Handles_ServerPrivilegedUsers(string[] names)
+        {
+            IReadOnlyCollection<string> result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .Code(MessageCode.ServerPrivilegedUsers)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            foreach (var name in names)
+            {
+                Assert.Contains(result, n => n == name);
+            }
+        }
     }
 }
