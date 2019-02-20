@@ -32,10 +32,14 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(1)));
 
-            var s = new SoulseekClient("127.0.0.1", 1, null);
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
+            var s = new SoulseekClient("127.0.0.1", 1, null, connectionFactory: connFactory.Object);
             var r = new ConnectToPeerResponse("username", "F", IPAddress.Parse("127.0.0.1"), 1, 1);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
 
             Assert.Null(ex);
         }
@@ -48,9 +52,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -60,7 +68,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
 
             waiter.Verify(m => m.Complete(download.WaitKey), Times.Once);
         }
@@ -73,9 +81,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromException<byte[]>(new Exception()));
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -85,7 +97,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
 
             Assert.Null(ex);
             waiter.Verify(m => m.Complete(download.WaitKey), Times.Never);
@@ -110,9 +122,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Callback<string>(str => message = str);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -122,7 +138,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
@@ -148,9 +164,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Callback<string>(str => message = str);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -160,7 +180,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
@@ -176,9 +196,13 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(Array.Empty<byte>(), bytesDownloaded, 1));
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             DownloadProgressUpdatedEventArgs e = null;
 
-            var s = new SoulseekClient("127.0.0.1", 1, null);
+            var s = new SoulseekClient("127.0.0.1", 1, null, connectionFactory: connFactory.Object);
             s.DownloadProgressUpdated += (sender, args) => { e = args; };
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
@@ -189,7 +213,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
 
             Assert.NotNull(e);
             Assert.Equal(bytesDownloaded, e.BytesDownloaded);
@@ -213,9 +237,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Raises(m => m.Disconnected += null, this, string.Empty);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -225,7 +253,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
 
             waiter.Verify(m => m.Complete(download.WaitKey, data), Times.Once);
         }
@@ -248,9 +276,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Raises(m => m.Disconnected += null, this, string.Empty);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -260,7 +292,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
 
             waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TimeoutException>()), Times.Once);
         }
@@ -283,9 +315,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Raises(m => m.Disconnected += null, this, string.Empty);
 
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
             var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
             var activeDownloads = new ConcurrentDictionary<int, Download>();
             var download = new Download(username, filename, token);
@@ -295,7 +331,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r, conn.Object);
+            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
 
             waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<ConnectionException>()), Times.Once);
         }
