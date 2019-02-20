@@ -327,7 +327,7 @@ namespace Soulseek.NET
                 tokenInternal = (int)generatedToken;
             }
 
-            return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken, null);
+            return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken);
         }
 
         /// <summary>
@@ -508,58 +508,61 @@ namespace Soulseek.NET
             Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message)));
         }
 
-        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
         {
             var download = new Download(username, filename, token);
 
             try
             {
                 // establish a message connection to the peer so that we can request the file
-                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
+                var peerConnection = await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
 
-                // prepare two waits; one for the transfer response to confirm that our request is acknowledge and another for the eventual transfer request sent when the
-                // peer is ready to send the file. the response message should be returned immediately, while the request will be sent only when we've reached the front of the queue.
-                var incomingResponseWait = MessageWaiter.Wait<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken: cancellationToken); // completed by HandlePeerMessage()
-                var incomingRequestWait = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken); // completed by HandlePeerMessage()
+                // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the eventual transfer request sent when the
+                // peer is ready to send the file. the response message should be returned immediately, while the request will be sent only when we've reached the front of the remote queue.
+                var transferRequestAcknowledged = MessageWaiter.Wait<PeerTransferResponse>(
+                    new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken: cancellationToken);
+                var transferStartRequested = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(
+                    new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
-                await connection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
+                // request the file
+                await peerConnection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage()).ConfigureAwait(false);
 
-                var incomingResponse = await incomingResponseWait.ConfigureAwait(false); // completed by HandlePeerMessage()
+                var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
-                if (incomingResponse.Allowed)
+                if (transferRequestAcknowledgement.Allowed)
                 {
                     // in testing peers have, without exception, returned Allowed = false, Message = Queued for this request,
                     // regardless of number of available slots and/or queue depth. this condition is likely only used when
-                    // uploading to a peer, which is not supported.
+                    // uploading to a peer, which is not currently supported.
                     throw new DownloadException($"A condition believed to be unreachable (PeerTransferResponseIncoming.Allowed = true) was reached.  Please report this in a GitHub issue and provide context.");
                 }
 
+                // the download is remotely queued, so put it in the local queue.
                 QueuedDownloads.TryAdd(download.Token, download);
                 download.State = DownloadStates.Queued;
-
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.None, download: download));
 
                 // wait for the peer to respond that they are ready to start the transfer
-                var incomingRequest = await incomingRequestWait.ConfigureAwait(false); // completed by HandlePeerMessage()
+                var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
-                download.Size = incomingRequest.FileSize;
-                download.RemoteToken = incomingRequest.Token;
+                download.Size = transferStartRequest.FileSize;
+                download.RemoteToken = transferStartRequest.Token;
 
+                // move the download from the local queue to active
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryAdd(download.RemoteToken, download);
                 download.State = DownloadStates.Initializing;
-
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
                 // change the following line to await a ConnectToPeerResponse
-                var downloadStartWait = MessageWaiter.Wait(download.WaitKey, cancellationToken: cancellationToken);
-                var downloadCompletionWait = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken); // completed by HandleDownload()
+                var transferConnectionRequest = MessageWaiter.Wait(download.WaitKey, cancellationToken: cancellationToken);
+                var downloadCompleted = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                 // respond to the peer that we are ready to accept the file
-                await connection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
+                await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
 
                 // fetch the CTPR from the wait here
-                await downloadStartWait.ConfigureAwait(false); // completed by HandleDownload()
+                await transferConnectionRequest.ConfigureAwait(false);
 
                 download.State = DownloadStates.InProgress;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
@@ -572,9 +575,9 @@ namespace Soulseek.NET
 
 
 
-                // wait for the transfer to complete
-                download.Data = await downloadCompletionWait.ConfigureAwait(false); // completed by HandleDownload()
 
+                // wait for the transfer to complete
+                download.Data = await downloadCompleted.ConfigureAwait(false);
                 download.State = DownloadStates.Succeeded;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
 
