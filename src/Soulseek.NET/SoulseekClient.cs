@@ -554,8 +554,10 @@ namespace Soulseek.NET
                 download.State = DownloadStates.Initializing;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
-                // change the following line to await a ConnectToPeerResponse
+                // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated transfer connection
                 var transferConnectionInitialized = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
+
+                // also prepare a wait for the overall completion of the download
                 var downloadCompleted = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                 // respond to the peer that we are ready to accept the file
@@ -563,13 +565,13 @@ namespace Soulseek.NET
 
                 download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
 
-                download.State = DownloadStates.InProgress;
-                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
-
                 try
                 {
                     // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[8]).ConfigureAwait(false);
+
+                    download.State = DownloadStates.InProgress;
+                    DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
 
                     var bytes = await download.Connection.ReadAsync(download.Size).ConfigureAwait(false);
 
@@ -587,7 +589,8 @@ namespace Soulseek.NET
                     download.Connection.Disconnect(ex.Message);
                 }
 
-                // wait for the transfer to complete
+                // wait for the download to complete
+                // this wait is either completed (on success) or thrown (on anything other than success) in the Disconnected event handler of the transfer connection
                 download.Data = await downloadCompleted.ConfigureAwait(false);
                 download.State = DownloadStates.Succeeded;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
