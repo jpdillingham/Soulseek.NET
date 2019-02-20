@@ -296,6 +296,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
                 .Returns(Task.FromResult(response));
@@ -305,6 +309,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
@@ -341,6 +347,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromException<object>(new TimeoutException()));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromException<IConnection>(new TimeoutException()));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
@@ -372,6 +380,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
+
             var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
@@ -383,6 +395,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromResult<byte[]>(data));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
@@ -414,6 +428,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
+
             var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
@@ -425,6 +443,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromResult<byte[]>(data));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
@@ -476,6 +496,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
                 .Returns(Task.FromResult(response));
@@ -485,6 +509,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<byte[]>(new MessageReadException()));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
@@ -524,6 +550,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
                 .Returns(Task.FromResult(response));
@@ -533,6 +563,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
