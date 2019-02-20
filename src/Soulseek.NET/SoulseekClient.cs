@@ -154,11 +154,11 @@ namespace Soulseek.NET
 
         private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
+        private IConnectionFactory ConnectionFactory { get; set; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private IMessageConnectionFactory MessageConnectionFactory { get; set; }
         private IWaiter MessageWaiter { get; set; }
-        private IConnectionFactory ConnectionFactory { get; set; }
         private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private IMessageConnection ServerConnection { get; set; }
@@ -727,7 +727,7 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse)
+        private async Task InitializeDownloadAsync(ConnectToPeerResponse downloadResponse)
         {
             int remoteToken = 0;
             IConnection connection = null;
@@ -985,7 +985,7 @@ namespace Soulseek.NET
                         // any other identifying information about the file.
                         if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
                         {
-                            await HandleDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                            await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
                         }
                     }
                     else
