@@ -15,7 +15,9 @@ namespace Soulseek.NET.Tests.Unit.Client
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging;
@@ -491,15 +493,15 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadInternalAsync")]
-        [Fact(DisplayName = "DownloadInternalAsync raises Download events on cancellation")]
-        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation()
+        [Theory(DisplayName = "DownloadInternalAsync raises Download events on cancellation"), AutoData]
+        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(1, false, 1, string.Empty);
-            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, "username", 1);
+            var response = new PeerTransferResponse(token, false, size, string.Empty);
+            var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
-            var request = new PeerTransferRequest(TransferDirection.Download, 1, "filename", 42);
+            var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
@@ -510,10 +512,15 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
+            var connFactory = new Mock<IMessageConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var events = new List<DownloadStateChangedEventArgs>();
@@ -523,7 +530,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 events.Add(e);
             };
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", "username", "filename", 1, null, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null));
 
             Assert.NotNull(ex);
             Assert.IsType<DownloadException>(ex);
