@@ -783,28 +783,7 @@ namespace Soulseek.NET
                 };
 
                 download.Connection = connection;
-                MessageWaiter.Complete(download.WaitKey, connection); // complete the "download start" wait
-
-                //try
-                //{
-                //    // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
-                //    await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
-
-                //    var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
-
-                //    download.Data = bytes;
-                //    download.State = DownloadStates.Succeeded;
-                //    connection.Disconnect("Transfer complete.");
-                //}
-                //catch (TimeoutException)
-                //{
-                //    download.State = DownloadStates.TimedOut;
-                //    connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.ReadTimeout} seconds of inactivity.");
-                //}
-                //catch (Exception ex)
-                //{
-                //    connection.Disconnect(ex.Message);
-                //}
+                MessageWaiter.Complete(download.WaitKey, connection);
             }
         }
 
