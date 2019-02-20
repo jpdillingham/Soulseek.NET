@@ -162,7 +162,7 @@ namespace Soulseek.NET
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
         /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IEnumerable<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.

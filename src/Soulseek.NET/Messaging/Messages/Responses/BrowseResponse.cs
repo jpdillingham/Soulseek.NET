@@ -12,7 +12,9 @@
 
 namespace Soulseek.NET.Messaging.Messages
 {
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
     using Soulseek.NET.Exceptions;
 
     /// <summary>
@@ -25,23 +27,23 @@ namespace Soulseek.NET.Messaging.Messages
         /// </summary>
         /// <param name="directoryCount">The optional directory count.</param>
         /// <param name="directoryList">The optional directory list.</param>
-        public BrowseResponse(int directoryCount, List<Directory> directoryList = null)
+        public BrowseResponse(int directoryCount, IEnumerable<Directory> directoryList = null)
         {
             DirectoryCount = directoryCount;
-            DirectoryList = directoryList ?? new List<Directory>();
+            DirectoryList = directoryList ?? Array.Empty<Directory>();
         }
 
         /// <summary>
         ///     Gets the list of directories.
         /// </summary>
-        public IEnumerable<Directory> Directories => DirectoryList.AsReadOnly();
+        public IReadOnlyCollection<Directory> Directories => DirectoryList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the number of directories.
         /// </summary>
         public int DirectoryCount { get; }
 
-        private List<Directory> DirectoryList { get; }
+        private IEnumerable<Directory> DirectoryList { get; }
 
         /// <summary>
         ///     Parses a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="message"/>.

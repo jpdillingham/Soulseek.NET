@@ -1,19 +1,21 @@
 ﻿namespace Console
 {
     using Newtonsoft.Json;
+    using Soulseek;
     using Soulseek.NET;
     using Soulseek.NET.Messaging.Messages;
     using System;
     using System.Collections.Concurrent;
     using System.IO;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     class Program
     {
         static async Task Main(string[] args)
         {
-            using (var client = new SoulseekClient())
+            using (var client = new SoulseekClient(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug)))
             {
                 client.StateChanged += Client_ServerStateChanged;
                 client.SearchResponseReceived += Client_SearchResponseReceived;
@@ -68,12 +70,14 @@
                     }
                     else if (cmd.StartsWith("search"))
                     {
+                        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300));
+
                         var search = string.Join(' ', cmd.Split(' ').Skip(1));
                         var token = new Random().Next();
                         var result = await client.SearchAsync(search, token, new SearchOptions(
                             filterFiles: false,
                             filterResponses: false,
-                            fileLimit: 100000));
+                            fileLimit: 10000), cts.Token, true);
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
@@ -116,7 +120,7 @@
                         });
 
                         await task;
-                        
+
                         Console.WriteLine($"All files complete.");
                     }
                     else if (cmd.StartsWith("download"))

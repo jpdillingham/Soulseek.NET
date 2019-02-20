@@ -10,11 +10,12 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Tests.Unit.Client
+namespace Soulseek.NET.Tests.Unit
 {
     using System;
     using System.Collections.Concurrent;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Messaging.Tcp;
@@ -23,6 +24,15 @@ namespace Soulseek.NET.Tests.Unit.Client
 
     public class SoulseekClientTests
     {
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with with given options"), AutoData]
+        public void Instantiates_With_Given_Options(SoulseekClientOptions options)
+        {
+            var s = new SoulseekClient(options);
+
+            Assert.Equal(options, s.Options);
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with defaults for minimal constructor")]
         public void Instantiates_With_Defaults_For_Minimal_Constructor()

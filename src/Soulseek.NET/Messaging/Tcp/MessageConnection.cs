@@ -61,7 +61,7 @@ namespace Soulseek.NET.Messaging.Tcp
 
             Connected += async (sender, e) =>
             {
-                Task.Run(() => ReadContinuouslyAsync()).Forget();
+                Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
                 await SendDeferredMessages().ConfigureAwait(false);
             };
         }

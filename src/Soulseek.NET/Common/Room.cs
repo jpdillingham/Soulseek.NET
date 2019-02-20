@@ -22,7 +22,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="name">The room name.</param>
         /// <param name="userCount">The number of users in the room.</param>
-        internal Room(string name, int userCount)
+        public Room(string name, int userCount)
         {
             Name = name;
             UserCount = userCount;
