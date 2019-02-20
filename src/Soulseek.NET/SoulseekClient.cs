@@ -727,13 +727,14 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse, IConnection connection = null)
+        private async Task HandleDownloadAsync(ConnectToPeerResponse downloadResponse)
         {
             int remoteToken = 0;
+            IConnection connection = null;
 
             try
             {
-                connection = connection ?? await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
+                connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions).ConfigureAwait(false);
                 var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
                 remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
             }
