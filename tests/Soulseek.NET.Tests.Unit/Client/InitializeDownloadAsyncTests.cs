@@ -1,4 +1,4 @@
-﻿// <copyright file="HandleDownloadAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="InitializeDownloadAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -22,9 +22,9 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Soulseek.NET.Tcp;
     using Xunit;
 
-    public class HandleDownloadAsyncTests
+    public class InitializeDownloadAsyncTests
     {
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Fact(DisplayName = "Does not throw on download missing from ActiveDownloads")]
         public async Task Does_Not_Throw_On_Download_Missing_From_ActiveDownloads()
         {
@@ -39,12 +39,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, null, connectionFactory: connFactory.Object);
             var r = new ConnectToPeerResponse("username", "F", IPAddress.Parse("127.0.0.1"), 1, 1);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
             Assert.Null(ex);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Completes 'start' wait when download exists"), AutoData]
         public async Task Completes_Start_Wait_When_Download_Exists(string username, string filename, int token, int remoteToken)
         {
@@ -68,12 +68,12 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
+            await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
             waiter.Verify(m => m.Complete(download.WaitKey), Times.Once);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Does not throw on remote token read Exception"), AutoData]
         public async Task Does_Not_Throw_On_Remote_Token_Read_Exception(string username, string filename, int token, int remoteToken)
         {
@@ -97,13 +97,13 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
             Assert.Null(ex);
             waiter.Verify(m => m.Complete(download.WaitKey), Times.Never);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Transfer timeout disconnects and does not throw"), AutoData]
         public async Task Transfer_Timeout_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
         {
@@ -138,14 +138,14 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
             Assert.Contains("timed out", message, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Transfer exception disconnects and does not throw"), AutoData]
         public async Task Transfer_Exception_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
         {
@@ -180,14 +180,14 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("HandleDownloadAsync", r));
+            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
             Assert.Null(ex);
             conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
             Assert.Contains("fake exception", message, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Raises DownloadProgressUpdated event on data read"), AutoData]
         public async Task Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, string filename, int token, int remoteToken, int bytesDownloaded)
         {
@@ -213,13 +213,13 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
+            await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
             Assert.NotNull(e);
             Assert.Equal(bytesDownloaded, e.BytesDownloaded);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Completes download wait with expected data on successful transfer"), AutoData]
         public async Task Completes_Download_Wait_With_Expected_Data_On_Successful_Transfer(string username, string filename, int token, int remoteToken, byte[] data)
         {
@@ -253,12 +253,12 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
+            await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
             waiter.Verify(m => m.Complete(download.WaitKey, data), Times.Once);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Completes download wait with TimeoutException on timeout"), AutoData]
         public async Task Completes_Download_Wait_With_TimeoutException_On_Timeout(string username, string filename, int token, int remoteToken)
         {
@@ -292,12 +292,12 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
+            await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
             waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TimeoutException>()), Times.Once);
         }
 
-        [Trait("Category", "HandleDownloadAsync")]
+        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Completes download wait with ConnectionException on exception"), AutoData]
         public async Task Completes_Download_Wait_With_ConnectionException_On_Exception(string username, string filename, int token, int remoteToken)
         {
@@ -331,7 +331,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("HandleDownloadAsync", r);
+            await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
             waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<ConnectionException>()), Times.Once);
         }
