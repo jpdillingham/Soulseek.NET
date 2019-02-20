@@ -16,6 +16,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -571,6 +572,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
 
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
+
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), null, null))
                 .Returns(Task.FromResult(response));
@@ -580,10 +585,13 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
+
             var connFactory = new Mock<IMessageConnectionFactory>();
             connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
