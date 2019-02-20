@@ -555,22 +555,17 @@ namespace Soulseek.NET
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
                 // change the following line to await a ConnectToPeerResponse
-                var transferConnectionRequest = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
+                var transferConnectionInitialized = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
                 var downloadCompleted = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                 // respond to the peer that we are ready to accept the file
                 await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
 
-                // fetch the CTPR from the wait here
-                download.Connection = await transferConnectionRequest.ConfigureAwait(false);
+                download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
 
                 download.State = DownloadStates.InProgress;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
 
-
-
-
-                // stick the code from HandleDownloadAsync() here
                 try
                 {
                     // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
@@ -591,10 +586,6 @@ namespace Soulseek.NET
                 {
                     download.Connection.Disconnect(ex.Message);
                 }
-
-
-
-
 
                 // wait for the transfer to complete
                 download.Data = await downloadCompleted.ConfigureAwait(false);
