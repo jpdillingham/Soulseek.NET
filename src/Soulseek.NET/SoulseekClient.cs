@@ -555,14 +555,14 @@ namespace Soulseek.NET
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
                 // change the following line to await a ConnectToPeerResponse
-                var transferConnectionRequest = MessageWaiter.Wait(download.WaitKey, cancellationToken: cancellationToken);
+                var transferConnectionRequest = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
                 var downloadCompleted = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                 // respond to the peer that we are ready to accept the file
                 await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage()).ConfigureAwait(false);
 
                 // fetch the CTPR from the wait here
-                await transferConnectionRequest.ConfigureAwait(false);
+                download.Connection = await transferConnectionRequest.ConfigureAwait(false);
 
                 download.State = DownloadStates.InProgress;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
@@ -571,6 +571,26 @@ namespace Soulseek.NET
 
 
                 // stick the code from HandleDownloadAsync() here
+                try
+                {
+                    // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
+                    await download.Connection.WriteAsync(new byte[8]).ConfigureAwait(false);
+
+                    var bytes = await download.Connection.ReadAsync(download.Size).ConfigureAwait(false);
+
+                    download.Data = bytes;
+                    download.State = DownloadStates.Succeeded;
+                    download.Connection.Disconnect("Transfer complete.");
+                }
+                catch (TimeoutException)
+                {
+                    download.State = DownloadStates.TimedOut;
+                    download.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.ReadTimeout} seconds of inactivity.");
+                }
+                catch (Exception ex)
+                {
+                    download.Connection.Disconnect(ex.Message);
+                }
 
 
 
@@ -746,8 +766,6 @@ namespace Soulseek.NET
 
             if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
-                MessageWaiter.Complete(download.WaitKey); // complete the "download start" wait
-
                 connection.DataRead += (sender, e) =>
                 {
                     var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
@@ -771,27 +789,28 @@ namespace Soulseek.NET
                 };
 
                 download.Connection = connection;
+                MessageWaiter.Complete(download.WaitKey, connection); // complete the "download start" wait
 
-                try
-                {
-                    // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
-                    await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
+                //try
+                //{
+                //    // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
+                //    await connection.WriteAsync(new byte[8]).ConfigureAwait(false);
 
-                    var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
+                //    var bytes = await connection.ReadAsync(download.Size).ConfigureAwait(false);
 
-                    download.Data = bytes;
-                    download.State = DownloadStates.Succeeded;
-                    connection.Disconnect("Transfer complete.");
-                }
-                catch (TimeoutException)
-                {
-                    download.State = DownloadStates.TimedOut;
-                    connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.ReadTimeout} seconds of inactivity.");
-                }
-                catch (Exception ex)
-                {
-                    connection.Disconnect(ex.Message);
-                }
+                //    download.Data = bytes;
+                //    download.State = DownloadStates.Succeeded;
+                //    connection.Disconnect("Transfer complete.");
+                //}
+                //catch (TimeoutException)
+                //{
+                //    download.State = DownloadStates.TimedOut;
+                //    connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.ReadTimeout} seconds of inactivity.");
+                //}
+                //catch (Exception ex)
+                //{
+                //    connection.Disconnect(ex.Message);
+                //}
             }
         }
 
