@@ -104,63 +104,14 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "InitializeDownloadAsync")]
-        [Theory(DisplayName = "Transfer timeout disconnects and does not throw"), AutoData]
-        public async Task Transfer_Timeout_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
-        {
-            var reads = 0;
-            string message = null;
-
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
-                .Callback<int>(c => reads++)
-                .Returns(() =>
-                {
-                    return reads == 1 ?
-                        Task.FromResult(BitConverter.GetBytes(remoteToken)) :
-                        Task.FromException<byte[]>(new TimeoutException());
-                });
-            conn.Setup(m => m.Disconnect(It.IsAny<string>()))
-                .Callback<string>(str => message = str);
-
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-                .Returns(conn.Object);
-
-            var waiter = new Mock<IWaiter>();
-
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
-
-            var activeDownloads = new ConcurrentDictionary<int, Download>();
-            var download = new Download(username, filename, token);
-            activeDownloads.TryAdd(remoteToken, download);
-
-            s.SetProperty("ActiveDownloads", activeDownloads);
-
-            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
-
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
-
-            Assert.Null(ex);
-            conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
-            Assert.Contains("timed out", message, StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        [Trait("Category", "InitializeDownloadAsync")]
         [Theory(DisplayName = "Transfer exception disconnects and does not throw"), AutoData]
         public async Task Transfer_Exception_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
         {
-            var reads = 0;
             string message = null;
 
             var conn = new Mock<IConnection>();
             conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
-                .Callback<int>(c => reads++)
-                .Returns(() =>
-                {
-                    return reads == 1 ?
-                        Task.FromResult(BitConverter.GetBytes(remoteToken)) :
-                        Task.FromException<byte[]>(new Exception("fake exception"));
-                });
+                .Returns(Task.FromException<byte[]>(new Exception("fake exception")));
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Callback<string>(str => message = str);
 
