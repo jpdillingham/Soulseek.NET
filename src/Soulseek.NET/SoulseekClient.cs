@@ -565,6 +565,28 @@ namespace Soulseek.NET
 
                 download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
 
+                download.Connection.DataRead += (sender, e) =>
+                {
+                    var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
+                    DownloadProgressUpdated?.Invoke(this, eventArgs);
+                };
+
+                download.Connection.Disconnected += (sender, message) =>
+                {
+                    if (download.State.HasFlag(DownloadStates.Succeeded))
+                    {
+                        MessageWaiter.Complete(download.WaitKey, download.Data);
+                    }
+                    else if (download.State.HasFlag(DownloadStates.TimedOut))
+                    {
+                        MessageWaiter.Throw(download.WaitKey, new TimeoutException(message));
+                    }
+                    else
+                    {
+                        MessageWaiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+                    }
+                };
+
                 try
                 {
                     // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
@@ -761,29 +783,6 @@ namespace Soulseek.NET
 
             if (ActiveDownloads.TryGetValue(remoteToken, out var download))
             {
-                connection.DataRead += (sender, e) =>
-                {
-                    var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
-                    DownloadProgressUpdated?.Invoke(this, eventArgs);
-                };
-
-                connection.Disconnected += (sender, message) =>
-                {
-                    if (download.State.HasFlag(DownloadStates.Succeeded))
-                    {
-                        MessageWaiter.Complete(download.WaitKey, download.Data);
-                    }
-                    else if (download.State.HasFlag(DownloadStates.TimedOut))
-                    {
-                        MessageWaiter.Throw(download.WaitKey, new TimeoutException(message));
-                    }
-                    else
-                    {
-                        MessageWaiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
-                    }
-                };
-
-                download.Connection = connection;
                 MessageWaiter.Complete(download.WaitKey, connection);
             }
         }
