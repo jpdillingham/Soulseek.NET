@@ -755,6 +755,7 @@ namespace Soulseek.NET
             catch (Exception ex)
             {
                 Diagnostic.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
+                connection.Disconnect($"Failed to initialize transfer: {ex.Message}");
                 return;
             }
 
