@@ -819,50 +819,57 @@ namespace Soulseek.NET
             var connection = (IMessageConnection)sender;
             Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 
-            switch (message.Code)
+            try
             {
-                case MessageCode.PeerSearchResponse:
-                    var searchResponse = SearchResponseSlim.Parse(message);
-                    if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
-                    {
-                        search.AddResponse(searchResponse);
-                    }
+                switch (message.Code)
+                {
+                    case MessageCode.PeerSearchResponse:
+                        var searchResponse = SearchResponseSlim.Parse(message);
+                        if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
+                        {
+                            search.AddResponse(searchResponse);
+                        }
 
-                    break;
+                        break;
 
-                case MessageCode.PeerBrowseResponse:
-                    var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username);
-                    try
-                    {
-                        MessageWaiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
-                    }
-                    catch (Exception ex)
-                    {
-                        MessageWaiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
-                    }
+                    case MessageCode.PeerBrowseResponse:
+                        var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username);
+                        try
+                        {
+                            MessageWaiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageWaiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
+                        }
 
-                    break;
+                        break;
 
-                case MessageCode.PeerTransferResponse:
-                    var transferResponse = PeerTransferResponse.Parse(message);
-                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
-                    break;
+                    case MessageCode.PeerTransferResponse:
+                        var transferResponse = PeerTransferResponse.Parse(message);
+                        MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
+                        break;
 
-                case MessageCode.PeerTransferRequest:
-                    var transferRequest = PeerTransferRequest.Parse(message);
-                    MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                    case MessageCode.PeerTransferRequest:
+                        var transferRequest = PeerTransferRequest.Parse(message);
+                        MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
 
-                    break;
+                        break;
 
-                case MessageCode.PeerQueueFailed:
-                    var pqfResponse = PeerQueueFailedResponse.Parse(message);
-                    Console.WriteLine($"[PEER QUEUE FAILED]: {pqfResponse.Filename}; {pqfResponse.Message}");
+                    case MessageCode.PeerQueueFailed:
+                        var pqfResponse = PeerQueueFailedResponse.Parse(message);
+                        Console.WriteLine($"[PEER QUEUE FAILED]: {pqfResponse.Filename}; {pqfResponse.Message}");
 
-                    break;
+                        break;
 
-                default:
-                    Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
-                    break;
+                    default:
+                        Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error handling peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
             }
         }
 
@@ -948,68 +955,75 @@ namespace Soulseek.NET
         {
             Diagnostic.Debug($"Server message received: {message.Code}");
 
-            switch (message.Code)
+            try
             {
-                case MessageCode.ServerParentMinSpeed:
-                case MessageCode.ServerParentSpeedRatio:
-                case MessageCode.ServerWishlistInterval:
-                    MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
-                    break;
+                switch (message.Code)
+                {
+                    case MessageCode.ServerParentMinSpeed:
+                    case MessageCode.ServerParentSpeedRatio:
+                    case MessageCode.ServerWishlistInterval:
+                        MessageWaiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
+                        break;
 
-                case MessageCode.ServerLogin:
-                    MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
-                    break;
+                    case MessageCode.ServerLogin:
+                        MessageWaiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
+                        break;
 
-                case MessageCode.ServerRoomList:
-                    MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
-                    break;
+                    case MessageCode.ServerRoomList:
+                        MessageWaiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
+                        break;
 
-                case MessageCode.ServerPrivilegedUsers:
-                    MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
-                    break;
+                    case MessageCode.ServerPrivilegedUsers:
+                        MessageWaiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
+                        break;
 
-                case MessageCode.ServerConnectToPeer:
-                    var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+                    case MessageCode.ServerConnectToPeer:
+                        var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
 
-                    if (connectToPeerResponse.Type == "F")
-                    {
-                        // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
-                        // any other identifying information about the file.
-                        if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
+                        if (connectToPeerResponse.Type == "F")
                         {
-                            await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                            // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
+                            // any other identifying information about the file.
+                            if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
+                            {
+                                await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                            }
                         }
                         else
                         {
-                            Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                            await GetSolicitedPeerConnectionAsync(connectToPeerResponse, Options.PeerConnectionOptions).ConfigureAwait(false);
                         }
-                    }
-                    else
-                    {
-                        await GetSolicitedPeerConnectionAsync(connectToPeerResponse, Options.PeerConnectionOptions).ConfigureAwait(false);
-                    }
 
-                    break;
+                        break;
 
-                case MessageCode.ServerPrivateMessage:
-                    var pm = PrivateMessage.Parse(message);
-                    PrivateMessageReceived?.Invoke(this, pm);
+                    case MessageCode.ServerPrivateMessage:
+                        var pm = PrivateMessage.Parse(message);
+                        PrivateMessageReceived?.Invoke(this, pm);
 
-                    if (Options.AutoAcknowledgePrivateMessages)
-                    {
-                        await AcknowledgePrivateMessageInternalAsync(pm.Id).ConfigureAwait(false);
-                    }
+                        if (Options.AutoAcknowledgePrivateMessages)
+                        {
+                            await AcknowledgePrivateMessageInternalAsync(pm.Id).ConfigureAwait(false);
+                        }
 
-                    break;
+                        break;
 
-                case MessageCode.ServerGetPeerAddress:
-                    var response = GetPeerAddressResponse.Parse(message);
-                    MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
-                    break;
+                    case MessageCode.ServerGetPeerAddress:
+                        var response = GetPeerAddressResponse.Parse(message);
+                        MessageWaiter.Complete(new WaitKey(message.Code, response.Username), response);
+                        break;
 
-                default:
-                    Diagnostic.Debug($"Unhandled server message: {message.Code}; {message.Payload.Length} bytes");
-                    break;
+                    default:
+                        Diagnostic.Debug($"Unhandled server message: {message.Code}; {message.Payload.Length} bytes");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error handling server message: {message.Code}; {ex.Message}", ex);
             }
         }
     }
