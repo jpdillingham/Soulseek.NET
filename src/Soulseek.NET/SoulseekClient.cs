@@ -979,6 +979,10 @@ namespace Soulseek.NET
                         {
                             await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
                         }
+                        else
+                        {
+                            Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                        }
                     }
                     else
                     {
