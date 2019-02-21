@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
@@ -305,6 +306,70 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Equal(port, newConn.Port);
 
             connMgr.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Ignores ConnectToPeerResponse 'F' on unexpected connection"), AutoData]
+        public void Ignores_ConnectToPeerResponse_F_On_Unexpected_Connection(string username, int token, IPAddress ip, int port)
+        {
+            var diagnostic = new Mock<IDiagnosticFactory>();
+            diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
+
+            var ex = Record.Exception(() => s.InvokeMethod("ServerConnection_MessageRead", null, msg));
+            var active = s.GetProperty<ConcurrentDictionary<int, Download>>("ActiveDownloads");
+            var queued = s.GetProperty<ConcurrentDictionary<int, Download>>("QueuedDownloads");
+
+            Assert.Null(ex);
+            Assert.Empty(active);
+            Assert.Empty(queued);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on ignored ConnectToPeerResponse 'F'"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Ignored_ConnectToPeerResponse_F(string username, int token, IPAddress ip, int port)
+        {
+            var diagnostic = new Mock<IDiagnosticFactory>();
+            diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+
+            var s = new SoulseekClient();
+            s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
+
+            Assert.Single(diagnostics);
         }
     }
 }
