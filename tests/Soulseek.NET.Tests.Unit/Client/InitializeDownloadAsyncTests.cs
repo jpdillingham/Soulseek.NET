@@ -70,7 +70,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
-            waiter.Verify(m => m.Complete(download.WaitKey), Times.Once);
+            waiter.Verify(m => m.Complete(download.WaitKey, It.IsAny<IConnection>()), Times.Once);
         }
 
         [Trait("Category", "InitializeDownloadAsync")]
