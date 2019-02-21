@@ -22,6 +22,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class ServerConnection_MessageReadTests
@@ -239,6 +240,71 @@ namespace Soulseek.NET.Tests.Unit.Client
             {
                 Assert.Contains(result, r => r.Name == room.Name);
             }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ServerPrivilegedUsers"), AutoData]
+        public void Handles_ServerPrivilegedUsers(string[] names)
+        {
+            IReadOnlyCollection<string> result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .Code(MessageCode.ServerPrivilegedUsers)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            foreach (var name in names)
+            {
+                Assert.Contains(result, n => n == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Creates connection on ConnectToPeerResponse 'P'"), AutoData]
+        public void Creates_Connection_On_ConnectToPeerResponse_P(string username, int token, IPAddress ip, int port)
+        {
+            IMessageConnection newConn = null;
+
+            var connMgr = new Mock<IConnectionManager<IMessageConnection>>();
+            connMgr.Setup(m => m.AddAsync(It.IsAny<IMessageConnection>()))
+                .Returns(Task.FromResult(new MessageConnection(MessageConnectionType.Peer, username, ip, port)))
+                .Callback<IMessageConnection>(c => newConn = c);
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString(username)
+                .WriteString("P")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: connMgr.Object);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            Assert.Equal(username, newConn.Username);
+            Assert.Equal(ip, newConn.IPAddress);
+            Assert.Equal(port, newConn.Port);
+
+            connMgr.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
         }
     }
 }
