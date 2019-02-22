@@ -403,5 +403,48 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             connFactory.Verify(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()), Times.Once);
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on Exception"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Exception(string filename, string username, int token, IPAddress ip, int port)
+        {
+            var diagnostic = new Mock<IDiagnosticFactory>();
+            diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()))
+                .Throws(new Exception());
+
+            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+
+            var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
+            s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+
+            var active = new ConcurrentDictionary<int, Download>();
+            active.TryAdd(token, new Download(username, filename, token));
+
+            s.SetProperty("ActiveDownloads", active);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
+
+            Assert.Single(diagnostics);
+        }
     }
 }
