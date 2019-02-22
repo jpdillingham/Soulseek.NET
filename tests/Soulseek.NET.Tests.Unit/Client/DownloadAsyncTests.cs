@@ -106,24 +106,6 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws DownloadException on token generation failure")]
-        public async Task DownloadAsync_Throws_DownloadException_On_Token_Generation_Failure()
-        {
-            var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.TryGetToken(It.IsAny<Func<int, bool>>(), out It.Ref<int?>.IsAny))
-                .Returns(false);
-
-            var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: tokenFactory.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
-
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.Contains("Unable to generate a unique token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
-        }
-
-        [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync throws DownloadException on peer message connection timeout")]
         public async Task DownloadAsync_Throws_DownloadException_On_Peer_Message_Connection_Timeout()
         {
