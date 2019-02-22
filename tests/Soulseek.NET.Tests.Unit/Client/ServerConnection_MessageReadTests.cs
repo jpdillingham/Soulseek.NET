@@ -371,5 +371,37 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.Single(diagnostics);
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
+        public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
+        {
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()))
+                .Returns(new Mock<IConnection>().Object);
+
+            var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
+
+            var active = new ConcurrentDictionary<int, Download>();
+            active.TryAdd(token, new Download(username, filename, token));
+
+            s.SetProperty("ActiveDownloads", active);
+
+            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+            connFactory.Verify(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()), Times.Once);
+        }
     }
 }
