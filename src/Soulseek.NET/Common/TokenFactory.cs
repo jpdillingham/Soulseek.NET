@@ -28,11 +28,6 @@ namespace Soulseek.NET
         /// <param name="start">The optional starting value.</param>
         public TokenFactory(int start = 0)
         {
-            if (start == int.MaxValue)
-            {
-                throw new ArgumentException($"Invalid attempt to initialize the token factory starting value with the maximum integer value.", nameof(start));
-            }
-
             current = start;
         }
 
@@ -44,12 +39,9 @@ namespace Soulseek.NET
         {
             lock (syncLock)
             {
-                if (current == int.MaxValue)
-                {
-                    current = 0;
-                }
-
-                return current++;
+                var retVal = current;
+                current = current == int.MaxValue ? 0 : current + 1;
+                return retVal;
             }
         }
     }
