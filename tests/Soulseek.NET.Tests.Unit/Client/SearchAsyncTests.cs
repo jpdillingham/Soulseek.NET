@@ -124,6 +124,26 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync generates new token"), AutoData]
+        public async Task SearchAsync_Generates_New_Token(string searchText, int startingToken)
+        {
+            WaitKey waitKey = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+                .Callback<WaitKey, CancellationToken?>((k, t) => waitKey = k);
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, options: new SoulseekClientOptions(startingToken: startingToken));
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            IReadOnlyCollection<SearchResponse> responses = null;
+            var ex = await Record.ExceptionAsync(async () => responses = await s.SearchAsync(searchText));
+
+            Assert.NotNull(ex); // swallow exception
+            Assert.Equal(new WaitKey(MessageCode.ServerFileSearch, startingToken), waitKey);
+        }
+
+        [Trait("Category", "SearchAsync")]
         [Theory(DisplayName = "SearchAsync adds search to ActiveSearches"), AutoData]
         public async Task SearchInternalAsync_Adds_Search_To_ActiveSearches(string searchText, int token)
         {
