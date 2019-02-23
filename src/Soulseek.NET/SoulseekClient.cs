@@ -193,7 +193,9 @@ namespace Soulseek.NET
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation response.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
@@ -272,18 +274,37 @@ namespace Soulseek.NET
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
-        ///     and with the optionally specified <paramref name="token"/> and <paramref name="cancellationToken"/>.
+        ///     with the optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
-        /// <remarks>If no <paramref name="token"/> is specified, one will be randomly generated internally.</remarks>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including a byte array containing the file contents.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null)
+        {
+            return DownloadAsync(username, filename, TokenFactory.GetToken(), cancellationToken);
+        }
+
+        /// <summary>
+        ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -305,24 +326,12 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            bool tokenExists(int t) => QueuedDownloads.ContainsKey(t) || ActiveDownloads.Any(d => d.Value.Token == t);
-            int tokenInternal;
-
-            if (token != null)
+            if (QueuedDownloads.ContainsKey(token) || ActiveDownloads.Any(d => d.Value.Token == token))
             {
-                if (tokenExists((int)token))
-                {
-                    throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
-                }
-
-                tokenInternal = (int)token;
-            }
-            else
-            {
-                tokenInternal = TokenFactory.GetToken();
+                throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
             }
 
-            return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken);
+            return DownloadInternalAsync(username, filename, token, cancellationToken);
         }
 
         /// <summary>
@@ -331,9 +340,13 @@ namespace Soulseek.NET
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
         /// <returns>A Task representing the operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="LoginException">Thrown when the login fails, or when an exception is encountered during the operation.</exception>
+        /// <exception cref="LoginException">
+        ///     Thrown when the login fails, or when an exception is encountered during the operation.
+        /// </exception>
         public Task LoginAsync(string username, string password)
         {
             if (string.IsNullOrEmpty(username))
@@ -360,24 +373,44 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Asynchronously searches for the specified <paramref name="searchText"/> and unique <paramref name="token"/> and
-        ///     with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> and with the optionally specified
+        ///     <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <returns>The operation context, including the search results.</returns>
+        /// <exception cref="ConnectionException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        /// </exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            return SearchAsync(searchText, TokenFactory.GetToken(), options, cancellationToken);
+        }
+
+        /// <summary>
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
+        ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
         /// <returns>The operation context, including the search results.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
-        /// <exception cref="SearchException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
@@ -411,7 +444,9 @@ namespace Soulseek.NET
         /// <param name="username">The user to which the message is to be sent.</param>
         /// <param name="message">The message to send.</param>
         /// <returns>A Task representing the operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="username"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
         public Task SendPrivateMessageAsync(string username, string message)
@@ -511,8 +546,9 @@ namespace Soulseek.NET
                 // establish a message connection to the peer so that we can request the file
                 var peerConnection = await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
 
-                // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the eventual transfer request sent when the
-                // peer is ready to send the file. the response message should be returned immediately, while the request will be sent only when we've reached the front of the remote queue.
+                // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
+                // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
+                // immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = MessageWaiter.Wait<PeerTransferResponse>(
                     new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken: cancellationToken);
                 var transferStartRequested = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(
@@ -548,7 +584,8 @@ namespace Soulseek.NET
                 download.State = DownloadStates.Initializing;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
-                // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated transfer connection
+                // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
+                // transfer connection
                 var transferConnectionInitialized = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
 
                 // also prepare a wait for the overall completion of the download
@@ -605,8 +642,8 @@ namespace Soulseek.NET
                     download.Connection.Disconnect(ex.Message);
                 }
 
-                // wait for the download to complete
-                // this wait is either completed (on success) or thrown (on anything other than success) in the Disconnected event handler of the transfer connection
+                // wait for the download to complete this wait is either completed (on success) or thrown (on anything other than
+                // success) in the Disconnected event handler of the transfer connection
                 download.Data = await downloadCompleted.ConfigureAwait(false);
                 download.State = DownloadStates.Succeeded;
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
@@ -962,8 +999,8 @@ namespace Soulseek.NET
 
                         if (connectToPeerResponse.Type == "F")
                         {
-                            // ensure that we are expecting at least one file from this user before we connect. the response doesn't contain
-                            // any other identifying information about the file.
+                            // ensure that we are expecting at least one file from this user before we connect. the response
+                            // doesn't contain any other identifying information about the file.
                             if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
                             {
                                 await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
