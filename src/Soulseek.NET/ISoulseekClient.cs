@@ -24,8 +24,6 @@ namespace Soulseek.NET
     /// </summary>
     public interface ISoulseekClient : IDisposable
     {
-        #region Public Events
-
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
@@ -61,10 +59,6 @@ namespace Soulseek.NET
         /// </summary>
         event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
-        #endregion Public Events
-
-        #region Public Properties
-
         /// <summary>
         ///     Gets or sets the address of the server to which to connect.
         /// </summary>
@@ -89,10 +83,6 @@ namespace Soulseek.NET
         ///     Gets the name of the currently signed in user.
         /// </summary>
         string Username { get; }
-
-        #endregion Public Properties
-
-        #region Public Methods
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -156,13 +146,12 @@ namespace Soulseek.NET
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <param name="waitForCompletion">A value indicating whether the search should wait completion before returning.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">Thrown when the client is not connected to the server, or no user is logged in.</exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.</exception>
         /// <exception cref="ArgumentException">Thrown when a search with the specified <paramref name="token"/> is already in progress.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
@@ -171,6 +160,5 @@ namespace Soulseek.NET
         /// <param name="message">The message to send.</param>
         /// <returns>A Task representing the operation.</returns>
         Task SendPrivateMessageAsync(string username, string message);
-        #endregion Public Methods
     }
 }
