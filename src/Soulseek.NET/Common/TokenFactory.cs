@@ -19,9 +19,17 @@ namespace Soulseek.NET
     /// </summary>
     public class TokenFactory : ITokenFactory
     {
-        private const int MaxValue = 2147483647;
-        private const int MaxIterations = 1000;
-        private readonly Random random = new Random();
+        private readonly object syncLock = new object();
+        private int current;
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TokenFactory"/> class.
+        /// </summary>
+        /// <param name="start">The optional starting value.</param>
+        public TokenFactory(int start = 0)
+        {
+            current = start;
+        }
 
         /// <summary>
         ///     Gets a new unique token.
@@ -29,52 +37,11 @@ namespace Soulseek.NET
         /// <returns>The new unique token.</returns>
         public int GetToken()
         {
-            return GetToken(s => false);
-        }
-
-        /// <summary>
-        ///     Gets a new unique token after checking for collisions using the specified <paramref name="collisionCheck"/>.
-        /// </summary>
-        /// <param name="collisionCheck">The function used to check for token collisions.</param>
-        /// <returns>The new unique token.</returns>
-        public int GetToken(Func<int, bool> collisionCheck)
-        {
-            var iterations = 0;
-            int token;
-
-            do
+            lock (syncLock)
             {
-                if (iterations >= MaxIterations)
-                {
-                    throw new TimeoutException($"Failed to find an unused token after {MaxIterations} attempts.");
-                }
-
-                token = random.Next(1, MaxValue);
-                iterations++;
-            }
-            while (collisionCheck(token));
-
-            return token;
-        }
-
-        /// <summary>
-        ///     Gets a new unique token after checking for collisions using the specified <paramref name="collisionCheck"/>.
-        /// </summary>
-        /// <param name="collisionCheck">The function used to check for token collisions.</param>
-        /// <param name="token">The new unique token.</param>
-        /// <returns>A value indicating whether the creation was successful.</returns>
-        public bool TryGetToken(Func<int, bool> collisionCheck, out int? token)
-        {
-            token = null;
-
-            try
-            {
-                token = GetToken(collisionCheck);
-                return true;
-            }
-            catch (TimeoutException)
-            {
-                return false;
+                var retVal = current;
+                current = current == int.MaxValue ? 0 : current + 1;
+                return retVal;
             }
         }
     }
