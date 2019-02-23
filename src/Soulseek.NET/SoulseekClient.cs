@@ -372,7 +372,6 @@ namespace Soulseek.NET
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">A cancellation token.</param>
-        /// <param name="waitForCompletion">A value indicating whether the search should wait completion before returning.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
@@ -384,7 +383,7 @@ namespace Soulseek.NET
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -408,7 +407,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, token, options, cancellationToken, waitForCompletion);
+            return SearchInternalAsync(searchText, token, options, cancellationToken);
         }
 
         /// <summary>
@@ -873,7 +872,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken? cancellationToken = null, bool waitForCompletion = true)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken? cancellationToken = null)
         {
             var search = new Search(searchText, token, options);
 
@@ -885,12 +884,6 @@ namespace Soulseek.NET
                 {
                     MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), search); // searchWait above
                     ActiveSearches.TryRemove(search.Token, out var _);
-
-                    if (!waitForCompletion)
-                    {
-                        SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
-                        search.Dispose();
-                    }
                 };
 
                 search.ResponseReceived += (_, response) =>
@@ -909,11 +902,6 @@ namespace Soulseek.NET
                 search.State = SearchStates.InProgress;
                 SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.Requested, search: search));
 
-                if (!waitForCompletion)
-                {
-                    return default(IReadOnlyCollection<SearchResponse>);
-                }
-
                 search = await searchWait.ConfigureAwait(false);
 
                 var responses = search.Responses;
@@ -931,11 +919,8 @@ namespace Soulseek.NET
             }
             finally
             {
-                if (waitForCompletion)
-                {
-                    SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
-                    search.Dispose();
-                }
+                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
+                search.Dispose();
             }
         }
 
