@@ -24,20 +24,5 @@ namespace Soulseek.NET
         /// </summary>
         /// <returns>The new unique token.</returns>
         int GetToken();
-
-        /// <summary>
-        ///     Gets a new unique token after checking for collisions using the specified <paramref name="collisionCheck"/>.
-        /// </summary>
-        /// <param name="collisionCheck">The function used to check for token collisions.</param>
-        /// <returns>The new unique token.</returns>
-        int GetToken(Func<int, bool> collisionCheck);
-
-        /// <summary>
-        ///     Gets a new unique token after checking for collisions using the specified <paramref name="collisionCheck"/>.
-        /// </summary>
-        /// <param name="collisionCheck">The function used to check for token collisions.</param>
-        /// <param name="token">The new unique token.</param>
-        /// <returns>A value indicating whether the creation was successful.</returns>
-        bool TryGetToken(Func<int, bool> collisionCheck, out int? token);
     }
 }

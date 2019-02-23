@@ -12,68 +12,55 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
+    using AutoFixture.Xunit2;
     using Xunit;
 
     public class TokenFactoryTests
     {
-        [Trait("Category", "GetToken")]
-        [Fact(DisplayName = "Returns a token given no collision")]
-        public void Returns_A_token_Given_No_Collision()
+        [Trait("Category", "Initialization")]
+        [Theory(DisplayName = "Initializes with given start"), AutoData]
+        public void Initializes_With_Given_Start(int start)
         {
-            int t = 0;
-            var ex = Record.Exception(() => t = new TokenFactory().GetToken());
+            var t = new TokenFactory(start);
 
-            Assert.Null(ex);
-            Assert.NotEqual(0, t);
+            var current = t.GetField<int>("current");
+
+            Assert.Equal(start, current);
+        }
+
+        [Trait("Category", "Initialization")]
+        [Theory(DisplayName = "First token is start"), AutoData]
+        public void First_Token_Is_Start(int start)
+        {
+            var t = new TokenFactory(start);
+
+            Assert.Equal(start, t.GetToken());
         }
 
         [Trait("Category", "GetToken")]
-        [Fact(DisplayName = "Throws TimeoutException given forced collision")]
-        public void Throws_TimeoutException_Given_forced_Collision()
+        [Theory(DisplayName = "Returns sequential tokens"), AutoData]
+        public void Returns_Sequential_Tokens(int start)
         {
-            int t = 0;
-            var ex = Record.Exception(() => t = new TokenFactory().GetToken(s => true));
+            var t = new TokenFactory(start);
 
-            Assert.NotNull(ex);
-            Assert.Equal(0, t);
+            var t1 = t.GetToken();
+            var t2 = t.GetToken();
+
+            Assert.Equal(start, t1);
+            Assert.Equal(start + 1, t2);
         }
 
-        [Trait("Category", "TryGetToken")]
-        [Fact(DisplayName = "Returns false given forced collision")]
-        public void Returns_False_Given_Forced_Collision()
+        [Trait("Category", "GetToken")]
+        [Fact(DisplayName = "Rolls over at int.MaxValue")]
+        public void Rolls_Over_At_Int_MaxValue()
         {
-            var ok = new TokenFactory().TryGetToken(s => true, out var token);
+            var t = new TokenFactory(int.MaxValue);
 
-            Assert.False(ok);
-        }
+            var t1 = t.GetToken();
+            var t2 = t.GetToken();
 
-        [Trait("Category", "TryGetToken")]
-        [Fact(DisplayName = "Nulls token given forced collision")]
-        public void Nulls_Token_Given_Forced_Collision()
-        {
-            new TokenFactory().TryGetToken(s => true, out var token);
-
-            Assert.Null(token);
-        }
-
-        [Trait("Category", "TryGetToken")]
-        [Fact(DisplayName = "Returns true given no collision")]
-        public void Returns_True_Given_No_Collision()
-        {
-            var ok = new TokenFactory().TryGetToken(s => false, out var token);
-
-            Assert.True(ok);
-        }
-
-        [Trait("Category", "TryGetToken")]
-        [Fact(DisplayName = "Sets token given no collision")]
-        public void Sets_Token_Given_No_Collision()
-        {
-            var ok = new TokenFactory().TryGetToken(s => false, out var token);
-
-            Assert.True(ok);
-            Assert.NotNull(token);
-            Assert.NotEqual(0, token);
+            Assert.Equal(int.MaxValue, t1);
+            Assert.Equal(0, t2);
         }
     }
 }

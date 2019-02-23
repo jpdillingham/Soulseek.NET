@@ -88,7 +88,7 @@ namespace Soulseek.NET
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
-            TokenFactory = tokenFactory ?? new TokenFactory();
+            TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
@@ -319,12 +319,7 @@ namespace Soulseek.NET
             }
             else
             {
-                if (!TokenFactory.TryGetToken(tokenExists, out var generatedToken))
-                {
-                    throw new DownloadException($"Unable to generate a unique token for the download.");
-                }
-
-                tokenInternal = (int)generatedToken;
+                tokenInternal = TokenFactory.GetToken();
             }
 
             return DownloadInternalAsync(username, filename, tokenInternal, cancellationToken);
