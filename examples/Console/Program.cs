@@ -55,19 +55,6 @@
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;
                     }
-                    else if (cmd.StartsWith("start-search"))
-                    {
-                        var search = string.Join(' ', cmd.Split(' ').Skip(1));
-                        var token = new Random().Next();
-
-                        await client.SearchAsync(search, token, new SearchOptions(
-                                filterFiles: false,
-                                filterResponses: false,
-                                fileLimit: 100000),
-                            waitForCompletion: false);
-
-                        Console.WriteLine($"Search for {search} started.");
-                    }
                     else if (cmd.StartsWith("search"))
                     {
                         var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300));
@@ -77,7 +64,7 @@
                         var result = await client.SearchAsync(search, token, new SearchOptions(
                             filterFiles: false,
                             filterResponses: false,
-                            fileLimit: 10000), cts.Token, true);
+                            fileLimit: 10000), cts.Token);
 
                         Console.WriteLine(JsonConvert.SerializeObject(result));
                         continue;

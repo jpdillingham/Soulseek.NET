@@ -113,7 +113,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             IReadOnlyCollection<SearchResponse> responses = null;
-            var ex = await Record.ExceptionAsync(async () => responses = await s.SearchAsync(searchText, token, options, null, true));
+            var ex = await Record.ExceptionAsync(async () => responses = await s.SearchAsync(searchText, token, options, null));
 
             var res = responses.ToList()[0];
 
@@ -145,40 +145,13 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            await s.SearchAsync(searchText, token, options, null, true);
+            await s.SearchAsync(searchText, token, options, null);
 
             var active = s.GetProperty<ConcurrentDictionary<int, Search>>("ActiveSearches");
 
             Assert.Single(active);
             Assert.True(active.ContainsKey(token));
             Assert.Equal(token, active[token].Token);
-        }
-
-        [Trait("Category", "SearchAsync")]
-        [Theory(DisplayName = "SearchAsync returns default when waitForCompletion is false"), AutoData]
-        public async Task SearchInternalAsync_Returns_Default_When_WaitForCompletion_Is_False(string searchText, int token)
-        {
-            var options = new SearchOptions();
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
-
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.InProgress;
-            search.SetProperty("ResponseList", new List<SearchResponse>() { response });
-
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
-                .Returns(Task.FromResult(search));
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
-                .Returns(Task.CompletedTask);
-
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-            var result = await s.SearchAsync(searchText, token, options, null, false);
-
-            Assert.Null(result);
         }
 
         [Trait("Category", "SearchAsync")]
@@ -203,7 +176,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, null, true));
+            var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, null));
 
             Assert.NotNull(ex);
             Assert.IsType<SearchException>(ex);
@@ -232,7 +205,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, null, true));
+            var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, null));
 
             Assert.NotNull(ex);
             Assert.IsType<SearchException>(ex);
@@ -262,43 +235,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
             s.SearchStateChanged += (_, e) => events.Add(e);
 
-            await s.SearchAsync(searchText, token, options, null, true);
+            await s.SearchAsync(searchText, token, options, null);
 
             Assert.Equal(3, events.Count);
             Assert.Equal(SearchStates.Requested, events[0].State);
             Assert.Equal(SearchStates.InProgress, events[1].State);
             Assert.Equal(SearchStates.Completed, events[2].State);
-        }
-
-        [Trait("Category", "SearchAsync")]
-        [Theory(DisplayName = "SearchAsync doesn't raise completed event when not waiting"), AutoData]
-        public async Task SearchInternalAsync_Doesnt_Raise_Completed_Event_When_Not_Waiting(string searchText, int token)
-        {
-            var options = new SearchOptions();
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
-
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.Completed;
-            search.SetProperty("ResponseList", new List<SearchResponse>() { response });
-
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
-                .Returns(Task.FromResult(search));
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
-                .Returns(Task.CompletedTask);
-
-            var events = new List<SearchStateChangedEventArgs>();
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-            s.SearchStateChanged += (_, e) => events.Add(e);
-
-            await s.SearchAsync(searchText, token, options, null, false);
-
-            Assert.Equal(2, events.Count);
-            Assert.Equal(SearchStates.Requested, events[0].State);
-            Assert.Equal(SearchStates.InProgress, events[1].State);
         }
     }
 }
