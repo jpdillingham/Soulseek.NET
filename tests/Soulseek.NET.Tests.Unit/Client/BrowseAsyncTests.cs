@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -21,6 +22,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class BrowseAsyncTests
@@ -69,39 +71,59 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "BrowseInternalAsync")]
         [Theory(DisplayName = "BrowseInternalAsync returns expected response on success"), AutoData]
-        public async Task BrowseInternalAsync_Returns_Expected_Response_On_Success(List<Directory> directories)
+        public async Task BrowseInternalAsync_Returns_Expected_Response_On_Success(string username, IPAddress ip, int port, List<Directory> directories)
         {
             var response = new BrowseResponse(directories.Count, directories);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var connFactory = new Mock<IMessageConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object);
+            var result = await s.BrowseAsync(username);
 
             Assert.Equal(response, result);
         }
 
         [Trait("Category", "BrowseInternalAsync")]
-        [Fact(DisplayName = "BrowseInternalAsync throws BrowseException on cancellation")]
-        public async Task BrowseInternalAsync_Throws_BrowseException_On_Cancellation()
+        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on cancellation"), AutoData]
+        public async Task BrowseInternalAsync_Throws_BrowseException_On_Cancellation(string username, IPAddress ip, int port)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
                 .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var connFactory = new Mock<IMessageConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             BrowseResponse result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
             Assert.NotNull(ex);
             Assert.IsType<BrowseException>(ex);
@@ -109,18 +131,26 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseInternalAsync")]
-        [Fact(DisplayName = "BrowseInternalAsync throws BrowseException on write exception")]
-        public async Task BrowseInternalAsync_Throws_BrowseException_On_Write_Exception()
+        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on write exception"), AutoData]
+        public async Task BrowseInternalAsync_Throws_BrowseException_On_Write_Exception(string username, IPAddress ip, int port)
         {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
                 .Throws(new ConnectionWriteException());
 
-            var s = new SoulseekClient();
+            var connFactory = new Mock<IMessageConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             BrowseResponse result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
             Assert.NotNull(ex);
             Assert.IsType<BrowseException>(ex);
@@ -128,19 +158,29 @@ namespace Soulseek.NET.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseInternalAsync")]
-        [Fact(DisplayName = "BrowseInternalAsync throws BrowseException on disconnect")]
-        public async Task BrowseInternalAsync_Throws_BrowseException_On_Disconnect()
+        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on disconnect"), AutoData]
+        public async Task BrowseInternalAsync_Throws_BrowseException_On_Disconnect(string username, IPAddress ip, int port)
         {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
+                .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
+
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
                 .Returns(Task.CompletedTask)
-                .Raises(m => m.Disconnected += null, this, string.Empty);
+                .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
 
-            var s = new SoulseekClient();
+            var connFactory = new Mock<IMessageConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             BrowseResponse result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<BrowseResponse>>("BrowseInternalAsync", "foo", null, conn.Object));
+            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
             Assert.NotNull(ex);
             Assert.IsType<BrowseException>(ex);
