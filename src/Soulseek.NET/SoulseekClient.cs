@@ -215,7 +215,7 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            return BrowseInternalAsync(username, cancellationToken, null);
+            return BrowseInternalAsync(username, cancellationToken);
         }
 
         /// <summary>
@@ -507,13 +507,13 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null, IMessageConnection connection = null)
+        private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken? cancellationToken = null)
         {
             try
             {
                 var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(new WaitKey(MessageCode.PeerBrowseResponse, username), cancellationToken);
 
-                connection = connection ?? await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
+                var connection = await GetUnsolicitedPeerConnectionAsync(username, Options.PeerConnectionOptions).ConfigureAwait(false);
                 connection.Disconnected += (sender, message) =>
                 {
                     MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
