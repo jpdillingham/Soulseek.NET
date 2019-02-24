@@ -864,7 +864,7 @@ namespace Soulseek.NET
                         break;
 
                     case MessageCode.PeerBrowseResponse:
-                        var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Key.Username);
+                        var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Username);
                         try
                         {
                             MessageWaiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
@@ -872,6 +872,7 @@ namespace Soulseek.NET
                         catch (Exception ex)
                         {
                             MessageWaiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
+                            throw;
                         }
 
                         break;
@@ -884,13 +885,6 @@ namespace Soulseek.NET
                     case MessageCode.PeerTransferRequest:
                         var transferRequest = PeerTransferRequest.Parse(message);
                         MessageWaiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
-
-                        break;
-
-                    case MessageCode.PeerQueueFailed:
-                        var pqfResponse = PeerQueueFailedResponse.Parse(message);
-                        Console.WriteLine($"[PEER QUEUE FAILED]: {pqfResponse.Filename}; {pqfResponse.Message}");
-
                         break;
 
                     default:
