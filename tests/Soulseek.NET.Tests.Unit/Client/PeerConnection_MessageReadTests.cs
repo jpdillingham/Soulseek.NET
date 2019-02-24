@@ -163,7 +163,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Throws wait for PeerBrowseResponse given bad message"), AutoData]
-        public void Throws_Wait_For_PeerBrowseResponse_Given_Bad_Message(string username, IPAddress ip, int port, string directoryName)
+        public void Throws_Wait_For_PeerBrowseResponse_Given_Bad_Message(string username, IPAddress ip, int port)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)
@@ -261,8 +261,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
 
-            var search = new Search("foo", token);
-            search.State = SearchStates.InProgress;
+            var search = new Search("foo", token)
+            {
+                State = SearchStates.InProgress
+            };
 
             var searches = new ConcurrentDictionary<int, Search>();
             searches.TryAdd(token, search);

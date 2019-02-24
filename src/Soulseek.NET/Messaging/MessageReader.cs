@@ -105,9 +105,7 @@ namespace Soulseek.NET.Messaging
                 throw new InvalidOperationException($"The message has already been decompressed.");
             }
 
-            byte[] decompressedPayload;
-
-            Decompress(Payload, out decompressedPayload);
+            Decompress(Payload, out byte[] decompressedPayload);
 
             Message = new MessageBuilder()
                 .Code(Code)
