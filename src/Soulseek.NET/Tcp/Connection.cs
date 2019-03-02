@@ -182,7 +182,7 @@ namespace Soulseek.NET.Tcp
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
                 using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
                 {
-                    var task = TcpClient.ConnectAsync(IPAddress, Port);
+                    var connectTask = TcpClient.ConnectAsync(IPAddress, Port);
 
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
                     // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same TCS.
@@ -190,20 +190,20 @@ namespace Soulseek.NET.Tcp
                     using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
                     using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
                     {
-                        // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
-                        if (task != await Task.WhenAny(task, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false))
-                        {
-                            if (task == timeoutTaskCompletionSource.Task)
-                            {
-                                throw new TimeoutException($"Operation timed out after {Options.ConnectTimeout} seconds");
-                            }
+                        var completedTask = await Task.WhenAny(connectTask, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
 
+                        if (completedTask == timeoutTaskCompletionSource.Task)
+                        {
+                            throw new TimeoutException($"Operation timed out after {Options.ConnectTimeout} seconds");
+                        }
+                        else if (completedTask == cancellationTaskCompletionSource.Task)
+                        {
                             throw new OperationCanceledException($"Operation cancelled.");
                         }
 
-                        if (task.Exception?.InnerException != null)
+                        if (connectTask.Exception?.InnerException != null)
                         {
-                            throw task.Exception.InnerException;
+                            throw connectTask.Exception.InnerException;
                         }
                     }
                 }

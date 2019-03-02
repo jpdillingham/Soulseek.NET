@@ -31,7 +31,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task GetPeerConnectionKeyAsync_Returns_Expected_ConnectionKey(string username, IPAddress ip, int port)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
@@ -152,7 +152,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new ConnectionOptions();
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(name, ipAddress, port)));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -178,7 +178,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var existingConn = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ipAddress, port)));
 
             var pcm = new Mock<IConnectionManager<IMessageConnection>>();
@@ -201,7 +201,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task GetUnsolicitedPeerConnectionAsync_Removes_Disconnected_Connection(string username, IPAddress ipAddress, int port)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ipAddress, port)));
 
             var existingConn = new Mock<IMessageConnection>();
