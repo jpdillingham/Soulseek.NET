@@ -16,6 +16,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Moq;
     using Soulseek.NET.Tcp;
@@ -167,7 +168,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             mock1.Verify(m => m.Dispose(), Times.Once);
 
             // ensure mock 2 was connected when activated
-            mock2.Verify(m => m.ConnectAsync(), Times.Once);
+            mock2.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Add")]
@@ -215,7 +216,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(1, c.Active);
             Assert.Equal(0, c.Queued);
 
-            mock.Verify(m => m.ConnectAsync(), Times.Once);
+            mock.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Add")]
@@ -246,7 +247,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             var mock = new Mock<IConnection>();
             mock.Setup(m => m.Key).Returns(key);
-            mock.Setup(m => m.ConnectAsync()).Throws(new Exception());
+            mock.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new Exception());
 
             var c = new ConnectionManager<IConnection>();
 
@@ -256,7 +257,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(0, c.Active);
             Assert.Equal(0, c.Queued);
 
-            mock.Verify(m => m.ConnectAsync(), Times.Once);
+            mock.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
             mock.Verify(m => m.Dispose(), Times.Once);
         }
 
@@ -303,7 +304,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.NotNull(conn);
             Assert.Equal(mock.Object, conn);
 
-            mock.Verify(m => m.ConnectAsync(), Times.Once);
+            mock.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
         }
 
         public static IEnumerable<object[]> GetData => new List<object[]>

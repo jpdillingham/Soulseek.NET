@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -150,7 +151,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Exception>(new ConnectionWriteException()));
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, messageWaiter: waiter.Object);

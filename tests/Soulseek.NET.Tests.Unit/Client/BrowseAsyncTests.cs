@@ -15,6 +15,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -76,7 +77,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var response = new BrowseResponse(directories.Count, directories);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
@@ -84,7 +85,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connFactory = new Mock<IMessageConnectionFactory>();
@@ -104,7 +105,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task BrowseInternalAsync_Throws_BrowseException_On_Cancellation(string username, IPAddress ip, int port)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
@@ -112,7 +113,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connFactory = new Mock<IMessageConnectionFactory>();
@@ -139,7 +140,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             var connFactory = new Mock<IMessageConnectionFactory>();
@@ -164,11 +165,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
 

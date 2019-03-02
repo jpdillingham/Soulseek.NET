@@ -411,7 +411,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Write_Throws_If_Stream_Throws()
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new SocketException());
 
             var t = new Mock<ITcpClient>();
@@ -427,7 +427,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.IsType<ConnectionWriteException>(ex);
             Assert.IsType<SocketException>(ex.InnerException);
 
-            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Write")]
@@ -446,7 +446,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Null(ex);
 
-            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Read")]
@@ -519,7 +519,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Null(ex);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Read")]
@@ -527,7 +527,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
@@ -541,7 +541,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Null(ex);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Read")]
@@ -549,7 +549,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Loops_Over_Stream_ReadAsync_On_Partial_Read()
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
@@ -561,7 +561,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             await c.ReadAsync(3);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(3));
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
 
         [Trait("Category", "Read")]
@@ -569,7 +569,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Throws_If_Stream_Throws()
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Throws(new SocketException());
 
             var t = new Mock<ITcpClient>();
@@ -585,7 +585,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.IsType<ConnectionReadException>(ex);
             Assert.IsType<SocketException>(ex.InnerException);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Read")]
@@ -640,7 +640,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Disconnects_If_Stream_Returns_0()
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 0));
 
             var t = new Mock<ITcpClient>();
@@ -654,7 +654,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Read")]
@@ -662,7 +662,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Read_Raises_DataRead_Event()
         {
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
@@ -687,7 +687,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
             Assert.Equal(3, eventArgs[2].CurrentLength);
             Assert.Equal(3, eventArgs[2].TotalLength);
 
-            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(3));
+            s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
         }
 
         [Trait("Category", "Read")]

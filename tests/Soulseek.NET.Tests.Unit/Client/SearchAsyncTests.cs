@@ -102,7 +102,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(search));
 
             var conn = new Mock<IMessageConnection>();
@@ -130,7 +130,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             WaitKey waitKey = null;
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Callback<WaitKey, CancellationToken?>((k, t) => waitKey = k);
 
             var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, options: new SoulseekClientOptions(startingToken: startingToken));
@@ -155,7 +155,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(search));
 
             var conn = new Mock<IMessageConnection>();
@@ -186,7 +186,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Search>(new OperationCanceledException()));
 
             var conn = new Mock<IMessageConnection>();
@@ -215,7 +215,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Search>(new Exception()));
 
             var conn = new Mock<IMessageConnection>();
@@ -243,7 +243,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), null))
+            waiter.Setup(m => m.WaitIndefinitely<Search>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(search));
 
             var conn = new Mock<IMessageConnection>();
