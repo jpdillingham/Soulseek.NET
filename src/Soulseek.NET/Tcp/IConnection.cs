@@ -75,6 +75,12 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        Task ConnectAsync();
+
+        /// <summary>
+        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
+        /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         Task ConnectAsync(CancellationToken cancellationToken);
@@ -89,6 +95,13 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        Task<byte[]> ReadAsync(int length);
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
         Task<byte[]> ReadAsync(int length, CancellationToken cancellationToken);
@@ -97,9 +110,23 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        Task<byte[]> ReadAsync(long length);
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
         Task<byte[]> ReadAsync(long length, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        Task WriteAsync(byte[] bytes);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.

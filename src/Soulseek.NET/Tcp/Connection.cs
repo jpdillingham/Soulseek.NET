@@ -144,6 +144,19 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection is already connected, or is transitioning between states.
+        /// </exception>
+        /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
+        public async Task ConnectAsync()
+        {
+            await ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
+        /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">
@@ -240,6 +253,16 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        public Task<byte[]> ReadAsync(long length)
+        {
+            return ReadAsync(length, CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
         public async Task<byte[]> ReadAsync(long length, CancellationToken cancellationToken)
@@ -252,6 +275,16 @@ namespace Soulseek.NET.Tcp
             }
 
             return await ReadAsync(intLength, cancellationToken).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <returns>The read bytes.</returns>
+        public Task<byte[]> ReadAsync(int length)
+        {
+            return ReadAsync(length, CancellationToken.None);
         }
 
         /// <summary>
@@ -278,6 +311,16 @@ namespace Soulseek.NET.Tcp
             }
 
             return ReadInternalAsync(length, cancellationToken);
+        }
+
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public Task WriteAsync(byte[] bytes)
+        {
+            return WriteAsync(bytes, CancellationToken.None);
         }
 
         /// <summary>

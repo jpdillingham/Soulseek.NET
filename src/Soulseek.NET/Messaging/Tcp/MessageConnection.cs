@@ -93,6 +93,16 @@ namespace Soulseek.NET.Messaging.Tcp
         ///     Asynchronously writes the specified message to the connection.
         /// </summary>
         /// <param name="message">The message to write.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public async Task WriteMessageAsync(Message message)
+        {
+            await WriteMessageAsync(message, CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Asynchronously writes the specified message to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task WriteMessageAsync(Message message, CancellationToken cancellationToken)
@@ -129,14 +139,14 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 var message = new List<byte>();
 
-                var lengthBytes = await ReadAsync(4).ConfigureAwait(false);
+                var lengthBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
                 var length = BitConverter.ToInt32(lengthBytes, 0);
                 message.AddRange(lengthBytes);
 
-                var codeBytes = await ReadAsync(4).ConfigureAwait(false);
+                var codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
                 message.AddRange(codeBytes);
 
-                var payloadBytes = await ReadAsync(length - 4).ConfigureAwait(false);
+                var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
                 message.AddRange(payloadBytes);
 
                 var messageBytes = message.ToArray();
@@ -153,7 +163,7 @@ namespace Soulseek.NET.Messaging.Tcp
             {
                 if (DeferredMessages.TryDequeue(out var deferredMessage))
                 {
-                    await WriteMessageAsync(deferredMessage).ConfigureAwait(false);
+                    await WriteMessageAsync(deferredMessage, CancellationToken.None).ConfigureAwait(false);
                 }
             }
         }
