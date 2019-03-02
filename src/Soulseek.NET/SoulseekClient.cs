@@ -806,7 +806,7 @@ namespace Soulseek.NET
             try
             {
                 connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions, CancellationToken.None).ConfigureAwait(false);
-                var remoteTokenBytes = await connection.ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
+                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
                 remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
             }
             catch (Exception ex)
@@ -826,7 +826,7 @@ namespace Soulseek.NET
         {
             try
             {
-                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin));
+                var loginWait = MessageWaiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin), cancellationToken: cancellationToken));
 
                 await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage(), cancellationToken).ConfigureAwait(false);
 
