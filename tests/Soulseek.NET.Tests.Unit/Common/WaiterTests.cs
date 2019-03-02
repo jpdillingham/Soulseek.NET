@@ -267,30 +267,32 @@ namespace Soulseek.NET.Tests.Unit
         [Fact(DisplayName = "Wait throws and is dequeued when cancelled")]
         public void Wait_Throws_And_Is_Dequeued_When_Cancelled()
         {
-            var tcs = new CancellationTokenSource();
-            tcs.CancelAfter(100);
-
-            var key = new WaitKey(MessageCode.ServerLogin);
-
-            using (var waiter = new Waiter(0))
+            using (var tcs = new CancellationTokenSource())
             {
-                Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
-                object result = null;
+                tcs.CancelAfter(100);
 
-                var ex = Record.Exception(() => result = task.Result);
+                var key = new WaitKey(MessageCode.ServerLogin);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                using (var waiter = new Waiter(0))
+                {
+                    Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
+                    object result = null;
 
-                Assert.NotNull(ex);
-                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                    var ex = Record.Exception(() => result = task.Result);
 
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
+                    var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                    waits.TryGetValue(key, out var queue);
+                    queue.TryPeek(out var wait);
 
-                Assert.NotNull(queue);
-                Assert.Empty(queue);
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex.InnerException);
+
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
+
+                    Assert.NotNull(queue);
+                    Assert.Empty(queue);
+                }
             }
         }
 
