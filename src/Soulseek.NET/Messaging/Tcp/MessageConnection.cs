@@ -16,6 +16,7 @@ namespace Soulseek.NET.Messaging.Tcp
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
@@ -92,8 +93,9 @@ namespace Soulseek.NET.Messaging.Tcp
         ///     Asynchronously writes the specified message to the connection.
         /// </summary>
         /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteMessageAsync(Message message)
+        public async Task WriteMessageAsync(Message message, CancellationToken cancellationToken)
         {
             if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
             {
@@ -109,7 +111,7 @@ namespace Soulseek.NET.Messaging.Tcp
                 var bytes = message.ToByteArray();
 
                 NormalizeMessageCode(bytes, 0 - (int)Type);
-                await WriteAsync(bytes).ConfigureAwait(false);
+                await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
             }
         }
 
