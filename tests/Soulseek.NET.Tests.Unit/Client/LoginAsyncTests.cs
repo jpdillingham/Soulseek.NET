@@ -89,7 +89,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task LoginAsync_Changes_State_To_Connected_And_LoggedIn_On_Success(string user, string password)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
 
             var conn = new Mock<IMessageConnection>();
@@ -108,7 +108,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task LoginAsync_Disconnects_And_Throws_LoginException_On_Failure(string user, string password)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(false, string.Empty)));
 
             var conn = new Mock<IMessageConnection>();
@@ -129,7 +129,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task LoginAsync_Throws_LoginException_On_Wait_Timeout(string user, string password)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<LoginResponse>(new TimeoutException()));
 
             var conn = new Mock<IMessageConnection>();

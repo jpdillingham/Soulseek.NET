@@ -50,7 +50,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task Completes_Start_Wait_When_Download_Exists(string username, string filename, int token, int remoteToken)
         {
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
 
             var connFactory = new Mock<IConnectionFactory>();
@@ -111,7 +111,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             string message = null;
 
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
                 .Returns(Task.FromException<byte[]>(new Exception("fake exception")));
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Callback<string>(str => message = str);

@@ -97,8 +97,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SearchOptions();
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.InProgress;
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.InProgress
+            };
+
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
@@ -150,8 +153,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SearchOptions();
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.InProgress;
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.InProgress
+            };
+
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
@@ -181,8 +187,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SearchOptions();
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.InProgress;
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.InProgress
+            };
+
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
@@ -210,8 +219,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SearchOptions();
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.InProgress;
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.InProgress
+            };
+
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
@@ -238,8 +250,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SearchOptions();
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
-            var search = new Search(searchText, token, options);
-            search.State = SearchStates.Completed;
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.Completed
+            };
+
             search.SetProperty("ResponseList", new List<SearchResponse>() { response });
 
             var waiter = new Mock<IWaiter>();
