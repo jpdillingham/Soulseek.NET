@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tcp
 {
     using System;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -74,8 +75,9 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        Task ConnectAsync();
+        Task ConnectAsync(CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disconnects the client.
@@ -87,21 +89,24 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
-        Task<byte[]> ReadAsync(int length);
+        Task<byte[]> ReadAsync(int length, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
-        Task<byte[]> ReadAsync(long length);
+        Task<byte[]> ReadAsync(long length, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        Task WriteAsync(byte[] bytes);
+        Task WriteAsync(byte[] bytes, CancellationToken cancellationToken);
     }
 }
