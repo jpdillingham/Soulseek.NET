@@ -15,6 +15,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using System;
     using System.Collections.Concurrent;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;

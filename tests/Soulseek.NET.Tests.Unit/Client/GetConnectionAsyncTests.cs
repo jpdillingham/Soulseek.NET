@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 {
     using System;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -30,7 +31,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task GetPeerConnectionKeyAsync_Returns_Expected_ConnectionKey(string username, IPAddress ip, int port)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
@@ -40,7 +41,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
 
             ConnectionKey result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<ConnectionKey>>("GetPeerConnectionKeyAsync", username));
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<ConnectionKey>>("GetPeerConnectionKeyAsync", username, CancellationToken.None));
 
             Assert.Null(ex);
             Assert.NotNull(result);
@@ -69,7 +70,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             IConnection result = null;
 
-            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options));
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options, CancellationToken.None));
 
             Assert.Null(ex);
             Assert.Equal(response.IPAddress, result.IPAddress);
@@ -98,10 +99,10 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
 
-            await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options);
+            await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options, CancellationToken.None);
 
-            conn.Verify(m => m.ConnectAsync(), Times.Once);
-            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>()), Times.Once);
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "GetSolicitedPeerConnectionAsync")]
@@ -115,7 +116,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             IMessageConnection conn = null;
 
-            var ex = await Record.ExceptionAsync(async () => conn = await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options));
+            var ex = await Record.ExceptionAsync(async () => conn = await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options, CancellationToken.None));
 
             Assert.Null(ex);
             Assert.NotNull(conn);
@@ -139,7 +140,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: pcm.Object);
 
-            await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options);
+            await s.InvokeMethod<Task<IMessageConnection>>("GetSolicitedPeerConnectionAsync", ctpr, options, CancellationToken.None);
 
             pcm.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
         }
@@ -151,16 +152,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new ConnectionOptions();
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(name, ipAddress, port)));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, messageWaiter: waiter.Object);
 
-            var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", name, options);
+            var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", name, options, CancellationToken.None);
 
             Assert.NotNull(conn);
             Assert.Equal(name, conn.Username);
@@ -177,7 +178,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var existingConn = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ipAddress, port)));
 
             var pcm = new Mock<IConnectionManager<IMessageConnection>>();
@@ -186,7 +187,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: pcm.Object, messageWaiter: waiter.Object);
 
-            var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", username, options);
+            var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", username, options, CancellationToken.None);
 
             Assert.NotNull(conn);
             Assert.Equal(username, conn.Username);
@@ -200,7 +201,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task GetUnsolicitedPeerConnectionAsync_Removes_Disconnected_Connection(string username, IPAddress ipAddress, int port)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, null))
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ipAddress, port)));
 
             var existingConn = new Mock<IMessageConnection>();
@@ -219,7 +220,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, peerConnectionManager: pcm.Object, messageWaiter: waiter.Object);
 
-            await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", username, new ConnectionOptions());
+            await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", username, new ConnectionOptions(), CancellationToken.None);
 
             pcm.Verify(m => m.RemoveAsync(It.IsAny<IMessageConnection>()), Times.Once);
         }

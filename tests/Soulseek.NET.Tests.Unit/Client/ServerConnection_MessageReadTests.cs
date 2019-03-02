@@ -17,6 +17,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -141,7 +142,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id)))
+            conn.Setup(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msg = new MessageBuilder()
@@ -157,7 +158,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            conn.Verify(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id)), Times.Once);
+            conn.Verify(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Message")]

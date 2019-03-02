@@ -88,27 +88,29 @@ namespace Soulseek.NET
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
         /// </summary>
         /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
-        Task AcknowledgePrivateMessageAsync(int privateMessageId);
+        Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
         ///     specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
         Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is already connected, or is transitioning between states.
         /// </exception>
-        Task ConnectAsync();
+        Task ConnectAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Disconnects the client from the server.
@@ -122,7 +124,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
@@ -138,7 +140,7 @@ namespace Soulseek.NET
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
@@ -152,9 +154,10 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
         /// <exception cref="LoginException">Thrown when the login fails.</exception>
-        Task LoginAsync(string username, string password);
+        Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously searches for the specified <paramref name="searchText"/> and with the optionally specified
@@ -162,7 +165,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
@@ -180,7 +183,7 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
@@ -199,7 +202,8 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The user to which the message is to be sent.</param>
         /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
-        Task SendPrivateMessageAsync(string username, string message);
+        Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
     }
 }

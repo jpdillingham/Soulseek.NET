@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Messaging.Tcp
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Tcp;
@@ -43,5 +44,13 @@ namespace Soulseek.NET.Messaging.Tcp
         /// <param name="message">The message to write.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         Task WriteMessageAsync(Message message);
+
+        /// <summary>
+        ///     Asynchronously writes the specified message to the connection.
+        /// </summary>
+        /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        Task WriteMessageAsync(Message message, CancellationToken cancellationToken);
     }
 }

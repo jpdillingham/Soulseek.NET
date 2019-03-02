@@ -151,37 +151,59 @@ namespace Soulseek.NET.Tcp
         /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
         public async Task ConnectAsync()
         {
+            await ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection is already connected, or is transitioning between states.
+        /// </exception>
+        /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
+        public async Task ConnectAsync(CancellationToken cancellationToken)
+        {
             if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
             {
                 throw new InvalidOperationException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
-            // that ends when the result is set programmatically
-            var taskCompletionSource = new TaskCompletionSource<bool>();
+            // that ends when the result is set programmatically.  create another for cancellation via the externally provided token.
+            var timeoutTaskCompletionSource = new TaskCompletionSource<bool>();
+            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
             try
             {
                 ChangeState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
 
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
-                using (var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
+                using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
                 {
-                    var task = TcpClient.ConnectAsync(IPAddress, Port);
+                    var connectTask = TcpClient.ConnectAsync(IPAddress, Port);
 
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
-                    // TCS via the registered delegate, ending the 'fake' task
-                    using (cancellationTokenSource.Token.Register(() => taskCompletionSource.TrySetResult(true)))
+                    // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same TCS.
+                    // either the timeout or the external token can now cancel the operation.
+                    using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
+                    using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
                     {
-                        // wait for both the connection task and the cancellation. if the cancellation ends first, throw.
-                        if (task != await Task.WhenAny(task, taskCompletionSource.Task).ConfigureAwait(false))
+                        var completedTask = await Task.WhenAny(connectTask, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+
+                        if (completedTask == timeoutTaskCompletionSource.Task)
                         {
                             throw new TimeoutException($"Operation timed out after {Options.ConnectTimeout} seconds");
                         }
-
-                        if (task.Exception?.InnerException != null)
+                        else if (completedTask == cancellationTaskCompletionSource.Task)
                         {
-                            throw task.Exception.InnerException;
+                            throw new OperationCanceledException($"Operation cancelled.");
+                        }
+
+                        if (connectTask.Exception?.InnerException != null)
+                        {
+                            throw connectTask.Exception.InnerException;
                         }
                     }
                 }
@@ -232,7 +254,18 @@ namespace Soulseek.NET.Tcp
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
         /// <returns>The read bytes.</returns>
-        public async Task<byte[]> ReadAsync(long length)
+        public Task<byte[]> ReadAsync(long length)
+        {
+            return ReadAsync(length, CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The read bytes.</returns>
+        public async Task<byte[]> ReadAsync(long length, CancellationToken cancellationToken)
         {
             // NetworkStream.ReadAsync doesn't support long, so if we were to support this we'd need to split the long up into
             // int-sized chunks and iterate. that's for later, if ever.
@@ -241,7 +274,7 @@ namespace Soulseek.NET.Tcp
                 throw new NotImplementedException($"File sizes exceeding ~2gb are not yet supported.");
             }
 
-            return await ReadAsync(intLength).ConfigureAwait(false);
+            return await ReadAsync(intLength, cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -250,6 +283,17 @@ namespace Soulseek.NET.Tcp
         /// <param name="length">The number of bytes to read.</param>
         /// <returns>The read bytes.</returns>
         public Task<byte[]> ReadAsync(int length)
+        {
+            return ReadAsync(length, CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously reads the specified number of bytes from the connection.
+        /// </summary>
+        /// <param name="length">The number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The read bytes.</returns>
+        public Task<byte[]> ReadAsync(int length, CancellationToken cancellationToken)
         {
             if (length < 0)
             {
@@ -266,7 +310,7 @@ namespace Soulseek.NET.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return ReadInternalAsync(length);
+            return ReadInternalAsync(length, cancellationToken);
         }
 
         /// <summary>
@@ -275,6 +319,17 @@ namespace Soulseek.NET.Tcp
         /// <param name="bytes">The bytes to write.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         public Task WriteAsync(byte[] bytes)
+        {
+            return WriteAsync(bytes, CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to the connection.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public Task WriteAsync(byte[] bytes, CancellationToken cancellationToken)
         {
             if (bytes == null || bytes.Length == 0)
             {
@@ -291,7 +346,7 @@ namespace Soulseek.NET.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return WriteInternalAsync(bytes);
+            return WriteInternalAsync(bytes, cancellationToken);
         }
 
         /// <summary>
@@ -339,7 +394,7 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        private async Task<byte[]> ReadInternalAsync(int length)
+        private async Task<byte[]> ReadInternalAsync(int length, CancellationToken cancellationToken)
         {
             InactivityTimer?.Reset();
 
@@ -355,7 +410,7 @@ namespace Soulseek.NET.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead).ConfigureAwait(false);
+                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
                     if (bytesRead == 0)
                     {
@@ -379,11 +434,11 @@ namespace Soulseek.NET.Tcp
             }
         }
 
-        private async Task WriteInternalAsync(byte[] bytes)
+        private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
             try
             {
-                await Stream.WriteAsync(bytes, 0, bytes.Length).ConfigureAwait(false);
+                await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {

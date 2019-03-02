@@ -57,17 +57,18 @@
                     }
                     else if (cmd.StartsWith("search"))
                     {
-                        var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300));
+                        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300)))
+                        {
+                            var search = string.Join(' ', cmd.Split(' ').Skip(1));
+                            var token = new Random().Next();
+                            var result = await client.SearchAsync(search, token, new SearchOptions(
+                                filterFiles: false,
+                                filterResponses: false,
+                                fileLimit: 10000), cts.Token);
 
-                        var search = string.Join(' ', cmd.Split(' ').Skip(1));
-                        var token = new Random().Next();
-                        var result = await client.SearchAsync(search, token, new SearchOptions(
-                            filterFiles: false,
-                            filterResponses: false,
-                            fileLimit: 10000), cts.Token);
-
-                        Console.WriteLine(JsonConvert.SerializeObject(result));
-                        continue;
+                            Console.WriteLine(JsonConvert.SerializeObject(result));
+                            continue;
+                        }
                     }
                     else if (cmd.StartsWith("download-folder"))
                     {

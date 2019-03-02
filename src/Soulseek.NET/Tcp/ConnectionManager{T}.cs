@@ -16,6 +16,7 @@ namespace Soulseek.NET.Tcp
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -172,7 +173,7 @@ namespace Soulseek.NET.Tcp
         {
             try
             {
-                await connection.ConnectAsync().ConfigureAwait(false);
+                await connection.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception)
             {

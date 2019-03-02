@@ -16,6 +16,7 @@ namespace Soulseek.NET.Tcp
     using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Net.Sockets;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -70,6 +71,28 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
+        ///     Asynchronously reads data from the <see cref="NetworkStream"/>.
+        /// </summary>
+        /// <param name="buffer">An array of type <see cref="byte"/> into which the read data will be written.</param>
+        /// <param name="offset">The location in <paramref name="buffer"/> from which to start reading data.</param>
+        /// <param name="size">The number of bytes to read.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The number of bytes read.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="buffer"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the <paramref name="offset"/> is less than zero or greater than the length of
+        ///     <paramref name="buffer"/>, or <paramref name="size"/> is less than zero or greater than the length of
+        ///     <paramref name="buffer"/> minus the value of the <paramref name="offset"/> parameter.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the stream is write only.</exception>
+        /// <exception cref="IOException">Thrown when an error occurs while reading from the network.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed.</exception>
+        public Task<int> ReadAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken)
+        {
+            return NetworkStream.ReadAsync(buffer, offset, size, cancellationToken);
+        }
+
+        /// <summary>
         ///     Asynchronously writes data to the <see cref="NetworkStream"/>.
         /// </summary>
         /// <param name="buffer">An array of type <see cref="byte"/> that contains the data to write to the <see cref="NetworkStream"/>.</param>
@@ -87,6 +110,27 @@ namespace Soulseek.NET.Tcp
         public Task WriteAsync(byte[] buffer, int offset, int size)
         {
             return NetworkStream.WriteAsync(buffer, offset, size);
+        }
+
+        /// <summary>
+        ///     Asynchronously writes data to the <see cref="NetworkStream"/>.
+        /// </summary>
+        /// <param name="buffer">An array of type <see cref="byte"/> that contains the data to write to the <see cref="NetworkStream"/>.</param>
+        /// <param name="offset">The location in <paramref name="buffer"/> from which to start writing data.</param>
+        /// <param name="size">The number of bytes to write to the <see cref="NetworkStream"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the <paramref name="buffer"/> is null.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the <paramref name="offset"/> is less than zero or greater than the length of
+        ///     <paramref name="buffer"/>, or <paramref name="size"/> is less than zero or greater than the length of
+        ///     <paramref name="buffer"/> minus the value of the <paramref name="offset"/> parameter.
+        /// </exception>
+        /// <exception cref="IOException">Thrown when an error occurs while writing to the network.</exception>
+        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.</exception>
+        public Task WriteAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken)
+        {
+            return NetworkStream.WriteAsync(buffer, offset, size, cancellationToken);
         }
 
         /// <summary>

@@ -138,7 +138,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         public async Task WriteMessageAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
@@ -154,7 +154,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             await c.WriteMessageAsync(msg);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "WriteMessageAsync")]
@@ -162,8 +162,9 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         public async Task WriteMessageAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>())).Throws(new IOException());
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new IOException());
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
@@ -184,7 +185,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             Assert.IsType<ConnectionWriteException>(ex);
             Assert.IsType<IOException>(ex.InnerException);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Deferred Messages")]
@@ -192,7 +193,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         public async Task Deferred_Messages_Are_Sent_On_Connected(IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
@@ -217,7 +218,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             Assert.Equal(2, deferred1);
             Assert.Empty(deferred2);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Exactly(2));
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Trait("Category", "Code Normalization")]
@@ -227,10 +228,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             int code = 0;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
-            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Callback<byte[], int, int>((bytes, offset, length) => code = BitConverter.ToInt32(bytes, 4))
+            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) => code = BitConverter.ToInt32(bytes, 4))
                 .Returns(Task.CompletedTask);
 
             var tcpMock = new Mock<ITcpClient>();
@@ -248,7 +249,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             Assert.Equal((int)MessageCode.ServerAddUser - 10000, code);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Code Normalization")]
@@ -258,10 +259,10 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             int code = 0;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.Run(() => 1));
-            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Callback<byte[], int, int>((bytes, offset, length) => code = BitConverter.ToInt32(bytes, 4))
+            streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) => code = BitConverter.ToInt32(bytes, 4))
                 .Returns(Task.CompletedTask);
 
             var tcpMock = new Mock<ITcpClient>();
@@ -279,7 +280,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
 
             Assert.Equal((int)MessageCode.PeerInfoRequest - 20000, code);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()), Times.Once);
+            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "ReadContinuouslyAsync")]
@@ -289,8 +290,8 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             int callCount = 0;
 
             var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Callback<byte[], int, int>((bytes, offset, length) =>
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
                 {
                     if (callCount % 2 == 0)
                     {

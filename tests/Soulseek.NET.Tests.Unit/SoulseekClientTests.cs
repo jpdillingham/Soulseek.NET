@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tests.Unit
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -94,7 +95,7 @@ namespace Soulseek.NET.Tests.Unit
         public async Task Connect_Throws_When_TcpConnection_Throws()
         {
             var c = new Mock<IMessageConnection>();
-            c.Setup(m => m.ConnectAsync()).Throws(new ConnectionException());
+            c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new ConnectionException());
 
             var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
 
