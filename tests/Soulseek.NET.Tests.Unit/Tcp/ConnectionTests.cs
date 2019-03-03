@@ -241,6 +241,35 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         }
 
         [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws OperationCanceledException when token is cancelled")]
+        public async Task Connect_Throws_OperationCanceledException_When_Token_Is_Cancelled()
+        {
+            var ip = new IPAddress(0x0);
+            var port = 1;
+
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
+                .Returns(Task.Run(() => Thread.Sleep(10000)));
+
+            var o = new ConnectionOptions(connectTimeout: 10000);
+            var c = new Connection(ip, port, options: o, tcpClient: t.Object);
+
+            Exception ex = null;
+
+            using (var cts = new CancellationTokenSource())
+            {
+                cts.Cancel();
+                ex = await Record.ExceptionAsync(async () => await c.ConnectAsync(cts.Token));
+            }
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionException>(ex);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
+
+            t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
+        }
+
+        [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect throws when TcpClient throws")]
         public async Task Connect_Throws_When_TcpClient_Throws()
         {
