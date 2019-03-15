@@ -7,9 +7,9 @@
     using Soulseek.NET.Messaging.Messages;
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
     using Utility.CommandLine;
 
@@ -24,40 +24,89 @@
         [Operands]
         private static string[] Operands { get; set; }
 
-        private static string StdIn { get; set; }
+        private static readonly Action<string> o = (s) => Console.WriteLine(s);
 
-        static async Task SearchAsync(SoulseekClient client, string searchText)
+        static async Task SearchAsync(SoulseekClient client, BrainzArtist brainz, string searchText)
         {
-            var result = await client.SearchAsync(string.Join(' ', Operands.Skip(2)));
-            Console.WriteLine(JsonConvert.SerializeObject(result));
+            var album = brainz.Albums[0]; // one album at a time for now.
+            var trackCount = album.Tracks.Count();
+
+            o($"Searching for '{brainz.Artist} {album.Title}'...");
+
+            IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText);
+
+            o($"Total results: {responses.Count()}");
+
+            responses = responses.Where(r => r.FileCount >= trackCount);
+
+            o($"Results with track count >= {trackCount}: {responses.Count()}");
+
+            var matchingResponses = new List<SearchResponse>();
+
+            foreach (var response in responses)
+            {
+                if (TracksMatch(album, response))
+                {
+                    matchingResponses.Add(response);
+                }
+            }
+
+            Console.WriteLine(JsonConvert.SerializeObject(matchingResponses));
         }
 
-        static string ReadStdIn()
+        private static bool TracksMatch(BrainzAlbum album, SearchResponse response)
         {
+            foreach (var track in album.Tracks)
+            {
+                var match = response.Files
+                    .Select(f => Path.GetFileNameWithoutExtension(f.Filename))
+                    .Where(f => f.Contains(track.Title, StringComparison.InvariantCultureIgnoreCase))
+                    .Where(f => f.Contains(track.Number, StringComparison.InvariantCultureIgnoreCase))
+                    .Any();
+
+                if (!match)
+                {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        static bool TryGetBrainzInput(out BrainzArtist brainzArtist)
+        {
+            var stdin = string.Empty;
+
             if (Console.IsInputRedirected)
             {
                 using (StreamReader reader = new StreamReader(Console.OpenStandardInput(), Console.InputEncoding))
                 {
-                    return reader.ReadToEnd();
+                    stdin = reader.ReadToEnd();
                 }
             }
 
-            return null;
+            try
+            {
+                brainzArtist = JsonConvert.DeserializeObject<BrainzArtist>(stdin);
+                return true;
+            }
+            catch (Exception)
+            {
+                brainzArtist = null;
+                return false;
+            }
         }
 
         static async Task Main(string[] args)
         {
             Arguments.Populate();
 
-            StdIn = ReadStdIn();
             BrainzArtist brainz = null;
 
-            if (!string.IsNullOrWhiteSpace(StdIn))
+            if (TryGetBrainzInput(out brainz))
             {
-                brainz = JsonConvert.DeserializeObject<BrainzArtist>(StdIn);
+                Operands = new string[] { "", "search", brainz.Artist, brainz.Albums[0].Title };
             }
-
-            Operands = new string[] { "", "search", brainz.Artist, brainz.Albums[0].Title };
 
             using (var client = new SoulseekClient(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug)))
             {
@@ -75,7 +124,7 @@
                 switch (Operands[1])
                 {
                     case "search":
-                        await SearchAsync(client, string.Join(' ', Operands.Skip(2)));
+                        await SearchAsync(client, brainz, string.Join(' ', Operands.Skip(2)));
                         break;
                     default:
                         Console.WriteLine($"Unknown option: '{Operands[1]}'.");
