@@ -1,5 +1,6 @@
 ﻿namespace Console
 {
+    using Console.Model;
     using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.NET;
@@ -46,9 +47,17 @@
 
         static async Task Main(string[] args)
         {
-            StdIn = ReadStdIn();
-
             Arguments.Populate();
+
+            StdIn = ReadStdIn();
+            BrainzArtist brainz = null;
+
+            if (!string.IsNullOrWhiteSpace(StdIn))
+            {
+                brainz = JsonConvert.DeserializeObject<BrainzArtist>(StdIn);
+            }
+
+            Operands = new string[] { "", "search", brainz.Artist, brainz.Albums[0].Title };
 
             using (var client = new SoulseekClient(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug)))
             {
