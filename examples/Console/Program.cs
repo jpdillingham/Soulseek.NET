@@ -23,8 +23,31 @@
         [Operands]
         private static string[] Operands { get; set; }
 
+        private static string StdIn { get; set; }
+
+        static async Task SearchAsync(SoulseekClient client, string searchText)
+        {
+            var result = await client.SearchAsync(string.Join(' ', Operands.Skip(2)));
+            Console.WriteLine(JsonConvert.SerializeObject(result));
+        }
+
+        static string ReadStdIn()
+        {
+            if (Console.IsInputRedirected)
+            {
+                using (StreamReader reader = new StreamReader(Console.OpenStandardInput(), Console.InputEncoding))
+                {
+                    return reader.ReadToEnd();
+                }
+            }
+
+            return null;
+        }
+
         static async Task Main(string[] args)
         {
+            StdIn = ReadStdIn();
+
             Arguments.Populate();
 
             using (var client = new SoulseekClient(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug)))
@@ -43,8 +66,7 @@
                 switch (Operands[1])
                 {
                     case "search":
-                        var result = await client.SearchAsync(string.Join(' ', Operands.Skip(2)));
-                        Console.WriteLine(JsonConvert.SerializeObject(result));
+                        await SearchAsync(client, string.Join(' ', Operands.Skip(2)));
                         break;
                     default:
                         Console.WriteLine($"Unknown option: '{Operands[1]}'.");
