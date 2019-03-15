@@ -51,6 +51,8 @@
                 }
             }
 
+            o($"Results with matching tracks: {matchingResponses.Count()}");
+
             Console.WriteLine(JsonConvert.SerializeObject(matchingResponses));
         }
 
@@ -59,10 +61,12 @@
             foreach (var track in album.Tracks)
             {
                 var match = response.Files
+                    .Where(f => f.Length >= (track.Length /1000)) // make sure length is at least as long
+                    .Where(f => f.Length < (track.Length / 1000) + 5) // allow for songs up to 5 seconds longer
                     .Select(f => Path.GetFileNameWithoutExtension(f.Filename))
-                    .Where(f => f.Contains(track.Title, StringComparison.InvariantCultureIgnoreCase))
-                    .Where(f => f.Contains(track.Number, StringComparison.InvariantCultureIgnoreCase))
-                    .Any();
+                        .Where(f => f.Contains(track.Title, StringComparison.InvariantCultureIgnoreCase))
+                        .Where(f => f.Contains(track.Number, StringComparison.InvariantCultureIgnoreCase))
+                        .Any();
 
                 if (!match)
                 {
