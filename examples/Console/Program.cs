@@ -33,7 +33,13 @@
 
             o($"Searching for '{brainz.Artist} {album.Title}'...");
 
-            IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText);
+            IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText, 
+                new SearchOptions(
+                    filterResponses: true, 
+                    minimumResponseFileCount: trackCount,
+                    filterFiles: true,
+                    ignoredFileExtensions: new[] { "m4a", ".flac" }
+                ));
 
             o($"Total results: {responses.Count()}");
 
@@ -53,7 +59,20 @@
 
             o($"Results with matching tracks: {matchingResponses.Count()}");
 
-            Console.WriteLine(JsonConvert.SerializeObject(matchingResponses));
+            var bestResponse = matchingResponses
+                .OrderBy(r => r.QueueLength)
+                .OrderByDescending(r => r.UploadSpeed)
+                .FirstOrDefault();
+
+            if (bestResponse != null)
+            {
+                o($"Best response from: {bestResponse.Username}");
+
+                foreach (var file in bestResponse.Files)
+                {
+                    o($"{file.Filename}\t{file.Length}\t{file.BitRate}\t{file.Size}");
+                }
+            }
         }
 
         private static bool TracksMatch(BrainzAlbum album, SearchResponse response)
