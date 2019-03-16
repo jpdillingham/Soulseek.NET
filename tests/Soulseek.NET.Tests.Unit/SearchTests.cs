@@ -156,13 +156,27 @@ namespace Soulseek.NET.Tests.Unit
         }
 
         [Trait("Category", "FileMeetsOptionCriteria")]
-        [Theory(DisplayName = "File filter respects IgnoredFileExtensions option")]
+        [Theory(DisplayName = "File filter respects IgnoredFileExtensions option with extension property")]
         [InlineData("mp3", true)]
         [InlineData("m4a", false)]
-        public void File_Filter_Respects_IgnoredFileExtensions_Option(string extension, bool expected)
+        public void File_Filter_Respects_IgnoredFileExtensions_Option_With_Extension(string extension, bool expected)
         {
             var s = new Search("foo", 42, new SearchOptions(filterFiles: true, ignoredFileExtensions: new[] { "m4a" }));
             var file = new File(1, "name", 1, extension, 0);
+
+            var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
+
+            Assert.Equal(expected, filter);
+        }
+
+        [Trait("Category", "FileMeetsOptionCriteria")]
+        [Theory(DisplayName = "File filter respects IgnoredFileExtensions option with filename property")]
+        [InlineData("mp3", true)]
+        [InlineData("m4a", false)]
+        public void File_Filter_Respects_IgnoredFileExtensions_Option_With_Filename(string extension, bool expected)
+        {
+            var s = new Search("foo", 42, new SearchOptions(filterFiles: true, ignoredFileExtensions: new[] { "m4a" }));
+            var file = new File(1, $"name.{extension}", 1, string.Empty, 0);
 
             var filter = s.InvokeMethod<bool>("FileMeetsOptionCriteria", file);
 
