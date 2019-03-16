@@ -14,6 +14,7 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Threading;
     using Soulseek.NET.Messaging.Messages;
@@ -153,6 +154,14 @@ namespace Soulseek.NET
             }
         }
 
+        private bool FileHasIgnoredExtension(File f)
+        {
+            return (Options.IgnoredFileExtensions != null) &&
+                Options.IgnoredFileExtensions.Any(e =>
+                    e.Equals(f.Extension, StringComparison.InvariantCultureIgnoreCase) ||
+                    $".{e}".Equals(Path.GetExtension(f.Filename), StringComparison.InvariantCultureIgnoreCase));
+        }
+
         private bool FileMeetsOptionCriteria(File file)
         {
             if (!Options.FilterFiles)
@@ -160,12 +169,7 @@ namespace Soulseek.NET
                 return true;
             }
 
-            bool fileHasIgnoredExtension(File f)
-            {
-                return (Options.IgnoredFileExtensions != null) && Options.IgnoredFileExtensions.Any(e => e == f.Extension);
-            }
-
-            if (file.Size < Options.MinimumFileSize || fileHasIgnoredExtension(file))
+            if (file.Size < Options.MinimumFileSize || FileHasIgnoredExtension(file))
             {
                 return false;
             }
