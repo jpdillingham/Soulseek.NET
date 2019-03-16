@@ -48,6 +48,9 @@
             responses = responses.Where(r => r.FileCount >= trackCount);
             o($"Results with track count >= {trackCount}: {responses.Count()}");
 
+            var bannedUsers = new string[] { "" };
+            responses = responses.Where(r => !bannedUsers.Contains(r.Username));
+
             responses = responses.Where(r => TracksMatch(album, r));
             o($"Results with matching tracks: {responses.Count()}");
 
@@ -93,12 +96,19 @@
             var tasks = files.Select(async file =>
             {
                 Console.WriteLine($"Attempting to download {file}");
-                var bytes = await client.DownloadAsync(username, file, random.Next());
-                var filename = $@"C:\tmp\{Path.GetFileName(file)}";
+                try
+                {
+                    var bytes = await client.DownloadAsync(username, file, random.Next());
+                    var filename = $@"C:\tmp\{Path.GetFileName(file)}";
 
-                Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
-                System.IO.File.WriteAllBytes(filename, bytes);
-                Console.WriteLine("Download complete!");
+                    Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
+                    System.IO.File.WriteAllBytes(filename, bytes);
+                    Console.WriteLine("Download complete!");
+                }
+                catch (Exception ex)
+                {
+                    o($"Error downloading {file}: {ex.Message}");
+                }
             });
 
             await Task.WhenAll(tasks);
@@ -106,7 +116,13 @@
 
         private static bool TracksMatch(BrainzAlbum album, SearchResponse response)
         {
-            return true;
+            o($"Checking response...");
+
+            foreach (var track in response.Files)
+            {
+                o($"{Path.GetFileNameWithoutExtension(track.Filename)} [{track.Length / 1000}]");
+            }
+
             foreach (var track in album.Tracks)
             {
                 var match = response.Files
@@ -160,13 +176,19 @@
 
             if (TryGetBrainzInput(out brainz))
             {
+                o($"Artist: {brainz.Artist}");
+                o($"Album: {brainz.Albums[0].Title}");
+
+                foreach (var track in brainz.Albums[0].Tracks)
+                {
+                    o($"{track.Number} - {track.Title} [{track.Length}]");
+                }
+
                 Operands = new string[] { "", "search", brainz.Artist, brainz.Albums[0].Title };
             }
 
-            //Operands = new string[] { "", "search" };
-
             var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                minimumDiagnosticLevel: DiagnosticLevel.Info,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
             );
