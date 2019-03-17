@@ -48,7 +48,7 @@
             responses = responses.Where(r => r.FileCount >= trackCount);
             o($"Results with track count >= {trackCount}: {responses.Count()}");
 
-            var bannedUsers = new string[] { "semigothic" };
+            var bannedUsers = new string[] {  };
             responses = responses.Where(r => !bannedUsers.Contains(r.Username));
 
             responses = responses.Where(r => TracksMatch(album, r));
