@@ -48,7 +48,7 @@
             responses = responses.Where(r => r.FileCount >= trackCount);
             o($"Results with track count >= {trackCount}: {responses.Count()}");
 
-            var bannedUsers = new string[] { "" };
+            var bannedUsers = new string[] { "semigothic" };
             responses = responses.Where(r => !bannedUsers.Contains(r.Username));
 
             responses = responses.Where(r => TracksMatch(album, r));
@@ -99,7 +99,15 @@
                 try
                 {
                     var bytes = await client.DownloadAsync(username, file, random.Next());
-                    var filename = $@"C:\tmp\{Path.GetFileName(file)}";
+
+                    var path = $@"C:\tmp\" + Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "");
+
+                    if (!System.IO.Directory.Exists(path))
+                    {
+                        System.IO.Directory.CreateDirectory(path);
+                    }
+
+                    var filename = Path.Combine(path, Path.GetFileName(file));
 
                     Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
                     System.IO.File.WriteAllBytes(filename, bytes);
@@ -126,8 +134,8 @@
             foreach (var track in album.Tracks)
             {
                 var match = response.Files
-                    .Where(f => f.Length >= (track.Length /1000)) // make sure length is at least as long
-                    .Where(f => f.Length < (track.Length / 1000) + 5) // allow for songs up to 5 seconds longer
+                    //.Where(f => f.Length >= (track.Length /1000)) // make sure length is at least as long
+                    //.Where(f => f.Length < (track.Length / 1000) + 5) // allow for songs up to 5 seconds longer
                     .Select(f => Path.GetFileNameWithoutExtension(f.Filename))
                         .Where(f => f.Contains(track.Title, StringComparison.InvariantCultureIgnoreCase))
                         .Where(f => f.Contains(track.Number, StringComparison.InvariantCultureIgnoreCase))
@@ -363,7 +371,7 @@
                 return Progress[k];
             });
 
-            //Console.WriteLine($"[PROGRESS]: {e.Filename}: {Progress[key]}%");
+            Console.Write($"\r[PROGRESS]: {e.Filename}: {Progress[key]}%");
         }
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
