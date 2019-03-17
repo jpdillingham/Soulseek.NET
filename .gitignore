@@ -338,3 +338,4 @@ tools/*
 
 #Main Build Output Directory
 [Oo]ut/
+/examples/Console/brainz.json
