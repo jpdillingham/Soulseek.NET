@@ -124,11 +124,13 @@
 
         private static bool TracksMatch(BrainzAlbum album, SearchResponse response)
         {
+            return true;
             o($"Checking response...");
+
 
             foreach (var track in response.Files)
             {
-                o($"{Path.GetFileNameWithoutExtension(track.Filename)} [{track.Length / 1000}]");
+                //o($"{Path.GetFileNameWithoutExtension(track.Filename)} [{track.Length / 1000}]");
             }
 
             foreach (var track in album.Tracks)
@@ -356,22 +358,23 @@
             Console.WriteLine($"[SEARCH] [{e.SearchText}]: {e.State}");
         }
 
-        private static ConcurrentDictionary<string, double> Progress { get; set; } = new ConcurrentDictionary<string, double>();
+        private static ConcurrentDictionary<string, ProgressBar> Progress { get; set; } = new ConcurrentDictionary<string, ProgressBar>();
 
         private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
         {
             var key = $"{e.Username}:{e.Filename}:{e.Token}";
-            Progress.AddOrUpdate(key, e.PercentComplete, (k, v) =>
+            Progress.AddOrUpdate(key, new ProgressBar(30, 0, 100, 1, (int)e.PercentComplete), (k, v) =>
             {
-                if (Progress[k] <= e.PercentComplete)
-                {
-                    return e.PercentComplete;
-                }
-
+                Progress[k].Value = (int)e.PercentComplete;
                 return Progress[k];
             });
 
             Console.Write($"\r[PROGRESS]: {e.Filename}: {Progress[key]}%");
+
+            if (e.PercentComplete == 100)
+            {
+                Console.Write("\n");
+            }
         }
 
         private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
