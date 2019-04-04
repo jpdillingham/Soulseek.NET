@@ -112,6 +112,32 @@ namespace Console.Model
         public bool Video { get; set; }
     }
 
+    public class Release
+    {
+        [JsonProperty("packaging-id")]
+        public string PackagingID { get; set; }
+        public string Asin { get; set; }
+        [JsonProperty("status-id")]
+        public string StatusID { get; set; }
+        public string Disambiguation { get; set; }
+        public string Date { get; set; }
+        public string Packaging { get; set; }
+        public string Status { get; set; }
+        [JsonProperty("release-events")]
+        public IEnumerable<ReleaseEvent> ReleaseEvents { get; set; }
+        [JsonProperty("cover-art-archive")]
+        public CoverArtArchive CoverArtArchive { get; set; }
+        [JsonProperty("text-representation")]
+        public TextRepresentation TextRepresentation { get; set; }
+        public string Quality { get; set; }
+        public string Title { get; set; }
+        public string Country { get; set; }
+        public string ID { get; set; }
+        public IEnumerable<Media> Media { get; set; }
+        public string Barcode { get; set; }
+        public double Score { get; set; }
+    }
+
     public class ReleaseEvent
     {
         public Area Area { get; set; }
