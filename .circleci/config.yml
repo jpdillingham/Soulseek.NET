@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: microsoft/aspnetcore-build:2.0
+      - image: microsoft/aspnetcore-build:2.1
     steps:
       - checkout
       - run: find .
