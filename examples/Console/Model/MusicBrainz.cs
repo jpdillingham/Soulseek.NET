@@ -44,4 +44,13 @@ namespace Console.Model
         public string End { get; set; }
         public bool Ended { get; set; }
     }
+
+    public class CoverArtArchive
+    {
+        public bool Artwork { get; set; }
+        public bool Front { get; set; }
+        public int Count { get; set; }
+        public bool Back { get; set; }
+        public bool Darkened { get; set; }
+    }
 }
