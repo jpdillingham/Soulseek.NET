@@ -65,4 +65,19 @@ namespace Console.Model
         public int Count { get; set; }
         public string Name { get; set; }
     }
+
+    public class ReleaseEvent
+    {
+        public string Date { get; set; }
+        public Area Area { get; set; }
+    }
+
+    public class Recording
+    {
+        public string Disambiguation { get; set; }
+        public string ID { get; set; }
+        public string Title { get; set; }
+        public bool Video { get; set; }
+        public int Length { get; set; }
+    }
 }
