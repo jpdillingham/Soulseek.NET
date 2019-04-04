@@ -53,4 +53,16 @@ namespace Console.Model
         public bool Back { get; set; }
         public bool Darkened { get; set; }
     }
+
+    public class TextRepresentation
+    {
+        public string Language { get; set; }
+        public string Script { get; set; }
+    }
+
+    public class Tag
+    {
+        public int Count { get; set; }
+        public string Name { get; set; }
+    }
 }
