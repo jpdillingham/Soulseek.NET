@@ -1,0 +1,11 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: microsoft/aspnetcore-build:2.0
+    steps:
+      - checkout
+      - run: find .
+      - run: dotnet restore
+      - run: dotnet build
+      - run: dotnet test --no-build tests/Soulseek.NET.Tests.Unit
