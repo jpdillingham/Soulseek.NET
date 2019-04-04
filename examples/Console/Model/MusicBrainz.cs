@@ -114,34 +114,74 @@ namespace Console.Model
 
     public class Release
     {
-        [JsonProperty("packaging-id")]
-        public string PackagingID { get; set; }
         public string Asin { get; set; }
-        [JsonProperty("status-id")]
-        public string StatusID { get; set; }
-        public string Disambiguation { get; set; }
-        public string Date { get; set; }
-        public string Packaging { get; set; }
-        public string Status { get; set; }
-        [JsonProperty("release-events")]
-        public IEnumerable<ReleaseEvent> ReleaseEvents { get; set; }
+
+        public string Barcode { get; set; }
+
+        public string Country { get; set; }
+
         [JsonProperty("cover-art-archive")]
         public CoverArtArchive CoverArtArchive { get; set; }
+
+        public string Date { get; set; }
+
+        public string Disambiguation { get; set; }
+
+        public string ID { get; set; }
+
+        public IEnumerable<Media> Media { get; set; }
+
+        public string Packaging { get; set; }
+
+        [JsonProperty("packaging-id")]
+        public string PackagingID { get; set; }
+
+        public string Quality { get; set; }
+
+        [JsonProperty("release-events")]
+        public IEnumerable<ReleaseEvent> ReleaseEvents { get; set; }
+
+        public double Score { get; set; }
+
+        public string Status { get; set; }
+
+        [JsonProperty("status-id")]
+        public string StatusID { get; set; }
+
         [JsonProperty("text-representation")]
         public TextRepresentation TextRepresentation { get; set; }
-        public string Quality { get; set; }
+
         public string Title { get; set; }
-        public string Country { get; set; }
-        public string ID { get; set; }
-        public IEnumerable<Media> Media { get; set; }
-        public string Barcode { get; set; }
-        public double Score { get; set; }
     }
 
     public class ReleaseEvent
     {
         public Area Area { get; set; }
         public string Date { get; set; }
+    }
+
+    public class ReleaseGroup
+    {
+        public string Disambiguation { get; set; }
+
+        [JsonProperty("first-release-date")]
+        public string FirstReleaseDate { get; set; }
+
+        public string ID { get; set; }
+
+        [JsonProperty("primary-type")]
+        public string PrimaryType { get; set; }
+
+        [JsonProperty("primary-type-id")]
+        public string PrimaryTypeID { get; set; }
+
+        [JsonProperty("secondary-type-ids")]
+        public IEnumerable<string> SecondaryTypeIDs { get; set; }
+
+        [JsonProperty("secondary-types")]
+        public IEnumerable<string> SecondaryTypes { get; set; }
+
+        public string Title { get; set; }
     }
 
     public class Tag
