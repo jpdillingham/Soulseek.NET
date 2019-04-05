@@ -8,7 +8,5 @@ jobs:
       - run: find .
       - run: dotnet restore
       - run: dotnet build --no-restore --no-incremental
-      - run:
-          name: Test
-          command: |
-            ./build/test.sh
+      - run: dotnet test --no-build -p:CollectCoverage=true -p:CoverletOutput="../coverage.json" tests/Soulseek.NET.Tests.Unit -p:Include="[Soulseek.NET*]*" -p:Exclude="[*.Tests.*]*"
+      - run: dotnet test --no-build -p:CollectCoverage=true -p:MergeWith="../coverage.json" -p:CoverletOutput="../opencover.xml" -p:CoverletOutputFormat=opencover tests/Soulseek.NET.Tests.Integration -p:Include="[Soulseek.NET*]*" -p:Exclude="[*.Tests.*]*"
