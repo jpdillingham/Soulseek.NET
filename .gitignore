@@ -339,3 +339,6 @@ tools/*
 #Main Build Output Directory
 [Oo]ut/
 /examples/Console/brainz.json
+
+coverage.json
+coverage.opencover.xml
