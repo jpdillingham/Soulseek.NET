@@ -6,6 +6,5 @@ jobs:
     steps:
       - checkout
       - run: find .
-      - run: dotnet restore
-      - run: dotnet build --no-restore --no-incremental
-      - run: ./build/test.sh
+      - run: sh ./build/build.sh
+      - run: sh ./build/test.sh
