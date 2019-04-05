@@ -5,6 +5,7 @@ mono: none
 dotnet: 2.1
 before_script:
 - dotnet restore
+- dotnet tool install --global dotnet-sonarscanner --version 4.6.0
 script:
 - sh ./build/build.sh
 - sh ./build/test.sh
