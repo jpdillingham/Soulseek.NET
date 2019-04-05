@@ -6,5 +6,5 @@ dotnet: 2.1
 before_script:
 - dotnet restore
 script:
-- ./build/build.sh
-- ./build/test.sh
+- sh ./build/build.sh
+- sh ./build/test.sh
