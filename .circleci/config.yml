@@ -7,5 +7,5 @@ jobs:
       - checkout
       - run: find .
       - run: dotnet restore
-      - run: dotnet build
-      - run: dotnet test --no-build tests/Soulseek.NET.Tests.Unit
+      - run: dotnet build --no-restore --no-incremental
+      - run: ./build/test.sh
