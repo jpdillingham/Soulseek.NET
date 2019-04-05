@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 set -e
 
 dotnet test --no-build --configuration Release -p:CollectCoverage=true -p:CoverletOutput="../coverage.json" tests/Soulseek.NET.Tests.Unit -p:Include="[Soulseek.NET*]*" -p:Exclude="[*.Tests.*]*"
