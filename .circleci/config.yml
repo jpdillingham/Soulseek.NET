@@ -8,4 +8,4 @@ jobs:
       - run: find .
       - run: dotnet restore
       - run: dotnet build --no-restore --no-incremental
-      - run: sh ./build/test.sh
+      - run: ./build/test.sh
