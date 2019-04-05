@@ -1,4 +1,6 @@
-version: 2
+version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.2
 jobs:
   build:
     docker:
@@ -8,4 +10,9 @@ jobs:
       - run: find .
       - run: dotnet restore
       - run: dotnet build --no-restore --no-incremental
-      - run: ./build/test.sh
+      - run:
+          name: Test
+          command: |
+            ./build/test.sh
+      - codecov/upload:
+          file: {{ tests/coverage.xml }}
