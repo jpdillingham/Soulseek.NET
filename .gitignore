@@ -341,4 +341,4 @@ tools/*
 /examples/Console/brainz.json
 
 coverage.json
-coverage.opencover.xml
+opencover.xml
