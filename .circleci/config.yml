@@ -6,6 +6,7 @@ jobs:
     steps:
       - checkout
       - run: find .
+      - run: apk add openjdk8-jre
       - run: echo 'export PATH=$HOME/.dotnet/tools:$PATH' >> $BASH_ENV
       - run: dotnet tool install --global dotnet-sonarscanner --version 4.6.0
       - run: bash ./build/ci.sh
