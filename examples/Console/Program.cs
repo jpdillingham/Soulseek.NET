@@ -14,6 +14,7 @@
     using System.Threading;
     using System.Threading.Tasks;
     using Utility.CommandLine;
+    using Utility.CommandLine.Progress;
 
     public class Program
     {

@@ -8,3 +8,5 @@ dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-githu
 . "${__dir}/test.sh"
 
 dotnet-sonarscanner end /d:sonar.login="${SONARCLOUD_TOKEN}"
+
+bash <(curl -s https://codecov.io/bash) -f tests/opencover.xml
