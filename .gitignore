@@ -343,3 +343,4 @@ tools/*
 coverage.json
 opencover.xml
 /.sonarqube
+dotnet-sonarscanner.exe
