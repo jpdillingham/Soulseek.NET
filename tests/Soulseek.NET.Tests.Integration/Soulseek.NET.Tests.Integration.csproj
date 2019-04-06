@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <IsXUnitTestProject>true</IsXUnitTestProject>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -9,10 +10,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="StyleCop.json" />
-  </ItemGroup>
-  <ItemGroup>
-    <AdditionalFiles Include="StyleCop.json">
+    <AdditionalFiles Include="..\CodeAnalysis\StyleCop.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
   </ItemGroup>
@@ -41,8 +39,8 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Soulseek.NET\Soulseek.NET.csproj" />
   </ItemGroup>
-
 </Project>
