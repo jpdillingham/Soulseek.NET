@@ -1,6 +1,6 @@
 # Soulseek.NET
 
-[![build status](https://jpdillingham.visualstudio.com/Soulseek.NET/_apis/build/status/Soulseek.NET-CI)](https://jpdillingham.visualstudio.com/Soulseek.NET/_build/latest?definitionId=2)
+[![CircleCI](https://circleci.com/gh/jpdillingham/Soulseek.NET/tree/master.svg?style=shield)](https://circleci.com/gh/jpdillingham/Soulseek.NET/tree/master)
 [![codecov](https://codecov.io/gh/jpdillingham/Soulseek.NET/branch/master/graph/badge.svg)](https://codecov.io/gh/jpdillingham/Soulseek.NET)
 [![quality](https://sonarcloud.io/api/project_badges/measure?project=jpdillingham_Soulseek.NET&metric=alert_status)](https://sonarcloud.io/dashboard?id=jpdillingham_Soulseek.NET)
 [![lines of code](https://sonarcloud.io/api/project_badges/measure?project=jpdillingham_Soulseek.NET&metric=ncloc)](https://sonarcloud.io/dashboard?id=jpdillingham_Soulseek.NET)
