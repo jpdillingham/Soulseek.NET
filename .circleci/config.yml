@@ -6,6 +6,5 @@ jobs:
     steps:
       - checkout
       - run: find .
-      - run: export PATH="$PATH:."
-      - run: dotnet tool install --tool-path . dotnet-sonarscanner --version 4.6.0
+      - run: echo $PATH
       - run: bash ./build/ci.sh
