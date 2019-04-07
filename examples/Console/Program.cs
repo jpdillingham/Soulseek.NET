@@ -11,10 +11,8 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
     using Utility.CommandLine;
-    using Utility.CommandLine.Progress;
 
     public class Program
     {
