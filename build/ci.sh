@@ -1,8 +1,9 @@
 #!/bin/bash
 set -e
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+__branch=$(git branch --no-color | grep -E '^\*' | awk '{print $2}')
 
-dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" /d:sonar.login="${SONARCLOUD_TOKEN}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
+dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" /d:sonar.branch.name=${__branch} /d:sonar.login="${SONARCLOUD_TOKEN}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
 
 . "${__dir}/build.sh"
 . "${__dir}/test.sh"
