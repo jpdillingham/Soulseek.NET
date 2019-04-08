@@ -28,6 +28,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{725D726B
 	ProjectSection(SolutionItems) = preProject
 		build\build.sh = build\build.sh
 		build\ci.sh = build\ci.sh
+		build\deploy.sh = build\deploy.sh
 		build\test.sh = build\test.sh
 	EndProjectSection
 EndProject
