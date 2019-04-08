@@ -14,7 +14,7 @@ if [ ! -z "${CIRCLECI}" ]; then
     # if building a PR, fetch the PR info from GitHub to determine the base and branch, then set options for PR analysis
     if [ ! -z "${CIRCLE_PULL_REQUEST}" ]; then
         echo "Fetching PR to determine base and branch"
-        pr_json="$(curl ${CIRCLE_PULL_REQUEST})"
+        pr_json="$(curl -v ${CIRCLE_PULL_REQUEST})"
         base="$(echo "$pr_json" | jq -r ".base.ref")"
         branch="$(echo "$pr_json" | jq -r ".head.ref")"
         options="/d:sonar.pullrequest.base="${base}" /d:sonar.pullrequest.branch="${branch}" /d:sonar.pullrequest.key="${CIRCLE_PULL_REQUEST##*/}""
