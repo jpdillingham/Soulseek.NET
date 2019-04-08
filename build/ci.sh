@@ -13,13 +13,13 @@ if [ "${CIRCLECI}" = "true" ]; then
     fi
 fi
 
-echo "Launching dotnet-sonarscanner with options: $"{options}""
+echo "Launching dotnet-sonarscanner with options: "${options}""
 
-dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" "${options}" /d:sonar.login="${SONARCLOUD_TOKEN}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
+dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" "${options}" /d:sonar.login="${TOKEN_SONARCLOUD}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
 
 . "${__dir}/build.sh"
 . "${__dir}/test.sh"
 
-dotnet-sonarscanner end /d:sonar.login="${SONARCLOUD_TOKEN}"
+dotnet-sonarscanner end /d:sonar.login="${TOKEN_SONARCLOUD}"
 
 bash <(curl -s https://codecov.io/bash) -f tests/opencover.xml
