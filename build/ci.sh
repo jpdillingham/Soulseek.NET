@@ -3,11 +3,19 @@ set -e
 __dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 __branch=$(git branch --no-color | grep -E '^\*' | awk '{print $2}')
 
+options="/d:sonar.branch.name="${__branch}""
+
 if [ "${CIRCLECI}" = "true" ]; then
     __branch="${CIRCLE_BRANCH}"
+
+    if [ ! -z "${CIRCLE_PULL_REQUEST}" ]; then
+        options="/d:sonar.pullrequest.branch="${__branch}" /d:sonar.pullrequest.key="${CIRCLE_PULL_REQUEST##*/}""
+    fi
 fi
 
-dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" /d:sonar.branch.name=${__branch} /d:sonar.login="${SONARCLOUD_TOKEN}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
+echo "Launching dotnet-sonarscanner with options: $"{options}""
+
+dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" "${options}" /d:sonar.login="${SONARCLOUD_TOKEN}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
 
 . "${__dir}/build.sh"
 . "${__dir}/test.sh"
