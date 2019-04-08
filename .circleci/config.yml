@@ -4,6 +4,7 @@ jobs:
     docker:
       - image: microsoft/dotnet:2.1.300-sdk
     steps:
+      - run: env
       - checkout
       - run: find .
       - run: apt-get update

@@ -1,32 +1,48 @@
 <Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <IsPackable>true</IsPackable>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <ProjectGuid>{f4d9d870-a509-463b-90d4-8d9d6cc340fb}</ProjectGuid>
   </PropertyGroup>
 
   <PropertyGroup>
     <CodeAnalysisRuleSet>..\CodeAnalysis\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
-  <!-- Package Metadata -->
-  <PropertyGroup>
-    <PackageId>Soulseek.NET</PackageId>
-    <!--
-      Since this project only produces one package, you should do version bumps directly in here.
-      This will write File & AssemblyVersion in the DLL File as well as pass down to NuGet Package
-      task for use in the .nupkg thus the Version registered in the feed when pushed.
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <DocumentationFile>bin\Debug\netstandard2.0\Soulseek.NET.xml</DocumentationFile>
+  </PropertyGroup>
 
-      Remember to stay SemVer v2 compatible.
-      If you want to attach a more detailed version tag to the DLL, use <InformationalVersion>ANYSTRINGYOUWANT</InformationalVersion>
-    -->
-    <Version>1.3.3.7</Version>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <DocumentationFile>bin\Release\netstandard2.0\Soulseek.NET.xml</DocumentationFile>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AdditionalFiles Include="..\CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </AdditionalFiles>
+  </ItemGroup>
+
+  <PropertyGroup>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <Version>0.0.1</Version>
+    <Authors>JP Dillingham</Authors>
+    <Product>Soulseek.NET</Product>
+    <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
+    <PackageLicenseExpression>GPL-3.0-or-later</PackageLicenseExpression>
     <Description>A .NET Standard client library for the Soulseek network.</Description>
+    <Copyright>Copyright (c) JP Dillingham (jp@dillingham.ws)</Copyright>
     <RepositoryUrl>https://github.com/jpdillingham/Soulseek.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
-    <PackageTags>Soulseek Network Soulseek.NET JPDillingham</PackageTags>
-    <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
-    <PackageLicenseUrl>https://github.com/jpdillingham/Soulseek.NET/blob/master/LICENSE</PackageLicenseUrl>
-    <!-- SonarQube needs this -->
-    <ProjectGuid>{f4d9d870-a509-463b-90d4-8d9d6cc340fb}</ProjectGuid>
+    <PackageTags>dotnet csharp soulseek soulseek-network</PackageTags>
+    <NeutralLanguage>en-US</NeutralLanguage>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <NoWarn>1701;1702;1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
@@ -35,17 +51,6 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
     <PackageReference Include="Microsoft.CSharp" Version="4.5.0" />
-  </ItemGroup>
-
-  <!-- SourceLink Setup -->
-  <PropertyGroup>
-    <AllowedOutputExtensionsInPackageBuildOutputFolder>.pdb;$(AllowedOutputExtensionsInPackageBuildOutputFolder)</AllowedOutputExtensionsInPackageBuildOutputFolder>
-    <PublishRepositoryUrl>true</PublishRepositoryUrl>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <NoWarn>1701;1702;1591</NoWarn>
-  </PropertyGroup>
-  <ItemGroup>
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0-beta2-18618-05" PrivateAssets="All" />
     <PackageReference Include="SonarAnalyzer.CSharp" Version="7.10.0.7896">
       <PrivateAssets>all</PrivateAssets>
@@ -62,4 +67,10 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
   </ItemGroup>
+
+    <!-- SourceLink Setup -->
+  <PropertyGroup>
+    <AllowedOutputExtensionsInPackageBuildOutputFolder>.pdb;$(AllowedOutputExtensionsInPackageBuildOutputFolder)</AllowedOutputExtensionsInPackageBuildOutputFolder>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+  </PropertyGroup>
 </Project>

@@ -2,20 +2,15 @@
   <PropertyGroup>
     <TargetFrameworks>netcoreapp2.1</TargetFrameworks>
     <IsXUnitTestProject>true</IsXUnitTestProject>
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netcoreapp2.1|AnyCPU'">
-    <DocumentationFile></DocumentationFile>
-  </PropertyGroup>
-  
+
   <PropertyGroup>
     <CodeAnalysisRuleSet>..\CodeAnalysis\CodeAnalysis.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="StyleCop.json" />
-  </ItemGroup>
-  <ItemGroup>
-    <AdditionalFiles Include="StyleCop.json">
+    <AdditionalFiles Include="..\CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
       <CopyToOutputDirectory>Never</CopyToOutputDirectory>
     </AdditionalFiles>
   </ItemGroup>
@@ -47,7 +42,9 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-
+  </ItemGroup>
+  
+  <ItemGroup>
     <ProjectReference Include="..\..\src\Soulseek.NET\Soulseek.NET.csproj" />
   </ItemGroup>
 </Project>
