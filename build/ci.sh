@@ -9,13 +9,21 @@ if [ "${CIRCLECI}" = "true" ]; then
     __branch="${CIRCLE_BRANCH}"
 
     if [ ! -z "${CIRCLE_PULL_REQUEST}" ]; then
-        options="/d:sonar.pullrequest.branch="${__branch}" /d:sonar.pullrequest.key="${CIRCLE_PULL_REQUEST##*/}""
+        options="/d:sonar.pullrequest.base="master" /d:sonar.pullrequest.branch="${__branch}" /d:sonar.pullrequest.key="${CIRCLE_PULL_REQUEST##*/}""
     fi
 fi
 
-echo "Launching dotnet-sonarscanner with options: "${options}""
+echo "Launching dotnet-sonarscanner with options: ${options}"
 
-dotnet-sonarscanner begin /key:"jpdillingham_Soulseek.NET" /o:jpdillingham-github /d:sonar.host.url="https://sonarcloud.io" /d:sonar.exclusions="**/*examples*/**" "${options}" /d:sonar.login="${TOKEN_SONARCLOUD}" /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml"
+dotnet-sonarscanner begin \
+    /key:"jpdillingham_Soulseek.NET" \
+    /o:jpdillingham-github \
+    ${options} \
+    /d:sonar.host.url="https://sonarcloud.io" \
+    /d:sonar.github.repository="jpdillingham/Soulseek.NET" \
+    /d:sonar.exclusions="**/*examples*/**" \
+    /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml" \
+    /d:sonar.login="${TOKEN_SONARCLOUD}" \
 
 . "${__dir}/build.sh"
 . "${__dir}/test.sh"
