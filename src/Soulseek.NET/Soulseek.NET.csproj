@@ -15,12 +15,6 @@
     <DocumentationFile>bin\Release\netstandard2.0\Soulseek.NET.xml</DocumentationFile>
   </PropertyGroup>
 
-  <ItemGroup>
-    <AdditionalFiles Include="..\CodeAnalysis\stylecop.json" Link="Properties\stylecop.json">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </AdditionalFiles>
-  </ItemGroup>
-
   <!-- Package Metadata -->
   <PropertyGroup>
     <PackageId>Soulseek.NET</PackageId>
@@ -42,6 +36,12 @@
     <!-- SonarQube needs this -->
     <ProjectGuid>{f4d9d870-a509-463b-90d4-8d9d6cc340fb}</ProjectGuid>
   </PropertyGroup>
+  <ItemGroup>
+    <None Remove="Properties\stylecop1.json" />
+  </ItemGroup>
+  <ItemGroup>
+    <AdditionalFiles Include="Properties\stylecop1.json" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.FxCopAnalyzers" Version="2.6.3">
