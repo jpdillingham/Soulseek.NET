@@ -18,7 +18,7 @@
 
         private static Uri GetArtistSearchRequestUri(string query) => new Uri($"{API_ROOT}/artist/?query={Uri.EscapeDataString(query)}&fmt=json");
 
-        private static Uri GetReleaseGroupRequestUri(Guid artistMbid, int offset, int limit) => new Uri($"{API_ROOT}/release-group?artist={artistMbid}&type=album|ep&offset={offset}&limit={limit}&fmt=json");
+        private static Uri GetReleaseGroupRequestUri(Guid artistMbid, int offset, int limit) => new Uri($"{API_ROOT}/release-group?artist={artistMbid}&offset={offset}&limit={limit}&fmt=json");
 
         private static Uri GetReleaseRequestUri(Guid releaseGroupMbid, int offset, int limit) => new Uri($"{API_ROOT}/release?release-group={releaseGroupMbid}&offset={offset}&limit={limit}&inc=media+recordings&fmt=json");
 
@@ -34,15 +34,13 @@
 
         public static async Task<IEnumerable<ReleaseGroup>> GetArtistReleaseGroups(Guid artistId)
         {
-            var offset = 0;
             var limit = 100;
             var releaseGroupCount = 0;
-
             var releaseGroups = new List<ReleaseGroup>();
 
             do
             {
-                var result = await Http.GetAsync(GetReleaseGroupRequestUri(artistId, offset, limit));
+                var result = await Http.GetAsync(GetReleaseGroupRequestUri(artistId, releaseGroups.Count, limit));
                 result.EnsureSuccessStatusCode();
                 var content = await result.Content.ReadAsStringAsync();
                 var releaseGroupResponse = JsonConvert.DeserializeObject<ReleaseGroupResponse>(content);
