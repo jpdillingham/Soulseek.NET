@@ -266,7 +266,7 @@
 
         public string Title { get; set; }
 
-        public string Type => string.Join(" + ", new string[] { PrimaryType }.Concat(SecondaryTypes));
+        public string Type =>  string.Join(" + ", new string[] { PrimaryType ?? "Unknown" }.Concat(SecondaryTypes));
 
         [JsonProperty("disambiguated-title")]
         public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
