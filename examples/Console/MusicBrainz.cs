@@ -53,6 +53,27 @@
 
             return releaseGroups;
         }
+
+        public static async Task<IEnumerable<Release>> GetReleaseGroupReleases(Guid releaseGroupId)
+        {
+            var limit = 100;
+            var releaseCount = 0;
+            var releases = new List<Release>();
+
+            do
+            {
+                var result = await Http.GetAsync(GetReleaseRequestUri(releaseGroupId, releases.Count, limit));
+                result.EnsureSuccessStatusCode();
+                var content = await result.Content.ReadAsStringAsync();
+                var releaseGroupResponse = JsonConvert.DeserializeObject<ReleaseResponse>(content);
+
+                releaseCount = releaseGroupResponse.ReleaseCount;
+
+                releases.AddRange(releaseGroupResponse.Releases);
+            } while (releaseCount > releases.Count);
+
+            return releases;
+        }
     }
 
     public class ArtistResponse
@@ -73,6 +94,17 @@
 
         [JsonProperty("release-groups")]
         public IEnumerable<ReleaseGroup> ReleaseGroups { get; set; }
+    }
+
+    public class ReleaseResponse
+    {
+        [JsonProperty("release-offset")]
+        public int ReleaseOffset { get; set; }
+
+        [JsonProperty("release-count")]
+        public int ReleaseCount { get; set; }
+
+        public IEnumerable<Release> Releases { get; set; }
     }
 
     public class Alias
@@ -182,7 +214,7 @@
     {
         public string Disambiguation { get; set; }
         public string ID { get; set; }
-        public int Length { get; set; }
+        public int? Length { get; set; }
         public string Title { get; set; }
         public bool? Video { get; set; }
 
@@ -290,7 +322,7 @@
         public IEnumerable<string> AlternateTitles { get; set; }
 
         public string ID { get; set; }
-        public int Length { get; set; }
+        public int? Length { get; set; }
         public string Number { get; set; }
         public int Position { get; set; }
         public Recording Recording { get; set; }
