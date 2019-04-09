@@ -22,12 +22,14 @@
 
         private static Uri GetReleaseRequestUri(Guid releaseGroupMbid, int offset, int limit) => new Uri($"{API_ROOT}/release?release-group={releaseGroupMbid}&offset={offset}&limit={limit}&inc=media+recordings&fmt=json");
 
-        public static async Task<ArtistResponse> GetMatchingArtists(string query)
+        public static async Task<IEnumerable<Artist>> GetMatchingArtists(string query)
         {
             var result = await Http.GetAsync(GetArtistSearchRequestUri(query));
             result.EnsureSuccessStatusCode();
             var content = await result.Content.ReadAsStringAsync();
-            return JsonConvert.DeserializeObject<ArtistResponse>(content);
+            var artistResponse = JsonConvert.DeserializeObject<ArtistResponse>(content);
+
+            return artistResponse.Artists;
         }
 
         public static async Task<IEnumerable<ReleaseGroup>> GetArtistReleaseGroups(Guid artistId)
