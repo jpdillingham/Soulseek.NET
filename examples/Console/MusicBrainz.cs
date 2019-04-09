@@ -263,6 +263,8 @@
         [JsonProperty("secondary-types")]
         public IEnumerable<string> SecondaryTypes { get; set; }
 
+        public double Score { get; set; }
+
         public string Title { get; set; }
 
         [JsonProperty("disambiguated-title")]

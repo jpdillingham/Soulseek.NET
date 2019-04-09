@@ -182,12 +182,12 @@
             return false;
         }
 
-        static async Task<Artist> SelectArtist(string search)
+        static async Task<Artist> SelectArtist(string artist)
         {
-            o($"\nSearching for artist '{Artist}'...");
+            o($"\nSearching for artist '{artist}'...");
 
-            var artists = await MusicBrainz.GetMatchingArtists(Artist);
-            var artistList = artists.Artists.OrderByDescending(a => a.Score).ToList();
+            var artists = await MusicBrainz.GetMatchingArtists(artist);
+            var artistList = artists.OrderByDescending(a => a.Score).ToList();
 
             var longest = artistList.Max(a => a.DisambiguatedName.Length);
 
@@ -221,6 +221,42 @@
             } while (true);
         }
 
+        static async Task<ReleaseGroup> SelectReleaseGroup(Artist artist, string album)
+        {
+            o($"\nSearching for '{artist.Name}' release groups matching '{album}'...");
+
+            var releaseGroups = await MusicBrainz.GetArtistReleaseGroups(Guid.Parse(artist.ID));
+            var releaseGroupList = releaseGroups.ToList();
+
+            var longest = releaseGroupList.Max(a => a.DisambiguatedTitle.Length);
+
+            o($"\nMatching release groups:\n");
+
+            for (int i = 0; i < releaseGroupList.Count; i++)
+            {
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseGroupList[i].DisambiguatedTitle.PadRight(longest)}  {releaseGroupList[i].Score.ToString().PadLeft(3)}%");
+            }
+
+            Console.WriteLine();
+
+            do
+            {
+                Console.Write($"Select release group (1-{releaseGroupList.Count}): ");
+
+                var selection = Console.ReadLine();
+
+                try
+                {
+                    var num = Int32.Parse(selection) - 1;
+                    return releaseGroupList[num];
+                }
+                catch (Exception)
+                {
+                    Console.Write($"Invalid input.  ");
+                }
+            } while (true);
+        }
+
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -230,6 +266,12 @@
 
             o($"Selected artist: {artist.DisambiguatedName}");
 
+            var releaseGroup = await SelectReleaseGroup(artist, Album);
+
+            o($"Selected release group: {releaseGroup.DisambiguatedTitle}");
+
+
+            Console.ReadKey();
 
             var options = new SoulseekClientOptions(
                 minimumDiagnosticLevel: DiagnosticLevel.Info,
