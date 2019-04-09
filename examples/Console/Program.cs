@@ -226,7 +226,7 @@
             o($"\nSearching for '{artist.Name}' release groups matching '{album}'...");
 
             var releaseGroups = await MusicBrainz.GetArtistReleaseGroups(Guid.Parse(artist.ID));
-            var releaseGroupList = releaseGroups.ToList();
+            var releaseGroupList = releaseGroups.OrderBy(r => r.Type).ToList();
 
             var longest = releaseGroupList.Max(a => a.DisambiguatedTitle.Length);
 
@@ -234,7 +234,7 @@
 
             for (int i = 0; i < releaseGroupList.Count; i++)
             {
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseGroupList[i].DisambiguatedTitle.PadRight(longest)}  {releaseGroupList[i].Score.ToString().PadLeft(3)}% \t{releaseGroupList[i].PrimaryType}\t{string.Join(", ", releaseGroupList[i].SecondaryTypes)}");
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseGroupList[i].DisambiguatedTitle.PadRight(longest)}  {releaseGroupList[i].Score.ToString().PadLeft(3)}% \t{releaseGroupList[i].Type}");
             }
 
             Console.WriteLine();
