@@ -11,6 +11,7 @@
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
+    using System.Text;
     using System.Threading.Tasks;
     using Utility.CommandLine;
 
@@ -22,13 +23,17 @@
         [Argument('p', "password")]
         private static string Password { get; set; }
 
-        [Operands]
-        private static string[] Operands { get; set; }
+        [Argument('a', "artist")]
+        private static string Artist { get; set; }
+
+        [Argument('l', "album")]
+        private static string Album { get; set; }
 
         private static readonly Action<string> o = (s) => Console.WriteLine(s);
 
         static async Task SearchAsync(SoulseekClient client, BrainzArtist brainz, string searchText)
         {
+
             var album = brainz.Albums[0]; // one album at a time for now.
             var trackCount = album.Tracks.Count();
 
@@ -177,24 +182,50 @@
             return false;
         }
 
+        static async Task<Artist> SelectArtist(string search)
+        {
+            o($"Searching for artist '{Artist}'...");
+
+            var artists = await MusicBrainz.GetMatchingArtists(Artist);
+            var artistList = artists.Artists.OrderByDescending(a => a.Score).ToList();
+
+            var longest = artistList.Max(a => a.DisambiguatedName.Length);
+
+            o($"      {"Artist".PadRight(longest)}  Score");
+            o($"━━━━━━{"━".PadRight(longest, '━')}━━━━━━━");
+
+            for (int i = 0; i < artistList.Count; i++)
+            {
+                o($"{(i + 1).ToString().PadLeft(3)}.  {artistList[i].DisambiguatedName.PadRight(longest)}  {artistList[i].Score.ToString().PadLeft(3)}%");
+            }
+
+            do
+            {
+                Console.Write($"Select artist (1-{artistList.Count}): ");
+
+                var selection = Console.ReadLine();
+
+                try
+                {
+                    var num = Int32.Parse(selection) - 1;
+                    return artistList[num];
+                }
+                catch (Exception)
+                {
+                    o($"Invalid input.");
+                }
+            } while (true);
+        }
+
         static async Task Main(string[] args)
         {
+            Console.OutputEncoding = Encoding.UTF8;
             Arguments.Populate();
 
-            BrainzArtist brainz = null;
+            var artist = await SelectArtist(Artist);
 
-            if (TryGetBrainzInput(out brainz))
-            {
-                o($"Artist: {brainz.Artist}");
-                o($"Album: {brainz.Albums[0].Title}");
+            o($"Selected artist: {artist.DisambiguatedName}");
 
-                foreach (var track in brainz.Albums[0].Tracks)
-                {
-                    o($"{track.Number} - {track.Title} [{track.Length}]");
-                }
-
-                Operands = new string[] { "", "search", brainz.Artist, brainz.Albums[0].Title };
-            }
 
             var options = new SoulseekClientOptions(
                 minimumDiagnosticLevel: DiagnosticLevel.Info,
@@ -214,126 +245,6 @@
 
                 await client.ConnectAsync();
                 await client.LoginAsync(Username, Password);
-
-                //await client.LoginAsync("praetor-2", "Jyi98uas");
-
-                switch (Operands[1])
-                {
-                    case "search":
-                        await SearchAsync(client, brainz, string.Join(' ', Operands.Skip(2)));
-                        break;
-                    default:
-                        Console.WriteLine($"Unknown option: '{Operands[1]}'.");
-                        break;                        
-                }
-
-                //while (true)
-                //{
-                //    var cmd = Console.ReadLine();
-
-                //    if (cmd == "disconnect")
-                //    {
-                //        client.Disconnect();
-                //        return;
-                //    }
-                //    else if (cmd.StartsWith("msg"))
-                //    {
-                //        var arr = cmd.Split(' ');
-
-                //        var peer = arr.Skip(1).Take(1).FirstOrDefault();
-                //        var message = arr.Skip(2).Take(999);
-
-                //        await client.SendPrivateMessageAsync(peer, string.Join(' ', message));
-                //    }
-                //    else if (cmd.StartsWith("browse"))
-                //    {
-                //        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
-                //        var result = await client.BrowseAsync(peer);
-
-                //        Console.WriteLine(JsonConvert.SerializeObject(result));
-                //        continue;
-                //    }
-                //    else if (cmd.StartsWith("search"))
-                //    {
-                //        using (var cts = new CancellationTokenSource(TimeSpan.FromSeconds(300)))
-                //        {
-                //            var search = string.Join(' ', cmd.Split(' ').Skip(1));
-                //            var token = new Random().Next();
-                //            var result = await client.SearchAsync(search, token, new SearchOptions(
-                //                filterFiles: false,
-                //                filterResponses: false,
-                //                fileLimit: 10000), cts.Token);
-
-                //            Console.WriteLine(JsonConvert.SerializeObject(result));
-                //            continue;
-                //        }
-                //    }
-                //    else if (cmd.StartsWith("download-folder"))
-                //    {
-                //        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
-
-                //        var files = new[]
-                //        {
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\01 - Bulls On Parade.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\02 - Down Rodeo.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\03 - People Of The Sun.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\04 - Revolver.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\05 - Roll Right.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\06 - Snakecharmer.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\07 - Tire Me.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\08 - Vietnow.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\09 - Wind Below.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\10 - Without A Face.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\11 - Year Of The Boomerang.mp3",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\Thumbs.db",
-                //            @"@@djpnk\\Bootlegs\\Fear Is Your Only God\\album.nfo",
-                //        };
-
-                //        var task = Task.Run(() =>
-                //        {
-                //            var random = new Random();
-
-                //            Parallel.ForEach(files, async (file) =>
-                //            {
-                //                Console.WriteLine($"Attempting to download {file}");
-                //                var bytes = await client.DownloadAsync(peer, file, random.Next());
-                //                var filename = $@"C:\tmp\{Path.GetFileName(file)}";
-
-                //                Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
-                //                System.IO.File.WriteAllBytes(filename, bytes);
-                //                Console.WriteLine("Download complete!");
-                //            });
-                //        });
-
-                //        await task;
-
-                //        Console.WriteLine($"All files complete.");
-                //    }
-                //    else if (cmd.StartsWith("download"))
-                //    {
-                //        var peer = cmd.Split(' ').Skip(1).FirstOrDefault();
-                //        var file = string.Join(' ', cmd.Split(' ').Skip(2));
-
-                //        var bytes = await client.DownloadAsync(peer, file, new Random().Next());
-                //        var filename = $@"C:\tmp\{Path.GetFileName(file)}";
-
-                //        Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
-                //        System.IO.File.WriteAllBytes(filename, bytes);
-                //        Console.WriteLine("Download complete!");
-                //    }
-                //    else
-                //    {
-                //        try
-                //        {
-                //            await client.LoginAsync(cmd.Split(' ')[0], cmd.Split(' ')[1]);
-                //            Console.WriteLine($"Logged in.");
-                //        }
-                //        catch (Exception ex)
-                //        {
-                //            Console.WriteLine($"Login failed: {ex.Message}");
-                //        }
-                //    }
-                //}
             }
         }
 
