@@ -1,15 +1,260 @@
 ﻿namespace Console
 {
+    using Newtonsoft.Json;
     using System;
+    using System.Collections.Generic;
+    using System.Net.Http;
+    using System.Threading.Tasks;
 
     public class MusicBrainz
     {
+        private static HttpClient Http = new HttpClient();
         private static readonly Uri API_ROOT = new Uri("https://musicbrainz.org/ws/2");
+
+        static MusicBrainz()
+        {
+            Http.DefaultRequestHeaders.UserAgent.Add(new System.Net.Http.Headers.ProductInfoHeaderValue("Soulseek.NET", "1.0.0"));
+        }
 
         private static Uri GetArtistSearchRequestUri(string query) => new Uri($"{API_ROOT}/artist/?query={Uri.EscapeDataString(query)}&fmt=json");
 
         private static Uri GetReleaseGroupRequestUri(Guid artistMbid, int offset, int limit) => new Uri($"{API_ROOT}/release-group?artist={artistMbid}&type=album|ep&offset={offset}&limit={limit}&fmt=json");
 
         private static Uri GetReleaseRequestUri(Guid releaseGroupMbid, int offset, int limit) => new Uri($"{API_ROOT}/release?release-group={releaseGroupMbid}&offset={offset}&limit={limit}&inc=media+recordings&fmt=json");
+
+        public static async Task<ArtistResponse> GetMatchingArtists(string query)
+        {
+            var result = await Http.GetAsync(GetArtistSearchRequestUri(query));
+            result.EnsureSuccessStatusCode();
+            var content = await result.Content.ReadAsStringAsync();
+            return JsonConvert.DeserializeObject<ArtistResponse>(content);
+        }
+    }
+
+    public class ArtistResponse
+    {
+        public DateTime Created { get; set; }
+        public int Count { get; set; }
+        public int Offset { get; set; }
+        public IEnumerable<Artist> Artists { get; set; }
+    }
+
+    public class Alias
+    {
+        [JsonProperty("begin-date")]
+        public string BeginDate { get; set; }
+
+        [JsonProperty("end-date")]
+        public string EndDate { get; set; }
+
+        public string Locale { get; set; }
+
+        public string Name { get; set; }
+
+        public bool? Primary { get; set; }
+
+        [JsonProperty("sort-name")]
+        public string ShortName { get; set; }
+
+        public string Type { get; set; }
+    }
+
+    public class Area
+    {
+        public string ID { get; set; }
+
+        [JsonProperty("life-span")]
+        public Lifespan Lifespan { get; set; }
+
+        public string Name { get; set; }
+
+        [JsonProperty("sort-name")]
+        public string SortName { get; set; }
+
+        public string Type { get; set; }
+
+        [JsonProperty("type-id")]
+        public string TypeID { get; set; }
+    }
+
+    public class Artist
+    {
+        public IEnumerable<Alias> Aliases { get; set; }
+        public Area Area { get; set; }
+
+        [JsonProperty("begin-area")]
+        public Area BeginArea { get; set; }
+
+        public string Country { get; set; }
+        public string Disambiguation { get; set; }
+        public string Gender { get; set; }
+        public string ID { get; set; }
+
+        [JsonProperty("life-span")]
+        public Lifespan Lifespan { get; set; }
+
+        public string Name { get; set; }
+        public int Score { get; set; }
+        public string SortName { get; set; }
+        public IEnumerable<Tag> Tags { get; set; }
+        public string Type { get; set; }
+
+        [JsonProperty("type-id")]
+        public string TypeID { get; set; }
+
+        [JsonProperty("disambiguated-name")]
+        public string DisambiguatedName => $"{Name} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
+    }
+
+    public class CoverArtArchive
+    {
+        public bool? Artwork { get; set; }
+        public bool? Back { get; set; }
+        public int Count { get; set; }
+        public bool? Darkened { get; set; }
+        public bool? Front { get; set; }
+    }
+
+    public class Lifespan
+    {
+        public string Begin { get; set; }
+        public string End { get; set; }
+        public bool? Ended { get; set; }
+    }
+
+    public class Media
+    {
+        public string Format { get; set; }
+
+        [JsonProperty("format-id")]
+        public string FormatID { get; set; }
+
+        public int Position { get; set; }
+
+        public string Title { get; set; }
+
+        [JsonProperty("track-count")]
+        public int TrackCount { get; set; }
+
+        [JsonProperty("track-offset")]
+        public int TrackOffset { get; set; }
+
+        public IEnumerable<Track> Tracks { get; set; }
+    }
+
+    public class Recording
+    {
+        public string Disambiguation { get; set; }
+        public string ID { get; set; }
+        public int Length { get; set; }
+        public string Title { get; set; }
+        public bool? Video { get; set; }
+
+        [JsonProperty("disambiguated-title")]
+        public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
+    }
+
+    public class Release
+    {
+        public string Asin { get; set; }
+
+        public string Barcode { get; set; }
+
+        public string Country { get; set; }
+
+        [JsonProperty("cover-art-archive")]
+        public CoverArtArchive CoverArtArchive { get; set; }
+
+        public string Date { get; set; }
+
+        public string Disambiguation { get; set; }
+
+        public string ID { get; set; }
+
+        public IEnumerable<Media> Media { get; set; }
+
+        public string Packaging { get; set; }
+
+        [JsonProperty("packaging-id")]
+        public string PackagingID { get; set; }
+
+        public string Quality { get; set; }
+
+        [JsonProperty("release-events")]
+        public IEnumerable<ReleaseEvent> ReleaseEvents { get; set; }
+
+        public double Score { get; set; }
+
+        public string Status { get; set; }
+
+        [JsonProperty("status-id")]
+        public string StatusID { get; set; }
+
+        [JsonProperty("text-representation")]
+        public TextRepresentation TextRepresentation { get; set; }
+
+        public string Title { get; set; }
+
+        [JsonProperty("disambiguated-title")]
+        public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
+    }
+
+    public class ReleaseEvent
+    {
+        public Area Area { get; set; }
+        public string Date { get; set; }
+    }
+
+    public class ReleaseGroup
+    {
+        public string Disambiguation { get; set; }
+
+        [JsonProperty("first-release-date")]
+        public string FirstReleaseDate { get; set; }
+
+        public string ID { get; set; }
+
+        [JsonProperty("primary-type")]
+        public string PrimaryType { get; set; }
+
+        [JsonProperty("primary-type-id")]
+        public string PrimaryTypeID { get; set; }
+
+        [JsonProperty("secondary-type-ids")]
+        public IEnumerable<string> SecondaryTypeIDs { get; set; }
+
+        [JsonProperty("secondary-types")]
+        public IEnumerable<string> SecondaryTypes { get; set; }
+
+        public string Title { get; set; }
+
+        [JsonProperty("disambiguated-title")]
+        public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
+    }
+
+    public class Tag
+    {
+        public int Count { get; set; }
+        public string Name { get; set; }
+    }
+
+    public class TextRepresentation
+    {
+        public string Language { get; set; }
+        public string Script { get; set; }
+    }
+
+    public class Track
+    {
+        [JsonProperty("alternate-titles")]
+        public IEnumerable<string> AlternateTitles { get; set; }
+
+        public string ID { get; set; }
+        public int Length { get; set; }
+        public string Number { get; set; }
+        public int Position { get; set; }
+        public Recording Recording { get; set; }
+        public double Score { get; set; }
+        public string Title { get; set; }
     }
 }
