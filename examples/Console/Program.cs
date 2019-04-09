@@ -234,7 +234,7 @@
 
             for (int i = 0; i < releaseGroupList.Count; i++)
             {
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseGroupList[i].DisambiguatedTitle.PadRight(longest)}  {releaseGroupList[i].Score.ToString().PadLeft(3)}%");
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseGroupList[i].DisambiguatedTitle.PadRight(longest)}  {releaseGroupList[i].Score.ToString().PadLeft(3)}% \t{releaseGroupList[i].PrimaryType}\t{string.Join(", ", releaseGroupList[i].SecondaryTypes)}");
             }
 
             Console.WriteLine();
