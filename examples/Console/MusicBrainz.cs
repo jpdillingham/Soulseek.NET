@@ -3,6 +3,7 @@
     using Newtonsoft.Json;
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net.Http;
     using System.Threading.Tasks;
 
@@ -264,6 +265,8 @@
         public double Score { get; set; }
 
         public string Title { get; set; }
+
+        public string Type => string.Join(" + ", new string[] { PrimaryType }.Concat(SecondaryTypes));
 
         [JsonProperty("disambiguated-title")]
         public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
