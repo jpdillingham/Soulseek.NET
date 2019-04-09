@@ -184,20 +184,24 @@
 
         static async Task<Artist> SelectArtist(string search)
         {
-            o($"Searching for artist '{Artist}'...");
+            o($"\nSearching for artist '{Artist}'...");
 
             var artists = await MusicBrainz.GetMatchingArtists(Artist);
             var artistList = artists.Artists.OrderByDescending(a => a.Score).ToList();
 
             var longest = artistList.Max(a => a.DisambiguatedName.Length);
 
-            o($"      {"Artist".PadRight(longest)}  Score");
-            o($"━━━━━━{"━".PadRight(longest, '━')}━━━━━━━");
+            //o($"      {"Artist".PadRight(longest)}  Score");
+            //o($"━━━━━━{"━".PadRight(longest, '━')}━━━━━━━");
+
+            o($"\nMatching artists:\n");
 
             for (int i = 0; i < artistList.Count; i++)
             {
-                o($"{(i + 1).ToString().PadLeft(3)}.  {artistList[i].DisambiguatedName.PadRight(longest)}  {artistList[i].Score.ToString().PadLeft(3)}%");
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {artistList[i].DisambiguatedName.PadRight(longest)}  {artistList[i].Score.ToString().PadLeft(3)}%");
             }
+
+            Console.WriteLine();
 
             do
             {
@@ -212,7 +216,7 @@
                 }
                 catch (Exception)
                 {
-                    o($"Invalid input.");
+                    Console.Write($"Invalid input.  ");
                 }
             } while (true);
         }
