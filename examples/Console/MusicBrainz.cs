@@ -29,6 +29,29 @@
             var content = await result.Content.ReadAsStringAsync();
             return JsonConvert.DeserializeObject<ArtistResponse>(content);
         }
+
+        public static async Task<IEnumerable<ReleaseGroup>> GetArtistReleaseGroups(Guid artistId)
+        {
+            var offset = 0;
+            var limit = 100;
+            var releaseGroupCount = 0;
+
+            var releaseGroups = new List<ReleaseGroup>();
+
+            do
+            {
+                var result = await Http.GetAsync(GetReleaseGroupRequestUri(artistId, offset, limit));
+                result.EnsureSuccessStatusCode();
+                var content = await result.Content.ReadAsStringAsync();
+                var releaseGroupResponse = JsonConvert.DeserializeObject<ReleaseGroupResponse>(content);
+
+                releaseGroupCount = releaseGroupResponse.ReleaseGroupCount;
+
+                releaseGroups.AddRange(releaseGroupResponse.ReleaseGroups);
+            } while (releaseGroupCount > releaseGroups.Count);
+
+            return releaseGroups;
+        }
     }
 
     public class ArtistResponse
@@ -37,6 +60,18 @@
         public int Count { get; set; }
         public int Offset { get; set; }
         public IEnumerable<Artist> Artists { get; set; }
+    }
+
+    public class ReleaseGroupResponse
+    {
+        [JsonProperty("release-group-count")]
+        public int ReleaseGroupCount { get; set; }
+
+        [JsonProperty("release-group-offset")]
+        public int ReleaseGroupOffset { get; set; }
+
+        [JsonProperty("release-groups")]
+        public IEnumerable<ReleaseGroup> ReleaseGroups { get; set; }
     }
 
     public class Alias
