@@ -228,7 +228,7 @@
             var releaseGroups = await MusicBrainz.GetArtistReleaseGroups(Guid.Parse(artist.ID));
             var releaseGroupList = releaseGroups.OrderBy(r => r.Type).ToList();
 
-            var longest = releaseGroupList.Max(a => a.DisambiguatedTitle.Length);
+            var longest = releaseGroupList.Max(r => r.DisambiguatedTitle.Length);
 
             o($"\nMatching release groups:\n");
 
@@ -257,6 +257,42 @@
             } while (true);
         }
 
+        static async Task<Release> SelectRelease(ReleaseGroup releaseGroup)
+        {
+            o($"Searching for releases in release group '{releaseGroup.Title}'...");
+
+            var releases = await MusicBrainz.GetReleaseGroupReleases(Guid.Parse(releaseGroup.ID));
+            var releaseList = releases.ToList();
+
+            var longest = releases.Max(r => r.DisambiguatedTitle.Length);
+
+            o($"\nReleases:\n");
+
+            for (int i = 0; i < releaseList.Count; i++)
+            {
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseList[i].DisambiguatedTitle.PadRight(longest)}  {releaseList[i].Score.ToString().PadLeft(3)}%");
+            }
+
+            Console.WriteLine();
+
+            do
+            {
+                Console.Write($"Select release (1-{releaseList.Count}): ");
+
+                var selection = Console.ReadLine();
+
+                try
+                {
+                    var num = Int32.Parse(selection) - 1;
+                    return releaseList[num];
+                }
+                catch (Exception)
+                {
+                    Console.Write($"Invalid input.  ");
+                }
+            } while (true);
+        }
+
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -270,6 +306,11 @@
 
             o($"Selected release group: {releaseGroup.DisambiguatedTitle}");
 
+            var release = await SelectRelease(releaseGroup);
+
+            o($"Selected release: {release.DisambiguatedTitle}");
+
+            o(JsonConvert.SerializeObject(release));
 
             Console.ReadKey();
 
