@@ -285,6 +285,9 @@
 
         [JsonProperty("disambiguated-title")]
         public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
+
+        public string Format => string.Join("+", Media.Select(m => m.Format));
+        public string TrackCount => string.Join("+", Media.Select(m => m.TrackCount));
     }
 
     public class ReleaseEvent
