@@ -7,8 +7,28 @@
     using System.Net.Http;
     using System.Threading.Tasks;
 
-    public class MusicBrainz
+    public static class MusicBrainz
     {
+        public static DateTime ToFuzzyDateTime(this string s)
+        {
+            if (s.Length == 2)
+            {
+                if (int.Parse(s) < 30)
+                {
+                    return DateTime.Parse($"1-1-20{s}");
+                }
+
+                return DateTime.Parse($"1-1-19{s}");
+            }
+
+            if (s.Length == 4)
+            {
+                return DateTime.Parse($"1-1-{s}");
+            }
+
+            else return DateTime.Parse(s);
+        }
+
         private static HttpClient Http = new HttpClient();
         private static readonly Uri API_ROOT = new Uri("https://musicbrainz.org/ws/2");
 
@@ -302,6 +322,8 @@
 
         [JsonProperty("disambiguated-title")]
         public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
+
+        public string Year => string.IsNullOrEmpty(FirstReleaseDate) ? "----" : FirstReleaseDate.ToFuzzyDateTime().Year.ToString();
     }
 
     public class Tag
