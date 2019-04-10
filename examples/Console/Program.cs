@@ -325,6 +325,24 @@
             } while (true);
         }
 
+        static void ListReleaseTracks(Release release)
+        {
+            var discs = release.Media.OrderBy(m => m.Position);
+
+            foreach (var disc in discs)
+            {
+                o($"\n{disc.Format} {disc.Position}{(string.IsNullOrEmpty(disc.Title) ? string.Empty : $": {disc.Title}")}\n");
+
+                var longest = disc.Tracks.Max(t => t.Title.Length);
+                var digitCount = disc.TrackCount.ToString().Length;
+
+                foreach (var track in disc.Tracks)
+                {
+                    o($"  {track.Position.ToString($"D{digitCount}")}  {track.Title.PadRight(longest)} [{track.Length}] [{TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"mm\:ss")}]");
+                }
+            }
+        }
+
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -342,7 +360,7 @@
 
             o($"Selected release: {release.DisambiguatedTitle}");
 
-            o(JsonConvert.SerializeObject(release));
+            ListReleaseTracks(release);
 
             Console.ReadKey();
 
