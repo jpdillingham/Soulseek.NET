@@ -27,7 +27,7 @@
         private static string Artist { get; set; }
 
         [Argument('l', "album")]
-        private static string Album { get; set; }
+        private static string Album { get; set; } = string.Empty;
 
         private static readonly Action<string> o = (s) => Console.WriteLine(s);
 
@@ -282,21 +282,30 @@
 
         static async Task<Release> SelectRelease(ReleaseGroup releaseGroup)
         {
-            o($"Searching for releases in release group '{releaseGroup.Title}'...");
+            o($"\nSearching for releases in release group '{releaseGroup.Title}'...");
 
             var releases = await MusicBrainz.GetReleaseGroupReleases(Guid.Parse(releaseGroup.ID));
-            var releaseList = releases.ToList();
+            var releaseList = releases
+                .OrderBy(r => r.Date.ToFuzzyDateTime())
+                .ToList();
 
             var longest = releases.Max(r => r.DisambiguatedTitle.Length);
+            var longestFormat = releases.Max(r => r.Format.Length);
+            var longestTrackCount = releases.Max(r => r.TrackCount.Length);
 
             o($"\nReleases:\n");
 
             for (int i = 0; i < releaseList.Count; i++)
             {
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseList[i].DisambiguatedTitle.PadRight(longest)}  {releaseList[i].Score.ToString().PadLeft(3)}%");
+                var r = releaseList[i];
+                var format = string.Join("+", r.Media.Select(m => m.Format));
+                var tracks = string.Join("+", r.Media.Select(m => m.TrackCount));
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Format.PadRight(longestFormat)}  {r.TrackCount.PadRight(longestTrackCount)}  {r.Country}");
             }
 
             Console.WriteLine();
+
+            //Console.WriteLine(JsonConvert.SerializeObject(releases));
 
             do
             {
@@ -319,7 +328,7 @@
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-            Arguments.Populate();
+            Arguments.Populate(clearExistingValues: false);
 
             var artist = await SelectArtist(Artist);
 
