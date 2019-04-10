@@ -31,32 +31,27 @@
 
         private static readonly Action<string> o = (s) => Console.WriteLine(s);
 
-        static async Task SearchAsync(SoulseekClient client, BrainzArtist brainz, string searchText)
+        static async Task SearchAsync(SoulseekClient client, Artist artist, Release release)
         {
+            var searchText = $"{artist.Name} {release.Title}";
 
-            var album = brainz.Albums[0]; // one album at a time for now.
-            var trackCount = album.Tracks.Count();
-
-            o($"Searching for '{brainz.Artist} {album.Title}'...");
+            o($"Searching for '{searchText}'...");
 
             IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText,
                 new SearchOptions(
                     filterResponses: true,
-                    minimumResponseFileCount: trackCount,
+                    minimumResponseFileCount: release.TrackCount,
                     filterFiles: true,
-                    ignoredFileExtensions: new string[] { "flac", "m4a" }
+                    ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
                 ));
 
             o($"Total results: {responses.Count()}");
 
-            responses = responses.Where(r => r.FileCount >= trackCount);
-            o($"Results with track count >= {trackCount}: {responses.Count()}");
+            responses = responses.Where(r => r.FileCount >= release.TrackCount);
+            o($"Results with track count >= {release.TrackCount}: {responses.Count()}");
 
             var bannedUsers = new string[] {  };
             responses = responses.Where(r => !bannedUsers.Contains(r.Username));
-
-            responses = responses.Where(r => TracksMatch(album, r));
-            o($"Results with matching tracks: {responses.Count()}");
 
             var freeResponses = responses.Where(r => r.FreeUploadSlots > 0);
             SearchResponse bestResponse = null;
@@ -124,62 +119,6 @@
             });
 
             await Task.WhenAll(tasks);
-        }
-
-        private static bool TracksMatch(BrainzAlbum album, SearchResponse response)
-        {
-            return true;
-            o($"Checking response...");
-
-
-            foreach (var track in response.Files)
-            {
-                //o($"{Path.GetFileNameWithoutExtension(track.Filename)} [{track.Length / 1000}]");
-            }
-
-            foreach (var track in album.Tracks)
-            {
-                var match = response.Files
-                    //.Where(f => f.Length >= (track.Length /1000)) // make sure length is at least as long
-                    //.Where(f => f.Length < (track.Length / 1000) + 5) // allow for songs up to 5 seconds longer
-                    .Select(f => Path.GetFileNameWithoutExtension(f.Filename))
-                        .Where(f => f.Contains(track.Title, StringComparison.InvariantCultureIgnoreCase))
-                        .Where(f => f.Contains(track.Number, StringComparison.InvariantCultureIgnoreCase))
-                        .Any();
-
-                if (!match)
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-
-        static bool TryGetBrainzInput(out BrainzArtist brainzArtist)
-        {
-            var stdin = string.Empty;
-            brainzArtist = null;
-
-            if (Console.IsInputRedirected)
-            {
-                using (StreamReader reader = new StreamReader(Console.OpenStandardInput(), Console.InputEncoding))
-                {
-                    stdin = reader.ReadToEnd();
-                }
-
-                try
-                {
-                    brainzArtist = JsonConvert.DeserializeObject<BrainzArtist>(stdin);
-                    return true;
-                }
-                catch (Exception)
-                {
-                    return false;
-                }
-            }
-
-            return false;
         }
 
         static async Task<Artist> SelectArtist(string artist)
@@ -275,7 +214,7 @@
 
             var longest = releases.Max(r => r.DisambiguatedTitle.Length);
             var longestFormat = releases.Max(r => r.Format.Length);
-            var longestTrackCount = releases.Max(r => r.TrackCount.Length);
+            var longestTrackCount = releases.Max(r => r.TrackCountExtended.Length);
 
             o("\nReleases:\n");
 
@@ -284,7 +223,7 @@
                 var r = releaseList[i];
                 var format = string.Join("+", r.Media.Select(m => m.Format));
                 var tracks = string.Join("+", r.Media.Select(m => m.TrackCount));
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Format.PadRight(longestFormat)}  {r.TrackCount.PadRight(longestTrackCount)}  {r.Country}");
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Format.PadRight(longestFormat)}  {r.TrackCountExtended.PadRight(longestTrackCount)}  {r.Country}");
             }
 
             do
@@ -298,7 +237,7 @@
                     var num = Int32.Parse(selection) - 1;
                     var release = releaseList[num];
 
-                    o($"\nTrack list for '{release.DisambiguatedTitle}', {release.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}, {release.Format}, {release.TrackCount}, {release.Country}:");
+                    o($"\nTrack list for '{release.DisambiguatedTitle}', {release.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}, {release.Format}, {release.TrackCountExtended}, {release.Country}:");
                     ListReleaseTracks(release);
 
                     Console.Write($"\nProceed with this track list? (Y/N): ");
@@ -354,8 +293,6 @@
 
             o($"Selected release: {release.DisambiguatedTitle}, {release.Date}, {release.Format}");
 
-            ListReleaseTracks(release);
-
             Console.ReadKey();
 
             var options = new SoulseekClientOptions(
@@ -376,6 +313,8 @@
 
                 await client.ConnectAsync();
                 await client.LoginAsync(Username, Password);
+
+                await SearchAsync(client, artist, release);
             }
         }
 
