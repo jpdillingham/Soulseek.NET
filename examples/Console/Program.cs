@@ -191,18 +191,16 @@
 
             var longest = artistList.Max(a => a.DisambiguatedName.Length);
 
-            o($"\nMatching artists:\n");
+            o($"\nBest matching Artists:\n");
 
             for (int i = 0; i < artistList.Count; i++)
             {
                 o($"  {(i + 1).ToString().PadLeft(3)}.  {artistList[i].DisambiguatedName.PadRight(longest)}  {artistList[i].Score.ToString().PadLeft(3)}%");
             }
 
-            Console.WriteLine();
-
             do
             {
-                Console.Write($"Select artist (1-{artistList.Count}): ");
+                Console.Write($"\nSelect artist (1-{artistList.Count}): ");
 
                 var selection = Console.ReadLine();
 
@@ -220,7 +218,11 @@
 
         static async Task<ReleaseGroup> SelectReleaseGroup(Artist artist, string album)
         {
-            o($"\nSearching for '{artist.Name}' release groups matching '{album}'...");
+            var showAll = string.IsNullOrEmpty(album);
+
+            o($"\nSearching for '{artist.Name}' release groups{(showAll ? string.Empty : $" matching '{album}'")}...");
+
+            var limit = showAll ? Int32.MaxValue : 25;
 
             var releaseGroups = await MusicBrainz.GetArtistReleaseGroups(Guid.Parse(artist.ID));
             var releaseGroupList = releaseGroups
@@ -229,39 +231,24 @@
                 .ThenBy(r => r.Type)
                 .ThenBy(r => r.Year, new SemiNumericComparer())
                 .ThenBy(r => r.DisambiguatedTitle)
+                .Take(limit)
                 .ToList();
 
             var longest = releaseGroupList.Max(r => r.DisambiguatedTitle.Length);
-            var bestMatch = releaseGroupList.OrderByDescending(r => r.Score).First().ID;
-            var bestIndex = 0;
+            var longestType = releaseGroupList.Max(r => r.Type.Length);
 
-            var lastType = string.Empty;
-
-            o($"\nMatching release groups:");
+            o(showAll ? "\nRelease groups:\n" : "\nBest matching release groups:\n");
 
             for (int i = 0; i < releaseGroupList.Count; i++)
             {
                 var r = releaseGroupList[i];
 
-                if (r.ID == bestMatch)
-                {
-                    bestIndex = i + 1;
-                }
-
-                if (lastType != r.Type)
-                {
-                    Console.WriteLine($"\n{r.Type}\n");
-                    lastType = r.Type;
-                }
-
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {Math.Round(r.Score * 100, 0).ToString().PadLeft(3)}% {(r.ID == bestMatch ? "<===" : string.Empty)}");
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Type.PadRight(longestType)}  {(string.IsNullOrEmpty(album) ? string.Empty : Math.Round(r.Score * 100, 0).ToString().PadLeft(3) + "%")}");
             }
-
-            Console.WriteLine();
 
             do
             {
-                Console.Write($"Select release group (1-{releaseGroupList.Count}, best match: {bestIndex}): ");
+                Console.Write($"\nSelect release group (1-{releaseGroupList.Count}): ");
 
                 var selection = Console.ReadLine();
 
@@ -290,7 +277,7 @@
             var longestFormat = releases.Max(r => r.Format.Length);
             var longestTrackCount = releases.Max(r => r.TrackCount.Length);
 
-            o($"\nReleases:\n");
+            o("\nReleases:\n");
 
             for (int i = 0; i < releaseList.Count; i++)
             {
