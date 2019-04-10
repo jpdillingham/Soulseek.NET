@@ -1,6 +1,5 @@
 ﻿namespace Console
 {
-    using Console.Model;
     using global::Utility.CommandLine;
     using Newtonsoft.Json;
     using Soulseek;
