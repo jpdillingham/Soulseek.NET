@@ -11,6 +11,8 @@
     {
         public static DateTime ToFuzzyDateTime(this string s)
         {
+            if (s == null) return default(DateTime);
+
             if (s.Length == 2)
             {
                 if (int.Parse(s) < 30)
