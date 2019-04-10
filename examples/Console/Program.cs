@@ -1,6 +1,7 @@
 ﻿namespace Console
 {
     using Console.Model;
+    using global::Utility.CommandLine;
     using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.NET;
@@ -13,7 +14,6 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
-    using Utility.CommandLine;
 
     public class Program
     {
@@ -226,15 +226,29 @@
             o($"\nSearching for '{artist.Name}' release groups matching '{album}'...");
 
             var releaseGroups = await MusicBrainz.GetArtistReleaseGroups(Guid.Parse(artist.ID));
-            var releaseGroupList = releaseGroups.OrderBy(r => r.Type).ToList();
+            var releaseGroupList = releaseGroups
+                .OrderBy(r => r.Type)
+                .ThenBy(r => r.Year, new SemiNumericComparer())
+                .ThenBy(r => r.DisambiguatedTitle)
+                .ToList();
 
             var longest = releaseGroupList.Max(r => r.DisambiguatedTitle.Length);
+
+            var lastType = string.Empty;
 
             o($"\nMatching release groups:\n");
 
             for (int i = 0; i < releaseGroupList.Count; i++)
             {
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {releaseGroupList[i].DisambiguatedTitle.PadRight(longest)}  {releaseGroupList[i].Score.ToString().PadLeft(3)}% \t{releaseGroupList[i].Type}");
+                var r = releaseGroupList[i];
+
+                if (lastType != r.Type)
+                {
+                    Console.WriteLine($"\n{r.Type}\n");
+                    lastType = r.Type;
+                }
+
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Score.ToString().PadLeft(3)}%");
             }
 
             Console.WriteLine();
