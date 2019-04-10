@@ -224,15 +224,12 @@
 
             var releaseGroups = await MusicBrainz.GetArtistReleaseGroups(Guid.Parse(artist.ID));
             var releaseGroupList = releaseGroups
-                .OrderBy(r => r.Type)
+                .Select(r => r.WithScore(r.Title.SimilarityCaseInsensitive(album)))
+                .OrderByDescending(r => r.Score)
+                .ThenBy(r => r.Type)
                 .ThenBy(r => r.Year, new SemiNumericComparer())
                 .ThenBy(r => r.DisambiguatedTitle)
                 .ToList();
-
-            releaseGroupList = releaseGroupList.Select(r => {
-                r.Score = r.Title.SimilarityCaseInsensitive(album);
-                return r;
-            }).ToList();
 
             var longest = releaseGroupList.Max(r => r.DisambiguatedTitle.Length);
             var bestMatch = releaseGroupList.OrderByDescending(r => r.Score).First().ID;
@@ -303,20 +300,30 @@
                 o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Format.PadRight(longestFormat)}  {r.TrackCount.PadRight(longestTrackCount)}  {r.Country}");
             }
 
-            Console.WriteLine();
-
-            //Console.WriteLine(JsonConvert.SerializeObject(releases));
-
             do
             {
-                Console.Write($"Select release (1-{releaseList.Count}): ");
+                Console.Write($"\nSelect release (1-{releaseList.Count}): ");
 
                 var selection = Console.ReadLine();
 
                 try
                 {
                     var num = Int32.Parse(selection) - 1;
-                    return releaseList[num];
+                    var release = releaseList[num];
+
+                    o($"\nTrack list for '{release.DisambiguatedTitle}', {release.Date.ToFuzzyDateTime().ToString("yyyy-MM-dd")}, {release.Format}, {release.TrackCount}, {release.Country}:");
+                    ListReleaseTracks(release);
+
+                    Console.Write($"\nProceed with this track list? (Y/N): ");
+
+                    var proceed = Console.ReadLine();
+
+                    if (proceed.Equals("Y", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        return release;
+                    }
+
+                    continue;
                 }
                 catch (Exception)
                 {
@@ -338,7 +345,7 @@
 
                 foreach (var track in disc.Tracks)
                 {
-                    o($"  {track.Position.ToString($"D{digitCount}")}  {track.Title.PadRight(longest)} [{track.Length}] [{TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"mm\:ss")}]");
+                    o($"   {track.Position.ToString("D2")}  {track.Title.PadRight(longest)}  {TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"m\:ss")}");
                 }
             }
         }
@@ -358,7 +365,7 @@
 
             var release = await SelectRelease(releaseGroup);
 
-            o($"Selected release: {release.DisambiguatedTitle}");
+            o($"Selected release: {release.DisambiguatedTitle}, {release.Date}, {release.Format}");
 
             ListReleaseTracks(release);
 
