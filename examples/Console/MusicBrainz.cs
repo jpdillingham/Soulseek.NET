@@ -291,8 +291,8 @@
         [JsonProperty("disambiguated-title")]
         public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
 
-        public string FormatString => string.Join("+", Media.Select(m => m.Format));
-        public string TrackCountString => string.Join("+", Media.Select(m => m.TrackCount));
+        public string Format => string.Join("+", Media.Select(m => m.Format));
+        public string TrackCountExtended => string.Join("+", Media.Select(m => m.TrackCount));
         public int TrackCount => Media.Sum(m => m.TrackCount);
     }
 
