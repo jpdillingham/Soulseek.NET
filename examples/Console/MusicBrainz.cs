@@ -329,6 +329,12 @@
         public string DisambiguatedTitle => $"{Title} {(string.IsNullOrEmpty(Disambiguation) ? string.Empty : $"({Disambiguation})")}";
 
         public string Year => string.IsNullOrEmpty(FirstReleaseDate) ? "----" : FirstReleaseDate.ToFuzzyDateTime().Year.ToString();
+
+        public ReleaseGroup WithScore(double score)
+        {
+            Score = score;
+            return this;
+        }
     }
 
     public class Tag
