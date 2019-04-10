@@ -11,7 +11,10 @@
     {
         public static DateTime ToFuzzyDateTime(this string s)
         {
-            if (s == null) return default(DateTime);
+            if (string.IsNullOrEmpty(s))
+            {
+                return default;
+            }
 
             if (s.Length == 2)
             {
