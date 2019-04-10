@@ -191,9 +191,6 @@
 
             var longest = artistList.Max(a => a.DisambiguatedName.Length);
 
-            //o($"      {"Artist".PadRight(longest)}  Score");
-            //o($"━━━━━━{"━".PadRight(longest, '━')}━━━━━━━");
-
             o($"\nMatching artists:\n");
 
             for (int i = 0; i < artistList.Count; i++)
@@ -232,15 +229,27 @@
                 .ThenBy(r => r.DisambiguatedTitle)
                 .ToList();
 
+            releaseGroupList = releaseGroupList.Select(r => {
+                r.Score = r.Title.SimilarityCaseInsensitive(album);
+                return r;
+            }).ToList();
+
             var longest = releaseGroupList.Max(r => r.DisambiguatedTitle.Length);
+            var bestMatch = releaseGroupList.OrderByDescending(r => r.Score).First().ID;
+            var bestIndex = 0;
 
             var lastType = string.Empty;
 
-            o($"\nMatching release groups:\n");
+            o($"\nMatching release groups:");
 
             for (int i = 0; i < releaseGroupList.Count; i++)
             {
                 var r = releaseGroupList[i];
+
+                if (r.ID == bestMatch)
+                {
+                    bestIndex = i + 1;
+                }
 
                 if (lastType != r.Type)
                 {
@@ -248,14 +257,14 @@
                     lastType = r.Type;
                 }
 
-                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {r.Score.ToString().PadLeft(3)}%");
+                o($"  {(i + 1).ToString().PadLeft(3)}.  {r.Year}  {r.DisambiguatedTitle.PadRight(longest)}  {Math.Round(r.Score * 100, 0).ToString().PadLeft(3)}% {(r.ID == bestMatch ? "<===" : string.Empty)}");
             }
 
             Console.WriteLine();
 
             do
             {
-                Console.Write($"Select release group (1-{releaseGroupList.Count}): ");
+                Console.Write($"Select release group (1-{releaseGroupList.Count}, best match: {bestIndex}): ");
 
                 var selection = Console.ReadLine();
 
