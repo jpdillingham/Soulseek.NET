@@ -35,6 +35,37 @@
         [Argument('u', "username")]
         private static string Username { get; set; } = "foo";
 
+        public static async Task Main(string[] args)
+        {
+            Console.OutputEncoding = Encoding.UTF8;
+
+            Arguments.Populate(clearExistingValues: false);
+
+            var artist = await SelectArtist(Artist);
+            var releaseGroup = await SelectReleaseGroup(artist, Album);
+            var release = await SelectRelease(releaseGroup);
+
+            var options = new SoulseekClientOptions(
+                minimumDiagnosticLevel: DiagnosticLevel.Warning,
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+            );
+
+            using (var client = new SoulseekClient(options))
+            {
+                client.StateChanged += Client_ServerStateChanged;
+                //client.DownloadProgressUpdated += Client_DownloadProgress;
+                client.DownloadStateChanged += Client_DownloadStateChanged;
+                client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                client.PrivateMessageReceived += Client_PrivateMessageReceived;
+
+                await client.ConnectAsync();
+                await client.LoginAsync(Username, Password);
+
+                await SearchAsync(client, artist, release);
+            }
+        }
+
         private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)
         {
             Console.WriteLine($"[DIAGNOSTICS] [{e.Level}]: {e.Message}");
@@ -74,14 +105,16 @@
 
         private static async Task DownloadFilesAsync(SoulseekClient client, string username, IEnumerable<string> files)
         {
-            var random = new Random();
+            var index = 0;
 
             var tasks = files.Select(async file =>
             {
-                Console.WriteLine($"Attempting to download {file}");
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, random.Next());
+                    var bytes = await client.DownloadAsync(username, file, index++, eventHandler: (sender, e) =>
+                    {
+                        Console.Write($"\r{Path.GetFileName(file)} {e.PercentComplete}%");
+                    });
 
                     var path = $@"downloads" + Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "");
 
@@ -123,36 +156,6 @@
             }
         }
 
-        private static async Task Main(string[] args)
-        {
-            Console.OutputEncoding = Encoding.UTF8;
-            Arguments.Populate(clearExistingValues: false);
-
-            var artist = await SelectArtist(Artist);
-            var releaseGroup = await SelectReleaseGroup(artist, Album);
-            var release = await SelectRelease(releaseGroup);
-
-            var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Warning,
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
-            );
-
-            using (var client = new SoulseekClient(options))
-            {
-                client.StateChanged += Client_ServerStateChanged;
-                client.DownloadProgressUpdated += Client_DownloadProgress;
-                client.DownloadStateChanged += Client_DownloadStateChanged;
-                client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                client.PrivateMessageReceived += Client_PrivateMessageReceived;
-
-                await client.ConnectAsync();
-                await client.LoginAsync(Username, Password);
-
-                await SearchAsync(client, artist, release);
-            }
-        }
-
         private static async Task SearchAsync(SoulseekClient client, Artist artist, Release release)
         {
             var searchText = $"{artist.Name} {release.Title}";
@@ -189,42 +192,42 @@
             complete = true;
             updateStatus();
 
-            //var bannedUsers = new string[] {  };
-            //responses = responses.Where(r => !bannedUsers.Contains(r.Username));
+            var bannedUsers = new string[] { };
+            responses = responses.Where(r => !bannedUsers.Contains(r.Username));
 
-            //var freeResponses = responses.Where(r => r.FreeUploadSlots > 0);
-            //SearchResponse bestResponse = null;
+            var freeResponses = responses.Where(r => r.FreeUploadSlots > 0);
+            SearchResponse bestResponse = null;
 
-            //if (freeResponses.Any())
-            //{
-            //    responses = freeResponses;
-            //    o($"Users with free upload slots: {responses.Count()}");
+            if (freeResponses.Any())
+            {
+                responses = freeResponses;
+                o($"Users with free upload slots: {responses.Count()}");
 
-            //    bestResponse = responses
-            //        .OrderByDescending(r => r.UploadSpeed)
-            //        .First();
-            //}
-            //else
-            //{
-            //    o($"No users with free upload slots.");
+                bestResponse = responses
+                    .OrderByDescending(r => r.UploadSpeed)
+                    .First();
+            }
+            else
+            {
+                o($"No users with free upload slots.");
 
-            //    bestResponse = responses
-            //        .OrderBy(r => r.QueueLength)
-            //        .First();
-            //}
+                bestResponse = responses
+                    .OrderBy(r => r.QueueLength)
+                    .First();
+            }
 
-            //o($"Best response from: {bestResponse.Username}");
+            o($"Best response from: {bestResponse.Username}");
 
-            //var maxLen = bestResponse.Files.Max(f => f.Filename.Length);
+            var maxLen = bestResponse.Files.Max(f => f.Filename.Length);
 
-            //foreach (var file in bestResponse.Files)
-            //{
-            //    o($"{file.Filename.PadRight(maxLen)}\t{file.Length}\t{file.BitRate}\t{file.Size}");
-            //}
+            foreach (var file in bestResponse.Files)
+            {
+                o($"{file.Filename.PadRight(maxLen)}\t{file.Length}\t{file.BitRate}\t{file.Size}");
+            }
 
-            ////await DownloadFilesAsync(client, bestResponse.Username, bestResponse.Files.Select(f => f.Filename));
+            await DownloadFilesAsync(client, bestResponse.Username, bestResponse.Files.Select(f => f.Filename));
 
-            //Console.WriteLine($"All files complete.");
+            Console.WriteLine($"All files complete.");
         }
 
         private static async Task<Artist> SelectArtist(string artist)
