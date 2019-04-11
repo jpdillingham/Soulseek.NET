@@ -1,7 +1,6 @@
 ﻿namespace Console
 {
     using global::Utility.CommandLine;
-    using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.NET;
     using Soulseek.NET.Messaging.Messages;
@@ -13,6 +12,7 @@
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
+    using System.Timers;
 
     public class Program
     {
@@ -34,7 +34,21 @@
         {
             var searchText = $"{artist.Name} {release.Title}";
 
+            var complete = false;
+            var spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => complete));
+            var totalResponses = 0;
+            var totalFiles = 0;
+
+            var timer = new Timer(100);
+            timer.Elapsed += (e, a) => updateStatus();
+
+            void updateStatus()
+            {
+                Console.Write($"\r{spinner} {(complete ? "Search complete." : "Performing search:")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
+            }
+
             o($"Searching for '{searchText}'...");
+            timer.Start();
 
             IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText,
                 new SearchOptions(
@@ -42,49 +56,55 @@
                     minimumResponseFileCount: release.TrackCount,
                     filterFiles: true,
                     ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
-                ));
+                ), eventHandler: (sender, e) => 
+                {
+                    totalResponses++;
+                    totalFiles += e.Response.FileCount;
+                });
 
-            o($"Total results: {responses.Count()}");
+            timer.Stop();
+            complete = true;
+            updateStatus();
 
-            responses = responses.Where(r => r.FileCount >= release.TrackCount);
-            o($"Results with track count >= {release.TrackCount}: {responses.Count()}");
+            //responses = responses.Where(r => r.FileCount >= release.TrackCount);
+            //o($"Results with track count >= {release.TrackCount}: {responses.Count()}");
 
-            var bannedUsers = new string[] {  };
-            responses = responses.Where(r => !bannedUsers.Contains(r.Username));
+            //var bannedUsers = new string[] {  };
+            //responses = responses.Where(r => !bannedUsers.Contains(r.Username));
 
-            var freeResponses = responses.Where(r => r.FreeUploadSlots > 0);
-            SearchResponse bestResponse = null;
+            //var freeResponses = responses.Where(r => r.FreeUploadSlots > 0);
+            //SearchResponse bestResponse = null;
 
-            if (freeResponses.Any())
-            {
-                responses = freeResponses;
-                o($"Users with free upload slots: {responses.Count()}");
+            //if (freeResponses.Any())
+            //{
+            //    responses = freeResponses;
+            //    o($"Users with free upload slots: {responses.Count()}");
 
-                bestResponse = responses
-                    .OrderByDescending(r => r.UploadSpeed)
-                    .First();
-            }
-            else
-            {
-                o($"No users with free upload slots.");
+            //    bestResponse = responses
+            //        .OrderByDescending(r => r.UploadSpeed)
+            //        .First();
+            //}
+            //else
+            //{
+            //    o($"No users with free upload slots.");
 
-                bestResponse = responses
-                    .OrderBy(r => r.QueueLength)
-                    .First();
-            }
+            //    bestResponse = responses
+            //        .OrderBy(r => r.QueueLength)
+            //        .First();
+            //}
 
-            o($"Best response from: {bestResponse.Username}");
+            //o($"Best response from: {bestResponse.Username}");
 
-            var maxLen = bestResponse.Files.Max(f => f.Filename.Length);
+            //var maxLen = bestResponse.Files.Max(f => f.Filename.Length);
 
-            foreach (var file in bestResponse.Files)
-            {
-                o($"{file.Filename.PadRight(maxLen)}\t{file.Length}\t{file.BitRate}\t{file.Size}");
-            }
+            //foreach (var file in bestResponse.Files)
+            //{
+            //    o($"{file.Filename.PadRight(maxLen)}\t{file.Length}\t{file.BitRate}\t{file.Size}");
+            //}
 
-            await DownloadFilesAsync(client, bestResponse.Username, bestResponse.Files.Select(f => f.Filename));
+            ////await DownloadFilesAsync(client, bestResponse.Username, bestResponse.Files.Select(f => f.Filename));
 
-            Console.WriteLine($"All files complete.");
+            //Console.WriteLine($"All files complete.");
         }
 
         private static async Task DownloadFilesAsync(SoulseekClient client, string username, IEnumerable<string> files)
@@ -98,7 +118,7 @@
                 {
                     var bytes = await client.DownloadAsync(username, file, random.Next());
 
-                    var path = $@"C:\tmp\" + Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "");
+                    var path = $@"downloads" + Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "");
 
                     if (!System.IO.Directory.Exists(path))
                     {
@@ -275,27 +295,19 @@
             }
         }
 
+        private static Spinner Spinner = new Spinner();
+
         static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
             Arguments.Populate(clearExistingValues: false);
 
             var artist = await SelectArtist(Artist);
-
-            o($"Selected artist: {artist.DisambiguatedName}");
-
             var releaseGroup = await SelectReleaseGroup(artist, Album);
-
-            o($"Selected release group: {releaseGroup.DisambiguatedTitle}");
-
             var release = await SelectRelease(releaseGroup);
 
-            o($"Selected release: {release.DisambiguatedTitle}, {release.Date}, {release.Format}");
-
-            Console.ReadKey();
-
             var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Info,
+                minimumDiagnosticLevel: DiagnosticLevel.Warning,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
             );
@@ -303,8 +315,6 @@
             using (var client = new SoulseekClient(options))
             {
                 client.StateChanged += Client_ServerStateChanged;
-                client.SearchResponseReceived += Client_SearchResponseReceived;
-                client.SearchStateChanged += Client_SearchStateChanged;
                 client.DownloadProgressUpdated += Client_DownloadProgress;
                 client.DownloadStateChanged += Client_DownloadStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
@@ -332,11 +342,6 @@
             Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.PreviousState} ==> {e.State}");
         }
 
-        private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
-        {
-            Console.WriteLine($"[SEARCH] [{e.SearchText}]: {e.State}");
-        }
-
         private static ConcurrentDictionary<string, ProgressBar> Progress { get; set; } = new ConcurrentDictionary<string, ProgressBar>();
 
         private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
@@ -354,20 +359,6 @@
             {
                 Console.Write("\n");
             }
-        }
-
-        private static void Client_SearchResponseReceived(object sender, SearchResponseReceivedEventArgs e)
-        {
-            Console.WriteLine($"[SEARCH RESPONSE] [{e.SearchText}]: {e.Response.FileCount} files from {e.Response.Username}");
-            //var r = e.Response;
-
-            //Console.WriteLine($"=====================================================================================");
-            //Console.WriteLine($"New search result from: {r.Username} (slots: {r.FreeUploadSlots}, upload: {r.UploadSpeed}, queue: {r.QueueLength})");
-
-            //foreach (var file in r.Files)
-            //{
-            //    Console.WriteLine($"[{file.BitRate}/{file.SampleRate}/{file.BitDepth}] {file.Filename}");
-            //}
         }
 
         private static void Client_ServerStateChanged(object sender, SoulseekClientStateChangedEventArgs e)
