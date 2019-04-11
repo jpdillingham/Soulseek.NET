@@ -23,6 +23,9 @@ fi
 
 echo "Launching dotnet-sonarscanner with options: ${options}"
 
+# disable git bash/mingw path mangling on Windows
+export MSYS2_ARG_CONV_EXCL="*"
+
 dotnet-sonarscanner begin \
     /key:"jpdillingham_Soulseek.NET" \
     /o:jpdillingham-github \
