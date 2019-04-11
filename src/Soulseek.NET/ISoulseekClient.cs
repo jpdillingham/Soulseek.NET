@@ -174,7 +174,7 @@ namespace Soulseek.NET
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null);
 
         /// <summary>
         ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
@@ -195,7 +195,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.

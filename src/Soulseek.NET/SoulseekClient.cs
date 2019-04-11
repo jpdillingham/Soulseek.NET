@@ -390,9 +390,9 @@ namespace Soulseek.NET
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null)
         {
-            return SearchAsync(searchText, TokenFactory.GetToken(), options, cancellationToken);
+            return SearchAsync(searchText, TokenFactory.GetToken(), options, cancellationToken, eventHandler);
         }
 
         /// <summary>
@@ -414,7 +414,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -438,7 +438,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, token, options, cancellationToken ?? CancellationToken.None);
+            return SearchInternalAsync(searchText, token, options, cancellationToken ?? CancellationToken.None, eventHandler);
         }
 
         /// <summary>
@@ -904,7 +904,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null)
         {
             var search = new Search(searchText, token, options);
 
@@ -921,6 +921,7 @@ namespace Soulseek.NET
                 search.ResponseReceived += (_, response) =>
                 {
                     var e = new SearchResponseReceivedEventArgs(search, response);
+                    eventHandler?.Invoke(this, e);
                     SearchResponseReceived?.Invoke(this, e);
                 };
 
