@@ -18,7 +18,7 @@ namespace Soulseek.NET
     /// <summary>
     ///     A single file download.
     /// </summary>
-    public class Download
+    public sealed class Download
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Download"/> class.
@@ -81,6 +81,9 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets or sets the connection used for the transfer.
         /// </summary>
+        /// <remarks>
+        ///     Ensure that the reference instance is disposed when the transfer is complete.
+        /// </remarks>
         internal IConnection Connection { get; set; }
 
         /// <summary>
