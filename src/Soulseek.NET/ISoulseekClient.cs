@@ -131,7 +131,7 @@ namespace Soulseek.NET
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null, Action<SoulseekClient, DownloadProgressUpdatedEventArgs> eventHandler = null);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
@@ -147,7 +147,7 @@ namespace Soulseek.NET
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, Action<SoulseekClient, DownloadProgressUpdatedEventArgs> eventHandler = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
