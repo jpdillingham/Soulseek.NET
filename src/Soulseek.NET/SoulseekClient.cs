@@ -589,7 +589,8 @@ namespace Soulseek.NET
                 DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
 
                 // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
-                // transfer connection
+                // transfer connection.  this operation is somewhat indirect because we aren't sure which download an incoming connection
+                // refers to until we connect and retrieve the token.
                 var transferConnectionInitialized = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
 
                 // also prepare a wait for the overall completion of the download
