@@ -343,3 +343,5 @@ tools/*
 coverage.json
 opencover.xml
 /.sonarqube
+
+/examples/Console/downloads
