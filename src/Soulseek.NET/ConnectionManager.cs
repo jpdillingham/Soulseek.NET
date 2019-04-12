@@ -20,14 +20,14 @@ namespace Soulseek.NET
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     Manages a queue of <see cref="IConnection"/>
     /// </summary>
     /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
-    internal sealed class ConnectionManager<T> : IConnectionManager<T>
-        where T : IConnection
+    internal sealed class ConnectionManager : IConnectionManager
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionManager{T}"/> class.
@@ -53,8 +53,8 @@ namespace Soulseek.NET
         /// </summary>
         public int Queued => ConnectionQueue.Count;
 
-        private ConcurrentQueue<T> ConnectionQueue { get; } = new ConcurrentQueue<T>();
-        private ConcurrentDictionary<ConnectionKey, T> Connections { get; } = new ConcurrentDictionary<ConnectionKey, T>();
+        private ConcurrentQueue<IMessageConnection> ConnectionQueue { get; } = new ConcurrentQueue<IMessageConnection>();
+        private ConcurrentDictionary<ConnectionKey, IMessageConnection> Connections { get; } = new ConcurrentDictionary<ConnectionKey, IMessageConnection>();
         private bool Disposed { get; set; }
 
         /// <summary>
@@ -65,7 +65,7 @@ namespace Soulseek.NET
         /// </remarks>
         /// <param name="connection">The connection to add.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task AddAsync(T connection)
+        public async Task AddAsync(IMessageConnection connection)
         {
             if (connection == null || connection.Key == null)
             {
@@ -99,13 +99,13 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
         /// <returns>The connection matching the specified connection key.</returns>
-        public T Get(ConnectionKey connectionKey)
+        public IMessageConnection Get(ConnectionKey connectionKey)
         {
             if (connectionKey != null)
             {
                 var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
 
-                if (!EqualityComparer<T>.Default.Equals(queuedConnection, default(T)))
+                if (!EqualityComparer<IMessageConnection>.Default.Equals(queuedConnection, default(IMessageConnection)))
                 {
                     return queuedConnection;
                 }
@@ -115,7 +115,7 @@ namespace Soulseek.NET
                 }
             }
 
-            return default(T);
+            return default(IMessageConnection);
         }
 
         /// <summary>
@@ -135,7 +135,7 @@ namespace Soulseek.NET
         /// </remarks>
         /// <param name="connection">The connection to remove.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task RemoveAsync(T connection)
+        public async Task RemoveAsync(IMessageConnection connection)
         {
             if (connection == null || connection.Key == null)
             {
@@ -172,7 +172,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task TryConnectAsync(T connection)
+        private async Task TryConnectAsync(IMessageConnection connection)
         {
             try
             {

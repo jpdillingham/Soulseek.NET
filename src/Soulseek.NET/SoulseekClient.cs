@@ -61,7 +61,6 @@ namespace Soulseek.NET
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="messageConnectionFactory">The IMessageConnectionFactory instance to use.</param>
-        /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
         /// <param name="peerConnectionManager">The IConnectionManager instance to use.</param>
         /// <param name="messageWaiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory to use.</param>
@@ -72,7 +71,7 @@ namespace Soulseek.NET
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IMessageConnectionFactory messageConnectionFactory = null,
-            IConnectionManager<IMessageConnection> peerConnectionManager = null,
+            IConnectionManager peerConnectionManager = null,
             IWaiter messageWaiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
@@ -84,7 +83,7 @@ namespace Soulseek.NET
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
             MessageConnectionFactory = messageConnectionFactory ?? new MessageConnectionFactory();
-            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager<IMessageConnection>(Options.ConcurrentPeerConnections);
+            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
@@ -156,7 +155,7 @@ namespace Soulseek.NET
         private bool Disposed { get; set; } = false;
         private IMessageConnectionFactory MessageConnectionFactory { get; set; }
         private IWaiter MessageWaiter { get; set; }
-        private IConnectionManager<IMessageConnection> PeerConnectionManager { get; set; }
+        private IConnectionManager PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }

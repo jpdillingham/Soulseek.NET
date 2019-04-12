@@ -281,7 +281,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         {
             IMessageConnection newConn = null;
 
-            var connMgr = new Mock<IConnectionManager<IMessageConnection>>();
+            var connMgr = new Mock<IConnectionManager>();
             connMgr.Setup(m => m.AddAsync(It.IsAny<IMessageConnection>()))
                 .Returns(Task.FromResult(new MessageConnection(MessageConnectionType.Peer, username, ip, port)))
                 .Callback<IMessageConnection>(c => newConn = c);

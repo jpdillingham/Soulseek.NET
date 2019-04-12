@@ -134,7 +134,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
             var options = new ConnectionOptions();
 
-            var pcm = new Mock<IConnectionManager<IMessageConnection>>();
+            var pcm = new Mock<IConnectionManager>();
             pcm.Setup(m => m.AddAsync(It.IsAny<IMessageConnection>()))
                 .Returns(Task.CompletedTask);
 
@@ -181,7 +181,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ipAddress, port)));
 
-            var pcm = new Mock<IConnectionManager<IMessageConnection>>();
+            var pcm = new Mock<IConnectionManager>();
             pcm.Setup(m => m.Get(It.IsAny<ConnectionKey>()))
                 .Returns(existingConn);
 
@@ -208,7 +208,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             existingConn.Setup(m => m.State)
                 .Returns(ConnectionState.Disconnected);
 
-            var pcm = new Mock<IConnectionManager<IMessageConnection>>();
+            var pcm = new Mock<IConnectionManager>();
             pcm.Setup(m => m.Get(It.IsAny<ConnectionKey>()))
                 .Returns(existingConn.Object);
             pcm.Setup(m => m.RemoveAsync(It.IsAny<IMessageConnection>()))

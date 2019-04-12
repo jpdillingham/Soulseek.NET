@@ -17,14 +17,13 @@ namespace Soulseek.NET
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Messages;
+    using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
 
     /// <summary>
-    ///     Manages a queue of <see cref="IConnection"/>
+    ///     Manages peer <see cref="IConnection"/> instances for the application.
     /// </summary>
-    /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
-    internal interface IConnectionManager<T> : IDisposable
-        where T : IConnection
+    internal interface IConnectionManager : IDisposable
     {
         /// <summary>
         ///     Gets the number of active connections.
@@ -50,14 +49,14 @@ namespace Soulseek.NET
         /// </remarks>
         /// <param name="connection">The connection to add.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        Task AddAsync(T connection);
+        Task AddAsync(IMessageConnection connection);
 
         /// <summary>
         ///     Returns the connection matching the specified <paramref name="connectionKey"/>
         /// </summary>
         /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
         /// <returns>The connection matching the specified connection key.</returns>
-        T Get(ConnectionKey connectionKey);
+        IMessageConnection Get(ConnectionKey connectionKey);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
@@ -70,7 +69,7 @@ namespace Soulseek.NET
         /// <remarks>If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.</remarks>
         /// <param name="connection">The connection to remove.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        Task RemoveAsync(T connection);
+        Task RemoveAsync(IMessageConnection connection);
 
         Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
     }

@@ -199,7 +199,7 @@ namespace Soulseek.NET.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var p = new Mock<IConnectionManager<IMessageConnection>>();
+            var p = new Mock<IConnectionManager>();
 
             var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object);
             await s.ConnectAsync();
