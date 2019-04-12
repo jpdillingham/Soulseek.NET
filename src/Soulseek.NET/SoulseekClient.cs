@@ -762,7 +762,7 @@ namespace Soulseek.NET
 
         private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            var connection = PeerConnectionManager.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);

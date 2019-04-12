@@ -20,13 +20,13 @@ namespace Soulseek.NET
     /// </summary>
     internal class ConnectionFactory : IConnectionFactory
     {
-        /// <summary>
-        ///     Gets a <see cref="Connection"/> instance.
-        /// </summary>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <returns>The created Connection.</returns>
-        public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null) => new Connection(ipAddress, port, options);
+        ///// <summary>
+        /////     Gets a <see cref="Connection"/> instance.
+        ///// </summary>
+        ///// <param name="ipAddress">The remote IP address of the connection.</param>
+        ///// <param name="port">The remote port of the connection.</param>
+        ///// <param name="options">The optional options for the connection.</param>
+        ///// <returns>The created Connection.</returns>
+        //public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null) => new Connection(ipAddress, port, options);
     }
 }
