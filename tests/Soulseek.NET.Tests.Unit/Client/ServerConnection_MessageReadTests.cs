@@ -373,79 +373,79 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.Single(diagnostics);
         }
 
-        [Trait("Category", "Message")]
-        [Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
-        public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
-        {
-            var ipBytes = ip.GetAddressBytes();
-            Array.Reverse(ipBytes);
+        //[Trait("Category", "Message")]
+        //[Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
+        //public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
+        //{
+        //    var ipBytes = ip.GetAddressBytes();
+        //    Array.Reverse(ipBytes);
 
-            var msg = new MessageBuilder()
-                .Code(MessageCode.ServerConnectToPeer)
-                .WriteString(username)
-                .WriteString("F")
-                .WriteBytes(ipBytes)
-                .WriteInteger(port)
-                .WriteInteger(token)
-                .Build();
+        //    var msg = new MessageBuilder()
+        //        .Code(MessageCode.ServerConnectToPeer)
+        //        .WriteString(username)
+        //        .WriteString("F")
+        //        .WriteBytes(ipBytes)
+        //        .WriteInteger(port)
+        //        .WriteInteger(token)
+        //        .Build();
 
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()))
-                .Returns(new Mock<IConnection>().Object);
+        //    var connFactory = new Mock<IConnectionFactory>();
+        //    connFactory.Setup(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()))
+        //        .Returns(new Mock<IConnection>().Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
 
-            var active = new ConcurrentDictionary<int, Download>();
-            active.TryAdd(token, new Download(username, filename, token));
+        //    var active = new ConcurrentDictionary<int, Download>();
+        //    active.TryAdd(token, new Download(username, filename, token));
 
-            s.SetProperty("ActiveDownloads", active);
+        //    s.SetProperty("ActiveDownloads", active);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+        //    s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            connFactory.Verify(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()), Times.Once);
-        }
+        //    connFactory.Verify(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()), Times.Once);
+        //}
 
-        [Trait("Category", "Message")]
-        [Theory(DisplayName = "Raises DiagnosticGenerated on Exception"), AutoData]
-        public void Raises_DiagnosticGenerated_On_Exception(string filename, string username, int token, IPAddress ip, int port)
-        {
-            var diagnostic = new Mock<IDiagnosticFactory>();
-            diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+        //[Trait("Category", "Message")]
+        //[Theory(DisplayName = "Raises DiagnosticGenerated on Exception"), AutoData]
+        //public void Raises_DiagnosticGenerated_On_Exception(string filename, string username, int token, IPAddress ip, int port)
+        //{
+        //    var diagnostic = new Mock<IDiagnosticFactory>();
+        //    diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
-            var ipBytes = ip.GetAddressBytes();
-            Array.Reverse(ipBytes);
+        //    var ipBytes = ip.GetAddressBytes();
+        //    Array.Reverse(ipBytes);
 
-            var msg = new MessageBuilder()
-                .Code(MessageCode.ServerConnectToPeer)
-                .WriteString(username)
-                .WriteString("F")
-                .WriteBytes(ipBytes)
-                .WriteInteger(port)
-                .WriteInteger(token)
-                .Build();
+        //    var msg = new MessageBuilder()
+        //        .Code(MessageCode.ServerConnectToPeer)
+        //        .WriteString(username)
+        //        .WriteString("F")
+        //        .WriteBytes(ipBytes)
+        //        .WriteInteger(port)
+        //        .WriteInteger(token)
+        //        .Build();
 
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()))
-                .Throws(new Exception());
+        //    var connFactory = new Mock<IConnectionFactory>();
+        //    connFactory.Setup(m => m.GetConnection(ip, port, It.IsAny<ConnectionOptions>()))
+        //        .Throws(new Exception());
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+        //    var diagnostics = new List<DiagnosticGeneratedEventArgs>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
-            s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+        //    var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
+        //    s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
-            var active = new ConcurrentDictionary<int, Download>();
-            active.TryAdd(token, new Download(username, filename, token));
+        //    var active = new ConcurrentDictionary<int, Download>();
+        //    active.TryAdd(token, new Download(username, filename, token));
 
-            s.SetProperty("ActiveDownloads", active);
+        //    s.SetProperty("ActiveDownloads", active);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+        //    s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
-                .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
-                .ToList();
+        //    diagnostics = diagnostics
+        //        .Where(d => d.Level == DiagnosticLevel.Warning)
+        //        .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
+        //        .ToList();
 
-            Assert.Single(diagnostics);
-        }
+        //    Assert.Single(diagnostics);
+        //}
     }
 }
