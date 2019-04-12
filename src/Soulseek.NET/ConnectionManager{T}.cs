@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Tcp
+namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
@@ -18,6 +18,7 @@ namespace Soulseek.NET.Tcp
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     Manages a queue of <see cref="IConnection"/>
