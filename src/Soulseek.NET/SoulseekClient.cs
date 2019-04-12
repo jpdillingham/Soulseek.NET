@@ -554,7 +554,7 @@ namespace Soulseek.NET
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = MessageWaiter.Wait<PeerTransferResponse>(
-                    new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), cancellationToken: cancellationToken);
+                    new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
                 var transferStartRequested = MessageWaiter.WaitIndefinitely<PeerTransferRequest>(
                     new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
@@ -670,6 +670,7 @@ namespace Soulseek.NET
                 download.State = DownloadStates.TimedOut;
                 download.Connection?.Disconnect("Transfer timed out.");
 
+                Diagnostic.Debug(ex.ToString());
                 throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             catch (Exception ex)
@@ -677,6 +678,7 @@ namespace Soulseek.NET
                 download.State = DownloadStates.Errored;
                 download.Connection?.Disconnect("Transfer error.");
 
+                Diagnostic.Debug(ex.ToString());
                 throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
@@ -776,8 +778,8 @@ namespace Soulseek.NET
 
             if (connection != default(IMessageConnection) && (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected))
             {
-                await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
-                connection = default(IMessageConnection);
+                    await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
+                    connection = default(IMessageConnection);
             }
 
             if (connection == default(IMessageConnection))
