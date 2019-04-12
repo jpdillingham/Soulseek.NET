@@ -60,7 +60,6 @@ namespace Soulseek.NET
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
-        /// <param name="messageConnectionFactory">The IMessageConnectionFactory instance to use.</param>
         /// <param name="peerConnectionManager">The IConnectionManager instance to use.</param>
         /// <param name="messageWaiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory to use.</param>
@@ -70,7 +69,6 @@ namespace Soulseek.NET
             int port,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
-            IMessageConnectionFactory messageConnectionFactory = null,
             IConnectionManager peerConnectionManager = null,
             IWaiter messageWaiter = null,
             ITokenFactory tokenFactory = null,
@@ -82,7 +80,6 @@ namespace Soulseek.NET
             Options = options ?? new SoulseekClientOptions();
 
             ServerConnection = serverConnection ?? GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
-            MessageConnectionFactory = messageConnectionFactory ?? new MessageConnectionFactory();
             PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
@@ -153,7 +150,6 @@ namespace Soulseek.NET
         private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private IMessageConnectionFactory MessageConnectionFactory { get; set; }
         private IWaiter MessageWaiter { get; set; }
         private IConnectionManager PeerConnectionManager { get; set; }
         private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
@@ -763,13 +759,13 @@ namespace Soulseek.NET
 
             if (connection != default(IMessageConnection) && (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected))
             {
-                    await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
-                    connection = default(IMessageConnection);
+                await PeerConnectionManager.RemoveAsync(connection).ConfigureAwait(false);
+                connection = default(IMessageConnection);
             }
 
             if (connection == default(IMessageConnection))
             {
-                connection = MessageConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
+                connection = PeerConnectionManager.GetMessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
                 connection.MessageRead += PeerConnection_MessageRead;
 
                 connection.Connected += async (sender, e) =>

@@ -72,5 +72,16 @@ namespace Soulseek.NET
         Task RemoveAsync(IMessageConnection connection);
 
         Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Gets a <see cref="MessageConnection"/> instance.
+        /// </summary>
+        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <returns>The created Connection.</returns>
+        IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null);
     }
 }
