@@ -19,6 +19,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
+    using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
     using Xunit;
 
@@ -28,9 +29,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Instantiates properly")]
         public void Instantiates_Properly()
         {
-            ConnectionManager<IConnection> c = null;
+            ConnectionManager c = null;
 
-            var ex = Record.Exception(() => c = new ConnectionManager<IConnection>(1000));
+            var ex = Record.Exception(() => c = new ConnectionManager(1000));
 
             Assert.Null(ex);
             Assert.NotNull(c);
@@ -44,7 +45,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
         {
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = Record.Exception(() => c.Dispose());
 
@@ -55,10 +56,10 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Removes does not throw on untracked connection")]
         public async Task Removes_Does_Not_Throw_On_Untracked_Connection()
         {
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(new ConnectionKey(new System.Net.IPAddress(0x0), 1));
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.RemoveAsync(mock.Object));
 
@@ -69,7 +70,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Removes does not throw on null connection")]
         public async Task Removes_Does_Not_Throw_On_Null_Connection()
         {
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.RemoveAsync(null));
 
@@ -80,9 +81,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Removes does not throw on null connection key")]
         public async Task Removes_Does_Not_Throw_On_Null_Connection_Key()
         {
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.RemoveAsync(mock.Object));
 
@@ -93,10 +94,10 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Removes does not dispose untracked connection")]
         public async Task Removes_Does_Not_Dispose_Untracked_Connection()
         {
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(new ConnectionKey(new IPAddress(0x0), 1));
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             await c.RemoveAsync(mock.Object);
 
@@ -109,13 +110,13 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(key);
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
             await c.AddAsync(mock.Object);
 
-            var active = c.GetProperty<ConcurrentDictionary<ConnectionKey, IConnection>>("Connections");
+            var active = c.GetProperty<ConcurrentDictionary<ConnectionKey, IMessageConnection>>("Connections");
 
             Assert.True(active.TryGetValue(mock.Object.Key, out var _), "Connection was added");
 
@@ -131,19 +132,19 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         public async Task Removes_Removes_Given_Connection_Then_Activates_Queued()
         {
             var key1 = new ConnectionKey(new IPAddress(0x1), 1);
-            var mock1 = new Mock<IConnection>();
+            var mock1 = new Mock<IMessageConnection>();
             mock1.Setup(m => m.Key).Returns(key1);
 
             var key2 = new ConnectionKey(new IPAddress(0x2), 2);
-            var mock2 = new Mock<IConnection>();
+            var mock2 = new Mock<IMessageConnection>();
             mock2.Setup(m => m.Key).Returns(key2);
 
-            var c = new ConnectionManager<IConnection>(1);
+            var c = new ConnectionManager(1);
             await c.AddAsync(mock1.Object);
             await c.AddAsync(mock2.Object);
 
-            var active = c.GetProperty<ConcurrentDictionary<ConnectionKey, IConnection>>("Connections");
-            var queued = c.GetProperty<ConcurrentQueue<IConnection>>("ConnectionQueue");
+            var active = c.GetProperty<ConcurrentDictionary<ConnectionKey, IMessageConnection>>("Connections");
+            var queued = c.GetProperty<ConcurrentQueue<IMessageConnection>>("ConnectionQueue");
 
             // ensure connection 1 was added and immediately activated
             Assert.Single(active);
@@ -175,7 +176,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Add does not throw on null connection")]
         public async Task Add_Does_Not_Throw_On_Null_Connection()
         {
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.AddAsync(null));
 
@@ -188,9 +189,9 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [Fact(DisplayName = "Add does not throw on null connection key")]
         public async Task Add_Does_Not_Throw_On_Null_Connection_Key()
         {
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
 
@@ -205,10 +206,10 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(key);
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
 
@@ -225,10 +226,10 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(key);
 
-            var c = new ConnectionManager<IConnection>(0); // enqueue all
+            var c = new ConnectionManager(0); // enqueue all
 
             var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
 
@@ -245,11 +246,11 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(key);
             mock.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new Exception());
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var ex = await Record.ExceptionAsync(async () => await c.AddAsync(mock.Object));
 
@@ -267,10 +268,10 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(key);
 
-            var c = new ConnectionManager<IConnection>(0); // force enqueue
+            var c = new ConnectionManager(0); // force enqueue
             await c.AddAsync(mock.Object);
 
             Assert.Equal(1, c.Queued);
@@ -290,10 +291,10 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         {
             var key = new ConnectionKey(new IPAddress(0x0), 1);
 
-            var mock = new Mock<IConnection>();
+            var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Key).Returns(key);
 
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
             await c.AddAsync(mock.Object);
 
             Assert.Equal(0, c.Queued);
@@ -318,7 +319,7 @@ namespace Soulseek.NET.Tests.Unit.Tcp
         [MemberData(nameof(GetData))]
         internal void Get_Returns_Null_Given_Null_Or_Missing_Key(ConnectionKey key)
         {
-            var c = new ConnectionManager<IConnection>();
+            var c = new ConnectionManager();
 
             var conn = c.Get(key);
 
