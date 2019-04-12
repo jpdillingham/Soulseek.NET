@@ -19,6 +19,7 @@ namespace Soulseek.NET
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Tcp;
 
     /// <summary>
@@ -183,13 +184,15 @@ namespace Soulseek.NET
             }
         }
 
-        /// <summary>
-        ///     Gets a <see cref="Connection"/> instance.
-        /// </summary>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <returns>The created Connection.</returns>
-        public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null) => new Connection(ipAddress, port, options);
+        public async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+            return connection;
+        }
     }
 }

@@ -757,17 +757,6 @@ namespace Soulseek.NET
             return connection;
         }
 
-        private async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = PeerConnectionManager.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-            return connection;
-        }
-
         private async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string username, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var key = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
@@ -808,7 +797,7 @@ namespace Soulseek.NET
 
             try
             {
-                connection = await GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                connection = await PeerConnectionManager.GetTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions, CancellationToken.None).ConfigureAwait(false);
                 var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
                 remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
             }
