@@ -591,7 +591,7 @@ namespace Soulseek.NET
                 // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
                 // transfer connection.  this operation is somewhat indirect because we aren't sure which download an incoming connection
                 // refers to until we connect and retrieve the token.
-                var transferConnectionInitialized = MessageWaiter.Wait<IConnection>(download.WaitKey, cancellationToken: cancellationToken);
+                var transferConnectionInitialized = MessageWaiter.Wait<IConnection>(download.WaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
 
                 // also prepare a wait for the overall completion of the download
                 var downloadCompleted = MessageWaiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
