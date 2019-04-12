@@ -12,12 +12,13 @@
 
 namespace Soulseek.NET
 {
+    using System.Net;
     using Soulseek.NET.Tcp;
 
     /// <summary>
     ///     A single file download.
     /// </summary>
-    internal class Download
+    public sealed class Download
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Download"/> class.
@@ -33,14 +34,9 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Gets or sets the connection used for the transfer.
+        ///     Gets the data downloaded.
         /// </summary>
-        public IConnection Connection { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the data downloaded.
-        /// </summary>
-        public byte[] Data { get; set; }
+        public byte[] Data { get; internal set; }
 
         /// <summary>
         ///     Gets the filename of the file to be downloaded.
@@ -48,19 +44,29 @@ namespace Soulseek.NET
         public string Filename { get; }
 
         /// <summary>
-        ///     Gets or sets the remote unique token for the transfer.
+        ///     Gets the ip address of the remote transfer connection, if one has been established.
         /// </summary>
-        public int RemoteToken { get; set; }
+        public IPAddress IPAddress => Connection?.IPAddress;
 
         /// <summary>
-        ///     Gets or sets the size of the file to be downloaded, in bytes.
+        ///     Gets the port of the remote transfer connection, if one has been established.
         /// </summary>
-        public int Size { get; set; }
+        public int? Port => Connection?.Port;
 
         /// <summary>
-        ///     Gets or sets the state of the download.
+        ///     Gets the remote unique token for the transfer.
         /// </summary>
-        public DownloadStates State { get; set; } = DownloadStates.None;
+        public int RemoteToken { get; internal set; }
+
+        /// <summary>
+        ///     Gets the size of the file to be downloaded, in bytes.
+        /// </summary>
+        public int Size { get; internal set; }
+
+        /// <summary>
+        ///     Gets the state of the download.
+        /// </summary>
+        public DownloadStates State { get; internal set; } = DownloadStates.None;
 
         /// <summary>
         ///     Gets the unique token for thr transfer.
@@ -73,8 +79,16 @@ namespace Soulseek.NET
         public string Username { get; }
 
         /// <summary>
+        ///     Gets or sets the connection used for the transfer.
+        /// </summary>
+        /// <remarks>
+        ///     Ensure that the reference instance is disposed when the transfer is complete.
+        /// </remarks>
+        internal IConnection Connection { get; set; }
+
+        /// <summary>
         ///     Gets tue unique wait key for the download.
         /// </summary>
-        public WaitKey WaitKey => new WaitKey(Username, Filename, Token);
+        internal WaitKey WaitKey => new WaitKey(Username, Filename, Token);
     }
 }
