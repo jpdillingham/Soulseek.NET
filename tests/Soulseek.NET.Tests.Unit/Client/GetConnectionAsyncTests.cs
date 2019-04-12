@@ -213,6 +213,8 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(existingConn.Object);
             pcm.Setup(m => m.RemoveAsync(It.IsAny<IMessageConnection>()))
                 .Returns(Task.CompletedTask);
+            pcm.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, It.IsAny<ConnectionOptions>()))
+                .Returns(new Mock<IMessageConnection>().Object);
 
             var serverConn = new Mock<IMessageConnection>();
             serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))

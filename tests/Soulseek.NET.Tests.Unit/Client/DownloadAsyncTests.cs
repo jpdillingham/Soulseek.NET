@@ -137,11 +137,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -162,11 +162,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -191,11 +192,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -221,11 +223,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -253,11 +256,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -297,11 +301,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -337,11 +342,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -385,11 +391,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             byte[] downloadedData = null;
@@ -433,11 +440,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var events = new List<DownloadStateChangedEventArgs>();
@@ -504,11 +512,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var events = new List<DownloadProgressUpdatedEventArgs>();
@@ -551,11 +560,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var events = new List<DownloadStateChangedEventArgs>();
@@ -605,11 +615,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var events = new List<DownloadStateChangedEventArgs>();
@@ -660,11 +671,11 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var events = new List<DownloadStateChangedEventArgs>();
@@ -720,11 +731,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));
@@ -771,11 +783,12 @@ namespace Soulseek.NET.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(It.IsAny<MessageConnectionType>(), It.IsAny<string>(), It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, options, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null));

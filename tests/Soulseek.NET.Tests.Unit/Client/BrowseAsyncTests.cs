@@ -88,11 +88,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var result = await s.BrowseAsync(username);
@@ -116,11 +116,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             BrowseResponse result = null;
@@ -143,11 +143,11 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             BrowseResponse result = null;
@@ -173,11 +173,11 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
 
-            var connFactory = new Mock<IMessageConnectionFactory>();
-            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
+            var connManager = new Mock<IConnectionManager>();
+            connManager.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ip, port, It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, messageConnectionFactory: connFactory.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             BrowseResponse result = null;
