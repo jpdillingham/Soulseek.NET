@@ -47,32 +47,41 @@
             IEnumerable<SearchResponse> responses = null;
 
             var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                minimumDiagnosticLevel: DiagnosticLevel.Warning,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
             );
 
-            using (var client = new SoulseekClient(options))
+            try
             {
-                client.StateChanged += Client_ServerStateChanged;
-                client.DownloadStateChanged += Client_DownloadStateChanged;
-                client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                client.PrivateMessageReceived += Client_PrivateMessageReceived;
+                using (var client = new SoulseekClient(options))
+                {
+                    client.StateChanged += Client_ServerStateChanged;
+                    client.DownloadStateChanged += Client_DownloadStateChanged;
+                    client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                    client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
-                await client.ConnectAsync();
-                await client.LoginAsync(Username, Password);
+                    await client.ConnectAsync();
+                    await client.LoginAsync(Username, Password);
 
-                var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
-                responses = await SearchAsync(client, searchText, release.TrackCount);
+                    var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
+                    responses = await SearchAsync(client, searchText, release.TrackCount);
 
-                responses = responses
-                    .OrderByDescending(r => r.FreeUploadSlots)
-                    .ThenByDescending(r => r.UploadSpeed);
+                    responses = responses
+                        .OrderByDescending(r => r.FreeUploadSlots)
+                        .ThenByDescending(r => r.UploadSpeed);
 
-                var response = SelectSearchResponse(responses);
+                    var response = SelectSearchResponse(responses);
 
-                await DownloadFilesAsync(client, response).ConfigureAwait(false);
+                    await DownloadFilesAsync(client, response).ConfigureAwait(false);
+                }
             }
+            catch (Exception ex)
+            {
+                Console.WriteLine(ex);
+            }
+
+            Console.ReadKey();
         }
 
         private static SearchResponse SelectSearchResponse(IEnumerable<SearchResponse> responses)
