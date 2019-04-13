@@ -83,5 +83,10 @@ namespace Soulseek.NET
         /// <param name="options">The optional options for the connection.</param>
         /// <returns>The created Connection.</returns>
         IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null);
+
+        IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options);
+        Task<ConnectionKey> GetPeerConnectionKeyAsync(string username, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string localUsername, string remoteUsername, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
     }
 }
