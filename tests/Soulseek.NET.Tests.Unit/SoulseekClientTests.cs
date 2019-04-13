@@ -209,7 +209,7 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(ex);
             Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-            p.Verify(m => m.RemoveAll(), Times.AtLeastOnce);
+            p.Verify(m => m.RemoveAndDisposeAll(), Times.AtLeastOnce);
         }
 
         [Trait("Category", "Dispose/Finalize")]
