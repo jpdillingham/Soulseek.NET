@@ -1,6 +1,7 @@
 ﻿namespace Console
 {
     using global::Utility.CommandLine;
+    using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.NET;
     using Soulseek.NET.Messaging.Messages;
@@ -35,53 +36,123 @@
         [Argument('u', "username")]
         private static string Username { get; set; } = "foo";
 
+        [Argument('b', "browse")]
+        private static string Browse { get; set; }
+
+        [Argument('d', "download")]
+        private static string Download { get; set; }
+
+        [Argument('f', "file")]
+        private static List<string> Files { get; set; } = new List<string>();
+
         public static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
 
             Arguments.Populate(clearExistingValues: false);
 
-            var artist = await SelectArtist(Artist);
-            var releaseGroup = await SelectReleaseGroup(artist, Album);
-            var release = await SelectRelease(releaseGroup);
-            IEnumerable<SearchResponse> responses = null;
-
-            var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Warning,
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
-            );
-
-            try
+            if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
             {
-                using (var client = new SoulseekClient(options))
+                var options = new SoulseekClientOptions(
+                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
+                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
+                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+                );
+
+                try
                 {
-                    client.StateChanged += Client_ServerStateChanged;
-                    client.DownloadStateChanged += Client_DownloadStateChanged;
-                    client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                    client.PrivateMessageReceived += Client_PrivateMessageReceived;
+                    using (var client = new SoulseekClient(options))
+                    {
+                        client.StateChanged += Client_ServerStateChanged;
+                        client.DownloadStateChanged += Client_DownloadStateChanged;
+                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
-                    await client.ConnectAsync();
-                    await client.LoginAsync(Username, Password);
+                        await client.ConnectAsync();
+                        await client.LoginAsync(Username, Password);
 
-                    var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
-                    responses = await SearchAsync(client, searchText, release.TrackCount);
-
-                    responses = responses
-                        .OrderByDescending(r => r.FreeUploadSlots)
-                        .ThenByDescending(r => r.UploadSpeed);
-
-                    var response = SelectSearchResponse(responses);
-
-                    await DownloadFilesAsync(client, response).ConfigureAwait(false);
+                        await DownloadFilesAsync(client, Download, Files);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
                 }
             }
-            catch (Exception ex)
+            else  if (!string.IsNullOrEmpty(Browse))
             {
-                Console.WriteLine(ex);
-            }
+                var options = new SoulseekClientOptions(
+                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
+                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
+                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+                );
 
-            Console.ReadKey();
+                try
+                {
+                    using (var client = new SoulseekClient(options))
+                    {
+                        client.StateChanged += Client_ServerStateChanged;
+                        client.DownloadStateChanged += Client_DownloadStateChanged;
+                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
+
+                        await client.ConnectAsync();
+                        await client.LoginAsync(Username, Password);
+
+                        var results = await client.BrowseAsync(Browse);
+
+                        System.IO.File.WriteAllText("browse.json", JsonConvert.SerializeObject(results));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
+            else if (!string.IsNullOrEmpty(Artist))
+            {
+                var artist = await SelectArtist(Artist);
+                var releaseGroup = await SelectReleaseGroup(artist, Album);
+                var release = await SelectRelease(releaseGroup);
+                IEnumerable<SearchResponse> responses = null;
+
+                var options = new SoulseekClientOptions(
+                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
+                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
+                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+                );
+
+                try
+                {
+                    using (var client = new SoulseekClient(options))
+                    {
+                        client.StateChanged += Client_ServerStateChanged;
+                        client.DownloadStateChanged += Client_DownloadStateChanged;
+                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
+
+                        await client.ConnectAsync();
+                        await client.LoginAsync(Username, Password);
+
+                        var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
+                        responses = await SearchAsync(client, searchText, release.TrackCount);
+
+                        responses = responses
+                            .OrderByDescending(r => r.FreeUploadSlots)
+                            .ThenByDescending(r => r.UploadSpeed);
+
+                        var response = SelectSearchResponse(responses);
+
+                        await DownloadFilesAsync(client, response).ConfigureAwait(false);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+
+                Console.ReadKey();
+            }
         }
 
         private static SearchResponse SelectSearchResponse(IEnumerable<SearchResponse> responses)
@@ -176,6 +247,42 @@
                     }
 
                     var filename = Path.Combine(path, Path.GetFileName(file.Filename));
+
+                    Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
+                    System.IO.File.WriteAllBytes(filename, bytes);
+                    Console.WriteLine("Download complete!");
+                }
+                catch (Exception ex)
+                {
+                    o($"Error downloading {file}: {ex.Message}");
+                }
+            });
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        // todo: make this not a lazy copy/paste :\
+        private static async Task DownloadFilesAsync(SoulseekClient client, string username, List<string> files)
+        {
+            var index = 0;
+
+            var tasks = files.Select(async file =>
+            {
+                try
+                {
+                    var bytes = await client.DownloadAsync(username, file, index++, eventHandler: (sender, e) =>
+                    {
+                        Console.Write($"\r{Path.GetFileName(file)} {e.PercentComplete}%");
+                    }).ConfigureAwait(false);
+
+                    var path = $@"downloads" + Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "");
+
+                    if (!System.IO.Directory.Exists(path))
+                    {
+                        System.IO.Directory.CreateDirectory(path);
+                    }
+
+                    var filename = Path.Combine(path, Path.GetFileName(file));
 
                     Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
                     System.IO.File.WriteAllBytes(filename, bytes);
