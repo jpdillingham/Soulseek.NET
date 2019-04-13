@@ -1,4 +1,4 @@
-﻿// <copyright file="IConnectionManager{T}.cs" company="JP Dillingham">
+﻿// <copyright file="IConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -52,11 +52,23 @@ namespace Soulseek.NET
         Task AddAsync(IMessageConnection connection);
 
         /// <summary>
-        ///     Returns the connection matching the specified <paramref name="connectionKey"/>
+        ///     Gets a <see cref="MessageConnection"/> instance.
         /// </summary>
-        /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
-        /// <returns>The connection matching the specified connection key.</returns>
-        IMessageConnection Get(ConnectionKey connectionKey);
+        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <returns>The created Connection.</returns>
+        IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null);
+
+        IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options);
+
+        Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+
+        Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+
+        Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string localUsername, string remoteUsername, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
@@ -70,23 +82,5 @@ namespace Soulseek.NET
         /// <param name="connection">The connection to remove.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         Task RemoveAsync(IMessageConnection connection);
-
-        Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
-
-        /// <summary>
-        ///     Gets a <see cref="MessageConnection"/> instance.
-        /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
-        /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <returns>The created Connection.</returns>
-        IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null);
-
-        IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options);
-        Task<ConnectionKey> GetPeerConnectionKeyAsync(string username, CancellationToken cancellationToken);
-        Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string localUsername, string remoteUsername, ConnectionOptions options, CancellationToken cancellationToken);
-        Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
     }
 }

@@ -103,12 +103,7 @@ namespace Soulseek.NET
             GC.SuppressFinalize(this);
         }
 
-        /// <summary>
-        ///     Returns the connection matching the specified <paramref name="connectionKey"/>
-        /// </summary>
-        /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
-        /// <returns>The connection matching the specified connection key.</returns>
-        public IMessageConnection Get(ConnectionKey connectionKey)
+        private IMessageConnection Get(ConnectionKey connectionKey)
         {
             if (connectionKey != null)
             {
@@ -204,7 +199,7 @@ namespace Soulseek.NET
             return connection;
         }
 
-        public async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username, CancellationToken cancellationToken)
+        private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username, CancellationToken cancellationToken)
         {
             var addressWait = Waiter.Wait<GetPeerAddressResponse>(new WaitKey(MessageCode.ServerGetPeerAddress, username), cancellationToken: cancellationToken);
 
