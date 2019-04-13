@@ -78,10 +78,11 @@ namespace Soulseek.NET
 
             Options = options ?? new SoulseekClientOptions();
 
-            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(MessageWaiter, ServerConnection_MessageRead, PeerConnection_MessageRead, Options.ConcurrentPeerConnections);
             MessageWaiter = messageWaiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+
+            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(MessageWaiter, ServerConnection_MessageRead, PeerConnection_MessageRead, Options.ConcurrentPeerConnections);
 
             ServerConnection = serverConnection;
 
