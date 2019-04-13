@@ -275,39 +275,39 @@ namespace Soulseek.NET.Tests.Unit.Client
             }
         }
 
-        [Trait("Category", "Message")]
-        [Theory(DisplayName = "Creates connection on ConnectToPeerResponse 'P'"), AutoData]
-        public void Creates_Connection_On_ConnectToPeerResponse_P(string username, int token, IPAddress ip, int port)
-        {
-            IMessageConnection newConn = null;
+        //[Trait("Category", "Message")]
+        //[Theory(DisplayName = "Creates connection on ConnectToPeerResponse 'P'"), AutoData]
+        //public void Creates_Connection_On_ConnectToPeerResponse_P(string username, int token, IPAddress ip, int port)
+        //{
+        //    IMessageConnection newConn = null;
 
-            var connMgr = new Mock<IConnectionManager>();
-            connMgr.Setup(m => m.AddAsync(It.IsAny<IMessageConnection>()))
-                .Returns(Task.FromResult(new MessageConnection(MessageConnectionType.Peer, username, ip, port)))
-                .Callback<IMessageConnection>(c => newConn = c);
+        //    var connMgr = new Mock<IConnectionManager>();
+        //    connMgr.Setup(m => m.AddAsync(It.IsAny<IMessageConnection>()))
+        //        .Returns(Task.FromResult(new MessageConnection(MessageConnectionType.Peer, username, ip, port)))
+        //        .Callback<IMessageConnection>(c => newConn = c);
 
-            var ipBytes = ip.GetAddressBytes();
-            Array.Reverse(ipBytes);
+        //    var ipBytes = ip.GetAddressBytes();
+        //    Array.Reverse(ipBytes);
 
-            var msg = new MessageBuilder()
-                .Code(MessageCode.ServerConnectToPeer)
-                .WriteString(username)
-                .WriteString("P")
-                .WriteBytes(ipBytes)
-                .WriteInteger(port)
-                .WriteInteger(token)
-                .Build();
+        //    var msg = new MessageBuilder()
+        //        .Code(MessageCode.ServerConnectToPeer)
+        //        .WriteString(username)
+        //        .WriteString("P")
+        //        .WriteBytes(ipBytes)
+        //        .WriteInteger(port)
+        //        .WriteInteger(token)
+        //        .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: connMgr.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: connMgr.Object);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+        //    s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            Assert.Equal(username, newConn.Username);
-            Assert.Equal(ip, newConn.IPAddress);
-            Assert.Equal(port, newConn.Port);
+        //    Assert.Equal(username, newConn.Username);
+        //    Assert.Equal(ip, newConn.IPAddress);
+        //    Assert.Equal(port, newConn.Port);
 
-            connMgr.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
-        }
+        //    connMgr.Verify(m => m.AddAsync(It.IsAny<IMessageConnection>()), Times.Once);
+        //}
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Ignores ConnectToPeerResponse 'F' on unexpected connection"), AutoData]
