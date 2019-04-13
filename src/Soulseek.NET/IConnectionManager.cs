@@ -26,19 +26,9 @@ namespace Soulseek.NET
     internal interface IConnectionManager : IDisposable
     {
         /// <summary>
-        ///     Gets the number of active connections.
-        /// </summary>
-        int Active { get; }
-
-        /// <summary>
         ///     Gets the number of allowed concurrent connections.
         /// </summary>
-        int ConcurrentConnections { get; }
-
-        /// <summary>
-        ///     Gets the number of queued connections.
-        /// </summary>
-        int Queued { get; }
+        int ConcurrentMessageConnections { get; }
 
         Task<IMessageConnection> GetSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
