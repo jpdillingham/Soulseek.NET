@@ -82,13 +82,13 @@ namespace Soulseek.NET
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(MessageWaiter, ServerConnection_MessageRead, PeerConnection_MessageRead, Options.ConcurrentPeerConnections);
+            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(MessageWaiter, Options.ConcurrentPeerConnections);
 
             ServerConnection = serverConnection;
 
             if (ServerConnection == null)
             {
-                ServerConnection = PeerConnectionManager.GetServerMessageConnection(Address, Port, Options.ServerConnectionOptions);
+                ServerConnection = PeerConnectionManager.GetServerConnection(Address, Port, Options.ServerConnectionOptions);
 
                 ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
                 ServerConnection.Disconnected += (sender, e) => Disconnect();
@@ -519,7 +519,7 @@ namespace Soulseek.NET
             {
                 var browseWait = MessageWaiter.WaitIndefinitely<BrowseResponse>(new WaitKey(MessageCode.PeerBrowseResponse, username), cancellationToken);
 
-                var connection = await PeerConnectionManager.GetUnsolicitedPeerConnectionAsync(Username, username, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                var connection = await PeerConnectionManager.GetUnsolicitedConnectionAsync(Username, username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                 connection.Disconnected += (sender, message) =>
                 {
                     MessageWaiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
@@ -550,7 +550,7 @@ namespace Soulseek.NET
             try
             {
                 // establish a message connection to the peer so that we can request the file
-                var peerConnection = await PeerConnectionManager.GetUnsolicitedPeerConnectionAsync(Username, username, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                var peerConnection = await PeerConnectionManager.GetUnsolicitedConnectionAsync(Username, username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
@@ -600,7 +600,7 @@ namespace Soulseek.NET
 
                 // respond to the peer that we are ready to accept the file
                 // but first, get a fresh connection (or maybe its cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                peerConnection = await PeerConnectionManager.GetUnsolicitedPeerConnectionAsync(Username, username, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                peerConnection = await PeerConnectionManager.GetUnsolicitedConnectionAsync(Username, username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                 await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
@@ -909,7 +909,7 @@ namespace Soulseek.NET
                         }
                         else
                         {
-                            await PeerConnectionManager.GetSolicitedPeerConnectionAsync(connectToPeerResponse, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                            await PeerConnectionManager.GetSolicitedConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
                         }
 
                         break;

@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManager{T}.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -32,14 +32,12 @@ namespace Soulseek.NET
     internal sealed class ConnectionManager : IConnectionManager
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionManager{T}"/> class.
+        ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
         /// <param name="concurrentConnections">The number of allowed concurrent connections.</param>
-        internal ConnectionManager(IWaiter waiter, EventHandler<Message> serverMessageHandler, EventHandler<Message> peerMessageHandler, int concurrentConnections = 500)
+        internal ConnectionManager(IWaiter waiter, int concurrentConnections = 500)
         {
             Waiter = waiter;
-            ServerMessageHandler = serverMessageHandler;
-            PeerMessageHandler = peerMessageHandler;
             ConcurrentConnections = concurrentConnections;
         }
 
@@ -58,19 +56,18 @@ namespace Soulseek.NET
         /// </summary>
         public int Queued => ConnectionQueue.Count;
 
-        private EventHandler<Message> PeerMessageHandler { get; }
-        private EventHandler<Message> ServerMessageHandler { get; }
-        private IMessageConnection ServerConnection { get; set; }
-        private IWaiter Waiter { get; set; }
         private ConcurrentQueue<IMessageConnection> ConnectionQueue { get; } = new ConcurrentQueue<IMessageConnection>();
         private ConcurrentDictionary<ConnectionKey, IMessageConnection> Connections { get; } = new ConcurrentDictionary<ConnectionKey, IMessageConnection>();
         private bool Disposed { get; set; }
+        private IMessageConnection ServerConnection { get; set; }
+        private IWaiter Waiter { get; set; }
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="connection"/> to the manager.
         /// </summary>
         /// <remarks>
-        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.  Otherwise, it is queued.
+        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.
+        ///     Otherwise, it is queued.
         /// </remarks>
         /// <param name="connection">The connection to add.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
@@ -103,23 +100,85 @@ namespace Soulseek.NET
             GC.SuppressFinalize(this);
         }
 
-        private IMessageConnection Get(ConnectionKey connectionKey)
+        public IMessageConnection GetServerConnection(string address, int port, ConnectionOptions options)
         {
-            if (connectionKey != null)
-            {
-                var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
+            var ipAddress = default(IPAddress);
 
-                if (!EqualityComparer<IMessageConnection>.Default.Equals(queuedConnection, default(IMessageConnection)))
-                {
-                    return queuedConnection;
-                }
-                else if (Connections.ContainsKey(connectionKey))
-                {
-                    return Connections[connectionKey];
-                }
+            try
+            {
+                ipAddress = address.ResolveIPAddress();
+            }
+            catch (Exception ex)
+            {
+                throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
             }
 
-            return default(IMessageConnection);
+            ServerConnection = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
+            return ServerConnection;
+        }
+
+        public async Task<IMessageConnection> GetSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new MessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
+            {
+                Context = connectToPeerResponse,
+            };
+
+            connection.Connected += async (sender, e) =>
+            {
+                var conn = (IMessageConnection)sender;
+                var context = (ConnectToPeerResponse)conn.Context;
+                var request = new PierceFirewallRequest(context.Token).ToMessage();
+                await conn.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
+            };
+
+            connection.Disconnected += async (sender, e) => await RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
+
+            connection.MessageRead += messageHandler;
+
+            await AddAsync(connection).ConfigureAwait(false);
+            return connection;
+        }
+
+        public async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+            return connection;
+        }
+
+        public async Task<IMessageConnection> GetUnsolicitedConnectionAsync(string localUsername, string remoteUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var key = await GetPeerConnectionKeyAsync(remoteUsername, cancellationToken).ConfigureAwait(false);
+            var connection = Get(key);
+
+            if (connection != default(IMessageConnection) && (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected))
+            {
+                await RemoveAsync(connection).ConfigureAwait(false);
+                connection = default(IMessageConnection);
+            }
+
+            if (connection == default(IMessageConnection))
+            {
+                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
+                connection.MessageRead += messageHandler;
+
+                connection.Connected += async (sender, e) =>
+                {
+                    var token = new Random().Next(1, 2147483647);
+                    await connection.WriteAsync(new PeerInitRequest(localUsername, "P", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                };
+
+                connection.Disconnected += async (sender, e) => await RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
+
+                await AddAsync(connection).ConfigureAwait(false);
+            }
+
+            return connection;
         }
 
         /// <summary>
@@ -131,15 +190,7 @@ namespace Soulseek.NET
             Connections.RemoveAndDisposeAll();
         }
 
-        /// <summary>
-        ///     Asynchronously disposes and removes the specified <paramref name="connection"/> from the manager.
-        /// </summary>
-        /// <remarks>
-        ///     If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.
-        /// </remarks>
-        /// <param name="connection">The connection to remove.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task RemoveAsync(IMessageConnection connection)
+        private async Task RemoveAsync(IMessageConnection connection)
         {
             if (connection == null || connection.Key == null)
             {
@@ -176,27 +227,23 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task TryConnectAsync(IMessageConnection connection)
+        private IMessageConnection Get(ConnectionKey connectionKey)
         {
-            try
+            if (connectionKey != null)
             {
-                await connection.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+                var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
+
+                if (!EqualityComparer<IMessageConnection>.Default.Equals(queuedConnection, default(IMessageConnection)))
+                {
+                    return queuedConnection;
+                }
+                else if (Connections.ContainsKey(connectionKey))
+                {
+                    return Connections[connectionKey];
+                }
             }
-            catch (Exception)
-            {
-                await RemoveAsync(connection).ConfigureAwait(false);
-            }
-        }
 
-        public async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-            return connection;
+            return default(IMessageConnection);
         }
 
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username, CancellationToken cancellationToken)
@@ -210,91 +257,16 @@ namespace Soulseek.NET
             return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
         }
 
-        public async Task<IMessageConnection> GetUnsolicitedPeerConnectionAsync(string localUsername, string remoteUsername, ConnectionOptions options, CancellationToken cancellationToken)
+        private async Task TryConnectAsync(IMessageConnection connection)
         {
-            var key = await GetPeerConnectionKeyAsync(remoteUsername, cancellationToken).ConfigureAwait(false);
-            var connection = Get(key);
-
-            if (connection != default(IMessageConnection) && (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected))
-            {
-                await RemoveAsync(connection).ConfigureAwait(false);
-                connection = default(IMessageConnection);
-            }
-
-            if (connection == default(IMessageConnection))
-            {
-                connection = GetMessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
-                connection.MessageRead += PeerMessageHandler;
-
-                connection.Connected += async (sender, e) =>
-                {
-                    var token = new Random().Next(1, 2147483647);
-                    await connection.WriteAsync(new PeerInitRequest(localUsername, "P", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-                };
-
-                connection.Disconnected += async (sender, e) =>
-                {
-                    await RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
-                };
-
-                await AddAsync(connection).ConfigureAwait(false);
-            }
-
-            return connection;
-        }
-
-        public async Task<IMessageConnection> GetSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = new MessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
-            {
-                Context = connectToPeerResponse,
-            };
-
-            connection.Connected += async (sender, e) =>
-            {
-                var conn = (IMessageConnection)sender;
-                var context = (ConnectToPeerResponse)conn.Context;
-                var request = new PierceFirewallRequest(context.Token).ToMessage();
-                await conn.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
-            };
-
-            connection.Disconnected += async (sender, e) =>
-            {
-                await RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
-            };
-
-            connection.MessageRead += PeerMessageHandler;
-
-            await AddAsync(connection).ConfigureAwait(false);
-            return connection;
-        }
-
-        public IMessageConnection GetServerMessageConnection(string address, int port, ConnectionOptions options)
-        {
-            var ipAddress = default(IPAddress);
-
             try
             {
-                ipAddress = address.ResolveIPAddress();
+                await connection.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
+                await RemoveAsync(connection).ConfigureAwait(false);
             }
-
-            ServerConnection = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
-            return ServerConnection;
         }
-
-        /// <summary>
-        ///     Gets a <see cref="MessageConnection"/> instance.
-        /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
-        /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <returns>The created Connection.</returns>
-        public IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null) => new MessageConnection(type, username, ipAddress, port, options);
     }
 }
