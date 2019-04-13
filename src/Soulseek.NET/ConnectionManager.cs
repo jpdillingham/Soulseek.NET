@@ -15,6 +15,7 @@ namespace Soulseek.NET
     using System;
     using System.Collections.Concurrent;
     using System.Linq;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Messaging;
@@ -38,14 +39,13 @@ namespace Soulseek.NET
         {
             ServerConnection = serverConnection;
             Waiter = waiter;
-            ConcurrentMessageConnections = concurrentMessageConnections;
-            ConcurrentTransferConnections = concurrentTransferConnections;
-        }
 
-        /// <summary>
-        ///     Gets the number of active connections.
-        /// </summary>
-        public int Active => Connections.Count;
+            ConcurrentMessageConnections = concurrentMessageConnections;
+            MessageConnectionSemaphore = new SemaphoreSlim(ConcurrentMessageConnections, ConcurrentMessageConnections);
+
+            ConcurrentTransferConnections = concurrentTransferConnections;
+            TransferConnectionSemaphore = new SemaphoreSlim(ConcurrentTransferConnections, ConcurrentTransferConnections);
+        }
 
         /// <summary>
         ///     Gets the number of allowed concurrent connections.
@@ -53,9 +53,9 @@ namespace Soulseek.NET
         public int ConcurrentMessageConnections { get; }
         public int ConcurrentTransferConnections { get; }
 
-        private ConcurrentQueue<IMessageConnection> ConnectionQueue { get; } = new ConcurrentQueue<IMessageConnection>();
         private ConcurrentDictionary<ConnectionKey, IMessageConnection> Connections { get; } = new ConcurrentDictionary<ConnectionKey, IMessageConnection>();
         private bool Disposed { get; set; }
+        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; } = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
         private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnections { get; } = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
 
         private SemaphoreSlim MessageConnectionSemaphore { get; }
@@ -75,7 +75,7 @@ namespace Soulseek.NET
         public async Task<IMessageConnection> GetSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
-            var (semaphore, connection) = await GetOrAddMessageConnection(key).ConfigureAwait(false);
+            var (semaphore, connection) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
 
             await semaphore.WaitAsync().ConfigureAwait(false);
 
@@ -114,7 +114,17 @@ namespace Soulseek.NET
 
         public async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
         {
+            Interlocked.Increment(ref waitingTransferConnections);
+
+            await TransferConnectionSemaphore.WaitAsync().ConfigureAwait(false);
+
+            Interlocked.Decrement(ref waitingTransferConnections);
+
             var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
+
+            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
+
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
@@ -126,7 +136,7 @@ namespace Soulseek.NET
         public async Task<IMessageConnection> GetUnsolicitedConnectionAsync(string localUsername, string remoteUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var key = await GetPeerConnectionKeyAsync(remoteUsername, cancellationToken).ConfigureAwait(false);
-            var (semaphore, connection) = await GetOrAddMessageConnection(key).ConfigureAwait(false);
+            var (semaphore, connection) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
 
             await semaphore.WaitAsync().ConfigureAwait(false);
 
@@ -134,6 +144,11 @@ namespace Soulseek.NET
             {
                 if (connection != null)
                 {
+                    if (connection.Context is ConnectToPeerResponse)
+                    {
+                        Console.WriteLine($"Reusing solicited connection for a download...");
+                    }
+
                     return connection;
                 }
                 else
@@ -191,7 +206,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnection(ConnectionKey key)
+        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionAsync(ConnectionKey key)
         {
             if (MessageConnections.ContainsKey(key))
             {
