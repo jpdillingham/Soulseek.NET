@@ -345,4 +345,4 @@ opencover.xml
 /.sonarqube
 
 /examples/Console/downloads
-/examples/Console/browse.json
+/examples/Console/data
