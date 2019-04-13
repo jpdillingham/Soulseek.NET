@@ -16,6 +16,7 @@ namespace Soulseek.NET
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Exceptions;
@@ -82,18 +83,26 @@ namespace Soulseek.NET
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(MessageWaiter, Options.ConcurrentPeerConnections);
-
             ServerConnection = serverConnection;
 
             if (ServerConnection == null)
             {
-                ServerConnection = PeerConnectionManager.GetServerConnection(Address, Port, Options.ServerConnectionOptions);
+                try
+                {
+                    IPAddress = Address.ResolveIPAddress();
+                }
+                catch (Exception ex)
+                {
+                    throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
+                }
 
+                ServerConnection = new MessageConnection(MessageConnectionType.Server, IPAddress, Port, Options.ServerConnectionOptions);
                 ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
                 ServerConnection.Disconnected += (sender, e) => Disconnect();
                 ServerConnection.MessageRead += ServerConnection_MessageRead;
             }
+
+            PeerConnectionManager = peerConnectionManager ?? new ConnectionManager(ServerConnection, MessageWaiter, Options.ConcurrentPeerConnections);
         }
 
         /// <summary>
@@ -132,19 +141,24 @@ namespace Soulseek.NET
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        ///     Gets or sets the address of the server to which to connect.
+        ///     Gets the unresolved server address.
         /// </summary>
-        public string Address { get; set; }
+        public string Address { get; }
 
         /// <summary>
-        ///     Gets the client options.
+        ///     Gets the resolved server address.
         /// </summary>
-        public SoulseekClientOptions Options { get; private set; }
+        public IPAddress IPAddress { get; }
 
         /// <summary>
-        ///     Gets or sets the port to which to connect.
+        ///     Gets the resolved server address.
         /// </summary>
-        public int Port { get; set; }
+        public SoulseekClientOptions Options { get; }
+
+        /// <summary>
+        ///     Gets server port.
+        /// </summary>
+        public int Port { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

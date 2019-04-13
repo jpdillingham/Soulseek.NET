@@ -34,8 +34,9 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
         /// <param name="concurrentConnections">The number of allowed concurrent connections.</param>
-        internal ConnectionManager(IWaiter waiter, int concurrentConnections = 500)
+        internal ConnectionManager(IMessageConnection serverConnection, IWaiter waiter, int concurrentConnections = 500)
         {
+            ServerConnection = serverConnection;
             Waiter = waiter;
             ConcurrentConnections = concurrentConnections;
         }
@@ -68,23 +69,6 @@ namespace Soulseek.NET
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-        }
-
-        public IMessageConnection GetServerConnection(string address, int port, ConnectionOptions options)
-        {
-            var ipAddress = default(IPAddress);
-
-            try
-            {
-                ipAddress = address.ResolveIPAddress();
-            }
-            catch (Exception ex)
-            {
-                throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
-            }
-
-            ServerConnection = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
-            return ServerConnection;
         }
 
         public async Task<IMessageConnection> GetSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)

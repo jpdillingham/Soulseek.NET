@@ -40,8 +40,6 @@ namespace Soulseek.NET
         /// </summary>
         int Queued { get; }
 
-        IMessageConnection GetServerConnection(string address, int port, ConnectionOptions options);
-
         Task<IMessageConnection> GetSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
