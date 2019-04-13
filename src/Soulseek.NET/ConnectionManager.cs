@@ -138,7 +138,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
-        public void RemoveAll()
+        public void RemoveAndDisposeAll()
         {
             ConnectionQueue.DequeueAndDisposeAll();
             Connections.RemoveAndDisposeAll();
@@ -170,7 +170,7 @@ namespace Soulseek.NET
             {
                 if (disposing)
                 {
-                    RemoveAll();
+                    RemoveAndDisposeAll();
                 }
 
                 Disposed = true;

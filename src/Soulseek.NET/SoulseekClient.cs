@@ -267,7 +267,7 @@ namespace Soulseek.NET
         {
             ServerConnection?.Disconnect(message ?? "Client disconnected.");
 
-            PeerConnectionManager?.RemoveAll();
+            PeerConnectionManager?.RemoveAndDisposeAll();
 
             ActiveSearches?.RemoveAndDisposeAll();
 

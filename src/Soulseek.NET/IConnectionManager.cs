@@ -49,6 +49,6 @@ namespace Soulseek.NET
         /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
-        void RemoveAll();
+        void RemoveAndDisposeAll();
     }
 }
