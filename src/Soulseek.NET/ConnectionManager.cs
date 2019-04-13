@@ -105,31 +105,54 @@ namespace Soulseek.NET
             return connection;
         }
 
+        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnections = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnection(ConnectionKey key)
+        {
+            // todo: implement queuing logic; use a lock or something to block threads that would be adding new connections
+            return MessageConnections.GetOrAdd(key, (new SemaphoreSlim(1, 1), null));
+        }
+
+        private void AddOrUpdateMessageConnection(ConnectionKey key, IMessageConnection connection)
+        {
+            MessageConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+        }
+
+        private void RemoveMessageConnection(IMessageConnection connection)
+        {
+            MessageConnections.TryRemove(connection.Key, out _);
+        }
+
         public async Task<IMessageConnection> GetUnsolicitedConnectionAsync(string localUsername, string remoteUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var key = await GetPeerConnectionKeyAsync(remoteUsername, cancellationToken).ConfigureAwait(false);
-            var connection = Get(key);
+            var (semaphore, connection) = await GetOrAddMessageConnection(key).ConfigureAwait(false);
 
-            if (connection != default(IMessageConnection) && (connection.State == ConnectionState.Disconnecting || connection.State == ConnectionState.Disconnected))
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
             {
-                await RemoveAsync(connection).ConfigureAwait(false);
-                connection = default(IMessageConnection);
-            }
-
-            if (connection == default(IMessageConnection))
-            {
-                connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
-                connection.MessageRead += messageHandler;
-
-                connection.Connected += async (sender, e) =>
+                if (connection != null && connection.State == ConnectionState.Connected)
                 {
+                    return connection;
+                }
+                else
+                {
+                    connection = new MessageConnection(MessageConnectionType.Peer, key.Username, key.IPAddress, key.Port, options);
+                    connection.MessageRead += messageHandler;
+                    connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
+
+                    await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
                     var token = new Random().Next(1, 2147483647);
                     await connection.WriteAsync(new PeerInitRequest(localUsername, "P", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-                };
 
-                connection.Disconnected += async (sender, e) => await RemoveAsync((IMessageConnection)sender).ConfigureAwait(false);
-
-                await AddAsync(connection).ConfigureAwait(false);
+                    AddOrUpdateMessageConnection(key, connection);
+                }
+            }
+            finally
+            {
+                semaphore.Release();
             }
 
             return connection;
@@ -196,6 +219,7 @@ namespace Soulseek.NET
             return default(IMessageConnection);
         }
 
+        // todo: move this back to SoulseekClient
         private async Task<ConnectionKey> GetPeerConnectionKeyAsync(string username, CancellationToken cancellationToken)
         {
             var addressWait = Waiter.Wait<GetPeerAddressResponse>(new WaitKey(MessageCode.ServerGetPeerAddress, username), cancellationToken: cancellationToken);
