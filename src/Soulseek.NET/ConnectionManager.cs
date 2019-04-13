@@ -28,7 +28,6 @@ namespace Soulseek.NET
     /// <summary>
     ///     Manages a queue of <see cref="IConnection"/>
     /// </summary>
-    /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
     internal sealed class ConnectionManager : IConnectionManager
     {
         /// <summary>
@@ -63,36 +62,7 @@ namespace Soulseek.NET
         private IWaiter Waiter { get; set; }
 
         /// <summary>
-        ///     Asynchronously adds the specified <paramref name="connection"/> to the manager.
-        /// </summary>
-        /// <remarks>
-        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.
-        ///     Otherwise, it is queued.
-        /// </remarks>
-        /// <param name="connection">The connection to add.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task AddAsync(IMessageConnection connection)
-        {
-            if (connection == null || connection.Key == null)
-            {
-                return;
-            }
-
-            if (Connections.Count < ConcurrentConnections)
-            {
-                if (Connections.TryAdd(connection.Key, connection))
-                {
-                    await TryConnectAsync(connection).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                ConnectionQueue.Enqueue(connection);
-            }
-        }
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager{T}"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager"/>.
         /// </summary>
         public void Dispose()
         {
@@ -190,27 +160,23 @@ namespace Soulseek.NET
             Connections.RemoveAndDisposeAll();
         }
 
-        private async Task RemoveAsync(IMessageConnection connection)
+        private async Task AddAsync(IMessageConnection connection)
         {
             if (connection == null || connection.Key == null)
             {
                 return;
             }
 
-            if (Connections.TryRemove(connection.Key, out var _))
+            if (Connections.Count < ConcurrentConnections)
             {
-                connection.Dispose();
+                if (Connections.TryAdd(connection.Key, connection))
+                {
+                    await TryConnectAsync(connection).ConfigureAwait(false);
+                }
             }
             else
             {
-                return;
-            }
-
-            if (Connections.Count < ConcurrentConnections &&
-                ConnectionQueue.TryDequeue(out var nextConnection) &&
-                Connections.TryAdd(nextConnection.Key, nextConnection))
-            {
-                await TryConnectAsync(nextConnection).ConfigureAwait(false);
+                ConnectionQueue.Enqueue(connection);
             }
         }
 
@@ -255,6 +221,30 @@ namespace Soulseek.NET
 
             var address = await addressWait.ConfigureAwait(false);
             return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
+        }
+
+        private async Task RemoveAsync(IMessageConnection connection)
+        {
+            if (connection == null || connection.Key == null)
+            {
+                return;
+            }
+
+            if (Connections.TryRemove(connection.Key, out var _))
+            {
+                connection.Dispose();
+            }
+            else
+            {
+                return;
+            }
+
+            if (Connections.Count < ConcurrentConnections &&
+                ConnectionQueue.TryDequeue(out var nextConnection) &&
+                Connections.TryAdd(nextConnection.Key, nextConnection))
+            {
+                await TryConnectAsync(nextConnection).ConfigureAwait(false);
+            }
         }
 
         private async Task TryConnectAsync(IMessageConnection connection)
