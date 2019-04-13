@@ -57,8 +57,8 @@
             if (!string.IsNullOrEmpty(Search))
             {
                 var options = new SoulseekClientOptions(
-                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
-                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
+                    minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
                     transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
                 );
 
@@ -74,7 +74,7 @@
                         await client.ConnectAsync();
                         await client.LoginAsync(Username, Password);
 
-                        var responses = await client.SearchAsync(Search);
+                        var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 1000000));
 
                         var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
                         file.Directory.Create();
