@@ -1,11 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace Console
 {
     public static class Utility
     {
+        public static string ToSafeFilename(this string text)
+        {
+            return string.Join("-", text.Split(Path.GetInvalidFileNameChars()));
+        }
+
         public static double Similarity(this string s, string t)
         {
             return (1.0 - ((double)s.LevenshteinDistance(t) / (double)Math.Max(s.Length, t.Length)));

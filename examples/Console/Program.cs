@@ -45,12 +45,47 @@
         [Argument('f', "file")]
         private static List<string> Files { get; set; } = new List<string>();
 
+        [Argument('s', "search")]
+        private static string Search { get; set; }
+
         public static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
 
             Arguments.Populate(clearExistingValues: false);
 
+            if (!string.IsNullOrEmpty(Search))
+            {
+                var options = new SoulseekClientOptions(
+                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
+                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
+                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+                );
+
+                try
+                {
+                    using (var client = new SoulseekClient(options))
+                    {
+                        client.StateChanged += Client_ServerStateChanged;
+                        client.DownloadStateChanged += Client_DownloadStateChanged;
+                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
+
+                        await client.ConnectAsync();
+                        await client.LoginAsync(Username, Password);
+
+                        var responses = await client.SearchAsync(Search);
+
+                        var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
+                        file.Directory.Create();
+                        System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(responses));
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                }
+            }
             if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
             {
                 var options = new SoulseekClientOptions(
@@ -101,7 +136,9 @@
 
                         var results = await client.BrowseAsync(Browse);
 
-                        System.IO.File.WriteAllText("browse.json", JsonConvert.SerializeObject(results));
+                        var file = new FileInfo(Path.Combine("data", "browse", $"{Browse}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
+                        file.Directory.Create();
+                        System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(results));
                     }
                 }
                 catch (Exception ex)
