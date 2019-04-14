@@ -199,9 +199,9 @@ namespace Soulseek.NET.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var p = new Mock<IConnectionManager<IMessageConnection>>();
+            var p = new Mock<IConnectionManager>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object);
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, connectionManager: p.Object);
             await s.ConnectAsync();
 
             var ex = Record.Exception(() => s.Disconnect());
@@ -209,7 +209,7 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(ex);
             Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-            p.Verify(m => m.RemoveAll(), Times.AtLeastOnce);
+            p.Verify(m => m.RemoveAndDisposeAll(), Times.AtLeastOnce);
         }
 
         [Trait("Category", "Dispose/Finalize")]

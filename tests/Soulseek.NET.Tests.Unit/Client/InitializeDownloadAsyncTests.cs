@@ -25,118 +25,118 @@ namespace Soulseek.NET.Tests.Unit.Client
 
     public class InitializeDownloadAsyncTests
     {
-        [Trait("Category", "InitializeDownloadAsync")]
-        [Fact(DisplayName = "Does not throw on download missing from ActiveDownloads")]
-        public async Task Does_Not_Throw_On_Download_Missing_From_ActiveDownloads()
-        {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
-                .Returns(Task.FromResult(BitConverter.GetBytes(1)));
+        //[Trait("Category", "InitializeDownloadAsync")]
+        //[Fact(DisplayName = "Does not throw on download missing from ActiveDownloads")]
+        //public async Task Does_Not_Throw_On_Download_Missing_From_ActiveDownloads()
+        //{
+        //    var conn = new Mock<IConnection>();
+        //    conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+        //        .Returns(Task.FromResult(BitConverter.GetBytes(1)));
 
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-                .Returns(conn.Object);
+        //    var connFactory = new Mock<IConnectionFactory>();
+        //    connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+        //        .Returns(conn.Object);
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, connectionFactory: connFactory.Object);
-            var r = new ConnectToPeerResponse("username", "F", IPAddress.Parse("127.0.0.1"), 1, 1);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, connectionFactory: connFactory.Object);
+        //    var r = new ConnectToPeerResponse("username", "F", IPAddress.Parse("127.0.0.1"), 1, 1);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
+        //    var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
-            Assert.Null(ex);
-        }
+        //    Assert.Null(ex);
+        //}
 
-        [Trait("Category", "InitializeDownloadAsync")]
-        [Theory(DisplayName = "Completes 'start' wait when download exists"), AutoData]
-        public async Task Completes_Start_Wait_When_Download_Exists(string username, string filename, int token, int remoteToken)
-        {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
-                .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
+        //[Trait("Category", "InitializeDownloadAsync")]
+        //[Theory(DisplayName = "Completes 'start' wait when download exists"), AutoData]
+        //public async Task Completes_Start_Wait_When_Download_Exists(string username, string filename, int token, int remoteToken)
+        //{
+        //    var conn = new Mock<IConnection>();
+        //    conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+        //        .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
 
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-                .Returns(conn.Object);
+        //    var connFactory = new Mock<IConnectionFactory>();
+        //    connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+        //        .Returns(conn.Object);
 
-            var waiter = new Mock<IWaiter>();
+        //    var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
-            var activeDownloads = new ConcurrentDictionary<int, Download>();
-            var download = new Download(username, filename, token);
-            activeDownloads.TryAdd(remoteToken, download);
+        //    var activeDownloads = new ConcurrentDictionary<int, Download>();
+        //    var download = new Download(username, filename, token);
+        //    activeDownloads.TryAdd(remoteToken, download);
 
-            s.SetProperty("ActiveDownloads", activeDownloads);
+        //    s.SetProperty("ActiveDownloads", activeDownloads);
 
-            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+        //    var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
+        //    await s.InvokeMethod<Task>("InitializeDownloadAsync", r);
 
-            waiter.Verify(m => m.Complete(download.WaitKey, It.IsAny<IConnection>()), Times.Once);
-        }
+        //    waiter.Verify(m => m.Complete(download.WaitKey, It.IsAny<IConnection>()), Times.Once);
+        //}
 
-        [Trait("Category", "InitializeDownloadAsync")]
-        [Theory(DisplayName = "Does not throw on remote token read Exception"), AutoData]
-        public async Task Does_Not_Throw_On_Remote_Token_Read_Exception(string username, string filename, int token, int remoteToken)
-        {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
-                .Returns(Task.FromException<byte[]>(new Exception()));
+        //[Trait("Category", "InitializeDownloadAsync")]
+        //[Theory(DisplayName = "Does not throw on remote token read Exception"), AutoData]
+        //public async Task Does_Not_Throw_On_Remote_Token_Read_Exception(string username, string filename, int token, int remoteToken)
+        //{
+        //    var conn = new Mock<IConnection>();
+        //    conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+        //        .Returns(Task.FromException<byte[]>(new Exception()));
 
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-                .Returns(conn.Object);
+        //    var connFactory = new Mock<IConnectionFactory>();
+        //    connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+        //        .Returns(conn.Object);
 
-            var waiter = new Mock<IWaiter>();
+        //    var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
-            var activeDownloads = new ConcurrentDictionary<int, Download>();
-            var download = new Download(username, filename, token);
-            activeDownloads.TryAdd(remoteToken, download);
+        //    var activeDownloads = new ConcurrentDictionary<int, Download>();
+        //    var download = new Download(username, filename, token);
+        //    activeDownloads.TryAdd(remoteToken, download);
 
-            s.SetProperty("ActiveDownloads", activeDownloads);
+        //    s.SetProperty("ActiveDownloads", activeDownloads);
 
-            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+        //    var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
+        //    var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
-            Assert.Null(ex);
-            waiter.Verify(m => m.Complete(download.WaitKey), Times.Never);
-        }
+        //    Assert.Null(ex);
+        //    waiter.Verify(m => m.Complete(download.WaitKey), Times.Never);
+        //}
 
-        [Trait("Category", "InitializeDownloadAsync")]
-        [Theory(DisplayName = "Transfer exception disconnects and does not throw"), AutoData]
-        public async Task Transfer_Exception_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
-        {
-            string message = null;
+        //[Trait("Category", "InitializeDownloadAsync")]
+        //[Theory(DisplayName = "Transfer exception disconnects and does not throw"), AutoData]
+        //public async Task Transfer_Exception_Disconnects_And_Does_Not_Throw(string username, string filename, int token, int remoteToken)
+        //{
+        //    string message = null;
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
-                .Returns(Task.FromException<byte[]>(new Exception("fake exception")));
-            conn.Setup(m => m.Disconnect(It.IsAny<string>()))
-                .Callback<string>(str => message = str);
+        //    var conn = new Mock<IConnection>();
+        //    conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+        //        .Returns(Task.FromException<byte[]>(new Exception("fake exception")));
+        //    conn.Setup(m => m.Disconnect(It.IsAny<string>()))
+        //        .Callback<string>(str => message = str);
 
-            var connFactory = new Mock<IConnectionFactory>();
-            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-                .Returns(conn.Object);
+        //    var connFactory = new Mock<IConnectionFactory>();
+        //    connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+        //        .Returns(conn.Object);
 
-            var waiter = new Mock<IWaiter>();
+        //    var waiter = new Mock<IWaiter>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
 
-            var activeDownloads = new ConcurrentDictionary<int, Download>();
-            var download = new Download(username, filename, token);
-            activeDownloads.TryAdd(remoteToken, download);
+        //    var activeDownloads = new ConcurrentDictionary<int, Download>();
+        //    var download = new Download(username, filename, token);
+        //    activeDownloads.TryAdd(remoteToken, download);
 
-            s.SetProperty("ActiveDownloads", activeDownloads);
+        //    s.SetProperty("ActiveDownloads", activeDownloads);
 
-            var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
+        //    var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
+        //    var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("InitializeDownloadAsync", r));
 
-            Assert.Null(ex);
-            conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
-            Assert.Contains("fake exception", message, StringComparison.InvariantCultureIgnoreCase);
-        }
+        //    Assert.Null(ex);
+        //    conn.Verify(m => m.Disconnect(It.IsAny<string>()), Times.Once);
+        //    Assert.Contains("fake exception", message, StringComparison.InvariantCultureIgnoreCase);
+        //}
     }
 }

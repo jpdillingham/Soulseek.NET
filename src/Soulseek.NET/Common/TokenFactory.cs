@@ -12,8 +12,6 @@
 
 namespace Soulseek.NET
 {
-    using System;
-
     /// <summary>
     ///     Generates unique tokens for network operations.
     /// </summary>

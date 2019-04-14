@@ -21,12 +21,14 @@ namespace Soulseek.NET.Tests.Unit
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiation(
             int concurrentPeerConnections,
+            int concurrentTransferConnections,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages)
         {
-            var o = new SoulseekClientOptions(concurrentPeerConnections, messageTimeout, autoAcknowledgePrivateMessages);
+            var o = new SoulseekClientOptions(concurrentPeerConnections, concurrentTransferConnections, messageTimeout, autoAcknowledgePrivateMessages);
 
-            Assert.Equal(concurrentPeerConnections, o.ConcurrentPeerConnections);
+            Assert.Equal(concurrentPeerConnections, o.ConcurrentMessageConnections);
+            Assert.Equal(concurrentTransferConnections, o.ConcurrentTransferConnections);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
 
