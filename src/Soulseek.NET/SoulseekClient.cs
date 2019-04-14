@@ -102,7 +102,7 @@ namespace Soulseek.NET
                 ServerConnection.MessageRead += ServerConnection_MessageRead;
             }
 
-            ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentMessageConnections, Options.ConcurrentTransferConnections);
+            ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
         }
 
         /// <summary>

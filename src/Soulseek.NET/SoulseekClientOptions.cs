@@ -22,8 +22,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
-        /// <param name="concurrentMessageConnections">The number of allowed concurrent peer message connections.</param>
-        /// <param name="concurrentTransferConnections">The number of allowed concurrent peer transfer connections.</param>
+        /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
         /// <param name="messageTimeout">The message timeout, in seconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
@@ -34,8 +33,7 @@ namespace Soulseek.NET
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         public SoulseekClientOptions(
-            int concurrentMessageConnections = 500,
-            int concurrentTransferConnections = 10,
+            int concurrentPeerConnections = 500,
             int messageTimeout = 5,
             bool autoAcknowledgePrivateMessages = true,
             DiagnosticLevel minimumDiagnosticLevel = DiagnosticLevel.Info,
@@ -44,8 +42,7 @@ namespace Soulseek.NET
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null)
         {
-            ConcurrentMessageConnections = concurrentMessageConnections;
-            ConcurrentTransferConnections = concurrentTransferConnections;
+            ConcurrentPeerConnections = concurrentPeerConnections;
             MessageTimeout = messageTimeout;
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
@@ -63,12 +60,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the number of allowed concurrent peer message connections. (Default = 500).
         /// </summary>
-        public int ConcurrentMessageConnections { get; }
-
-        /// <summary>
-        ///     Gets the number of allowed concurrent peer transfer connections. (Default = 10).
-        /// </summary>
-        public int ConcurrentTransferConnections { get; }
+        public int ConcurrentPeerConnections { get; }
 
         /// <summary>
         ///     Gets the message timeout, in seconds, used when waiting for a response from the server. (Default = 5).
