@@ -14,6 +14,7 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Generic;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Exceptions;
@@ -60,9 +61,14 @@ namespace Soulseek.NET
         event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        ///     Gets or sets the address of the server to which to connect.
+        ///     Gets the unresolved server address.
         /// </summary>
-        string Address { get; set; }
+        string Address { get; }
+
+        /// <summary>
+        ///     Gets the resolved server address.
+        /// </summary>
+        IPAddress IPAddress { get; }
 
         /// <summary>
         ///     Gets the client options.
@@ -70,9 +76,9 @@ namespace Soulseek.NET
         SoulseekClientOptions Options { get; }
 
         /// <summary>
-        ///     Gets or sets the port to which to connect.
+        ///     Gets the server port.
         /// </summary>
-        int Port { get; set; }
+        int Port { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

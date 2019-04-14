@@ -1,4 +1,4 @@
-﻿// <copyright file="IConnectionManager{T}.cs" company="JP Dillingham">
+﻿// <copyright file="IConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,9 +13,9 @@
 namespace Soulseek.NET
 {
     using System;
-    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
@@ -26,51 +26,51 @@ namespace Soulseek.NET
     internal interface IConnectionManager : IDisposable
     {
         /// <summary>
-        ///     Gets the number of active connections.
+        ///     Gets the number of allowed concurrent peer message connections.
         /// </summary>
-        int Active { get; }
+        int ConcurrentMessageConnections { get; }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent connections.
+        ///     Gets the number of allowed concurrent peer transfer connections.
         /// </summary>
-        int ConcurrentConnections { get; }
+        int ConcurrentTransferConnections { get; }
 
         /// <summary>
-        ///     Gets the number of queued connections.
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
         /// </summary>
-        int Queued { get; }
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <param name="messageHandler">The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The existing or new connection.</returns>
+        Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
-        ///     Asynchronously adds the specified <paramref name="connection"/> to the manager.
+        ///     Adds a new transfer <see cref="IConnection"/>.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initializes new instance if one does not exist.
         /// </summary>
         /// <remarks>
-        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.
-        ///     Otherwise, it is queued.
+        ///     Solicited connections (such as one used to retrieve search results) will be reused if possible.
         /// </remarks>
-        /// <param name="connection">The connection to add.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        Task AddAsync(IMessageConnection connection);
-
-        /// <summary>
-        ///     Returns the connection matching the specified <paramref name="connectionKey"/>
-        /// </summary>
-        /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
-        /// <returns>The connection matching the specified connection key.</returns>
-        IMessageConnection Get(ConnectionKey connectionKey);
+        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
+        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
+        /// <param name="messageHandler">The message handler to substribe to the conection's <see cref="IMessageConnection.MessageRead"/> event.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The existing or new connection.</returns>
+        Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
-        void RemoveAll();
-
-        /// <summary>
-        ///     Asynchronously disposes and removes the specified <paramref name="connection"/> from the manager.
-        /// </summary>
-        /// <remarks>If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.</remarks>
-        /// <param name="connection">The connection to remove.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        Task RemoveAsync(IMessageConnection connection);
-
-        Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+        void RemoveAndDisposeAll();
     }
 }

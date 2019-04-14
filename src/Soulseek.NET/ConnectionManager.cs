@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManager{T}.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,11 +14,10 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Linq;
-    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
@@ -26,67 +25,81 @@ namespace Soulseek.NET
     /// <summary>
     ///     Manages a queue of <see cref="IConnection"/>
     /// </summary>
-    /// <typeparam name="T">The Type of the managed connection implementation.</typeparam>
     internal sealed class ConnectionManager : IConnectionManager
     {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionManager{T}"/> class.
-        /// </summary>
-        /// <param name="concurrentConnections">The number of allowed concurrent connections.</param>
-        internal ConnectionManager(int concurrentConnections = 500)
-        {
-            ConcurrentConnections = concurrentConnections;
-        }
+        private int waitingMessageConnections = 0;
+        private int waitingTransferConnections = 0;
 
         /// <summary>
-        ///     Gets the number of active connections.
+        ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
-        public int Active => Connections.Count;
+        /// <param name="concurrentMessageConnections">The number of allowed concurrent peer message connections.</param>
+        /// <param name="concurrentTransferConnections">The number of allowed concurrent peer transfer connections.</param>
+        internal ConnectionManager(int concurrentMessageConnections, int concurrentTransferConnections)
+        {
+            ConcurrentMessageConnections = concurrentMessageConnections;
+            ConcurrentTransferConnections = concurrentTransferConnections;
+
+            MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnections, ConcurrentMessageConnections);
+            TransferSemaphore = new SemaphoreSlim(ConcurrentTransferConnections, ConcurrentTransferConnections);
+
+            TokenFactory = new TokenFactory();
+            MessageConnections = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+            TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
+        }
 
         /// <summary>
         ///     Gets the number of allowed concurrent connections.
         /// </summary>
-        public int ConcurrentConnections { get; private set; }
+        public int ConcurrentMessageConnections { get; }
 
         /// <summary>
-        ///     Gets the number of queued connections.
+        ///     Gets the number of allowed concurrent peer transfer connections. (Default = 10).
         /// </summary>
-        public int Queued => ConnectionQueue.Count;
+        public int ConcurrentTransferConnections { get; }
 
-        private ConcurrentQueue<IMessageConnection> ConnectionQueue { get; } = new ConcurrentQueue<IMessageConnection>();
-        private ConcurrentDictionary<ConnectionKey, IMessageConnection> Connections { get; } = new ConcurrentDictionary<ConnectionKey, IMessageConnection>();
         private bool Disposed { get; set; }
+        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnections { get; }
+        private SemaphoreSlim MessageSemaphore { get; }
+        private TokenFactory TokenFactory { get; }
+        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; }
+        private SemaphoreSlim TransferSemaphore { get; }
 
         /// <summary>
-        ///     Asynchronously adds the specified <paramref name="connection"/> to the manager.
+        ///     Adds a new transfer <see cref="IConnection"/>.
         /// </summary>
-        /// <remarks>
-        ///     If <see cref="Active"/> is fewer than <see cref="ConcurrentConnections"/>, the connection is connected immediately.  Otherwise, it is queued.
-        /// </remarks>
-        /// <param name="connection">The connection to add.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task AddAsync(IMessageConnection connection)
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        public async Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            if (connection == null || connection.Key == null)
-            {
-                return;
-            }
+            Interlocked.Increment(ref waitingTransferConnections);
 
-            if (Connections.Count < ConcurrentConnections)
+            await TransferSemaphore.WaitAsync().ConfigureAwait(false);
+
+            Interlocked.Decrement(ref waitingTransferConnections);
+
+            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+
+            connection.Disconnected += (sender, e) =>
             {
-                if (Connections.TryAdd(connection.Key, connection))
-                {
-                    await TryConnectAsync(connection).ConfigureAwait(false);
-                }
-            }
-            else
-            {
-                ConnectionQueue.Enqueue(connection);
-            }
+                TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
+                TransferSemaphore.Release();
+            };
+
+            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
+
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+            return connection;
         }
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager{T}"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager"/>.
         /// </summary>
         public void Dispose()
         {
@@ -95,68 +108,125 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Returns the connection matching the specified <paramref name="connectionKey"/>
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
         /// </summary>
-        /// <param name="connectionKey">The unique identifier of the connection to retrieve.</param>
-        /// <returns>The connection matching the specified connection key.</returns>
-        public IMessageConnection Get(ConnectionKey connectionKey)
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The existing or new connection.</returns>
+        public async Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            if (connectionKey != null)
-            {
-                var queuedConnection = ConnectionQueue.FirstOrDefault(c => c.Key.Equals(connectionKey));
+            var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
+            var (semaphore, connection) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
 
-                if (!EqualityComparer<IMessageConnection>.Default.Equals(queuedConnection, default(IMessageConnection)))
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                if (connection != null)
                 {
-                    return queuedConnection;
+                    return connection;
                 }
-                else if (Connections.ContainsKey(connectionKey))
+                else
                 {
-                    return Connections[connectionKey];
+                    connection = new MessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
+                    {
+                        Context = connectToPeerResponse,
+                    };
+
+                    connection.MessageRead += messageHandler;
+                    connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
+
+                    await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+                    var context = (ConnectToPeerResponse)connection.Context;
+                    var request = new PierceFirewallRequest(context.Token).ToMessage();
+                    await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                    AddOrUpdateMessageConnection(key, connection);
                 }
             }
+            finally
+            {
+                semaphore.Release();
+            }
 
-            return default(IMessageConnection);
+            return connection;
+        }
+
+        /// <summary>
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initializes new instance if one does not exist.
+        /// </summary>
+        /// <remarks>Solicited connections (such as one used to retrieve search results) will be reused if possible.</remarks>
+        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
+        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to substribe to the conection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The existing or new connection.</returns>
+        public async Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var (semaphore, connection) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
+
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                if (connection != null)
+                {
+                    if (connection.Context is ConnectToPeerResponse)
+                    {
+                        Console.WriteLine($"Reusing solicited connection for a download...");
+                    }
+
+                    return connection;
+                }
+                else
+                {
+                    connection = new MessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options);
+                    connection.MessageRead += messageHandler;
+                    connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
+
+                    await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+                    await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.GetToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                    AddOrUpdateMessageConnection(connectionKey, connection);
+                }
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+
+            return connection;
         }
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
-        public void RemoveAll()
+        public void RemoveAndDisposeAll()
         {
-            ConnectionQueue.DequeueAndDisposeAll();
-            Connections.RemoveAndDisposeAll();
+            while (!MessageConnections.IsEmpty)
+            {
+                if (MessageConnections.TryRemove(MessageConnections.Keys.First(), out var value))
+                {
+                    value.Semaphore.Dispose();
+                    value.Connection.Dispose();
+                }
+            }
+
+            TransferConnections.RemoveAndDisposeAll();
         }
 
-        /// <summary>
-        ///     Asynchronously disposes and removes the specified <paramref name="connection"/> from the manager.
-        /// </summary>
-        /// <remarks>
-        ///     If <see cref="Queued"/> is greater than zero, the next connection is removed from the queue and connected.
-        /// </remarks>
-        /// <param name="connection">The connection to remove.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task RemoveAsync(IMessageConnection connection)
+        private void AddOrUpdateMessageConnection(ConnectionKey key, IMessageConnection connection)
         {
-            if (connection == null || connection.Key == null)
-            {
-                return;
-            }
-
-            if (Connections.TryRemove(connection.Key, out var _))
-            {
-                connection.Dispose();
-            }
-            else
-            {
-                return;
-            }
-
-            if (Connections.Count < ConcurrentConnections &&
-                ConnectionQueue.TryDequeue(out var nextConnection) &&
-                Connections.TryAdd(nextConnection.Key, nextConnection))
-            {
-                await TryConnectAsync(nextConnection).ConfigureAwait(false);
-            }
+            MessageConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
         }
 
         private void Dispose(bool disposing)
@@ -165,34 +235,35 @@ namespace Soulseek.NET
             {
                 if (disposing)
                 {
-                    RemoveAll();
+                    RemoveAndDisposeAll();
+                    MessageSemaphore.Dispose();
+                    TransferSemaphore.Dispose();
                 }
 
                 Disposed = true;
             }
         }
 
-        private async Task TryConnectAsync(IMessageConnection connection)
+        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionAsync(ConnectionKey key)
         {
-            try
+            if (MessageConnections.ContainsKey(key))
             {
-                await connection.ConnectAsync(CancellationToken.None).ConfigureAwait(false);
+                return MessageConnections[key];
             }
-            catch (Exception)
-            {
-                await RemoveAsync(connection).ConfigureAwait(false);
-            }
+
+            Interlocked.Increment(ref waitingMessageConnections);
+
+            await MessageSemaphore.WaitAsync().ConfigureAwait(false);
+
+            Interlocked.Decrement(ref waitingMessageConnections);
+
+            return MessageConnections.GetOrAdd(key, (new SemaphoreSlim(1, 1), null));
         }
 
-        public async Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
+        private void RemoveMessageConnection(IMessageConnection connection)
         {
-            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-            return connection;
+            MessageConnections.TryRemove(connection.Key, out _);
+            MessageSemaphore.Release();
         }
     }
 }
