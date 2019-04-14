@@ -28,12 +28,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the number of allowed concurrent peer message connections.
         /// </summary>
-        int ConcurrentMessageConnections { get; }
-
-        /// <summary>
-        ///     Gets the number of allowed concurrent peer transfer connections.
-        /// </summary>
-        int ConcurrentTransferConnections { get; }
+        int ConcurrentPeerConnections { get; }
 
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.

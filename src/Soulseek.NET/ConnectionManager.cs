@@ -27,43 +27,34 @@ namespace Soulseek.NET
     /// </summary>
     internal sealed class ConnectionManager : IConnectionManager
     {
-        private int waitingMessageConnections = 0;
-        private int waitingTransferConnections = 0;
+        private int waitingPeerConnections = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
-        /// <param name="concurrentMessageConnections">The number of allowed concurrent peer message connections.</param>
-        /// <param name="concurrentTransferConnections">The number of allowed concurrent peer transfer connections.</param>
-        internal ConnectionManager(int concurrentMessageConnections, int concurrentTransferConnections)
+        /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
+        internal ConnectionManager(int concurrentPeerConnections)
         {
-            ConcurrentMessageConnections = concurrentMessageConnections;
-            ConcurrentTransferConnections = concurrentTransferConnections;
+            ConcurrentPeerConnections = concurrentPeerConnections;
 
-            MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnections, ConcurrentMessageConnections);
-            TransferSemaphore = new SemaphoreSlim(ConcurrentTransferConnections, ConcurrentTransferConnections);
+            PeerSemaphore = new SemaphoreSlim(ConcurrentPeerConnections, ConcurrentPeerConnections);
+            PeerConnections = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
 
             TokenFactory = new TokenFactory();
-            MessageConnections = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-            TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
         }
 
         /// <summary>
         ///     Gets the number of allowed concurrent connections.
         /// </summary>
-        public int ConcurrentMessageConnections { get; }
-
-        /// <summary>
-        ///     Gets the number of allowed concurrent peer transfer connections. (Default = 10).
-        /// </summary>
-        public int ConcurrentTransferConnections { get; }
+        public int ConcurrentPeerConnections { get; }
 
         private bool Disposed { get; set; }
-        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnections { get; }
-        private SemaphoreSlim MessageSemaphore { get; }
+        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; }
+        private SemaphoreSlim PeerSemaphore { get; }
         private TokenFactory TokenFactory { get; }
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; }
-        private SemaphoreSlim TransferSemaphore { get; }
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/>.
@@ -74,23 +65,12 @@ namespace Soulseek.NET
         /// <returns>The new connection.</returns>
         public async Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            Interlocked.Increment(ref waitingTransferConnections);
-
-            await TransferSemaphore.WaitAsync().ConfigureAwait(false);
-
-            Interlocked.Decrement(ref waitingTransferConnections);
-
             var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
-
-            connection.Disconnected += (sender, e) =>
-            {
-                TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
-                TransferSemaphore.Release();
-            };
-
-            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
@@ -142,11 +122,11 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
+                    AddOrUpdateMessageConnection(key, connection);
+
                     var context = (ConnectToPeerResponse)connection.Context;
                     var request = new PierceFirewallRequest(context.Token).ToMessage();
                     await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-                    AddOrUpdateMessageConnection(key, connection);
                 }
             }
             finally
@@ -194,9 +174,9 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.GetToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
                     AddOrUpdateMessageConnection(connectionKey, connection);
+
+                    await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.GetToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -212,9 +192,9 @@ namespace Soulseek.NET
         /// </summary>
         public void RemoveAndDisposeAll()
         {
-            while (!MessageConnections.IsEmpty)
+            while (!PeerConnections.IsEmpty)
             {
-                if (MessageConnections.TryRemove(MessageConnections.Keys.First(), out var value))
+                if (PeerConnections.TryRemove(PeerConnections.Keys.First(), out var value))
                 {
                     value.Semaphore.Dispose();
                     value.Connection.Dispose();
@@ -226,7 +206,7 @@ namespace Soulseek.NET
 
         private void AddOrUpdateMessageConnection(ConnectionKey key, IMessageConnection connection)
         {
-            MessageConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+            PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
         }
 
         private void Dispose(bool disposing)
@@ -236,8 +216,7 @@ namespace Soulseek.NET
                 if (disposing)
                 {
                     RemoveAndDisposeAll();
-                    MessageSemaphore.Dispose();
-                    TransferSemaphore.Dispose();
+                    PeerSemaphore.Dispose();
                 }
 
                 Disposed = true;
@@ -246,24 +225,24 @@ namespace Soulseek.NET
 
         private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionAsync(ConnectionKey key)
         {
-            if (MessageConnections.ContainsKey(key))
+            if (PeerConnections.ContainsKey(key))
             {
-                return MessageConnections[key];
+                return PeerConnections[key];
             }
 
-            Interlocked.Increment(ref waitingMessageConnections);
+            Interlocked.Increment(ref waitingPeerConnections);
 
-            await MessageSemaphore.WaitAsync().ConfigureAwait(false);
+            await PeerSemaphore.WaitAsync().ConfigureAwait(false);
 
-            Interlocked.Decrement(ref waitingMessageConnections);
+            Interlocked.Decrement(ref waitingPeerConnections);
 
-            return MessageConnections.GetOrAdd(key, (new SemaphoreSlim(1, 1), null));
+            return PeerConnections.GetOrAdd(key, (new SemaphoreSlim(1, 1), null));
         }
 
         private void RemoveMessageConnection(IMessageConnection connection)
         {
-            MessageConnections.TryRemove(connection.Key, out _);
-            MessageSemaphore.Release();
+            PeerConnections.TryRemove(connection.Key, out _);
+            PeerSemaphore.Release();
         }
     }
 }
