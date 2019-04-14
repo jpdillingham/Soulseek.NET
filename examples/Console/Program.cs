@@ -57,7 +57,7 @@
             if (!string.IsNullOrEmpty(Search))
             {
                 var options = new SoulseekClientOptions(
-                    minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                    minimumDiagnosticLevel: DiagnosticLevel.Info,
                     peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
                     transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
                 );
