@@ -70,11 +70,12 @@
                         client.DownloadStateChanged += Client_DownloadStateChanged;
                         client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                         client.PrivateMessageReceived += Client_PrivateMessageReceived;
+                        client.SearchStateChanged += Client_SearchStateChanged;
 
                         await client.ConnectAsync();
                         await client.LoginAsync(Username, Password);
 
-                        var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 1000000));
+                        var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 10));
 
                         var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
                         file.Directory.Create();
@@ -192,6 +193,11 @@
             }
         }
 
+        private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
+        {
+            o($"[SEARCH] {e.PreviousState} => {e.State}");
+        }
+
         private static SearchResponse SelectSearchResponse(IEnumerable<SearchResponse> responses)
         {
             var index = 0;
@@ -271,7 +277,7 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(searchResponse.Username, file.Filename, index++, eventHandler: (sender, e) =>
+                    var bytes = await client.DownloadAsync(searchResponse.Username, file.Filename, index++, progressUpdated: (e) =>
                     {
                         Console.Write($"\r{Path.GetFileName(file.Filename)} {e.PercentComplete}%");
                     }).ConfigureAwait(false);
@@ -307,7 +313,7 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, index++, eventHandler: (sender, e) =>
+                    var bytes = await client.DownloadAsync(username, file, index++, progressUpdated: (e) =>
                     {
                         Console.Write($"\r{Path.GetFileName(file)} {e.PercentComplete}%");
                     }).ConfigureAwait(false);
@@ -375,7 +381,7 @@
                     minimumResponseFileCount: minimumFileCount,
                     filterFiles: true,
                     ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
-                ), eventHandler: (sender, e) =>
+                ), responseReceived: (e) =>
                 {
                     totalResponses++;
                     totalFiles += e.Response.FileCount;
@@ -414,7 +420,7 @@
                     minimumResponseFileCount: release.TrackCount,
                     filterFiles: true,
                     ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
-                ), eventHandler: (sender, e) =>
+                ), responseReceived: (e) =>
                 {
                     totalResponses++;
                     totalFiles += e.Response.FileCount;

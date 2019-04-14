@@ -406,9 +406,9 @@ namespace Soulseek.NET
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, Action<SearchResponseReceivedEventArgs> responseReceivedHandler = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null)
         {
-            return SearchAsync(searchText, TokenFactory.GetToken(), options, responseReceivedHandler, cancellationToken);
+            return SearchAsync(searchText, TokenFactory.GetToken(), options, stateChanged, responseReceived, cancellationToken);
         }
 
         /// <summary>
@@ -430,7 +430,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchResponseReceivedEventArgs> responseReceivedHandler = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -454,7 +454,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, token, options, responseReceivedHandler, cancellationToken ?? CancellationToken.None);
+            return SearchInternalAsync(searchText, token, options, stateChanged, responseReceived, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -562,14 +562,15 @@ namespace Soulseek.NET
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged, Action<DownloadProgressUpdatedEventArgs> progressUpdated, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token);
+            var lastState = DownloadStates.None;
 
             void updateState(DownloadStates state)
             {
-                var previousState = download.State;
                 download.State = state;
-                var args = new DownloadStateChangedEventArgs(previousState: previousState, download: download);
-                DownloadStateChanged?.Invoke(this, args);
+                var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
+                lastState = state;
                 stateChanged?.Invoke(args);
+                DownloadStateChanged?.Invoke(this, args);
             }
 
             try
@@ -672,6 +673,7 @@ namespace Soulseek.NET
                 }
                 catch (Exception ex)
                 {
+                    updateState(DownloadStates.Completed | download.State);
                     download.Connection.Disconnect(ex.Message);
                 }
 
@@ -710,7 +712,7 @@ namespace Soulseek.NET
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryRemove(download.RemoteToken, out var _);
 
-                updateState(download.State | DownloadStates.Completed);
+                updateState(DownloadStates.Completed | download.State);
             }
         }
 
@@ -829,9 +831,19 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, Action<SearchResponseReceivedEventArgs> responseReceivedHandler, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, Action<SearchStateChangedEventArgs> stateChanged, Action<SearchResponseReceivedEventArgs> responseReceived, CancellationToken cancellationToken)
         {
             var search = new Search(searchText, token, options);
+            var lastState = SearchStates.None;
+
+            void updateState(SearchStates state)
+            {
+                search.State = state;
+                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
+                lastState = state;
+                stateChanged?.Invoke(args);
+                SearchStateChanged?.Invoke(this, args);
+            }
 
             try
             {
@@ -846,19 +858,16 @@ namespace Soulseek.NET
                 search.ResponseReceived += (_, response) =>
                 {
                     var eventArgs = new SearchResponseReceivedEventArgs(search, response);
-                    responseReceivedHandler?.Invoke(eventArgs);
+                    responseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
                 ActiveSearches.TryAdd(search.Token, search);
-
-                search.State = SearchStates.Requested;
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.None, search: search));
+                updateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                search.State = SearchStates.InProgress;
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.Requested, search: search));
+                updateState(SearchStates.InProgress);
 
                 search = await searchWait.ConfigureAwait(false);
 
@@ -877,7 +886,7 @@ namespace Soulseek.NET
             }
             finally
             {
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
+                updateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
         }
