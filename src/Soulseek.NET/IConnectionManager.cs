@@ -26,12 +26,12 @@ namespace Soulseek.NET
     internal interface IConnectionManager : IDisposable
     {
         /// <summary>
-        ///     Gets the number of allowed concurrent peer message connections. (Default = 500).
+        ///     Gets the number of allowed concurrent peer message connections.
         /// </summary>
         int ConcurrentMessageConnections { get; }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent peer transfer connections. (Default = 10).
+        ///     Gets the number of allowed concurrent peer transfer connections.
         /// </summary>
         int ConcurrentTransferConnections { get; }
 
