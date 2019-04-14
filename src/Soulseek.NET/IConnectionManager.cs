@@ -34,7 +34,7 @@ namespace Soulseek.NET
 
         Task<IConnection> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
 
-        Task<IMessageConnection> GetUnsolicitedConnectionAsync(string localUsername, string remoteUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetUnsolicitedConnectionAsync(string localUsername, ConnectionKey connectionKey, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
