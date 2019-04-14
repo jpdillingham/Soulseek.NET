@@ -209,7 +209,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action < SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.

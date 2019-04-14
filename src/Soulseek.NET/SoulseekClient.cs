@@ -296,7 +296,9 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
+        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
@@ -315,7 +317,9 @@ namespace Soulseek.NET
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
+        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
@@ -397,7 +401,9 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
+        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
@@ -418,9 +424,11 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
+        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="ArgumentException">
