@@ -581,7 +581,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<DownloadException>(ex);
             Assert.IsType<MessageReadException>(ex.InnerException);
 
-            Assert.Equal(DownloadStates.Errored, events[events.Count - 1].PreviousState);
+            Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
             Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
         }
 
@@ -636,7 +636,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<DownloadException>(ex);
             Assert.IsType<TimeoutException>(ex.InnerException);
 
-            Assert.Equal(DownloadStates.TimedOut, events[events.Count - 1].PreviousState);
+            Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
             Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
         }
 
@@ -691,7 +691,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<DownloadException>(ex);
             Assert.IsType<OperationCanceledException>(ex.InnerException);
 
-            Assert.Equal(DownloadStates.Cancelled, events[events.Count - 1].PreviousState);
+            Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
             Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
         }
 
