@@ -12,7 +12,10 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
+    using System.Net;
     using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class DownloadTests
@@ -35,10 +38,30 @@ namespace Soulseek.NET.Tests.Unit
             var d = new Download(username, filename, token);
 
             Assert.Null(d.Connection);
+            Assert.Null(d.IPAddress);
+            Assert.Null(d.Port);
             Assert.Null(d.Data);
             Assert.Equal(0, d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(DownloadStates.None, d.State);
+        }
+
+        [Trait("Category", "Properties")]
+        [Theory(DisplayName = "IPAddress and Port props return Connection props"), AutoData]
+        internal void IPAddress_And_Port_Props_Return_Connection_Props(string username, string filename, int token, IPAddress ipAddress, int port)
+        {
+            var d = new Download(username, filename, token);
+
+            var c = new Mock<IConnection>();
+            c.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            c.Setup(m => m.Port)
+                .Returns(port);
+
+            d.Connection = c.Object;
+
+            Assert.Equal(ipAddress, d.IPAddress);
+            Assert.Equal(port, (int)d.Port);
         }
 
         [Trait("Category", "Wait Key")]
