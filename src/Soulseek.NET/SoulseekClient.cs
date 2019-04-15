@@ -102,7 +102,7 @@ namespace Soulseek.NET
                 ServerConnection.MessageRead += ServerConnection_MessageRead;
             }
 
-            ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentMessageConnections, Options.ConcurrentTransferConnections);
+            ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
         }
 
         /// <summary>
@@ -296,16 +296,18 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
+        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, CancellationToken? cancellationToken = null, Action<SoulseekClient, DownloadProgressUpdatedEventArgs> eventHandler = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, Action<DownloadStateChangedEventArgs> stateChanged = null, Action<DownloadProgressUpdatedEventArgs> progressUpdated = null, CancellationToken? cancellationToken = null)
         {
-            return DownloadAsync(username, filename, TokenFactory.GetToken(), cancellationToken, eventHandler);
+            return DownloadAsync(username, filename, TokenFactory.GetToken(), stateChanged, progressUpdated, cancellationToken);
         }
 
         /// <summary>
@@ -315,14 +317,16 @@ namespace Soulseek.NET
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
+        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, int token, CancellationToken? cancellationToken = null, Action<SoulseekClient, DownloadProgressUpdatedEventArgs> eventHandler = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged = null, Action<DownloadProgressUpdatedEventArgs> progressUpdated = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -349,7 +353,7 @@ namespace Soulseek.NET
                 throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
             }
 
-            return DownloadInternalAsync(username, filename, token, cancellationToken ?? CancellationToken.None, eventHandler);
+            return DownloadInternalAsync(username, filename, token, stateChanged, progressUpdated, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -397,7 +401,9 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
+        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
+        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
@@ -406,9 +412,9 @@ namespace Soulseek.NET
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null)
         {
-            return SearchAsync(searchText, TokenFactory.GetToken(), options, cancellationToken, eventHandler);
+            return SearchAsync(searchText, TokenFactory.GetToken(), options, stateChanged, responseReceived, cancellationToken);
         }
 
         /// <summary>
@@ -418,9 +424,11 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
+        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="InvalidOperationException">
+        /// <exception cref="ConnectionException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="ArgumentException">
@@ -430,7 +438,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -454,7 +462,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, token, options, cancellationToken ?? CancellationToken.None, eventHandler);
+            return SearchInternalAsync(searchText, token, options, stateChanged, responseReceived, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -559,9 +567,19 @@ namespace Soulseek.NET
             Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message)));
         }
 
-        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, CancellationToken cancellationToken, Action<SoulseekClient, DownloadProgressUpdatedEventArgs> eventHandler = null)
+        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged, Action<DownloadProgressUpdatedEventArgs> progressUpdated, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token);
+            var lastState = DownloadStates.None;
+
+            void updateState(DownloadStates state)
+            {
+                download.State = state;
+                var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
+                lastState = state;
+                stateChanged?.Invoke(args);
+                DownloadStateChanged?.Invoke(this, args);
+            }
 
             try
             {
@@ -578,6 +596,7 @@ namespace Soulseek.NET
 
                 // request the file
                 await peerConnection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+                updateState(DownloadStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
@@ -591,8 +610,7 @@ namespace Soulseek.NET
 
                 // the download is remotely queued, so put it in the local queue.
                 QueuedDownloads.TryAdd(download.Token, download);
-                download.State = DownloadStates.Queued;
-                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.None, download: download));
+                updateState(DownloadStates.Queued);
 
                 // wait for the peer to respond that they are ready to start the transfer
                 var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
@@ -603,8 +621,7 @@ namespace Soulseek.NET
                 // move the download from the local queue to active
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryAdd(download.RemoteToken, download);
-                download.State = DownloadStates.Initializing;
-                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Queued, download: download));
+                updateState(DownloadStates.Initializing);
 
                 // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
                 // transfer connection. this operation is somewhat indirect because we aren't sure which download an incoming
@@ -624,7 +641,7 @@ namespace Soulseek.NET
                 download.Connection.DataRead += (sender, e) =>
                 {
                     var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
-                    eventHandler?.Invoke(this, eventArgs);
+                    progressUpdated?.Invoke(eventArgs);
                     DownloadProgressUpdated?.Invoke(this, eventArgs);
                 };
 
@@ -649,8 +666,7 @@ namespace Soulseek.NET
                     // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[8], cancellationToken).ConfigureAwait(false);
 
-                    download.State = DownloadStates.InProgress;
-                    DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.Initializing, download: download));
+                    updateState(DownloadStates.InProgress);
 
                     var bytes = await download.Connection.ReadAsync(download.Size, cancellationToken).ConfigureAwait(false);
 
@@ -665,15 +681,13 @@ namespace Soulseek.NET
                 }
                 catch (Exception ex)
                 {
+                    updateState(DownloadStates.Completed | download.State);
                     download.Connection.Disconnect(ex.Message);
                 }
 
                 // wait for the download to complete this wait is either completed (on success) or thrown (on anything other than
                 // success) in the Disconnected event handler of the transfer connection
                 download.Data = await downloadCompleted.ConfigureAwait(false);
-                download.State = DownloadStates.Succeeded;
-                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: DownloadStates.InProgress, download: download));
-
                 return download.Data;
             }
             catch (OperationCanceledException ex)
@@ -706,9 +720,7 @@ namespace Soulseek.NET
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryRemove(download.RemoteToken, out var _);
 
-                var previousState = download.State;
-                download.State = download.State | DownloadStates.Completed;
-                DownloadStateChanged?.Invoke(this, new DownloadStateChangedEventArgs(previousState: previousState, download: download));
+                updateState(DownloadStates.Completed | download.State);
             }
         }
 
@@ -827,9 +839,19 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken, Action<SoulseekClient, SearchResponseReceivedEventArgs> eventHandler = null)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, Action<SearchStateChangedEventArgs> stateChanged, Action<SearchResponseReceivedEventArgs> responseReceived, CancellationToken cancellationToken)
         {
             var search = new Search(searchText, token, options);
+            var lastState = SearchStates.None;
+
+            void updateState(SearchStates state)
+            {
+                search.State = state;
+                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
+                lastState = state;
+                stateChanged?.Invoke(args);
+                SearchStateChanged?.Invoke(this, args);
+            }
 
             try
             {
@@ -844,19 +866,16 @@ namespace Soulseek.NET
                 search.ResponseReceived += (_, response) =>
                 {
                     var eventArgs = new SearchResponseReceivedEventArgs(search, response);
-                    eventHandler?.Invoke(this, eventArgs);
+                    responseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
                 ActiveSearches.TryAdd(search.Token, search);
-
-                search.State = SearchStates.Requested;
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.None, search: search));
+                updateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                search.State = SearchStates.InProgress;
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.Requested, search: search));
+                updateState(SearchStates.InProgress);
 
                 search = await searchWait.ConfigureAwait(false);
 
@@ -875,7 +894,7 @@ namespace Soulseek.NET
             }
             finally
             {
-                SearchStateChanged?.Invoke(this, new SearchStateChangedEventArgs(previousState: SearchStates.InProgress, search: search));
+                updateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
         }

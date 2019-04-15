@@ -13,6 +13,7 @@
 namespace Soulseek.NET.Tests.Unit
 {
     using AutoFixture.Xunit2;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class SoulseekClientOptionsTests
@@ -21,16 +22,49 @@ namespace Soulseek.NET.Tests.Unit
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiation(
             int concurrentPeerConnections,
-            int concurrentTransferConnections,
             int messageTimeout,
-            bool autoAcknowledgePrivateMessages)
+            bool autoAcknowledgePrivateMessages,
+            DiagnosticLevel minimumDiagnosticLevel,
+            int startingToken,
+            ConnectionOptions serverConnectionOptions,
+            ConnectionOptions peerConnectionOptions,
+            ConnectionOptions transferConnectionOptions)
         {
-            var o = new SoulseekClientOptions(concurrentPeerConnections, concurrentTransferConnections, messageTimeout, autoAcknowledgePrivateMessages);
+            var o = new SoulseekClientOptions(
+                concurrentPeerConnections,
+                messageTimeout,
+                autoAcknowledgePrivateMessages,
+                minimumDiagnosticLevel,
+                startingToken,
+                serverConnectionOptions,
+                peerConnectionOptions,
+                transferConnectionOptions);
 
-            Assert.Equal(concurrentPeerConnections, o.ConcurrentMessageConnections);
-            Assert.Equal(concurrentTransferConnections, o.ConcurrentTransferConnections);
+            Assert.Equal(concurrentPeerConnections, o.ConcurrentPeerConnections);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
+            Assert.Equal(minimumDiagnosticLevel, o.MinimumDiagnosticLevel);
+            Assert.Equal(startingToken, o.StartingToken);
+            Assert.Equal(serverConnectionOptions, o.ServerConnectionOptions);
+            Assert.Equal(peerConnectionOptions, o.PeerConnectionOptions);
+            Assert.Equal(transferConnectionOptions, o.TransferConnectionOptions);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with default options if null"), AutoData]
+        public void Instantiation_Defaults_Options_If_Null(
+            int concurrentPeerConnections,
+            int messageTimeout,
+            bool autoAcknowledgePrivateMessages,
+            DiagnosticLevel minimumDiagnosticLevel,
+            int startingToken)
+        {
+            var o = new SoulseekClientOptions(
+                concurrentPeerConnections,
+                messageTimeout,
+                autoAcknowledgePrivateMessages,
+                minimumDiagnosticLevel,
+                startingToken);
 
             Assert.NotNull(o.ServerConnectionOptions);
             Assert.NotNull(o.PeerConnectionOptions);

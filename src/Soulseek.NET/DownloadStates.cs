@@ -30,43 +30,48 @@ namespace Soulseek.NET
         None = 0,
 
         /// <summary>
+        ///     Requested.
+        /// </summary>
+        Requested = 1,
+
+        /// <summary>
         ///     Queued remotely.
         /// </summary>
-        Queued = 1,
+        Queued = 2,
 
         /// <summary>
         ///     Initializing.
         /// </summary>
-        Initializing = 2,
+        Initializing = 4,
 
         /// <summary>
         ///     In progress.
         /// </summary>
-        InProgress = 4,
+        InProgress = 8,
 
         /// <summary>
         ///     Completed; check remaining state flags for disposition.
         /// </summary>
-        Completed = 8,
+        Completed = 16,
 
         /// <summary>
         ///     Completed due to a successful transfer.
         /// </summary>
-        Succeeded = 16,
+        Succeeded = 32,
 
         /// <summary>
         ///     Completed due to cancellation.
         /// </summary>
-        Cancelled = 32,
+        Cancelled = 64,
 
         /// <summary>
         ///     Completed due to timeout.
         /// </summary>
-        TimedOut = 64,
+        TimedOut = 128,
 
         /// <summary>
         ///     Completed due to transfer error.
         /// </summary>
-        Errored = 128,
+        Errored = 256,
     }
 }
