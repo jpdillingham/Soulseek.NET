@@ -26,19 +26,24 @@ namespace Soulseek.NET
     internal interface IConnectionManager : IDisposable
     {
         /// <summary>
+        ///     Gets the number of active peer message connections.
+        /// </summary>
+        int ActivePeerConnections { get; }
+
+        /// <summary>
+        ///     Gets the number of active transfer connections.
+        /// </summary>
+        int ActiveTransferConnections { get; }
+
+        /// <summary>
         ///     Gets the number of allowed concurrent peer message connections.
         /// </summary>
         int ConcurrentPeerConnections { get; }
 
         /// <summary>
-        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
+        ///     Gets the number of waiting peer message connections.
         /// </summary>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <param name="messageHandler">The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The existing or new connection.</returns>
-        Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+        int WaitingPeerConnections { get; }
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/>.
@@ -50,14 +55,26 @@ namespace Soulseek.NET
         Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The existing or new connection.</returns>
+        Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initializes new instance if one does not exist.
         /// </summary>
-        /// <remarks>
-        ///     Solicited connections (such as one used to retrieve search results) will be reused if possible.
-        /// </remarks>
+        /// <remarks>Solicited connections (such as one used to retrieve search results) will be reused if possible.</remarks>
         /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
         /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
-        /// <param name="messageHandler">The message handler to substribe to the conection's <see cref="IMessageConnection.MessageRead"/> event.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to substribe to the conection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The existing or new connection.</returns>

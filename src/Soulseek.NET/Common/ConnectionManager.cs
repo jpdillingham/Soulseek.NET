@@ -35,6 +35,11 @@ namespace Soulseek.NET
         /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
         internal ConnectionManager(int concurrentPeerConnections)
         {
+            if (concurrentPeerConnections < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(concurrentPeerConnections), $"Concurrent connection option must be greater than zero.");
+            }
+
             ConcurrentPeerConnections = concurrentPeerConnections;
 
             PeerSemaphore = new SemaphoreSlim(ConcurrentPeerConnections, ConcurrentPeerConnections);
@@ -46,9 +51,24 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent connections.
+        ///     Gets the number of active peer message connections.
+        /// </summary>
+        public int ActivePeerConnections => PeerConnections.Count;
+
+        /// <summary>
+        ///     Gets the number of active transfer connections.
+        /// </summary>
+        public int ActiveTransferConnections => TransferConnections.Count;
+
+        /// <summary>
+        ///     Gets the number of allowed concurrent peer message connections.
         /// </summary>
         public int ConcurrentPeerConnections { get; }
+
+        /// <summary>
+        ///     Gets the number of waiting peer message connections.
+        /// </summary>
+        public int WaitingPeerConnections => waitingPeerConnections;
 
         private bool Disposed { get; set; }
         private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; }
