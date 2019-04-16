@@ -209,11 +209,11 @@
 
         private static void ListResponseFiles(SearchResponse response)
         {
-            var longest = response.Files.Max(f => Path.GetFileName(f.Filename).Length);
+            var longest = response.Files.Max(f => f.Filename.Length);
 
             foreach (var file in response.Files)
             {
-                o($"{Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size}  {file.BitRate}, {TimeSpan.FromMilliseconds(file.Length ?? 0).ToString(@"m\:ss")}");
+                o($"{file.Filename.PadRight(longest)}  {file.Size}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
             }
         }
 
@@ -377,80 +377,6 @@
             updateStatus();
 
             return responses;
-        }
-
-        private static async Task SearchAsyncOld(SoulseekClient client, Artist artist, Release release)
-        {
-            var searchText = $"{artist.Name} {release.Title}";
-
-            var complete = false;
-            var spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => complete));
-            var totalResponses = 0;
-            var totalFiles = 0;
-
-            var timer = new Timer(100);
-            timer.Elapsed += (e, a) => updateStatus();
-
-            void updateStatus()
-            {
-                Console.Write($"\r{spinner} {(complete ? "Search complete." : "Performing search:")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
-            }
-
-            o($"Searching for '{searchText}'...");
-            timer.Start();
-
-            IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText,
-                new SearchOptions(
-                    filterResponses: true,
-                    minimumResponseFileCount: release.TrackCount,
-                    filterFiles: true,
-                    ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
-                ), responseReceived: (e) =>
-                {
-                    totalResponses++;
-                    totalFiles += e.Response.FileCount;
-                });
-
-            timer.Stop();
-            complete = true;
-            updateStatus();
-
-            var bannedUsers = new string[] { };
-            responses = responses.Where(r => !bannedUsers.Contains(r.Username));
-
-            var freeResponses = responses.Where(r => r.FreeUploadSlots > 0);
-            SearchResponse bestResponse = null;
-
-            if (freeResponses.Any())
-            {
-                responses = freeResponses;
-                o($"Users with free upload slots: {responses.Count()}");
-
-                bestResponse = responses
-                    .OrderByDescending(r => r.UploadSpeed)
-                    .First();
-            }
-            else
-            {
-                o($"No users with free upload slots.");
-
-                bestResponse = responses
-                    .OrderBy(r => r.QueueLength)
-                    .First();
-            }
-
-            o($"Best response from: {bestResponse.Username}");
-
-            var maxLen = bestResponse.Files.Max(f => f.Filename.Length);
-
-            foreach (var file in bestResponse.Files)
-            {
-                o($"{file.Filename.PadRight(maxLen)}\t{file.Length}\t{file.BitRate}\t{file.Size}");
-            }
-
-            //await DownloadFilesAsync(client, bestResponse.Username, bestResponse.Files.Select(f => f.Filename));
-
-            Console.WriteLine($"All files complete.");
         }
 
         private static async Task<Artist> SelectArtist(string artist)

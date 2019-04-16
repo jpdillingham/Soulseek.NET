@@ -1,22 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Globalization;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.CompilerServices;
-using System.Text;
-
-namespace Console
+﻿namespace Console
 {
-    public static class EnvironmentVariablesExtensions
+    using System;
+    using System.Collections.Generic;
+    using System.Diagnostics;
+    using System.Globalization;
+    using System.Linq;
+    using System.Reflection;
+    using System.Runtime.CompilerServices;
+
+    public static class EnvironmentVariables
     {
         /// <summary>
         ///     Gets the DeclaringType of the first method on the stack whose name matches the specified <paramref name="caller"/>.
         /// </summary>
         /// <param name="caller">The name of the calling method for which the DeclaringType is to be fetched.</param>
         /// <returns>The DeclaringType of the first method on the stack whose name matches the specified <paramref name="caller"/>.</returns>
-        public static Type GetCallingType(string caller)
+        internal static Type GetCallingType(string caller)
         {
             var callingMethod = new StackTrace().GetFrames()
                 .Select(f => f.GetMethod())
@@ -29,10 +28,7 @@ namespace Console
 
             return callingMethod.DeclaringType;
         }
-    }
 
-    public static class EnvironmentVariables
-    {
         public static void Populate(Type type)
         {
             foreach (var envar in GetEnvironmentVariableProperties(type))
@@ -44,10 +40,10 @@ namespace Console
 
         public static void Populate([CallerMemberName] string caller = default(string))
         {
-            Populate(EnvironmentVariablesExtensions.GetCallingType(caller));
+            Populate(GetCallingType(caller));
         }
 
-        private static object ChangeType(object value, string argument, Type toType)
+        private static object ChangeType(object value, string name, Type toType)
         {
             try
             {
@@ -60,7 +56,7 @@ namespace Console
             }
             catch (Exception ex) when (ex is InvalidCastException || ex is FormatException || ex is OverflowException || ex is ArgumentNullException)
             {
-                string message = $"Specified value '{value}' for argument '{argument}' (expected type: {toType}).  ";
+                string message = $"Specified value '{value}' for environment variable '{name}' (expected type: {toType}).  ";
                 message += "See inner exception for details.";
 
                 throw new ArgumentException(message, ex);
