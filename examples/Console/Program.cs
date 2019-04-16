@@ -54,14 +54,14 @@
 
             Arguments.Populate(clearExistingValues: false);
 
+            var options = new SoulseekClientOptions(
+                minimumDiagnosticLevel: DiagnosticLevel.None,
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+            );
+
             if (!string.IsNullOrEmpty(Search))
             {
-                var options = new SoulseekClientOptions(
-                    minimumDiagnosticLevel: DiagnosticLevel.Info,
-                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
-                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
-                );
-
                 try
                 {
                     using (var client = new SoulseekClient(options))
@@ -75,7 +75,7 @@
                         await client.ConnectAsync();
                         await client.LoginAsync(Username, Password);
 
-                        var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 10));
+                        var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 1000));
 
                         var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
                         file.Directory.Create();
@@ -89,12 +89,6 @@
             }
             if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
             {
-                var options = new SoulseekClientOptions(
-                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
-                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
-                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
-                );
-
                 try
                 {
                     using (var client = new SoulseekClient(options))
@@ -117,12 +111,6 @@
             }
             else  if (!string.IsNullOrEmpty(Browse))
             {
-                var options = new SoulseekClientOptions(
-                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
-                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
-                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
-                );
-
                 try
                 {
                     using (var client = new SoulseekClient(options))
@@ -153,12 +141,6 @@
                 var releaseGroup = await SelectReleaseGroup(artist, Album);
                 var release = await SelectRelease(releaseGroup);
                 IEnumerable<SearchResponse> responses = null;
-
-                var options = new SoulseekClientOptions(
-                    minimumDiagnosticLevel: DiagnosticLevel.Warning,
-                    peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 30),
-                    transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
-                );
 
                 try
                 {

@@ -99,41 +99,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
         }
 
         [Trait("Category", "WriteMessageAsync")]
-        [Theory(DisplayName = "WriteMessageAsync defers when pending"), AutoData]
-        public async Task WriteMessageAsync_Defers_When_Pending(string username, IPAddress ipAddress, int port)
-        {
-            var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
-                .Build();
-
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
-
-            await c.WriteMessageAsync(msg);
-
-            var deferred = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages");
-
-            Assert.Single(deferred);
-        }
-
-        [Trait("Category", "WriteMessageAsync")]
-        [Theory(DisplayName = "WriteMessageAsync defers when connecting"), AutoData]
-        public async Task WriteMessageAsync_Defers_When_Connecting(string username, IPAddress ipAddress, int port)
-        {
-            var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
-                .Build();
-
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
-            c.SetProperty("State", ConnectionState.Connecting);
-
-            await c.WriteMessageAsync(msg);
-
-            var deferred = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages");
-
-            Assert.Single(deferred);
-        }
-
-        [Trait("Category", "WriteMessageAsync")]
         [Theory(DisplayName = "WriteMessageAsync writes when connected"), AutoData]
         public async Task WriteMessageAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
         {
@@ -186,39 +151,6 @@ namespace Soulseek.NET.Tests.Unit.Messaging.Tcp
             Assert.IsType<IOException>(ex.InnerException);
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
-        }
-
-        [Trait("Category", "Deferred Messages")]
-        [Theory(DisplayName = "Deferred messages are sent on connected"), AutoData]
-        public async Task Deferred_Messages_Are_Sent_On_Connected(IPAddress ipAddress, int port)
-        {
-            var streamMock = new Mock<INetworkStream>();
-            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.Run(() => 1));
-
-            var tcpMock = new Mock<ITcpClient>();
-            tcpMock.Setup(s => s.Connected).Returns(true);
-            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
-
-            var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
-                .Build();
-
-            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
-
-            await c.WriteMessageAsync(msg);
-            await c.WriteMessageAsync(msg);
-
-            var deferred1 = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages").Count;
-
-            await c.ConnectAsync();
-
-            var deferred2 = c.GetProperty<ConcurrentQueue<Message>>("DeferredMessages");
-
-            Assert.Equal(2, deferred1);
-            Assert.Empty(deferred2);
-
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
 
         [Trait("Category", "Code Normalization")]

@@ -60,10 +60,9 @@ namespace Soulseek.NET.Messaging.Tcp
                 InactivityTimer = null;
             }
 
-            Connected += async (sender, e) =>
+            Connected += (sender, e) =>
             {
                 Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
-                await SendDeferredMessages().ConfigureAwait(false);
             };
         }
 
@@ -87,8 +86,6 @@ namespace Soulseek.NET.Messaging.Tcp
         /// </summary>
         public string Username { get; private set; } = string.Empty;
 
-        private ConcurrentQueue<Message> DeferredMessages { get; } = new ConcurrentQueue<Message>();
-
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.
         /// </summary>
@@ -107,22 +104,15 @@ namespace Soulseek.NET.Messaging.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task WriteMessageAsync(Message message, CancellationToken cancellationToken)
         {
-            if (State == ConnectionState.Disconnecting || State == ConnectionState.Disconnected)
+            if (State != ConnectionState.Connected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
             }
 
-            if (State == ConnectionState.Pending || State == ConnectionState.Connecting)
-            {
-                DeferredMessages.Enqueue(message);
-            }
-            else if (State == ConnectionState.Connected)
-            {
-                var bytes = message.ToByteArray();
+            var bytes = message.ToByteArray();
 
-                NormalizeMessageCode(bytes, 0 - (int)Type);
-                await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
-            }
+            NormalizeMessageCode(bytes, 0 - (int)Type);
+            await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
         }
 
         private void NormalizeMessageCode(byte[] messageBytes, int newCode)
@@ -154,17 +144,6 @@ namespace Soulseek.NET.Messaging.Tcp
                 NormalizeMessageCode(messageBytes, (int)Type);
 
                 MessageRead?.Invoke(this, new Message(messageBytes));
-            }
-        }
-
-        private async Task SendDeferredMessages()
-        {
-            while (!DeferredMessages.IsEmpty)
-            {
-                if (DeferredMessages.TryDequeue(out var deferredMessage))
-                {
-                    await WriteMessageAsync(deferredMessage, CancellationToken.None).ConfigureAwait(false);
-                }
             }
         }
     }
