@@ -13,19 +13,21 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Messages;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
     ///     A single file search.
     /// </summary>
-    internal sealed class Search : IDisposable
+    public sealed class Search : IDisposable
     {
-        private int resultCount = 0;
+        private int resultFileCount = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Search"/> class.
@@ -33,7 +35,7 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchOptions options = null)
+        internal Search(string searchText, int token, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
@@ -52,16 +54,6 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Occurs when the search is completed.
-        /// </summary>
-        public event EventHandler<SearchStates> Completed;
-
-        /// <summary>
-        ///     Occurs when a new search result is received.
-        /// </summary>
-        public event EventHandler<SearchResponse> ResponseReceived;
-
-        /// <summary>
         ///     Gets the options for the search.
         /// </summary>
         public SearchOptions Options { get; }
@@ -69,7 +61,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the collection of responses received from peers.
         /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses => ResponseList.AsReadOnly();
+        public IReadOnlyCollection<SearchResponse> Responses => ResponseBag.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the text for which to search.
@@ -77,25 +69,39 @@ namespace Soulseek.NET
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets or sets the state of the search.
+        ///     Gets the state of the search.
         /// </summary>
-        public SearchStates State { get; set; } = SearchStates.None;
+        public SearchStates State { get; internal set; } = SearchStates.None;
 
         /// <summary>
         ///     Gets the unique identifier for the search.
         /// </summary>
         public int Token { get; }
 
+        /// <summary>
+        ///     Gets or sets the Action to invoke when a new search response is received.
+        /// </summary>
+        internal Action<SearchResponse> ResponseReceived { get; set; }
+
         private bool Disposed { get; set; } = false;
-        private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
+        private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
+        private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         /// <summary>
         ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in
         ///     the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        public void AddResponse(SearchResponseSlim slimResponse)
+        internal void AddResponse(SearchResponseSlim slimResponse)
         {
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
@@ -107,14 +113,14 @@ namespace Soulseek.NET
                     return;
                 }
 
-                Interlocked.Add(ref resultCount, fullResponse.Files.Count);
+                Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
 
-                ResponseList.Add(fullResponse);
+                ResponseBag.Add(fullResponse);
 
-                ResponseReceived?.Invoke(this, fullResponse);
+                ResponseReceived?.Invoke(fullResponse);
                 SearchTimeoutTimer.Reset();
 
-                if (resultCount >= Options.FileLimit)
+                if (resultFileCount >= Options.FileLimit)
                 {
                     Complete(SearchStates.FileLimitReached);
                 }
@@ -125,19 +131,33 @@ namespace Soulseek.NET
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
-        public void Complete(SearchStates state)
+        internal void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
-            Completed?.Invoke(this, State);
+            TaskCompletionSource.SetResult(0);
         }
 
         /// <summary>
-        ///     Disposes this instance.
+        ///     Asynchronously waits for the search to be completed.
         /// </summary>
-        public void Dispose()
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The collection of received search responses.</returns>
+        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
-            Dispose(true);
+            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
+
+            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+            {
+                var completedTask = await Task.WhenAny(TaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
+
+                if (completedTask == cancellationTaskCompletionSource.Task)
+                {
+                    throw new OperationCanceledException("Operation cancelled.");
+                }
+
+                return ResponseBag.ToList().AsReadOnly();
+            }
         }
 
         private void Dispose(bool disposing)
@@ -147,7 +167,7 @@ namespace Soulseek.NET
                 if (disposing)
                 {
                     SearchTimeoutTimer.Dispose();
-                    ResponseList = default(List<SearchResponse>);
+                    ResponseBag = default(ConcurrentBag<SearchResponse>);
                 }
 
                 Disposed = true;
