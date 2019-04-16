@@ -855,7 +855,7 @@ namespace Soulseek.NET
 
             try
             {
-                search.ResponseReceived += (_, response) =>
+                search.ResponseReceived = (response) =>
                 {
                     var eventArgs = new SearchResponseReceivedEventArgs(search, response);
                     responseReceived?.Invoke(eventArgs);
@@ -868,7 +868,7 @@ namespace Soulseek.NET
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
                 updateState(SearchStates.InProgress);
 
-                var responses = await search.WaitForCompletion().ConfigureAwait(false);
+                var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
                 return responses.ToList().AsReadOnly();
             }
             catch (OperationCanceledException ex)
