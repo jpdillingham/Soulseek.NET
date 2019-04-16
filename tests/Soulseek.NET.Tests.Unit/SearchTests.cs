@@ -14,6 +14,8 @@ namespace Soulseek.NET.Tests.Unit
 {
     using System;
     using System.Linq;
+    using System.Threading;
+    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
@@ -56,19 +58,6 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.True(s.State.HasFlag(SearchStates.Completed));
             Assert.True(s.State.HasFlag(SearchStates.Cancelled));
-        }
-
-        [Trait("Category", "Complete")]
-        [Fact(DisplayName = "Complete invokes complete event")]
-        public void Complete_Invokes_Complete_Event()
-        {
-            bool invoked = false;
-            var s = new Search("foo", 42);
-            s.Completed += (sender, state) => { invoked = true; };
-
-            s.Complete(SearchStates.Cancelled);
-
-            Assert.True(invoked);
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -456,7 +445,7 @@ namespace Soulseek.NET.Tests.Unit
 
         [Trait("Category", "AddResponse")]
         [Theory(DisplayName = "AddResponse completes search and invokes completed event when file limit reached"), AutoData]
-        public void AddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
+        public async Task AddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
         {
             var options = new SearchOptions(
                     filterResponses: false,
@@ -466,7 +455,6 @@ namespace Soulseek.NET.Tests.Unit
             var completedState = SearchStates.None;
 
             var s = new Search("foo", token, options);
-            s.Completed += (sender, state) => completedState = state;
 
             s.State = SearchStates.InProgress;
 
@@ -491,10 +479,14 @@ namespace Soulseek.NET.Tests.Unit
             var reader = new MessageReader(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file lists
 
+            var task = s.WaitForCompletion(CancellationToken.None);
+
             s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
-            Assert.True(completedState.HasFlag(SearchStates.Completed));
-            Assert.True(completedState.HasFlag(SearchStates.FileLimitReached));
+            await task;
+
+            Assert.True(s.State.HasFlag(SearchStates.Completed));
+            Assert.True(s.State.HasFlag(SearchStates.FileLimitReached));
         }
 
         [Trait("Category", "AddResponse")]
@@ -508,7 +500,7 @@ namespace Soulseek.NET.Tests.Unit
                 State = SearchStates.InProgress
             };
 
-            s.ResponseReceived += (sender, response) => addResponse = response;
+            s.ResponseReceived += (response) => addResponse = response;
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
