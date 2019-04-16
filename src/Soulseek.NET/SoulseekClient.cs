@@ -855,14 +855,6 @@ namespace Soulseek.NET
 
             try
             {
-                var searchWait = MessageWaiter.WaitIndefinitely<Search>(new WaitKey(MessageCode.ServerFileSearch, token), cancellationToken);
-
-                search.Completed += (_, state) =>
-                {
-                    MessageWaiter.Complete(new WaitKey(MessageCode.ServerFileSearch, token), search); // searchWait above
-                    ActiveSearches.TryRemove(search.Token, out var _);
-                };
-
                 search.ResponseReceived += (_, response) =>
                 {
                     var eventArgs = new SearchResponseReceivedEventArgs(search, response);
@@ -874,13 +866,10 @@ namespace Soulseek.NET
                 updateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
-
                 updateState(SearchStates.InProgress);
 
-                search = await searchWait.ConfigureAwait(false);
-
-                var responses = search.Responses;
-                return responses;
+                var responses = await search.WaitForCompletion().ConfigureAwait(false);
+                return responses.ToList().AsReadOnly();
             }
             catch (OperationCanceledException ex)
             {

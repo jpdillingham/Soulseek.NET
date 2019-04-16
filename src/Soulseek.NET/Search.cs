@@ -17,13 +17,14 @@ namespace Soulseek.NET
     using System.IO;
     using System.Linq;
     using System.Threading;
+    using System.Threading.Tasks;
     using Soulseek.NET.Messaging.Messages;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
     ///     A single file search.
     /// </summary>
-    internal sealed class Search : IDisposable
+    public sealed class Search : IDisposable
     {
         private int resultCount = 0;
 
@@ -33,7 +34,7 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchOptions options = null)
+        internal Search(string searchText, int token, SearchOptions options = null, Action<SearchResponseReceivedEventArgs> responseReceived = null)
         {
             SearchText = searchText;
             Token = token;
@@ -50,11 +51,6 @@ namespace Soulseek.NET
             SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
             SearchTimeoutTimer.Reset();
         }
-
-        /// <summary>
-        ///     Occurs when the search is completed.
-        /// </summary>
-        public event EventHandler<SearchStates> Completed;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -77,9 +73,9 @@ namespace Soulseek.NET
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets or sets the state of the search.
+        ///     Gets the state of the search.
         /// </summary>
-        public SearchStates State { get; set; } = SearchStates.None;
+        public SearchStates State { get; internal set; } = SearchStates.None;
 
         /// <summary>
         ///     Gets the unique identifier for the search.
@@ -89,13 +85,28 @@ namespace Soulseek.NET
         private bool Disposed { get; set; } = false;
         private List<SearchResponse> ResponseList { get; set; } = new List<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
+        private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
+
+        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion()
+        {
+            await TaskCompletionSource.Task.ConfigureAwait(false);
+            return ResponseList;
+        }
+
+        /// <summary>
+        ///     Disposes this instance.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         /// <summary>
         ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified in
         ///     the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        public void AddResponse(SearchResponseSlim slimResponse)
+        internal void AddResponse(SearchResponseSlim slimResponse)
         {
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
@@ -125,19 +136,12 @@ namespace Soulseek.NET
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
-        public void Complete(SearchStates state)
+        internal void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
-            Completed?.Invoke(this, State);
-        }
-
-        /// <summary>
-        ///     Disposes this instance.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
+            TaskCompletionSource.SetResult(0);
+            //Completed?.Invoke(this, State);
         }
 
         private void Dispose(bool disposing)
