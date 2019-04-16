@@ -18,6 +18,7 @@ namespace Soulseek.NET.Tests.Unit.Client
     using Moq;
     using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Tcp;
+    using Soulseek.NET.Tcp;
     using Xunit;
 
     public class SendPrivateMessageAsyncTests
@@ -51,7 +52,11 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync does not throw when write does not throw")]
         public async Task AcknowledgePrivateMessageAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
         {
-            var s = new SoulseekClient();
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
@@ -125,7 +130,11 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "SendPrivateMessageAsync does not throw when write does not throw")]
         public async Task SendPrivateMessageAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
         {
-            var s = new SoulseekClient();
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
