@@ -29,11 +29,13 @@
         private static string[] IgnoredUsers { get; set; } = new string[] { };
 
         [Argument('p', "password")]
+        [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
 
         private static ConcurrentDictionary<string, ProgressBar> Progress { get; set; } = new ConcurrentDictionary<string, ProgressBar>();
 
         [Argument('u', "username")]
+        [EnvironmentVariable("SLSK_USERNAME")]
         private static string Username { get; set; } = "foo";
 
         [Argument('b', "browse")]
@@ -52,6 +54,7 @@
         {
             Console.OutputEncoding = Encoding.UTF8;
 
+            EnvironmentVariables.Populate();
             Arguments.Populate(clearExistingValues: false);
 
             var options = new SoulseekClientOptions(
