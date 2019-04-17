@@ -156,7 +156,7 @@
         {
             if (e.State == SoulseekClientStates.Disconnected)
             {
-                o("Disconnected.");
+                o("Disconnected" + (!string.IsNullOrEmpty(e.Message) ? $": {e.Message}" : string.Empty ));
             }
         }
 
