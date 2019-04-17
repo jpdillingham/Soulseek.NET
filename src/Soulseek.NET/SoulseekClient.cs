@@ -98,7 +98,7 @@ namespace Soulseek.NET
 
                 ServerConnection = new MessageConnection(MessageConnectionType.Server, IPAddress, Port, Options.ServerConnectionOptions);
                 ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
-                ServerConnection.Disconnected += (sender, e) => Disconnect();
+                ServerConnection.Disconnected += ServerConnection_Disconnected;
                 ServerConnection.MessageRead += ServerConnection_MessageRead;
             }
 
@@ -265,6 +265,7 @@ namespace Soulseek.NET
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         public void Disconnect(string message = null)
         {
+            ServerConnection.Disconnected -= ServerConnection_Disconnected;
             ServerConnection?.Disconnect(message ?? "Client disconnected.");
 
             ConnectionManager?.RemoveAndDisposeAll();
@@ -278,7 +279,10 @@ namespace Soulseek.NET
 
             Username = null;
 
-            ChangeState(SoulseekClientStates.Disconnected);
+            if (State != SoulseekClientStates.Disconnected)
+            {
+                ChangeState(SoulseekClientStates.Disconnected, message);
+            }
         }
 
         /// <summary>
@@ -776,7 +780,7 @@ namespace Soulseek.NET
                 }
                 else
                 {
-                    Disconnect(); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                    Disconnect($"The server rejected login attempt: {response.Message}"); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
                     throw new LoginException($"The server rejected login attempt: {response.Message}");
                 }
             }
@@ -898,6 +902,11 @@ namespace Soulseek.NET
             {
                 throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
             }
+        }
+
+        private void ServerConnection_Disconnected(object sender, string e)
+        {
+            Disconnect(e);
         }
 
         private async void ServerConnection_MessageRead(object sender, Message message)
