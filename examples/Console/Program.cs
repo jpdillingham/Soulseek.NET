@@ -25,19 +25,6 @@
         [Argument('a', "artist")]
         private static string Artist { get; set; }
 
-        [Argument('i', "ignore-user")]
-        private static string[] IgnoredUsers { get; set; } = new string[] { };
-
-        [Argument('p', "password")]
-        [EnvironmentVariable("SLSK_PASSWORD")]
-        private static string Password { get; set; }
-
-        private static ConcurrentDictionary<string, ProgressBar> Progress { get; set; } = new ConcurrentDictionary<string, ProgressBar>();
-
-        [Argument('u', "username")]
-        [EnvironmentVariable("SLSK_USERNAME")]
-        private static string Username { get; set; } = "foo";
-
         [Argument('b', "browse")]
         private static string Browse { get; set; }
 
@@ -47,13 +34,21 @@
         [Argument('f', "file")]
         private static List<string> Files { get; set; } = new List<string>();
 
+        [Argument('i', "ignore-user")]
+        private static string[] IgnoredUsers { get; set; } = new string[] { };
+
+        [Argument('p', "password")]
+        [EnvironmentVariable("SLSK_PASSWORD")]
+        private static string Password { get; set; }
+
+        private static ConcurrentDictionary<string, ProgressBar> Progress { get; set; } = new ConcurrentDictionary<string, ProgressBar>();
+
         [Argument('s', "search")]
         private static string Search { get; set; }
 
-        static void SubscribeEvents(SoulseekClient client)
-        {
-
-        }
+        [Argument('u', "username")]
+        [EnvironmentVariable("SLSK_USERNAME")]
+        private static string Username { get; set; } = "foo";
 
         public static async Task Main(string[] args)
         {
@@ -129,78 +124,9 @@
             }
         }
 
-        private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
-        {
-            o($"[SEARCH] {e.PreviousState} => {e.State}");
-        }
-
-        private static (string Username, IEnumerable<Soulseek.NET.File> Files) SelectSearchResponse(IEnumerable<SearchResponse> responses)
-        {
-            var index = 0;
-
-            do
-            {
-                var response = responses.ToList()[index];
-
-                o($"\nUser: {response.Username}, Upload speed: {response.UploadSpeed}, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}");
-
-                var directories = response.Files
-                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
-                    .ToDictionary(g => g.Key, g => g.ToList());
-
-                ListResponseFiles(directories);
-
-                Console.Write($"\nSelect directory (1-{directories.Count}) or press ENTER to show next result: ");
-
-                var proceed = Console.ReadLine();
-
-                if (!proceed.Equals(string.Empty, StringComparison.InvariantCultureIgnoreCase))
-                {
-                    var num = int.Parse(proceed) - 1;
-                    var key = directories.Keys.ToList()[num];
-                    return (response.Username, directories[key]);
-                }
-
-                index++;
-            } while (true);
-        }
-
-        private static void ListResponseFiles(Dictionary<string, List<Soulseek.NET.File>> directories)
-        {
-            for (int i = 0; i < directories.Count; i++)
-            {
-                var key = directories.Keys.ToList()[i];
-                o($"\n{(i + 1)}.  {key}\n");
-
-                var longest = directories[key].Max(f => Path.GetFileName(f.Filename).Length);
-
-                foreach (var file in directories[key])
-                {
-                    o($"   {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToString().PadRight(10)}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
-                }
-            }
-        }
-
         private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)
         {
             Console.WriteLine($"[DIAGNOSTICS] [{e.Level}]: {e.Message}");
-        }
-
-        private static void Client_DownloadProgress(object sender, DownloadProgressUpdatedEventArgs e)
-        {
-            var key = $"{e.Username}:{e.Filename}:{e.Token}";
-            Progress.AddOrUpdate(key, new ProgressBar(30, 0, 100, 1, (int)e.PercentComplete), (k, v) =>
-            {
-                Progress[k].Value = (int)e.PercentComplete;
-                return Progress[k];
-            });
-
-            Console.Write($"\r[PROGRESS]: {e.Filename}: {Progress[key]}%");
-
-            if (e.PercentComplete == 100)
-            {
-                Console.Write("\n");
-            }
         }
 
         private static void Client_DownloadStateChanged(object sender, DownloadStateChangedEventArgs e)
@@ -213,47 +139,16 @@
             Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }
 
+        private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
+        {
+            o($"[SEARCH] {e.PreviousState} => {e.State}");
+        }
+
         private static void Client_ServerStateChanged(object sender, SoulseekClientStateChangedEventArgs e)
         {
             Console.WriteLine($"Server state changed to {e.State} ({e.Message})");
         }
 
-        private static async Task DownloadFilesAsync(SoulseekClient client, SearchResponse searchResponse)
-        {
-            var index = 0;
-
-            var tasks = searchResponse.Files.Select(async file =>
-            {
-                try
-                {
-                    var bytes = await client.DownloadAsync(searchResponse.Username, file.Filename, index++, progressUpdated: (e) =>
-                    {
-                        Console.Write($"\r{Path.GetFileName(file.Filename)} {e.PercentComplete}%");
-                    }).ConfigureAwait(false);
-
-                    var path = $@"downloads" + Path.GetDirectoryName(file.Filename).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file.Filename)), "");
-
-                    if (!System.IO.Directory.Exists(path))
-                    {
-                        System.IO.Directory.CreateDirectory(path);
-                    }
-
-                    var filename = Path.Combine(path, Path.GetFileName(file.Filename));
-
-                    Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
-                    System.IO.File.WriteAllBytes(filename, bytes);
-                    Console.WriteLine("Download complete!");
-                }
-                catch (Exception ex)
-                {
-                    o($"Error downloading {file}: {ex.Message}");
-                }
-            });
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-        }
-
-        // todo: make this not a lazy copy/paste :\
         private static async Task DownloadFilesAsync(SoulseekClient client, string username, List<string> files)
         {
             var index = 0;
@@ -303,6 +198,22 @@
                 foreach (var track in disc.Tracks)
                 {
                     o($"   {track.Position.ToString("D2")}  {track.Title.PadRight(longest)}  {TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"m\:ss")}");
+                }
+            }
+        }
+
+        private static void ListResponseFiles(Dictionary<string, List<Soulseek.NET.File>> directories)
+        {
+            for (int i = 0; i < directories.Count; i++)
+            {
+                var key = directories.Keys.ToList()[i];
+                o($"\n{(i + 1)}.  {key}\n");
+
+                var longest = directories[key].Max(f => Path.GetFileName(f.Filename).Length);
+
+                foreach (var file in directories[key])
+                {
+                    o($"   {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToString().PadRight(10)}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
                 }
             }
         }
@@ -478,6 +389,41 @@
                     Console.Write($"Invalid input.  ");
                 }
             } while (true);
+        }
+
+        private static (string Username, IEnumerable<Soulseek.NET.File> Files) SelectSearchResponse(IEnumerable<SearchResponse> responses)
+        {
+            var index = 0;
+
+            do
+            {
+                var response = responses.ToList()[index];
+
+                o($"\nUser: {response.Username}, Upload speed: {response.UploadSpeed}, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}");
+
+                var directories = response.Files
+                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                ListResponseFiles(directories);
+
+                Console.Write($"\nSelect directory (1-{directories.Count}) or press ENTER to show next result: ");
+
+                var proceed = Console.ReadLine();
+
+                if (!proceed.Equals(string.Empty, StringComparison.InvariantCultureIgnoreCase))
+                {
+                    var num = int.Parse(proceed) - 1;
+                    var key = directories.Keys.ToList()[num];
+                    return (response.Username, directories[key]);
+                }
+
+                index++;
+            } while (true);
+        }
+
+        private static void SubscribeEvents(SoulseekClient client)
+        {
         }
     }
 }
