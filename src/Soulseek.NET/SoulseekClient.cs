@@ -564,7 +564,7 @@ namespace Soulseek.NET
         {
             var previousState = State;
             State = state;
-            Task.Run(() => StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message)));
+            StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
         }
 
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged, Action<DownloadProgressUpdatedEventArgs> progressUpdated, CancellationToken cancellationToken)
