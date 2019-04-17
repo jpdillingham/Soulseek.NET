@@ -166,7 +166,7 @@
 
                         var response = SelectSearchResponse(responses);
 
-                        await DownloadFilesAsync(client, response).ConfigureAwait(false);
+                        await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
                     }
                 }
                 catch (Exception ex)
@@ -183,7 +183,7 @@
             o($"[SEARCH] {e.PreviousState} => {e.State}");
         }
 
-        private static SearchResponse SelectSearchResponse(IEnumerable<SearchResponse> responses)
+        private static (string Username, IEnumerable<Soulseek.NET.File> Files) SelectSearchResponse(IEnumerable<SearchResponse> responses)
         {
             var index = 0;
 
@@ -191,29 +191,42 @@
             {
                 var response = responses.ToList()[index];
 
-                o($"\nUser: {response.Username}, Upload speed: {response.UploadSpeed}, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}\n");
-                ListResponseFiles(response);
+                o($"\nUser: {response.Username}, Upload speed: {response.UploadSpeed}, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}");
 
-                Console.Write($"\nDownload these files? (Y/N): ");
+                var directories = response.Files
+                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
+                    .ToDictionary(g => g.Key, g => g.ToList());
+
+                ListResponseFiles(directories);
+
+                Console.Write($"\nSelect directory (1-{directories.Count}) or press ENTER to show next result: ");
 
                 var proceed = Console.ReadLine();
 
-                if (proceed.Equals("Y", StringComparison.InvariantCultureIgnoreCase))
+                if (!proceed.Equals(string.Empty, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    return responses.ToList()[index];
+                    var num = int.Parse(proceed) - 1;
+                    var key = directories.Keys.ToList()[num];
+                    return (response.Username, directories[key]);
                 }
 
                 index++;
             } while (true);
         }
 
-        private static void ListResponseFiles(SearchResponse response)
+        private static void ListResponseFiles(Dictionary<string, List<Soulseek.NET.File>> directories)
         {
-            var longest = response.Files.Max(f => f.Filename.Length);
-
-            foreach (var file in response.Files)
+            for (int i = 0; i < directories.Count; i++)
             {
-                o($"{file.Filename.PadRight(longest)}  {file.Size}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
+                var key = directories.Keys.ToList()[i];
+                o($"\n{(i + 1)}.  {key}\n");
+
+                var longest = directories[key].Max(f => Path.GetFileName(f.Filename).Length);
+
+                foreach (var file in directories[key])
+                {
+                    o($"   {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToString().PadRight(10)}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
+                }
             }
         }
 
