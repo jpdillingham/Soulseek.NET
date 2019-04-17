@@ -179,11 +179,6 @@ namespace Soulseek.NET
             {
                 if (connection != null)
                 {
-                    if (connection.Context is ConnectToPeerResponse)
-                    {
-                        Console.WriteLine($"Reusing solicited connection for a download...");
-                    }
-
                     return connection;
                 }
                 else
