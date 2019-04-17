@@ -50,6 +50,15 @@
         [EnvironmentVariable("SLSK_USERNAME")]
         private static string Username { get; set; } = "foo";
 
+        private static async Task ConnectAndLogin(SoulseekClient client)
+        {
+            Console.Write("\nConnecting...");
+            await client.ConnectAsync();
+            Console.Write("\rConnected.  Logging in...");
+            await client.LoginAsync(Username, Password);
+            Console.Write("\rConnected and logged in.    \n");
+        }
+
         public static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -69,14 +78,20 @@
                 client.DownloadStateChanged += Client_DownloadStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
-                client.SearchStateChanged += Client_SearchStateChanged;
 
                 if (!string.IsNullOrEmpty(Search))
                 {
-                    await client.ConnectAsync();
-                    await client.LoginAsync(Username, Password);
+                    await ConnectAndLogin(client);
 
-                    var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 1000));
+                    var responses = await SearchAsync(client, Search, 1);
+
+                    responses = responses
+                        .OrderByDescending(r => r.FreeUploadSlots)
+                        .ThenByDescending(r => r.UploadSpeed);
+
+                    var response = SelectSearchResponse(responses);
+
+                    await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
                     var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
                     file.Directory.Create();
@@ -91,8 +106,7 @@
                 }
                 else if (!string.IsNullOrEmpty(Browse))
                 {
-                    await client.ConnectAsync();
-                    await client.LoginAsync(Username, Password);
+                    await ConnectAndLogin(client);
 
                     var results = await client.BrowseAsync(Browse);
 
@@ -107,8 +121,7 @@
                     var release = await SelectRelease(releaseGroup);
                     IEnumerable<SearchResponse> responses = null;
 
-                    await client.ConnectAsync();
-                    await client.LoginAsync(Username, Password);
+                    await ConnectAndLogin(client);
 
                     var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
                     responses = await SearchAsync(client, searchText, release.TrackCount);
@@ -139,14 +152,12 @@
             Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }
 
-        private static void Client_SearchStateChanged(object sender, SearchStateChangedEventArgs e)
-        {
-            o($"[SEARCH] {e.PreviousState} => {e.State}");
-        }
-
         private static void Client_ServerStateChanged(object sender, SoulseekClientStateChangedEventArgs e)
         {
-            Console.WriteLine($"Server state changed to {e.State} ({e.Message})");
+            if (e.State == SoulseekClientStates.Disconnected)
+            {
+                o("Disconnected.");
+            }
         }
 
         private static async Task DownloadFilesAsync(SoulseekClient client, string username, List<string> files)
@@ -224,13 +235,14 @@
             var spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => complete));
             var totalResponses = 0;
             var totalFiles = 0;
+            var state = SearchStates.None;
 
             var timer = new Timer(100);
             timer.Elapsed += (e, a) => updateStatus();
 
             void updateStatus()
             {
-                Console.Write($"\r{spinner} {(complete ? "Search complete." : $"Searching for '{searchText}':")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
+                Console.Write($"\r{spinner} {(complete ? "Search complete." : $"[{state}] Searching for '{searchText}':")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
             }
 
             timer.Start();
@@ -241,7 +253,9 @@
                     minimumResponseFileCount: minimumFileCount,
                     filterFiles: true,
                     ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
-                ), responseReceived: (e) =>
+                ), 
+                stateChanged: (e) => state = e.State,
+                responseReceived: (e) =>
                 {
                     totalResponses++;
                     totalFiles += e.Response.FileCount;
