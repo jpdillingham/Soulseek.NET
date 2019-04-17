@@ -50,6 +50,11 @@
         [Argument('s', "search")]
         private static string Search { get; set; }
 
+        static void SubscribeEvents(SoulseekClient client)
+        {
+
+        }
+
         public static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
@@ -63,118 +68,64 @@
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
             );
 
-            if (!string.IsNullOrEmpty(Search))
+            using (var client = new SoulseekClient(options))
             {
-                try
+                client.StateChanged += Client_ServerStateChanged;
+                client.DownloadStateChanged += Client_DownloadStateChanged;
+                client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
+                client.PrivateMessageReceived += Client_PrivateMessageReceived;
+                client.SearchStateChanged += Client_SearchStateChanged;
+
+                if (!string.IsNullOrEmpty(Search))
                 {
-                    using (var client = new SoulseekClient(options))
-                    {
-                        client.StateChanged += Client_ServerStateChanged;
-                        client.DownloadStateChanged += Client_DownloadStateChanged;
-                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
-                        client.SearchStateChanged += Client_SearchStateChanged;
+                    await client.ConnectAsync();
+                    await client.LoginAsync(Username, Password);
 
-                        await client.ConnectAsync();
-                        await client.LoginAsync(Username, Password);
+                    var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 1000));
 
-                        var responses = await client.SearchAsync(Search, new SearchOptions(searchTimeout: 60, fileLimit: 1000));
-
-                        var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
-                        file.Directory.Create();
-                        System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(responses));
-                    }
+                    var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
+                    file.Directory.Create();
+                    System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(responses));
                 }
-                catch (Exception ex)
+                if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
                 {
-                    Console.WriteLine(ex);
+                    await client.ConnectAsync();
+                    await client.LoginAsync(Username, Password);
+
+                    await DownloadFilesAsync(client, Download, Files);
                 }
-            }
-            if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
-            {
-                try
+                else if (!string.IsNullOrEmpty(Browse))
                 {
-                    using (var client = new SoulseekClient(options))
-                    {
-                        client.StateChanged += Client_ServerStateChanged;
-                        client.DownloadStateChanged += Client_DownloadStateChanged;
-                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
+                    await client.ConnectAsync();
+                    await client.LoginAsync(Username, Password);
 
-                        await client.ConnectAsync();
-                        await client.LoginAsync(Username, Password);
+                    var results = await client.BrowseAsync(Browse);
 
-                        await DownloadFilesAsync(client, Download, Files);
-                    }
+                    var file = new FileInfo(Path.Combine("data", "browse", $"{Browse}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
+                    file.Directory.Create();
+                    System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(results));
                 }
-                catch (Exception ex)
+                else if (!string.IsNullOrEmpty(Artist))
                 {
-                    Console.WriteLine(ex);
+                    var artist = await SelectArtist(Artist);
+                    var releaseGroup = await SelectReleaseGroup(artist, Album);
+                    var release = await SelectRelease(releaseGroup);
+                    IEnumerable<SearchResponse> responses = null;
+
+                    await client.ConnectAsync();
+                    await client.LoginAsync(Username, Password);
+
+                    var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
+                    responses = await SearchAsync(client, searchText, release.TrackCount);
+
+                    responses = responses
+                        .OrderByDescending(r => r.FreeUploadSlots)
+                        .ThenByDescending(r => r.UploadSpeed);
+
+                    var response = SelectSearchResponse(responses);
+
+                    await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
                 }
-            }
-            else  if (!string.IsNullOrEmpty(Browse))
-            {
-                try
-                {
-                    using (var client = new SoulseekClient(options))
-                    {
-                        client.StateChanged += Client_ServerStateChanged;
-                        client.DownloadStateChanged += Client_DownloadStateChanged;
-                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
-
-                        await client.ConnectAsync();
-                        await client.LoginAsync(Username, Password);
-
-                        var results = await client.BrowseAsync(Browse);
-
-                        var file = new FileInfo(Path.Combine("data", "browse", $"{Browse}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
-                        file.Directory.Create();
-                        System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(results));
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
-            }
-            else if (!string.IsNullOrEmpty(Artist))
-            {
-                var artist = await SelectArtist(Artist);
-                var releaseGroup = await SelectReleaseGroup(artist, Album);
-                var release = await SelectRelease(releaseGroup);
-                IEnumerable<SearchResponse> responses = null;
-
-                try
-                {
-                    using (var client = new SoulseekClient(options))
-                    {
-                        client.StateChanged += Client_ServerStateChanged;
-                        client.DownloadStateChanged += Client_DownloadStateChanged;
-                        client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                        client.PrivateMessageReceived += Client_PrivateMessageReceived;
-
-                        await client.ConnectAsync();
-                        await client.LoginAsync(Username, Password);
-
-                        var searchText = artist.Name == release.Title ? $"{artist.Name} {release.Date.ToFuzzyDateTime().ToString("yyyy")}" : $"{artist.Name} {release.Title}";
-                        responses = await SearchAsync(client, searchText, release.TrackCount);
-
-                        responses = responses
-                            .OrderByDescending(r => r.FreeUploadSlots)
-                            .ThenByDescending(r => r.UploadSpeed);
-
-                        var response = SelectSearchResponse(responses);
-
-                        await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine(ex);
-                }
-
-                Console.ReadKey();
             }
         }
 
