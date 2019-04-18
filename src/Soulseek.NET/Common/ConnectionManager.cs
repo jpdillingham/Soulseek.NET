@@ -211,8 +211,8 @@ namespace Soulseek.NET
             {
                 if (PeerConnections.TryRemove(PeerConnections.Keys.First(), out var value))
                 {
-                    value.Semaphore.Dispose();
-                    value.Connection.Dispose();
+                    value.Semaphore?.Dispose();
+                    value.Connection?.Dispose();
                 }
             }
 
