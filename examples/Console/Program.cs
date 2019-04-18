@@ -28,14 +28,15 @@
         [Argument('b', "browse")]
         private static string Browse { get; set; }
 
+        [EnvironmentVariable("SLSK_OUTPUT_DIR")]
+        [Argument('o', "output-directory")]
+        private static string OutputDirectory { get; set; }
+
         [Argument('d', "download")]
         private static string Download { get; set; }
 
         [Argument('f', "file")]
         private static List<string> Files { get; set; } = new List<string>();
-
-        [Argument('i', "ignore-user")]
-        private static string[] IgnoredUsers { get; set; } = new string[] { };
 
         [Argument('p', "password")]
         [EnvironmentVariable("SLSK_PASSWORD")]
@@ -93,7 +94,7 @@
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
-                    var file = new FileInfo(Path.Combine("data", "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
+                    var file = new FileInfo(Path.Combine(OutputDirectory, "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
                     file.Directory.Create();
                     System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(responses));
                 }
@@ -108,9 +109,10 @@
                 {
                     await ConnectAndLogin(client);
 
+                    o($"Browsing user {Browse}...");
                     var results = await client.BrowseAsync(Browse);
 
-                    var file = new FileInfo(Path.Combine("data", "browse", $"{Browse}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
+                    var file = new FileInfo(Path.Combine(OutputDirectory, "browse", $"{Browse}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
                     file.Directory.Create();
                     System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(results));
                 }
@@ -173,7 +175,7 @@
                         Console.Write($"\r{Path.GetFileName(file)} {e.PercentComplete}%");
                     }).ConfigureAwait(false);
 
-                    var path = $@"downloads" + Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "");
+                    var path = Path.Combine(OutputDirectory, Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), ""));
 
                     if (!System.IO.Directory.Exists(path))
                     {
