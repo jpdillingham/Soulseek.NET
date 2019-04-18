@@ -77,7 +77,6 @@
             using (var client = new SoulseekClient(options))
             {
                 client.StateChanged += Client_ServerStateChanged;
-                client.DownloadStateChanged += Client_DownloadStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
@@ -145,15 +144,6 @@
             Console.WriteLine($"[DIAGNOSTICS] [{e.Level}]: {e.Message}");
         }
 
-        private static void Client_DownloadStateChanged(object sender, DownloadStateChangedEventArgs e)
-        {
-            var key = (e.Username, e.Filename, e.Token);
-            var download = Downloads.GetOrAdd(key, (e.State, new ProgressBar(10)));
-            download.State = e.State;
-
-            Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.PreviousState} ==> {e.State}");
-        }
-
         private static void Client_PrivateMessageReceived(object sender, PrivateMessage e)
         {
             Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
@@ -175,14 +165,32 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, index++, progressUpdated: (e) =>
+                    var bytes = await client.DownloadAsync(username, file, index++, stateChanged: (e) => 
+                    {
+                        var key = (e.Username, e.Filename, e.Token);
+                        var download = Downloads.GetOrAdd(key, (e.State, new ProgressBar(10)));
+                        download.State = e.State;
+
+                        Downloads.AddOrUpdate(key, download, (k, v) => download);
+
+                        if (download.State.HasFlag(DownloadStates.Completed))
+                        {
+                            o(string.Empty);
+                        }
+                    }, progressUpdated: (e) =>
                     {
                         var key = (e.Username, e.Filename, e.Token);
                         Downloads.TryGetValue(key, out var download);
-
                         download.ProgressBar.Value = (int)e.PercentComplete;
 
-                        Console.Write($"\r{Path.GetFileName(file)} {download.ProgressBar} {e.PercentComplete.ToString("N0")}%");
+                        var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(DownloadStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
+
+                        var longest = Downloads.Max(d => d.Key.Filename.Length);
+                        var fn = Path.GetFileName(e.Filename).PadRight(longest);
+
+                        var stats = $"{e.BytesDownloaded}/{e.Size} ({e.PercentComplete.ToString("N0")}%)";
+
+                        Console.Write($"\r[{status}]  {fn}  {download.ProgressBar}  {stats}");
                     }).ConfigureAwait(false);
 
                     var path = Path.Combine(OutputDirectory, Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), ""));
@@ -194,9 +202,7 @@
 
                     var filename = Path.Combine(path, Path.GetFileName(file));
 
-                    Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
                     System.IO.File.WriteAllBytes(filename, bytes);
-                    Console.Write("\r");
                 }
                 catch (Exception ex)
                 {
