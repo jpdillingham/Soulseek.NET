@@ -42,7 +42,8 @@
         [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
 
-        private static ConcurrentDictionary<string, ProgressBar> Progress { get; set; } = new ConcurrentDictionary<string, ProgressBar>();
+        private static ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, ProgressBar ProgressBar)> Downloads { get; set; } 
+            = new ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, ProgressBar ProgressBar)>();
 
         [Argument('s', "search")]
         private static string Search { get; set; }
@@ -57,7 +58,7 @@
             await client.ConnectAsync();
             Console.Write("\rConnected.  Logging in...");
             await client.LoginAsync(Username, Password);
-            Console.Write("\rConnected and logged in.    \n");
+            o("\rConnected and logged in.    \n");
         }
 
         public static async Task Main(string[] args)
@@ -146,6 +147,10 @@
 
         private static void Client_DownloadStateChanged(object sender, DownloadStateChangedEventArgs e)
         {
+            var key = (e.Username, e.Filename, e.Token);
+            var download = Downloads.GetOrAdd(key, (e.State, new ProgressBar(10)));
+            download.State = e.State;
+
             Console.WriteLine($"[DOWNLOAD] [{e.Filename}]: {e.PreviousState} ==> {e.State}");
         }
 
@@ -172,7 +177,12 @@
                 {
                     var bytes = await client.DownloadAsync(username, file, index++, progressUpdated: (e) =>
                     {
-                        Console.Write($"\r{Path.GetFileName(file)} {e.PercentComplete}%");
+                        var key = (e.Username, e.Filename, e.Token);
+                        Downloads.TryGetValue(key, out var download);
+
+                        download.ProgressBar.Value = (int)e.PercentComplete;
+
+                        Console.Write($"\r{Path.GetFileName(file)} {download.ProgressBar} {e.PercentComplete.ToString("N0")}%");
                     }).ConfigureAwait(false);
 
                     var path = Path.Combine(OutputDirectory, Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), ""));
@@ -186,7 +196,7 @@
 
                     Console.WriteLine($"Bytes received: {bytes.Length}; writing to file {filename}...");
                     System.IO.File.WriteAllBytes(filename, bytes);
-                    Console.WriteLine("Download complete!");
+                    Console.Write("\r");
                 }
                 catch (Exception ex)
                 {
