@@ -585,6 +585,13 @@ namespace Soulseek.NET
                 DownloadStateChanged?.Invoke(this, args);
             }
 
+            void updateProgress(int currentLength)
+            {
+                var eventArgs = new DownloadProgressUpdatedEventArgs(download, currentLength);
+                progressUpdated?.Invoke(eventArgs);
+                DownloadProgressUpdated?.Invoke(this, eventArgs);
+            }
+
             try
             {
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
@@ -642,13 +649,7 @@ namespace Soulseek.NET
 
                 download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
 
-                download.Connection.DataRead += (sender, e) =>
-                {
-                    var eventArgs = new DownloadProgressUpdatedEventArgs(download, e.CurrentLength);
-                    progressUpdated?.Invoke(eventArgs);
-                    DownloadProgressUpdated?.Invoke(this, eventArgs);
-                };
-
+                download.Connection.DataRead += (sender, e) => updateProgress(e.CurrentLength);
                 download.Connection.Disconnected += (sender, message) =>
                 {
                     if (download.State.HasFlag(DownloadStates.Succeeded))
@@ -685,7 +686,6 @@ namespace Soulseek.NET
                 }
                 catch (Exception ex)
                 {
-                    updateState(DownloadStates.Completed | download.State);
                     download.Connection.Disconnect(ex.Message);
                 }
 
@@ -724,7 +724,12 @@ namespace Soulseek.NET
                 QueuedDownloads.TryRemove(download.Token, out var _);
                 ActiveDownloads.TryRemove(download.RemoteToken, out var _);
 
-                updateState(DownloadStates.Completed | download.State);
+                // change state so we can fire the progress update a final time with the updated state
+                // little bit of a hack to avoid cloning the download
+                download.State = DownloadStates.Completed | download.State;
+                updateProgress(download.Data?.Length ?? 0);
+
+                updateState(download.State);
             }
         }
 
