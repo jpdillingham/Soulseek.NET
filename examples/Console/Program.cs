@@ -15,7 +15,7 @@
     using System.Threading.Tasks;
     using System.Timers;
 
-    public class Program
+    public static class Program
     {
         private static readonly Action<string> o = (s) => Console.WriteLine(s);
 
@@ -92,17 +92,22 @@
 
                     var response = SelectSearchResponse(responses);
 
+                    o($"\nDownloading {response.Files.Count()} files from {Username}...\n");
+
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
-                    var file = new FileInfo(Path.Combine(OutputDirectory, "search", $"{Search}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
-                    file.Directory.Create();
-                    System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(responses));
+                    o($"Download{(response.Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
                 }
                 if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
                 {
                     await ConnectAndLogin(client);
 
+
+                    o($"\nDownloading {Files.Count()} files from {Username}...\n");
+
                     await DownloadFilesAsync(client, Download, Files);
+
+                    o($"Download{(Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
                 }
                 else if (!string.IsNullOrEmpty(Browse))
                 {
@@ -132,6 +137,8 @@
                         .ThenByDescending(r => r.UploadSpeed);
 
                     var response = SelectSearchResponse(responses);
+                    
+                    o($"Downloading {response.Files.Count()} files from {Username}...\n");
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
                 }
@@ -189,21 +196,18 @@
 
                         download.State = e.State;
                         download.ProgressBar.Value = (int)e.PercentComplete;
-                        Downloads.AddOrUpdate(key, download, (k, v) => download);
 
                         var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(DownloadStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
+
+                        Downloads.AddOrUpdate(key, download, (k, v) => download);
 
                         var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename).Length);
                         var fn = Path.GetFileName(e.Filename).PadRight(longest);
 
-                        var completed = e.State.HasFlag(DownloadStates.Completed);
+                        var size = $"{e.BytesDownloaded.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
+                        var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
-                        var spinner = completed ? download.Spinner.Format.Complete.ToString() : download.Spinner.ToString();
-                        var progress = !completed ? download.ProgressBar.ToString() : new string(' ', 10);
-
-                        var stats = $"{e.BytesDownloaded}/{e.Size} ({e.PercentComplete.ToString("N0")}%)";
-
-                        Console.Write($"\r  {download.Spinner}  {fn}  {download.ProgressBar} {stats}  [{status}]");
+                        Console.Write($"\r  {download.Spinner}  {fn}  {download.ProgressBar}  {size}  {percent}  [{status}]");
 
                     }).ConfigureAwait(false);
 
@@ -256,7 +260,7 @@
 
                 foreach (var file in directories[key])
                 {
-                    o($"  {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToString().PadRight(10)}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
+                    o($"  {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToMB()}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
                 }
             }
         }
@@ -467,6 +471,16 @@
 
                 index++;
             } while (true);
+        }
+
+        public static string ToMB(this long size)
+        {
+            return $"{(size / (double)1000000).ToString("N2")}MB";
+        }
+
+        public static string ToMB(this int size)
+        {
+            return ((long)size).ToMB();
         }
     }
 }
