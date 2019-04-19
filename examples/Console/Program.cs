@@ -140,6 +140,8 @@
                     o($"Downloading {response.Files.Count()} files from {Username}...\n");
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
+
+                    o($"\nDownload{(response.Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
                 }
 
                 client.StateChanged -= Client_ServerStateChanged;
