@@ -92,22 +92,21 @@
 
                     var response = SelectSearchResponse(responses);
 
-                    o($"\nDownloading {response.Files.Count()} files from {Username}...\n");
+                    o($"\nDownloading {response.Files.Count()} files from {response.Username}...\n");
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
-                    o($"Download{(response.Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
+                    o($"\nDownload{(response.Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
                 }
                 if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
                 {
                     await ConnectAndLogin(client);
 
-
-                    o($"\nDownloading {Files.Count()} files from {Username}...\n");
+                    o($"\nDownloading {Files.Count()} files from {Download}...\n");
 
                     await DownloadFilesAsync(client, Download, Files);
 
-                    o($"Download{(Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
+                    o($"\nDownload{(Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
                 }
                 else if (!string.IsNullOrEmpty(Browse))
                 {
@@ -207,7 +206,7 @@
                         var size = $"{e.BytesDownloaded.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
                         var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
-                        Console.Write($"\r  {download.Spinner}  {fn}  {download.ProgressBar}  {size}  {percent}  [{status}]");
+                        Console.Write($"\r {download.Spinner}  {fn}  {size}  {percent}  [{status}]  {download.ProgressBar}");
 
                     }).ConfigureAwait(false);
 
@@ -260,7 +259,7 @@
 
                 foreach (var file in directories[key])
                 {
-                    o($"  {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToMB()}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
+                    o($"    {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToMB().PadLeft(7)}  {$"{file.BitRate}kbps".PadLeft(9)}  {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss").PadLeft(7)}");
                 }
             }
         }
@@ -450,7 +449,13 @@
             {
                 var response = responses.ToList()[index];
 
-                o($"\nUser: {response.Username}, Upload speed: {response.UploadSpeed}, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}");
+                var cnt = $"Response {index + 1}/{responses.Count()}";
+                var res = $"User: {response.Username}, Upload speed: {response.UploadSpeed.ToKB()}/s, Free upload slots: {response.FreeUploadSlots}, Queue length: {response.QueueLength}";
+
+                o($"\n┌{new string('─', res.Length - 29)} ──────── ──      ─ ─");
+                o($"│ {cnt}");
+                o($"│ {res} │");
+                o($"└{new string('─', res.Length - 19)}  ───── ─── ─     ─ ─┘");
 
                 var directories = response.Files
                     .GroupBy(f => Path.GetDirectoryName(f.Filename))
@@ -471,6 +476,11 @@
 
                 index++;
             } while (true);
+        }
+
+        public static string ToKB(this int size)
+        {
+            return $"{(size / (double)1000).ToString("N2")}KB";
         }
 
         public static string ToMB(this long size)
