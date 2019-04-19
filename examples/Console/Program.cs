@@ -42,8 +42,8 @@
         [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
 
-        private static ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, ProgressBar ProgressBar)> Downloads { get; set; } 
-            = new ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, ProgressBar ProgressBar)>();
+        private static ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)> Downloads { get; set; } 
+            = new ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)>();
 
         [Argument('s', "search")]
         private static string Search { get; set; }
@@ -100,8 +100,7 @@
                 }
                 if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
                 {
-                    await client.ConnectAsync();
-                    await client.LoginAsync(Username, Password);
+                    await ConnectAndLogin(client);
 
                     await DownloadFilesAsync(client, Download, Files);
                 }
@@ -136,6 +135,10 @@
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
                 }
+
+                client.StateChanged -= Client_ServerStateChanged;
+                client.DiagnosticGenerated -= Client_DiagnosticMessageGenerated;
+                client.PrivateMessageReceived -= Client_PrivateMessageReceived;
             }
         }
 
@@ -153,7 +156,7 @@
         {
             if (e.State == SoulseekClientStates.Disconnected)
             {
-                o("Disconnected" + (!string.IsNullOrEmpty(e.Message) ? $": {e.Message}" : string.Empty ));
+                o("\n×  Disconnected from server" + (!string.IsNullOrEmpty(e.Message) ? $": {e.Message}" : "." ));
             }
         }
 
@@ -165,35 +168,46 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, index++, stateChanged: (e) => 
+                    var bytes = await client.DownloadAsync(username, file, index++, stateChanged: (e) =>
                     {
                         var key = (e.Username, e.Filename, e.Token);
-                        var download = Downloads.GetOrAdd(key, (e.State, new ProgressBar(10)));
+                        var download = Downloads.GetOrAdd(key, (e.State, null, new ProgressBar(10)));
                         download.State = e.State;
-
+                        download.ProgressBar = new ProgressBar(10, format: new ProgressBarFormat(left: "[", right: "]", full: '=', tip: '>', empty: ' ', emptyWhen: () => Downloads[key].State.HasFlag(DownloadStates.Completed)));
+                        download.Spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => Downloads[key].State.HasFlag(DownloadStates.Completed)));
+                        
                         Downloads.AddOrUpdate(key, download, (k, v) => download);
 
                         if (download.State.HasFlag(DownloadStates.Completed))
                         {
-                            o(string.Empty);
+                            o(string.Empty); // new line
                         }
                     }, progressUpdated: (e) =>
                     {
                         var key = (e.Username, e.Filename, e.Token);
                         Downloads.TryGetValue(key, out var download);
+
+                        download.State = e.State;
                         download.ProgressBar.Value = (int)e.PercentComplete;
+                        Downloads.AddOrUpdate(key, download, (k, v) => download);
 
                         var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(DownloadStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
 
-                        var longest = Downloads.Max(d => d.Key.Filename.Length);
+                        var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename).Length);
                         var fn = Path.GetFileName(e.Filename).PadRight(longest);
+
+                        var completed = e.State.HasFlag(DownloadStates.Completed);
+
+                        var spinner = completed ? download.Spinner.Format.Complete.ToString() : download.Spinner.ToString();
+                        var progress = !completed ? download.ProgressBar.ToString() : new string(' ', 10);
 
                         var stats = $"{e.BytesDownloaded}/{e.Size} ({e.PercentComplete.ToString("N0")}%)";
 
-                        Console.Write($"\r[{status}]  {fn}  {download.ProgressBar}  {stats}");
+                        Console.Write($"\r  {download.Spinner}  {fn}  {download.ProgressBar} {stats}  [{status}]");
+
                     }).ConfigureAwait(false);
 
-                    var path = Path.Combine(OutputDirectory, Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), ""));
+                    var path = $"{OutputDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "")}";
 
                     if (!System.IO.Directory.Exists(path))
                     {
@@ -226,7 +240,7 @@
 
                 foreach (var track in disc.Tracks)
                 {
-                    o($"   {track.Position.ToString("D2")}  {track.Title.PadRight(longest)}  {TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"m\:ss")}");
+                    o($"  {track.Position.ToString("D2")}  {track.Title.PadRight(longest)}  {TimeSpan.FromMilliseconds(track.Length ?? 0).ToString(@"m\:ss")}");
                 }
             }
         }
@@ -242,7 +256,7 @@
 
                 foreach (var file in directories[key])
                 {
-                    o($"   {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToString().PadRight(10)}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
+                    o($"  {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToString().PadRight(10)}  {file.BitRate}kbps, {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss")}");
                 }
             }
         }
@@ -260,7 +274,7 @@
 
             void updateStatus()
             {
-                Console.Write($"\r{spinner} {(complete ? "Search complete." : $"[{state}] Searching for '{searchText}':")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
+                Console.Write($"\r{spinner}  {(complete ? "Search complete." : $"Searching for '{searchText}':")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
             }
 
             timer.Start();
@@ -270,6 +284,7 @@
                     filterResponses: true,
                     minimumResponseFileCount: minimumFileCount,
                     filterFiles: true,
+                    searchTimeout: 5,
                     ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
                 ), 
                 stateChanged: (e) => state = e.State,
@@ -452,10 +467,6 @@
 
                 index++;
             } while (true);
-        }
-
-        private static void SubscribeEvents(SoulseekClient client)
-        {
         }
     }
 }
