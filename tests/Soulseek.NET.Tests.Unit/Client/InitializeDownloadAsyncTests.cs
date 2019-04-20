@@ -59,7 +59,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         //    var waiter = new Mock<IWaiter>();
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, waiter: waiter.Object, connectionFactory: connFactory.Object);
 
         //    var activeDownloads = new ConcurrentDictionary<int, Download>();
         //    var download = new Download(username, filename, token);
@@ -88,7 +88,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         //    var waiter = new Mock<IWaiter>();
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, waiter: waiter.Object, connectionFactory: connFactory.Object);
 
         //    var activeDownloads = new ConcurrentDictionary<int, Download>();
         //    var download = new Download(username, filename, token);
@@ -122,7 +122,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         //    var waiter = new Mock<IWaiter>();
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, null, messageWaiter: waiter.Object, connectionFactory: connFactory.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, null, waiter: waiter.Object, connectionFactory: connFactory.Object);
 
         //    var activeDownloads = new ConcurrentDictionary<int, Download>();
         //    var download = new Download(username, filename, token);

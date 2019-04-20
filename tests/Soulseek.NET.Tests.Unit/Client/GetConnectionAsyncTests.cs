@@ -38,7 +38,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
         //        .Returns(Task.CompletedTask);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object, serverConnection: conn.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object);
 
         //    ConnectionKey result = null;
         //    var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<ConnectionKey>>("GetPeerConnectionKeyAsync", username, CancellationToken.None));
@@ -159,7 +159,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         //    serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
         //        .Returns(Task.CompletedTask);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, messageWaiter: waiter.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, waiter: waiter.Object);
 
         //    var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", name, options, CancellationToken.None);
 
@@ -185,7 +185,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         //    pcm.Setup(m => m.Get(It.IsAny<ConnectionKey>()))
         //        .Returns(existingConn);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: pcm.Object, messageWaiter: waiter.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, peerConnectionManager: pcm.Object, waiter: waiter.Object);
 
         //    var conn = await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", username, options, CancellationToken.None);
 
@@ -220,7 +220,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         //    serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
         //        .Returns(Task.CompletedTask);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, peerConnectionManager: pcm.Object, messageWaiter: waiter.Object);
+        //    var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, peerConnectionManager: pcm.Object, waiter: waiter.Object);
 
         //    await s.InvokeMethod<Task<IMessageConnection>>("GetUnsolicitedPeerConnectionAsync", username, new ConnectionOptions(), CancellationToken.None);
 

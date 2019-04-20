@@ -61,7 +61,7 @@ namespace Soulseek.NET
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="connectionManager">The IConnectionManager instance to use.</param>
-        /// <param name="messageWaiter">The IWaiter instance to use.</param>
+        /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory to use.</param>
         internal SoulseekClient(
@@ -70,7 +70,7 @@ namespace Soulseek.NET
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IConnectionManager connectionManager = null,
-            IWaiter messageWaiter = null,
+            IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
@@ -79,7 +79,7 @@ namespace Soulseek.NET
 
             Options = options ?? new SoulseekClientOptions();
 
-            Waiter = Waiter ?? new Waiter(Options.MessageTimeout);
+            Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 

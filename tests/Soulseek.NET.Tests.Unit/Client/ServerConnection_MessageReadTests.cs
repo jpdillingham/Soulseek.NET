@@ -89,7 +89,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(port)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("ServerConnection_MessageRead", null, message);
 
@@ -180,7 +180,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(value)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
@@ -207,7 +207,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteBytes(ipBytes)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
@@ -234,7 +234,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("ServerConnection_MessageRead", null, builder.Build());
 
@@ -265,7 +265,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var msg = builder.Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
