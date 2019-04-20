@@ -28,6 +28,7 @@ namespace Soulseek.NET
     public sealed class Search : IDisposable
     {
         private int resultFileCount = 0;
+        private int resultCount = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Search"/> class.
@@ -113,6 +114,7 @@ namespace Soulseek.NET
                     return;
                 }
 
+                Interlocked.Increment(ref resultCount);
                 Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
 
                 ResponseBag.Add(fullResponse);
@@ -120,7 +122,11 @@ namespace Soulseek.NET
                 ResponseReceived?.Invoke(fullResponse);
                 SearchTimeoutTimer.Reset();
 
-                if (resultFileCount >= Options.FileLimit)
+                if (resultCount >= Options.ResponseLimit)
+                {
+                    Complete(SearchStates.ResponseLimitReached);
+                }
+                else if (resultFileCount >= Options.FileLimit)
                 {
                     Complete(SearchStates.FileLimitReached);
                 }
