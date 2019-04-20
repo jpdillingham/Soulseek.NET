@@ -22,6 +22,7 @@ namespace Soulseek.NET.Tests.Unit
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Defaults(
             int searchTimeout,
+            int responseLimit,
             int fileLimit,
             bool filterResponses,
             int minimumResponseFileCount,
@@ -40,6 +41,7 @@ namespace Soulseek.NET.Tests.Unit
         {
             var o = new SearchOptions(
                 searchTimeout,
+                responseLimit,
                 fileLimit,
                 filterResponses,
                 minimumResponseFileCount,
@@ -57,6 +59,7 @@ namespace Soulseek.NET.Tests.Unit
                 includeVariableBitRate);
 
             Assert.Equal(searchTimeout, o.SearchTimeout);
+            Assert.Equal(responseLimit, o.ResponseLimit);
             Assert.Equal(fileLimit, o.FileLimit);
             Assert.Equal(filterResponses, o.FilterResponses);
             Assert.Equal(minimumResponseFileCount, o.MinimumResponseFileCount);
