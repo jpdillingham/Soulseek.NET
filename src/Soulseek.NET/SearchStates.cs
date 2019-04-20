@@ -46,7 +46,7 @@ namespace Soulseek.NET
         Cancelled = 8,
 
         /// <summary>
-        ///     Completed due to the timeout value specified in search options having been reached.
+        ///     Completed due to the timeout value specified in <see cref="SearchOptions"/> having been reached.
         /// </summary>
         /// <remarks>
         ///     The timeout duration is from the time of the last response.
@@ -54,13 +54,18 @@ namespace Soulseek.NET
         TimedOut = 16,
 
         /// <summary>
-        ///     Completed due to the file limit specified in search options having been reached.
+        ///     Completed due to the response limit specified in <see cref="SearchOptions"/> having been reached.
         /// </summary>
-        FileLimitReached = 32,
+        ResponseLimitReached = 32,
+
+        /// <summary>
+        ///     Completed due to the file limit specified in <see cref="SearchOptions"/> having been reached.
+        /// </summary>
+        FileLimitReached = 64,
 
         /// <summary>
         ///     Completed due to error.
         /// </summary>
-        Errored = 64,
+        Errored = 128,
     }
 }

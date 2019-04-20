@@ -24,12 +24,17 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="SearchOptions"/> class.
         /// </summary>
         /// <param name="searchTimeout">The search timeout value, in seconds, used to determine when the search is complete.</param>
-        /// <param name="fileLimit">The maximum number of search results to accept before the search is considered complete.</param>
+        /// <param name="responseLimit">The maximum number of search results to accept before the search is considered completed.</param>
+        /// <param name="fileLimit">The maximum number of file results to accept before the search is considered complete.</param>
         /// <param name="filterResponses">A value indicating whether responses are to be filtered.</param>
         /// <param name="minimumResponseFileCount">The minimum number of files a response must contain in order to be processed.</param>
-        /// <param name="minimumPeerFreeUploadSlots">The minimum number of free upload slots a peer must have in order for a response to be processed.</param>
-        /// <param name="maximumPeerQueueLength">The maximum queue depth a peer may have in order for a response to be processed. </param>
-        /// <param name="minimumPeerUploadSpeed">The minimum upload speed a peer must have in order for a response to be processed.</param>
+        /// <param name="minimumPeerFreeUploadSlots">
+        ///     The minimum number of free upload slots a peer must have in order for a response to be processed.
+        /// </param>
+        /// <param name="maximumPeerQueueLength">The maximum queue depth a peer may have in order for a response to be processed.</param>
+        /// <param name="minimumPeerUploadSpeed">
+        ///     The minimum upload speed a peer must have in order for a response to be processed.
+        /// </param>
         /// <param name="ignoredFileExtensions">A list of ignored file extensions.</param>
         /// <param name="filterFiles">A value indicating whether files are to be filtered.</param>
         /// <param name="minimumFileBitRate">The minimum file bitrate.</param>
@@ -41,6 +46,7 @@ namespace Soulseek.NET
         /// <param name="includeVariableBitRate">A value indicating whether variable bit rate files are to be included.</param>
         public SearchOptions(
             int searchTimeout = 15,
+            int responseLimit = 100,
             int fileLimit = 10000,
             bool filterResponses = true,
             int minimumResponseFileCount = 1,
@@ -58,6 +64,7 @@ namespace Soulseek.NET
             bool includeVariableBitRate = true)
         {
             SearchTimeout = searchTimeout;
+            ResponseLimit = responseLimit;
             FileLimit = fileLimit;
             FilterResponses = filterResponses;
             MinimumResponseFileCount = minimumResponseFileCount;
@@ -76,17 +83,14 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Gets the search timeout value, in seconds, used to determine when the search is complete. (Default = 15).
-        /// </summary>
-        /// <remarks>
-        ///     The timeout duration is from the time of the last response.
-        /// </remarks>
-        public int SearchTimeout { get; }
-
-        /// <summary>
-        ///     Gets the maximum number of search results to accept before the search is considered complete. (Default = 10,000).
+        ///     Gets the maximum number of file results to accept before the search is considered complete. (Default = 10,000).
         /// </summary>
         public int FileLimit { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether files are to be filtered. (Default = false).
+        /// </summary>
+        public bool FilterFiles { get; }
 
         /// <summary>
         ///     Gets a value indicating whether responses are to be filtered. (Default = true).
@@ -94,68 +98,74 @@ namespace Soulseek.NET
         public bool FilterResponses { get; }
 
         /// <summary>
+        ///     Gets a list of ignored file extensions. (Default = empty).
+        /// </summary>
+        public IReadOnlyCollection<string> IgnoredFileExtensions { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether constant bit rate files are to be included. (Default = true).
+        /// </summary>
+        public bool IncludeConstantBitRate { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether variable bit rate files are to be included. (Default = true).
+        /// </summary>
+        public bool IncludeVariableBitRate { get; }
+
+        /// <summary>
+        ///     Gets the maximum queue depth a peer may have in order for a response to be processed. (Default = 1000000).
+        /// </summary>
+        public int MaximumPeerQueueLength { get; }
+
+        /// <summary>
+        ///     Gets the minimum file bit depth. (Default = 0).
+        /// </summary>
+        public int MinimumFileBitDepth { get; }
+
+        /// <summary>
+        ///     Gets the minimum file bitrate. (Default = 128).
+        /// </summary>
+        public int MinimumFileBitRate { get; }
+
+        /// <summary>
+        ///     Gets the minimum file length, in seconds. (Default = 0).
+        /// </summary>
+        public int MinimumFileLength { get; }
+
+        /// <summary>
+        ///     Gets the minimum file sample rate. (Default = 0).
+        /// </summary>
+        public int MinimumFileSampleRate { get; }
+
+        /// <summary>
+        ///     Gets the minimum file size. (Default = 0).
+        /// </summary>
+        public int MinimumFileSize { get; }
+
+        /// <summary>
+        ///     Gets the minimum number of free upload slots a peer must have in order for a response to be processed. (Default = 0).
+        /// </summary>
+        public int MinimumPeerFreeUploadSlots { get; }
+
+        /// <summary>
+        ///     Gets the minimum upload speed a peer must have in order for a response to be processed. (Default = 0).
+        /// </summary>
+        public int MinimumPeerUploadSpeed { get; }
+
+        /// <summary>
         ///     Gets the minimum number of files a response must contain in order to be processed. (Default = 1).
         /// </summary>
         public int MinimumResponseFileCount { get; }
 
         /// <summary>
-        ///     Gets the minimum number of free upload slots a peer must have in order for a response to be processed.  (Default = 0).
+        ///     Gets the maximum number of search results to accept before the search is considered complete. (Default = 100).
         /// </summary>
-        public int MinimumPeerFreeUploadSlots { get; }
+        public int ResponseLimit { get; }
 
         /// <summary>
-        ///     Gets the maximum queue depth a peer may have in order for a response to be processed.  (Default = 1000000).
+        ///     Gets the search timeout value, in seconds, used to determine when the search is complete. (Default = 15).
         /// </summary>
-        public int MaximumPeerQueueLength { get; }
-
-        /// <summary>
-        ///     Gets the minimum upload speed a peer must have in order for a response to be processed.  (Default = 0).
-        /// </summary>
-        public int MinimumPeerUploadSpeed { get; }
-
-        /// <summary>
-        ///     Gets a list of ignored file extensions.  (Default = empty).
-        /// </summary>
-        public IReadOnlyCollection<string> IgnoredFileExtensions { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether files are to be filtered.  (Default = false).
-        /// </summary>
-        public bool FilterFiles { get; }
-
-        /// <summary>
-        ///     Gets the minimum file bitrate.  (Default = 128).
-        /// </summary>
-        public int MinimumFileBitRate { get; }
-
-        /// <summary>
-        ///     Gets the minimum file size.  (Default = 0).
-        /// </summary>
-        public int MinimumFileSize { get; }
-
-        /// <summary>
-        ///     Gets the minimum file length, in seconds.  (Default = 0).
-        /// </summary>
-        public int MinimumFileLength { get; }
-
-        /// <summary>
-        ///     Gets the minimum file sample rate.  (Default = 0).
-        /// </summary>
-        public int MinimumFileSampleRate { get; }
-
-        /// <summary>
-        ///     Gets the minimum file bit depth.  (Default = 0).
-        /// </summary>
-        public int MinimumFileBitDepth { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether constant bit rate files are to be included.  (Default = true).
-        /// </summary>
-        public bool IncludeConstantBitRate { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether variable bit rate files are to be included.  (Default = true).
-        /// </summary>
-        public bool IncludeVariableBitRate { get; }
+        /// <remarks>The timeout duration is from the time of the last response.</remarks>
+        public int SearchTimeout { get; }
     }
 }
