@@ -212,6 +212,10 @@
 
                     }).ConfigureAwait(false);
 
+                    // GetDirectoryName() and GetFileName() only work when the path separator is the same as the current OS' DirectorySeparatorChar.
+                    // normalize for both Windows and Linux by replacing / and \ with Path.DirectorySeparatorChar.
+                    file = file.ToLocalOSPath();
+
                     var path = $"{OutputDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(file).Replace(Path.GetDirectoryName(Path.GetDirectoryName(file)), "")}";
 
                     if (!System.IO.Directory.Exists(path))
@@ -493,6 +497,11 @@
         public static string ToMB(this int size)
         {
             return ((long)size).ToMB();
+        }
+
+        public static string ToLocalOSPath(this string path) 
+        {
+            return path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
         }
     }
 }
