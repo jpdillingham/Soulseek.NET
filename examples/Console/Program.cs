@@ -96,7 +96,7 @@
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
-                    o($"\nDownload{(response.Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
+                    o($"\nDownload{(response.Files.Count() > 1 ? "s" : string.Empty)} complete.");
                 }
                 if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
                 {
@@ -106,7 +106,7 @@
 
                     await DownloadFilesAsync(client, Download, Files);
 
-                    o($"\nDownload{(Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
+                    o($"\nDownload{(Files.Count() > 1 ? "s" : string.Empty)} complete.");
                 }
                 else if (!string.IsNullOrEmpty(Browse))
                 {
@@ -141,7 +141,7 @@
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
-                    o($"\nDownload{(response.Files.Count() > 1 ? "(s)" : string.Empty)} complete.");
+                    o($"\nDownload{(response.Files.Count() > 1 ? "s" : string.Empty)} complete.");
                 }
 
                 client.StateChanged -= Client_ServerStateChanged;
@@ -261,7 +261,7 @@
                 var key = directories.Keys.ToList()[i];
                 o($"\n{(i + 1)}.  {key}\n");
 
-                var longest = directories[key].Max(f => Path.GetFileName(f.Filename).Length);
+                var longest = directories[key].Max(f => Path.GetFileName(f.Filename.ToLocalOSPath()).Length);
 
                 foreach (var file in directories[key])
                 {
