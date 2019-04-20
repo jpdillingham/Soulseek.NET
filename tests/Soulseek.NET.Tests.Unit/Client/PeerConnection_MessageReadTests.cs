@@ -102,7 +102,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var msg = new PeerTransferResponse(token, allowed, fileSize, message).ToMessage();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
@@ -125,7 +125,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var msg = new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
@@ -154,7 +154,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Compress()
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
@@ -179,7 +179,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Code(MessageCode.PeerBrowseResponse)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
@@ -219,7 +219,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Compress()
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             var ex = Record.Exception(() => s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg));
 
@@ -259,7 +259,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Compress()
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             var search = new Search("foo", token)
             {

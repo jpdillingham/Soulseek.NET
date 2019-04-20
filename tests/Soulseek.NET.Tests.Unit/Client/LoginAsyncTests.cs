@@ -94,7 +94,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
             s.SetProperty("State", SoulseekClientStates.Connected);
 
             await s.LoginAsync(user, password);
@@ -113,7 +113,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
             s.SetProperty("State", SoulseekClientStates.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
@@ -134,7 +134,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
             s.SetProperty("State", SoulseekClientStates.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
@@ -154,7 +154,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Exception>(new ConnectionWriteException()));
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, messageWaiter: waiter.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
             s.SetProperty("State", SoulseekClientStates.Connected);
 
             var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
