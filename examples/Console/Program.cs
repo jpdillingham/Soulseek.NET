@@ -92,7 +92,7 @@
 
                     var response = SelectSearchResponse(responses);
 
-                    o($"\nDownloading {response.Files.Count()} files from {response.Username}...\n");
+                    o($"\nDownloading {response.Files.Count()} file{(response.Files.Count() > 1 ? "s" : string.Empty)} from {response.Username}...\n");
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
@@ -102,7 +102,7 @@
                 {
                     await ConnectAndLogin(client);
 
-                    o($"\nDownloading {Files.Count()} files from {Download}...\n");
+                    o($"\nDownloading {Files.Count()} file{(Files.Count() > 1 ? "s" : string.Empty)} from {Download}...\n");
 
                     await DownloadFilesAsync(client, Download, Files);
 
@@ -137,7 +137,7 @@
 
                     var response = SelectSearchResponse(responses);
                     
-                    o($"Downloading {response.Files.Count()} files from {Username}...\n");
+                    o($"\nDownloading {response.Files.Count()} file{(response.Files.Count() > 1 ? "s" : string.Empty)} from {response.Username}...\n");
 
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
@@ -202,8 +202,8 @@
 
                         Downloads.AddOrUpdate(key, download, (k, v) => download);
 
-                        var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename).Length);
-                        var fn = Path.GetFileName(e.Filename).PadRight(longest);
+                        var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename.ToLocalOSPath()).Length);
+                        var fn = Path.GetFileName(e.Filename.ToLocalOSPath()).PadRight(longest);
 
                         var size = $"{e.BytesDownloaded.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
                         var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
@@ -265,7 +265,8 @@
 
                 foreach (var file in directories[key])
                 {
-                    o($"    {Path.GetFileName(file.Filename).PadRight(longest)}  {file.Size.ToMB().PadLeft(7)}  {$"{file.BitRate}kbps".PadLeft(9)}  {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss").PadLeft(7)}");
+                    var filename = file.Filename.ToLocalOSPath();
+                    o($"    {Path.GetFileName(filename).PadRight(longest)}  {file.Size.ToMB().PadLeft(7)}  {$"{file.BitRate}kbps".PadLeft(9)}  {TimeSpan.FromSeconds(file.Length ?? 0).ToString(@"m\:ss").PadLeft(7)}");
                 }
             }
         }
@@ -482,26 +483,6 @@
 
                 index++;
             } while (true);
-        }
-
-        public static string ToKB(this int size)
-        {
-            return $"{(size / (double)1000).ToString("N2")}KB";
-        }
-
-        public static string ToMB(this long size)
-        {
-            return $"{(size / (double)1000000).ToString("N2")}MB";
-        }
-
-        public static string ToMB(this int size)
-        {
-            return ((long)size).ToMB();
-        }
-
-        public static string ToLocalOSPath(this string path) 
-        {
-            return path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
         }
     }
 }
