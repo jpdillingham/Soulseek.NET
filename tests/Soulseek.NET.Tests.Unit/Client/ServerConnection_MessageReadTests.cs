@@ -331,12 +331,10 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
 
             var ex = Record.Exception(() => s.InvokeMethod("ServerConnection_MessageRead", null, msg));
-            var active = s.GetProperty<ConcurrentDictionary<int, Download>>("ActiveDownloads");
-            var queued = s.GetProperty<ConcurrentDictionary<int, Download>>("QueuedDownloads");
+            var active = s.GetProperty<ConcurrentDictionary<int, Download>>("Downloads");
 
             Assert.Null(ex);
             Assert.Empty(active);
-            Assert.Empty(queued);
         }
 
         [Trait("Category", "Message")]

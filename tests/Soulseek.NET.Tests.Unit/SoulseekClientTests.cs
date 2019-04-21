@@ -156,7 +156,7 @@ namespace Soulseek.NET.Tests.Unit
             searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
             searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
 
-            s.SetProperty("ActiveSearches", searches);
+            s.SetProperty("Searches", searches);
 
             var ex = Record.Exception(() => s.Disconnect());
 
@@ -174,23 +174,17 @@ namespace Soulseek.NET.Tests.Unit
             var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
             await s.ConnectAsync();
 
-            var activeDownloads = new ConcurrentDictionary<int, Download>();
-            activeDownloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
-            activeDownloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
+            var downloads = new ConcurrentDictionary<int, Download>();
+            downloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
+            downloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
 
-            var queuedDownloads = new ConcurrentDictionary<int, Download>();
-            queuedDownloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
-            queuedDownloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
-
-            s.SetProperty("ActiveDownloads", activeDownloads);
-            s.SetProperty("QueuedDownloads", queuedDownloads);
+            s.SetProperty("Downloads", downloads);
 
             var ex = Record.Exception(() => s.Disconnect());
 
             Assert.Null(ex);
             Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-            Assert.Empty(activeDownloads);
-            Assert.Empty(queuedDownloads);
+            Assert.Empty(downloads);
         }
 
         [Trait("Category", "Disconnect")]

@@ -170,13 +170,12 @@ namespace Soulseek.NET
         /// </summary>
         public string Username { get; private set; }
 
-        private ConcurrentDictionary<int, Download> ActiveDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
+        private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private IConnectionManager ConnectionManager { get; set; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private IWaiter Waiter { get; set; }
-        private ConcurrentDictionary<int, Download> QueuedDownloads { get; set; } = new ConcurrentDictionary<int, Download>();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
 
@@ -270,10 +269,8 @@ namespace Soulseek.NET
 
             ConnectionManager?.RemoveAndDisposeAll();
 
-            ActiveSearches?.RemoveAndDisposeAll();
-
-            QueuedDownloads?.RemoveAll();
-            ActiveDownloads?.RemoveAll();
+            Searches?.RemoveAndDisposeAll();
+            Downloads?.RemoveAll();
 
             Waiter?.CancelAll();
 
@@ -352,7 +349,7 @@ namespace Soulseek.NET
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            if (QueuedDownloads.ContainsKey(token) || ActiveDownloads.Any(d => d.Value.Token == token))
+            if (Downloads.ContainsKey(token))
             {
                 throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
             }
@@ -449,7 +446,7 @@ namespace Soulseek.NET
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
             }
 
-            if (ActiveSearches.ContainsKey(token))
+            if (Searches.ContainsKey(token))
             {
                 throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
             }
@@ -598,6 +595,8 @@ namespace Soulseek.NET
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
+                Downloads.TryAdd(download.Token, download);
+
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
@@ -615,7 +614,6 @@ namespace Soulseek.NET
                 if (transferRequestAcknowledgement.Allowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
-                    ActiveDownloads.TryAdd(transferRequestAcknowledgement.Token, download);
                     updateState(DownloadStates.Initializing);
 
                     download.Size = transferRequestAcknowledgement.FileSize;
@@ -629,7 +627,6 @@ namespace Soulseek.NET
                 else
                 {
                     // the download is remotely queued, so put it in the local queue.
-                    QueuedDownloads.TryAdd(download.Token, download);
                     updateState(DownloadStates.Queued);
 
                     // wait for the peer to respond that they are ready to start the transfer
@@ -637,10 +634,6 @@ namespace Soulseek.NET
 
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
-
-                    // move the download from the local queue to active
-                    QueuedDownloads.TryRemove(download.Token, out var _);
-                    ActiveDownloads.TryAdd(download.RemoteToken, download);
                     updateState(DownloadStates.Initializing);
 
                     // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
@@ -730,16 +723,14 @@ namespace Soulseek.NET
             }
             finally
             {
-                download.Connection?.Dispose();
+                Downloads.TryRemove(download.Token, out var _);
 
-                QueuedDownloads.TryRemove(download.Token, out var _);
-                ActiveDownloads.TryRemove(download.RemoteToken, out var _);
+                download.Connection?.Dispose();
 
                 // change state so we can fire the progress update a final time with the updated state
                 // little bit of a hack to avoid cloning the download
                 download.State = DownloadStates.Completed | download.State;
                 updateProgress(download.Data?.Length ?? 0);
-
                 updateState(download.State);
             }
         }
@@ -769,11 +760,13 @@ namespace Soulseek.NET
             catch (Exception ex)
             {
                 Diagnostic.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
-                connection.Disconnect($"Failed to initialize transfer: {ex.Message}");
+                connection?.Disconnect($"Failed to initialize transfer: {ex.Message}");
                 return;
             }
 
-            if (ActiveDownloads.TryGetValue(remoteToken, out var download))
+            var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == downloadResponse.Username);
+
+            if (download != default(Download))
             {
                 Waiter.Complete(download.WaitKey, connection);
             }
@@ -817,7 +810,7 @@ namespace Soulseek.NET
                 {
                     case MessageCode.PeerSearchResponse:
                         var searchResponse = SearchResponseSlim.Parse(message);
-                        if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
+                        if (Searches.TryGetValue(searchResponse.Token, out var search))
                         {
                             search.AddResponse(searchResponse);
                         }
@@ -882,7 +875,7 @@ namespace Soulseek.NET
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
-                ActiveSearches.TryAdd(search.Token, search);
+                Searches.TryAdd(search.Token, search);
                 updateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
@@ -903,6 +896,8 @@ namespace Soulseek.NET
             }
             finally
             {
+                Searches.TryRemove(search.Token, out _);
+
                 updateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
@@ -958,7 +953,7 @@ namespace Soulseek.NET
                         {
                             // ensure that we are expecting at least one file from this user before we connect. the response
                             // doesn't contain any other identifying information about the file.
-                            if (!ActiveDownloads.IsEmpty && ActiveDownloads.Select(kvp => kvp.Value).Any(d => d.Username == connectToPeerResponse.Username))
+                            if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
                             {
                                 await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
                             }

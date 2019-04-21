@@ -81,7 +81,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-            s.SetProperty("ActiveSearches", dict);
+            s.SetProperty("Searches", dict);
 
             var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, token));
 
@@ -155,13 +155,14 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            await s.SearchAsync(searchText, token, options, null);
+            var task = s.SearchAsync(searchText, token, options, null);
 
-            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("ActiveSearches");
+            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
+
+            await task;
 
             Assert.Single(active);
-            Assert.True(active.ContainsKey(token));
-            Assert.Equal(token, active[token].Token);
+            Assert.Contains(active, kvp => kvp.Key == token);
         }
 
         [Trait("Category", "SearchAsync")]
