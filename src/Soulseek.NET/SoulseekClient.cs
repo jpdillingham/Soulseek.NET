@@ -171,7 +171,7 @@ namespace Soulseek.NET
         public string Username { get; private set; }
 
         private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private ConcurrentDictionary<int, Search> ActiveSearches { get; set; } = new ConcurrentDictionary<int, Search>();
+        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private IConnectionManager ConnectionManager { get; set; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
@@ -269,8 +269,7 @@ namespace Soulseek.NET
 
             ConnectionManager?.RemoveAndDisposeAll();
 
-            ActiveSearches?.RemoveAndDisposeAll();
-
+            Searches?.RemoveAndDisposeAll();
             Downloads?.RemoveAll();
 
             Waiter?.CancelAll();
@@ -447,7 +446,7 @@ namespace Soulseek.NET
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
             }
 
-            if (ActiveSearches.ContainsKey(token))
+            if (Searches.ContainsKey(token))
             {
                 throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
             }
@@ -724,14 +723,14 @@ namespace Soulseek.NET
             }
             finally
             {
-                download.Connection?.Dispose();
                 Downloads.TryRemove(download.Token, out var _);
+
+                download.Connection?.Dispose();
 
                 // change state so we can fire the progress update a final time with the updated state
                 // little bit of a hack to avoid cloning the download
                 download.State = DownloadStates.Completed | download.State;
                 updateProgress(download.Data?.Length ?? 0);
-
                 updateState(download.State);
             }
         }
@@ -811,7 +810,7 @@ namespace Soulseek.NET
                 {
                     case MessageCode.PeerSearchResponse:
                         var searchResponse = SearchResponseSlim.Parse(message);
-                        if (ActiveSearches.TryGetValue(searchResponse.Token, out var search))
+                        if (Searches.TryGetValue(searchResponse.Token, out var search))
                         {
                             search.AddResponse(searchResponse);
                         }
@@ -876,7 +875,7 @@ namespace Soulseek.NET
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
-                ActiveSearches.TryAdd(search.Token, search);
+                Searches.TryAdd(search.Token, search);
                 updateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
@@ -897,6 +896,8 @@ namespace Soulseek.NET
             }
             finally
             {
+                Searches.TryRemove(search.Token, out _);
+
                 updateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
