@@ -46,13 +46,24 @@ namespace Soulseek.NET
         int WaitingPeerConnections { get; }
 
         /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/>.
+        ///     Adds a new transfer <see cref="IConnection"/> and pierce the firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
         Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Adds a new transfer <see cref="IConnection"/> and send a peer init request.
+        /// </summary>
+        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
+        /// <param name="token">The transfer token.</param>
+        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        Task<IConnection> AddTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.

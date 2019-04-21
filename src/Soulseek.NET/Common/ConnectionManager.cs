@@ -77,7 +77,30 @@ namespace Soulseek.NET
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; }
 
         /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/>.
+        ///     Adds a new transfer <see cref="IConnection"/> and send a peer init request.
+        /// </summary>
+        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
+        /// <param name="token">The transfer token.</param>
+        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        public async Task<IConnection> AddTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new Connection(connectionKey.IPAddress, connectionKey.Port, options);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+
+            await connection.WriteAsync(new PeerInitRequest(localUsername, "F", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+            return connection;
+        }
+
+        /// <summary>
+        ///     Adds a new transfer <see cref="IConnection"/> and pierce the firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
