@@ -219,36 +219,36 @@ namespace Soulseek.NET.Tests.Unit.Client
             Assert.IsType<OperationCanceledException>(ex.InnerException);
         }
 
-        [Trait("Category", "DownloadInternalAsync")]
-        [Theory(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferResponse allowed"), AutoData]
-        public async Task DownloadInternalAsync_Throws_DownloadException_On_PeerTransferResponse_Allowed(string username, IPAddress ip, int port, string filename, int token, int size)
-        {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+        //[Trait("Category", "DownloadInternalAsync")]
+        //[Theory(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferResponse allowed"), AutoData]
+        //public async Task DownloadInternalAsync_Throws_DownloadException_On_PeerTransferResponse_Allowed(string username, IPAddress ip, int port, string filename, int token, int size)
+        //{
+        //    var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, true, size, string.Empty);
-            var waitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
+        //    var response = new PeerTransferResponse(token, true, size, string.Empty);
+        //    var waitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(waitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(response));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+        //    var waiter = new Mock<IWaiter>();
+        //    waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(waitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+        //        .Returns(Task.FromResult(response));
+        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
-            var conn = new Mock<IMessageConnection>();
+        //    var conn = new Mock<IMessageConnection>();
 
-            var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(conn.Object));
+        //    var connManager = new Mock<IConnectionManager>();
+        //    connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+        //        .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+        //    var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
+        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null, null));
+        //    var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, null, null, null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.Contains("unreachable", ex.Message, StringComparison.InvariantCultureIgnoreCase);
-        }
+        //    Assert.NotNull(ex);
+        //    Assert.IsType<DownloadException>(ex);
+        //    Assert.Contains("unreachable", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+        //}
 
         [Trait("Category", "DownloadInternalAsync")]
         [Theory(DisplayName = "DownloadInternalAsync throws DownloadException on PeerTransferRequest cancellation"), AutoData]
