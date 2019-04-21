@@ -678,7 +678,7 @@ namespace Soulseek.NET
 
                 try
                 {
-                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued.  
+                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued.
                     // not sure what this is; it was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
