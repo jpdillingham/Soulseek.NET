@@ -574,6 +574,7 @@ namespace Soulseek.NET
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged, Action<DownloadProgressUpdatedEventArgs> progressUpdated, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token);
+            Task<byte[]> downloadCompleted = null;
             var lastState = DownloadStates.None;
 
             void updateState(DownloadStates state)
@@ -613,41 +614,50 @@ namespace Soulseek.NET
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
-                    // in testing peers have, without exception, returned Allowed = false, Message = Queued for this request,
-                    // regardless of number of available slots and/or queue depth. this condition is likely only used when
-                    // uploading to a peer, which is not currently supported.
-                    throw new DownloadException($"A condition believed to be unreachable (PeerTransferResponseIncoming.Allowed = true) was reached.  Please report this in a GitHub issue and provide context.");
+                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
+                    ActiveDownloads.TryAdd(transferRequestAcknowledgement.Token, download);
+                    updateState(DownloadStates.Initializing);
+
+                    download.Size = transferRequestAcknowledgement.FileSize;
+                    download.RemoteToken = token;
+
+                    // also prepare a wait for the overall completion of the download
+                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
+
+                    download.Connection = await ConnectionManager.AddTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Username, Options.TransferConnectionOptions, cancellationToken).ConfigureAwait(false);
                 }
+                else
+                {
+                    // the download is remotely queued, so put it in the local queue.
+                    QueuedDownloads.TryAdd(download.Token, download);
+                    updateState(DownloadStates.Queued);
 
-                // the download is remotely queued, so put it in the local queue.
-                QueuedDownloads.TryAdd(download.Token, download);
-                updateState(DownloadStates.Queued);
+                    // wait for the peer to respond that they are ready to start the transfer
+                    var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
-                // wait for the peer to respond that they are ready to start the transfer
-                var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
+                    download.Size = transferStartRequest.FileSize;
+                    download.RemoteToken = transferStartRequest.Token;
 
-                download.Size = transferStartRequest.FileSize;
-                download.RemoteToken = transferStartRequest.Token;
+                    // move the download from the local queue to active
+                    QueuedDownloads.TryRemove(download.Token, out var _);
+                    ActiveDownloads.TryAdd(download.RemoteToken, download);
+                    updateState(DownloadStates.Initializing);
 
-                // move the download from the local queue to active
-                QueuedDownloads.TryRemove(download.Token, out var _);
-                ActiveDownloads.TryAdd(download.RemoteToken, download);
-                updateState(DownloadStates.Initializing);
+                    // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
+                    // transfer connection. this operation is somewhat indirect because we aren't sure which download an incoming
+                    // connection refers to until we connect and retrieve the token.
+                    var transferConnectionInitialized = Waiter.Wait<IConnection>(download.WaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
 
-                // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
-                // transfer connection. this operation is somewhat indirect because we aren't sure which download an incoming
-                // connection refers to until we connect and retrieve the token.
-                var transferConnectionInitialized = Waiter.Wait<IConnection>(download.WaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
+                    // also prepare a wait for the overall completion of the download
+                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
-                // also prepare a wait for the overall completion of the download
-                var downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
+                    // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its cached
+                    // in the manager) to the peer in case it disconnected and was purged while we were waiting.
+                    peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its cached
-                // in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
-                await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
-
-                download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
+                    download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
+                }
 
                 download.Connection.DataRead += (sender, e) => updateProgress(e.CurrentLength);
                 download.Connection.Disconnected += (sender, message) =>
@@ -668,8 +678,9 @@ namespace Soulseek.NET
 
                 try
                 {
-                    // write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
-                    await download.Connection.WriteAsync(new byte[8], cancellationToken).ConfigureAwait(false);
+                    // (deprecated comment) write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
+                    // this needs to be 16 bytes for transfers beginning immediately.
+                    await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
                     updateState(DownloadStates.InProgress);
 
