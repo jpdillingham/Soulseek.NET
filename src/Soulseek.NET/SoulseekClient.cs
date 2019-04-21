@@ -678,8 +678,8 @@ namespace Soulseek.NET
 
                 try
                 {
-                    // (deprecated comment) write an empty 8 byte array to initiate the transfer. not sure what this is; it was identified via WireShark.
-                    // this needs to be 16 bytes for transfers beginning immediately.
+                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued.  
+                    // not sure what this is; it was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
                     updateState(DownloadStates.InProgress);

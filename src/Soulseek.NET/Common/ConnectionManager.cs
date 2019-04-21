@@ -77,7 +77,7 @@ namespace Soulseek.NET
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; }
 
         /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/> and send a peer init request.
+        ///     Adds a new transfer <see cref="IConnection"/> and sends a peer init request.
         /// </summary>
         /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
         /// <param name="token">The transfer token.</param>
@@ -100,7 +100,7 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/> and pierce the firewall.
+        ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
