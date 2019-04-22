@@ -295,14 +295,13 @@
                     minimumResponseFileCount: minimumFileCount,
                     filterFiles: true,
                     searchTimeout: 5,
-                    ignoredFileExtensions: new string[] { "flac", "m4a", "wav" }
-                ), 
-                stateChanged: (e) => state = e.State,
-                responseReceived: (e) =>
-                {
-                    totalResponses++;
-                    totalFiles += e.Response.FileCount;
-                });
+                    ignoredFileExtensions: new string[] { "flac", "m4a", "wav" },
+                    stateChanged: (e) => state = e.State,
+                    responseReceived: (e) =>
+                    {
+                        totalResponses++;
+                        totalFiles += e.Response.FileCount;
+                    }));
 
             timer.Stop();
             complete = true;

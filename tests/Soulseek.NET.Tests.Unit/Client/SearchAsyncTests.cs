@@ -180,7 +180,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var ct = new CancellationToken(true);
 
-            var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, null, null, ct));
+            var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, ct));
 
             Assert.NotNull(ex);
             Assert.IsType<SearchException>(ex);
