@@ -59,7 +59,9 @@ namespace Soulseek.NET.Tests.Unit
                 minimumFileSampleRate,
                 minimumFileBitDepth,
                 includeConstantBitRate,
-                includeVariableBitRate);
+                includeVariableBitRate,
+                stateChanged,
+                responseReceived);
 
             Assert.Equal(searchTimeout, o.SearchTimeout);
             Assert.Equal(responseLimit, o.ResponseLimit);
