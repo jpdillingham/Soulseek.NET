@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
+    using System;
     using System.Collections.Generic;
     using AutoFixture.Xunit2;
     using Xunit;
@@ -22,41 +23,45 @@ namespace Soulseek.NET.Tests.Unit
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Defaults(
             int searchTimeout,
-            int responseLimit,
-            int fileLimit,
             bool filterResponses,
+            int responseLimit,
             int minimumResponseFileCount,
             int minimumPeerFreeUploadSlots,
             int maximumPeerQueueLength,
             int minimumPeerUploadSpeed,
-            IEnumerable<string> ignoredFileExtensions,
             bool filterFiles,
+            int fileLimit,
+            IEnumerable<string> ignoredFileExtensions,
             int minimumFileBitRate,
             int minimumFileSize,
             int minimumFileLength,
             int minimumFileSampleRate,
             int minimumFileBitDepth,
             bool includeConstantBitRate,
-            bool includeVariableBitRate)
+            bool includeVariableBitRate,
+            Action<SearchStateChangedEventArgs> stateChanged,
+            Action<SearchResponseReceivedEventArgs> responseReceived)
         {
             var o = new SearchOptions(
                 searchTimeout,
-                responseLimit,
-                fileLimit,
                 filterResponses,
+                responseLimit,
                 minimumResponseFileCount,
                 minimumPeerFreeUploadSlots,
                 maximumPeerQueueLength,
                 minimumPeerUploadSpeed,
-                ignoredFileExtensions,
                 filterFiles,
+                fileLimit,
+                ignoredFileExtensions,
                 minimumFileBitRate,
                 minimumFileSize,
                 minimumFileLength,
                 minimumFileSampleRate,
                 minimumFileBitDepth,
                 includeConstantBitRate,
-                includeVariableBitRate);
+                includeVariableBitRate,
+                stateChanged,
+                responseReceived);
 
             Assert.Equal(searchTimeout, o.SearchTimeout);
             Assert.Equal(responseLimit, o.ResponseLimit);
@@ -75,6 +80,8 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(minimumFileBitDepth, o.MinimumFileBitDepth);
             Assert.Equal(includeConstantBitRate, o.IncludeConstantBitRate);
             Assert.Equal(includeVariableBitRate, o.IncludeVariableBitRate);
+            Assert.Equal(stateChanged, o.StateChanged);
+            Assert.Equal(responseReceived, o.ResponseReceived);
         }
     }
 }

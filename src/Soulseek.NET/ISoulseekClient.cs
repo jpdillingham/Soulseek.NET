@@ -175,8 +175,6 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
-        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
@@ -186,7 +184,7 @@ namespace Soulseek.NET
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
@@ -195,8 +193,6 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
-        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
@@ -209,7 +205,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
