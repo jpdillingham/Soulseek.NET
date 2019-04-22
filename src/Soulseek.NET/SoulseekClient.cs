@@ -402,8 +402,6 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
-        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
@@ -413,9 +411,9 @@ namespace Soulseek.NET
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            return SearchAsync(searchText, TokenFactory.GetToken(), options, stateChanged, responseReceived, cancellationToken);
+            return SearchAsync(searchText, TokenFactory.GetToken(), options, cancellationToken);
         }
 
         /// <summary>
@@ -425,8 +423,6 @@ namespace Soulseek.NET
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
-        /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
         /// <exception cref="ConnectionException">
@@ -439,7 +435,7 @@ namespace Soulseek.NET
         ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
         /// </exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, Action<SearchStateChangedEventArgs> stateChanged = null, Action<SearchResponseReceivedEventArgs> responseReceived = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int token, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -463,7 +459,7 @@ namespace Soulseek.NET
 
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, token, options, stateChanged, responseReceived, cancellationToken ?? CancellationToken.None);
+            return SearchInternalAsync(searchText, token, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -852,7 +848,7 @@ namespace Soulseek.NET
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, Action<SearchStateChangedEventArgs> stateChanged, Action<SearchResponseReceivedEventArgs> responseReceived, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new Search(searchText, token, options);
             var lastState = SearchStates.None;
@@ -862,7 +858,7 @@ namespace Soulseek.NET
                 search.State = state;
                 var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
                 lastState = state;
-                stateChanged?.Invoke(args);
+                options?.StateChanged?.Invoke(args);
                 SearchStateChanged?.Invoke(this, args);
             }
 
@@ -871,7 +867,7 @@ namespace Soulseek.NET
                 search.ResponseReceived = (response) =>
                 {
                     var eventArgs = new SearchResponseReceivedEventArgs(search, response);
-                    responseReceived?.Invoke(eventArgs);
+                    options?.ResponseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
