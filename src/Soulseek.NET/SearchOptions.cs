@@ -13,7 +13,6 @@
 namespace Soulseek.NET
 {
     using System;
-    using System.Collections.Generic;
     using Soulseek.NET.Messaging.Messages;
 
     /// <summary>
@@ -25,8 +24,8 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="SearchOptions"/> class.
         /// </summary>
         /// <param name="searchTimeout">The search timeout value, in seconds, used to determine when the search is complete.</param>
-        /// <param name="filterResponses">A value indicating whether responses are to be filtered.</param>
         /// <param name="responseLimit">The maximum number of search results to accept before the search is considered completed.</param>
+        /// <param name="filterResponses">A value indicating whether responses are to be filtered.</param>
         /// <param name="minimumResponseFileCount">The minimum number of files a response must contain in order to be processed.</param>
         /// <param name="minimumPeerFreeUploadSlots">
         ///     The minimum number of free upload slots a peer must have in order for a response to be processed.
@@ -35,44 +34,26 @@ namespace Soulseek.NET
         /// <param name="minimumPeerUploadSpeed">
         ///     The minimum upload speed a peer must have in order for a response to be processed.
         /// </param>
-        /// <param name="filterFiles">A value indicating whether files are to be filtered.</param>
+        /// <param name="responseFilter">
+        ///     The function used to evaluate whether a response should be included in the search results.
+        /// </param>
         /// <param name="fileLimit">The maximum number of file results to accept before the search is considered complete.</param>
-        /// <param name="ignoredFileExtensions">A list of ignored file extensions.</param>
-        /// <param name="minimumFileBitRate">The minimum file bitrate.</param>
-        /// <param name="minimumFileSize">The minimum file size.</param>
-        /// <param name="minimumFileLength">The minimum file length, in seconds.</param>
-        /// <param name="minimumFileSampleRate">The minimum file sample rate.</param>
-        /// <param name="minimumFileBitDepth">The minimum file depth.</param>
-        /// <param name="includeConstantBitRate">A value indicating whether constant bit rate files are to be included.</param>
-        /// <param name="includeVariableBitRate">A value indicating whether variable bit rate files are to be included.</param>
+        /// <param name="fileFilter">The function used to evaluate whether a file should be included in a search response.</param>
         /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
-        /// <param name="responseFilter">
-        ///     The function used to evaluate whether a response should be included from the search results.
-        /// </param>
-        /// <param name="fileFilter">The function used to evaluate whether a file should be included from a search response.</param>
         public SearchOptions(
             int searchTimeout = 15,
-            bool filterResponses = true,
             int responseLimit = 100,
+            bool filterResponses = true,
             int minimumResponseFileCount = 1,
             int minimumPeerFreeUploadSlots = 0,
             int maximumPeerQueueLength = 1000000,
             int minimumPeerUploadSpeed = 0,
-            bool filterFiles = false,
-            int fileLimit = 10000,
-            IEnumerable<string> ignoredFileExtensions = null,
-            int minimumFileBitRate = 128,
-            int minimumFileSize = 0,
-            int minimumFileLength = 0,
-            int minimumFileSampleRate = 0,
-            int minimumFileBitDepth = 0,
-            bool includeConstantBitRate = true,
-            bool includeVariableBitRate = true,
-            Action<SearchStateChangedEventArgs> stateChanged = null,
-            Action<SearchResponseReceivedEventArgs> responseReceived = null,
             Func<SearchResponse, bool> responseFilter = null,
-            Func<File, bool> fileFilter = null)
+            int fileLimit = 10000,
+            Func<File, bool> fileFilter = null,
+            Action<SearchStateChangedEventArgs> stateChanged = null,
+            Action<SearchResponseReceivedEventArgs> responseReceived = null)
         {
             SearchTimeout = searchTimeout;
             ResponseLimit = responseLimit;
@@ -82,15 +63,6 @@ namespace Soulseek.NET
             MinimumPeerFreeUploadSlots = minimumPeerFreeUploadSlots;
             MaximumPeerQueueLength = maximumPeerQueueLength;
             MinimumPeerUploadSpeed = minimumPeerUploadSpeed;
-            IgnoredFileExtensions = new List<string>(ignoredFileExtensions ?? Array.Empty<string>()).AsReadOnly();
-            FilterFiles = filterFiles;
-            MinimumFileBitRate = minimumFileBitRate;
-            MinimumFileSize = minimumFileSize;
-            MinimumFileLength = minimumFileLength;
-            MinimumFileSampleRate = minimumFileSampleRate;
-            MinimumFileBitDepth = minimumFileBitDepth;
-            IncludeConstantBitRate = includeConstantBitRate;
-            IncludeVariableBitRate = includeVariableBitRate;
             StateChanged = stateChanged;
             ResponseReceived = responseReceived;
             ResponseFilter = responseFilter;
@@ -98,14 +70,9 @@ namespace Soulseek.NET
         }
 
         /// <summary>
-        ///     Gets the function used to evaluate whether a file should be excluded from a search response.
+        ///     Gets the function used to evaluate whether a file should be included in a search response (Default = all files included).
         /// </summary>
         public Func<File, bool> FileFilter { get; }
-
-        /// <summary>
-        ///     Gets the function used to evaluate whether a response should be excluded from the search results.
-        /// </summary>
-        public Func<SearchResponse, bool> ResponseFilter { get; }
 
         /// <summary>
         ///     Gets the maximum number of file results to accept before the search is considered complete. (Default = 10,000).
@@ -113,59 +80,14 @@ namespace Soulseek.NET
         public int FileLimit { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether files are to be filtered. (Default = false).
-        /// </summary>
-        public bool FilterFiles { get; }
-
-        /// <summary>
         ///     Gets a value indicating whether responses are to be filtered. (Default = true).
         /// </summary>
         public bool FilterResponses { get; }
 
         /// <summary>
-        ///     Gets a list of ignored file extensions. (Default = empty).
-        /// </summary>
-        public IReadOnlyCollection<string> IgnoredFileExtensions { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether constant bit rate files are to be included. (Default = true).
-        /// </summary>
-        public bool IncludeConstantBitRate { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether variable bit rate files are to be included. (Default = true).
-        /// </summary>
-        public bool IncludeVariableBitRate { get; }
-
-        /// <summary>
         ///     Gets the maximum queue depth a peer may have in order for a response to be processed. (Default = 1000000).
         /// </summary>
         public int MaximumPeerQueueLength { get; }
-
-        /// <summary>
-        ///     Gets the minimum file bit depth. (Default = 0).
-        /// </summary>
-        public int MinimumFileBitDepth { get; }
-
-        /// <summary>
-        ///     Gets the minimum file bitrate. (Default = 128).
-        /// </summary>
-        public int MinimumFileBitRate { get; }
-
-        /// <summary>
-        ///     Gets the minimum file length, in seconds. (Default = 0).
-        /// </summary>
-        public int MinimumFileLength { get; }
-
-        /// <summary>
-        ///     Gets the minimum file sample rate. (Default = 0).
-        /// </summary>
-        public int MinimumFileSampleRate { get; }
-
-        /// <summary>
-        ///     Gets the minimum file size. (Default = 0).
-        /// </summary>
-        public int MinimumFileSize { get; }
 
         /// <summary>
         ///     Gets the minimum number of free upload slots a peer must have in order for a response to be processed. (Default = 0).
@@ -181,6 +103,11 @@ namespace Soulseek.NET
         ///     Gets the minimum number of files a response must contain in order to be processed. (Default = 1).
         /// </summary>
         public int MinimumResponseFileCount { get; }
+
+        /// <summary>
+        ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all responses included).
+        /// </summary>
+        public Func<SearchResponse, bool> ResponseFilter { get; }
 
         /// <summary>
         ///     Gets the maximum number of search results to accept before the search is considered complete. (Default = 100).
