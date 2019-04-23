@@ -109,6 +109,12 @@ namespace Soulseek.NET
                 var fullResponse = new SearchResponse(slimResponse);
                 fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
 
+                // ensure the filtered file count still meets the response criteria
+                if (Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount)
+                {
+                    return;
+                }
+
                 Interlocked.Increment(ref resultCount);
                 Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
 
