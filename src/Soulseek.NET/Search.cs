@@ -114,7 +114,7 @@ namespace Soulseek.NET
                 fullResponse = new SearchResponse(fullResponse, filteredFiles);
 
                 // ensure the filtered file count still meets the response criteria
-                if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || (Options.ResponseFilter?.Invoke(fullResponse) ?? true))
+                if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
                 {
                     return;
                 }
