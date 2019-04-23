@@ -14,6 +14,7 @@ namespace Soulseek.NET
 {
     using System;
     using System.Collections.Generic;
+    using Soulseek.NET.Messaging.Messages;
 
     /// <summary>
     ///     Options for the search operation.
@@ -46,6 +47,10 @@ namespace Soulseek.NET
         /// <param name="includeVariableBitRate">A value indicating whether variable bit rate files are to be included.</param>
         /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
+        /// <param name="excludeResponse">
+        ///     The function used to evaluate whether a response should be excluded from the search results.
+        /// </param>
+        /// <param name="excludeFile">The function used to evaluate whether a file should be excluded from a search response.</param>
         public SearchOptions(
             int searchTimeout = 15,
             bool filterResponses = true,
@@ -65,7 +70,9 @@ namespace Soulseek.NET
             bool includeConstantBitRate = true,
             bool includeVariableBitRate = true,
             Action<SearchStateChangedEventArgs> stateChanged = null,
-            Action<SearchResponseReceivedEventArgs> responseReceived = null)
+            Action<SearchResponseReceivedEventArgs> responseReceived = null,
+            Func<bool, SearchResponse> excludeResponse = null,
+            Func<bool, File> excludeFile = null)
         {
             SearchTimeout = searchTimeout;
             ResponseLimit = responseLimit;
@@ -87,6 +94,16 @@ namespace Soulseek.NET
             StateChanged = stateChanged;
             ResponseReceived = responseReceived;
         }
+
+        /// <summary>
+        ///     Gets the function used to evaluate whether a file should be excluded from a search response.
+        /// </summary>
+        public Func<bool, File> ExcludeFile { get; }
+
+        /// <summary>
+        ///     Gets the function used to evaluate whether a response should be excluded from the search results.
+        /// </summary>
+        public Func<bool, SearchResponse> ExcludeResponse { get; }
 
         /// <summary>
         ///     Gets the maximum number of file results to accept before the search is considered complete. (Default = 10,000).
@@ -169,6 +186,11 @@ namespace Soulseek.NET
         public int ResponseLimit { get; }
 
         /// <summary>
+        ///     Gets the Action to invoke when a new search response is received.
+        /// </summary>
+        public Action<SearchResponseReceivedEventArgs> ResponseReceived { get; }
+
+        /// <summary>
         ///     Gets the search timeout value, in seconds, used to determine when the search is complete. (Default = 15).
         /// </summary>
         /// <remarks>The timeout duration is from the time of the last response.</remarks>
@@ -178,10 +200,5 @@ namespace Soulseek.NET
         ///     Gets the Action to invoke when the search changes state.
         /// </summary>
         public Action<SearchStateChangedEventArgs> StateChanged { get; }
-
-        /// <summary>
-        ///     Gets the Action to invoke when a new search response is received.
-        /// </summary>
-        public Action<SearchResponseReceivedEventArgs> ResponseReceived { get; }
     }
 }
