@@ -293,15 +293,14 @@
                 new SearchOptions(
                     filterResponses: true,
                     minimumResponseFileCount: minimumFileCount,
-                    filterFiles: true,
                     searchTimeout: 5,
-                    ignoredFileExtensions: new string[] { "flac", "m4a", "wav" },
                     stateChanged: (e) => state = e.State,
                     responseReceived: (e) =>
                     {
                         totalResponses++;
                         totalFiles += e.Response.FileCount;
-                    }));
+                    }, 
+                    fileFilter: (file) => Path.GetExtension(file.Filename) == ".mp3"));
 
             timer.Stop();
             complete = true;

@@ -38,5 +38,6 @@
   </Rules>
   <Rules AnalyzerId="SonarAnalyzer.CSharp" RuleNamespace="SonarAnalyzer.CSharp">
     <Rule Id="S107" Action="None" />
+    <Rule Id="S2589" Action="None" />
   </Rules>
 </RuleSet>

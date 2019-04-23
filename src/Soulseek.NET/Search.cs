@@ -15,7 +15,6 @@ namespace Soulseek.NET
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.IO;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -27,8 +26,8 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class Search : IDisposable
     {
-        private int resultFileCount = 0;
         private int resultCount = 0;
+        private int resultFileCount = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Search"/> class.
@@ -104,12 +103,18 @@ namespace Soulseek.NET
         /// <param name="slimResponse">The response to add.</param>
         internal void AddResponse(SearchResponseSlim slimResponse)
         {
-            if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
+            // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
+            // the slim response for fitness prior to extracting the file list from it for performance reasons.
+            if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
+                // extract the file list from the response and filter it
                 var fullResponse = new SearchResponse(slimResponse);
-                fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
+                var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
-                if (Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount)
+                fullResponse = new SearchResponse(fullResponse, filteredFiles);
+
+                // ensure the filtered file count still meets the response criteria
+                if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
                 {
                     return;
                 }
@@ -180,51 +185,7 @@ namespace Soulseek.NET
             }
         }
 
-        private bool FileHasIgnoredExtension(File f)
-        {
-            return (Options.IgnoredFileExtensions != null) &&
-                Options.IgnoredFileExtensions.Any(e =>
-                    e.Equals(f.Extension, StringComparison.InvariantCultureIgnoreCase) ||
-                    $".{e}".Equals(Path.GetExtension(f.Filename), StringComparison.InvariantCultureIgnoreCase));
-        }
-
-        private bool FileMeetsOptionCriteria(File file)
-        {
-            if (!Options.FilterFiles)
-            {
-                return true;
-            }
-
-            if (file.Size < Options.MinimumFileSize || FileHasIgnoredExtension(file))
-            {
-                return false;
-            }
-
-            var bitRate = file.GetAttributeValue(FileAttributeType.BitRate);
-            var length = file.GetAttributeValue(FileAttributeType.Length);
-            var bitDepth = file.GetAttributeValue(FileAttributeType.BitDepth);
-            var sampleRate = file.GetAttributeValue(FileAttributeType.SampleRate);
-
-            if ((bitRate != null && bitRate < Options.MinimumFileBitRate) ||
-                (length != null && length < Options.MinimumFileLength) ||
-                (bitDepth != null && bitDepth < Options.MinimumFileBitDepth) ||
-                (sampleRate != null && sampleRate < Options.MinimumFileSampleRate))
-            {
-                return false;
-            }
-
-            var constantBitRates = new[] { 32, 64, 128, 192, 256, 320 };
-            var isConstant = constantBitRates.Any(b => b == bitRate);
-
-            if (bitRate != null && ((!Options.IncludeConstantBitRate && isConstant) || (!Options.IncludeVariableBitRate && !isConstant)))
-            {
-                return false;
-            }
-
-            return true;
-        }
-
-        private bool ResponseMeetsOptionCriteria(SearchResponseSlim response)
+        private bool SlimResponseMeetsOptionCriteria(SearchResponseSlim response)
         {
             if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||
