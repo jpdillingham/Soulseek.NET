@@ -301,7 +301,8 @@
                     {
                         totalResponses++;
                         totalFiles += e.Response.FileCount;
-                    }));
+                    }, 
+                    excludeFiles: (file) => Path.GetExtension(file.Filename) != ".mp3"));
 
             timer.Stop();
             complete = true;
