@@ -293,9 +293,7 @@
                 new SearchOptions(
                     filterResponses: true,
                     minimumResponseFileCount: minimumFileCount,
-                    filterFiles: true,
                     searchTimeout: 5,
-                    ignoredFileExtensions: new string[] { "flac", "m4a", "wav" },
                     stateChanged: (e) => state = e.State,
                     responseReceived: (e) =>
                     {
