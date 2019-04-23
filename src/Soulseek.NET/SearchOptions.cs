@@ -47,10 +47,10 @@ namespace Soulseek.NET
         /// <param name="includeVariableBitRate">A value indicating whether variable bit rate files are to be included.</param>
         /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
-        /// <param name="excludeResponses">
-        ///     The function used to evaluate whether a response should be excluded from the search results.
+        /// <param name="responseFilter">
+        ///     The function used to evaluate whether a response should be included from the search results.
         /// </param>
-        /// <param name="excludeFiles">The function used to evaluate whether a file should be excluded from a search response.</param>
+        /// <param name="fileFilter">The function used to evaluate whether a file should be included from a search response.</param>
         public SearchOptions(
             int searchTimeout = 15,
             bool filterResponses = true,
@@ -71,8 +71,8 @@ namespace Soulseek.NET
             bool includeVariableBitRate = true,
             Action<SearchStateChangedEventArgs> stateChanged = null,
             Action<SearchResponseReceivedEventArgs> responseReceived = null,
-            Func<SearchResponse, bool> excludeResponses = null,
-            Func<File, bool> excludeFiles = null)
+            Func<SearchResponse, bool> responseFilter = null,
+            Func<File, bool> fileFilter = null)
         {
             SearchTimeout = searchTimeout;
             ResponseLimit = responseLimit;
@@ -93,19 +93,19 @@ namespace Soulseek.NET
             IncludeVariableBitRate = includeVariableBitRate;
             StateChanged = stateChanged;
             ResponseReceived = responseReceived;
-            ExcludeResponses = excludeResponses;
-            ExcludeFiles = excludeFiles;
+            ResponseFilter = responseFilter;
+            FileFilter = fileFilter;
         }
 
         /// <summary>
         ///     Gets the function used to evaluate whether a file should be excluded from a search response.
         /// </summary>
-        public Func<File, bool> ExcludeFiles { get; }
+        public Func<File, bool> FileFilter { get; }
 
         /// <summary>
         ///     Gets the function used to evaluate whether a response should be excluded from the search results.
         /// </summary>
-        public Func<SearchResponse, bool> ExcludeResponses { get; }
+        public Func<SearchResponse, bool> ResponseFilter { get; }
 
         /// <summary>
         ///     Gets the maximum number of file results to accept before the search is considered complete. (Default = 10,000).
