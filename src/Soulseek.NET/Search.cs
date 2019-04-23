@@ -107,10 +107,15 @@ namespace Soulseek.NET
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && ResponseMeetsOptionCriteria(slimResponse))
             {
                 var fullResponse = new SearchResponse(slimResponse);
-                fullResponse = new SearchResponse(fullResponse, fullResponse.Files.Where(f => FileMeetsOptionCriteria(f)).ToList());
+
+                var filteredFiles = fullResponse.Files
+                    .Where(f => FileMeetsOptionCriteria(f))
+                    .Where(f => !(Options.ExcludeFiles?.Invoke(f) ?? false));
+
+                fullResponse = new SearchResponse(fullResponse, filteredFiles);
 
                 // ensure the filtered file count still meets the response criteria
-                if (Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount)
+                if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || (Options.ExcludeResponses?.Invoke(fullResponse) ?? false))
                 {
                     return;
                 }
