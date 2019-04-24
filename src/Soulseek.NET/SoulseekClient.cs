@@ -297,8 +297,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
-        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -306,9 +305,9 @@ namespace Soulseek.NET
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, Action<DownloadStateChangedEventArgs> stateChanged = null, Action<DownloadProgressUpdatedEventArgs> progressUpdated = null, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null)
         {
-            return DownloadAsync(username, filename, TokenFactory.GetToken(), stateChanged, progressUpdated, cancellationToken);
+            return DownloadAsync(username, filename, TokenFactory.GetToken(), options, cancellationToken);
         }
 
         /// <summary>
@@ -318,8 +317,7 @@ namespace Soulseek.NET
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -327,7 +325,7 @@ namespace Soulseek.NET
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged = null, Action<DownloadProgressUpdatedEventArgs> progressUpdated = null, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, int token, DownloadOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -354,7 +352,9 @@ namespace Soulseek.NET
                 throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
             }
 
-            return DownloadInternalAsync(username, filename, token, stateChanged, progressUpdated, cancellationToken ?? CancellationToken.None);
+            options = options ?? new DownloadOptions();
+
+            return DownloadInternalAsync(username, filename, token, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -564,7 +564,7 @@ namespace Soulseek.NET
             StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
         }
 
-        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged, Action<DownloadProgressUpdatedEventArgs> progressUpdated, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token);
             Task<byte[]> downloadCompleted = null;
@@ -575,14 +575,14 @@ namespace Soulseek.NET
                 download.State = state;
                 var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
                 lastState = state;
-                stateChanged?.Invoke(args);
+                options?.StateChanged?.Invoke(args);
                 DownloadStateChanged?.Invoke(this, args);
             }
 
             void updateProgress(int currentLength)
             {
                 var eventArgs = new DownloadProgressUpdatedEventArgs(download, currentLength);
-                progressUpdated?.Invoke(eventArgs);
+                options?.ProgressUpdated?.Invoke(eventArgs);
                 DownloadProgressUpdated?.Invoke(this, eventArgs);
             }
 

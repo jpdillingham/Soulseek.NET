@@ -176,7 +176,7 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, index++, stateChanged: (e) =>
+                    var bytes = await client.DownloadAsync(username, file, index++, new DownloadOptions(stateChanged: (e) =>
                     {
                         var key = (e.Username, e.Filename, e.Token);
                         var download = Downloads.GetOrAdd(key, (e.State, null, new ProgressBar(10)));
@@ -210,7 +210,7 @@
 
                         Console.Write($"\r {download.Spinner}  {fn}  {size}  {percent}  [{status}]  {download.ProgressBar}");
 
-                    }).ConfigureAwait(false);
+                    })).ConfigureAwait(false);
 
                     // GetDirectoryName() and GetFileName() only work when the path separator is the same as the current OS' DirectorySeparatorChar.
                     // normalize for both Windows and Linux by replacing / and \ with Path.DirectorySeparatorChar.

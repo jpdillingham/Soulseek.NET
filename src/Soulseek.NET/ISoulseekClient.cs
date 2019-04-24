@@ -130,8 +130,7 @@ namespace Soulseek.NET
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
-        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -139,7 +138,7 @@ namespace Soulseek.NET
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, Action<DownloadStateChangedEventArgs> stateChanged = null, Action<DownloadProgressUpdatedEventArgs> progressUpdated = null, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
@@ -148,8 +147,7 @@ namespace Soulseek.NET
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -157,7 +155,7 @@ namespace Soulseek.NET
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, int token, Action<DownloadStateChangedEventArgs> stateChanged = null, Action<DownloadProgressUpdatedEventArgs> progressUpdated = null, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, int token, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
