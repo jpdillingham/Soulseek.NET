@@ -575,14 +575,14 @@ namespace Soulseek.NET
                 download.State = state;
                 var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
                 lastState = state;
-                options.StateChanged?.Invoke(args);
+                options?.StateChanged?.Invoke(args);
                 DownloadStateChanged?.Invoke(this, args);
             }
 
             void updateProgress(int currentLength)
             {
                 var eventArgs = new DownloadProgressUpdatedEventArgs(download, currentLength);
-                options.ProgressUpdated?.Invoke(eventArgs);
+                options?.ProgressUpdated?.Invoke(eventArgs);
                 DownloadProgressUpdated?.Invoke(this, eventArgs);
             }
 
