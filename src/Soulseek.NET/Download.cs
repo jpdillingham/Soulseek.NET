@@ -42,6 +42,11 @@ namespace Soulseek.NET
         public byte[] Data { get; internal set; }
 
         /// <summary>
+        ///     Gets the current duration of the download, if it has been started.
+        /// </summary>
+        public TimeSpan? Duration => (EndTime ?? DateTime.Now) - StartTime;
+
+        /// <summary>
         ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; private set; }
