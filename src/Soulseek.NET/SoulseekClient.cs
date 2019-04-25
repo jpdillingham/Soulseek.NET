@@ -581,8 +581,9 @@ namespace Soulseek.NET
 
             void updateProgress(int bytesDownloaded)
             {
+                var lastBytes = download.BytesDownloaded;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new DownloadProgressUpdatedEventArgs(download, bytesDownloaded);
+                var eventArgs = new DownloadProgressUpdatedEventArgs(lastBytes, download);
                 options?.ProgressUpdated?.Invoke(eventArgs);
                 DownloadProgressUpdated?.Invoke(this, eventArgs);
             }
