@@ -24,10 +24,10 @@ namespace Soulseek.NET.Tests.Unit
             var dl = new Download(username, filename, token);
             var d = new DownloadEventArgs(dl);
 
-            Assert.Equal(dl.Username, d.Download.Username);
-            Assert.Equal(dl.Filename, d.Download.Filename);
-            Assert.Equal(dl.Token, d.Download.Token);
-            Assert.Equal(dl.State, d.Download.State);
+            Assert.Equal(dl.Username, d.Username);
+            Assert.Equal(dl.Filename, d.Filename);
+            Assert.Equal(dl.Token, d.Token);
+            Assert.Equal(dl.State, d.State);
         }
 
         [Trait("Category", "DownloadProgressUpdatedEventArgs Instantiation")]
@@ -39,7 +39,6 @@ namespace Soulseek.NET.Tests.Unit
 
             var d = new DownloadProgressUpdatedEventArgs(bytesDownloaded, dl);
 
-            Assert.Equal(dl, d.Download);
             Assert.Equal(bytesDownloaded, d.PreviousBytesDownloaded);
         }
 

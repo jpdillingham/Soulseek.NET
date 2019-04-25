@@ -178,9 +178,9 @@
                 {
                     var bytes = await client.DownloadAsync(username, file, index++, new DownloadOptions(stateChanged: (e) =>
                     {
-                        var key = (e.Download.Username, e.Download.Filename, e.Download.Token);
-                        var download = Downloads.GetOrAdd(key, (e.Download.State, null, new ProgressBar(10)));
-                        download.State = e.Download.State;
+                        var key = (e.Username, e.Filename, e.Token);
+                        var download = Downloads.GetOrAdd(key, (e.State, null, new ProgressBar(10)));
+                        download.State = e.State;
                         download.ProgressBar = new ProgressBar(10, format: new ProgressBarFormat(left: "[", right: "]", full: '=', tip: '>', empty: ' ', emptyWhen: () => Downloads[key].State.HasFlag(DownloadStates.Completed)));
                         download.Spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => Downloads[key].State.HasFlag(DownloadStates.Completed)));
                         
@@ -192,23 +192,23 @@
                         }
                     }, progressUpdated: (e) =>
                     {
-                        var key = (e.Download.Username, e.Download.Filename, e.Download.Token);
+                        var key = (e.Username, e.Filename, e.Token);
                         Downloads.TryGetValue(key, out var download);
 
-                        download.State = e.Download.State;
-                        download.ProgressBar.Value = (int)e.Download.PercentComplete;
+                        download.State = e.State;
+                        download.ProgressBar.Value = (int)e.PercentComplete;
 
                         var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(DownloadStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
 
                         Downloads.AddOrUpdate(key, download, (k, v) => download);
 
                         var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename.ToLocalOSPath()).Length);
-                        var fn = Path.GetFileName(e.Download.Filename.ToLocalOSPath()).PadRight(longest);
+                        var fn = Path.GetFileName(e.Filename.ToLocalOSPath()).PadRight(longest);
 
-                        var size = $"{e.Download.BytesDownloaded.ToMB()}/{e.Download.Size.ToMB()}".PadLeft(15);
-                        var percent = $"({e.Download.PercentComplete.ToString("N0").PadLeft(3)}%)";
+                        var size = $"{e.BytesDownloaded.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
+                        var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
-                        Console.Write($"\r {download.Spinner}  {fn}  {size}  {percent}  [{status}]  {download.ProgressBar} {e.Download.AverageSpeed.ToMB()}/s {e.Download.ElapsedTime.Value.ToString(@"m\:ss")} / {e.Download.RemainingTime.Value.ToString(@"m\:ss")}");
+                        Console.Write($"\r {download.Spinner}  {fn}  {size}  {percent}  [{status}]  {download.ProgressBar} {e.AverageSpeed.ToMB()}/s {e.ElapsedTime.Value.ToString(@"m\:ss")} / {e.RemainingTime.Value.ToString(@"m\:ss")}");
 
                     })).ConfigureAwait(false);
 
