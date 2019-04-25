@@ -167,11 +167,11 @@ namespace Soulseek.NET
         {
             BytesDownloaded = bytesDownloaded;
 
-            var msSinceLastUpdate = (DateTime.Now - (lastProgressTime ?? StartTime)).Value.TotalMilliseconds;
+            var ts = DateTime.Now - (lastProgressTime ?? StartTime);
 
-            if (msSinceLastUpdate >= progressUpdateLimit)
+            if (ts.HasValue && ts.Value.TotalMilliseconds >= progressUpdateLimit)
             {
-                var currentSpeed = (BytesDownloaded - lastProgressBytes) / (msSinceLastUpdate / 1000d);
+                var currentSpeed = (BytesDownloaded - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.Now;
