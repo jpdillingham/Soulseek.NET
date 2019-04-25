@@ -208,7 +208,7 @@
                         var size = $"{e.BytesDownloaded.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
                         var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
-                        Console.Write($"\r {download.Spinner}  {fn}  {size}  {percent}  [{status}]  {download.ProgressBar}");
+                        Console.Write($"\r {download.Spinner}  {fn}  {size}  {percent}  [{status}]  {download.ProgressBar} {e.AverageSpeed.ToKB()}kb/s");
 
                     })).ConfigureAwait(false);
 
