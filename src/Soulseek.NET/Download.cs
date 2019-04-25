@@ -44,7 +44,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current duration of the download, if it has been started.
         /// </summary>
-        public TimeSpan? Duration => (EndTime ?? DateTime.Now) - StartTime;
+        public TimeSpan? ElapsedTime => (EndTime ?? DateTime.Now) - StartTime;
 
         /// <summary>
         ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
