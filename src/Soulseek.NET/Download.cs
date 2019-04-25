@@ -91,6 +91,7 @@ namespace Soulseek.NET
                 if (!state.HasFlag(DownloadStates.InProgress) && value.HasFlag(DownloadStates.InProgress))
                 {
                     StartTime = DateTime.Now;
+                    EndTime = null;
                 }
                 else if (!state.HasFlag(DownloadStates.Completed) && value.HasFlag(DownloadStates.Completed))
                 {
