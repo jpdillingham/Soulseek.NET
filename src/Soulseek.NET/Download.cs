@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET
 {
+    using System;
     using System.Net;
     using Soulseek.NET.Tcp;
 
@@ -20,6 +21,8 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class Download
     {
+        private DownloadStates state = DownloadStates.None;
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="Download"/> class.
         /// </summary>
@@ -37,6 +40,11 @@ namespace Soulseek.NET
         ///     Gets the data downloaded.
         /// </summary>
         public byte[] Data { get; internal set; }
+
+        /// <summary>
+        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
+        /// </summary>
+        public DateTime? EndTime { get; private set; }
 
         /// <summary>
         ///     Gets the filename of the file to be downloaded.
@@ -64,9 +72,34 @@ namespace Soulseek.NET
         public int Size { get; internal set; }
 
         /// <summary>
+        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.InProgress"/> state.
+        /// </summary>
+        public DateTime? StartTime { get; private set; }
+
+        /// <summary>
         ///     Gets the state of the download.
         /// </summary>
-        public DownloadStates State { get; internal set; } = DownloadStates.None;
+        public DownloadStates State
+        {
+            get
+            {
+                return state;
+            }
+
+            internal set
+            {
+                if (!state.HasFlag(DownloadStates.InProgress) && value.HasFlag(DownloadStates.InProgress))
+                {
+                    StartTime = DateTime.Now;
+                }
+                else if (!state.HasFlag(DownloadStates.Completed) && value.HasFlag(DownloadStates.Completed))
+                {
+                    EndTime = DateTime.Now;
+                }
+
+                state = value;
+            }
+        }
 
         /// <summary>
         ///     Gets the unique token for thr transfer.
@@ -81,9 +114,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets or sets the connection used for the transfer.
         /// </summary>
-        /// <remarks>
-        ///     Ensure that the reference instance is disposed when the transfer is complete.
-        /// </remarks>
+        /// <remarks>Ensure that the reference instance is disposed when the transfer is complete.</remarks>
         internal IConnection Connection { get; set; }
 
         /// <summary>
