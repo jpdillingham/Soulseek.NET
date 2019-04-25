@@ -21,7 +21,9 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class Download
     {
+        private readonly double speedAlpha = 2f;
         private DownloadStates state = DownloadStates.None;
+        private DateTime? lastProgressTime = null;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Download"/> class.
@@ -35,6 +37,21 @@ namespace Soulseek.NET
             Filename = filename;
             Token = token;
         }
+
+        public void UpdateProgress(int bytesDownloaded)
+        {
+            BytesDownloaded = bytesDownloaded;
+            var currentSpeed = BytesDownloaded / (DateTime.Now - (lastProgressTime ?? StartTime)).Value.TotalSeconds;
+            AverageSpeed = double.IsNaN(AverageSpeed) ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
+            lastProgressTime = DateTime.Now;
+        }
+
+        public int BytesDownloaded { get; private set; }
+
+        /// <summary>
+        ///     Gets the current average download speed.
+        /// </summary>
+        public double AverageSpeed { get; private set; } = double.NaN;
 
         /// <summary>
         ///     Gets the data downloaded.
