@@ -25,40 +25,13 @@ namespace Soulseek.NET
         /// <param name="download">The download which raised the event.</param>
         internal DownloadEventArgs(Download download)
         {
-            Username = download.Username;
-            Filename = download.Filename;
-            Token = download.Token;
-            Size = download.Size;
-            State = download.State;
-            AverageSpeed = download.AverageSpeed;
+            Download = download;
         }
 
-        public double AverageSpeed { get; }
-
         /// <summary>
-        ///     Gets the filename of the file to be downloaded.
+        ///     Gets the download associated with the event.
         /// </summary>
-        public string Filename { get; }
-
-        /// <summary>
-        ///     Gets the size of the file to be downloaded, in bytes.
-        /// </summary>
-        public int Size { get; }
-
-        /// <summary>
-        ///     Gets the state of the download.
-        /// </summary>
-        public DownloadStates State { get; }
-
-        /// <summary>
-        ///     Gets the unique token for thr transfer.
-        /// </summary>
-        public int Token { get; }
-
-        /// <summary>
-        ///     Gets the username of the peer from which the file is to be downloaded.
-        /// </summary>
-        public string Username { get; }
+        public Download Download { get; }
     }
 
     /// <summary>
@@ -69,23 +42,18 @@ namespace Soulseek.NET
         /// <summary>
         ///     Initializes a new instance of the <see cref="DownloadProgressUpdatedEventArgs"/> class.
         /// </summary>
+        /// <param name="previousBytesDownloaded">The previous total number of bytes downloaded.</param>
         /// <param name="download">The download which raised the event.</param>
-        /// <param name="bytesDownloaded">The total number of bytes read.</param>
-        internal DownloadProgressUpdatedEventArgs(Download download, int bytesDownloaded)
+        internal DownloadProgressUpdatedEventArgs(int previousBytesDownloaded, Download download)
             : base(download)
         {
-            BytesDownloaded = bytesDownloaded;
+            PreviousBytesDownloaded = previousBytesDownloaded;
         }
 
         /// <summary>
         ///     Gets the total number of bytes read.
         /// </summary>
-        public int BytesDownloaded { get; }
-
-        /// <summary>
-        ///     Gets the current progress in percent.
-        /// </summary>
-        public double PercentComplete => (BytesDownloaded / (double)Size) * 100;
+        public int PreviousBytesDownloaded { get; }
     }
 
     /// <summary>
