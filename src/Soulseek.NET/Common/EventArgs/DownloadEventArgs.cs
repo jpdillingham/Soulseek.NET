@@ -30,7 +30,10 @@ namespace Soulseek.NET
             Token = download.Token;
             Size = download.Size;
             State = download.State;
+            AverageSpeed = download.AverageSpeed;
         }
+
+        public double AverageSpeed { get; }
 
         /// <summary>
         ///     Gets the filename of the file to be downloaded.
