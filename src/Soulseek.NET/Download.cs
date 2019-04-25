@@ -21,9 +21,13 @@ namespace Soulseek.NET
     /// </summary>
     public sealed class Download
     {
+        private readonly int progressUpdateLimit = 100;
         private readonly double speedAlpha = 2f / 10;
-        private DownloadStates state = DownloadStates.None;
+        private double lastProgressBytes = 0;
         private DateTime? lastProgressTime = null;
+        private bool speedInitialized = false;
+
+        private DownloadStates state = DownloadStates.None;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Download"/> class.
@@ -38,20 +42,20 @@ namespace Soulseek.NET
             Token = token;
         }
 
-        public void UpdateProgress(int bytesDownloaded)
-        {
-            BytesDownloaded = bytesDownloaded;
-            var currentSpeed = BytesDownloaded / (DateTime.Now - (lastProgressTime ?? StartTime)).Value.TotalMilliseconds;
-            AverageSpeed = double.IsNaN(AverageSpeed) ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
-            lastProgressTime = DateTime.Now;
-        }
-
-        public int BytesDownloaded { get; private set; }
-
         /// <summary>
         ///     Gets the current average download speed.
         /// </summary>
-        public double AverageSpeed { get; private set; } = double.NaN;
+        public double AverageSpeed { get; private set; }
+
+        /// <summary>
+        ///     Gets the total number of bytes downloaded.
+        /// </summary>
+        public int BytesDownloaded { get; private set; }
+
+        /// <summary>
+        ///     Gets the number of remaining bytes to be downloaded.
+        /// </summary>
+        public int BytesRemaining => Size - BytesDownloaded;
 
         /// <summary>
         ///     Gets the data downloaded.
@@ -79,9 +83,19 @@ namespace Soulseek.NET
         public IPAddress IPAddress => Connection?.IPAddress;
 
         /// <summary>
+        ///     Gets the current progress in percent.
+        /// </summary>
+        public double PercentComplete => (BytesDownloaded / (double)Size) * 100;
+
+        /// <summary>
         ///     Gets the port of the remote transfer connection, if one has been established.
         /// </summary>
         public int? Port => Connection?.Port;
+
+        /// <summary>
+        ///     Gets the projected remaining duration of the download.
+        /// </summary>
+        public TimeSpan? RemainingTime => AverageSpeed == 0 ? default(TimeSpan) : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
 
         /// <summary>
         ///     Gets the remote unique token for the transfer.
@@ -144,5 +158,25 @@ namespace Soulseek.NET
         ///     Gets tue unique wait key for the download.
         /// </summary>
         internal WaitKey WaitKey => new WaitKey(Username, Filename, Token);
+
+        /// <summary>
+        ///     Updates the download progress.
+        /// </summary>
+        /// <param name="bytesDownloaded">The total number of bytes downloaded.</param>
+        internal void UpdateProgress(int bytesDownloaded)
+        {
+            BytesDownloaded = bytesDownloaded;
+
+            var msSinceLastUpdate = (DateTime.Now - (lastProgressTime ?? StartTime)).Value.TotalMilliseconds;
+
+            if (msSinceLastUpdate >= progressUpdateLimit)
+            {
+                var currentSpeed = (BytesDownloaded - lastProgressBytes) / (msSinceLastUpdate / 1000d);
+                AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
+                speedInitialized = true;
+                lastProgressTime = DateTime.Now;
+                lastProgressBytes = BytesDownloaded;
+            }
+        }
     }
 }
