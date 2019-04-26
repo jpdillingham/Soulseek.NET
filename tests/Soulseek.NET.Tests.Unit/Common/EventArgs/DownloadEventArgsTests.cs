@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
+    using System;
     using AutoFixture.Xunit2;
     using Xunit;
 
@@ -19,15 +20,28 @@ namespace Soulseek.NET.Tests.Unit
     {
         [Trait("Category", "DownloadEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token)
+        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadOptions options)
         {
-            var dl = new Download(username, filename, token);
+            var dl = new Download(username, filename, token, options);
             var d = new DownloadEventArgs(dl);
 
+            Assert.Equal(0, d.AverageSpeed);
+            Assert.Equal(0, d.BytesDownloaded);
+            Assert.Equal(0, d.BytesRemaining);
+            Assert.Equal(default(TimeSpan), d.ElapsedTime);
+            Assert.Equal(default(TimeSpan), d.RemainingTime);
+            Assert.Null(d.StartTime);
+            Assert.Null(d.EndTime);
+            Assert.Null(d.IPAddress);
+            Assert.Equal(0, d.PercentComplete);
+            Assert.Null(d.Port);
+            Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(0, d.Size);
             Assert.Equal(dl.Username, d.Username);
             Assert.Equal(dl.Filename, d.Filename);
             Assert.Equal(dl.Token, d.Token);
             Assert.Equal(dl.State, d.State);
+            Assert.Equal(options, d.Options);
         }
 
         [Trait("Category", "DownloadProgressUpdatedEventArgs Instantiation")]
@@ -37,10 +51,9 @@ namespace Soulseek.NET.Tests.Unit
             var dl = new Download(username, filename, token);
             dl.Size = size;
 
-            var d = new DownloadProgressUpdatedEventArgs(dl, bytesDownloaded);
+            var d = new DownloadProgressUpdatedEventArgs(bytesDownloaded, dl);
 
-            Assert.Equal(bytesDownloaded, d.BytesDownloaded);
-            Assert.Equal((bytesDownloaded / (double)size) * 100, d.PercentComplete);
+            Assert.Equal(bytesDownloaded, d.PreviousBytesDownloaded);
         }
 
         [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]

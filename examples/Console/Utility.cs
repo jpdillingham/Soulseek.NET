@@ -66,9 +66,24 @@ namespace Console
             return d[n, m];
         }
 
+        public static string ToKB(this double size)
+        {
+            return $"{(size / 1000).ToString("N2")}KB";
+        }
+
         public static string ToKB(this int size)
         {
+            return ((long)size).ToKB();
+        }
+
+        public static string ToKB(this long size)
+        {
             return $"{(size / (double)1000).ToString("N2")}KB";
+        }
+
+        public static string ToMB(this double size)
+        {
+            return $"{(size / 1000000).ToString("N2")}MB";
         }
 
         public static string ToMB(this long size)

@@ -566,7 +566,7 @@ namespace Soulseek.NET
 
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
         {
-            var download = new Download(username, filename, token);
+            var download = new Download(username, filename, token, options);
             Task<byte[]> downloadCompleted = null;
             var lastState = DownloadStates.None;
 
@@ -579,9 +579,11 @@ namespace Soulseek.NET
                 DownloadStateChanged?.Invoke(this, args);
             }
 
-            void updateProgress(int currentLength)
+            void updateProgress(int bytesDownloaded)
             {
-                var eventArgs = new DownloadProgressUpdatedEventArgs(download, currentLength);
+                var lastBytes = download.BytesDownloaded;
+                download.UpdateProgress(bytesDownloaded);
+                var eventArgs = new DownloadProgressUpdatedEventArgs(lastBytes, download);
                 options?.ProgressUpdated?.Invoke(eventArgs);
                 DownloadProgressUpdated?.Invoke(this, eventArgs);
             }
