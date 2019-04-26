@@ -12,6 +12,7 @@
 
 namespace Soulseek.NET.Tests.Unit
 {
+    using System;
     using AutoFixture.Xunit2;
     using Xunit;
 
@@ -24,6 +25,18 @@ namespace Soulseek.NET.Tests.Unit
             var dl = new Download(username, filename, token);
             var d = new DownloadEventArgs(dl);
 
+            Assert.Equal(0, d.AverageSpeed);
+            Assert.Equal(0, d.BytesDownloaded);
+            Assert.Equal(0, d.BytesRemaining);
+            Assert.Equal(default(TimeSpan), d.ElapsedTime);
+            Assert.Equal(default(TimeSpan), d.RemainingTime);
+            Assert.Null(d.StartTime);
+            Assert.Null(d.EndTime);
+            Assert.Null(d.IPAddress);
+            Assert.Equal(0, d.PercentComplete);
+            Assert.Null(d.Port);
+            Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(0, d.Size);
             Assert.Equal(dl.Username, d.Username);
             Assert.Equal(dl.Filename, d.Filename);
             Assert.Equal(dl.Token, d.Token);
