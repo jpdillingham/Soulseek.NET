@@ -81,6 +81,11 @@ namespace Soulseek.NET
         public IPAddress IPAddress { get; }
 
         /// <summary>
+        ///     Gets the options for the transfer.
+        /// </summary>
+        public DownloadOptions Options { get; }
+
+        /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
         public double PercentComplete { get; }
@@ -124,11 +129,6 @@ namespace Soulseek.NET
         ///     Gets the username of the peer from which the file is to be downloaded.
         /// </summary>
         public string Username { get; }
-
-        /// <summary>
-        ///     Gets the options for the transfer.
-        /// </summary>
-        public DownloadOptions Options { get; }
     }
 
     /// <summary>
