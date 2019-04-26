@@ -46,7 +46,7 @@ namespace Soulseek.NET.Tests.Unit
 
             var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
 
-            var e = new SearchResponseReceivedEventArgs(search, response);
+            var e = new SearchResponseReceivedEventArgs(response, search);
 
             Assert.Equal(searchText, e.SearchText);
             Assert.Equal(token, e.Token);

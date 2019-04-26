@@ -868,7 +868,7 @@ namespace Soulseek.NET
             {
                 search.ResponseReceived = (response) =>
                 {
-                    var eventArgs = new SearchResponseReceivedEventArgs(search, response);
+                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
                     options?.ResponseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
