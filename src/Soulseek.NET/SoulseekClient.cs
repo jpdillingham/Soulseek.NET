@@ -566,7 +566,7 @@ namespace Soulseek.NET
 
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
         {
-            var download = new Download(username, filename, token);
+            var download = new Download(username, filename, token, options);
             Task<byte[]> downloadCompleted = null;
             var lastState = DownloadStates.None;
 

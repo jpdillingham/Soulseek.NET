@@ -42,6 +42,7 @@ namespace Soulseek.NET
             State = download.State;
             Token = download.Token;
             Username = download.Username;
+            Options = download.Options;
         }
 
         /// <summary>
@@ -123,6 +124,11 @@ namespace Soulseek.NET
         ///     Gets the username of the peer from which the file is to be downloaded.
         /// </summary>
         public string Username { get; }
+
+        /// <summary>
+        ///     Gets the options for the transfer.
+        /// </summary>
+        public DownloadOptions Options { get; }
     }
 
     /// <summary>

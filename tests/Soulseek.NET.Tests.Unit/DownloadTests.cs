@@ -34,9 +34,9 @@ namespace Soulseek.NET.Tests.Unit
 
         [Trait("Category", "Properties")]
         [Theory(DisplayName = "Properties default to expected values"), AutoData]
-        internal void Properties_Default_To_Expected_Values(string username, string filename, int token)
+        internal void Properties_Default_To_Expected_Values(string username, string filename, int token, DownloadOptions options)
         {
-            var d = new Download(username, filename, token);
+            var d = new Download(username, filename, token, options);
 
             Assert.Null(d.Connection);
             Assert.Null(d.IPAddress);
@@ -54,6 +54,7 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(d.EndTime);
             Assert.Equal(0, d.PercentComplete);
             Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(options, d.Options);
         }
 
         [Trait("Category", "Properties")]

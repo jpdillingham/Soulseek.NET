@@ -20,9 +20,9 @@ namespace Soulseek.NET.Tests.Unit
     {
         [Trait("Category", "DownloadEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token)
+        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadOptions options)
         {
-            var dl = new Download(username, filename, token);
+            var dl = new Download(username, filename, token, options);
             var d = new DownloadEventArgs(dl);
 
             Assert.Equal(0, d.AverageSpeed);
@@ -41,6 +41,7 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(dl.Filename, d.Filename);
             Assert.Equal(dl.Token, d.Token);
             Assert.Equal(dl.State, d.State);
+            Assert.Equal(options, d.Options);
         }
 
         [Trait("Category", "DownloadProgressUpdatedEventArgs Instantiation")]

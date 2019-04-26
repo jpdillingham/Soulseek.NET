@@ -35,11 +35,14 @@ namespace Soulseek.NET
         /// <param name="username">The username of the peer from which the file is to be downloaded.</param>
         /// <param name="filename">The filename of the file to be downloaded.</param>
         /// <param name="token">The unique token for the transfer.</param>
-        internal Download(string username, string filename, int token)
+        /// <param name="options">The options for the transfer.</param>
+        internal Download(string username, string filename, int token, DownloadOptions options = null)
         {
             Username = username;
             Filename = filename;
             Token = token;
+
+            Options = options ?? new DownloadOptions();
         }
 
         /// <summary>
@@ -81,6 +84,11 @@ namespace Soulseek.NET
         ///     Gets the ip address of the remote transfer connection, if one has been established.
         /// </summary>
         public IPAddress IPAddress => Connection?.IPAddress;
+
+        /// <summary>
+        ///     Gets the options for the transfer.
+        /// </summary>
+        public DownloadOptions Options { get; }
 
         /// <summary>
         ///     Gets the current progress in percent.
