@@ -13,6 +13,8 @@
 namespace Soulseek.NET
 {
     using System;
+    using System.Collections.Generic;
+    using System.Linq;
     using Soulseek.NET.Messaging.Messages;
 
     /// <summary>
@@ -26,14 +28,32 @@ namespace Soulseek.NET
         /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchEventArgs(Search search)
         {
+            Options = search.Options;
+            Responses = search.Responses.ToList();
             SearchText = search.SearchText;
+            State = search.State;
             Token = search.Token;
         }
+
+        /// <summary>
+        ///     Gets the options for the search.
+        /// </summary>
+        public SearchOptions Options { get; }
+
+        /// <summary>
+        ///     Gets the collection of responses received from peers.
+        /// </summary>
+        public IReadOnlyCollection<SearchResponse> Responses { get; }
 
         /// <summary>
         ///     Gets the text for which to search.
         /// </summary>
         public string SearchText { get; }
+
+        /// <summary>
+        ///     Gets the state of the search.
+        /// </summary>
+        public SearchStates State { get; }
 
         /// <summary>
         ///     Gets the unique identifier for the search.
@@ -49,9 +69,9 @@ namespace Soulseek.NET
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
         /// </summary>
-        /// <param name="search">The search instance with which to initialize data.</param>
         /// <param name="response">The search response which raised the event.</param>
-        internal SearchResponseReceivedEventArgs(Search search, SearchResponse response)
+        /// <param name="search">The search instance with which to initialize data.</param>
+        internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
             : base(search)
         {
             Response = response;
@@ -77,13 +97,7 @@ namespace Soulseek.NET
             : base(search)
         {
             PreviousState = previousState;
-            State = search.State;
         }
-
-        /// <summary>
-        ///     Gets the search state.
-        /// </summary>
-        public SearchStates State { get; }
 
         /// <summary>
         ///     Gets the previous search state.
