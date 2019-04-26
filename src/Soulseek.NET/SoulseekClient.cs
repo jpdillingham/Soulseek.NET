@@ -620,7 +620,9 @@ namespace Soulseek.NET
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
-                    download.Connection = await ConnectionManager.AddTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Username, Options.TransferConnectionOptions, cancellationToken).ConfigureAwait(false);
+                    download.Connection = await ConnectionManager
+                        .AddTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Username, Options.TransferConnectionOptions, cancellationToken)
+                        .ConfigureAwait(false);
                 }
                 else
                 {
