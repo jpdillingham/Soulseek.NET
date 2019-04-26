@@ -65,7 +65,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current duration of the download, if it has been started.
         /// </summary>
-        public TimeSpan? ElapsedTime => (EndTime ?? DateTime.Now) - StartTime;
+        public TimeSpan? ElapsedTime => StartTime == null ? default(TimeSpan) : (EndTime ?? DateTime.Now) - StartTime;
 
         /// <summary>
         ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
@@ -85,7 +85,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
-        public double PercentComplete => (BytesDownloaded / (double)Size) * 100;
+        public double PercentComplete => Size == 0 ? 0 : (BytesDownloaded / (double)Size) * 100;
 
         /// <summary>
         ///     Gets the port of the remote transfer connection, if one has been established.
