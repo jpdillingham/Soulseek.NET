@@ -26,29 +26,29 @@ namespace Soulseek.NET.Tests.Unit.Client
 
     public class GetConnectionAsyncTests
     {
-        //[Trait("Category", "GetPeerConnectionKeyAsync")]
-        //[Theory(DisplayName = "GetPeerConnectionKeyAsync returns expected ConnectionKey"), AutoData]
-        //public async Task GetPeerConnectionKeyAsync_Returns_Expected_ConnectionKey(string username, IPAddress ip, int port)
-        //{
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+        [Trait("Category", "GetPeerConnectionKeyAsync")]
+        [Theory(DisplayName = "GetPeerConnectionKeyAsync returns expected ConnectionKey"), AutoData]
+        public async Task GetPeerConnectionKeyAsync_Returns_Expected_ConnectionKey(string username, IPAddress ip, int port)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
-        //        .Returns(Task.CompletedTask);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object);
 
-        //    ConnectionKey result = null;
-        //    var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<ConnectionKey>>("GetPeerConnectionKeyAsync", username, CancellationToken.None));
+            ConnectionKey result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<ConnectionKey>>("GetPeerConnectionKeyAsync", username, CancellationToken.None));
 
-        //    Assert.Null(ex);
-        //    Assert.NotNull(result);
-        //    Assert.Equal(username, result.Username);
-        //    Assert.Equal(ip, result.IPAddress);
-        //    Assert.Equal(port, result.Port);
-        //}
+            Assert.Null(ex);
+            Assert.NotNull(result);
+            Assert.Equal(username, result.Username);
+            Assert.Equal(ip, result.IPAddress);
+            Assert.Equal(port, result.Port);
+        }
 
         //[Trait("Category", "GetTransferConnectionAsync")]
         //[Theory(DisplayName = "GetTransferConnectionAsync returns expected IConnection"), AutoData]
