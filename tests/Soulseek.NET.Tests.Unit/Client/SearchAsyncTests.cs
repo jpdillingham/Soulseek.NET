@@ -169,16 +169,6 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Theory(DisplayName = "SearchAsync creates token when not given"), AutoData]
         public async Task SearchInternalAsync_Creates_Token_When_Not_Given(string searchText)
         {
-            //var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
-            //var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
-
-            //var search = new Search(searchText, token, options)
-            //{
-            //    State = SearchStates.InProgress
-            //};
-
-            //search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
                 .Returns(Task.CompletedTask);
@@ -235,6 +225,116 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<SearchException>(ex);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync invokes StateChanged delegate"), AutoData]
+        public async Task SearchAsync_Invokes_StateChanged_Delegate(string searchText, int token)
+        {
+            var fired = false;
+            var options = new SearchOptions(searchTimeout: 1, fileLimit: 1, stateChanged: (e) => fired = true);
+            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.InProgress
+            };
+
+            search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var task = s.SearchAsync(searchText, token, options, null);
+
+            await task;
+
+            Assert.True(fired);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync fires SearchStateChanged event"), AutoData]
+        public async Task SearchAsync_Fires_SearchStateChanged_Event(string searchText, int token)
+        {
+            var fired = false;
+            var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
+            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+
+            var search = new Search(searchText, token, options)
+            {
+                State = SearchStates.InProgress
+            };
+
+            search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
+            s.SearchStateChanged += (sender, e) => fired = true;
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var task = s.SearchAsync(searchText, token, options, null);
+
+            await task;
+
+            Assert.True(fired);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync invokes ResponseReceived delegate"), AutoData]
+        public async Task SearchAsync_Invokes_ResponseReceived_Delegate(string searchText, int token)
+        {
+            var fired = false;
+            var options = new SearchOptions(searchTimeout: 1, fileLimit: 1, responseReceived: (e) => fired = true);
+            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var task = s.SearchAsync(searchText, token, options, null);
+
+            var search = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches")[token];
+            search.ResponseReceived.Invoke(response);
+
+            await task;
+
+            Assert.True(fired);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync fires SearchResponseReceived event"), AutoData]
+        public async Task SearchAsync_Fires_SearchResponseReceived_Event(string searchText, int token)
+        {
+            var fired = false;
+            var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
+            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
+            s.SearchResponseReceived += (sender, e) => fired = true;
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var task = s.SearchAsync(searchText, token, options, null);
+
+            var search = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches")[token];
+            search.ResponseReceived.Invoke(response);
+
+            await task;
+
+            Assert.True(fired);
         }
     }
 }
