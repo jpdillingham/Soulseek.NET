@@ -33,7 +33,8 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
         /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
-        internal ConnectionManager(int concurrentPeerConnections)
+        /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
+        internal ConnectionManager(int concurrentPeerConnections, IConnectionFactory connectionFactory = null)
         {
             if (concurrentPeerConnections < 1)
             {
@@ -47,6 +48,7 @@ namespace Soulseek.NET
 
             TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
 
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             TokenFactory = new TokenFactory();
         }
 
@@ -70,6 +72,7 @@ namespace Soulseek.NET
         /// </summary>
         public int WaitingPeerConnections => waitingPeerConnections;
 
+        private IConnectionFactory ConnectionFactory { get; }
         private bool Disposed { get; set; }
         private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; }
         private SemaphoreSlim PeerSemaphore { get; }
@@ -87,7 +90,7 @@ namespace Soulseek.NET
         /// <returns>The new connection.</returns>
         public async Task<IConnection> AddTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            var connection = new Connection(connectionKey.IPAddress, connectionKey.Port, options);
+            var connection = ConnectionFactory.GetConnection(connectionKey.IPAddress, connectionKey.Port, options);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
@@ -108,7 +111,7 @@ namespace Soulseek.NET
         /// <returns>The new connection.</returns>
         public async Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            var connection = new Connection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
@@ -155,10 +158,8 @@ namespace Soulseek.NET
                 }
                 else
                 {
-                    connection = new MessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options)
-                    {
-                        Context = connectToPeerResponse,
-                    };
+                    connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+                    connection.Context = connectToPeerResponse;
 
                     connection.MessageRead += messageHandler;
                     connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
@@ -206,7 +207,7 @@ namespace Soulseek.NET
                 }
                 else
                 {
-                    connection = new MessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options);
+                    connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options);
                     connection.MessageRead += messageHandler;
                     connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
 
