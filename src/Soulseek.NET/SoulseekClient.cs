@@ -753,7 +753,10 @@ namespace Soulseek.NET
 
             try
             {
-                connection = await ConnectionManager.AddTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                connection = await ConnectionManager
+                    .AddTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions, CancellationToken.None)
+                    .ConfigureAwait(false);
+
                 var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
                 remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
             }
