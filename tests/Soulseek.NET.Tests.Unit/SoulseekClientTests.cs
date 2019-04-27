@@ -129,6 +129,20 @@ namespace Soulseek.NET.Tests.Unit
         }
 
         [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect handler disconnects")]
+        public async Task Disconnect_Handler_Disconnects()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            await s.ConnectAsync();
+
+            s.InvokeMethod("ServerConnection_Disconnected", null, string.Empty);
+
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+        }
+
+        [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect disconnects")]
         public async Task Disconnect_Disconnects()
         {
@@ -224,6 +238,17 @@ namespace Soulseek.NET.Tests.Unit
             var s = new SoulseekClient();
 
             var ex = Record.Exception(() => s.InvokeMethod("Finalize"));
+
+            Assert.Null(ex);
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Fact(DisplayName = "ChangeState does not throw if StateChange is unsubscribed")]
+        public void ChangeState_Does_Not_Throw_If_StateChange_Is_Unsubscribed()
+        {
+            var s = new SoulseekClient();
+
+            var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty));
 
             Assert.Null(ex);
         }

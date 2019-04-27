@@ -34,7 +34,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         {
             var s = new SoulseekClient();
 
-            var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", 0));
+            var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", 0, cancellationToken: CancellationToken.None));
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
@@ -163,6 +163,37 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             Assert.Single(active);
             Assert.Contains(active, kvp => kvp.Key == token);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync creates token when not given"), AutoData]
+        public async Task SearchInternalAsync_Creates_Token_When_Not_Given(string searchText)
+        {
+            //var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
+            //var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+
+            //var search = new Search(searchText, token, options)
+            //{
+            //    State = SearchStates.InProgress
+            //};
+
+            //search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var task = s.SearchAsync(searchText);
+
+            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
+
+            await task;
+
+            Assert.Single(active);
+            Assert.Contains(active, kvp => kvp.Value.SearchText == searchText);
         }
 
         [Trait("Category", "SearchAsync")]
