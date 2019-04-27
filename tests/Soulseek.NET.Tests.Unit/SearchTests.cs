@@ -267,11 +267,10 @@ namespace Soulseek.NET.Tests.Unit
                     minimumResponseFileCount: 1,
                     fileLimit: 1);
 
-            var completedState = SearchStates.None;
-
-            var s = new Search("foo", token, options);
-
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", token, options)
+            {
+                State = SearchStates.InProgress
+            };
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
@@ -314,11 +313,10 @@ namespace Soulseek.NET.Tests.Unit
                     responseLimit: 1,
                     fileLimit: 10000000);
 
-            var completedState = SearchStates.None;
-
-            var s = new Search("foo", token, options);
-
-            s.State = SearchStates.InProgress;
+            var s = new Search("foo", token, options)
+            {
+                State = SearchStates.InProgress
+            };
 
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerSearchResponse)
