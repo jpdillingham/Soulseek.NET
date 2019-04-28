@@ -41,4 +41,4 @@ dotnet-sonarscanner begin \
 
 dotnet-sonarscanner end /d:sonar.login="${TOKEN_SONARCLOUD}"
 
-bash <(curl -s https://codecov.io/bash) -f tests/opencover.xml
+bash <(curl -s https://codecov.io/bash) -f tests/opencover.xml -t ${TOKEN_CODECOV_SOULSEEKNET}
