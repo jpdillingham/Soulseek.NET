@@ -155,11 +155,15 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var task = s.SearchAsync(searchText, token, options, null);
+            var cts = new CancellationTokenSource(1000);
+
+            var task = s.SearchAsync(searchText, token, options, cts.Token);
 
             var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
 
-            await task;
+            cts.Cancel();
+
+            await Record.ExceptionAsync(async () => await task); // swallow the cancellation exception
 
             Assert.Single(active);
             Assert.Contains(active, kvp => kvp.Key == token);
@@ -176,11 +180,15 @@ namespace Soulseek.NET.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var task = s.SearchAsync(searchText);
+            var cts = new CancellationTokenSource(1000);
+
+            var task = s.SearchAsync(searchText, null, cts.Token);
 
             var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
 
-            await task;
+            cts.Cancel();
+
+            await Record.ExceptionAsync(async () => await task); // swallow the cancellation exception
 
             Assert.Single(active);
             Assert.Contains(active, kvp => kvp.Value.SearchText == searchText);
