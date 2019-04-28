@@ -794,7 +794,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync raises Download events on cancellation"), AutoData]
         public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 1000);
 
             var response = new PeerTransferResponse(token, false, size, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
@@ -814,8 +814,10 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
+
             waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
+
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
