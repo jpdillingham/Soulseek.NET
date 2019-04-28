@@ -284,6 +284,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var connMgr = new Mock<IConnectionManager>();
             connMgr
                 .Setup(m => m.GetOrAddSolicitedConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new Mock<IMessageConnection>().Object))
                 .Callback<ConnectToPeerResponse, EventHandler<Message>, ConnectionOptions, CancellationToken>((r, e, c, t) => response = r);
 
             var ipBytes = ip.GetAddressBytes();

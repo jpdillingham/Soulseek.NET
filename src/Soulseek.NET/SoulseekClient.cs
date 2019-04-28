@@ -575,7 +575,7 @@ namespace Soulseek.NET
                 download.State = state;
                 var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
                 lastState = state;
-                options?.StateChanged?.Invoke(args);
+                options.StateChanged?.Invoke(args);
                 DownloadStateChanged?.Invoke(this, args);
             }
 
@@ -584,7 +584,7 @@ namespace Soulseek.NET
                 var lastBytes = download.BytesDownloaded;
                 download.UpdateProgress(bytesDownloaded);
                 var eventArgs = new DownloadProgressUpdatedEventArgs(lastBytes, download);
-                options?.ProgressUpdated?.Invoke(eventArgs);
+                options.ProgressUpdated?.Invoke(eventArgs);
                 DownloadProgressUpdated?.Invoke(this, eventArgs);
             }
 
@@ -865,7 +865,7 @@ namespace Soulseek.NET
                 search.State = state;
                 var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
                 lastState = state;
-                options?.StateChanged?.Invoke(args);
+                options.StateChanged?.Invoke(args);
                 SearchStateChanged?.Invoke(this, args);
             }
 
@@ -874,7 +874,7 @@ namespace Soulseek.NET
                 search.ResponseReceived = (response) =>
                 {
                     var eventArgs = new SearchResponseReceivedEventArgs(response, search);
-                    options?.ResponseReceived?.Invoke(eventArgs);
+                    options.ResponseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
