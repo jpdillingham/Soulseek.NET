@@ -27,25 +27,28 @@ namespace Soulseek.NET.Tests.Unit.Client
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws InvalidOperationException when not connected")]
         public async Task AcknowledgePrivateMessageAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
 
-            var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
-
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws InvalidOperationException when not logged in")]
         public async Task AcknowledgePrivateMessageAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
@@ -56,12 +59,14 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
 
-            Assert.Null(ex);
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
@@ -72,39 +77,44 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
 
-            Assert.NotNull(ex);
-            Assert.IsType<PrivateMessageException>(ex);
-            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<PrivateMessageException>(ex);
+                Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
         [Fact(DisplayName = "SendPrivateMessageAsync throws InvalidOperationException when not connected")]
         public async Task SendPrivateMessageAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
 
-            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
-
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
         [Fact(DisplayName = "SendPrivateMessageAsync throws InvalidOperationException when not logged in")]
         public async Task SendPrivateMessageAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
@@ -117,13 +127,15 @@ namespace Soulseek.NET.Tests.Unit.Client
         [InlineData("username", "")]
         public async Task SendPrivateMessageAsync_Throws_(string username, string message)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync(username, message));
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync(username, message));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
@@ -134,12 +146,14 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
 
-            Assert.Null(ex);
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "SendPrivateMessageAsync")]
@@ -150,14 +164,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<PrivateMessageException>(ex);
-            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<PrivateMessageException>(ex);
+                Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
         }
     }
 }

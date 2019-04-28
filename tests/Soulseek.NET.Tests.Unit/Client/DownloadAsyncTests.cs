@@ -36,12 +36,13 @@ namespace Soulseek.NET.Tests.Unit.Client
         [InlineData("   ")]
         public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Username(string username)
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename"));
 
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename"));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -51,58 +52,64 @@ namespace Soulseek.NET.Tests.Unit.Client
         [InlineData("   ")]
         public async Task DownloadAsync_Throws_ArgumentException_Given_Bad_Filename(string filename)
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", filename));
 
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", filename));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync throws InvalidOperationException when not connected")]
         public async Task DownloadAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
 
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
-
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
 
         [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync throws InvalidOperationException when not logged in")]
         public async Task DownloadAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
 
         [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync throws ArgumentException when token used")]
         public async Task DownloadAsync_Throws_ArgumentException_When_Token_Used()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var queued = new ConcurrentDictionary<int, Download>();
-            queued.TryAdd(1, new Download("foo", "bar", 1));
+                var queued = new ConcurrentDictionary<int, Download>();
+                queued.TryAdd(1, new Download("foo", "bar", 1));
 
-            s.SetProperty("Downloads", queued);
+                s.SetProperty("Downloads", queued);
 
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 1));
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 1));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
-            Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
 
         [Trait("Category", "DownloadAsync")]
@@ -115,14 +122,16 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, options: options);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, options: options))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<TimeoutException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -149,14 +158,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -177,14 +188,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<TimeoutException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -209,14 +222,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -242,14 +257,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -289,14 +306,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -330,14 +349,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<TimeoutException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -379,14 +400,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            byte[] downloadedData = null;
-            var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                byte[] downloadedData = null;
+                var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.Null(ex);
-            Assert.Equal(data, downloadedData);
+                Assert.Null(ex);
+                Assert.Equal(data, downloadedData);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -430,14 +453,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<int>(), It.IsAny<string>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            byte[] downloadedData = null;
-            var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                byte[] downloadedData = null;
+                var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.Null(ex);
-            Assert.Equal(data, downloadedData);
+                Assert.Null(ex);
+                Assert.Equal(data, downloadedData);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -479,34 +504,36 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-            var events = new List<DownloadStateChangedEventArgs>();
-
-            s.DownloadStateChanged += (sender, e) =>
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
             {
-                events.Add(e);
-            };
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null);
+                var events = new List<DownloadStateChangedEventArgs>();
 
-            Assert.Equal(5, events.Count);
+                s.DownloadStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
 
-            Assert.Equal(DownloadStates.None, events[0].PreviousState);
-            Assert.Equal(DownloadStates.Requested, events[0].State);
+                await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null);
 
-            Assert.Equal(DownloadStates.Requested, events[1].PreviousState);
-            Assert.Equal(DownloadStates.Queued, events[1].State);
+                Assert.Equal(5, events.Count);
 
-            Assert.Equal(DownloadStates.Queued, events[2].PreviousState);
-            Assert.Equal(DownloadStates.Initializing, events[2].State);
+                Assert.Equal(DownloadStates.None, events[0].PreviousState);
+                Assert.Equal(DownloadStates.Requested, events[0].State);
 
-            Assert.Equal(DownloadStates.Initializing, events[3].PreviousState);
-            Assert.Equal(DownloadStates.InProgress, events[3].State);
+                Assert.Equal(DownloadStates.Requested, events[1].PreviousState);
+                Assert.Equal(DownloadStates.Queued, events[1].State);
 
-            Assert.Equal(DownloadStates.InProgress, events[4].PreviousState);
-            Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[4].State);
+                Assert.Equal(DownloadStates.Queued, events[2].PreviousState);
+                Assert.Equal(DownloadStates.Initializing, events[2].State);
+
+                Assert.Equal(DownloadStates.Initializing, events[3].PreviousState);
+                Assert.Equal(DownloadStates.InProgress, events[3].State);
+
+                Assert.Equal(DownloadStates.InProgress, events[4].PreviousState);
+                Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[4].State);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -548,14 +575,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var fired = false;
+                var fired = false;
 
-            await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(stateChanged: (e) => fired = true), null);
+                await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(stateChanged: (e) => fired = true), null);
 
-            Assert.True(fired);
+                Assert.True(fired);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -602,20 +631,22 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var events = new List<DownloadProgressUpdatedEventArgs>();
+                var events = new List<DownloadProgressUpdatedEventArgs>();
 
-            s.DownloadProgressUpdated += (d, e) => events.Add(e);
+                s.DownloadProgressUpdated += (d, e) => events.Add(e);
 
-            await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null);
+                await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null);
 
-            Assert.Equal(2, events.Count);
-            Assert.Equal(1, events[0].BytesDownloaded);
-            Assert.Equal(DownloadStates.InProgress, events[0].State);
+                Assert.Equal(2, events.Count);
+                Assert.Equal(1, events[0].BytesDownloaded);
+                Assert.Equal(DownloadStates.InProgress, events[0].State);
 
-            Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[1].State);
+                Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[1].State);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -662,14 +693,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var fired = false;
+                var fired = false;
 
-            await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(progressUpdated: (e) => fired = true), null);
+                await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(progressUpdated: (e) => fired = true), null);
 
-            Assert.True(fired);
+                Assert.True(fired);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -711,24 +744,26 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-            var events = new List<DownloadStateChangedEventArgs>();
-
-            s.DownloadStateChanged += (sender, e) =>
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
             {
-                events.Add(e);
-            };
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var events = new List<DownloadStateChangedEventArgs>();
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<MessageReadException>(ex.InnerException);
+                s.DownloadStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
 
-            Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
-            Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<MessageReadException>(ex.InnerException);
+
+                Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
+                Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -770,70 +805,42 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-            var events = new List<DownloadStateChangedEventArgs>();
-
-            s.DownloadStateChanged += (sender, e) =>
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
             {
-                events.Add(e);
-            };
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var events = new List<DownloadStateChangedEventArgs>();
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+                s.DownloadStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
 
-            Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
-            Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<TimeoutException>(ex.InnerException);
+
+                Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
+                Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
         [Theory(DisplayName = "DownloadInternalAsync raises Download events on cancellation"), AutoData]
-        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, string filename, int token)
         {
-            try
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException("Wait cancelled."));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, null, waiter: waiter.Object, serverConnection: conn.Object))
             {
-                var options = new SoulseekClientOptions(messageTimeout: 1000);
-
-                var response = new PeerTransferResponse(token, false, size, string.Empty);
-                var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
-
-                var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
-
-                var transferConn = new Mock<IConnection>();
-                transferConn.Setup(m => m.State)
-                    .Returns(ConnectionState.Connected);
-                transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                var waiter = new Mock<IWaiter>();
-                waiter.Setup(m => m.Wait<PeerTransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(response));
-                waiter.Setup(m => m.WaitIndefinitely<PeerTransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(request));
-                waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.CompletedTask);
-
-                waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
-
-                waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(transferConn.Object));
-                waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
-
-                var conn = new Mock<IMessageConnection>();
-                conn.Setup(m => m.State)
-                    .Returns(ConnectionState.Connected);
-
-                var connManager = new Mock<IConnectionManager>();
-                connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-                    .Returns(Task.FromResult(conn.Object));
-
-                var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var events = new List<DownloadStateChangedEventArgs>();
@@ -849,12 +856,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 Assert.IsType<DownloadException>(ex);
                 Assert.IsType<OperationCanceledException>(ex.InnerException);
 
-                Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
                 Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine(ex);
             }
         }
 
@@ -899,15 +901,17 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<ConnectionException>(ex.InnerException);
-            Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
@@ -951,14 +955,16 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<TimeoutException>(ex.InnerException);
+            }
         }
     }
 }

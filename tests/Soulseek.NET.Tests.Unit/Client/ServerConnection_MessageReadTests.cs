@@ -41,11 +41,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(1)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, message);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, message);
-
-            diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
+                diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
+            }
         }
 
         [Trait("Category", "Diagnostic")]
@@ -60,13 +61,14 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var message = new MessageBuilder().Code(MessageCode.ServerPrivateRoomOwned).Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, message);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, message);
+                diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Exactly(2));
 
-            diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Exactly(2));
-
-            Assert.Contains("Unhandled", msg, StringComparison.InvariantCultureIgnoreCase);
+                Assert.Contains("Unhandled", msg, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -89,13 +91,14 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(port)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, message);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, message);
-
-            Assert.Equal(username, result.Username);
-            Assert.Equal(ip, result.IPAddress);
-            Assert.Equal(port, result.Port);
+                Assert.Equal(username, result.Username);
+                Assert.Equal(ip, result.IPAddress);
+                Assert.Equal(port, result.Port);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -120,19 +123,20 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, options: options, serverConnection: conn.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, serverConnection: conn.Object))
+            {
+                PrivateMessage response = null;
+                s.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
 
-            PrivateMessage response = null;
-            s.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
-
-            Assert.NotNull(response);
-            Assert.Equal(id, response.Id);
-            Assert.Equal(timestamp, response.Timestamp);
-            Assert.Equal(username, response.Username);
-            Assert.Equal(message, response.Message);
-            Assert.Equal(isAdmin, response.IsAdmin);
+                Assert.NotNull(response);
+                Assert.Equal(id, response.Id);
+                Assert.Equal(timestamp, response.Timestamp);
+                Assert.Equal(username, response.Username);
+                Assert.Equal(message, response.Message);
+                Assert.Equal(isAdmin, response.IsAdmin);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -154,11 +158,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, options: options, serverConnection: conn.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, serverConnection: conn.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
-
-            conn.Verify(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
+                conn.Verify(m => m.WriteMessageAsync(It.Is<Message>(a => new MessageReader(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -180,11 +185,12 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(value)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
-
-            Assert.Equal(value, result);
+                Assert.Equal(value, result);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -207,13 +213,14 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteBytes(ipBytes)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
-
-            Assert.Equal(success, result.Succeeded);
-            Assert.Equal(message, result.Message);
-            Assert.Equal(ip, result.IPAddress);
+                Assert.Equal(success, result.Succeeded);
+                Assert.Equal(message, result.Message);
+                Assert.Equal(ip, result.IPAddress);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -234,13 +241,14 @@ namespace Soulseek.NET.Tests.Unit.Client
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
-
-            s.InvokeMethod("ServerConnection_MessageRead", null, builder.Build());
-
-            foreach (var room in rooms)
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
             {
-                Assert.Contains(result, r => r.Name == room.Name);
+                s.InvokeMethod("ServerConnection_MessageRead", null, builder.Build());
+
+                foreach (var room in rooms)
+                {
+                    Assert.Contains(result, r => r.Name == room.Name);
+                }
             }
         }
 
@@ -265,13 +273,14 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var msg = builder.Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
-
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
-
-            foreach (var name in names)
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
             {
-                Assert.Contains(result, n => n == name);
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+
+                foreach (var name in names)
+                {
+                    Assert.Contains(result, n => n == name);
+                }
             }
         }
 
@@ -299,15 +308,16 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(token)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, connectionManager: connMgr.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, connectionManager: connMgr.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+                Assert.Equal(username, response.Username);
+                Assert.Equal(ip, response.IPAddress);
+                Assert.Equal(port, response.Port);
 
-            Assert.Equal(username, response.Username);
-            Assert.Equal(ip, response.IPAddress);
-            Assert.Equal(port, response.Port);
-
-            connMgr.Verify(m => m.GetOrAddSolicitedConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+                connMgr.Verify(m => m.GetOrAddSolicitedConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -329,13 +339,14 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .WriteInteger(token)
                 .Build();
 
-            var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object))
+            {
+                var ex = Record.Exception(() => s.InvokeMethod("ServerConnection_MessageRead", null, msg));
+                var active = s.GetProperty<ConcurrentDictionary<int, Download>>("Downloads");
 
-            var ex = Record.Exception(() => s.InvokeMethod("ServerConnection_MessageRead", null, msg));
-            var active = s.GetProperty<ConcurrentDictionary<int, Download>>("Downloads");
-
-            Assert.Null(ex);
-            Assert.Empty(active);
+                Assert.Null(ex);
+                Assert.Empty(active);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -359,17 +370,19 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var diagnostics = new List<DiagnosticGeneratedEventArgs>();
 
-            var s = new SoulseekClient();
-            s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            using (var s = new SoulseekClient())
+            {
+                s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
-                .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
-                .ToList();
+                diagnostics = diagnostics
+                    .Where(d => d.Level == DiagnosticLevel.Warning)
+                    .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
+                    .ToList();
 
-            Assert.Single(diagnostics);
+                Assert.Single(diagnostics);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -396,16 +409,17 @@ namespace Soulseek.NET.Tests.Unit.Client
             connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, connectionManager: connManager.Object);
+            using (var s = new SoulseekClient("127.0.0.1", 1, connectionManager: connManager.Object))
+            {
+                var active = new ConcurrentDictionary<int, Download>();
+                active.TryAdd(token, new Download(username, filename, token));
 
-            var active = new ConcurrentDictionary<int, Download>();
-            active.TryAdd(token, new Download(username, filename, token));
+                s.SetProperty("Downloads", active);
 
-            s.SetProperty("Downloads", active);
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
-
-            connManager.Verify(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+                connManager.Verify(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+            }
         }
 
         [Trait("Category", "Message")]
@@ -421,17 +435,19 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var diagnostics = new List<DiagnosticGeneratedEventArgs>();
 
-            var s = new SoulseekClient();
-            s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            using (var s = new SoulseekClient())
+            {
+                s.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
-            s.InvokeMethod("ServerConnection_MessageRead", null, msg);
+                s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-            diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
-                .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
-                .ToList();
+                diagnostics = diagnostics
+                    .Where(d => d.Level == DiagnosticLevel.Warning)
+                    .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
+                    .ToList();
 
-            Assert.Single(diagnostics);
+                Assert.Single(diagnostics);
+            }
         }
     }
 }
