@@ -792,33 +792,40 @@ namespace Soulseek.NET.Tests.Unit.Client
 
         [Trait("Category", "DownloadInternalAsync")]
         [Theory(DisplayName = "DownloadInternalAsync raises Download events on cancellation"), AutoData]
-        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, string filename, int token)
         {
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Throws(new OperationCanceledException("Wait cancelled."));
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
-
-            var s = new SoulseekClient("127.0.0.1", 1, null, waiter: waiter.Object, serverConnection: conn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-            var events = new List<DownloadStateChangedEventArgs>();
-
-            s.DownloadStateChanged += (sender, e) =>
+            try
             {
-                events.Add(e);
-            };
+                var waiter = new Mock<IWaiter>();
+                waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                    .Throws(new OperationCanceledException("Wait cancelled."));
 
-            var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.State)
+                    .Returns(ConnectionState.Connected);
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadException>(ex);
-            Assert.IsType<OperationCanceledException>(ex.InnerException);
+                var s = new SoulseekClient("127.0.0.1", 1, null, waiter: waiter.Object, serverConnection: conn.Object);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
+                var events = new List<DownloadStateChangedEventArgs>();
+
+                s.DownloadStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadException>(ex);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
+
+                Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
+            }
+            catch (Exception ex)
+            {
+                Assert.Equal(string.Empty, ex.Message);
+            }
         }
 
         [Trait("Category", "DownloadInternalAsync")]
