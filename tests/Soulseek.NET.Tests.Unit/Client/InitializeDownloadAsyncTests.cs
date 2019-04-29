@@ -34,7 +34,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(BitConverter.GetBytes(1)));
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.AddSolicitedTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var s = new SoulseekClient("127.0.0.1", 1, null, connectionManager: connManager.Object);
@@ -54,7 +54,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.AddSolicitedTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var waiter = new Mock<IWaiter>();
@@ -87,7 +87,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromException<byte[]>(new Exception()));
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.AddSolicitedTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var waiter = new Mock<IWaiter>();
@@ -121,7 +121,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Callback<string>(str => message = str);
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.AddSolicitedTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var waiter = new Mock<IWaiter>();

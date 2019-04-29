@@ -406,7 +406,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new byte[] { 0, 0, 0, 0 }));
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.AddSolicitedTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, connectionManager: connManager.Object))
@@ -418,7 +418,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
                 s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-                connManager.Verify(m => m.AddTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+                connManager.Verify(m => m.AddSolicitedTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 

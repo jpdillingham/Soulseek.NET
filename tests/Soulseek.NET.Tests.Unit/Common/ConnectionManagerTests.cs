@@ -66,33 +66,39 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(ex);
         }
 
-        //[Trait("Category", "GetTransferConnectionAsync")]
-        //[Theory(DisplayName = "GetTransferConnectionAsync connects and pierces firewall"), AutoData]
-        //internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, string type, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-        //{
-        //    var conn = new Mock<IConnection>();
-        //    conn.Setup(m => m.IPAddress)
-        //        .Returns(ipAddress);
-        //    conn.Setup(m => m.Port)
-        //        .Returns(port);
-        //    conn.Setup(m => m.ConnectAsync())
-        //        .Returns(Task.CompletedTask);
-        //    conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
-        //        .Returns(Task.CompletedTask);
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync connects and pierces firewall"), AutoData]
+        internal async Task AddTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, string type, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync())
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
+                .Returns(Task.CompletedTask);
 
-        //    var connFactory = new Mock<IConnectionFactory>();
-        //    connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-        //        .Returns(conn.Object);
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
 
-        //    var response = new ConnectToPeerResponse(username, type, ipAddress, port, token);
+            var key = new ConnectionKey(ipAddress, port);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, connectionFactory: connFactory.Object);
+            IConnection newConn = null;
 
-        //    await s.InvokeMethod<Task<IConnection>>("GetTransferConnectionAsync", response, options, CancellationToken.None);
+            using (var c = new ConnectionManager(1, connFactory.Object))
+            {
+                newConn = await c.AddUnsolicitedTransferConnectionAsync(key, token, username, options, CancellationToken.None);
+            }
 
-        //    conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //    conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-        //}
+            Assert.Equal(ipAddress, newConn.IPAddress);
+            Assert.Equal(port, newConn.Port);
+
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
 
         //[Trait("Category", "GetSolicitedPeerConnectionAsync")]
         //[Theory(DisplayName = "GetSolicitedPeerConnectionAsync returns expected IMessageConnection instance"), AutoData]
