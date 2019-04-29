@@ -97,9 +97,9 @@ namespace Soulseek.NET.Tests.Unit
             return InvokeMethod<T>(target, methodName, Flags, args);
         }
 
-        public static void RaiseEvent(this object target, string eventName, object eventArgs)
+        public static void RaiseEvent(this object target, Type targetType, string eventName, object eventArgs)
         {
-            var type = target.GetType();
+            var type = targetType;
             var @event = (MulticastDelegate)type.GetField(eventName, Flags)?.GetValue(target);
 
             if (@event == null)
@@ -118,6 +118,11 @@ namespace Soulseek.NET.Tests.Unit
             {
                 throw new Exception($"Failed to raise event '{eventName}' on target Type {type.Name}.  See inner Exception for details.", ex);
             }
+        }
+
+        public static void RaiseEvent(this object target, string eventName, object eventArgs)
+        {
+            RaiseEvent(target, target.GetType(), eventName, eventArgs);
         }
 
         public static void SetField(this object target, string fieldName, object value)
