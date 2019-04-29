@@ -118,6 +118,25 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(ex);
         }
 
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect raises StateChanged event")]
+        public async Task Connect_Raises_StateChanged_Event()
+        {
+            var fired = false;
+
+            var s = new SoulseekClient();
+            s.StateChanged += (sender, e) => fired = true;
+
+            var task = s.ConnectAsync();
+
+            var c = s.GetProperty<Connection>("ServerConnection");
+            c.RaiseEvent(typeof(Connection), "Connected", EventArgs.Empty);
+
+            await task;
+
+            Assert.True(fired);
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiation throws on a bad address")]
         public void Instantiation_Throws_On_A_Bad_Address()
@@ -155,6 +174,27 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Null(ex);
             Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect raises StateChanged event")]
+        public void Disconnect_Raises_StateChanged_Event()
+        {
+            var fired = false;
+
+            var c = new Mock<IMessageConnection>();
+
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            s.StateChanged += (sender, e) => fired = true;
+
+            s.SetProperty("State", ConnectionState.Connected);
+
+            var ex = Record.Exception(() => s.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+
+            Assert.True(fired);
         }
 
         [Trait("Category", "Disconnect")]
