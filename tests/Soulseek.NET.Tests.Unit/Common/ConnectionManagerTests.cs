@@ -66,10 +66,14 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(ex);
         }
 
-        [Trait("Category", "AddTransferConnectionAsync")]
-        [Theory(DisplayName = "AddTransferConnectionAsync connects and pierces firewall"), AutoData]
-        internal async Task AddTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, string type, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
+        [Theory(DisplayName = "AddUnsolicitedTransferConnectionAsync connects and sends PeerInit"), AutoData]
+        internal async Task AddUnsolicitedTransferConnectionAsync_Connects_And_Sends_PeerInit(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
         {
+            var key = new ConnectionKey(ipAddress, port);
+            var expectedBytes = new PeerInitRequest(username, "F", token).ToMessage().ToByteArray();
+            byte[] actualBytes = Array.Empty<byte>();
+
             var conn = new Mock<IConnection>();
             conn.Setup(m => m.IPAddress)
                 .Returns(ipAddress);
@@ -77,14 +81,13 @@ namespace Soulseek.NET.Tests.Unit
                 .Returns(port);
             conn.Setup(m => m.ConnectAsync())
                 .Returns(Task.CompletedTask);
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>()))
-                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
 
             var connFactory = new Mock<IConnectionFactory>();
             connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
                 .Returns(conn.Object);
-
-            var key = new ConnectionKey(ipAddress, port);
 
             IConnection newConn = null;
 
@@ -95,6 +98,47 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Equal(ipAddress, newConn.IPAddress);
             Assert.Equal(port, newConn.Port);
+
+            Assert.Equal(expectedBytes, actualBytes);
+
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
+        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
+        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
+            var expectedBytes = new PierceFirewallRequest(token).ToMessage().ToByteArray();
+            byte[] actualBytes = Array.Empty<byte>();
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync())
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+                .Returns(conn.Object);
+
+            IConnection newConn = null;
+
+            using (var c = new ConnectionManager(1, connFactory.Object))
+            {
+                newConn = await c.AddSolicitedTransferConnectionAsync(ctpr, options, CancellationToken.None);
+            }
+
+            Assert.Equal(ipAddress, newConn.IPAddress);
+            Assert.Equal(port, newConn.Port);
+
+            Assert.Equal(expectedBytes, actualBytes);
 
             conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
