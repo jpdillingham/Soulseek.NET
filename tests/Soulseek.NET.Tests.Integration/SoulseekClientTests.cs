@@ -30,6 +30,22 @@ namespace Soulseek.NET.Tests.Integration
         }
 
         [Trait("Category", "Connectivity")]
+        [Fact(DisplayName = "Client connect raises StateChanged event")]
+        public async Task Client_Connect_Raises_StateChanged_Event()
+        {
+            SoulseekClientStateChangedEventArgs args = null;
+
+            var client = new SoulseekClient();
+            client.StateChanged += (sender, e) => args = e;
+
+            var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientStates.Connected, client.State);
+            Assert.Equal(SoulseekClientStates.Connected, args.State);
+        }
+
+        [Trait("Category", "Connectivity")]
         [Fact(DisplayName = "Client disconnects")]
         public async Task Client_Disconnects()
         {
@@ -40,6 +56,24 @@ namespace Soulseek.NET.Tests.Integration
 
             Assert.Null(ex);
             Assert.Equal(SoulseekClientStates.Disconnected, client.State);
+        }
+
+        [Trait("Category", "Connectivity")]
+        [Fact(DisplayName = "Client disconnect raises StateChanged event")]
+        public async Task Client_Disconnect_Raises_StateChanged_Event()
+        {
+            SoulseekClientStateChangedEventArgs args = null;
+
+            var client = new SoulseekClient();
+            await client.ConnectAsync();
+
+            client.StateChanged += (sender, e) => args = e;
+
+            var ex = Record.Exception(() => client.Disconnect());
+
+            Assert.Null(ex);
+            Assert.Equal(SoulseekClientStates.Disconnected, client.State);
+            Assert.Equal(SoulseekClientStates.Disconnected, args.State);
         }
     }
 }
