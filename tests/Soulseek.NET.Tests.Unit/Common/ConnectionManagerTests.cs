@@ -19,6 +19,7 @@ namespace Soulseek.NET.Tests.Unit
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.NET.Messaging;
     using Soulseek.NET.Messaging.Messages;
     using Soulseek.NET.Messaging.Tcp;
     using Soulseek.NET.Tcp;
@@ -119,7 +120,7 @@ namespace Soulseek.NET.Tests.Unit
 
             IConnection newConn = null;
 
-            using (var c = new ConnectionManager(1, connFactory.Object))
+            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
             {
                 newConn = await c.AddUnsolicitedTransferConnectionAsync(key, token, username, options, CancellationToken.None);
             }
@@ -158,7 +159,7 @@ namespace Soulseek.NET.Tests.Unit
 
             IConnection newConn = null;
 
-            using (var c = new ConnectionManager(1, connFactory.Object))
+            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
             {
                 newConn = await c.AddSolicitedTransferConnectionAsync(ctpr, options, CancellationToken.None);
             }
@@ -170,6 +171,44 @@ namespace Soulseek.NET.Tests.Unit
 
             conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
             conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
+        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
+            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
+
+            var expectedBytes = new PierceFirewallRequest(token).ToMessage().ToByteArray();
+            byte[] actualBytes = Array.Empty<byte>();
+
+            var tokenFactory = new Mock<ITokenFactory>();
+            tokenFactory.Setup(m => m.GetToken())
+                .Returns(token);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
+
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
+                .Returns(conn.Object);
+
+            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
+
+            IMessageConnection connection = null;
+
+            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
+
+            Assert.Null(ex);
+
+            Assert.Equal(conn.Object, connection);
+
+            Assert.Equal(expectedBytes, actualBytes);
         }
     }
 }
