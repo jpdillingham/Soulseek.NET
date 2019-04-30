@@ -13,6 +13,8 @@
 namespace Soulseek.NET.Tests.Unit
 {
     using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -64,6 +66,34 @@ namespace Soulseek.NET.Tests.Unit
             var ex = Record.Exception(() => c.Dispose());
 
             Assert.Null(ex);
+        }
+
+        [Trait("Category", "RemoveAndDisposeAll")]
+        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
+        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
+        {
+            var c = new ConnectionManager(1);
+
+            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+            peer.GetOrAdd(new ConnectionKey(ip, port), (new SemaphoreSlim(1), new Mock<IMessageConnection>().Object));
+
+            c.SetProperty("PeerConnections", peer);
+
+            var transfer = new ConcurrentDictionary<(ConnectionKey, int), IConnection>();
+            transfer.GetOrAdd((new ConnectionKey(ip, port), port), new Mock<IConnection>().Object);
+
+            c.SetProperty("TransferConnections", transfer);
+
+            var activePeerBefore = c.ActivePeerConnections;
+            var activeTransferBefore = c.ActiveTransferConnections;
+
+            c.RemoveAndDisposeAll();
+
+            Assert.Equal(1, activePeerBefore);
+            Assert.Equal(1, activeTransferBefore);
+
+            Assert.Empty(c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections"));
+            Assert.Empty(c.GetProperty<ConcurrentDictionary<(ConnectionKey, int), IConnection>>("TransferConnections"));
         }
 
         [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
