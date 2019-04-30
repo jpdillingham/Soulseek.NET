@@ -74,10 +74,10 @@ namespace Soulseek.NET
 
         private IConnectionFactory ConnectionFactory { get; }
         private bool Disposed { get; set; }
-        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; }
+        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; set; }
         private SemaphoreSlim PeerSemaphore { get; }
         private TokenFactory TokenFactory { get; }
-        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; }
+        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
@@ -166,7 +166,7 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    AddOrUpdateMessageConnection(key, connection);
+                    PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
 
                     var context = (ConnectToPeerResponse)connection.Context;
                     var request = new PierceFirewallRequest(context.Token).ToMessage();
@@ -213,7 +213,7 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    AddOrUpdateMessageConnection(connectionKey, connection);
+                    PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
 
                     await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.GetToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
@@ -241,11 +241,6 @@ namespace Soulseek.NET
             }
 
             TransferConnections.RemoveAndDisposeAll();
-        }
-
-        private void AddOrUpdateMessageConnection(ConnectionKey key, IMessageConnection connection)
-        {
-            PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
         }
 
         private void Dispose(bool disposing)
