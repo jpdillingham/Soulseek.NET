@@ -213,7 +213,7 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+                    PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
 
                     await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.GetToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
