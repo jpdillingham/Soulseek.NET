@@ -33,8 +33,9 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
         /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
+        /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
-        internal ConnectionManager(int concurrentPeerConnections, IConnectionFactory connectionFactory = null)
+        internal ConnectionManager(int concurrentPeerConnections, ITokenFactory tokenFactory = null, IConnectionFactory connectionFactory = null)
         {
             if (concurrentPeerConnections < 1)
             {
@@ -49,7 +50,7 @@ namespace Soulseek.NET
             TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
-            TokenFactory = new TokenFactory();
+            TokenFactory = tokenFactory ?? new TokenFactory();
         }
 
         /// <summary>
@@ -76,7 +77,7 @@ namespace Soulseek.NET
         private bool Disposed { get; set; }
         private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; set; }
         private SemaphoreSlim PeerSemaphore { get; }
-        private TokenFactory TokenFactory { get; }
+        private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
 
         /// <summary>
@@ -168,8 +169,7 @@ namespace Soulseek.NET
 
                     PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
 
-                    var context = (ConnectToPeerResponse)connection.Context;
-                    var request = new PierceFirewallRequest(context.Token).ToMessage();
+                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage();
                     await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
             }
