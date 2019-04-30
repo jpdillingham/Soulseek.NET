@@ -210,5 +210,30 @@ namespace Soulseek.NET.Tests.Unit
 
             Assert.Equal(expectedBytes, actualBytes);
         }
+
+        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync returns existing connection"), AutoData]
+        internal async Task GetOrAddSolicitedConnectionAsync_Returns_Existing_Connection(
+            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
+
+            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+            var conn = new Mock<IMessageConnection>();
+
+            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
+
+            var c = new ConnectionManager(10);
+            c.SetProperty("PeerConnections", peer);
+
+            IMessageConnection connection = null;
+
+            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
+
+            Assert.Null(ex);
+
+            Assert.Equal(conn.Object, connection);
+        }
     }
 }
