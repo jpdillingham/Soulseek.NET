@@ -14,6 +14,7 @@ namespace Soulseek.NET.Tests.Unit
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -277,7 +278,7 @@ namespace Soulseek.NET.Tests.Unit
         [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
         [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync returns existing connection"), AutoData]
         internal async Task GetOrAddUnsolicitedConnectionAsync_Returns_Existing_Connection(
-            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options)
         {
             var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
             var conn = new Mock<IMessageConnection>();
@@ -295,6 +296,71 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Null(ex);
 
             Assert.Equal(conn.Object, connection);
+        }
+
+        [Trait("Category", "Semaphore")]
+        [Theory(DisplayName = "GetOrAdd queues connections"), AutoData]
+        internal void GetOrAdd_Queues_Connections(
+            string username, IPAddress ipAddress, int port, string username2, IPAddress ipAddress2, int port2, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        {
+            var key1 = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+            var key2 = new ConnectionKey(username2, ipAddress2, port2, MessageConnectionType.Peer);
+
+            var tokenFactory = new Mock<ITokenFactory>();
+            tokenFactory.Setup(m => m.GetToken())
+                .Returns(token);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(key1);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    Thread.Sleep(5000);
+                    return Task.CompletedTask;
+                });
+
+            var conn2 = new Mock<IMessageConnection>();
+            conn2.Setup(m => m.Key)
+                .Returns(key2);
+            conn2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(() =>
+                {
+                    Thread.Sleep(5000);
+                    return Task.CompletedTask;
+                });
+
+            var connFactory = new Mock<IConnectionFactory>();
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
+                .Returns(conn.Object);
+            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username2, ipAddress2, port2, options))
+                .Returns(conn2.Object);
+
+            var c = new ConnectionManager(1, tokenFactory.Object, connFactory.Object);
+
+#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+            c.GetOrAddUnsolicitedConnectionAsync(key1, username, messageHandler, options, CancellationToken.None);
+            c.GetOrAddUnsolicitedConnectionAsync(key2, username, messageHandler, options, CancellationToken.None);
+#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+
+            Assert.Equal(1, c.ActivePeerConnections);
+            Assert.Equal(1, c.WaitingPeerConnections);
+
+            var firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
+            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
+
+            Thread.Sleep(100);
+
+            Assert.Equal(1, c.ActivePeerConnections);
+            Assert.Equal(0, c.WaitingPeerConnections);
+
+            firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
+            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
+
+            Thread.Sleep(100);
+
+            Assert.Equal(0, c.ActivePeerConnections);
+            Assert.Equal(0, c.WaitingPeerConnections);
         }
     }
 }
