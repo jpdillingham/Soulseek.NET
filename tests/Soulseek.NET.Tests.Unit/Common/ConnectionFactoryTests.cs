@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.NET.Tests.Unit.Common
+namespace Soulseek.NET.Tests.Unit
 {
     using System.Net;
     using AutoFixture.Xunit2;

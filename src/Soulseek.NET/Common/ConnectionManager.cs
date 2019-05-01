@@ -33,8 +33,9 @@ namespace Soulseek.NET
         ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
         /// </summary>
         /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
+        /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
-        internal ConnectionManager(int concurrentPeerConnections, IConnectionFactory connectionFactory = null)
+        internal ConnectionManager(int concurrentPeerConnections, ITokenFactory tokenFactory = null, IConnectionFactory connectionFactory = null)
         {
             if (concurrentPeerConnections < 1)
             {
@@ -49,7 +50,7 @@ namespace Soulseek.NET
             TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
-            TokenFactory = new TokenFactory();
+            TokenFactory = tokenFactory ?? new TokenFactory();
         }
 
         /// <summary>
@@ -74,33 +75,10 @@ namespace Soulseek.NET
 
         private IConnectionFactory ConnectionFactory { get; }
         private bool Disposed { get; set; }
-        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; }
+        private ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)> PeerConnections { get; set; }
         private SemaphoreSlim PeerSemaphore { get; }
-        private TokenFactory TokenFactory { get; }
-        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; }
-
-        /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/> and sends a peer init request.
-        /// </summary>
-        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
-        /// <param name="token">The transfer token.</param>
-        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The new connection.</returns>
-        public async Task<IConnection> AddTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = ConnectionFactory.GetConnection(connectionKey.IPAddress, connectionKey.Port, options);
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
-
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
-
-            await connection.WriteAsync(new PeerInitRequest(localUsername, "F", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-            return connection;
-        }
+        private ITokenFactory TokenFactory { get; }
+        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
@@ -109,7 +87,7 @@ namespace Soulseek.NET
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        public async Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
+        public async Task<IConnection> AddSolicitedTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
@@ -120,6 +98,29 @@ namespace Soulseek.NET
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+            return connection;
+        }
+
+        /// <summary>
+        ///     Adds a new transfer <see cref="IConnection"/> and sends a peer init request.
+        /// </summary>
+        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
+        /// <param name="token">The transfer token.</param>
+        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        public async Task<IConnection> AddUnsolicitedTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = ConnectionFactory.GetConnection(connectionKey.IPAddress, connectionKey.Port, options);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+
+            await connection.WriteAsync(new PeerInitRequest(localUsername, "F", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
             return connection;
         }
@@ -166,10 +167,9 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    AddOrUpdateMessageConnection(key, connection);
+                    PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
 
-                    var context = (ConnectToPeerResponse)connection.Context;
-                    var request = new PierceFirewallRequest(context.Token).ToMessage();
+                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage();
                     await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
             }
@@ -213,7 +213,7 @@ namespace Soulseek.NET
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    AddOrUpdateMessageConnection(connectionKey, connection);
+                    PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
 
                     await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.GetToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
@@ -241,11 +241,6 @@ namespace Soulseek.NET
             }
 
             TransferConnections.RemoveAndDisposeAll();
-        }
-
-        private void AddOrUpdateMessageConnection(ConnectionKey key, IMessageConnection connection)
-        {
-            PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
         }
 
         private void Dispose(bool disposing)
