@@ -314,21 +314,13 @@ namespace Soulseek.NET.Tests.Unit
             conn.Setup(m => m.Key)
                 .Returns(key1);
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(() =>
-                {
-                    Thread.Sleep(5000);
-                    return Task.CompletedTask;
-                });
+                .Returns(() => Task.CompletedTask);
 
             var conn2 = new Mock<IMessageConnection>();
             conn2.Setup(m => m.Key)
                 .Returns(key2);
             conn2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(() =>
-                {
-                    Thread.Sleep(5000);
-                    return Task.CompletedTask;
-                });
+                .Returns(() => Task.CompletedTask);
 
             var connFactory = new Mock<IConnectionFactory>();
             connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
