@@ -27,8 +27,7 @@
         {
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials()));
 
-            services
-                .AddMvc()
+            services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
                 .AddJsonOptions(options =>
                 {
@@ -43,16 +42,13 @@
                 options.SubstituteApiVersionInUrl = true;
             });
 
-            services.AddSwaggerGen(c =>
+            services.AddSwaggerGen(options =>
             {
-                var provider = services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
+                services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>()
+                    .ApiVersionDescriptions.ToList()
+                        .ForEach(description => options.SwaggerDoc(description.GroupName, new Info { Title = "Soulseek.NET Example API", Version = description.GroupName }));
 
-                foreach (var description in provider.ApiVersionDescriptions)
-                {
-                    c.SwaggerDoc(description.GroupName, new Info { Title = "Soulseek.NET Example API", Version = description.GroupName });
-                }
-
-                c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml"));
+                options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml"));
             });
         }
 
@@ -72,14 +68,14 @@
             app.UseHttpsRedirection();
             app.UseMvc();
 
-            app.UseSwagger(c => 
+            app.UseSwagger(options => 
             {
-                string camelCase(string key) =>
-                    string.Join('/', key.Split('/').Select(x => x.Contains("{") || x.Length < 2 ? x : char.ToLowerInvariant(x[0]) + x.Substring(1)));
-
                 // use camelCasing for routes and properties
-                c.PreSerializeFilters.Add((document, request) =>
+                options.PreSerializeFilters.Add((document, request) =>
                 {
+                    string camelCase(string key) =>
+                        string.Join('/', key.Split('/').Select(x => x.Contains("{") || x.Length < 2 ? x : char.ToLowerInvariant(x[0]) + x.Substring(1)));
+
                     document.Paths = document.Paths.ToDictionary(p => camelCase(p.Key), p => p.Value);
                     document.Paths.ToList()
                         .ForEach(path => typeof(PathItem).GetProperties().Where(p => p.PropertyType == typeof(Operation)).ToList()
