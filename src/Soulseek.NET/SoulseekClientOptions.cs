@@ -17,7 +17,7 @@ namespace Soulseek.NET
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>
-    public class SoulseekClientOptions
+    public sealed class SoulseekClientOptions
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.

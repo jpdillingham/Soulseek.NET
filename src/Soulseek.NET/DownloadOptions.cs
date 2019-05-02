@@ -17,7 +17,7 @@ namespace Soulseek.NET
     /// <summary>
     ///     Options for the download operation.
     /// </summary>
-    public class DownloadOptions
+    public sealed class DownloadOptions
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="DownloadOptions"/> class.
