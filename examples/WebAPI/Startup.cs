@@ -27,7 +27,8 @@
         {
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials()));
 
-            services.AddMvc()
+            services
+                .AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
                 .AddJsonOptions(options =>
                 {
@@ -35,11 +36,7 @@
                     options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 });
 
-            services.AddApiVersioning(options =>
-            {
-                options.ReportApiVersions = true;
-            });
-
+            services.AddApiVersioning(options => options.ReportApiVersions = true);
             services.AddVersionedApiExplorer(options =>
             {
                 options.GroupNameFormat = "'v'VVV";
@@ -48,17 +45,14 @@
 
             services.AddSwaggerGen(c =>
             {
-                var provider = services.BuildServiceProvider()
-                       .GetRequiredService<IApiVersionDescriptionProvider>();
+                var provider = services.BuildServiceProvider().GetRequiredService<IApiVersionDescriptionProvider>();
 
                 foreach (var description in provider.ApiVersionDescriptions)
                 {
                     c.SwaggerDoc(description.GroupName, new Info { Title = "Soulseek.NET Example API", Version = description.GroupName });
                 }
 
-                var fileName = typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml";
-                var basePath = AppContext.BaseDirectory;
-                c.IncludeXmlComments(Path.Combine(basePath, fileName));
+                c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, typeof(Startup).GetTypeInfo().Assembly.GetName().Name + ".xml"));
             });
         }
 
@@ -83,10 +77,10 @@
                 string camelCase(string key) =>
                     string.Join('/', key.Split('/').Select(x => x.Contains("{") || x.Length < 2 ? x : char.ToLowerInvariant(x[0]) + x.Substring(1)));
 
+                // use camelCasing for routes and properties
                 c.PreSerializeFilters.Add((document, request) =>
                 {
                     document.Paths = document.Paths.ToDictionary(p => camelCase(p.Key), p => p.Value);
-
                     document.Paths.ToList()
                         .ForEach(path => typeof(PathItem).GetProperties().Where(p => p.PropertyType == typeof(Operation)).ToList()
                             .ForEach(operation => ((Operation)operation.GetValue(path.Value, null))?.Parameters.ToList()
@@ -94,13 +88,8 @@
                 });
             });
 
-            app.UseSwaggerUI(options =>
-            {
-                foreach (var description in provider.ApiVersionDescriptions)
-                {
-                    options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName);
-                }
-            });
+            app.UseSwaggerUI(options => provider.ApiVersionDescriptions.ToList()
+                .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
         }
     }
 }
