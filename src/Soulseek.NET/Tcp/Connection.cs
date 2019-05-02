@@ -217,7 +217,7 @@ namespace Soulseek.NET.Tcp
             {
                 ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
 
-                throw;
+                throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
 
