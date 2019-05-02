@@ -49,7 +49,7 @@ namespace Soulseek.NET
             {
                 return Equals((WaitKey)obj);
             }
-            catch (Exception)
+            catch (InvalidCastException)
             {
                 return false;
             }

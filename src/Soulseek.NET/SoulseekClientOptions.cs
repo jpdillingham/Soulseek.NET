@@ -83,7 +83,7 @@ namespace Soulseek.NET
         public ConnectionOptions ServerConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets the starting value for download and search tokens. (Default = 0);
+        ///     Gets the starting value for download and search tokens. (Default = 0).
         /// </summary>
         public int StartingToken { get; }
 

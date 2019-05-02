@@ -38,6 +38,6 @@ namespace Soulseek.NET
         /// <summary>
         ///     Connected and logged in.
         /// </summary>
-        LoggedIn = 4
+        LoggedIn = 4,
     }
 }

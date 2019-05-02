@@ -29,7 +29,7 @@ namespace Soulseek.NET.Messaging.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
@@ -44,7 +44,7 @@ namespace Soulseek.NET.Messaging.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>

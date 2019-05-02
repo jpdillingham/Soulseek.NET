@@ -62,7 +62,7 @@ namespace Soulseek.NET.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentNullException">Thrown when the address parameter is null.</exception>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the port parameter is not between <see cref="IPEndPoint.MinPort"/> and <see cref="IPEndPoint.MaxPort"/>
+        ///     Thrown when the port parameter is not between <see cref="IPEndPoint.MinPort"/> and <see cref="IPEndPoint.MaxPort"/>.
         /// </exception>
         /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>

@@ -33,7 +33,7 @@ namespace Soulseek.NET
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> with the specified parameters.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>

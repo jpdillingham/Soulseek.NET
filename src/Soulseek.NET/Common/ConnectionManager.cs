@@ -23,7 +23,7 @@ namespace Soulseek.NET
     using Soulseek.NET.Tcp;
 
     /// <summary>
-    ///     Manages a queue of <see cref="IConnection"/>
+    ///     Manages a queue of <see cref="IConnection"/>.
     /// </summary>
     internal sealed class ConnectionManager : IConnectionManager
     {

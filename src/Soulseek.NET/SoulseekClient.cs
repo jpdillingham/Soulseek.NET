@@ -17,6 +17,7 @@ namespace Soulseek.NET
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.NET.Exceptions;
@@ -91,7 +92,7 @@ namespace Soulseek.NET
                 {
                     IPAddress = Address.ResolveIPAddress();
                 }
-                catch (Exception ex)
+                catch (SocketException ex)
                 {
                     throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
                 }
@@ -570,7 +571,7 @@ namespace Soulseek.NET
             Task<byte[]> downloadCompleted = null;
             var lastState = DownloadStates.None;
 
-            void updateState(DownloadStates state)
+            void UpdateState(DownloadStates state)
             {
                 download.State = state;
                 var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
@@ -579,7 +580,7 @@ namespace Soulseek.NET
                 DownloadStateChanged?.Invoke(this, args);
             }
 
-            void updateProgress(int bytesDownloaded)
+            void UpdateProgress(int bytesDownloaded)
             {
                 var lastBytes = download.BytesDownloaded;
                 download.UpdateProgress(bytesDownloaded);
@@ -605,14 +606,14 @@ namespace Soulseek.NET
 
                 // request the file
                 await peerConnection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
-                updateState(DownloadStates.Requested);
+                UpdateState(DownloadStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
-                    updateState(DownloadStates.Initializing);
+                    UpdateState(DownloadStates.Initializing);
 
                     download.Size = transferRequestAcknowledgement.FileSize;
                     download.RemoteToken = token;
@@ -627,14 +628,14 @@ namespace Soulseek.NET
                 else
                 {
                     // the download is remotely queued, so put it in the local queue.
-                    updateState(DownloadStates.Queued);
+                    UpdateState(DownloadStates.Queued);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
-                    updateState(DownloadStates.Initializing);
+                    UpdateState(DownloadStates.Initializing);
 
                     // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
                     // transfer connection. this operation is somewhat indirect because we aren't sure which download an incoming
@@ -652,7 +653,7 @@ namespace Soulseek.NET
                     download.Connection = await transferConnectionInitialized.ConfigureAwait(false);
                 }
 
-                download.Connection.DataRead += (sender, e) => updateProgress(e.CurrentLength);
+                download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
                 download.Connection.Disconnected += (sender, message) =>
                 {
                     if (download.State.HasFlag(DownloadStates.Succeeded))
@@ -675,7 +676,7 @@ namespace Soulseek.NET
                     // not sure what this is; it was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
-                    updateState(DownloadStates.InProgress);
+                    UpdateState(DownloadStates.InProgress);
 
                     var bytes = await download.Connection.ReadAsync(download.Size, cancellationToken).ConfigureAwait(false);
 
@@ -730,8 +731,8 @@ namespace Soulseek.NET
                 // change state so we can fire the progress update a final time with the updated state
                 // little bit of a hack to avoid cloning the download
                 download.State = DownloadStates.Completed | download.State;
-                updateProgress(download.Data?.Length ?? 0);
-                updateState(download.State);
+                UpdateProgress(download.Data?.Length ?? 0);
+                UpdateState(download.State);
             }
         }
 
@@ -860,7 +861,7 @@ namespace Soulseek.NET
             var search = new Search(searchText, token, options);
             var lastState = SearchStates.None;
 
-            void updateState(SearchStates state)
+            void UpdateState(SearchStates state)
             {
                 search.State = state;
                 var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
@@ -879,10 +880,10 @@ namespace Soulseek.NET
                 };
 
                 Searches.TryAdd(search.Token, search);
-                updateState(SearchStates.Requested);
+                UpdateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
-                updateState(SearchStates.InProgress);
+                UpdateState(SearchStates.InProgress);
 
                 var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
                 return responses.ToList().AsReadOnly();
@@ -901,7 +902,7 @@ namespace Soulseek.NET
             {
                 Searches.TryRemove(search.Token, out _);
 
-                updateState(SearchStates.Completed | search.State);
+                UpdateState(SearchStates.Completed | search.State);
                 search.Dispose();
             }
         }

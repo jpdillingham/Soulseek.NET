@@ -217,7 +217,7 @@ namespace Soulseek.NET.Tcp
             {
                 ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
 
-                throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
+                throw;
             }
         }
 
@@ -351,7 +351,7 @@ namespace Soulseek.NET.Tcp
 
         /// <summary>
         ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally
-        ///     specified <paramref name="message"/>
+        ///     specified <paramref name="message"/>.
         /// </summary>
         /// <param name="state">The state to which to change.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>

@@ -209,7 +209,7 @@ namespace Soulseek.NET.Messaging
 
         private void Decompress(byte[] inData, out byte[] outData)
         {
-            void copyStream(Stream input, Stream output)
+            void CopyStream(Stream input, Stream output)
             {
                 byte[] buffer = new byte[2000];
                 int len;
@@ -228,7 +228,7 @@ namespace Soulseek.NET.Messaging
                 using (var outZStream = new ZOutputStream(outMemoryStream))
                 using (var inMemoryStream = new MemoryStream(inData))
                 {
-                    copyStream(inMemoryStream, outZStream);
+                    CopyStream(inMemoryStream, outZStream);
                     outZStream.finish();
                     outData = outMemoryStream.ToArray();
                 }

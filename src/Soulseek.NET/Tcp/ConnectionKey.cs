@@ -90,7 +90,7 @@ namespace Soulseek.NET.Tcp
             {
                 return Equals((ConnectionKey)obj);
             }
-            catch (Exception)
+            catch (InvalidCastException)
             {
                 return false;
             }
