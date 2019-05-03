@@ -290,7 +290,7 @@
             timer.Start();
 
             IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText,
-                new SearchOptions(
+                options: new SearchOptions(
                     filterResponses: true,
                     minimumResponseFileCount: minimumFileCount,
                     searchTimeout: 5,
