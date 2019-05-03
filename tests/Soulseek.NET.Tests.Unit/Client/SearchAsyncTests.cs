@@ -182,7 +182,7 @@ namespace Soulseek.NET.Tests.Unit.Client
 
             var cts = new CancellationTokenSource(1000);
 
-            var task = s.SearchAsync(searchText, null, cts.Token);
+            var task = s.SearchAsync(searchText, cancellationToken: cts.Token);
 
             var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
 
