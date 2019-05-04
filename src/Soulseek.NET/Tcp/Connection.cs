@@ -144,31 +144,20 @@ namespace Soulseek.NET.Tcp
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the connection is already connected, or is transitioning between states.
-        /// </exception>
-        /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
-        public async Task ConnectAsync()
-        {
-            await ConnectAsync(CancellationToken.None).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
-        /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection is already connected, or is transitioning between states.
         /// </exception>
         /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
-        public async Task ConnectAsync(CancellationToken cancellationToken)
+        public async Task ConnectAsync(CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Pending && State != ConnectionState.Disconnected)
             {
                 throw new InvalidOperationException($"Invalid attempt to connect a connected or transitioning connection (current state: {State})");
             }
+
+            cancellationToken = cancellationToken ?? CancellationToken.None;
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
             // that ends when the result is set programmatically.  create another for cancellation via the externally provided token.
@@ -188,7 +177,7 @@ namespace Soulseek.NET.Tcp
                     // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same TCS.
                     // either the timeout or the external token can now cancel the operation.
                     using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
-                    using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+                    using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
                     {
                         var completedTask = await Task.WhenAny(connectTask, timeoutTaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
 
@@ -253,19 +242,9 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
-        /// <returns>The read bytes.</returns>
-        public Task<byte[]> ReadAsync(long length)
-        {
-            return ReadAsync(length, CancellationToken.None);
-        }
-
-        /// <summary>
-        ///     Asynchronously reads the specified number of bytes from the connection.
-        /// </summary>
-        /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
-        public async Task<byte[]> ReadAsync(long length, CancellationToken cancellationToken)
+        public async Task<byte[]> ReadAsync(long length, CancellationToken? cancellationToken = null)
         {
             // NetworkStream.ReadAsync doesn't support long, so if we were to support this we'd need to split the long up into
             // int-sized chunks and iterate. that's for later, if ever.
@@ -281,19 +260,9 @@ namespace Soulseek.NET.Tcp
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <param name="length">The number of bytes to read.</param>
-        /// <returns>The read bytes.</returns>
-        public Task<byte[]> ReadAsync(int length)
-        {
-            return ReadAsync(length, CancellationToken.None);
-        }
-
-        /// <summary>
-        ///     Asynchronously reads the specified number of bytes from the connection.
-        /// </summary>
-        /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The read bytes.</returns>
-        public Task<byte[]> ReadAsync(int length, CancellationToken cancellationToken)
+        public Task<byte[]> ReadAsync(int length, CancellationToken? cancellationToken = null)
         {
             if (length < 0)
             {
@@ -310,17 +279,7 @@ namespace Soulseek.NET.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return ReadInternalAsync(length, cancellationToken);
-        }
-
-        /// <summary>
-        ///     Asynchronously writes the specified bytes to the connection.
-        /// </summary>
-        /// <param name="bytes">The bytes to write.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public Task WriteAsync(byte[] bytes)
-        {
-            return WriteAsync(bytes, CancellationToken.None);
+            return ReadInternalAsync(length, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -329,7 +288,7 @@ namespace Soulseek.NET.Tcp
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public Task WriteAsync(byte[] bytes, CancellationToken cancellationToken)
+        public Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
             if (bytes == null || bytes.Length == 0)
             {
@@ -346,7 +305,7 @@ namespace Soulseek.NET.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return WriteInternalAsync(bytes, cancellationToken);
+            return WriteInternalAsync(bytes, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -439,6 +398,7 @@ namespace Soulseek.NET.Tcp
             try
             {
                 await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+                InactivityTimer?.Reset();
             }
             catch (Exception ex)
             {
