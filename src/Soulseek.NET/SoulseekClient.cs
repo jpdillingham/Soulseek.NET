@@ -389,7 +389,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionException">
+        /// <exception cref="InvalidOperationException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="ArgumentException">

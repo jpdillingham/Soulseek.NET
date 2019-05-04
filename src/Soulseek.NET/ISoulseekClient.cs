@@ -148,7 +148,13 @@ namespace Soulseek.NET
         /// <param name="password">The password with which to log in.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
-        /// <exception cref="LoginException">Thrown when the login fails.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="LoginException">
+        ///     Thrown when the login fails, or when an exception is encountered during the operation.
+        /// </exception>
         Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -160,7 +166,7 @@ namespace Soulseek.NET
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="ConnectionException">
+        /// <exception cref="InvalidOperationException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="ArgumentException">
