@@ -14,7 +14,6 @@ namespace Soulseek.NET.Messaging
 {
     using System;
     using System.IO;
-    using System.Linq;
     using System.Text;
     using Soulseek.NET.Exceptions;
     using Soulseek.NET.Zlib;
@@ -31,6 +30,7 @@ namespace Soulseek.NET.Messaging
         public MessageReader(Message message)
         {
             Message = message ?? throw new ArgumentNullException(nameof(message), "Invalid attempt to initialize MessageReader with a null Message");
+            Payload = Message.Payload;
         }
 
         /// <summary>
@@ -50,6 +50,7 @@ namespace Soulseek.NET.Messaging
             }
 
             Message = new Message(bytes);
+            Payload = Message.Payload;
         }
 
         /// <summary>
@@ -60,7 +61,7 @@ namespace Soulseek.NET.Messaging
         /// <summary>
         ///     Gets the Message payload.
         /// </summary>
-        public byte[] Payload => Message.Payload;
+        public Memory<byte> Payload { get; private set; }
 
         /// <summary>
         ///     Gets the current position of the head of the reader.
@@ -105,12 +106,14 @@ namespace Soulseek.NET.Messaging
                 throw new InvalidOperationException($"The message has already been decompressed.");
             }
 
-            Decompress(Payload, out byte[] decompressedPayload);
+            Decompress(Payload.ToArray(), out byte[] decompressedPayload);
 
             Message = new MessageBuilder()
                 .Code(Code)
                 .WriteBytes(decompressedPayload)
                 .Build();
+
+            Payload = Message.Payload;
 
             Decompressed = true;
 
@@ -125,7 +128,7 @@ namespace Soulseek.NET.Messaging
         {
             try
             {
-                var retVal = Payload[Position];
+                var retVal = Payload.Span[Position];
                 Position += 1;
                 return retVal;
             }
@@ -147,7 +150,7 @@ namespace Soulseek.NET.Messaging
                 throw new MessageReadException($"Requested bytes extend beyond the length of the message payload.");
             }
 
-            var retVal = Payload.Skip(Position).Take(count).ToArray();
+            var retVal = Payload.Slice(Position, count).ToArray();
             Position += count;
             return retVal;
         }
@@ -160,7 +163,7 @@ namespace Soulseek.NET.Messaging
         {
             try
             {
-                var retVal = BitConverter.ToInt32(Payload, Position);
+                var retVal = Payload.Span[Position] | (Payload.Span[Position + 1] << 8) | (Payload.Span[Position + 2] << 16) | (Payload.Span[Position + 3] << 24);
                 Position += 4;
                 return retVal;
             }
@@ -178,7 +181,7 @@ namespace Soulseek.NET.Messaging
         {
             try
             {
-                var retVal = BitConverter.ToInt64(Payload, Position);
+                var retVal = BitConverter.ToInt64(Payload.Slice(Position, 8).ToArray(), 0);
                 Position += 8;
                 return retVal;
             }
@@ -201,7 +204,7 @@ namespace Soulseek.NET.Messaging
                 throw new MessageReadException($"Specified string extends beyond the length of the message payload.");
             }
 
-            var bytes = Payload.Skip(Position).Take(length).ToArray();
+            var bytes = Payload.Slice(Position, length).ToArray();
             var retVal = Encoding.ASCII.GetString(bytes);
             Position += length;
             return retVal;
