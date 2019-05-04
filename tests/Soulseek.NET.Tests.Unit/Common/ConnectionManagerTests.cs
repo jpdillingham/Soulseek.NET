@@ -109,7 +109,7 @@ namespace Soulseek.NET.Tests.Unit
                 .Returns(ipAddress);
             conn.Setup(m => m.Port)
                 .Returns(port);
-            conn.Setup(m => m.ConnectAsync())
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
@@ -148,7 +148,7 @@ namespace Soulseek.NET.Tests.Unit
                 .Returns(ipAddress);
             conn.Setup(m => m.Port)
                 .Returns(port);
-            conn.Setup(m => m.ConnectAsync())
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)

@@ -402,7 +402,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Build();
 
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(4))
+            conn.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new byte[] { 0, 0, 0, 0 }));
 
             var connManager = new Mock<IConnectionManager>();
