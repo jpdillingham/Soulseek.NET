@@ -34,7 +34,7 @@ namespace Soulseek.NET.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object);

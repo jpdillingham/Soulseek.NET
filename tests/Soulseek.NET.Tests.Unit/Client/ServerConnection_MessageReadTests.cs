@@ -108,7 +108,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
                 .Returns(Task.CompletedTask);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
