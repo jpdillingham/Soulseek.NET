@@ -500,18 +500,21 @@ namespace Soulseek.NET
 
         private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken cancellationToken)
         {
+            IMessageConnection connection = null;
+
             try
             {
                 var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(new WaitKey(MessageCode.PeerBrowseResponse, username), cancellationToken);
 
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
-                var connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
                 connection.Disconnected += (sender, message) =>
                 {
                     Waiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
+                connection.SuspendReadTimeout();
                 await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
@@ -520,6 +523,10 @@ namespace Soulseek.NET
             catch (Exception ex)
             {
                 throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
+            }
+            finally
+            {
+                connection?.ResumeReadTimeout();
             }
         }
 

@@ -283,6 +283,24 @@ namespace Soulseek.NET.Tcp
         }
 
         /// <summary>
+        ///     Resumes and resets the data read timeout timer.
+        /// </summary>
+        public void ResumeReadTimeout()
+        {
+            InactivityTimer.Interval = Options.ReadTimeout * 1000;
+            InactivityTimer.Reset();
+        }
+
+        /// <summary>
+        ///     Suspends the data read timeout timer.
+        /// </summary>
+        public void SuspendReadTimeout()
+        {
+            // technically not suspended indefinitely; this is about 24 days which is close enough for our purposes.
+            InactivityTimer.Interval = int.MaxValue;
+        }
+
+        /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
