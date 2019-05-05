@@ -14,7 +14,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\Soulseek.NET\Soulseek.NET.csproj" />
+    <ProjectReference Include="..\..\src\Soulseek\Soulseek.csproj" />
   </ItemGroup>
 
   <ItemGroup>

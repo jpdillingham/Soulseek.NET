@@ -13,7 +13,7 @@
     using Microsoft.Extensions.DependencyInjection;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
-    using Soulseek.NET;
+    using Soulseek;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
