@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
 VisualStudioVersion = 15.0.28010.2003
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek.NET", "src\Soulseek.NET\Soulseek.NET.csproj", "{F4D9D870-A509-463B-90D4-8D9D6CC340FB}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek", "src\Soulseek\Soulseek.csproj", "{F4D9D870-A509-463B-90D4-8D9D6CC340FB}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek.NET.Tests.Unit", "tests\Soulseek.NET.Tests.Unit\Soulseek.NET.Tests.Unit.csproj", "{D8129A84-F460-4700-B0D3-2D17AD765119}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek.Tests.Unit", "tests\Soulseek.Tests.Unit\Soulseek.Tests.Unit.csproj", "{D8129A84-F460-4700-B0D3-2D17AD765119}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek.NET.Tests.Integration", "tests\Soulseek.NET.Tests.Integration\Soulseek.NET.Tests.Integration.csproj", "{2B914535-2CA9-46B5-8FB1-5FDD5773C750}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Soulseek.Tests.Integration", "tests\Soulseek.Tests.Integration\Soulseek.Tests.Integration.csproj", "{2B914535-2CA9-46B5-8FB1-5FDD5773C750}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{753F9370-E445-46A7-9EB7-D4F42AF6581D}"
 EndProject

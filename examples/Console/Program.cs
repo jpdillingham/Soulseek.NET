@@ -3,9 +3,8 @@
     using global::Utility.CommandLine;
     using Newtonsoft.Json;
     using Soulseek;
-    using Soulseek.NET;
-    using Soulseek.NET.Messaging.Messages;
-    using Soulseek.NET.Tcp;
+    using Soulseek.Messaging.Messages;
+    using Soulseek.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -255,7 +254,7 @@
             }
         }
 
-        private static void ListResponseFiles(Dictionary<string, List<Soulseek.NET.File>> directories)
+        private static void ListResponseFiles(Dictionary<string, List<Soulseek.File>> directories)
         {
             for (int i = 0; i < directories.Count; i++)
             {
@@ -447,7 +446,7 @@
             } while (true);
         }
 
-        private static (string Username, IEnumerable<Soulseek.NET.File> Files) SelectSearchResponse(IEnumerable<SearchResponse> responses)
+        private static (string Username, IEnumerable<Soulseek.File> Files) SelectSearchResponse(IEnumerable<SearchResponse> responses)
         {
             var index = 0;
 

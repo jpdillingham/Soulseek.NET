@@ -5,8 +5,8 @@
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
-    using Soulseek.NET;
-    using Soulseek.NET.Messaging.Messages;
+    using Soulseek;
+    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Search
