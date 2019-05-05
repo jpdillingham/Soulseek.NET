@@ -37,6 +37,7 @@ namespace Soulseek.NET
             Level = level;
             Message = message;
             Exception = exception;
+            Timestamp = DateTime.UtcNow;
         }
 
         /// <summary>
@@ -48,6 +49,11 @@ namespace Soulseek.NET
         ///     Gets the event message.
         /// </summary>
         public string Message { get; }
+
+        /// <summary>
+        ///     Gets the UTC timestamp of the instant at which the event was raised.
+        /// </summary>
+        public DateTime Timestamp { get; }
 
         /// <summary>
         ///     Gets a value indicating whether an <see cref="Exception"/> is included with the event.
