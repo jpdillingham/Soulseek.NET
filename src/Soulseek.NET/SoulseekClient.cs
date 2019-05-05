@@ -514,19 +514,22 @@ namespace Soulseek.NET
                     Waiter.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                connection.SuspendReadTimeout();
+                var sw = new System.Diagnostics.Stopwatch();
+                Diagnostic.Debug($"Sending browse request to peer {username}");
+                sw.Start();
+
                 await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
+
+                sw.Stop();
+                Diagnostic.Debug($"Browse of {username} completed in {sw.ElapsedMilliseconds}ms.  {response.DirectoryCount} directories fetched.");
+
                 return response;
             }
             catch (Exception ex)
             {
                 throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
-            }
-            finally
-            {
-                connection?.ResumeReadTimeout();
             }
         }
 

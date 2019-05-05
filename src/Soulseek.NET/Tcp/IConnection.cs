@@ -108,15 +108,5 @@ namespace Soulseek.NET.Tcp
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null);
-
-        /// <summary>
-        ///     Suspends the data read timeout timer.
-        /// </summary>
-        void SuspendReadTimeout();
-
-        /// <summary>
-        ///     Resumes and resets the data read timeout timer.
-        /// </summary>
-        void ResumeReadTimeout();
     }
 }
