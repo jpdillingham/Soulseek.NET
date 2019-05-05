@@ -30,7 +30,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task Does_Not_Throw_On_Download_Missing_From_ActiveDownloads()
         {
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(1)));
 
             var connManager = new Mock<IConnectionManager>();
@@ -50,7 +50,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task Completes_Start_Wait_When_Download_Exists(string username, string filename, int token, int remoteToken)
         {
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>(), null))
                 .Returns(Task.FromResult(BitConverter.GetBytes(remoteToken)));
 
             var connManager = new Mock<IConnectionManager>();
@@ -83,7 +83,7 @@ namespace Soulseek.NET.Tests.Unit.Client
         public async Task Does_Not_Throw_On_Remote_Token_Read_Exception(string username, string filename, int token)
         {
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new Exception()));
 
             var connManager = new Mock<IConnectionManager>();
@@ -115,7 +115,7 @@ namespace Soulseek.NET.Tests.Unit.Client
             string message = null;
 
             var conn = new Mock<IConnection>();
-            conn.Setup(m => m.ReadAsync(It.IsAny<int>()))
+            conn.Setup(m => m.ReadAsync(It.IsAny<int>(), null))
                 .Returns(Task.FromException<byte[]>(new Exception("fake exception")));
             conn.Setup(m => m.Disconnect(It.IsAny<string>()))
                 .Callback<string>(str => message = str);

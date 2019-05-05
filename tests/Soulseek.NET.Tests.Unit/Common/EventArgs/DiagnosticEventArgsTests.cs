@@ -26,6 +26,8 @@ namespace Soulseek.NET.Tests.Unit
             Assert.Equal(level, e.Level);
             Assert.Equal(message, e.Message);
             Assert.Equal(exception, e.Exception);
+
+            Assert.True(e.Timestamp <= DateTime.UtcNow);
         }
 
         [Trait("Category", "DiagnosticEventArgs Instantiation")]

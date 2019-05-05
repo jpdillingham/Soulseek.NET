@@ -25,7 +25,7 @@ namespace Soulseek.NET.Messaging.Messages
         ///     Initializes a new instance of the <see cref="PeerInitRequest"/> class.
         /// </summary>
         /// <param name="username">The username of the peer.</param>
-        /// <param name="transferType">The transfer type (P or F)</param>
+        /// <param name="transferType">The transfer type (P or F).</param>
         /// <param name="token">The unique token for the connection.</param>
         public PeerInitRequest(string username, string transferType, int token)
         {
@@ -40,7 +40,7 @@ namespace Soulseek.NET.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Gets the transfer type (P or F)
+        ///     Gets the transfer type (P or F).
         /// </summary>
         public string TransferType { get; }
 

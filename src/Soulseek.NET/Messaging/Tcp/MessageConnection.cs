@@ -29,7 +29,7 @@ namespace Soulseek.NET.Messaging.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
@@ -44,7 +44,7 @@ namespace Soulseek.NET.Messaging.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server)</param>
+        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
@@ -90,19 +90,9 @@ namespace Soulseek.NET.Messaging.Tcp
         ///     Asynchronously writes the specified message to the connection.
         /// </summary>
         /// <param name="message">The message to write.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteMessageAsync(Message message)
-        {
-            await WriteMessageAsync(message, CancellationToken.None).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        ///     Asynchronously writes the specified message to the connection.
-        /// </summary>
-        /// <param name="message">The message to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteMessageAsync(Message message, CancellationToken cancellationToken)
+        public async Task WriteMessageAsync(Message message, CancellationToken? cancellationToken = null)
         {
             if (State != ConnectionState.Connected)
             {
@@ -112,7 +102,7 @@ namespace Soulseek.NET.Messaging.Tcp
             var bytes = message.ToByteArray();
 
             NormalizeMessageCode(bytes, 0 - (int)Type);
-            await WriteAsync(bytes, cancellationToken).ConfigureAwait(false);
+            await WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
         }
 
         private void NormalizeMessageCode(byte[] messageBytes, int newCode)

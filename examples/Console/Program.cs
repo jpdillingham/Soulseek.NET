@@ -9,6 +9,7 @@
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -152,7 +153,7 @@
 
         private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)
         {
-            Console.WriteLine($"[DIAGNOSTICS] [{e.Level}]: {e.Message}");
+            Console.WriteLine($"[DIAGNOSTICS] [{e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] [{e.Level}]: {e.Message}");
         }
 
         private static void Client_PrivateMessageReceived(object sender, PrivateMessage e)
@@ -290,7 +291,7 @@
             timer.Start();
 
             IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText,
-                new SearchOptions(
+                options: new SearchOptions(
                     filterResponses: true,
                     minimumResponseFileCount: minimumFileCount,
                     searchTimeout: 5,
