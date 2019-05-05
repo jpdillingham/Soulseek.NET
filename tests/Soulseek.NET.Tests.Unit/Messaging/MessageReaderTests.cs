@@ -78,7 +78,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var reader = new MessageReader(msg);
 
             Assert.Equal(MessageCode.PeerBrowseRequest, reader.Code);
-            Assert.Equal(BitConverter.GetBytes(num), reader.Payload);
+            Assert.Equal(BitConverter.GetBytes(num), reader.Payload.ToArray());
             Assert.Equal(0, reader.Position);
             Assert.Equal(num, reader.ReadInteger());
             Assert.Equal(4, reader.Position);
@@ -98,7 +98,7 @@ namespace Soulseek.NET.Tests.Unit.Messaging
             var reader = new MessageReader(msgBytes);
 
             Assert.Equal(MessageCode.PeerBrowseRequest, reader.Code);
-            Assert.Equal(BitConverter.GetBytes(num), reader.Payload);
+            Assert.Equal(BitConverter.GetBytes(num), reader.Payload.ToArray());
             Assert.Equal(0, reader.Position);
             Assert.Equal(num, reader.ReadInteger());
             Assert.Equal(4, reader.Position);
