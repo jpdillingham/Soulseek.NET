@@ -674,6 +674,13 @@ namespace Soulseek
                 download.Data = await downloadCompleted.ConfigureAwait(false);
                 return download.Data;
             }
+            catch (DownloadRejectedException ex)
+            {
+                download.State = DownloadStates.Rejected;
+                download.Connection?.Disconnect("Transfer rejected.");
+
+                throw new DownloadException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
+            }
             catch (OperationCanceledException ex)
             {
                 download.State = DownloadStates.Cancelled;
@@ -818,6 +825,11 @@ namespace Soulseek
                     case MessageCode.PeerTransferRequest:
                         var transferRequest = PeerTransferRequest.Parse(message);
                         Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                        break;
+
+                    case MessageCode.PeerQueueFailed:
+                        var queueFailedResponse = PeerQueueFailedResponse.Parse(message);
+                        Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
                         break;
 
                     default:
