@@ -276,5 +276,32 @@ namespace Soulseek.Tests.Unit.Client
             Assert.Single(search.Responses);
             Assert.Contains(search.Responses, r => r.Username == username && r.Token == token);
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Throws PeerTransferRequest wait on PeerQueueFailed"), AutoData]
+        public void Throws_PeerTransferRequest_Wait_On_PeerQueueFailed(string username, IPAddress ip, int port, string filename, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Username)
+                .Returns(username);
+            conn.Setup(m => m.IPAddress)
+                .Returns(ip);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+
+            var waiter = new Mock<IWaiter>();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerQueueFailed)
+                .WriteString(filename)
+                .WriteString(message)
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
+
+            s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
+
+            waiter.Verify(m => m.Throw(new WaitKey(MessageCode.PeerTransferRequest, username, filename), It.IsAny<Exception>()), Times.Once);
+        }
     }
 }
