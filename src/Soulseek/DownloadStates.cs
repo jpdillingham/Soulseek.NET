@@ -73,5 +73,10 @@ namespace Soulseek
         ///     Completed due to transfer error.
         /// </summary>
         Errored = 256,
+
+        /// <summary>
+        ///     Completed due to rejection by peer.
+        /// </summary>
+        Rejected = 512,
     }
 }
