@@ -12,8 +12,14 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    /// <summary>
+    ///     Requests information about a peer.
+    /// </summary>
     public class PeerInfoRequest
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerInfoRequest"/> class.
+        /// </summary>
         public PeerInfoRequest()
         {
         }
