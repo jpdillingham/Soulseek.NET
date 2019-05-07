@@ -259,6 +259,40 @@ namespace Soulseek
             }
         }
 
+        public Task<PeerInfoResponse> GetPeerInfoAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            return GetPeerInfoInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        private async Task<PeerInfoResponse> GetPeerInfoInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            IMessageConnection connection = null;
+
+            try
+            {
+                var infoWait = Waiter.WaitIndefinitely<PeerInfoResponse>(new WaitKey(MessageCode.PeerInfoResponse, username), cancellationToken);
+
+                var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+
+                connection.Disconnected += (sender, message) =>
+                {
+                    Waiter.Throw(new WaitKey(MessageCode.PeerInfoResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                };
+
+                await connection.WriteMessageAsync(new PeerInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await infoWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                // todo: fix this
+                throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
+            }
+        }
+
         /// <summary>
         ///     Disconnects the client from the server.
         /// </summary>
@@ -815,6 +849,11 @@ namespace Soulseek
                             throw;
                         }
 
+                        break;
+
+                    case MessageCode.PeerInfoResponse:
+                        var infoResponse = PeerInfoResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(MessageCode.PeerInfoResponse, connection.Username), infoResponse);
                         break;
 
                     case MessageCode.PeerTransferResponse:
