@@ -350,11 +350,24 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
         public Task<PeerInfoResponse> GetPeerInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
             return GetPeerInfoInternalAsync(username, cancellationToken ?? CancellationToken.None);
