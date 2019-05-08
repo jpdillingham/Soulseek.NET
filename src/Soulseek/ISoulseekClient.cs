@@ -142,6 +142,17 @@ namespace Soulseek
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously fetches information about the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user from which to fetch the information.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the information response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        Task<PeerInfoResponse> GetPeerInfoAsync(string username, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
         /// <param name="username">The username with which to log in.</param>

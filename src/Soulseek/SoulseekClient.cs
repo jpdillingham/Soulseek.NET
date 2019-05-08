@@ -171,14 +171,14 @@ namespace Soulseek
         /// </summary>
         public string Username { get; private set; }
 
-        private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private IConnectionManager ConnectionManager { get; set; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private IWaiter Waiter { get; set; }
+        private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
+        private IWaiter Waiter { get; set; }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -339,6 +339,38 @@ namespace Soulseek
             options = options ?? new DownloadOptions();
 
             return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches information about the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user from which to fetch the information.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the information response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        public Task<PeerInfoResponse> GetPeerInfoAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to browse.");
+            }
+
+            return GetPeerInfoInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -620,8 +652,8 @@ namespace Soulseek
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
-                    // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its cached
-                    // in the manager) to the peer in case it disconnected and was purged while we were waiting.
+                    // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its
+                    // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
                     peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
@@ -647,8 +679,8 @@ namespace Soulseek
 
                 try
                 {
-                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued.
-                    // not sure what this is; it was identified via WireShark.
+                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
+                    // was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
                     UpdateState(DownloadStates.InProgress);
@@ -710,8 +742,8 @@ namespace Soulseek
 
                 download.Connection?.Dispose();
 
-                // change state so we can fire the progress update a final time with the updated state
-                // little bit of a hack to avoid cloning the download
+                // change state so we can fire the progress update a final time with the updated state little bit of a hack to
+                // avoid cloning the download
                 download.State = DownloadStates.Completed | download.State;
                 UpdateProgress(download.Data?.Length ?? 0);
                 UpdateState(download.State);
@@ -727,6 +759,34 @@ namespace Soulseek
 
             var address = await addressWait.ConfigureAwait(false);
             return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
+        }
+
+        private async Task<PeerInfoResponse> GetPeerInfoInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            IMessageConnection connection = null;
+
+            try
+            {
+                var infoWait = Waiter.Wait<PeerInfoResponse>(new WaitKey(MessageCode.PeerInfoResponse, username), cancellationToken: cancellationToken);
+
+                var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+
+                connection.Disconnected += (sender, message) =>
+                {
+                    Waiter.Throw(new WaitKey(MessageCode.PeerInfoResponse, username), new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                };
+
+                await connection.WriteMessageAsync(new PeerInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await infoWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new PeerInfoException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+            }
         }
 
         private async Task InitializeDownloadAsync(ConnectToPeerResponse downloadResponse)
@@ -815,6 +875,11 @@ namespace Soulseek
                             throw;
                         }
 
+                        break;
+
+                    case MessageCode.PeerInfoResponse:
+                        var infoResponse = PeerInfoResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(MessageCode.PeerInfoResponse, connection.Username), infoResponse);
                         break;
 
                     case MessageCode.PeerTransferResponse:

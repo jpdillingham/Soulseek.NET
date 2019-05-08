@@ -42,6 +42,9 @@
         [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
 
+        [Argument('i', "peer-info")]
+        private static string Info { get; set; }
+
         private static ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)> Downloads { get; set; } 
             = new ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)>();
 
@@ -97,6 +100,15 @@
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
                     o($"\nDownload{(response.Files.Count() > 1 ? "s" : string.Empty)} complete.");
+                }
+                if (!string.IsNullOrEmpty(Info))
+                {
+                    await ConnectAndLogin(client);
+                    o($"\nFetching peer info for {Info}...\n");
+
+                    var response = await client.GetPeerInfoAsync(Info);
+
+                    o(JsonConvert.SerializeObject(response));
                 }
                 if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
                 {

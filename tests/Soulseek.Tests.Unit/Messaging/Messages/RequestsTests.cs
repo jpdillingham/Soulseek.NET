@@ -259,5 +259,17 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(ticket, reader.ReadInteger());
             Assert.Equal(text, reader.ReadString());
         }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerInfoRequest")]
+        [Fact(DisplayName = "PeerInfoRequest constructs the correct Message")]
+        public void PeerInfoRequest_Constructs_The_Correct_Message()
+        {
+            var a = new PeerInfoRequest();
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerInfoRequest, msg.Code);
+            Assert.Equal(4, msg.Length);
+        }
     }
 }
