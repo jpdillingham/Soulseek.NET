@@ -57,14 +57,19 @@ namespace Soulseek.Messaging.Tcp
             if (Type == MessageConnectionType.Server)
             {
                 InactivityTimer = null;
-            }
 
-            Connected += (sender, e) =>
+                Connected += (sender, e) =>
+                {
+                    Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
+                };
+            }
+            else
             {
-                // run in the background, and disconnect on any exception.
-                // note that a failure to read or write by itself won't disconnect in the base class, by design.
-                Task.Run(() => ReadContinuouslyAsync()).ContinueWith(t => { Disconnect(t.Exception.Message); }, TaskContinuationOptions.OnlyOnFaulted);
-            };
+                Connected += (sender, e) =>
+                {
+                    Task.Run(() => ReadContinuouslyAsync()).Forget();
+                };
+            }
         }
 
         /// <summary>
