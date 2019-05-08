@@ -1,16 +1,10 @@
 ﻿namespace WebAPI.Controllers
 {
-    using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
-    using System.Linq;
-    using System.Net;
-    using System.Net.Http;
-    using System.Net.Http.Headers;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
-    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Search
@@ -37,7 +31,7 @@
         /// <param name="token">The optional download token.</param>
         /// <returns></returns>
         [HttpGet("{username}/{filename}")]
-        public async Task<ActionResult<byte[]>> Get([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
+        public async Task<FileContentResult> Get([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {
             var fileBytes = await Client.DownloadAsync(username, filename, token);
             return File(fileBytes, "application/octet-stream", Path.GetFileName(filename));
