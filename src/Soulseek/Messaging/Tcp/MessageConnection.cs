@@ -13,7 +13,6 @@
 namespace Soulseek.Messaging.Tcp
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
@@ -62,7 +61,7 @@ namespace Soulseek.Messaging.Tcp
 
             Connected += (sender, e) =>
             {
-                Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
+                Task.Run(() => ReadContinuouslyAsync()).ContinueWith(t => { Disconnect(t.Exception.Message); }, TaskContinuationOptions.OnlyOnFaulted);
             };
         }
 
