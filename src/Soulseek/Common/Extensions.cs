@@ -56,6 +56,15 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Continue a task and swallow any Exceptions.
+        /// </summary>
+        /// <param name="task">The task to continue.</param>
+        public static void Forget(this Task task)
+        {
+            task.ContinueWith(t => { });
+        }
+
+        /// <summary>
         ///     Removes all instances within the specified <see cref="ConcurrentDictionary{TKey, TValue}"/>.
         /// </summary>
         /// <typeparam name="TKey">The type of the dictionary key.</typeparam>
