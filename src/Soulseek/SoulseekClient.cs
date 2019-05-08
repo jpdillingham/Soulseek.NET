@@ -767,7 +767,7 @@ namespace Soulseek
 
             try
             {
-                var infoWait = Waiter.WaitIndefinitely<PeerInfoResponse>(new WaitKey(MessageCode.PeerInfoResponse, username), cancellationToken);
+                var infoWait = Waiter.Wait<PeerInfoResponse>(new WaitKey(MessageCode.PeerInfoResponse, username), cancellationToken: cancellationToken);
 
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
                 connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
