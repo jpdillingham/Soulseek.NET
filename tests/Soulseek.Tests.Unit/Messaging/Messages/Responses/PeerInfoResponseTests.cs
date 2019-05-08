@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(picture, response.Picture);
             Assert.Equal(uploadSlots, response.UploadSlots);
             Assert.Equal(queueLength, response.QueueLength);
-            Assert.Equal(hasFreeSlot, response.HasFreeSlot);
+            Assert.Equal(hasFreeSlot, response.HasFreeUploadSlot);
         }
 
         [Trait("Category", "Parse")]
@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(picture, response.Picture);
             Assert.Equal(uploadSlots, response.UploadSlots);
             Assert.Equal(queueLength, response.QueueLength);
-            Assert.Equal(hasFreeSlot, response.HasFreeSlot);
+            Assert.Equal(hasFreeSlot, response.HasFreeUploadSlot);
         }
 
         [Trait("Category", "Parse")]
@@ -111,7 +111,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.False(response.HasPicture);
             Assert.Equal(uploadSlots, response.UploadSlots);
             Assert.Equal(queueLength, response.QueueLength);
-            Assert.Equal(hasFreeSlot, response.HasFreeSlot);
+            Assert.Equal(hasFreeSlot, response.HasFreeUploadSlot);
         }
     }
 }

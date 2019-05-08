@@ -27,15 +27,15 @@ namespace Soulseek.Messaging.Messages
         /// <param name="picture">If configured, the picture data.</param>
         /// <param name="uploadSlots">The number of configured upload slots.</param>
         /// <param name="queueLength">The current queue length.</param>
-        /// <param name="hasFreeSlot">A value indicating whether an upload slot is free.</param>
-        internal PeerInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
+        internal PeerInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
             Description = description;
             HasPicture = hasPicture;
             Picture = picture;
             UploadSlots = uploadSlots;
             QueueLength = queueLength;
-            HasFreeSlot = hasFreeSlot;
+            HasFreeUploadSlot = hasFreeUploadSlot;
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets a value indicating whether an upload slot is free.
         /// </summary>
-        public bool HasFreeSlot { get; }
+        public bool HasFreeUploadSlot { get; }
 
         /// <summary>
         ///     Parses a new instance of <see cref="PeerInfoResponse"/> from the specified <paramref name="message"/>.
@@ -94,9 +94,9 @@ namespace Soulseek.Messaging.Messages
 
             var uploadSlots = reader.ReadInteger();
             var queueLength = reader.ReadInteger();
-            var hasFreeSlot = reader.ReadByte() > 0;
+            var hasFreeUploadSlot = reader.ReadByte() > 0;
 
-            return new PeerInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeSlot);
+            return new PeerInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeUploadSlot);
         }
     }
 }

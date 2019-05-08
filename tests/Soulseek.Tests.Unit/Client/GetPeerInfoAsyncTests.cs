@@ -12,6 +12,10 @@
 
 namespace Soulseek.Tests.Unit.Client
 {
+    using System;
+    using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
@@ -19,10 +23,6 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Messaging.Messages;
     using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
-    using System;
-    using System.Net;
-    using System.Threading;
-    using System.Threading.Tasks;
     using Xunit;
 
     public class GetPeerInfoAsyncTests
@@ -95,9 +95,8 @@ namespace Soulseek.Tests.Unit.Client
             Assert.Equal(result.Picture, info.Picture);
             Assert.Equal(result.UploadSlots, info.UploadSlots);
             Assert.Equal(result.QueueLength, info.QueueLength);
-            Assert.Equal(result.HasFreeSlot, info.HasFreeSlot);
+            Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
         }
-
 
         [Trait("Category", "GetPeerInfoAsync")]
         [Theory(DisplayName = "GetPeerInfoAsync throws PeerInfoException on throw"), AutoData]

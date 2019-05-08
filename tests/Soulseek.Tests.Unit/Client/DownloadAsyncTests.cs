@@ -976,8 +976,6 @@ namespace Soulseek.Tests.Unit.Client
             var response = new PeerTransferResponse(token, false, size, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
-            var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
-
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
