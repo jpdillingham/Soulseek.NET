@@ -897,6 +897,11 @@ namespace Soulseek
                         Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
                         break;
 
+                    case MessageCode.PeerUploadFailed:
+                        var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
+                        Diagnostic.Debug($"Upload of {uploadFailedResponse.Filename} from {connection.Username} failed.");
+                        break;
+
                     default:
                         Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
                         break;
