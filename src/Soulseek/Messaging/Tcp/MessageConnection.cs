@@ -13,7 +13,6 @@
 namespace Soulseek.Messaging.Tcp
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
@@ -58,12 +57,19 @@ namespace Soulseek.Messaging.Tcp
             if (Type == MessageConnectionType.Server)
             {
                 InactivityTimer = null;
-            }
 
-            Connected += (sender, e) =>
+                Connected += (sender, e) =>
+                {
+                    Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
+                };
+            }
+            else
             {
-                Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
-            };
+                Connected += (sender, e) =>
+                {
+                    Task.Run(() => ReadContinuouslyAsync()).Forget();
+                };
+            }
         }
 
         /// <summary>

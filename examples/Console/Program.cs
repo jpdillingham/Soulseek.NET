@@ -72,7 +72,7 @@
             Arguments.Populate(clearExistingValues: false);
 
             var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                minimumDiagnosticLevel: DiagnosticLevel.None,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
             );

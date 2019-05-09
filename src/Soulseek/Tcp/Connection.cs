@@ -389,6 +389,7 @@ namespace Soulseek.Tcp
             }
             catch (Exception ex)
             {
+                Disconnect($"Read error: {ex.Message}");
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
@@ -402,6 +403,7 @@ namespace Soulseek.Tcp
             }
             catch (Exception ex)
             {
+                Disconnect($"Write error: {ex.Message}");
                 throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
