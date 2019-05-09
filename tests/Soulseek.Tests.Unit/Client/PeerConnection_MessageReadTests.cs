@@ -58,6 +58,37 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Creates diagnostic on PeerUploadFailed message"), AutoData]
+        public void Creates_Diagnostic_On_PeerUploadFailed_Message(string username, IPAddress ip, int port)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Username)
+                .Returns(username);
+            conn.Setup(m => m.IPAddress)
+                .Returns(ip);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+
+            List<string> messages = new List<string>();
+
+            var diagnostic = new Mock<IDiagnosticFactory>();
+            diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(msg => messages.Add(msg));
+
+            var message = new MessageBuilder()
+                .Code(MessageCode.PeerUploadFailed)
+                .WriteString("foo")
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
+
+            s.InvokeMethod("PeerConnection_MessageRead", conn.Object, message);
+
+            Assert.Contains(messages, m => m.IndexOf("peer message received", StringComparison.InvariantCultureIgnoreCase) > -1);
+            Assert.Contains(messages, m => m.IndexOf("upload", StringComparison.InvariantCultureIgnoreCase) > -1 && m.IndexOf("failed", StringComparison.InvariantCultureIgnoreCase) > -1);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on Exception"), AutoData]
         public void Creates_Diagnostic_On_Exception(string username, IPAddress ip, int port)
         {
