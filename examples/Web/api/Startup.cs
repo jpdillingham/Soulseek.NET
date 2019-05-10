@@ -81,7 +81,6 @@
 
             app.UseCors("AllowAll");
 
-            app.UseHttpsRedirection();
             app.UseMvc();
 
             app.UseSwagger(options => 
