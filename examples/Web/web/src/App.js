@@ -1,6 +1,6 @@
 import React, { Component } from 'react';
 import './App.css';
-import FileList from './FileList';
+import Response from './Response';
 import axios from 'axios';
 import { Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
 import data from './data'
@@ -30,7 +30,7 @@ class App extends Component {
                 </Button>
                 <div className="results">
                     {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>
-                        <FileList response={r}/>
+                        <Response response={r}/>
                     )}
                 </div>
             </div>
