@@ -1,23 +1,24 @@
 import React, { Component } from 'react';
 import './App.css';
+import FileList from './FileList';
 import axios from 'axios';
-import { Input, Button } from 'semantic-ui-react';
+import { Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
 import data from './data'
 
-const BASE_URL = "http://localhost:60084/api/v1";
+const BASE_URL = "http://localhost:5000/api/v1";
 
 class App extends Component {
-    state = { searchPhrase: '', results: [] }
+    state = { searchPhrase: '', results: data }
 
     search = () => {
-        axios.get(BASE_URL + '/search/' + this.state.searchPhrase)
-        .then(response => this.setState({ results: response.data }))
-        //this.setState({ results: data })
+        //axios.get(BASE_URL + '/search/' + this.state.searchPhrase)
+        //.then(response => this.setState({ results: response.data }))
+        this.setState({ results: data })
     }
 
     render() {
         return (
-            <div className="App">
+            <div className="app">
                 <Input 
                     placeholder="Enter search phrase..."
                     onChange={(event, data) => this.setState({ searchPhrase: data.value })}
@@ -27,16 +28,9 @@ class App extends Component {
                 >
                     Search
                 </Button>
-                <div>
-                    {this.state.results.filter(r => r.freeUploadSlots > 0).map(r =>
-                        <ul>
-                            <li>{r.username}; {r.freeUploadSlots}, {r.queueLength}</li>
-                            <ul>
-                                {r.files.map(f => 
-                                    <li><a href={BASE_URL + '/download/' + r.username + '/' + encodeURIComponent(f.filename)}>{f.filename}</a></li>
-                                )}
-                            </ul>
-                        </ul>
+                <div className="results">
+                    {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>
+                        <FileList response={r}/>
                     )}
                 </div>
             </div>

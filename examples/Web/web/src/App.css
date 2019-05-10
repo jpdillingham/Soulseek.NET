@@ -1,0 +1,17 @@
+body {
+    background: #e7e7e7 !important;
+}
+
+.app {
+    margin: auto;
+}
+.results {
+    margin: 10px;
+    width: 100%;
+}
+
+.resultCard {
+    width: 800px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
