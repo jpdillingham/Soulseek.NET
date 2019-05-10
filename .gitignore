@@ -346,3 +346,4 @@ opencover.xml
 
 /examples/Console/downloads
 /examples/Console/data
+examples/Web/web/src/data.js
