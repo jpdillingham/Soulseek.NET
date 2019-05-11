@@ -12,8 +12,8 @@ class Response extends Component {
             <Card className='resultCard'>
                 <Card.Content>
                     <Card.Header><Icon name='circle' color={free ? 'green' : 'yellow'}/>{response.username}</Card.Header>
-                    <Card.Meta>
-                        <span className='date'>{free ? 'Slot available' : 'Queued' }</span>
+                    <Card.Meta className='resultMeta'>
+                        <span>Upload Speed: {formatBytes(response.uploadSpeed)}/s, Free Upload Slot: {free ? 'YES' : 'NO'}, Queue Length: {response.queueLength}</span>
                     </Card.Meta>
                     <FileList files={response.files}/>
                 </Card.Content>

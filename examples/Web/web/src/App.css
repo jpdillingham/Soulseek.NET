@@ -12,6 +12,10 @@ body {
     margin-right: auto !important;
 }
 
+.resultMeta {
+    margin-top: 5px;
+}
+
 .searchSegment {
     width: 800px !important;
     margin-left: auto !important;
