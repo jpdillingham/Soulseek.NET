@@ -6,24 +6,24 @@ body {
     margin: auto;
 }
 
-.resultCard {
+.result-card {
     width: 800px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
 
-.resultMeta {
+.result-meta {
     margin-top: 5px;
 }
 
-.searchSegment {
+.search-segment {
     width: 800px !important;
     margin-left: auto !important;
     margin-right: auto !important;
     margin-top: 15px !important;
 }
 
-.searchInput {
+.search-input {
     width: 100%;
 }
 

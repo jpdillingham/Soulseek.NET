@@ -1,10 +1,11 @@
 import React, { Component } from 'react';
-import './App.css';
-import Response from './Response';
 import axios from 'axios';
-import { Segment, Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
-import data from './data'
+import './App.css';
+
+import Response from './Response';
 import Search from './Search'
+
+import data from './data'
 
 const BASE_URL = "http://localhost:60084/api/v1";
 
@@ -31,8 +32,8 @@ class App extends Component {
             <div className="app">
                 <Search
                     pending={this.state.searchState === 'pending'}
-                    onSearchPhraseChange={this.onSearchPhraseChange}
-                    search={this.search}
+                    onPhraseChange={this.onSearchPhraseChange}
+                    onSearch={this.search}
                 />
                 {this.state.searchState === 'complete' && <div>
                     {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>

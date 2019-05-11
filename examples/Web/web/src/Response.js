@@ -1,7 +1,13 @@
 import React, { Component } from 'react';
-import { formatSeconds, formatBytes } from './util';
-import { Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
+import { formatBytes } from './util';
+
 import FileList from './FileList'
+
+import { 
+    Button, 
+    Card, 
+    Icon
+} from 'semantic-ui-react';
 
 class Response extends Component {
     render() {
@@ -9,10 +15,10 @@ class Response extends Component {
         let free = response.freeUploadSlots > 0;
 
         return (
-            <Card className='resultCard'>
+            <Card className='result-card'>
                 <Card.Content>
                     <Card.Header><Icon name='circle' color={free ? 'green' : 'yellow'}/>{response.username}</Card.Header>
-                    <Card.Meta className='resultMeta'>
+                    <Card.Meta className='result-meta'>
                         <span>Upload Speed: {formatBytes(response.uploadSpeed)}/s, Free Upload Slot: {free ? 'YES' : 'NO'}, Queue Length: {response.queueLength}</span>
                     </Card.Meta>
                     <FileList files={response.files}/>

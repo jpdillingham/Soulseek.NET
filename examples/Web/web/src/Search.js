@@ -1,23 +1,21 @@
-import React, { Component } from 'react';
-import { formatSeconds, formatBytes } from './util';
-import { Segment, Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
-import FileList from './FileList'
+import React from 'react';
 
-class Search extends Component {
-    render() {
-        return (
-            <Segment className='searchSegment'>
-                    <Input 
-                        loading={this.props.pending}
-                        disabled={this.props.pending}
-                        className='searchInput'
-                        placeholder="Enter search phrase..."
-                        onChange={this.props.onSearchPhraseChange}
-                        action={!this.props.pending && { content: 'Search', onClick: this.props.search }}
-                    />
-            </Segment>
-        )
-    }
-}
+import { 
+    Segment, 
+    Input 
+} from 'semantic-ui-react';
+
+const Search = ({ pending, onPhraseChange, onSearch }) => (
+    <Segment className='search-segment'>
+        <Input 
+            loading={pending}
+            disabled={pending}
+            className='search-input'
+            placeholder="Enter search phrase..."
+            onChange={onPhraseChange}
+            action={!pending && { content: 'Search', onClick: onSearch }}
+        />
+    </Segment>
+);
 
 export default Search;
