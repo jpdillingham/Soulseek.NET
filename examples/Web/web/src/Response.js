@@ -18,10 +18,7 @@ class Response extends Component {
                     <FileList files={response.files}/>
                 </Card.Content>
                 <Card.Content extra>
-                    <a>
-                        <Icon name='user' />
-                        Average Bitrate
-                    </a>
+                    <Button color='green' content='Download' icon='download' label={{ as: 'a', basic: false, content: '2 Selected' }} labelPosition='left' />
                 </Card.Content>
             </Card>
         )

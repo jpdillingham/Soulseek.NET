@@ -26,3 +26,7 @@ body {
 .searchInput {
     width: 100%;
 }
+
+.filelist-header {
+    margin-top: 20px !important;
+}
