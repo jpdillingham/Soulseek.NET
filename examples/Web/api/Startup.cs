@@ -11,6 +11,7 @@
     using Microsoft.AspNetCore.Mvc.ApiExplorer;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.FileProviders;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
@@ -24,6 +25,9 @@
         [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
 
+        [EnvironmentVariable("SLSK_WEBROOT")]
+        private static string WebRoot { get; set; }
+
         private SoulseekClient Client { get; }
 
         public Startup(IConfiguration configuration)
@@ -36,8 +40,6 @@
 
         public void ConfigureServices(IServiceCollection services)
         {
-            EnvironmentVariables.Populate();
-
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials()));
 
             services.AddMvc()
@@ -80,6 +82,14 @@
             }
 
             app.UseCors("AllowAll");
+
+            app.UseFileServer(new FileServerOptions
+            {
+                FileProvider = new PhysicalFileProvider(WebRoot),
+                RequestPath = "",
+                EnableDirectoryBrowsing = false,
+                EnableDefaultFiles = true
+            });
 
             app.UseMvc();
 

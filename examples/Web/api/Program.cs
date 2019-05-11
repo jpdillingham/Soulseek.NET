@@ -7,6 +7,7 @@
     {
         public static void Main(string[] args)
         {
+            EnvironmentVariables.Populate(typeof(Startup));
             CreateWebHostBuilder(args).Build().Run();
         }
 
