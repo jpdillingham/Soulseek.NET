@@ -2,37 +2,43 @@ import React, { Component } from 'react';
 import './App.css';
 import Response from './Response';
 import axios from 'axios';
-import { Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
+import { Segment, Input, Button, Card, Table, Icon, List } from 'semantic-ui-react';
 import data from './data'
+import Search from './Search'
 
-const BASE_URL = "http://localhost:5000/api/v1";
+const BASE_URL = "http://localhost:60084/api/v1";
 
 class App extends Component {
-    state = { searchPhrase: '', results: data }
+    state = { searchPhrase: '', searchState: 'complete', results: data }
 
     search = () => {
-        //axios.get(BASE_URL + '/search/' + this.state.searchPhrase)
-        //.then(response => this.setState({ results: response.data }))
-        this.setState({ results: data })
+        this.setState({ searchState: 'pending' }, () => {
+            axios.get(BASE_URL + '/search/' + this.state.searchPhrase)
+            .then(response => this.setState({ results: response.data }))
+            .then(() => this.setState({ searchState: 'complete' }))
+        })
+
+        console.log('sadfdsa')
+        //this.setState({ results: data })
+    }
+
+    onSearchPhraseChange = (event, data) => {
+        this.setState({ searchPhrase: data.value });
     }
 
     render() {
         return (
             <div className="app">
-                <Input 
-                    placeholder="Enter search phrase..."
-                    onChange={(event, data) => this.setState({ searchPhrase: data.value })}
+                <Search
+                    pending={this.state.searchState === 'pending'}
+                    onSearchPhraseChange={this.onSearchPhraseChange}
+                    search={this.search}
                 />
-                <Button
-                    onClick={this.search}
-                >
-                    Search
-                </Button>
-                <div className="results">
+                {this.state.searchState === 'complete' && <div>
                     {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>
                         <Response response={r}/>
                     )}
-                </div>
+                </div>}
             </div>
         )
     }

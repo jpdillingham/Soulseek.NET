@@ -5,13 +5,20 @@ body {
 .app {
     margin: auto;
 }
-.results {
-    margin: 10px;
-    width: 100%;
-}
 
 .resultCard {
     width: 800px !important;
     margin-left: auto !important;
     margin-right: auto !important;
+}
+
+.searchSegment {
+    width: 800px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 15px !important;
+}
+
+.searchInput {
+    width: 100%;
 }
