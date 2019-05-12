@@ -19,24 +19,24 @@ const FileList = ({ directoryName, files, onSelectionChange }) => (
         </Header>
         <List>
             <List.Item>
-            <Table singleLine>
+            <Table>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell><Checkbox label=''/></Table.HeaderCell>
-                        <Table.HeaderCell>File</Table.HeaderCell>
-                        <Table.HeaderCell>Bitrate</Table.HeaderCell>
-                        <Table.HeaderCell>Length</Table.HeaderCell>
-                        <Table.HeaderCell>Size</Table.HeaderCell>
+                        <Table.HeaderCell className='filelist-selector'><Checkbox fitted/></Table.HeaderCell>
+                        <Table.HeaderCell className='filelist-filename'>File</Table.HeaderCell>
+                        <Table.HeaderCell className='filelist-size'>Size</Table.HeaderCell>
+                        <Table.HeaderCell className='filelist-bitrate'>Bitrate</Table.HeaderCell>
+                        <Table.HeaderCell className='filelist-length'>Length</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>                                
                 <Table.Body>
                     {files.map(f => 
                         <Table.Row>
-                            <Table.Cell><Checkbox label='' onChange={(event, data) => onSelectionChange(f.filename, data.checked)}/></Table.Cell>
-                            <Table.Cell>{getFileName(f.filename)}</Table.Cell>
-                            <Table.Cell>{f.bitRate}</Table.Cell>
-                            <Table.Cell>{formatSeconds(f.length)}</Table.Cell>
-                            <Table.Cell>{formatBytes(f.size)}</Table.Cell>
+                            <Table.Cell className='filelist-selector'><Checkbox fitted onChange={(event, data) => onSelectionChange(f.filename, data.checked)}/></Table.Cell>
+                            <Table.Cell className='filelist-filename'>{getFileName(f.filename)}</Table.Cell>
+                            <Table.Cell className='filelist-size'>{formatBytes(f.size)}</Table.Cell>
+                            <Table.Cell className='filelist-bitrate'>{f.bitRate}</Table.Cell>
+                            <Table.Cell className='filelist-length'>{formatSeconds(f.length)}</Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>
