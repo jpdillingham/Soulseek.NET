@@ -17,3 +17,12 @@ export const formatBytes = (bytes, decimals = 2) => {
 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + ' ' + sizes[i];
 }
+
+export const getFileName = (fullPath) => {
+    return fullPath.split('\\').pop().split('/').pop();
+}
+
+export const getDirectoryName = (fullPath) => {
+    let path = fullPath.substring(0, fullPath.lastIndexOf("/"));
+    return path.substring(0, path.lastIndexOf("\\"));
+}
