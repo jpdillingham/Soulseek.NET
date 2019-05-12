@@ -22,7 +22,13 @@ const FileList = ({ directoryName, files, onSelectionChange }) => (
             <Table>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell className='filelist-selector'><Checkbox fitted/></Table.HeaderCell>
+                        <Table.HeaderCell className='filelist-selector'>
+                            <Checkbox 
+                                fitted
+                                onChange={(event, data) => files.map(f => onSelectionChange(f, data.checked))}
+                                checked={files.filter(f => !f.selected).length === 0}
+                            />
+                        </Table.HeaderCell>
                         <Table.HeaderCell className='filelist-filename'>File</Table.HeaderCell>
                         <Table.HeaderCell className='filelist-size'>Size</Table.HeaderCell>
                         <Table.HeaderCell className='filelist-bitrate'>Bitrate</Table.HeaderCell>
