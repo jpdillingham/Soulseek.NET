@@ -83,9 +83,12 @@
 
             app.UseCors("AllowAll");
 
+            WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
+            Console.WriteLine($"Serving static content from {WebRoot}");
+
             app.UseFileServer(new FileServerOptions
             {
-                FileProvider = new PhysicalFileProvider(WebRoot),
+                FileProvider = new PhysicalFileProvider(WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot")),
                 RequestPath = "",
                 EnableDirectoryBrowsing = false,
                 EnableDefaultFiles = true
