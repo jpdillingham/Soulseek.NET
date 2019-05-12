@@ -17,10 +17,7 @@ class App extends Component {
             axios.get(BASE_URL + '/search/' + this.state.searchPhrase)
             .then(response => this.setState({ results: response.data }))
             .then(() => this.setState({ searchState: 'complete' }))
-        })
-
-        console.log('sadfdsa')
-        //this.setState({ results: data })
+        });
     }
 
     onSearchPhraseChange = (event, data) => {
