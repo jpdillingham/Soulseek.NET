@@ -57,3 +57,7 @@ body {
 .filelist-length{
     width: 65px;
 }
+
+.download-button {
+    color: black;
+}

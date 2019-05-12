@@ -32,7 +32,13 @@ const FileList = ({ directoryName, files, onSelectionChange }) => (
                 <Table.Body>
                     {files.map(f => 
                         <Table.Row>
-                            <Table.Cell className='filelist-selector'><Checkbox fitted onChange={(event, data) => onSelectionChange(f.filename, data.checked)}/></Table.Cell>
+                            <Table.Cell className='filelist-selector'>
+                                <Checkbox 
+                                    fitted 
+                                    onChange={(event, data) => onSelectionChange(f, data.checked)}
+                                    checked={f.selected}
+                                />
+                            </Table.Cell>
                             <Table.Cell className='filelist-filename'>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell className='filelist-size'>{formatBytes(f.size)}</Table.Cell>
                             <Table.Cell className='filelist-bitrate'>{f.bitRate}</Table.Cell>
