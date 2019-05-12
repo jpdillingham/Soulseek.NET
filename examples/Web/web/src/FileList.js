@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatSeconds, formatBytes } from './util';
+import { formatSeconds, formatBytes, getFileName } from './util';
 
 import { 
     Header, 
@@ -33,7 +33,7 @@ const FileList = ({ files }) => (
                     {files.map(f => 
                         <Table.Row>
                             <Table.Cell><Checkbox label=''/></Table.Cell>
-                            <Table.Cell>{f.filename.split('\\').pop().split('/').pop()}</Table.Cell>
+                            <Table.Cell>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell>{f.bitRate}</Table.Cell>
                             <Table.Cell>{formatSeconds(f.length)}</Table.Cell>
                             <Table.Cell>{formatBytes(f.size)}</Table.Cell>
