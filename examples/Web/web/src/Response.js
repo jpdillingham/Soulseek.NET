@@ -55,7 +55,7 @@ class Response extends Component {
                     )}
                 </Card.Content>
                 <Card.Content extra>
-                    <Button 
+                    {selectedFiles.length > 0 && <Button 
                         color='green' 
                         content='Download'
                         icon='download' 
@@ -65,7 +65,7 @@ class Response extends Component {
                             content: `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} ${selectedSize}`
                         }}
                         labelPosition='right' 
-                    />
+                    />}
                 </Card.Content>
             </Card>
         )
