@@ -23,6 +23,13 @@ export const getFileName = (fullPath) => {
 }
 
 export const getDirectoryName = (fullPath) => {
-    let path = fullPath.substring(0, fullPath.lastIndexOf("/"));
-    return path.substring(0, path.lastIndexOf("\\"));
+    let path = fullPath;
+
+    if (path.lastIndexOf('\\') > 0)
+        path = path.substring(0, path.lastIndexOf('\\'));
+
+    if (path.lastIndexOf('/') > 0)
+        path = path.substring(0, path.lastIndexOf('/'));
+
+    return path;
 }

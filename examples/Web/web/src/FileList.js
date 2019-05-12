@@ -9,13 +9,13 @@ import {
     Checkbox 
 } from 'semantic-ui-react';
 
-const FileList = ({ files }) => (
+const FileList = ({ directoryName, files, onSelectionChange }) => (
     <div>
         <Header 
             size='small' 
             className='filelist-header'
         >
-            <Icon name='folder'/>Folder/name/here
+            <Icon name='folder'/>{directoryName}
         </Header>
         <List>
             <List.Item>
@@ -32,7 +32,7 @@ const FileList = ({ files }) => (
                 <Table.Body>
                     {files.map(f => 
                         <Table.Row>
-                            <Table.Cell><Checkbox label=''/></Table.Cell>
+                            <Table.Cell><Checkbox label='' onChange={(event, data) => onSelectionChange(f.filename, data.checked)}/></Table.Cell>
                             <Table.Cell>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell>{f.bitRate}</Table.Cell>
                             <Table.Cell>{formatSeconds(f.length)}</Table.Cell>
