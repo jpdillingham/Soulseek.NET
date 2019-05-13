@@ -22,7 +22,6 @@ class Response extends Component {
     state = { tree: buildTree(this.props.response.files) }
 
     onFileSelectionChange = (file, state) => {
-        console.log(file, state);
         file.selected = state;
         this.setState({ tree: this.state.tree })
     }
@@ -62,9 +61,10 @@ class Response extends Component {
                         label={{ 
                             as: 'a', 
                             basic: false, 
-                            content: `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'} ${selectedSize}`
+                            content: `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}, ${selectedSize}`
                         }}
-                        labelPosition='right' 
+                        labelPosition='right'
+                        onClick={() => this.props.onDownload(response.username, selectedFiles)}
                     />}
                 </Card.Content>
             </Card>
