@@ -34,6 +34,8 @@
         {
             Configuration = configuration;
             Client = new SoulseekClient();
+            Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
+            Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
         }
 
         public IConfiguration Configuration { get; }
