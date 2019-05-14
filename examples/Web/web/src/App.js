@@ -25,14 +25,18 @@ class App extends Component {
         Promise.all(files.map(f => this.downloadOne(username, f)));
     }
 
-    downloadOne = (username, file) => {
+    downloadOne = (username, file, toBrowser = false) => {
         return axios.request({
             method: 'GET',
-            url: `${BASE_URL}/download/${username}/${encodeURI(file.filename)}`,
+            url: `${BASE_URL}/files/${username}/${encodeURI(file.filename)}`,
             responseType: 'arraybuffer',
             responseEncoding: 'binary'
         })
-        .then((response) => downloadFile(response.data, getFileName(file.filename)));
+        .then((response) => { 
+            if (toBrowser) { 
+                downloadFile(response.data, getFileName(file.filename))
+            }
+        });
     }
 
     onSearchPhraseChange = (event, data) => {
