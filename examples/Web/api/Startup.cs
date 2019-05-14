@@ -19,20 +19,22 @@
 
     public class Startup
     {
-        [EnvironmentVariable("SLSK_USERNAME")]
         private static string Username { get; set; }
-
-        [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
-
-        [EnvironmentVariable("SLSK_WEBROOT")]
         private static string WebRoot { get; set; }
+        public static string OutputDirectory { get; private set; }
 
         private SoulseekClient Client { get; }
 
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            Username = Configuration.GetValue<string>("USERNAME");
+            Password = Configuration.GetValue<string>("PASSWORD");
+            WebRoot = Configuration.GetValue<string>("WEBROOT");
+            OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIRECTORY");
+
             Client = new SoulseekClient();
             Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
             Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
