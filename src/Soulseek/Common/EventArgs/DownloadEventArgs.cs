@@ -29,6 +29,7 @@ namespace Soulseek
             AverageSpeed = download.AverageSpeed;
             BytesDownloaded = download.BytesDownloaded;
             BytesRemaining = download.BytesRemaining;
+            Data = download.Data;
             ElapsedTime = download.ElapsedTime;
             EndTime = download.EndTime;
             Filename = download.Filename;
@@ -59,6 +60,11 @@ namespace Soulseek
         ///     Gets the number of remaining bytes to be downloaded.
         /// </summary>
         public int BytesRemaining { get; }
+
+        /// <summary>
+        ///     Gets the data downloaded.
+        /// </summary>
+        public byte[] Data { get; }
 
         /// <summary>
         ///     Gets the current duration of the download, if it has been started.
