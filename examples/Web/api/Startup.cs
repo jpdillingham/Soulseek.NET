@@ -33,7 +33,7 @@
             Username = Configuration.GetValue<string>("USERNAME");
             Password = Configuration.GetValue<string>("PASSWORD");
             WebRoot = Configuration.GetValue<string>("WEBROOT");
-            OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIRECTORY");
+            OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
 
             Client = new SoulseekClient();
             Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
