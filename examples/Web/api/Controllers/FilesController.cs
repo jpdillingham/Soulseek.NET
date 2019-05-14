@@ -1,5 +1,6 @@
 ﻿namespace WebAPI.Controllers
 {
+    using System;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
     using System.Threading.Tasks;
@@ -53,10 +54,34 @@
         [HttpPost("queue/{username}/{filename}")]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {
-            var fileBytes = await Client.DownloadAsync(username, filename, token);
-            var localFilename = SaveLocalFile(filename, OutputDirectory, fileBytes);
+            var waitUntilEnqueue = new TaskCompletionSource<bool>();
 
-            return Ok(localFilename);
+            var downloadTask = Client.DownloadAsync(username, filename, token, new DownloadOptions(stateChanged: (e) =>
+            {
+                if (e.State == DownloadStates.Queued)
+                {
+                    waitUntilEnqueue.SetResult(true);
+                }
+
+                if (e.State.HasFlag(DownloadStates.Completed) && e.State.HasFlag(DownloadStates.Succeeded))
+                {
+                    SaveLocalFile(filename, OutputDirectory, e.Data);
+                }
+            }));
+
+            try
+            {
+                // wait until either the waitUntilEnqueue task completes because the download was successfully
+                // queued, or the downloadTask throws due to an error prior to successfully queueing.
+                var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
+
+                // if it didn't throw, just return ok.  the download will continue waiting in the background.
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex);
+            }
         }
 
         private static string SaveLocalFile(string remoteFilename, string saveDirectory, byte[] data)

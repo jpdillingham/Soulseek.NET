@@ -26,17 +26,19 @@ class App extends Component {
     }
 
     downloadOne = (username, file, toBrowser = false) => {
-        return axios.request({
-            method: 'GET',
-            url: `${BASE_URL}/files/${username}/${encodeURI(file.filename)}`,
-            responseType: 'arraybuffer',
-            responseEncoding: 'binary'
-        })
-        .then((response) => { 
-            if (toBrowser) { 
-                downloadFile(response.data, getFileName(file.filename))
-            }
-        });
+        // return axios.request({
+        //     method: 'GET',
+        //     url: `${BASE_URL}/files/${username}/${encodeURI(file.filename)}`,
+        //     responseType: 'arraybuffer',
+        //     responseEncoding: 'binary'
+        // })
+        // .then((response) => { 
+        //     if (toBrowser) { 
+        //         downloadFile(response.data, getFileName(file.filename))
+        //     }
+        // });
+
+        return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
     }
 
     onSearchPhraseChange = (event, data) => {
