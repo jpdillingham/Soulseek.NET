@@ -5569,7 +5569,7 @@ jest@24.7.1:
     import-local "^2.0.0"
     jest-cli "^24.7.1"
 
-jquery@x.*:
+jquery@>=1.6.4, jquery@x.*:
   version "3.4.1"
   resolved "https://registry.yarnpkg.com/jquery/-/jquery-3.4.1.tgz#714f1f8d9dde4bdfa55764ba37ef214630d80ef2"
   integrity sha512-36+AdBzCL+y6qjw5Tx7HgzeGCzC81MDDgaUP8ld2zhx58HdqXGoBd+tHdrBMiyjGQs0Hxs/MLZTu/eHNJJuWPw==
@@ -8689,6 +8689,13 @@ signal-exit@^3.0.0, signal-exit@^3.0.2:
   version "3.0.2"
   resolved "https://registry.yarnpkg.com/signal-exit/-/signal-exit-3.0.2.tgz#b5fdc08f1287ea1178628e415e25132b73646c6d"
   integrity sha1-tf3AjxKH6hF4Yo5BXiUTK3NkbG0=
+
+signalr@^2.4.1:
+  version "2.4.1"
+  resolved "https://registry.yarnpkg.com/signalr/-/signalr-2.4.1.tgz#57cde6e0bf43265028e0ca3d954a8577b9e336e2"
+  integrity sha512-HhIcA9kOE9WBs/DPHd+9jN90GDeSD7RRAETcmxn80laDBQmkQeHblzGBNw4rBzn1behe2WiFYQcbKyx11H3ADw==
+  dependencies:
+    jquery ">=1.6.4"
 
 simple-swizzle@^0.2.2:
   version "0.2.2"
