@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
-import { formatBytes, getDirectoryName } from './util';
+import axios from 'axios';
+
+import { BASE_URL } from './constants';
+import { formatBytes, getDirectoryName, downloadFile, getFileName } from './util';
 
 import FileList from './FileList'
 
@@ -20,26 +23,48 @@ const buildTree = (files) => {
 }
 
 class Response extends Component {
-    state = { tree: buildTree(this.props.response.files), downloadRequest: undefined, downloadError: '' }
+    state = { 
+        tree: buildTree(this.props.response.files), 
+        downloadRequest: undefined, 
+        downloadError: '' 
+    }
 
     onFileSelectionChange = (file, state) => {
         file.selected = state;
-        this.setState({ tree: this.state.tree })
+        this.setState({ tree: this.state.tree, downloadRequest: undefined, downloadError: '' })
     }
 
-    download = (username, files) => {
+    download = (username, files, toBrowser = false) => {
         this.setState({ downloadRequest: 'inProgress' }, () => {
-            this.props.onDownload(username, files)
+            Promise.all(files.map(f => this.downloadOne(username, f, toBrowser)))
             .then(() => this.setState({ downloadRequest: 'complete' }))
             .catch(err => this.setState({ downloadRequest: 'error', downloadError: err.response }))
         });
     }
 
-    render() {
+    downloadOne = (username, file, toBrowser) => {
+        if (toBrowser) {
+            return axios.request({
+                method: 'GET',
+                url: `${BASE_URL}/files/${username}/${encodeURI(file.filename)}`,
+                responseType: 'arraybuffer',
+                responseEncoding: 'binary'
+            })
+            .then((response) => { 
+                if (toBrowser) { 
+                    downloadFile(response.data, getFileName(file.filename))
+                }
+            });
+        }
+
+        return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
+    }
+
+    render = () => {
         let response = this.props.response;
         let free = response.freeUploadSlots > 0;
 
-        let { tree } = this.state;
+        let { tree, downloadRequest, downloadError } = this.state;
 
         let selectedFiles = Object.keys(tree)
             .reduce((list, dict) => list.concat(tree[dict]), [])
@@ -57,7 +82,8 @@ class Response extends Component {
                     {Object.keys(tree).map(dir => 
                         <FileList 
                             directoryName={dir} 
-                            files={tree[dir]} 
+                            files={tree[dir]}
+                            disabled={downloadRequest === 'inProgress'}
                             onSelectionChange={this.onFileSelectionChange}
                         />
                     )}
@@ -76,14 +102,14 @@ class Response extends Component {
                                 }}
                                 labelPosition='right'
                                 onClick={() => this.download(response.username, selectedFiles)}
-                                disabled={this.state.downloadRequest === 'inProgress'}
+                                disabled={downloadRequest === 'inProgress'}
                             />
-                            {this.state.downloadRequest === 'inProgress' && <Icon loading name='circle notch' size='large'/>}
-                            {this.state.downloadRequest === 'complete' && <Icon name='checkmark' color='green' size='large'/>}
-                            {this.state.downloadRequest === 'error' && 
-                                <span>
-                                    <Icon name='x' color='red' size='large'/><Label>{this.state.downloadError.statusText}</Label></span>
-                                }
+                            {downloadRequest === 'inProgress' && <Icon loading name='circle notch' size='large'/>}
+                            {downloadRequest === 'complete' && <Icon name='checkmark' color='green' size='large'/>}
+                            {downloadRequest === 'error' && <span>
+                                <Icon name='x' color='red' size='large'/>
+                                <Label>{downloadError.statusText}</Label>
+                            </span>}
                         </span>}
                 </Card.Content>
             </Card>

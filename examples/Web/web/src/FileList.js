@@ -1,4 +1,5 @@
 import React from 'react';
+
 import { formatSeconds, formatBytes, getFileName } from './util';
 
 import { 
@@ -9,7 +10,7 @@ import {
     Checkbox 
 } from 'semantic-ui-react';
 
-const FileList = ({ directoryName, files, onSelectionChange }) => (
+const FileList = ({ directoryName, files, onSelectionChange, disabled }) => (
     <div>
         <Header 
             size='small' 
@@ -27,6 +28,7 @@ const FileList = ({ directoryName, files, onSelectionChange }) => (
                                 fitted
                                 onChange={(event, data) => files.map(f => onSelectionChange(f, data.checked))}
                                 checked={files.filter(f => !f.selected).length === 0}
+                                disabled={disabled}
                             />
                         </Table.HeaderCell>
                         <Table.HeaderCell className='filelist-filename'>File</Table.HeaderCell>
@@ -43,6 +45,7 @@ const FileList = ({ directoryName, files, onSelectionChange }) => (
                                     fitted 
                                     onChange={(event, data) => onSelectionChange(f, data.checked)}
                                     checked={f.selected}
+                                    disabled={disabled}
                                 />
                             </Table.Cell>
                             <Table.Cell className='filelist-filename'>{getFileName(f.filename)}</Table.Cell>

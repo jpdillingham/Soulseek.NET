@@ -1,14 +1,14 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
+import data from './data'
+
+import Response from './Response';
+
 import { 
     Segment, 
     Input 
 } from 'semantic-ui-react';
-
-import Response from './Response';
-
-import data from './data'
 
 class Search extends Component {
     state = { searchPhrase: '', searchState: 'complete', results: data }
