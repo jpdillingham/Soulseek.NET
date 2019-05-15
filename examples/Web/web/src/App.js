@@ -18,7 +18,7 @@ const BASE_URL = "http://localhost:5000/api/v1";
 
 class App extends Component {
     download = (username, files) => {
-        Promise.all(files.map(f => this.downloadOne(username, f)));
+        return Promise.all(files.map(f => this.downloadOne(username, f)));
     }
 
     downloadOne = (username, file, toBrowser = false) => {

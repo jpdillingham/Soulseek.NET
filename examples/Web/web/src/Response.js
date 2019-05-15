@@ -6,7 +6,8 @@ import FileList from './FileList'
 import { 
     Button, 
     Card, 
-    Icon
+    Icon,
+    Label
 } from 'semantic-ui-react';
 
 const buildTree = (files) => {
@@ -19,11 +20,19 @@ const buildTree = (files) => {
 }
 
 class Response extends Component {
-    state = { tree: buildTree(this.props.response.files) }
+    state = { tree: buildTree(this.props.response.files), downloadRequest: undefined, downloadError: '' }
 
     onFileSelectionChange = (file, state) => {
         file.selected = state;
         this.setState({ tree: this.state.tree })
+    }
+
+    download = (username, files) => {
+        this.setState({ downloadRequest: 'inProgress' }, () => {
+            this.props.onDownload(username, files)
+            .then(() => this.setState({ downloadRequest: 'complete' }))
+            .catch(err => this.setState({ downloadRequest: 'error', downloadError: err.response }))
+        });
     }
 
     render() {
@@ -54,18 +63,28 @@ class Response extends Component {
                     )}
                 </Card.Content>
                 <Card.Content extra>
-                    {selectedFiles.length > 0 && <Button 
-                        color='green' 
-                        content='Download'
-                        icon='download' 
-                        label={{ 
-                            as: 'a', 
-                            basic: false, 
-                            content: `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}, ${selectedSize}`
-                        }}
-                        labelPosition='right'
-                        onClick={() => this.props.onDownload(response.username, selectedFiles)}
-                    />}
+                    {selectedFiles.length > 0 && 
+                        <span>
+                            <Button 
+                                color='green' 
+                                content='Download'
+                                icon='download' 
+                                label={{ 
+                                    as: 'a', 
+                                    basic: false, 
+                                    content: `${selectedFiles.length} file${selectedFiles.length === 1 ? '' : 's'}, ${selectedSize}`
+                                }}
+                                labelPosition='right'
+                                onClick={() => this.download(response.username, selectedFiles)}
+                                disabled={this.state.downloadRequest === 'inProgress'}
+                            />
+                            {this.state.downloadRequest === 'inProgress' && <Icon loading name='circle notch' size='large'/>}
+                            {this.state.downloadRequest === 'complete' && <Icon name='checkmark' color='green' size='large'/>}
+                            {this.state.downloadRequest === 'error' && 
+                                <span>
+                                    <Icon name='x' color='red' size='large'/><Label>{this.state.downloadError.statusText}</Label></span>
+                                }
+                        </span>}
                 </Card.Content>
             </Card>
         )
