@@ -14,12 +14,13 @@ body {
     margin-right: -1px !important;
 }
 
-.content {
+.app-content {
     margin-top: 70px;
+    background: #e7e7e7 !important;
 }
 
 .result-card {
-    width: 1200px !important;
+    width: 1000px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
@@ -29,7 +30,7 @@ body {
 }
 
 .search-segment {
-    width: 1200px !important;
+    width: 1000px !important;
     margin-left: auto !important;
     margin-right: auto !important;
     margin-top: 15px !important;
@@ -48,8 +49,8 @@ body {
 }
 
 .filelist-filename {
-    width: 900px;
-    min-width: 900px;
+    width: 700px;
+    min-width: 700px;
     word-wrap: break-word !important;
 }
 
