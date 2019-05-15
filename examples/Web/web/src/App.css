@@ -12,7 +12,7 @@ body {
 }
 
 .result-card {
-    width: 800px !important;
+    width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
@@ -22,7 +22,7 @@ body {
 }
 
 .search-segment {
-    width: 800px !important;
+    width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
     margin-top: 15px !important;
@@ -41,8 +41,8 @@ body {
 }
 
 .filelist-filename {
-    width: 500px;
-    min-width: 500px;
+    width: 900px;
+    min-width: 900px;
     word-wrap: break-word !important;
 }
 
