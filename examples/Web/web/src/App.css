@@ -9,6 +9,13 @@ body {
 
 .app {
     margin: auto;
+    margin-top: -1px !important;
+    margin-left: -1px !important;
+    margin-right: -1px !important;
+}
+
+.content {
+    margin-top: 70px;
 }
 
 .result-card {

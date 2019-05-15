@@ -3,6 +3,13 @@ import axios from 'axios';
 import { getFileName, downloadFile } from './util'
 import './App.css';
 
+import { 
+    Sidebar,
+    Segment,
+    Menu,
+    Icon,
+} from 'semantic-ui-react';
+
 import Response from './Response';
 import Search from './Search'
 
@@ -47,18 +54,30 @@ class App extends Component {
 
     render() {
         return (
-            <div className="app">
-                <Search
-                    pending={this.state.searchState === 'pending'}
-                    onPhraseChange={this.onSearchPhraseChange}
-                    onSearch={this.search}
-                />
-                {this.state.searchState === 'complete' && <div>
-                    {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>
-                        <Response response={r} onDownload={this.download}/>
-                    )}
-                </div>}
-            </div>
+            <Sidebar.Pushable as={Segment} className='app'>
+                <Sidebar as={Menu} animation='overlay' icon='labeled' inverted horizontal direction='top' visible width='thin'>
+                    <Menu.Item as='a'>
+                        <Icon name='search' />
+                        Search
+                    </Menu.Item>
+                    <Menu.Item as='a'>
+                        <Icon name='download' />
+                        Downloads
+                    </Menu.Item>
+                </Sidebar>
+                <Sidebar.Pusher className='content'>
+                    <Search
+                        pending={this.state.searchState === 'pending'}
+                        onPhraseChange={this.onSearchPhraseChange}
+                        onSearch={this.search}
+                    />
+                    {this.state.searchState === 'complete' && <div>
+                        {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>
+                            <Response response={r} onDownload={this.download}/>
+                        )}
+                    </div>}
+                </Sidebar.Pusher>
+            </Sidebar.Pushable>
         )
     }
 }
