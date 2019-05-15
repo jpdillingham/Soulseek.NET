@@ -9,9 +9,8 @@ body {
 
 .app {
     margin: auto;
-    margin-top: -1px !important;
-    margin-left: -1px !important;
-    margin-right: -1px !important;
+    border: 0px !important;
+    border-radius: 0% !important;
 }
 
 .app-content {
