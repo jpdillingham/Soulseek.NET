@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import { Route, Link } from "react-router-dom";
 import { getFileName, downloadFile } from './util'
 import './App.css';
 
@@ -56,14 +57,18 @@ class App extends Component {
         return (
             <Sidebar.Pushable as={Segment} className='app'>
                 <Sidebar as={Menu} animation='overlay' icon='labeled' inverted horizontal direction='top' visible width='thin'>
-                    <Menu.Item as='a'>
-                        <Icon name='search' />
-                        Search
-                    </Menu.Item>
-                    <Menu.Item as='a'>
-                        <Icon name='download' />
-                        Downloads
-                    </Menu.Item>
+                    <Link to='/search'>
+                        <Menu.Item as='a'>
+                            <Icon name='search' />
+                            Search
+                        </Menu.Item>
+                    </Link>
+                    <Link to='/downloads'>
+                        <Menu.Item as='a'>
+                            <Icon name='download' />
+                            Downloads
+                        </Menu.Item>
+                    </Link>
                 </Sidebar>
                 <Sidebar.Pusher className='content'>
                     <Search
