@@ -38,8 +38,8 @@ const FileList = ({ directoryName, files, onSelectionChange, disabled }) => (
                     </Table.Row>
                 </Table.Header>                                
                 <Table.Body>
-                    {files.map(f => 
-                        <Table.Row>
+                    {files.map((f, i) => 
+                        <Table.Row key={i}>
                             <Table.Cell className='filelist-selector'>
                                 <Checkbox 
                                     fitted 

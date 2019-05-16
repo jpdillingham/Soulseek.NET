@@ -79,8 +79,9 @@ class Response extends Component {
                     <Card.Meta className='result-meta'>
                         <span>Upload Speed: {formatBytes(response.uploadSpeed)}/s, Free Upload Slot: {free ? 'YES' : 'NO'}, Queue Length: {response.queueLength}</span>
                     </Card.Meta>
-                    {Object.keys(tree).map(dir => 
+                    {Object.keys(tree).map((dir, i) => 
                         <FileList 
+                            key={i}
                             directoryName={dir} 
                             files={tree[dir]}
                             disabled={downloadRequest === 'inProgress'}

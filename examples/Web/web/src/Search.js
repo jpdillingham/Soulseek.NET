@@ -1,7 +1,8 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import data from './data'
+import { BASE_URL } from './constants';
+import data from './data';
 
 import Response from './Response';
 
@@ -13,9 +14,9 @@ import {
 class Search extends Component {
     state = { searchPhrase: '', searchState: 'complete', results: data }
 
-    search = () => {
+    search = (searchPhrase) => {
         this.setState({ searchState: 'pending' }, () => {
-            axios.get(this.props.baseUrl + '/search/' + this.state.searchPhrase)
+            axios.get(BASE_URL + '/search/' + searchPhrase)
             .then(response => this.setState({ results: response.data }))
             .then(() => this.setState({ searchState: 'complete' }))
         });
@@ -26,7 +27,8 @@ class Search extends Component {
     }
     
     render = () => {
-        let pending = this.state.searchState === 'pending';
+        let { searchPhrase, searchState, results } = this.state;
+        let pending = searchState === 'pending';
 
         return (
             <div>
@@ -37,12 +39,16 @@ class Search extends Component {
                         className='search-input'
                         placeholder="Enter search phrase..."
                         onChange={this.onSearchPhraseChange}
-                        action={!pending && { content: 'Search', onClick: this.search }}
+                        action={!pending && { content: 'Search', onClick: () => this.search(searchPhrase) }}
                     />
                 </Segment>
-                {this.state.searchState === 'complete' && <div>
-                    {this.state.results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map(r =>
-                        <Response response={r} onDownload={this.props.onDownload}/>
+                {searchState === 'complete' && <div>
+                    {results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map((r, i) =>
+                        <Response 
+                            key={i} 
+                            response={r} 
+                            onDownload={this.props.onDownload}
+                        />
                     )}
                 </div>}
                 <div>&nbsp;</div>
