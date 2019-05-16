@@ -59,16 +59,16 @@ namespace Soulseek
 
         private bool Disposed { get; set; }
         private SystemTimer MonitorTimer { get; set; }
-        private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
+        private ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)> Waits { get; set; } = new ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>();
 
         /// <summary>
         ///     Cancels all waits.
         /// </summary>
         public void CancelAll()
         {
-            foreach (var queue in Waits)
+            foreach (var record in Waits)
             {
-                while (queue.Value.TryDequeue(out var wait))
+                while (record.Value.Queue.TryDequeue(out var wait))
                 {
                     wait.TaskCompletionSource.SetCanceled();
                 }
@@ -83,7 +83,7 @@ namespace Soulseek
         /// <param name="result">The wait result.</param>
         public void Complete<T>(WaitKey key, T result)
         {
-            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
+            if (Waits.TryGetValue(key, out var record) && record.Queue.TryDequeue(out var wait))
             {
                 ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
             }
@@ -114,7 +114,7 @@ namespace Soulseek
         /// <param name="exception">The Exception to throw.</param>
         public void Throw(WaitKey key, Exception exception)
         {
-            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
+            if (Waits.TryGetValue(key, out var record) && record.Queue.TryDequeue(out var wait))
             {
                 wait.TaskCompletionSource.SetException(exception);
             }
@@ -152,10 +152,10 @@ namespace Soulseek
                 CancellationToken = cancellationToken,
             };
 
-            Waits.AddOrUpdate(key, new ConcurrentQueue<PendingWait>(new[] { wait }), (_, queue) =>
+            Waits.AddOrUpdate(key, (new ReaderWriterLockSlim(), new ConcurrentQueue<PendingWait>(new[] { wait })), (_, record) =>
             {
-                queue.Enqueue(wait);
-                return queue;
+                record.Queue.Enqueue(wait);
+                return record;
             });
 
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
@@ -206,18 +206,18 @@ namespace Soulseek
 
         private void MonitorWaits(object sender, object e)
         {
-            foreach (var queue in Waits)
+            foreach (var record in Waits)
             {
-                if (queue.Value.TryPeek(out var nextPendingWait))
+                if (record.Value.Queue.TryPeek(out var nextPendingWait))
                 {
                     if (nextPendingWait.CancellationToken != null && ((CancellationToken)nextPendingWait.CancellationToken).IsCancellationRequested)
                     {
-                        if (queue.Value.TryDequeue(out var cancelledWait))
+                        if (record.Value.Queue.TryDequeue(out var cancelledWait))
                         {
                             cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled."));
                         }
                     }
-                    else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && queue.Value.TryDequeue(out var timedOutWait))
+                    else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && record.Value.Queue.TryDequeue(out var timedOutWait))
                     {
                         timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
