@@ -246,6 +246,10 @@ namespace Soulseek.Tests.Unit
                 Task<object> task = waiter.Wait<object>(key);
                 object result = null;
 
+                // stick another wait in the same queue to prevent the disposal logic from removing 
+                // the dictionary record before we can inspect it
+                waiter.Wait<object>(key, timeout: 99999);
+
                 var ex = Record.Exception(() => result = task.Result);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
@@ -259,7 +263,7 @@ namespace Soulseek.Tests.Unit
                 Assert.Single(waits);
 
                 Assert.NotNull(record.Queue);
-                Assert.Empty(record.Queue);
+                Assert.Single(record.Queue);
             }
         }
 
@@ -278,6 +282,10 @@ namespace Soulseek.Tests.Unit
                     Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
                     object result = null;
 
+                    // stick another wait in the same queue to prevent the disposal logic from removing
+                    // the dictionary record before we can inspect it
+                    waiter.Wait<object>(key, 999999, CancellationToken.None);
+
                     var ex = Record.Exception(() => result = task.Result);
 
                     var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
@@ -291,7 +299,37 @@ namespace Soulseek.Tests.Unit
                     Assert.Single(waits);
 
                     Assert.NotNull(record.Queue);
-                    Assert.Empty(record.Queue);
+                    Assert.Single(record.Queue); // should contain only the dummy wait
+                }
+            }
+        }
+
+        [Trait("Category", "Wait Cleanup")]
+        [Fact(DisplayName = "Wait dictionary and queue are collected after last wait is dequeued")]
+        public void Wait_Dictionary_And_Queue_Are_Collected_After_Last_Wait_Is_Dequeued()
+        {
+            using (var tcs = new CancellationTokenSource())
+            {
+                tcs.CancelAfter(100);
+
+                var key = new WaitKey(MessageCode.ServerLogin);
+
+                using (var waiter = new Waiter(0))
+                {
+                    Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
+                    object result = null;
+
+                    var ex = Record.Exception(() => result = task.Result);
+                    waiter.InvokeMethod("MonitorWaits", null, null); // force clean up.  normally this is on a timer.
+
+                    var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                    var exists = waits.TryGetValue(key, out var record);
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex.InnerException);
+
+                    Assert.Empty(waits);
+                    Assert.False(exists);
                 }
             }
         }
