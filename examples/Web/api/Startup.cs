@@ -11,6 +11,7 @@
     using Microsoft.AspNetCore.Mvc.ApiExplorer;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
+    using Microsoft.Extensions.FileProviders;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
@@ -18,26 +19,31 @@
 
     public class Startup
     {
-        [EnvironmentVariable("SLSK_USERNAME")]
         private static string Username { get; set; }
-
-        [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
+        private static string WebRoot { get; set; }
+        public static string OutputDirectory { get; private set; }
 
         private SoulseekClient Client { get; }
 
         public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
+
+            Username = Configuration.GetValue<string>("USERNAME");
+            Password = Configuration.GetValue<string>("PASSWORD");
+            WebRoot = Configuration.GetValue<string>("WEBROOT");
+            OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
+
             Client = new SoulseekClient();
+            Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
+            Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
         }
 
         public IConfiguration Configuration { get; }
 
         public void ConfigureServices(IServiceCollection services)
         {
-            EnvironmentVariables.Populate();
-
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader().AllowCredentials()));
 
             services.AddMvc()
@@ -81,7 +87,17 @@
 
             app.UseCors("AllowAll");
 
-            app.UseHttpsRedirection();
+            WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
+            Console.WriteLine($"Serving static content from {WebRoot}");
+
+            app.UseFileServer(new FileServerOptions
+            {
+                FileProvider = new PhysicalFileProvider(WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot")),
+                RequestPath = "",
+                EnableDirectoryBrowsing = false,
+                EnableDefaultFiles = true
+            });
+
             app.UseMvc();
 
             app.UseSwagger(options => 

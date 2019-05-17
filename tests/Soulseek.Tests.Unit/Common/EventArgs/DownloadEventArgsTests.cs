@@ -42,6 +42,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(dl.Token, d.Token);
             Assert.Equal(dl.State, d.State);
             Assert.Equal(options, d.Options);
+            Assert.Equal(dl.Data, d.Data);
         }
 
         [Trait("Category", "DownloadProgressUpdatedEventArgs Instantiation")]

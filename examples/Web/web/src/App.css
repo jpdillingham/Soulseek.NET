@@ -1,0 +1,72 @@
+body {
+    background: #e7e7e7 !important;
+}
+
+.ui.table td, th {
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
+}
+
+.app {
+    margin: auto;
+    margin-bottom: 17px !important;
+    border: 0px !important;
+    border-radius: 0% !important;
+    box-shadow: none !important;
+}
+
+.app-content {
+    margin-top: 70px;
+    background: #e7e7e7 !important;
+}
+
+.result-card {
+    width: 1000px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.result-meta {
+    margin-top: 5px;
+}
+
+.search-segment {
+    width: 1000px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    margin-top: 15px !important;
+}
+
+.search-input {
+    width: 100%;
+}
+
+.filelist-header {
+    margin-top: 20px !important;
+}
+
+.filelist-selector {
+    width: 40px;
+}
+
+.filelist-filename {
+    width: 700px;
+    min-width: 700px;
+    word-wrap: break-word !important;
+}
+
+.filelist-size {
+    width: 100px;
+}
+
+.filelist-bitrate {
+    width: 70px;
+}
+
+.filelist-length{
+    width: 65px;
+}
+
+.download-button {
+    color: black;
+}

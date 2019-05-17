@@ -275,8 +275,13 @@ namespace Soulseek
 
         private void RemoveMessageConnection(IMessageConnection connection)
         {
-            PeerConnections.TryRemove(connection.Key, out _);
-            PeerSemaphore.Release();
+            if (PeerConnections.TryRemove(connection.Key, out _))
+            {
+                // only release if we successfully removed a connection.  this can throw
+                // if another thread released it first and the semaphore tries to release more
+                // than its capacity.
+                PeerSemaphore.Release();
+            }
         }
     }
 }

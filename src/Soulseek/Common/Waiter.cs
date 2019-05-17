@@ -59,6 +59,7 @@ namespace Soulseek
 
         private bool Disposed { get; set; }
         private SystemTimer MonitorTimer { get; set; }
+        private ConcurrentDictionary<WaitKey, ReaderWriterLockSlim> Locks { get; set; } = new ConcurrentDictionary<WaitKey, ReaderWriterLockSlim>();
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
         /// <summary>
@@ -66,9 +67,9 @@ namespace Soulseek
         /// </summary>
         public void CancelAll()
         {
-            foreach (var queue in Waits)
+            foreach (var record in Waits)
             {
-                while (queue.Value.TryDequeue(out var wait))
+                while (record.Value.TryDequeue(out var wait))
                 {
                     wait.TaskCompletionSource.SetCanceled();
                 }
@@ -152,11 +153,21 @@ namespace Soulseek
                 CancellationToken = cancellationToken,
             };
 
-            Waits.AddOrUpdate(key, new ConcurrentQueue<PendingWait>(new[] { wait }), (_, queue) =>
+            var recordLock = Locks.GetOrAdd(key, new ReaderWriterLockSlim());
+            recordLock.EnterReadLock();
+
+            try
             {
-                queue.Enqueue(wait);
-                return queue;
-            });
+                Waits.AddOrUpdate(key, new ConcurrentQueue<PendingWait>(new[] { wait }), (_, queue) =>
+                {
+                    queue.Enqueue(wait);
+                    return queue;
+                });
+            }
+            finally
+            {
+                recordLock.ExitReadLock();
+            }
 
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
         }
@@ -204,23 +215,62 @@ namespace Soulseek
             }
         }
 
+        /// <remarks>
+        ///     Not thread safe; ensure this is invoked only by the timer within this class.
+        /// </remarks>
         private void MonitorWaits(object sender, object e)
         {
-            foreach (var queue in Waits)
+            foreach (var record in Waits)
             {
-                if (queue.Value.TryPeek(out var nextPendingWait))
+                // it shouldn't be possible for a record to make it into Waits without a corresponding lock in Locks,
+                // but use GetOrAdd here anyway.
+                var recordLock = Locks.GetOrAdd(record.Key, new ReaderWriterLockSlim());
+
+                // enter a read lock first; TryPeek and TryDequeue are atomic so there's no risky operation until later.
+                recordLock.EnterUpgradeableReadLock();
+
+                try
                 {
-                    if (nextPendingWait.CancellationToken != null && ((CancellationToken)nextPendingWait.CancellationToken).IsCancellationRequested)
+                    if (record.Value.TryPeek(out var nextPendingWait))
                     {
-                        if (queue.Value.TryDequeue(out var cancelledWait))
+                        if (nextPendingWait.CancellationToken != null && ((CancellationToken)nextPendingWait.CancellationToken).IsCancellationRequested)
                         {
-                            cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled."));
+                            if (record.Value.TryDequeue(out var cancelledWait))
+                            {
+                                cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled."));
+                            }
+                        }
+                        else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && record.Value.TryDequeue(out var timedOutWait))
+                        {
+                            timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
                         }
                     }
-                    else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && queue.Value.TryDequeue(out var timedOutWait))
+
+                    if (record.Value.IsEmpty)
                     {
-                        timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
+                        // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits
+                        // before we can delete the dictionary record
+                        recordLock.EnterWriteLock();
+
+                        try
+                        {
+                            // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
+                            // entered the write lock.  this is guarateed to be safe since we now have exclusive access to the record
+                            if (record.Value.IsEmpty)
+                            {
+                                Waits.TryRemove(record.Key, out _);
+                                Locks.TryRemove(record.Key, out _);
+                            }
+                        }
+                        finally
+                        {
+                            recordLock.ExitWriteLock();
+                        }
                     }
+                }
+                finally
+                {
+                    recordLock.ExitUpgradeableReadLock();
                 }
             }
         }
