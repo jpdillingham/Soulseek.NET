@@ -154,8 +154,17 @@ namespace Soulseek
 
             Waits.AddOrUpdate(key, (new ReaderWriterLockSlim(), new ConcurrentQueue<PendingWait>(new[] { wait })), (_, record) =>
             {
-                record.Queue.Enqueue(wait);
-                return record;
+                record.Lock.EnterWriteLock();
+
+                try
+                {
+                    record.Queue.Enqueue(wait);
+                    return record;
+                }
+                finally
+                {
+                    record.Lock.ExitWriteLock();
+                }
             });
 
             return ((TaskCompletionSource<T>)wait.TaskCompletionSource).Task;
@@ -221,6 +230,29 @@ namespace Soulseek
                     {
                         timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
                     }
+                }
+
+                record.Value.Lock.EnterUpgradeableReadLock();
+
+                try
+                {
+                    if (record.Value.Queue.IsEmpty)
+                    {
+                        record.Value.Lock.EnterWriteLock();
+
+                        try
+                        {
+                            Waits.TryRemove(record.Key, out _);
+                        }
+                        finally
+                        {
+                            record.Value.Lock.ExitWriteLock();
+                        }
+                    }
+                }
+                finally
+                {
+                    record.Value.Lock.ExitUpgradeableReadLock();
                 }
             }
         }
