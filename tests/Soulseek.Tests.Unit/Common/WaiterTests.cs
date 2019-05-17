@@ -36,13 +36,13 @@ namespace Soulseek.Tests.Unit
 
                 var key = new WaitKey(MessageCode.ServerLogin);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                var peek = queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                var peek = record.Queue.TryPeek(out var wait);
 
                 Assert.Equal(result, waitResult);
-                Assert.NotNull(queue);
-                Assert.Empty(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Empty(record.Queue);
                 Assert.False(peek);
             }
         }
@@ -86,9 +86,9 @@ namespace Soulseek.Tests.Unit
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex.InnerException);
@@ -96,8 +96,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Single(record.Queue);
             }
         }
 
@@ -144,8 +144,8 @@ namespace Soulseek.Tests.Unit
 
                 var key = new WaitKey(MessageCode.ServerLogin);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
 
                 Assert.IsType<Task<object>>(task1);
                 Assert.NotNull(task1);
@@ -158,8 +158,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Equal(2, queue.Count);
+                Assert.NotNull(record.Queue);
+                Assert.Equal(2, record.Queue.Count);
             }
         }
 
@@ -177,9 +177,9 @@ namespace Soulseek.Tests.Unit
             {
                 Task<object> task = waiter.Wait<object>(key, timeout);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.IsType<Task<object>>(task);
                 Assert.NotNull(task);
@@ -188,8 +188,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Single(record.Queue);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
 
                 if (timeout != null)
@@ -213,9 +213,9 @@ namespace Soulseek.Tests.Unit
             {
                 Task task = waiter.Wait(key, timeout);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.IsType<Task<object>>(task);
                 Assert.NotNull(task);
@@ -224,8 +224,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Single(record.Queue);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
 
                 if (timeout != null)
@@ -248,9 +248,9 @@ namespace Soulseek.Tests.Unit
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex.InnerException);
@@ -258,8 +258,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Empty(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Empty(record.Queue);
             }
         }
 
@@ -280,9 +280,9 @@ namespace Soulseek.Tests.Unit
 
                     var ex = Record.Exception(() => result = task.Result);
 
-                    var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                    waits.TryGetValue(key, out var queue);
-                    queue.TryPeek(out var wait);
+                    var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                    waits.TryGetValue(key, out var record);
+                    record.Queue.TryPeek(out var wait);
 
                     Assert.NotNull(ex);
                     Assert.IsType<OperationCanceledException>(ex.InnerException);
@@ -290,8 +290,8 @@ namespace Soulseek.Tests.Unit
                     Assert.NotEmpty(waits);
                     Assert.Single(waits);
 
-                    Assert.NotNull(queue);
-                    Assert.Empty(queue);
+                    Assert.NotNull(record.Queue);
+                    Assert.Empty(record.Queue);
                 }
             }
         }
@@ -331,9 +331,9 @@ namespace Soulseek.Tests.Unit
 
                 var ex = Record.Exception(() => result = task.Result);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex.InnerException);
@@ -342,8 +342,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Empty(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Empty(record.Queue);
             }
         }
 
@@ -359,9 +359,9 @@ namespace Soulseek.Tests.Unit
 
                 Task<object> task = waiter.WaitIndefinitely<object>(key);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.IsType<Task<object>>(task);
                 Assert.NotNull(task);
@@ -370,8 +370,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Single(record.Queue);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
                 Assert.Equal(maxConst, wait.TimeoutAfter);
             }
@@ -389,9 +389,9 @@ namespace Soulseek.Tests.Unit
 
                 Task task = waiter.WaitIndefinitely(key);
 
-                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, (ReaderWriterLockSlim Lock, ConcurrentQueue<PendingWait> Queue)>>("Waits");
+                waits.TryGetValue(key, out var record);
+                record.Queue.TryPeek(out var wait);
 
                 Assert.IsType<Task<object>>(task);
                 Assert.NotNull(task);
@@ -400,8 +400,8 @@ namespace Soulseek.Tests.Unit
                 Assert.NotEmpty(waits);
                 Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                Assert.NotNull(record.Queue);
+                Assert.Single(record.Queue);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
                 Assert.Equal(maxConst, wait.TimeoutAfter);
             }
