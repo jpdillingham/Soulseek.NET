@@ -166,6 +166,9 @@ namespace Soulseek
         /// </summary>
         public SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
 
+        public IReadOnlyCollection<Search> Searches => SearchDictionary.Select(s => s.Value).ToList().AsReadOnly();
+        public IReadOnlyCollection<Download> Downloads => DownloadDictionary.Select(s => s.Value).ToList().AsReadOnly();
+
         /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>

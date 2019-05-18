@@ -90,6 +90,9 @@ namespace Soulseek
         /// </summary>
         string Username { get; }
 
+        IReadOnlyCollection<Search> Searches { get; }
+        IReadOnlyCollection<Download> Downloads { get; }
+
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
         /// </summary>
