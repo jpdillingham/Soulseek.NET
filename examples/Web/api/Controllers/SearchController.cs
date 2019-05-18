@@ -31,11 +31,17 @@
         /// <param name="searchText">The search phrase.</param>
         /// <param name="token">The optional search token.</param>
         /// <returns></returns>
-        [HttpGet("{searchText}")]
-        public async Task<ActionResult<IEnumerable<SearchResponse>>> Get([FromRoute, Required]string searchText, [FromQuery]int? token = null)
+        [HttpPost("")]
+        public async Task<ActionResult<IEnumerable<SearchResponse>>> Post([FromBody]string searchText, [FromQuery]int? token = null)
         {
             var results = await Client.SearchAsync(searchText, token);
             return results.ToList();
+        }
+
+        [HttpGet]
+        public ActionResult<IEnumerable<Search>> Get()
+        {
+            return Ok(Client.Searches);
         }
     }
 }
