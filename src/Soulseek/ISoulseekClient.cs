@@ -66,6 +66,11 @@ namespace Soulseek
         string Address { get; }
 
         /// <summary>
+        ///     Gets the list of downloads in progress.
+        /// </summary>
+        IReadOnlyCollection<Download> Downloads { get; }
+
+        /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
         IPAddress IPAddress { get; }
@@ -81,6 +86,11 @@ namespace Soulseek
         int Port { get; }
 
         /// <summary>
+        ///     Gets the list of searches in progress.
+        /// </summary>
+        IReadOnlyCollection<Search> Searches { get; }
+
+        /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         SoulseekClientStates State { get; }
@@ -89,9 +99,6 @@ namespace Soulseek
         ///     Gets the name of the currently signed in user.
         /// </summary>
         string Username { get; }
-
-        IReadOnlyCollection<Search> Searches { get; }
-        IReadOnlyCollection<Download> Downloads { get; }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.

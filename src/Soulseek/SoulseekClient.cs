@@ -147,6 +147,11 @@ namespace Soulseek
         public string Address { get; }
 
         /// <summary>
+        ///     Gets the list of downloads in progress.
+        /// </summary>
+        public IReadOnlyCollection<Download> Downloads => DownloadDictionary.Select(s => s.Value).ToList().AsReadOnly();
+
+        /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
         public IPAddress IPAddress { get; }
@@ -162,12 +167,14 @@ namespace Soulseek
         public int Port { get; }
 
         /// <summary>
+        ///     Gets the list of searches in progress.
+        /// </summary>
+        public IReadOnlyCollection<Search> Searches => SearchDictionary.Select(s => s.Value).ToList().AsReadOnly();
+
+        /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         public SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
-
-        public IReadOnlyCollection<Search> Searches => SearchDictionary.Select(s => s.Value).ToList().AsReadOnly();
-        public IReadOnlyCollection<Download> Downloads => DownloadDictionary.Select(s => s.Value).ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
