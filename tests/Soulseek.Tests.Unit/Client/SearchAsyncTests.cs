@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-            s.SetProperty("Searches", dict);
+            s.SetProperty("SearchDictionary", dict);
 
             var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, token));
 
@@ -159,7 +159,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var task = s.SearchAsync(searchText, token, options, cts.Token);
 
-            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
+            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("SearchDictionary").ToList();
 
             cts.Cancel();
 
@@ -184,7 +184,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var task = s.SearchAsync(searchText, cancellationToken: cts.Token);
 
-            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches").ToList();
+            var active = s.GetProperty<ConcurrentDictionary<int, Search>>("SearchDictionary").ToList();
 
             cts.Cancel();
 
@@ -311,7 +311,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var task = s.SearchAsync(searchText, token, options, null);
 
-            var search = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches")[token];
+            var search = s.GetProperty<ConcurrentDictionary<int, Search>>("SearchDictionary")[token];
             search.ResponseReceived.Invoke(response);
 
             await task;
@@ -337,7 +337,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var task = s.SearchAsync(searchText, token, options, null);
 
-            var search = s.GetProperty<ConcurrentDictionary<int, Search>>("Searches")[token];
+            var search = s.GetProperty<ConcurrentDictionary<int, Search>>("SearchDictionary")[token];
             search.ResponseReceived.Invoke(response);
 
             await task;

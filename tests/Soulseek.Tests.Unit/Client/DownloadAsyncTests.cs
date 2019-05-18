@@ -102,7 +102,7 @@ namespace Soulseek.Tests.Unit.Client
                 var queued = new ConcurrentDictionary<int, Download>();
                 queued.TryAdd(1, new Download("foo", "bar", 1));
 
-                s.SetProperty("Downloads", queued);
+                s.SetProperty("DownloadDictionary", queued);
 
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 1));
 

@@ -174,8 +174,8 @@ namespace Soulseek
         private IConnectionManager ConnectionManager { get; set; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+        private ConcurrentDictionary<int, Download> DownloadDictionary { get; set; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<int, Search> SearchDictionary { get; set; } = new ConcurrentDictionary<int, Search>();
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
         private IWaiter Waiter { get; set; }
@@ -270,8 +270,8 @@ namespace Soulseek
 
             ConnectionManager?.RemoveAndDisposeAll();
 
-            Searches?.RemoveAndDisposeAll();
-            Downloads?.RemoveAll();
+            SearchDictionary?.RemoveAndDisposeAll();
+            DownloadDictionary?.RemoveAll();
 
             Waiter?.CancelAll();
 
@@ -331,7 +331,7 @@ namespace Soulseek
 
             token = token ?? TokenFactory.GetToken();
 
-            if (Downloads.ContainsKey((int)token))
+            if (DownloadDictionary.ContainsKey((int)token))
             {
                 throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
             }
@@ -440,7 +440,7 @@ namespace Soulseek
 
             token = token ?? TokenFactory.GetToken();
 
-            if (Searches.ContainsKey((int)token))
+            if (SearchDictionary.ContainsKey((int)token))
             {
                 throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
             }
@@ -601,7 +601,7 @@ namespace Soulseek
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
-                Downloads.TryAdd(download.Token, download);
+                DownloadDictionary.TryAdd(download.Token, download);
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
@@ -738,7 +738,7 @@ namespace Soulseek
             }
             finally
             {
-                Downloads.TryRemove(download.Token, out var _);
+                DownloadDictionary.TryRemove(download.Token, out var _);
 
                 download.Connection?.Dispose();
 
@@ -810,7 +810,7 @@ namespace Soulseek
                 return;
             }
 
-            var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == downloadResponse.Username);
+            var download = DownloadDictionary.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == downloadResponse.Username);
 
             if (download != default(Download))
             {
@@ -856,7 +856,7 @@ namespace Soulseek
                 {
                     case MessageCode.PeerSearchResponse:
                         var searchResponse = SearchResponseSlim.Parse(message);
-                        if (Searches.TryGetValue(searchResponse.Token, out var search))
+                        if (SearchDictionary.TryGetValue(searchResponse.Token, out var search))
                         {
                             search.AddResponse(searchResponse);
                         }
@@ -936,7 +936,7 @@ namespace Soulseek
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
-                Searches.TryAdd(search.Token, search);
+                SearchDictionary.TryAdd(search.Token, search);
                 UpdateState(SearchStates.Requested);
 
                 await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
@@ -957,7 +957,7 @@ namespace Soulseek
             }
             finally
             {
-                Searches.TryRemove(search.Token, out _);
+                SearchDictionary.TryRemove(search.Token, out _);
 
                 UpdateState(SearchStates.Completed | search.State);
                 search.Dispose();
@@ -1014,7 +1014,7 @@ namespace Soulseek
                         {
                             // ensure that we are expecting at least one file from this user before we connect. the response
                             // doesn't contain any other identifying information about the file.
-                            if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
+                            if (!DownloadDictionary.IsEmpty && DownloadDictionary.Values.Any(d => d.Username == connectToPeerResponse.Username))
                             {
                                 await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
                             }
