@@ -33,11 +33,7 @@
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            var s = JsonConvert.SerializeObject(Tracker.Downloads, new IPAddressConverter());
-
-            Console.WriteLine(s);
-
-            return Ok(s);
+            return Ok(Tracker.Downloads);
         }
 
         /// <summary>
