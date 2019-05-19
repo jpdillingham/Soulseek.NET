@@ -37,11 +37,5 @@
             var results = await Client.SearchAsync(searchText, token);
             return results.ToList();
         }
-
-        [HttpGet]
-        public ActionResult<IEnumerable<Search>> Get()
-        {
-            return Ok(Client.Searches);
-        }
     }
 }

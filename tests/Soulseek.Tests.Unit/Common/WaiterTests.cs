@@ -246,7 +246,7 @@ namespace Soulseek.Tests.Unit
                 Task<object> task = waiter.Wait<object>(key);
                 object result = null;
 
-                // stick another wait in the same queue to prevent the disposal logic from removing 
+                // stick another wait in the same queue to prevent the disposal logic from removing
                 // the dictionary record before we can inspect it
                 waiter.Wait<object>(key, timeout: 99999);
 

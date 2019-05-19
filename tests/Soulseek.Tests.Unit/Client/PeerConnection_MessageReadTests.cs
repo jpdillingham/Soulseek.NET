@@ -332,7 +332,7 @@ namespace Soulseek.Tests.Unit.Client
             var searches = new ConcurrentDictionary<int, Search>();
             searches.TryAdd(token, search);
 
-            s.SetProperty("SearchDictionary", searches);
+            s.SetProperty("Searches", searches);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 

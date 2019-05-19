@@ -66,11 +66,6 @@ namespace Soulseek
         string Address { get; }
 
         /// <summary>
-        ///     Gets the list of downloads in progress.
-        /// </summary>
-        IReadOnlyCollection<Download> Downloads { get; }
-
-        /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
         IPAddress IPAddress { get; }
@@ -84,11 +79,6 @@ namespace Soulseek
         ///     Gets the server port.
         /// </summary>
         int Port { get; }
-
-        /// <summary>
-        ///     Gets the list of searches in progress.
-        /// </summary>
-        IReadOnlyCollection<Search> Searches { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

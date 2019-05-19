@@ -342,7 +342,7 @@ namespace Soulseek.Tests.Unit.Client
             using (var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object))
             {
                 var ex = Record.Exception(() => s.InvokeMethod("ServerConnection_MessageRead", null, msg));
-                var active = s.GetProperty<ConcurrentDictionary<int, Download>>("DownloadDictionary");
+                var active = s.GetProperty<ConcurrentDictionary<int, Download>>("Downloads");
 
                 Assert.Null(ex);
                 Assert.Empty(active);
@@ -414,7 +414,7 @@ namespace Soulseek.Tests.Unit.Client
                 var active = new ConcurrentDictionary<int, Download>();
                 active.TryAdd(token, new Download(username, filename, token));
 
-                s.SetProperty("DownloadDictionary", active);
+                s.SetProperty("Downloads", active);
 
                 s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 

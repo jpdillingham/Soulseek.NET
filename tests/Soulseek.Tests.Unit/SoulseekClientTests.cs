@@ -210,7 +210,7 @@ namespace Soulseek.Tests.Unit
             searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
             searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
 
-            s.SetProperty("SearchDictionary", searches);
+            s.SetProperty("Searches", searches);
 
             var ex = Record.Exception(() => s.Disconnect());
 
@@ -232,7 +232,7 @@ namespace Soulseek.Tests.Unit
             downloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
             downloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
 
-            s.SetProperty("DownloadDictionary", downloads);
+            s.SetProperty("Downloads", downloads);
 
             var ex = Record.Exception(() => s.Disconnect());
 

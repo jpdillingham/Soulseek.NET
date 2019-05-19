@@ -69,7 +69,7 @@ namespace Soulseek.Tests.Unit.Client
 
             activeDownloads.TryAdd(token, download);
 
-            s.SetProperty("DownloadDictionary", activeDownloads);
+            s.SetProperty("Downloads", activeDownloads);
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
@@ -98,7 +98,7 @@ namespace Soulseek.Tests.Unit.Client
             var download = new Download(username, filename, token);
             activeDownloads.TryAdd(token, download);
 
-            s.SetProperty("DownloadDictionary", activeDownloads);
+            s.SetProperty("Downloads", activeDownloads);
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
@@ -132,7 +132,7 @@ namespace Soulseek.Tests.Unit.Client
             var download = new Download(username, filename, token);
             activeDownloads.TryAdd(token, download);
 
-            s.SetProperty("DownloadDictionary", activeDownloads);
+            s.SetProperty("Downloads", activeDownloads);
 
             var r = new ConnectToPeerResponse(username, "F", IPAddress.Parse("127.0.0.1"), 1, token);
 
