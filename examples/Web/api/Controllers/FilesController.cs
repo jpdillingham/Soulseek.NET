@@ -3,6 +3,7 @@
     using System;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
@@ -33,7 +34,8 @@
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            return Ok(Tracker.Downloads);
+            var x = Tracker.Downloads.Select(u => new { Username = u.Key, Files = u.Value.Values });
+            return Ok(x);
         }
 
         /// <summary>
