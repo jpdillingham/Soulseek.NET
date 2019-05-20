@@ -43,6 +43,8 @@
     {
         internal Download(DownloadEventArgs e)
         {
+            Filename = e.Filename;
+            Username = e.Username;
             AverageSpeed = e.AverageSpeed;
             BytesDownloaded = e.BytesDownloaded;
             BytesRemaining = e.BytesRemaining;
@@ -59,6 +61,8 @@
             Token = e.Token;
         }
 
+        public string Filename { get; }
+        public string Username { get; }
         public double AverageSpeed { get; }
         public int BytesDownloaded { get; }
         public int BytesRemaining { get; }
