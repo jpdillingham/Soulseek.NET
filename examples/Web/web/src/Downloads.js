@@ -2,47 +2,57 @@ import React, { Component } from 'react';
 import axios from 'axios';
 
 import { BASE_URL } from './constants';
-import { formatBytes, getDirectoryName, getFileName } from './util';
-
-const buildTree = (files) => {
-    return files.reduce((dict, file) => {
-        let dir = getDirectoryName(file.filename);
-        let selectable = { selected: false, ...file };
-        dict[dir] = dict[dir] === undefined ? [ selectable ] : dict[dir].concat(selectable);
-        return dict;
-    }, {});
-}
+import { formatBytes, getFileName } from './util';
 
 class Downloads extends Component {
     state = { fetchState: '', downloads: [] }
 
     componentDidMount = () => {
         this.fetch();
+        window.setInterval(this.fetch, 500);
     }
 
     fetch = () => {
-        this.setState({ fetchState: 'pending' }, () => {
+        this.setState({ ...this.state, fetchState: 'pending' }, () => {
             axios.get(BASE_URL + '/files')
             .then(response => this.setState({ 
-                fetchState: 'complete', downloads: response.data.map(u => [{ username: u.username, files: buildTree(u.files) }])
+                fetchState: 'complete', downloads: response.data
             }))
-            .catch(err => this.setState({ fetchState: 'failed' }))
+            .catch(err => this.setState({ ...this.state, fetchState: 'failed' }))
         })
     }
     
     render = () => {
-        let { fetchState, downloads } = this.state;
-
-        console.log(JSON.stringify(downloads));
+        let { downloads } = this.state;
 
         return (
-            fetchState === 'complete' && downloads && <div>
-                {Object.keys(downloads).map((user, index) => 
-                    Object.keys(downloads[user]).map((file, index) => 
-                        JSON.stringify(downloads[user][file])
-                    )
+            downloads && <ul>
+                {downloads.map((user, index) => 
+                    <li>
+                        {user.username}
+                        <ul>
+                            {user.directories.map((dir, index) => 
+                                <li>
+                                    {dir.directory}
+                                    <ul>
+                                            <table>
+                                                <tbody>
+                                        {dir.files.map((file, index) => 
+                                                    <tr>
+                                                        <td>{file.filename}</td>
+                                                        <td>{file.state}</td>
+                                                        <td>{file.percentComplete}</td>
+                                                    </tr>
+                                        )}
+                                        </tbody>
+                                    </table>
+                                    </ul>
+                                </li>
+                            )}
+                        </ul>
+                    </li>
                 )}
-            </div>
+            </ul>
         );
     }
 }
