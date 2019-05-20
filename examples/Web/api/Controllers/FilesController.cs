@@ -34,7 +34,7 @@
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            var x = Tracker.Downloads.Select(u => new { Username = u.Key, Files = u.Value.Values });
+            var x = Tracker.Downloads;
             return Ok(x);
         }
 
