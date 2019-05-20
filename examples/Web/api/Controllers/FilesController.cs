@@ -34,7 +34,14 @@
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            var x = Tracker.Downloads;
+            var x = Tracker.Downloads.Select(u => new
+            {
+                Username = u.Key,
+                Directories = u.Value.Values
+                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
+                    .Select(d => new { Directory = d.Key, Files = d })
+            });
+
             return Ok(x);
         }
 
