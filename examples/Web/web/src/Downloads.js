@@ -9,20 +9,25 @@ import { BASE_URL } from './constants';
 import DownloadList from './DownloadList';
 
 class Downloads extends Component {
-    state = { fetchState: '', downloads: [] }
+    state = { fetchState: '', downloads: [], interval: undefined }
 
     componentDidMount = () => {
         this.fetch();
-        window.setInterval(this.fetch, 500);
+        this.setState({ interval: window.setInterval(this.fetch, 500) });
+    }
+
+    componentWillUnmount = () => {
+        clearInterval(this.state.interval);
+        this.setState({ interval: undefined });
     }
 
     fetch = () => {
-        this.setState({ ...this.state, fetchState: 'pending' }, () => {
+        this.setState({ fetchState: 'pending' }, () => {
             axios.get(BASE_URL + '/files')
             .then(response => this.setState({ 
                 fetchState: 'complete', downloads: response.data
             }))
-            .catch(err => this.setState({ ...this.state, fetchState: 'failed' }))
+            .catch(err => this.setState({ fetchState: 'failed' }))
         })
     }
     
