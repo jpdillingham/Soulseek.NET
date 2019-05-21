@@ -6,7 +6,6 @@ import {
 } from 'semantic-ui-react';
 
 import { BASE_URL } from './constants';
-import { formatBytes, getFileName } from './util';
 import DownloadList from './DownloadList';
 
 class Downloads extends Component {
@@ -33,11 +32,11 @@ class Downloads extends Component {
         return (
             downloads && <div>
                 {downloads.map((user, index) => 
-                    <Card className='download-card'>
+                    <Card key={index} className='download-card'>
                         <Card.Content>
                             <Card.Header>{user.username}</Card.Header>
                             {user.directories && user.directories.map((dir, index) => 
-                                <DownloadList directoryName={dir.directory} files={dir.files}/>
+                                <DownloadList key={index} directoryName={dir.directory} files={dir.files}/>
                             )}
                         </Card.Content>
                     </Card>
