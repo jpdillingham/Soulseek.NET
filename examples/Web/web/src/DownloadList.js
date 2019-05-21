@@ -30,7 +30,7 @@ const DownloadList = ({ directoryName, files }) => (
                     </Table.Row>
                 </Table.Header>                                
                 <Table.Body>
-                    {files.map((f, i) => 
+                    {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
                         <Table.Row key={i}>
                             <Table.Cell>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell>{formatBytes(f.bytesDownloaded) + '/' + formatBytes(f.size)}</Table.Cell>
