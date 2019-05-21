@@ -88,7 +88,7 @@
                 {
                     SaveLocalFile(filename, OutputDirectory, e.Data);
                 }
-            }, progressUpdated: (e) => Tracker.AddOrUpdate(e)));
+            }, progressUpdated: (e) => Tracker.AddOrUpdate(e))).ContinueWith((t) => Console.WriteLine($"[DOWNLOAD ERROR]: {t.Exception.GetBaseException().Message})"), TaskContinuationOptions.OnlyOnFaulted);
 
             try
             {
