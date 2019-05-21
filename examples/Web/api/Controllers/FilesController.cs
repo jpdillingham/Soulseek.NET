@@ -3,9 +3,11 @@
     using System;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
+    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
+    using Newtonsoft.Json;
     using Soulseek;
 
     /// <summary>
@@ -20,11 +22,27 @@
     {
         private ISoulseekClient Client { get; }
         private string OutputDirectory { get; }
+        private IDownloadTracker Tracker { get; }
 
-        public FilesController(IConfiguration configuration, ISoulseekClient client)
+        public FilesController(IConfiguration configuration, ISoulseekClient client, IDownloadTracker tracker)
         {
             OutputDirectory = configuration.GetValue<string>("OUTPUT_DIR");
             Client = client;
+            Tracker = tracker;
+        }
+
+        [HttpGet("")]
+        public IActionResult GetAll()
+        {
+            var x = Tracker.Downloads.Select(u => new
+            {
+                Username = u.Key,
+                Directories = u.Value.Values
+                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
+                    .Select(d => new { Directory = d.Key, Files = d })
+            });
+
+            return Ok(x);
         }
 
         /// <summary>
@@ -38,7 +56,8 @@
         [HttpGet("{username}/{filename}")]
         public async Task<IActionResult> Download([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token, [FromQuery]bool toDisk = true)
         {
-            var fileBytes = await Client.DownloadAsync(username, filename, token);
+            var fileBytes = await Client.DownloadAsync(username, filename, token, 
+                new DownloadOptions(stateChanged: (e) => Tracker.AddOrUpdate(e), progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
             if (toDisk)
             {
@@ -58,6 +77,8 @@
 
             var downloadTask = Client.DownloadAsync(username, filename, token, new DownloadOptions(stateChanged: (e) =>
             {
+                Tracker.AddOrUpdate(e);
+
                 if (e.State == DownloadStates.Queued)
                 {
                     waitUntilEnqueue.SetResult(true);
@@ -67,7 +88,7 @@
                 {
                     SaveLocalFile(filename, OutputDirectory, e.Data);
                 }
-            }));
+            }, progressUpdated: (e) => Tracker.AddOrUpdate(e))).ContinueWith((t) => Console.WriteLine($"[DOWNLOAD ERROR]: {t.Exception.GetBaseException().Message})"), TaskContinuationOptions.OnlyOnFaulted);
 
             try
             {

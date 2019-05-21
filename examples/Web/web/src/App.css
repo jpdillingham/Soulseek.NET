@@ -70,3 +70,9 @@ body {
 .download-button {
     color: black;
 }
+
+.download-card {
+    width: 1000px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}

@@ -1,21 +1,54 @@
 import React, { Component } from 'react';
+import axios from 'axios';
+
+import {
+    Card
+} from 'semantic-ui-react';
+
+import { BASE_URL } from './constants';
+import DownloadList from './DownloadList';
 
 class Downloads extends Component {
-    state = { }
+    state = { fetchState: '', downloads: [], interval: undefined }
+
+    componentDidMount = () => {
+        this.fetch();
+        this.setState({ interval: window.setInterval(this.fetch, 500) });
+    }
+
+    componentWillUnmount = () => {
+        clearInterval(this.state.interval);
+        this.setState({ interval: undefined });
+    }
+
+    fetch = () => {
+        this.setState({ fetchState: 'pending' }, () => {
+            axios.get(BASE_URL + '/files')
+            .then(response => this.setState({ 
+                fetchState: 'complete', downloads: response.data
+            }))
+            .catch(err => this.setState({ fetchState: 'failed' }))
+        })
+    }
     
-    render = () => (
-        <div>
-            Hello, World!
+    render = () => {
+        let { downloads } = this.state;
 
-
-            Hello, World!
-            Hello, World!
-            v
-            Hello, World!
-            Hello, World!
-            Hello, World!
-        </div>
-    )
+        return (
+            downloads && <div>
+                {downloads.map((user, index) => 
+                    <Card key={index} className='download-card'>
+                        <Card.Content>
+                            <Card.Header>{user.username}</Card.Header>
+                            {user.directories && user.directories.map((dir, index) => 
+                                <DownloadList key={index} directoryName={dir.directory} files={dir.files}/>
+                            )}
+                        </Card.Content>
+                    </Card>
+                )}
+            </div>
+        );
+    }
 }
 
 export default Downloads;

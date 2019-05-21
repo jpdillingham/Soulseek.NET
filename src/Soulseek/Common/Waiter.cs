@@ -222,9 +222,9 @@ namespace Soulseek
         {
             foreach (var record in Waits)
             {
-                // it shouldn't be possible for a record to make it into Waits without a corresponding lock in Locks,
-                // but use GetOrAdd here anyway.
-                var recordLock = Locks.GetOrAdd(record.Key, new ReaderWriterLockSlim());
+                // a lock should always be available or added prior to a wait; if not we'll take the null ref exception
+                // that would follow. it should be impossible to hit this so a catastrophic failure is appropriate.
+                Locks.TryGetValue(record.Key, out var recordLock);
 
                 // enter a read lock first; TryPeek and TryDequeue are atomic so there's no risky operation until later.
                 recordLock.EnterUpgradeableReadLock();
