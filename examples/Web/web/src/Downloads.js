@@ -1,8 +1,13 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
+import {
+    Card
+} from 'semantic-ui-react';
+
 import { BASE_URL } from './constants';
 import { formatBytes, getFileName } from './util';
+import DownloadList from './DownloadList';
 
 class Downloads extends Component {
     state = { fetchState: '', downloads: [] }
@@ -26,35 +31,18 @@ class Downloads extends Component {
         let { downloads } = this.state;
 
         return (
-            downloads && <ul>
+            downloads && <div>
                 {downloads.map((user, index) => 
-                    <li>
-                        {user.username}
-                        <ul>
+                    <Card className='download-card'>
+                        <Card.Content>
+                            <Card.Header>{user.username}</Card.Header>
                             {user.directories && user.directories.map((dir, index) => 
-                                <li>
-                                    {dir.directory}
-                                    <ul>
-                                        <table>
-                                            <tbody>
-                                            {dir.files && dir.files
-                                                .sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename)))
-                                                .map((file, index) => 
-                                                        <tr>
-                                                            <td>{getFileName(file.filename)}</td>
-                                                            <td>{file.state}</td>
-                                                            <td>{file.percentComplete}</td>
-                                                        </tr>
-                                            )}
-                                            </tbody>
-                                        </table>
-                                    </ul>
-                                </li>
+                                <DownloadList directoryName={dir.directory} files={dir.files}/>
                             )}
-                        </ul>
-                    </li>
+                        </Card.Content>
+                    </Card>
                 )}
-            </ul>
+            </div>
         );
     }
 }
