@@ -31,21 +31,23 @@ class Downloads extends Component {
                     <li>
                         {user.username}
                         <ul>
-                            {user.directories.map((dir, index) => 
+                            {user.directories && user.directories.map((dir, index) => 
                                 <li>
                                     {dir.directory}
                                     <ul>
-                                            <table>
-                                                <tbody>
-                                        {dir.files.map((file, index) => 
-                                                    <tr>
-                                                        <td>{file.filename}</td>
-                                                        <td>{file.state}</td>
-                                                        <td>{file.percentComplete}</td>
-                                                    </tr>
-                                        )}
-                                        </tbody>
-                                    </table>
+                                        <table>
+                                            <tbody>
+                                            {dir.files && dir.files
+                                                .sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename)))
+                                                .map((file, index) => 
+                                                        <tr>
+                                                            <td>{getFileName(file.filename)}</td>
+                                                            <td>{file.state}</td>
+                                                            <td>{file.percentComplete}</td>
+                                                        </tr>
+                                            )}
+                                            </tbody>
+                                        </table>
                                     </ul>
                                 </li>
                             )}
