@@ -2,40 +2,34 @@
 {
     using Soulseek;
     using System;
-    using System.Collections.Generic;
+    using System.Collections.Concurrent;
     using System.Net;
 
     public interface IDownloadTracker
     {
-        Dictionary<string, Dictionary<string, Download>> Downloads { get; }
+        ConcurrentDictionary<string, ConcurrentDictionary<string, Download>> Downloads { get; }
         void AddOrUpdate(DownloadEventArgs state);
     }
 
     public class DownloadTracker : IDownloadTracker
     {
-        public Dictionary<string, Dictionary<string, Download>> Downloads { get; private set; } = 
-            new Dictionary<string, Dictionary<string, Download>>();
+        public ConcurrentDictionary<string, ConcurrentDictionary<string, Download>> Downloads { get; private set; } = 
+            new ConcurrentDictionary<string, ConcurrentDictionary<string, Download>>();
 
         public void AddOrUpdate(DownloadEventArgs args)
         {
-            if (Downloads.ContainsKey(args.Username))
+            Downloads.AddOrUpdate(args.Username, GetNewDictionary(args), (user, dict) =>
             {
-                if (Downloads[args.Username].ContainsKey(args.Filename))
-                {
-                    Downloads[args.Username][args.Filename] = new Download(args);
-                }
-                else
-                {
-                    Downloads[args.Username].Add(args.Filename, new Download(args));
-                }
-            }
-            else
-            {
-                Downloads.Add(args.Username, new Dictionary<string, Download>()
-                {
-                    { args.Filename, new Download(args) }
-                });
-            }
+                dict.AddOrUpdate(args.Filename, new Download(args), (file, download) => new Download(args));
+                return dict;
+            });
+        }
+
+        private ConcurrentDictionary<string, Download> GetNewDictionary(DownloadEventArgs args)
+        {
+            var r = new ConcurrentDictionary<string, Download>();
+            r.AddOrUpdate(args.Filename, new Download(args), (key, value) => new Download(args));
+            return r;
         }
     }
 
