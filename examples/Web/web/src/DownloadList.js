@@ -10,6 +10,21 @@ import {
     Progress
 } from 'semantic-ui-react';
 
+const getColor = (state) => {
+    switch(state) {
+        case 'InProgress':
+            return 'blue'; 
+        case 'Completed, Succeeded':
+            return 'green';
+        case 'Queued':
+            return 'grey';
+        case 'Initializing':
+            return 'teal';
+        default:
+            return 'red';
+    }
+}
+
 const DownloadList = ({ directoryName, files }) => (
     <div>
         <Header 
@@ -34,7 +49,11 @@ const DownloadList = ({ directoryName, files }) => (
                             <Table.Cell className='downloadlist-filename'>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell className='downloadlist-size'>{formatBytes(f.bytesDownloaded).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
                             <Table.Cell className='downloadlist-progress'>
-                                <Progress style={{ margin: 0}} percent={Math.round(f.percentComplete)} progress color='green'/>
+                                <Progress 
+                                    style={{ margin: 0}}
+                                    percent={Math.round(f.percentComplete)} 
+                                    progress color={getColor(f.state)}
+                                />
                             </Table.Cell>
                         </Table.Row>
                     )}
