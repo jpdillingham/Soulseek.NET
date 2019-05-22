@@ -76,3 +76,7 @@ body {
     margin-left: auto !important;
     margin-right: auto !important;
 }
+
+.download-segment {
+    margin-top: 15px;
+}
