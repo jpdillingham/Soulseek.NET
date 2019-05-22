@@ -23,19 +23,19 @@ const DownloadList = ({ directoryName, files }) => (
             <Table>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell>File</Table.HeaderCell>
-                        <Table.HeaderCell>Progress</Table.HeaderCell>
-                        <Table.HeaderCell>Size</Table.HeaderCell>
+                        <Table.HeaderCell className='downloadlist-filename'>File</Table.HeaderCell>
+                        <Table.HeaderCell className='downloadlist-size'>Size</Table.HeaderCell>
+                        <Table.HeaderCell className='downloadlist-progress'>Progress</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>                                
                 <Table.Body>
                     {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
                         <Table.Row key={i}>
-                            <Table.Cell>{getFileName(f.filename)}</Table.Cell>
-                            <Table.Cell>
+                            <Table.Cell className='downloadlist-filename'>{getFileName(f.filename)}</Table.Cell>
+                            <Table.Cell className='downloadlist-size'>{formatBytes(f.bytesDownloaded).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
+                            <Table.Cell className='downloadlist-progress'>
                                 <Progress style={{ margin: 0}} percent={Math.round(f.percentComplete)} progress color='green'/>
                             </Table.Cell>
-                            <Table.Cell>{formatBytes(f.bytesDownloaded).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>

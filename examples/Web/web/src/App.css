@@ -21,7 +21,7 @@ body {
 }
 
 .result-card {
-    width: 1000px !important;
+    width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
@@ -31,7 +31,7 @@ body {
 }
 
 .search-segment {
-    width: 1000px !important;
+    width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
     margin-top: 15px !important;
@@ -50,8 +50,8 @@ body {
 }
 
 .filelist-filename {
-    width: 700px;
-    min-width: 700px;
+    width: 900px;
+    min-width: 900px;
     word-wrap: break-word !important;
 }
 
@@ -72,11 +72,26 @@ body {
 }
 
 .download-card {
-    width: 1000px !important;
+    width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
 
 .download-segment {
     margin-top: 15px;
+}
+
+.downloadlist-size {
+    width: 130px;
+    min-width: 130px;
+}
+
+.downloadlist-progress {
+    max-width: 1000px;
+}
+
+.downloadlist-filename {
+    width: 800px;
+    min-width: 800px;
+    word-wrap: break-word !important;
 }
