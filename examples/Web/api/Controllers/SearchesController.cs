@@ -13,12 +13,12 @@
     [ApiController]
     [Produces("application/json")]
     [Consumes("application/json")]
-    public class SearchController : ControllerBase
+    public class SearchesController : ControllerBase
     {
         private ISoulseekClient Client { get; }
         private ISearchTracker Tracker { get; }
 
-        public SearchController(ISoulseekClient client, ISearchTracker tracker)
+        public SearchesController(ISoulseekClient client, ISearchTracker tracker)
         {
             Client = client;
             Tracker = tracker;
