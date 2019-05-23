@@ -1,12 +1,9 @@
 ﻿namespace WebAPI.Controllers
 {
-    using System.Collections.Generic;
-    using System.ComponentModel.DataAnnotations;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
-    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Search
@@ -19,10 +16,12 @@
     public class SearchController : ControllerBase
     {
         private ISoulseekClient Client { get; }
+        private ISearchTracker Tracker { get; }
 
-        public SearchController(ISoulseekClient client)
+        public SearchController(ISoulseekClient client, ISearchTracker tracker)
         {
             Client = client;
+            Tracker = tracker;
         }
 
         /// <summary>
@@ -32,10 +31,32 @@
         /// <param name="token">The optional search token.</param>
         /// <returns></returns>
         [HttpPost("")]
-        public async Task<ActionResult<IEnumerable<SearchResponse>>> Post([FromBody]string searchText, [FromQuery]int? token = null)
+        public async Task<IActionResult> Post([FromBody]string searchText, [FromQuery]int? token = null)
         {
-            var results = await Client.SearchAsync(searchText, token);
-            return results.ToList();
+            var results = await Client.SearchAsync(searchText, token, new SearchOptions(
+                responseReceived: (e) => Tracker.AddOrUpdate(e), 
+                stateChanged: (e) => Tracker.AddOrUpdate(e)));
+
+            return Ok(results.ToList());
+        }
+
+        /// <summary>
+        ///     Gets the status of the current search.
+        /// </summary>
+        /// <returns></returns>
+        [HttpGet("")]
+        public IActionResult Get()
+        {
+            var response = Tracker.Searches.Select(kvp => new
+            {
+                SearchText = kvp.Key,
+                Token = kvp.Value.Token,
+                State = kvp.Value.State,
+                ResponseCount = kvp.Value.Responses.Count,
+                TotalFileCount = kvp.Value.Responses.Sum(r => r.FileCount)
+            });
+
+            return Ok(response);
         }
     }
 }
