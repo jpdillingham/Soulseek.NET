@@ -73,7 +73,7 @@ class Response extends Component {
         let selectedSize = formatBytes(selectedFiles.reduce((total, f) => total + f.size, 0));
 
         return (
-            <Card className='result-card'>
+            <Card className='result-card' raised>
                 <Card.Content>
                     <Card.Header><Icon name='circle' color={free ? 'green' : 'yellow'}/>{response.username}</Card.Header>
                     <Card.Meta className='result-meta'>

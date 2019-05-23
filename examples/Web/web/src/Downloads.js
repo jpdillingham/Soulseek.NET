@@ -38,7 +38,7 @@ class Downloads extends Component {
             downloads.length === 0 ? <span>No downloads.</span> :
             <div className='download-segment'>
                 {downloads.map((user, index) => 
-                    <Card key={index} className='download-card'>
+                    <Card key={index} className='download-card' raised>
                         <Card.Content>
                             <Card.Header>{user.username}</Card.Header>
                             {user.directories && user.directories.map((dir, index) => 

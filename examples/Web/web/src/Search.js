@@ -36,7 +36,7 @@ class Search extends Component {
 
         return (
             <div>
-                <Segment className='search-segment'>
+                <Segment className='search-segment' raised>
                     <Input 
                         ref={input => this.inputtext = input}
                         loading={pending}
