@@ -8,7 +8,7 @@
     public interface IDownloadTracker
     {
         ConcurrentDictionary<string, ConcurrentDictionary<string, Download>> Downloads { get; }
-        void AddOrUpdate(DownloadEventArgs state);
+        void AddOrUpdate(DownloadEventArgs args);
     }
 
     public class DownloadTracker : IDownloadTracker

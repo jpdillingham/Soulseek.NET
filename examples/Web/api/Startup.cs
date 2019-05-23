@@ -80,6 +80,7 @@
 
             services.AddSingleton<ISoulseekClient, SoulseekClient>(serviceProvider => Client);
             services.AddSingleton<IDownloadTracker, DownloadTracker>();
+            services.AddSingleton<ISearchTracker, SearchTracker>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApiVersionDescriptionProvider provider)
