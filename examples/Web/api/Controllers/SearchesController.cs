@@ -58,5 +58,21 @@
 
             return Ok(response);
         }
+
+        /// <summary>
+        ///     Gets the status of the search corresponding to the specified <paramref name="searchText"/>.
+        /// </summary>
+        /// <param name="searchText">The search phrase of the desired search.</param>
+        /// <returns></returns>
+        [HttpGet("{searchText}")]
+        public IActionResult Get([FromRoute]string searchText)
+        {
+            if (!Tracker.Searches.ContainsKey(searchText))
+            {
+                return NotFound();
+            }
+
+            return Ok(Tracker.Searches[searchText]);
+        }
     }
 }
