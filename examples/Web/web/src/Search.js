@@ -18,7 +18,7 @@ class Search extends Component {
         let searchPhrase = this.inputtext.inputRef.current.value;
 
         this.setState({ searchState: 'pending' }, () => {
-            axios.post(BASE_URL + '/search', JSON.stringify(searchPhrase), { 
+            axios.post(BASE_URL + '/searches', JSON.stringify(searchPhrase), { 
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
             .then(response => this.setState({ results: response.data }))
