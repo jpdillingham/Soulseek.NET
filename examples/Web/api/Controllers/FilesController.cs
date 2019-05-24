@@ -88,13 +88,18 @@
                 {
                     SaveLocalFile(filename, OutputDirectory, e.Data);
                 }
-            }, progressUpdated: (e) => Tracker.AddOrUpdate(e))).ContinueWith((t) => Console.WriteLine($"[DOWNLOAD ERROR]: {t.Exception.GetBaseException().Message})"), TaskContinuationOptions.OnlyOnFaulted);
+            }, progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
             try
             {
                 // wait until either the waitUntilEnqueue task completes because the download was successfully
                 // queued, or the downloadTask throws due to an error prior to successfully queueing.
                 var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
+
+                if (task == downloadTask)
+                {
+                    return StatusCode(500, downloadTask.Exception.Message);
+                }
 
                 // if it didn't throw, just return ok.  the download will continue waiting in the background.
                 return Ok();
