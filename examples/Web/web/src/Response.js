@@ -109,7 +109,7 @@ class Response extends Component {
                             {downloadRequest === 'complete' && <Icon name='checkmark' color='green' size='large'/>}
                             {downloadRequest === 'error' && <span>
                                 <Icon name='x' color='red' size='large'/>
-                                <Label>{downloadError.statusText}</Label>
+                                <Label>{downloadError.data + ` (HTTP ${downloadError.status} ${downloadError.statusText})`}</Label>
                             </span>}
                         </span>}
                 </Card.Content>
