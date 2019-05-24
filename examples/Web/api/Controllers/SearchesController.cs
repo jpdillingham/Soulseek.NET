@@ -41,7 +41,7 @@
         }
 
         /// <summary>
-        ///     Gets the status of the current search.
+        ///     Gets the state of all current searches.
         /// </summary>
         /// <returns></returns>
         [HttpGet("")]
@@ -60,7 +60,7 @@
         }
 
         /// <summary>
-        ///     Gets the status of the search corresponding to the specified <paramref name="searchText"/>.
+        ///     Gets the state and results of the search corresponding to the specified <paramref name="searchText"/>.
         /// </summary>
         /// <param name="searchText">The search phrase of the desired search.</param>
         /// <returns></returns>
@@ -73,6 +73,24 @@
             }
 
             return Ok(Tracker.Searches[searchText]);
+        }
+
+        /// <summary>
+        ///     Gets the state and results of the search corresponding to the specified <paramref name="token"/>.
+        /// </summary>
+        /// <param name="token">The token of the desired search.</param>
+        /// <returns></returns>
+        [HttpGet("{token}")]
+        public IActionResult Get([FromRoute]int token)
+        {
+            var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
+
+            if (search == default)
+            {
+                return NotFound();
+            }
+
+            return Ok(search);
         }
     }
 }
