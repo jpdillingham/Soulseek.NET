@@ -13,12 +13,12 @@ import {
 } from 'semantic-ui-react';
 
 class Search extends Component {
-    state = { searchPhrase: '', searchState: 'complete', results: data }
+    state = { searchPhrase: '', searchState: 'complete', searchStatus: {}, results: data, interval: undefined }
 
     search = () => {
         let searchPhrase = this.inputtext.inputRef.current.value;
 
-        this.setState({ searchState: 'pending' }, () => {
+        this.setState({ searchPhrase: searchPhrase, searchState: 'pending' }, () => {
             axios.post(BASE_URL + '/searches', JSON.stringify(searchPhrase), { 
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
@@ -30,10 +30,28 @@ class Search extends Component {
     onSearchPhraseChange = (event, data) => {
         this.setState({ searchPhrase: data.value });
     }
+
+    componentDidMount = () => {
+        this.fetch();
+        this.setState({ interval: window.setInterval(this.fetch, 500) });
+    }
+
+    componentWillUnmount = () => {
+        clearInterval(this.state.interval);
+        this.setState({ interval: undefined });
+    }
+
+    fetch = () => {
+        if (this.state.searchState === 'pending') {
+            axios.get(BASE_URL + '/searches/' + encodeURI(this.state.searchPhrase))
+            .then(response => this.setState({
+                searchStatus: response.data
+            }));
+        }
+    }
     
     render = () => {
-        let { searchPhrase, searchState, results } = this.state;
-        searchState = 'pending'
+        let { searchState, searchStatus, results } = this.state;
         let pending = searchState === 'pending';
 
         return (
@@ -56,7 +74,7 @@ class Search extends Component {
                         inline='centered' 
                         size='big'
                     >
-                        Found 144 files from 36 users
+                        Found {searchStatus.fileCount} files from {searchStatus.responseCount} users
                     </Loader>
                 : 
                     <div>
