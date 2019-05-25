@@ -35,9 +35,10 @@ class Downloads extends Component {
         let { downloads } = this.state;
 
         return (
-            downloads && <div>
+            downloads.length === 0 ? <span>No downloads.</span> :
+            <div className='download-segment'>
                 {downloads.map((user, index) => 
-                    <Card key={index} className='download-card'>
+                    <Card key={index} className='download-card' raised>
                         <Card.Content>
                             <Card.Header>{user.username}</Card.Header>
                             {user.directories && user.directories.map((dir, index) => 
@@ -46,6 +47,7 @@ class Downloads extends Component {
                         </Card.Content>
                     </Card>
                 )}
+                <div>&nbsp;</div>
             </div>
         );
     }

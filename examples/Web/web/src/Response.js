@@ -73,7 +73,7 @@ class Response extends Component {
         let selectedSize = formatBytes(selectedFiles.reduce((total, f) => total + f.size, 0));
 
         return (
-            <Card className='result-card'>
+            <Card className='result-card' raised>
                 <Card.Content>
                     <Card.Header><Icon name='circle' color={free ? 'green' : 'yellow'}/>{response.username}</Card.Header>
                     <Card.Meta className='result-meta'>
@@ -109,7 +109,7 @@ class Response extends Component {
                             {downloadRequest === 'complete' && <Icon name='checkmark' color='green' size='large'/>}
                             {downloadRequest === 'error' && <span>
                                 <Icon name='x' color='red' size='large'/>
-                                <Label>{downloadError.statusText}</Label>
+                                <Label>{downloadError.data + ` (HTTP ${downloadError.status} ${downloadError.statusText})`}</Label>
                             </span>}
                         </span>}
                 </Card.Content>
