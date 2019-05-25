@@ -13,7 +13,16 @@ import {
 } from 'semantic-ui-react';
 
 class Search extends Component {
-    state = { searchPhrase: '', searchState: 'complete', searchStatus: {}, results: data, interval: undefined }
+    state = { 
+        searchPhrase: '', 
+        searchState: 'complete', 
+        searchStatus: { 
+            responseCount: 0, 
+            fileCount: 0 
+        }, 
+        results: data, 
+        interval: undefined 
+    }
 
     search = () => {
         let searchPhrase = this.inputtext.inputRef.current.value;
