@@ -41,6 +41,10 @@ body {
     width: 100%;
 }
 
+.search-loader {
+    margin-top: 100px !important;
+}
+
 .filelist-header {
     margin-top: 20px !important;
 }
