@@ -50,8 +50,8 @@
             var response = Tracker.Searches.Select(kvp => new
             {
                 SearchText = kvp.Key,
-                Token = kvp.Value.Token,
-                State = kvp.Value.State,
+                kvp.Value.Token,
+                kvp.Value.State,
                 ResponseCount = kvp.Value.Responses.Count,
                 FileCount = kvp.Value.Responses.Sum(r => r.FileCount)
             });
@@ -60,37 +60,46 @@
         }
 
         /// <summary>
-        ///     Gets the state and results of the search corresponding to the specified <paramref name="searchText"/>.
+        ///     Gets the state of the search corresponding to the specified <paramref name="searchText"/>.
         /// </summary>
         /// <param name="searchText">The search phrase of the desired search.</param>
         /// <returns></returns>
         [HttpGet("{searchText}")]
-        public IActionResult Get([FromRoute]string searchText)
+        public IActionResult GetBySearchText([FromRoute]string searchText)
         {
-            if (!Tracker.Searches.ContainsKey(searchText))
-            {
-                return NotFound();
-            }
-
-            return Ok(Tracker.Searches[searchText]);
-        }
-
-        /// <summary>
-        ///     Gets the state and results of the search corresponding to the specified <paramref name="token"/>.
-        /// </summary>
-        /// <param name="token">The token of the desired search.</param>
-        /// <returns></returns>
-        [HttpGet("{token}")]
-        public IActionResult Get([FromRoute]int token)
-        {
-            var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
+            Tracker.Searches.TryGetValue(searchText, out var search);
 
             if (search == default(WebAPI.Search))
             {
                 return NotFound();
             }
 
-            return Ok(search);
+            return Ok(new
+            {
+                search.SearchText,
+                search.Token,
+                search.State,
+                ResponseCount = search.Responses.Count,
+                FileCount = search.Responses.Sum(r => r.FileCount)
+            });
+        }
+
+        /// <summary>
+        ///     Gets the state of the search corresponding to the specified <paramref name="token"/>.
+        /// </summary>
+        /// <param name="token">The token of the desired search.</param>
+        /// <returns></returns>
+        [HttpGet("{token:int}")]
+        public IActionResult GetByToken([FromRoute]int token)
+        {
+            var searchText = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token)?.SearchText;
+
+            if (string.IsNullOrEmpty(searchText))
+            {
+                return NotFound();
+            }
+
+            return GetBySearchText(searchText);
         }
     }
 }
