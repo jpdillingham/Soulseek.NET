@@ -3,7 +3,7 @@ set -e
 
 cd web
 pwd
-#npm run build
+npm run build
 
 rm -rf ../api/wwwroot
 mkdir ../api/wwwroot
