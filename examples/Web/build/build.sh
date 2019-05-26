@@ -1,11 +1,14 @@
 #!/bin/bash
 set -e
 
-cd ../web
-npm run build
+cd web
+pwd
+#npm run build
 
 rm -rf ../api/wwwroot
+mkdir ../api/wwwroot
 cp -r build/* ../api/wwwroot/
 
-cd api
+cd ../api
+pwd
 dotnet publish --configuration Release
