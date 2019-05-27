@@ -329,7 +329,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            token = token ?? TokenFactory.GetToken();
+            token = token ?? TokenFactory.NextToken();
 
             if (Downloads.ContainsKey((int)token))
             {
@@ -438,7 +438,7 @@ namespace Soulseek
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
             }
 
-            token = token ?? TokenFactory.GetToken();
+            token = token ?? TokenFactory.NextToken();
 
             if (Searches.ContainsKey((int)token))
             {

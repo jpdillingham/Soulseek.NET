@@ -185,7 +185,7 @@ namespace Soulseek.Tests.Unit
             byte[] actualBytes = Array.Empty<byte>();
 
             var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.GetToken())
+            tokenFactory.Setup(m => m.NextToken())
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();
@@ -248,7 +248,7 @@ namespace Soulseek.Tests.Unit
             byte[] actualBytes = Array.Empty<byte>();
 
             var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.GetToken())
+            tokenFactory.Setup(m => m.NextToken())
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();
@@ -307,7 +307,7 @@ namespace Soulseek.Tests.Unit
             var key2 = new ConnectionKey(username2, ipAddress2, port2, MessageConnectionType.Peer);
 
             var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.GetToken())
+            tokenFactory.Setup(m => m.NextToken())
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();

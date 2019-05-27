@@ -34,7 +34,7 @@ namespace Soulseek.Tests.Unit
         {
             var t = new TokenFactory(start);
 
-            Assert.Equal(start, t.GetToken());
+            Assert.Equal(start, t.NextToken());
         }
 
         [Trait("Category", "GetToken")]
@@ -43,8 +43,8 @@ namespace Soulseek.Tests.Unit
         {
             var t = new TokenFactory(start);
 
-            var t1 = t.GetToken();
-            var t2 = t.GetToken();
+            var t1 = t.NextToken();
+            var t2 = t.NextToken();
 
             Assert.Equal(start, t1);
             Assert.Equal(start + 1, t2);
@@ -56,8 +56,8 @@ namespace Soulseek.Tests.Unit
         {
             var t = new TokenFactory(int.MaxValue);
 
-            var t1 = t.GetToken();
-            var t2 = t.GetToken();
+            var t1 = t.NextToken();
+            var t2 = t.NextToken();
 
             Assert.Equal(int.MaxValue, t1);
             Assert.Equal(0, t2);

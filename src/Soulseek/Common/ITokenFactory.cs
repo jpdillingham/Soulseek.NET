@@ -12,17 +12,24 @@
 
 namespace Soulseek
 {
-    using System;
-
     /// <summary>
     ///     Generates unique tokens for network operations.
     /// </summary>
     public interface ITokenFactory
     {
         /// <summary>
-        ///     Gets a new unique token.
+        ///     Gets the next token.
         /// </summary>
-        /// <returns>The new unique token.</returns>
-        int GetToken();
+        /// <remarks>
+        ///     <para>
+        ///         Tokens are returned sequentially and the token value rolls over to 0 when it has reached <see cref="int.MaxValue"/>.
+        ///     </para>
+        ///     <para>
+        ///         This operation is thread safe.
+        ///     </para>
+        /// </remarks>
+        /// <returns>The next token.</returns>
+        /// <threadsafety instance="true"/>
+        int NextToken();
     }
 }
