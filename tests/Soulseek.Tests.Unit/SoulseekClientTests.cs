@@ -294,14 +294,16 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "GetNextToken")]
-        [Fact(DisplayName = "GetNextToken invokes TokenFactory")]
-        public void GetNextToken_Invokes_TokenFactory()
+        [Theory(DisplayName = "GetNextToken invokes TokenFactory"), AutoData]
+        public void GetNextToken_Invokes_TokenFactory(int token)
         {
             var f = new Mock<ITokenFactory>();
             f.Setup(m => m.NextToken())
-                .Returns(1);
+                .Returns(token);
 
             var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: f.Object).GetNextToken();
+
+            Assert.Equal(token, s);
 
             f.Verify(m => m.NextToken(), Times.Once);
         }
