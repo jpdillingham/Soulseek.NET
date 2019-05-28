@@ -341,7 +341,7 @@ namespace Soulseek.Tests.Unit
             var firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
             c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
 
-            Thread.Sleep(100);
+            Thread.Sleep(500);
 
             Assert.Equal(1, c.ActivePeerConnections);
             Assert.Equal(0, c.WaitingPeerConnections);
@@ -349,7 +349,7 @@ namespace Soulseek.Tests.Unit
             firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
             c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
 
-            Thread.Sleep(100);
+            Thread.Sleep(500);
 
             Assert.Equal(0, c.ActivePeerConnections);
             Assert.Equal(0, c.WaitingPeerConnections);
