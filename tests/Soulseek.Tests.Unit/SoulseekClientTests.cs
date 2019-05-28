@@ -292,5 +292,18 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(ex);
         }
+
+        [Trait("Category", "GetNextToken")]
+        [Fact(DisplayName = "GetNextToken invokes TokenFactory")]
+        public void GetNextToken_Invokes_TokenFactory()
+        {
+            var f = new Mock<ITokenFactory>();
+            f.Setup(m => m.NextToken())
+                .Returns(1);
+
+            var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: f.Object).GetNextToken();
+
+            f.Verify(m => m.NextToken(), Times.Once);
+        }
     }
 }
