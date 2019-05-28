@@ -75,5 +75,31 @@ namespace Soulseek.Tests.Integration
             Assert.Equal(SoulseekClientStates.Disconnected, client.State);
             Assert.Equal(SoulseekClientStates.Disconnected, args.State);
         }
+
+        [Trait("Category", "GetNextToken")]
+        [Fact(DisplayName = "GetNextToken returns sequential tokens")]
+        public void GetNextToken_Returns_Sequential_Tokens()
+        {
+            var s = new SoulseekClient();
+
+            var t1 = s.GetNextToken();
+            var t2 = s.GetNextToken();
+
+            Assert.Equal(t1 + 1, t2);
+        }
+
+        [Trait("Category", "GetNextToken")]
+        [Fact(DisplayName = "GetNextToken rolls over at int.MaxValue")]
+        public void GetNextToken_Rolls_Over_At_Int_MaxValue()
+        {
+            var s = new SoulseekClient(
+                new SoulseekClientOptions(startingToken: int.MaxValue));
+
+            var t1 = s.GetNextToken();
+            var t2 = s.GetNextToken();
+
+            Assert.Equal(int.MaxValue, t1);
+            Assert.Equal(0, t2);
+        }
     }
 }
