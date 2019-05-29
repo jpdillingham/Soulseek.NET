@@ -292,5 +292,20 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(ex);
         }
+
+        [Trait("Category", "GetNextToken")]
+        [Theory(DisplayName = "GetNextToken invokes TokenFactory"), AutoData]
+        public void GetNextToken_Invokes_TokenFactory(int token)
+        {
+            var f = new Mock<ITokenFactory>();
+            f.Setup(m => m.NextToken())
+                .Returns(token);
+
+            var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: f.Object).GetNextToken();
+
+            Assert.Equal(token, s);
+
+            f.Verify(m => m.NextToken(), Times.Once);
+        }
     }
 }

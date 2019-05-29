@@ -329,7 +329,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"A user must be logged in to browse.");
             }
 
-            token = token ?? TokenFactory.GetToken();
+            token = token ?? TokenFactory.NextToken();
 
             if (Downloads.ContainsKey((int)token))
             {
@@ -340,6 +340,17 @@ namespace Soulseek
 
             return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
+
+        /// <summary>
+        ///     Gets the next token for use in client operations.
+        /// </summary>
+        /// <remarks>
+        ///     <para>Tokens are returned sequentially and the token value rolls over to 0 when it has reached <see cref="int.MaxValue"/>.</para>
+        ///     <para>This operation is thread safe.</para>
+        /// </remarks>
+        /// <returns>The next token.</returns>
+        /// <threadsafety instance="true"/>
+        public int GetNextToken() => TokenFactory.NextToken();
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
@@ -438,7 +449,7 @@ namespace Soulseek
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
             }
 
-            token = token ?? TokenFactory.GetToken();
+            token = token ?? TokenFactory.NextToken();
 
             if (Searches.ContainsKey((int)token))
             {

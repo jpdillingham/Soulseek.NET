@@ -142,6 +142,21 @@ namespace Soulseek
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Gets the next token for use in client operations.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         Tokens are returned sequentially and the token value rolls over to 0 when it has reached <see cref="int.MaxValue"/>.
+        ///     </para>
+        ///     <para>
+        ///         This operation is thread safe.
+        ///     </para>
+        /// </remarks>
+        /// <returns>The next token.</returns>
+        /// <threadsafety instance="true"/>
+        int GetNextToken();
+
+        /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the information.</param>

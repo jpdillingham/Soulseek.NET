@@ -185,7 +185,7 @@ namespace Soulseek.Tests.Unit
             byte[] actualBytes = Array.Empty<byte>();
 
             var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.GetToken())
+            tokenFactory.Setup(m => m.NextToken())
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();
@@ -248,7 +248,7 @@ namespace Soulseek.Tests.Unit
             byte[] actualBytes = Array.Empty<byte>();
 
             var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.GetToken())
+            tokenFactory.Setup(m => m.NextToken())
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();
@@ -307,7 +307,7 @@ namespace Soulseek.Tests.Unit
             var key2 = new ConnectionKey(username2, ipAddress2, port2, MessageConnectionType.Peer);
 
             var tokenFactory = new Mock<ITokenFactory>();
-            tokenFactory.Setup(m => m.GetToken())
+            tokenFactory.Setup(m => m.NextToken())
                 .Returns(token);
 
             var conn = new Mock<IMessageConnection>();
@@ -341,7 +341,7 @@ namespace Soulseek.Tests.Unit
             var firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
             c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
 
-            Thread.Sleep(100);
+            Thread.Sleep(500);
 
             Assert.Equal(1, c.ActivePeerConnections);
             Assert.Equal(0, c.WaitingPeerConnections);
@@ -349,7 +349,7 @@ namespace Soulseek.Tests.Unit
             firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
             c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
 
-            Thread.Sleep(100);
+            Thread.Sleep(500);
 
             Assert.Equal(0, c.ActivePeerConnections);
             Assert.Equal(0, c.WaitingPeerConnections);
