@@ -160,5 +160,38 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(value, f.GetAttributeValue(type));
         }
+
+        [Trait("Category", "IsVariableBitRate")]
+        [Theory(DisplayName = "IsVariableBitRate returns true when attribute is 1"), AutoData]
+        public void IsVariableBitRate_Returns_True_When_Attribute_Is_1(int code, string filename, long size, string extension)
+        {
+            var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.VariableBitRate, 1) };
+
+            var f = new File(code, filename, size, extension, 1, list);
+
+            Assert.True(f.IsVariableBitRate);
+        }
+
+        [Trait("Category", "IsVariableBitRate")]
+        [Theory(DisplayName = "IsVariableBitRate returns false when attribute is 0"), AutoData]
+        public void IsVariableBitRate_Returns_False_When_Attribute_Is_0(int code, string filename, long size, string extension)
+        {
+            var list = new List<FileAttribute>() { new FileAttribute(FileAttributeType.VariableBitRate, 0) };
+
+            var f = new File(code, filename, size, extension, 1, list);
+
+            Assert.False(f.IsVariableBitRate);
+        }
+
+        [Trait("Category", "IsVariableBitRate")]
+        [Theory(DisplayName = "IsVariableBitRate returns null when attribute is not present"), AutoData]
+        public void IsVariableBitRate_Returns_Null_When_Attribute_Is_Not_Present(int code, string filename, long size, string extension)
+        {
+            var list = new List<FileAttribute>() { };
+
+            var f = new File(code, filename, size, extension, 1, list);
+
+            Assert.Null(f.IsVariableBitRate);
+        }
     }
 }

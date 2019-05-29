@@ -28,9 +28,9 @@ namespace Soulseek
         Length = 1,
 
         /// <summary>
-        ///     Unknown.
+        ///     Variable bit rate flag; 0 = constant, 1 = VBR.
         /// </summary>
-        Unknown = 2,
+        VariableBitRate = 2,
 
         /// <summary>
         ///     Sample rate, in khz.
