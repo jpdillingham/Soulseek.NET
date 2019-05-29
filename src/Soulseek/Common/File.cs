@@ -77,6 +77,19 @@ namespace Soulseek
         public string Filename { get; }
 
         /// <summary>
+        ///     Gets a value indicating whether the <see cref="FileAttributeType.VariableBitRate"/> attribute value indicates a
+        ///     file with a variable bit rate.
+        /// </summary>
+        public bool? IsVariableBitRate
+        {
+            get
+            {
+                var val = GetAttributeValue(FileAttributeType.VariableBitRate);
+                return val == null ? (bool?)null : val != 0;
+            }
+        }
+
+        /// <summary>
         ///     Gets the value of the <see cref="FileAttributeType.Length"/> attribute.
         /// </summary>
         public int? Length => GetAttributeValue(FileAttributeType.Length);
