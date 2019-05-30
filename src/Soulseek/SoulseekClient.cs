@@ -572,7 +572,7 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
+                throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
         }
 
