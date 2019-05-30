@@ -341,6 +341,20 @@ namespace Soulseek
             return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
+        public int GetDownloadPlaceInQueueAsync(string username, string filename)
+        {
+            return GetDownloadPlaceInQueueInternalAsync(username, filename);
+        }
+
+        private int GetDownloadPlaceInQueueInternalAsync(string username, string filename)
+        {
+            var record = Downloads.SingleOrDefault(kvp => kvp.Value.Username == username && kvp.Value.Filename == filename);
+
+            Downloads.TryGetValue(record.Value.Token, out var download);
+
+            var eq = 
+        }
+
         /// <summary>
         ///     Gets the next token for use in client operations.
         /// </summary>
@@ -912,6 +926,11 @@ namespace Soulseek
                     case MessageCode.PeerQueueFailed:
                         var queueFailedResponse = PeerQueueFailedResponse.Parse(message);
                         Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
+                        break;
+
+                    case MessageCode.PeerPlaceInQueueResponse:
+                        var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(MessageCode.PeerPlaceInQueueRequest, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
                         break;
 
                     case MessageCode.PeerUploadFailed:
