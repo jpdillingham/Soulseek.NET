@@ -505,7 +505,7 @@ namespace Soulseek.Messaging
         /// <summary>
         ///     44
         /// </summary>
-        PeerUploadQueueNotification = 20044,
+        PeerPlaceInQueueResponse = 20044,
 
         /// <summary>
         ///     46
