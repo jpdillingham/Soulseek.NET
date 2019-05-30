@@ -17,6 +17,7 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Messaging.Tcp;
@@ -47,6 +48,27 @@ namespace Soulseek.Tests.Unit.Client
             Assert.Equal(username, result.Username);
             Assert.Equal(ip, result.IPAddress);
             Assert.Equal(port, result.Port);
+        }
+
+        [Trait("Category", "GetPeerConnectionKeyAsync")]
+        [Theory(DisplayName = "GetPeerConnectionKeyAsync throws when 0.0.0.0 is returned"), AutoData]
+        public async Task GetPeerConnectionKeyAsync_Throws_When_Zero_IP_Is_Returned(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("0.0.0.0"), 0)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object);
+
+            ConnectionKey result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.InvokeMethod<Task<ConnectionKey>>("GetPeerConnectionKeyAsync", username, CancellationToken.None));
+
+            Assert.NotNull(ex);
+            Assert.IsType<PeerOfflineException>(ex);
         }
     }
 }

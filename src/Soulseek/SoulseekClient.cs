@@ -572,7 +572,7 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                throw new BrowseException($"Failed to browse user {Username}: {ex.Message}", ex);
+                throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
         }
 
@@ -769,6 +769,12 @@ namespace Soulseek
             await ServerConnection.WriteMessageAsync(request.ToMessage(), cancellationToken).ConfigureAwait(false);
 
             var address = await addressWait.ConfigureAwait(false);
+
+            if (address.IPAddress.Equals(IPAddress.Parse("0.0.0.0")))
+            {
+                throw new PeerOfflineException($"Unable to retrieve connection details for {username}; the peer appears to be offline.");
+            }
+
             return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
         }
 
