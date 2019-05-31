@@ -341,18 +341,41 @@ namespace Soulseek
             return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
-        public int GetDownloadPlaceInQueueAsync(string username, string filename)
+        public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
-            return GetDownloadPlaceInQueueInternalAsync(username, filename);
+            // todo: guard clauses
+
+            return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
         }
 
-        private int GetDownloadPlaceInQueueInternalAsync(string username, string filename)
+        private async Task<int> GetDownloadPlaceInQueueInternalAsync(string username, string filename, CancellationToken cancellationToken)
         {
-            var record = Downloads.SingleOrDefault(kvp => kvp.Value.Username == username && kvp.Value.Filename == filename);
+            IMessageConnection connection = null;
 
-            Downloads.TryGetValue(record.Value.Token, out var download);
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename);
+                var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
 
-            var eq = 
+                var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+
+                connection.Disconnected += (sender, message) =>
+                {
+                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                };
+
+                await connection.WriteMessageAsync(new PeerPlaceInQueueRequest(filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await responseWait.ConfigureAwait(false);
+
+                return response.PlaceInQueue;
+            }
+            catch (Exception ex)
+            {
+                // todo: add a new exception for this
+                throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
