@@ -953,7 +953,7 @@ namespace Soulseek
 
                     case MessageCode.PeerPlaceInQueueResponse:
                         var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(MessageCode.PeerPlaceInQueueRequest, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
+                        Waiter.Complete(new WaitKey(MessageCode.PeerPlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
                         break;
 
                     case MessageCode.PeerUploadFailed:
