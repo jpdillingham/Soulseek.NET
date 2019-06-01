@@ -36,7 +36,10 @@
             WebRoot = Configuration.GetValue<string>("WEBROOT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
 
-            Client = new SoulseekClient();
+            var options = new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug);
+
+            Client = new SoulseekClient(options);
+            Client.DiagnosticGenerated += (e, args) => Console.WriteLine($"[DIAG] [{args.Level}] {args.Message}");
             Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
             //Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
         }
