@@ -680,6 +680,10 @@ namespace Soulseek
                         .AddUnsolicitedTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Username, Options.TransferConnectionOptions, cancellationToken)
                         .ConfigureAwait(false);
                 }
+                else if (transferRequestAcknowledgement.Message.Contains("File not shared."))
+                {
+                    throw new DownloadRejectedException(transferRequestAcknowledgement.Message);
+                }
                 else
                 {
                     // the download is remotely queued, so put it in the local queue.
