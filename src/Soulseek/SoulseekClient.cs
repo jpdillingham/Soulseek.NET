@@ -680,7 +680,7 @@ namespace Soulseek
                         .AddUnsolicitedTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Username, Options.TransferConnectionOptions, cancellationToken)
                         .ConfigureAwait(false);
                 }
-                else if (transferRequestAcknowledgement.Message.Contains("File not shared."))
+                else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
                 {
                     throw new DownloadRejectedException(transferRequestAcknowledgement.Message);
                 }
