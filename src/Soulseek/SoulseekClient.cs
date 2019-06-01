@@ -341,9 +341,40 @@ namespace Soulseek
             return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
+        /// <summary>
+        ///     Asynchronously gets the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user whose queue to check.</param>
+        /// <param name="filename">The file to check.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The current place of the file in the queue.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DownloadNotFoundException">Thrown when a corresponding download is not active.</exception>
+        /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
         public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
-            // todo: guard clauses
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace.", nameof(filename));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected and LoggedIn to check download queue position (currently: {State})");
+            }
+
+            if (!Downloads.Any(d => d.Value.Username == username && d.Value.Filename == filename))
+            {
+                throw new DownloadNotFoundException($"A download of {filename} from user {username} is not active.");
+            }
 
             return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
         }
@@ -373,8 +404,7 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                // todo: add a new exception for this
-                throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
+                throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
             }
         }
 
