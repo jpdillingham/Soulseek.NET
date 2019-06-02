@@ -342,6 +342,44 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously gets the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user whose queue to check.</param>
+        /// <param name="filename">The file to check.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The current place of the file in the queue.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DownloadNotFoundException">Thrown when a corresponding download is not active.</exception>
+        /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace.", nameof(filename));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected and LoggedIn to check download queue position (currently: {State})");
+            }
+
+            if (!Downloads.Any(d => d.Value.Username == username && d.Value.Filename == filename))
+            {
+                throw new DownloadNotFoundException($"A download of {filename} from user {username} is not active.");
+            }
+
+            return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Gets the next token for use in client operations.
         /// </summary>
         /// <remarks>
@@ -643,6 +681,10 @@ namespace Soulseek
                         .AddUnsolicitedTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Username, Options.TransferConnectionOptions, cancellationToken)
                         .ConfigureAwait(false);
                 }
+                else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
+                {
+                    throw new DownloadRejectedException(transferRequestAcknowledgement.Message);
+                }
                 else
                 {
                     // the download is remotely queued, so put it in the local queue.
@@ -758,6 +800,35 @@ namespace Soulseek
                 download.State = DownloadStates.Completed | download.State;
                 UpdateProgress(download.Data?.Length ?? 0);
                 UpdateState(download.State);
+            }
+        }
+
+        private async Task<int> GetDownloadPlaceInQueueInternalAsync(string username, string filename, CancellationToken cancellationToken)
+        {
+            IMessageConnection connection = null;
+
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename);
+                var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
+
+                var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+
+                connection.Disconnected += (sender, message) =>
+                {
+                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                };
+
+                await connection.WriteMessageAsync(new PeerPlaceInQueueRequest(filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await responseWait.ConfigureAwait(false);
+
+                return response.PlaceInQueue;
+            }
+            catch (Exception ex)
+            {
+                throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
             }
         }
 
@@ -912,6 +983,11 @@ namespace Soulseek
                     case MessageCode.PeerQueueFailed:
                         var queueFailedResponse = PeerQueueFailedResponse.Parse(message);
                         Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
+                        break;
+
+                    case MessageCode.PeerPlaceInQueueResponse:
+                        var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(MessageCode.PeerPlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
                         break;
 
                     case MessageCode.PeerUploadFailed:

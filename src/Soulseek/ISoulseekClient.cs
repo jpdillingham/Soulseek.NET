@@ -142,15 +142,26 @@ namespace Soulseek
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously gets the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user whose queue to check.</param>
+        /// <param name="filename">The file to check.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The current place of the file in the queue.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DownloadNotFoundException">Thrown when a corresponding download is not active.</exception>
+        /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
+        Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Gets the next token for use in client operations.
         /// </summary>
         /// <remarks>
-        ///     <para>
-        ///         Tokens are returned sequentially and the token value rolls over to 0 when it has reached <see cref="int.MaxValue"/>.
-        ///     </para>
-        ///     <para>
-        ///         This operation is thread safe.
-        ///     </para>
+        ///     <para>Tokens are returned sequentially and the token value rolls over to 0 when it has reached <see cref="int.MaxValue"/>.</para>
+        ///     <para>This operation is thread safe.</para>
         /// </remarks>
         /// <returns>The next token.</returns>
         /// <threadsafety instance="true"/>

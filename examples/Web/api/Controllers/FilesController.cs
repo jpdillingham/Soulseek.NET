@@ -70,6 +70,12 @@
             }
         }
 
+        [HttpGet("{username}/{filename}/placeInQueue")]
+        public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
+        {
+            return Ok(await Client.GetDownloadPlaceInQueueAsync(username, filename));
+        }
+
         [HttpPost("queue/{username}/{filename}")]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {

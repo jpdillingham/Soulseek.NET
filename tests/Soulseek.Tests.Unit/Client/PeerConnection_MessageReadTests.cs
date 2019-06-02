@@ -196,6 +196,36 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait for PeerPlaceInQueueResponse"), AutoData]
+        public void Completes_Wait_For_PeerPlaceInQueueResponse(string username, IPAddress ip, int port, string peer, string filename, int placeInQueue)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Username)
+                .Returns(username);
+            conn.Setup(m => m.IPAddress)
+                .Returns(ip);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+
+            var waiter = new Mock<IWaiter>();
+
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerPlaceInQueueResponse)
+                .WriteString(filename)
+                .WriteInteger(placeInQueue)
+                .Build();
+
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
+
+            s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
+
+            waiter.Verify(
+                m => m.Complete(
+                    new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename),
+                    It.Is<PeerPlaceInQueueResponse>(r => r.Filename == filename && r.PlaceInQueue == placeInQueue)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Completes wait for PeerBrowseResponse"), AutoData]
         public void Completes_Wait_For_PeerBrowseResponse(string username, IPAddress ip, int port, string directoryName)
         {
