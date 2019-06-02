@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
+    using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
@@ -270,6 +271,30 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.PeerInfoRequest, msg.Code);
             Assert.Equal(4, msg.Length);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerPlaceInQueueRequest")]
+        [Theory(DisplayName = "PeerPlaceInQueueRequest instantiates properly"), AutoData]
+        public void PeerPlaceInQueueRequest_Instantiates_Properly(string filename)
+        {
+            var a = new PeerPlaceInQueueRequest(filename);
+
+            Assert.Equal(filename, a.Filename);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "PeerPlaceInQueueRequest")]
+        [Theory(DisplayName = "PeerPlaceInQueueRequest constructs the correct Message"), AutoData]
+        public void PeerPlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
+        {
+            var a = new PeerPlaceInQueueRequest(filename);
+            var msg = a.ToMessage();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(MessageCode.PeerPlaceInQueueRequest, msg.Code);
+            Assert.Equal(filename, reader.ReadString());
         }
     }
 }
