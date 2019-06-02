@@ -379,35 +379,6 @@ namespace Soulseek
             return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
         }
 
-        private async Task<int> GetDownloadPlaceInQueueInternalAsync(string username, string filename, CancellationToken cancellationToken)
-        {
-            IMessageConnection connection = null;
-
-            try
-            {
-                var waitKey = new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename);
-                var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
-
-                var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
-                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
-
-                connection.Disconnected += (sender, message) =>
-                {
-                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                };
-
-                await connection.WriteMessageAsync(new PeerPlaceInQueueRequest(filename).ToMessage(), cancellationToken).ConfigureAwait(false);
-
-                var response = await responseWait.ConfigureAwait(false);
-
-                return response.PlaceInQueue;
-            }
-            catch (Exception ex)
-            {
-                throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
-            }
-        }
-
         /// <summary>
         ///     Gets the next token for use in client operations.
         /// </summary>
@@ -829,6 +800,35 @@ namespace Soulseek
                 download.State = DownloadStates.Completed | download.State;
                 UpdateProgress(download.Data?.Length ?? 0);
                 UpdateState(download.State);
+            }
+        }
+
+        private async Task<int> GetDownloadPlaceInQueueInternalAsync(string username, string filename, CancellationToken cancellationToken)
+        {
+            IMessageConnection connection = null;
+
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename);
+                var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
+
+                var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+
+                connection.Disconnected += (sender, message) =>
+                {
+                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                };
+
+                await connection.WriteMessageAsync(new PeerPlaceInQueueRequest(filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await responseWait.ConfigureAwait(false);
+
+                return response.PlaceInQueue;
+            }
+            catch (Exception ex)
+            {
+                throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
             }
         }
 
