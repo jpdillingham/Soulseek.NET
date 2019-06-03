@@ -180,6 +180,29 @@ namespace Soulseek
         private ITokenFactory TokenFactory { get; set; }
         private IWaiter Waiter { get; set; }
 
+        public Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            return AddUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        private async Task<AddUserResponse> AddUserInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.ServerAddUser, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteMessageAsync(new AddUserRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await addUserWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                // todo: implement this
+                throw new PeerInfoException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+            }
+        }
+
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
         /// </summary>
@@ -1123,6 +1146,11 @@ namespace Soulseek
 
                         break;
 
+                    case MessageCode.ServerAddUser:
+                        var addUserResponse = AddUserResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(message.Code, addUserResponse.Username), addUserResponse);
+                        break;
+
                     case MessageCode.ServerPrivateMessage:
                         var pm = PrivateMessage.Parse(message);
                         PrivateMessageReceived?.Invoke(this, pm);
@@ -1135,8 +1163,8 @@ namespace Soulseek
                         break;
 
                     case MessageCode.ServerGetPeerAddress:
-                        var response = GetPeerAddressResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(message.Code, response.Username), response);
+                        var peerAddressResponse = GetPeerAddressResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(message.Code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 
                     default:

@@ -223,5 +223,7 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
+
+        Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null);
     }
 }
