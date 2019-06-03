@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Requests the address of a peer.
+    ///     Adds a peer to the server-side watch list.
     /// </summary>
     public class AddUserRequest
     {

@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     The response to a peer info request.
+    ///     The response to an add user request.
     /// </summary>
     public sealed class AddUserResponse
     {

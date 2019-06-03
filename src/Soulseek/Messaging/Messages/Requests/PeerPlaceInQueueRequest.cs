@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Requests the address of a peer.
+    ///     Requests the place of a file in a remote queue.
     /// </summary>
     public class PeerPlaceInQueueRequest
     {
