@@ -97,7 +97,8 @@ namespace Soulseek.Messaging.Messages
             }
 
             var username = reader.ReadString();
-            var exists = reader.ReadByte() > 0;
+            var b = reader.ReadByte();
+            var exists = b > 0;
 
             UserStatus? status = null;
             int? averageSpeed = null;
@@ -113,7 +114,11 @@ namespace Soulseek.Messaging.Messages
                 downloadCount = reader.ReadLong();
                 fileCount = reader.ReadInteger();
                 directoryCount = reader.ReadInteger();
-                countryCode = reader.ReadString();
+
+                if (reader.HasMoreData())
+                {
+                    countryCode = reader.ReadString();
+                }
             }
 
             return new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
