@@ -296,5 +296,53 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(MessageCode.PeerPlaceInQueueRequest, msg.Code);
             Assert.Equal(filename, reader.ReadString());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "AddUserRequest")]
+        [Theory(DisplayName = "AddUserRequest instantiates properly"), AutoData]
+        public void AddUserRequest_Instantiates_Properly(string username)
+        {
+            var a = new AddUserRequest(username);
+
+            Assert.Equal(username, a.Username);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "AddUserRequest")]
+        [Theory(DisplayName = "AddUserRequest constructs the correct message"), AutoData]
+        public void AddUserRequest_Constructs_The_Correct_Message(string username)
+        {
+            var a = new AddUserRequest(username);
+            var msg = a.ToMessage();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(MessageCode.ServerAddUser, msg.Code);
+            Assert.Equal(username, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "GetStatusRequest")]
+        [Theory(DisplayName = "GetStatusRequest instantiates properly"), AutoData]
+        public void GetStatusRequest_Instantiates_Properly(string username)
+        {
+            var a = new GetStatusRequest(username);
+
+            Assert.Equal(username, a.Username);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "GetStatusRequest")]
+        [Theory(DisplayName = "GetStatusRequest constructs the correct message"), AutoData]
+        public void GetStatusRequest_Constructs_The_Correct_Message(string username)
+        {
+            var a = new GetStatusRequest(username);
+            var msg = a.ToMessage();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(MessageCode.ServerGetStatus, msg.Code);
+            Assert.Equal(username, reader.ReadString());
+        }
     }
 }
