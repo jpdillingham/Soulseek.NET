@@ -120,6 +120,11 @@ namespace Soulseek.Messaging
             return this;
         }
 
+        public bool HasMoreData()
+        {
+            return Position < Payload.Length;
+        }
+
         /// <summary>
         ///     Reads a single byte at the head of the reader.
         /// </summary>
