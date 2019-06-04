@@ -23,9 +23,9 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="GetStatusResponse"/> class.
         /// </summary>
         /// <param name="username">The username of the peer.</param>
-        /// <param name="status">The status of the peer (0 = offline, 1 = away, 2 = online).</param>
+        /// <param name="status">The status of the peer.</param>
         /// <param name="privileged">A value indicating whether the peer is privileged.</param>
-        internal GetStatusResponse(string username, int status, bool privileged)
+        internal GetStatusResponse(string username, UserStatus status, bool privileged)
         {
             Username = username;
             Status = status;
@@ -38,9 +38,9 @@ namespace Soulseek.Messaging.Messages
         public bool Privileged { get; }
 
         /// <summary>
-        ///     Gets the status of the peer (0 = offline, 1 = away, 2 = online).
+        ///     Gets the status of the peer.
         /// </summary>
-        public int Status { get; }
+        public UserStatus Status { get; }
 
         /// <summary>
         ///     Gets the username of the peer.
@@ -62,7 +62,7 @@ namespace Soulseek.Messaging.Messages
             }
 
             var username = reader.ReadString();
-            int status = reader.ReadInteger();
+            var status = (UserStatus)reader.ReadInteger();
             var privileged = reader.ReadByte() > 0;
 
             return new GetStatusResponse(username, status, privileged);

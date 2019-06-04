@@ -24,13 +24,13 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="username">The username of the added peer.</param>
         /// <param name="exists">A value indicating whether the username exists on the network.</param>
-        /// <param name="status">The status of the peer (0 = offline, 1 = away, 2 = online)</param>
+        /// <param name="status">The status of the peer.</param>
         /// <param name="averageSpeed">The average upload speed of the peer.</param>
         /// <param name="downloadCount">The number of active peer downloads.</param>
         /// <param name="fileCount">The number of files shared by the peer.</param>
         /// <param name="directoryCount">The number of directories shared by the peer.</param>
         /// <param name="countryCode">The peer's country code.</param>
-        internal AddUserResponse(string username, bool exists, int? status, int? averageSpeed, long? downloadCount, int? fileCount, int? directoryCount, string countryCode)
+        internal AddUserResponse(string username, bool exists, UserStatus? status, int? averageSpeed, long? downloadCount, int? fileCount, int? directoryCount, string countryCode)
         {
             Username = username;
             Exists = exists;
@@ -55,7 +55,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the status of the peer (0 = offline, 1 = away, 2 = online).
         /// </summary>
-        public int? Status { get; }
+        public UserStatus? Status { get; }
 
         /// <summary>
         ///     Gets the average upload speed of the peer.
@@ -99,7 +99,7 @@ namespace Soulseek.Messaging.Messages
             var username = reader.ReadString();
             var exists = reader.ReadByte() > 0;
 
-            int? status = null;
+            UserStatus? status = null;
             int? averageSpeed = null;
             long? downloadCount = null;
             int? fileCount = null;
@@ -108,7 +108,7 @@ namespace Soulseek.Messaging.Messages
 
             if (exists)
             {
-                status = reader.ReadInteger();
+                status = (UserStatus)reader.ReadInteger();
                 averageSpeed = reader.ReadInteger();
                 downloadCount = reader.ReadLong();
                 fileCount = reader.ReadInteger();
