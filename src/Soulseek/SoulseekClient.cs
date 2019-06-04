@@ -185,28 +185,6 @@ namespace Soulseek
         private ITokenFactory TokenFactory { get; set; }
         private IWaiter Waiter { get; set; }
 
-        public Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null)
-        {
-            return AddUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
-        }
-
-        private async Task<AddUserResponse> AddUserInternalAsync(string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.ServerAddUser, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteMessageAsync(new AddUserRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
-
-                var response = await addUserWait.ConfigureAwait(false);
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                throw new AddUserException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
-            }
-        }
-
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
         /// </summary>
@@ -228,6 +206,32 @@ namespace Soulseek
             }
 
             return AcknowledgePrivateMessageInternalAsync(privateMessageId, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list.
+        /// </summary>
+        /// <param name="username">The username of the user to add.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to add users (currently: {State})");
+            }
+
+            return AddUserInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -429,6 +433,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
+        /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
         public Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -454,6 +459,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
         public Task<GetStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -467,23 +473,6 @@ namespace Soulseek
             }
 
             return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
-        }
-
-        private async Task<GetStatusResponse> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
-        {
-            try
-            {
-                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.ServerGetStatus, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteMessageAsync(new GetStatusRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
-
-                var response = await getStatusWait.ConfigureAwait(false);
-
-                return response;
-            }
-            catch (Exception ex)
-            {
-                throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
-            }
         }
 
         /// <summary>
@@ -640,6 +629,23 @@ namespace Soulseek
             catch (Exception ex)
             {
                 throw new PrivateMessageException($"Failed to send an acknowledgement for private message id {privateMessageId}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<AddUserResponse> AddUserInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.ServerAddUser, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteMessageAsync(new AddUserRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await addUserWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new AddUserException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
         }
 
@@ -938,6 +944,23 @@ namespace Soulseek
             catch (Exception ex)
             {
                 throw new UserInfoException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<GetStatusResponse> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.ServerGetStatus, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteMessageAsync(new GetStatusRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await getStatusWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
             }
         }
 

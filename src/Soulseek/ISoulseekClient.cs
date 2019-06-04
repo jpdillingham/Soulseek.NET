@@ -113,6 +113,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
         Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -192,6 +193,9 @@ namespace Soulseek
         /// <returns>The operation context, including the information response.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
         Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
