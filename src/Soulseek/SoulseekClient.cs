@@ -203,8 +203,7 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                // todo: implement this
-                throw new PeerInfoException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+                throw new AddUserException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
         }
 
@@ -430,24 +429,61 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
-        public Task<PeerInfoResponse> GetPeerInfoAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
                 throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user information (currently: {State})");
             }
 
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            return GetUserInfoInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user for which to fetch the status.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        public Task<GetStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
             {
-                throw new InvalidOperationException($"A user must be logged in to browse.");
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
             }
 
-            return GetPeerInfoInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user status (currently: {State})");
+            }
+
+            return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        private async Task<GetStatusResponse> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.ServerGetStatus, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteMessageAsync(new GetStatusRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                var response = await getStatusWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex)
+            {
+                throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -877,7 +913,7 @@ namespace Soulseek
             return new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
         }
 
-        private async Task<PeerInfoResponse> GetPeerInfoInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<PeerInfoResponse> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
 
@@ -901,7 +937,7 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                throw new PeerInfoException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+                throw new UserInfoException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
         }
 
@@ -1157,7 +1193,6 @@ namespace Soulseek
                         break;
 
                     case MessageCode.ServerGetStatus:
-                        // todo: add a method to invoke this
                         var statsResponse = GetStatusResponse.Parse(message);
                         Waiter.Complete(new WaitKey(message.Code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
