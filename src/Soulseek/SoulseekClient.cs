@@ -142,6 +142,11 @@ namespace Soulseek
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         /// <summary>
+        ///     Occurs when a watched user's status changes.
+        /// </summary>
+        public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+
+        /// <summary>
         ///     Gets the unresolved server address.
         /// </summary>
         public string Address { get; }
@@ -1149,6 +1154,13 @@ namespace Soulseek
                     case MessageCode.ServerAddUser:
                         var addUserResponse = AddUserResponse.Parse(message);
                         Waiter.Complete(new WaitKey(message.Code, addUserResponse.Username), addUserResponse);
+                        break;
+
+                    case MessageCode.ServerGetStatus:
+                        // todo: add a method to invoke this
+                        var statsResponse = GetStatusResponse.Parse(message);
+                        Waiter.Complete(new WaitKey(message.Code, statsResponse.Username), statsResponse);
+                        UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
 
                     case MessageCode.ServerPrivateMessage:
