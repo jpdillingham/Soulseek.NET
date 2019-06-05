@@ -516,5 +516,28 @@ namespace Soulseek.Tests.Unit.Messaging
             Assert.NotNull(ex.InnerException.InnerException);
             Assert.IsType<MessageCompressionException>(ex.InnerException.InnerException);
         }
+
+        [Trait("Category", "HasMoreData")]
+        [Fact(DisplayName = "HasMoreData returns expected value")]
+        public void HasMoreData_Returns_Expected_Value()
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .WriteInteger(1)
+                .WriteInteger(2)
+                .Build();
+
+            var reader = new MessageReader(msg);
+
+            Assert.True(reader.HasMoreData);
+
+            reader.ReadInteger();
+
+            Assert.True(reader.HasMoreData);
+
+            reader.ReadInteger();
+
+            Assert.False(reader.HasMoreData);
+        }
     }
 }
