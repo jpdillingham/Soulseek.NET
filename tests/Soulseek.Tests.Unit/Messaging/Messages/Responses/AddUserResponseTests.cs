@@ -112,5 +112,32 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Null(r.DirectoryCount);
             Assert.Null(r.CountryCode);
         }
+
+        [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse does not throw if CountryCode is missing"), AutoData]
+        public void Parse_Does_Not_Throw_If_CountryCode_Is_Missing(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount)
+        {
+            var msg = new MessageBuilder()
+                .Code(MessageCode.ServerAddUser)
+                .WriteString(username)
+                .WriteByte(1) // exists = true
+                .WriteInteger((int)status)
+                .WriteInteger(averageSpeed)
+                .WriteLong(downloadCount)
+                .WriteInteger(fileCount)
+                .WriteInteger(directoryCount)
+                .Build();
+
+            var r = AddUserResponse.Parse(msg);
+
+            Assert.Equal(username, r.Username);
+            Assert.True(r.Exists);
+            Assert.Equal(status, r.Status);
+            Assert.Equal(averageSpeed, r.AverageSpeed);
+            Assert.Equal(downloadCount, r.DownloadCount);
+            Assert.Equal(fileCount, r.FileCount);
+            Assert.Equal(directoryCount, r.DirectoryCount);
+            Assert.Null(r.CountryCode);
+        }
     }
 }
