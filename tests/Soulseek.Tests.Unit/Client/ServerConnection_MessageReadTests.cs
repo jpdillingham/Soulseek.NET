@@ -513,5 +513,36 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(privileged, result.Privileged);
             }
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
+        public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
+        {
+            GetStatusResponse result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
+                .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
+
+            var message = new MessageBuilder()
+                .Code(MessageCode.ServerGetStatus)
+                .WriteString(username)
+                .WriteInteger((int)status)
+                .WriteByte((byte)(privileged ? 1 : 0))
+                .Build();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                UserStatusChangedEventArgs eventArgs = null;
+
+                s.UserStatusChanged += (sender, args) => eventArgs = args;
+
+                s.InvokeMethod("ServerConnection_MessageRead", null, message);
+
+                Assert.Equal(username, eventArgs.Username);
+                Assert.Equal(status, eventArgs.Status);
+                Assert.Equal(privileged, eventArgs.Privileged);
+            }
+        }
     }
 }
