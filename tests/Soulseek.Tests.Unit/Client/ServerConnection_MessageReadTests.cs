@@ -449,5 +449,69 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Single(diagnostics);
             }
         }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ServerAddUser"), AutoData]
+        public void Handles_ServerAddUser(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
+        {
+            AddUserResponse result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<AddUserResponse>()))
+                .Callback<WaitKey, AddUserResponse>((key, response) => result = response);
+
+            var message = new MessageBuilder()
+                .Code(MessageCode.ServerAddUser)
+                .WriteString(username)
+                .WriteByte(1) // exists = true
+                .WriteInteger((int)status)
+                .WriteInteger(averageSpeed)
+                .WriteLong(downloadCount)
+                .WriteInteger(fileCount)
+                .WriteInteger(directoryCount)
+                .WriteString(countryCode)
+                .Build();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, message);
+
+                Assert.Equal(username, result.Username);
+                Assert.Equal(exists, result.Exists);
+                Assert.Equal(status, result.Status);
+                Assert.Equal(averageSpeed, result.AverageSpeed);
+                Assert.Equal(downloadCount, result.DownloadCount);
+                Assert.Equal(fileCount, result.FileCount);
+                Assert.Equal(directoryCount, result.DirectoryCount);
+                Assert.Equal(countryCode, result.CountryCode);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ServerGetStatus"), AutoData]
+        public void Handles_ServerGetStatus(string username, UserStatus status, bool privileged)
+        {
+            GetStatusResponse result = null;
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
+                .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
+
+            var message = new MessageBuilder()
+                .Code(MessageCode.ServerGetStatus)
+                .WriteString(username)
+                .WriteInteger((int)status)
+                .WriteByte((byte)(privileged ? 1 : 0))
+                .Build();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", null, message);
+
+                Assert.Equal(username, result.Username);
+                Assert.Equal(status, result.Status);
+                Assert.Equal(privileged, result.Privileged);
+            }
+        }
     }
 }
