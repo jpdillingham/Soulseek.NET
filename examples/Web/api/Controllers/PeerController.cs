@@ -31,7 +31,7 @@
         [HttpGet("{username}")]
         public async Task<PeerInfoResponse> Get([FromRoute, Required]string username)
         {
-            var response = await Client.GetPeerInfoAsync(username);
+            var response = await Client.GetUserInfoAsync(username);
             return response;
         }
     }

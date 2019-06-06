@@ -113,4 +113,151 @@ namespace Soulseek.Exceptions
         {
         }
     }
+
+    /// <summary>
+    ///     Represents errors that occur while logging in to the Soulseek network.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class UserInfoException : SoulseekClientException
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserInfoException"/> class.
+        /// </summary>
+        public UserInfoException()
+            : base()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserInfoException"/> class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public UserInfoException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserInfoException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
+        ///     exception is specified.
+        /// </param>
+        public UserInfoException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserInfoException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        protected UserInfoException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     Represents errors that occur while logging in to the Soulseek network.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class UserStatusException : SoulseekClientException
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserStatusException"/> class.
+        /// </summary>
+        public UserStatusException()
+            : base()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserStatusException"/> class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public UserStatusException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserStatusException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
+        ///     exception is specified.
+        /// </param>
+        public UserStatusException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserStatusException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        protected UserStatusException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     Represents errors that occur while logging in to the Soulseek network.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class AddUserException : SoulseekClientException
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AddUserException"/> class.
+        /// </summary>
+        public AddUserException()
+            : base()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AddUserException"/> class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public AddUserException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AddUserException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
+        ///     exception is specified.
+        /// </param>
+        public AddUserException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="AddUserException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        protected AddUserException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
 }

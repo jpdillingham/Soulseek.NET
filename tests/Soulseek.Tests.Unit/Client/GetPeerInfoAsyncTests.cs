@@ -38,7 +38,7 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetPeerInfoAsync(username));
+            var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync(username));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
@@ -55,7 +55,7 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient();
             s.SetProperty("State", state);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetPeerInfoAsync("a"));
+            var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync("a"));
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var info = await s.GetPeerInfoAsync(username);
+            var info = await s.GetUserInfoAsync(username);
 
             Assert.Equal(result.Description, info.Description);
             Assert.Equal(result.HasPicture, info.HasPicture);
@@ -126,10 +126,10 @@ namespace Soulseek.Tests.Unit.Client
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
             PeerInfoResponse info = null;
-            var ex = await Record.ExceptionAsync(async () => info = await s.GetPeerInfoAsync(username));
+            var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
 
             Assert.NotNull(ex);
-            Assert.IsType<PeerInfoException>(ex);
+            Assert.IsType<UserInfoException>(ex);
             Assert.IsType<ConnectionException>(ex.InnerException);
         }
     }

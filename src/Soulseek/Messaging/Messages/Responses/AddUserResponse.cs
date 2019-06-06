@@ -115,7 +115,7 @@ namespace Soulseek.Messaging.Messages
                 fileCount = reader.ReadInteger();
                 directoryCount = reader.ReadInteger();
 
-                if (reader.HasMoreData())
+                if (reader.HasMoreData)
                 {
                     countryCode = reader.ReadString();
                 }
