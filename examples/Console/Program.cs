@@ -45,6 +45,12 @@
         [Argument('i', "peer-info")]
         private static string Info { get; set; }
 
+        [Argument('t', "test-add-user")]
+        private static string TestAddUser { get; set; }
+
+        [Argument('z', "get-user-status")]
+        private static string GetUserStatus { get; set; }
+
         private static ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)> Downloads { get; set; } 
             = new ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)>();
 
@@ -72,7 +78,7 @@
             Arguments.Populate(clearExistingValues: false);
 
             var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.None,
+                minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
             );
@@ -83,6 +89,20 @@
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
+                if (!string.IsNullOrEmpty(GetUserStatus))
+                {
+                    await ConnectAndLogin(client);
+
+                    var response = await client.GetUserStatusAsync(GetUserStatus);
+                    Console.WriteLine(JsonConvert.SerializeObject(response));
+                }
+                if (!string.IsNullOrEmpty(TestAddUser))
+                {
+                    await ConnectAndLogin(client);
+
+                    var response = await client.AddUserAsync(TestAddUser);
+                    Console.WriteLine(JsonConvert.SerializeObject(response));
+                }
                 if (!string.IsNullOrEmpty(Search))
                 {
                     await ConnectAndLogin(client);
@@ -106,7 +126,7 @@
                     await ConnectAndLogin(client);
                     o($"\nFetching peer info for {Info}...\n");
 
-                    var response = await client.GetPeerInfoAsync(Info);
+                    var response = await client.GetUserInfoAsync(Info);
 
                     o(JsonConvert.SerializeObject(response));
                 }

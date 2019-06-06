@@ -59,6 +59,11 @@ namespace Soulseek.Messaging
         public MessageCode Code => Message.Code;
 
         /// <summary>
+        ///     Gets a value indicating whether additional, unread data exists in the payload.
+        /// </summary>
+        public bool HasMoreData => Position < Payload.Length;
+
+        /// <summary>
         ///     Gets the Message payload.
         /// </summary>
         public Memory<byte> Payload { get; private set; }
@@ -70,25 +75,6 @@ namespace Soulseek.Messaging
 
         private bool Decompressed { get; set; } = false;
         private Message Message { get; set; }
-
-        /// <summary>
-        ///     Moves the head of the reader to the specified <paramref name="position"/>.
-        /// </summary>
-        /// <param name="position">The desired position.</param>
-        public void Seek(int position)
-        {
-            if (position < 0)
-            {
-                throw new ArgumentOutOfRangeException(nameof(position), $"Attempt to seek to a negative position.");
-            }
-
-            if (position > Payload.Length)
-            {
-                throw new ArgumentOutOfRangeException(nameof(position), $"Seek to position {position} would extend beyond the length of the message.");
-            }
-
-            Position = position;
-        }
 
         /// <summary>
         ///     Decompresses the message payload.
@@ -208,6 +194,25 @@ namespace Soulseek.Messaging
             var retVal = Encoding.ASCII.GetString(bytes);
             Position += length;
             return retVal;
+        }
+
+        /// <summary>
+        ///     Moves the head of the reader to the specified <paramref name="position"/>.
+        /// </summary>
+        /// <param name="position">The desired position.</param>
+        public void Seek(int position)
+        {
+            if (position < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(position), $"Attempt to seek to a negative position.");
+            }
+
+            if (position > Payload.Length)
+            {
+                throw new ArgumentOutOfRangeException(nameof(position), $"Seek to position {position} would extend beyond the length of the message.");
+            }
+
+            Position = position;
         }
 
         private void Decompress(byte[] inData, out byte[] outData)

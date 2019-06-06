@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerPlaceInQueueRequest.cs" company="JP Dillingham">
+﻿// <copyright file="AddUserRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Requests the place of a file in a remote queue.
+    ///     Adds a peer to the server-side watch list.
     /// </summary>
-    public class PeerPlaceInQueueRequest
+    public class AddUserRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerPlaceInQueueRequest"/> class.
+        ///     Initializes a new instance of the <see cref="AddUserRequest"/> class.
         /// </summary>
-        /// <param name="filename">The filename to check.</param>
-        public PeerPlaceInQueueRequest(string filename)
+        /// <param name="username">The username of the peer to add.</param>
+        public AddUserRequest(string username)
         {
-            Filename = filename;
+            Username = username;
         }
 
         /// <summary>
-        ///     Gets the filename to check.
+        ///     Gets the username of the peer to add.
         /// </summary>
-        public string Filename { get; }
+        public string Username { get; }
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerPlaceInQueueRequest)
-                .WriteString(Filename)
+                .Code(MessageCode.ServerAddUser)
+                .WriteString(Username)
                 .Build();
         }
     }

@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerPlaceInQueueRequest.cs" company="JP Dillingham">
+﻿// <copyright file="GetStatusRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Requests the place of a file in a remote queue.
+    ///     Requests the status of a peer.
     /// </summary>
-    public class PeerPlaceInQueueRequest
+    public class GetStatusRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerPlaceInQueueRequest"/> class.
+        ///     Initializes a new instance of the <see cref="GetStatusRequest"/> class.
         /// </summary>
-        /// <param name="filename">The filename to check.</param>
-        public PeerPlaceInQueueRequest(string filename)
+        /// <param name="username">The username of the peer for which to retreive status information.</param>
+        public GetStatusRequest(string username)
         {
-            Filename = filename;
+            Username = username;
         }
 
         /// <summary>
-        ///     Gets the filename to check.
+        ///     Gets the username of the peer for which to retreive status information.
         /// </summary>
-        public string Filename { get; }
+        public string Username { get; }
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public Message ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerPlaceInQueueRequest)
-                .WriteString(Filename)
+                .Code(MessageCode.ServerGetStatus)
+                .WriteString(Username)
                 .Build();
         }
     }

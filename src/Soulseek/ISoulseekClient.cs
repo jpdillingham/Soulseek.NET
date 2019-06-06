@@ -61,6 +61,11 @@ namespace Soulseek
         event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         /// <summary>
+        ///     Occurs when a watched user's status changes.
+        /// </summary>
+        event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+
+        /// <summary>
         ///     Gets the unresolved server address.
         /// </summary>
         string Address { get; }
@@ -97,6 +102,19 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
         Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list.
+        /// </summary>
+        /// <param name="username">The username of the user to add.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
+        Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -176,7 +194,24 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        Task<PeerInfoResponse> GetPeerInfoAsync(string username, CancellationToken? cancellationToken = null);
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
+        Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user for which to fetch the status.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
+        Task<GetStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
