@@ -1,4 +1,4 @@
-﻿// <copyright file="GetStatusAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="GetUserStatusAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,7 +13,14 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.Exceptions;
+    using Soulseek.Messaging;
+    using Soulseek.Messaging.Messages;
+    using Soulseek.Messaging.Tcp;
     using Xunit;
 
     public class GetUserStatusAsyncTests
@@ -35,7 +42,7 @@ namespace Soulseek.Tests.Unit.Client
             Assert.IsType<ArgumentException>(ex);
         }
 
-        [Trait("Category", "GetStatusAsync")]
+        [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetUserStatusAsync throws InvalidOperationException if not connected and logged in")]
         [InlineData(SoulseekClientStates.None)]
         [InlineData(SoulseekClientStates.Disconnected)]
@@ -50,6 +57,55 @@ namespace Soulseek.Tests.Unit.Client
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
+        }
+
+        [Trait("Category", "GetUserStatusAsync")]
+        [Theory(DisplayName = "GetPeerInfoAsync returns expected info"), AutoData]
+        public async Task GetUserStatusAsync_Returns_Expected_Info(string username, UserStatus status, bool privileged)
+        {
+            var result = new GetStatusResponse(username, status, privileged);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var stat = await s.GetUserStatusAsync(username);
+
+            Assert.Equal(result.Username, stat.Username);
+            Assert.Equal(result.Status, stat.Status);
+            Assert.Equal(result.Privileged, stat.Privileged);
+        }
+
+        [Trait("Category", "GetUserStatusAsync")]
+        [Theory(DisplayName = "GetUserStatusAsync throws UserStatusException on throw"), AutoData]
+        public async Task GetUserStatusAsync_Throws_UserStatusException_On_Throw(string username, UserStatus status, bool privileged)
+        {
+            var result = new GetStatusResponse(username, status, privileged);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Throws(new ConnectionException("foo"));
+
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            GetStatusResponse r = null;
+            var ex = await Record.ExceptionAsync(async () => r = await s.GetUserStatusAsync(username));
+
+            Assert.NotNull(ex);
+            Assert.IsType<UserStatusException>(ex);
+            Assert.IsType<ConnectionException>(ex.InnerException);
         }
     }
 }

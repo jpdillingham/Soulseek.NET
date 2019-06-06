@@ -1,4 +1,4 @@
-﻿// <copyright file="GetPeerInfoAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="GetUserInfoAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -25,15 +25,15 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Tcp;
     using Xunit;
 
-    public class GetPeerInfoAsyncTests
+    public class GetUserInfoAsyncTests
     {
-        [Trait("Category", "GetPeerInfoAsync")]
-        [Theory(DisplayName = "GetPeerInfoAsync throws ArgumentException on bad username")]
+        [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync throws ArgumentException on bad username")]
         [InlineData(null)]
         [InlineData(" ")]
         [InlineData("\t")]
         [InlineData("")]
-        public async Task GetPeerInfoAsync_Throws_ArgumentException_On_Null_Username(string username)
+        public async Task GetUserInfoAsync_Throws_ArgumentException_On_Null_Username(string username)
         {
             var s = new SoulseekClient();
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -44,13 +44,13 @@ namespace Soulseek.Tests.Unit.Client
             Assert.IsType<ArgumentException>(ex);
         }
 
-        [Trait("Category", "GetPeerInfoAsync")]
-        [Theory(DisplayName = "GetPeerInfoAsync throws InvalidOperationException if not connected and logged in")]
+        [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync throws InvalidOperationException if not connected and logged in")]
         [InlineData(SoulseekClientStates.None)]
         [InlineData(SoulseekClientStates.Disconnected)]
         [InlineData(SoulseekClientStates.Connected)]
         [InlineData(SoulseekClientStates.LoggedIn)]
-        public async Task GetPeerInfoAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
+        public async Task GetUserInfoAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
             var s = new SoulseekClient();
             s.SetProperty("State", state);
@@ -61,9 +61,9 @@ namespace Soulseek.Tests.Unit.Client
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        [Trait("Category", "GetPeerInfoAsync")]
-        [Theory(DisplayName = "GetPeerInfoAsync returns expected info"), AutoData]
-        public async Task GetPeerInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
+        public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
 
@@ -98,9 +98,9 @@ namespace Soulseek.Tests.Unit.Client
             Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
         }
 
-        [Trait("Category", "GetPeerInfoAsync")]
-        [Theory(DisplayName = "GetPeerInfoAsync throws PeerInfoException on throw"), AutoData]
-        public async Task GetPeerInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync throws PeerInfoException on throw"), AutoData]
+        public async Task GetUserInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
 
