@@ -21,10 +21,10 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="PeerSearchRequest"/> class.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
-        /// <param name="ticket">The unique ticket for the search.</param>
-        public PeerSearchRequest(string searchText, int ticket)
+        /// <param name="token">The unique token for the search.</param>
+        public PeerSearchRequest(string searchText, int token)
         {
-            Ticket = ticket;
+            Token = token;
             SearchText = searchText;
         }
 
@@ -34,9 +34,9 @@ namespace Soulseek.Messaging.Messages
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets the unique ticket for the search.
+        ///     Gets the unique token for the search.
         /// </summary>
-        public int Ticket { get; }
+        public int Token { get; }
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
@@ -46,7 +46,7 @@ namespace Soulseek.Messaging.Messages
         {
             return new MessageBuilder()
                 .Code(MessageCode.PeerSearchRequest)
-                .WriteInteger(Ticket)
+                .WriteInteger(Token)
                 .WriteString(SearchText)
                 .Build();
         }
