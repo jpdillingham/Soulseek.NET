@@ -563,6 +563,61 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously searches the specified <paramref name="username"/> for the specified <paramref name="searchText"/>
+        ///     using the specified unique <paramref name="token"/> and with the optionally specified <paramref name="options"/>
+        ///     and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="username">The user to search.</param>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the search results.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
+        /// </exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        public Task<IReadOnlyCollection<SearchResponse>> SearchUserAsync(string username, string searchText, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
+            }
+
+            token = token ?? TokenFactory.NextToken();
+
+            if (Searches.ContainsKey((int)token))
+            {
+                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"A user must be logged in to search.");
+            }
+
+            options = options ?? new SearchOptions();
+
+            return SearchUserInternalAsync(searchText, (int)token, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user to which the message is to be sent.</param>
@@ -1094,6 +1149,57 @@ namespace Soulseek
         }
 
         private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
+        {
+            var search = new Search(searchText, token, options);
+            var lastState = SearchStates.None;
+
+            void UpdateState(SearchStates state)
+            {
+                search.State = state;
+                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
+                lastState = state;
+                options.StateChanged?.Invoke(args);
+                SearchStateChanged?.Invoke(this, args);
+            }
+
+            try
+            {
+                search.ResponseReceived = (response) =>
+                {
+                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
+                    options.ResponseReceived?.Invoke(eventArgs);
+                    SearchResponseReceived?.Invoke(this, eventArgs);
+                };
+
+                Searches.TryAdd(search.Token, search);
+                UpdateState(SearchStates.Requested);
+
+                await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
+                UpdateState(SearchStates.InProgress);
+
+                var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
+                return responses.ToList().AsReadOnly();
+            }
+            catch (OperationCanceledException ex)
+            {
+                search.Complete(SearchStates.Cancelled);
+                throw new SearchException($"Search for {searchText} ({token}) was cancelled.", ex);
+            }
+            catch (Exception ex)
+            {
+                search.Complete(SearchStates.Errored);
+                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+            }
+            finally
+            {
+                Searches.TryRemove(search.Token, out _);
+
+                UpdateState(SearchStates.Completed | search.State);
+                search.Dispose();
+            }
+        }
+
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchUserInternalAsync(string username, string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new Search(searchText, token, options);
             var lastState = SearchStates.None;
