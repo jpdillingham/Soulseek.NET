@@ -197,7 +197,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Completes wait for PeerPlaceInQueueResponse"), AutoData]
-        public void Completes_Wait_For_PeerPlaceInQueueResponse(string username, IPAddress ip, int port, string peer, string filename, int placeInQueue)
+        public void Completes_Wait_For_PeerPlaceInQueueResponse(string username, IPAddress ip, int port, string filename, int placeInQueue)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)

@@ -21,11 +21,11 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="SearchRequest"/> class.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
-        /// <param name="ticket">The unique token for the search.</param>
-        public SearchRequest(string searchText, int ticket)
+        /// <param name="token">The unique token for the search.</param>
+        public SearchRequest(string searchText, int token)
         {
             SearchText = searchText;
-            Ticket = ticket;
+            Token = token;
         }
 
         /// <summary>
@@ -34,9 +34,9 @@ namespace Soulseek.Messaging.Messages
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets the unique ticket for the search.
+        ///     Gets the unique token for the search.
         /// </summary>
-        public int Ticket { get; }
+        public int Token { get; }
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
@@ -46,7 +46,7 @@ namespace Soulseek.Messaging.Messages
         {
             return new MessageBuilder()
                 .Code(MessageCode.ServerFileSearch)
-                .WriteInteger(Ticket)
+                .WriteInteger(Token)
                 .WriteString(SearchText)
                 .Build();
         }
