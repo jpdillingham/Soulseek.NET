@@ -614,7 +614,7 @@ namespace Soulseek
 
             options = options ?? new SearchOptions();
 
-            return SearchUserInternalAsync(searchText, (int)token, options, cancellationToken ?? CancellationToken.None);
+            return SearchUserInternalAsync(username, searchText, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
