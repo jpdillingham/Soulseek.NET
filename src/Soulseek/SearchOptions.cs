@@ -23,6 +23,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchOptions"/> class.
         /// </summary>
+        /// <param name="username">The username of the user to search.</param>
         /// <param name="searchTimeout">The search timeout value, in seconds, used to determine when the search is complete.</param>
         /// <param name="responseLimit">The maximum number of search results to accept before the search is considered completed.</param>
         /// <param name="filterResponses">A value indicating whether responses are to be filtered.</param>
@@ -42,6 +43,7 @@ namespace Soulseek
         /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         public SearchOptions(
+            string username = null,
             int searchTimeout = 15,
             int responseLimit = 100,
             bool filterResponses = true,
@@ -55,6 +57,7 @@ namespace Soulseek
             Action<SearchStateChangedEventArgs> stateChanged = null,
             Action<SearchResponseReceivedEventArgs> responseReceived = null)
         {
+            Username = username;
             SearchTimeout = searchTimeout;
             ResponseLimit = responseLimit;
             FileLimit = fileLimit;
@@ -105,7 +108,8 @@ namespace Soulseek
         public int MinimumResponseFileCount { get; }
 
         /// <summary>
-        ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all responses included).
+        ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all
+        ///     responses included).
         /// </summary>
         public Func<SearchResponse, bool> ResponseFilter { get; }
 
@@ -129,5 +133,10 @@ namespace Soulseek
         ///     Gets the Action to invoke when the search changes state.
         /// </summary>
         public Action<SearchStateChangedEventArgs> StateChanged { get; }
+
+        /// <summary>
+        ///     Gets the username of the user to search. (Default = null; do not search a specific user).
+        /// </summary>
+        public string Username { get; }
     }
 }
