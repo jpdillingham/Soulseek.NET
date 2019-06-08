@@ -251,29 +251,6 @@ namespace Soulseek
         Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously searches the specified <paramref name="username"/> for the specified <paramref name="searchText"/>
-        ///     using the specified unique <paramref name="token"/> and with the optionally specified <paramref name="options"/>
-        ///     and <paramref name="cancellationToken"/>.
-        /// </summary>
-        /// <param name="username">The user to search.</param>
-        /// <param name="searchText">The text for which to search.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
-        /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
-        /// </exception>
-        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<SearchResponse>> SearchUserAsync(string username, string searchText, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
-
-        /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user to which the message is to be sent.</param>
