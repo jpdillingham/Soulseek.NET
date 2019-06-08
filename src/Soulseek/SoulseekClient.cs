@@ -559,11 +559,6 @@ namespace Soulseek
 
             options = options ?? new SearchOptions();
 
-            if (!string.IsNullOrEmpty(options.Username))
-            {
-                return SearchUserInternalAsync(searchText, (int)token, options, cancellationToken ?? CancellationToken.None);
-            }
-
             return SearchInternalAsync(searchText, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
@@ -1099,57 +1094,6 @@ namespace Soulseek
         }
 
         private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
-        {
-            var search = new Search(searchText, token, options);
-            var lastState = SearchStates.None;
-
-            void UpdateState(SearchStates state)
-            {
-                search.State = state;
-                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
-                lastState = state;
-                options.StateChanged?.Invoke(args);
-                SearchStateChanged?.Invoke(this, args);
-            }
-
-            try
-            {
-                search.ResponseReceived = (response) =>
-                {
-                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
-                    options.ResponseReceived?.Invoke(eventArgs);
-                    SearchResponseReceived?.Invoke(this, eventArgs);
-                };
-
-                Searches.TryAdd(search.Token, search);
-                UpdateState(SearchStates.Requested);
-
-                await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
-                UpdateState(SearchStates.InProgress);
-
-                var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
-                return responses.ToList().AsReadOnly();
-            }
-            catch (OperationCanceledException ex)
-            {
-                search.Complete(SearchStates.Cancelled);
-                throw new SearchException($"Search for {searchText} ({token}) was cancelled.", ex);
-            }
-            catch (Exception ex)
-            {
-                search.Complete(SearchStates.Errored);
-                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
-            }
-            finally
-            {
-                Searches.TryRemove(search.Token, out _);
-
-                UpdateState(SearchStates.Completed | search.State);
-                search.Dispose();
-            }
-        }
-
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchUserInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new Search(searchText, token, options);
             var lastState = SearchStates.None;
