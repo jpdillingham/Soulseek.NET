@@ -104,6 +104,17 @@ namespace Soulseek
             }
 
             ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
+
+            Listener = new Listener(54859);
+            Listener.Accepted += (sender, e) =>
+            {
+                Console.WriteLine($"Accepted connection from {e.IPAddress}:{e.Port}.............");
+                //var conn = new MessageConnection(MessageConnectionType.Peer, "noname", IPAddress.Parse("127.0.0.1"), 1, null, e.TcpClient);
+                //conn.MessageRead += PeerConnection_MessageRead;
+                //conn.Disconnected += (ss, ee) => Console.WriteLine($"Disconnected");
+            };
+
+            Listener.Start();
         }
 
         /// <summary>
@@ -184,6 +195,8 @@ namespace Soulseek
         private IMessageConnection ServerConnection { get; set; }
         private ITokenFactory TokenFactory { get; set; }
         private IWaiter Waiter { get; set; }
+
+        private IListener Listener { get; }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
