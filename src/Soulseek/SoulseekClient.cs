@@ -1016,6 +1016,7 @@ namespace Soulseek
 
                 var response = await loginWait.ConfigureAwait(false);
 
+                // todo: write a test for this
                 await ServerConnection.WriteMessageAsync(new SetListenPortRequest(54859).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 if (response.Succeeded)
