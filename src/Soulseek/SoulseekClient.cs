@@ -1016,6 +1016,8 @@ namespace Soulseek
 
                 var response = await loginWait.ConfigureAwait(false);
 
+                await ServerConnection.WriteMessageAsync(new SetListenPortRequest(54859).ToMessage(), cancellationToken).ConfigureAwait(false);
+
                 if (response.Succeeded)
                 {
                     Username = username;
