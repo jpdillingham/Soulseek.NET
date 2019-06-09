@@ -105,7 +105,8 @@ namespace Soulseek
         public int MinimumResponseFileCount { get; }
 
         /// <summary>
-        ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all responses included).
+        ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all
+        ///     responses included).
         /// </summary>
         public Func<SearchResponse, bool> ResponseFilter { get; }
 
