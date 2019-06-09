@@ -13,6 +13,7 @@
 namespace Soulseek.Tcp
 {
     using System;
+    using System.Net;
 
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events.
@@ -92,5 +93,18 @@ namespace Soulseek.Tcp
         ///     Gets the state from which the connection changed.
         /// </summary>
         public ConnectionState PreviousState { get; }
+    }
+
+    internal sealed class ConnectionAcceptedEventArgs : ConnectionEventArgs
+    {
+        internal ConnectionAcceptedEventArgs(ITcpClient tcpClient)
+        {
+            TcpClient = tcpClient;
+        }
+
+        public ITcpClient TcpClient { get; }
+        private IPEndPoint EndPoint => (IPEndPoint)TcpClient.Client.RemoteEndPoint;
+        public IPAddress IPAddress => EndPoint.Address;
+        public int Port => EndPoint.Port;
     }
 }
