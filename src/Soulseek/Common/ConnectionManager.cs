@@ -137,6 +137,9 @@ namespace Soulseek
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
         /// </summary>
+        /// <remarks>
+        ///     A solicited connection is one which is initiated remotely by sending a <see cref="ConnectToPeerResponse"/>.
+        /// </remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <param name="messageHandler">
         ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
@@ -147,18 +150,29 @@ namespace Soulseek
         public async Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
-            var (semaphore, connection) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
+            IMessageConnection connection = null;
 
+            // get or add a connection.  we only care about the semphore at this point, so discard the connection.
+            var (semaphore, _) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
+
+            // await the semaphore we got back to ensure exclusive access over the code that follows. this is important because while the GetOrAdd above either gets or retrieves a connection in a thread safe manner (through ConcurrentDictionary),
+            // the connection itself is not synchronized.
             await semaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
+                // retrieve the connection now that we have exclusive access to the record.
+                (_, connection) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
+
+                // the connection is null when added, so if it is no longer null then it was either already established prior to this method being invoked, or has been established
+                // by another thread between the first and second calls to GetOrAddMessageConnectionAsync().  either way, return it as is.
                 if (connection != null)
                 {
                     return connection;
                 }
                 else
                 {
+                    // establish the connection.
                     connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
                     connection.Context = connectToPeerResponse;
 
@@ -167,7 +181,9 @@ namespace Soulseek
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    PeerConnections.AddOrUpdate(key, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+                    // update the dictionary to replace the null value with the new connection. if the record was removed between the previous call to GetOrAddMessageConnectionAsync(),
+                    // a new record is inserted with the existing semaphore.
+                    PeerConnections.AddOrUpdate(key, (semaphore, connection), (k, v) => (v.Semaphore, connection));
 
                     var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage();
                     await connection.WriteAsync(request.ToByteArray(), cancellationToken).ConfigureAwait(false);
@@ -184,7 +200,14 @@ namespace Soulseek
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initializes new instance if one does not exist.
         /// </summary>
-        /// <remarks>Solicited connections (such as one used to retrieve search results) will be reused if possible.</remarks>
+        /// <remarks>
+        ///     <para>
+        ///         An unsolicited connection is one which is initiated locally for purposes of retrieving user info, browsing shares, etc.
+        ///     </para>
+        ///     <para>
+        ///         Solicited connections (such as one used to retrieve search results) will be reused if possible.
+        ///     </para>
+        /// </remarks>
         /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
         /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
         /// <param name="messageHandler">
@@ -195,12 +218,14 @@ namespace Soulseek
         /// <returns>The existing or new connection.</returns>
         public async Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            var (semaphore, connection) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
-
+            IMessageConnection connection = null;
+            var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
             try
             {
+                (_, connection) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
+
                 if (connection != null)
                 {
                     return connection;
@@ -213,7 +238,7 @@ namespace Soulseek
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+                    PeerConnections.AddOrUpdate(connectionKey, (semaphore, connection), (k, v) => (v.Semaphore, connection));
 
                     await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.NextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
