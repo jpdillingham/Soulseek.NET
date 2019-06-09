@@ -1203,28 +1203,28 @@ namespace Soulseek
                         Waiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
                         break;
 
-                    case MessageCode.ServerConnectToPeer:
-                        var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+                    //case MessageCode.ServerConnectToPeer:
+                    //    var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
 
-                        if (connectToPeerResponse.Type == "F")
-                        {
-                            // ensure that we are expecting at least one file from this user before we connect. the response
-                            // doesn't contain any other identifying information about the file.
-                            if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
-                            {
-                                await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
-                            }
-                            else
-                            {
-                                Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
-                            }
-                        }
-                        else
-                        {
-                            await ConnectionManager.GetOrAddSolicitedConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
-                        }
+                    //    if (connectToPeerResponse.Type == "F")
+                    //    {
+                    //        // ensure that we are expecting at least one file from this user before we connect. the response
+                    //        // doesn't contain any other identifying information about the file.
+                    //        if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
+                    //        {
+                    //            await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                    //        }
+                    //        else
+                    //        {
+                    //            Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                    //        }
+                    //    }
+                    //    else
+                    //    {
+                    //        await ConnectionManager.GetOrAddSolicitedConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                    //    }
 
-                        break;
+                    //    break;
 
                     case MessageCode.ServerAddUser:
                         var addUserResponse = AddUserResponse.Parse(message);

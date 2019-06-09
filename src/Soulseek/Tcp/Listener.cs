@@ -39,7 +39,16 @@
                 var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
                 Console.WriteLine($"Accepted connection from {client.Client.RemoteEndPoint}");
 
-                Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client)));
+                var ep = (IPEndPoint)client.Client.RemoteEndPoint;
+
+                var connection = new Connection(ep.Address, ep.Port, null, new TcpClientAdapter(client));
+
+                Console.WriteLine($"Trying to read code...");
+                var code = await connection.ReadAsync(1).ConfigureAwait(false);
+
+                Console.WriteLine($"Code: {code}");
+
+                //Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client)));
             }
         }
     }

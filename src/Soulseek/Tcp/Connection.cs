@@ -264,20 +264,20 @@ namespace Soulseek.Tcp
         /// <returns>The read bytes.</returns>
         public Task<byte[]> ReadAsync(int length, CancellationToken? cancellationToken = null)
         {
-            if (length < 0)
-            {
-                throw new ArgumentException($"The requested length must be greater than or equal to zero.");
-            }
+            //if (length < 0)
+            //{
+            //    throw new ArgumentException($"The requested length must be greater than or equal to zero.");
+            //}
 
-            if (!TcpClient.Connected)
-            {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
-            }
+            //if (!TcpClient.Connected)
+            //{
+            //    throw new InvalidOperationException($"The underlying Tcp connection is closed.");
+            //}
 
-            if (State != ConnectionState.Connected)
-            {
-                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
-            }
+            //if (State != ConnectionState.Connected)
+            //{
+            //    throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
+            //}
 
             return ReadInternalAsync(length, cancellationToken ?? CancellationToken.None);
         }
