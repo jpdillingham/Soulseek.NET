@@ -336,5 +336,29 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(MessageCode.ServerGetStatus, msg.Code);
             Assert.Equal(username, reader.ReadString());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SetListenPortRequest")]
+        [Theory(DisplayName = "SetListenPortRequest instantiates properly"), AutoData]
+        public void SetListenPortRequest_Instantiates_Properly(int port)
+        {
+            var a = new SetListenPortRequest(port);
+
+            Assert.Equal(port, a.Port);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "SetListenPortRequest")]
+        [Theory(DisplayName = "SetListenPortRequest constructs the correct message"), AutoData]
+        public void SetListenPortRequest_Constructs_The_Correct_Message(int port)
+        {
+            var a = new SetListenPortRequest(port);
+            var msg = a.ToMessage();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(MessageCode.ServerSetListenPort, msg.Code);
+            Assert.Equal(port, reader.ReadInteger());
+        }
     }
 }
