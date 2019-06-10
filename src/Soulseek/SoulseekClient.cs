@@ -109,9 +109,12 @@ namespace Soulseek
             Listener.Accepted += (sender, e) =>
             {
                 Console.WriteLine($"Accepted connection from {e.IPAddress}:{e.Port}.............");
-                //var conn = new MessageConnection(MessageConnectionType.Peer, "noname", IPAddress.Parse("127.0.0.1"), 1, null, e.TcpClient);
-                //conn.MessageRead += PeerConnection_MessageRead;
-                //conn.Disconnected += (ss, ee) => Console.WriteLine($"Disconnected");
+                ConnectionManager.GetOrAddIncomingConnectionAsync(
+                    new ConnectionKey(e.Username, e.IPAddress, e.Port, MessageConnectionType.Peer),
+                    e.TcpClient,
+                    PeerConnection_MessageRead,
+                    Options.PeerConnectionOptions,
+                    CancellationToken.None);
             };
 
             Listener.Start();
@@ -1203,28 +1206,28 @@ namespace Soulseek
                         Waiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
                         break;
 
-                    //case MessageCode.ServerConnectToPeer:
-                    //    var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+                    case MessageCode.ServerConnectToPeer:
+                        var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
 
-                    //    if (connectToPeerResponse.Type == "F")
-                    //    {
-                    //        // ensure that we are expecting at least one file from this user before we connect. the response
-                    //        // doesn't contain any other identifying information about the file.
-                    //        if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
-                    //        {
-                    //            await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
-                    //        }
-                    //        else
-                    //        {
-                    //            Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
-                    //        }
-                    //    }
-                    //    else
-                    //    {
-                    //        await ConnectionManager.GetOrAddSolicitedConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
-                    //    }
+                        if (connectToPeerResponse.Type == "F")
+                        {
+                            // ensure that we are expecting at least one file from this user before we connect. the response
+                            // doesn't contain any other identifying information about the file.
+                            if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
+                            {
+                                await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                            }
+                        }
+                        else
+                        {
+                            await ConnectionManager.GetOrAddSolicitedConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                        }
 
-                    //    break;
+                        break;
 
                     case MessageCode.ServerAddUser:
                         var addUserResponse = AddUserResponse.Parse(message);
