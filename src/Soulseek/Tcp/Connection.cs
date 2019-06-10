@@ -33,14 +33,12 @@ namespace Soulseek.Tcp
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
-        /// <param name="initialState">The optional initial state of the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ConnectionState initialState = ConnectionState.Pending, ITcpClient tcpClient = null)
+        internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new ConnectionOptions();
-            State = initialState;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
             InactivityTimer = new SystemTimer()
@@ -67,12 +65,11 @@ namespace Soulseek.Tcp
                 }
             };
 
-            if (State == ConnectionState.Connected)
+            if (TcpClient.Connected)
             {
-                Console.WriteLine($"Connection initialized as connected, starting watchdog");
+                State = ConnectionState.Connected;
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
-                Stream = TcpClient.GetStream();
             }
         }
 
@@ -137,9 +134,9 @@ namespace Soulseek.Tcp
         protected SystemTimer InactivityTimer { get; set; }
 
         /// <summary>
-        ///     Gets or sets the network stream for the connection.
+        ///     Gets the network stream for the connection.
         /// </summary>
-        protected INetworkStream Stream { get; set; }
+        protected Lazy<INetworkStream> Stream => new Lazy<INetworkStream>(() => TcpClient.GetStream());
 
         /// <summary>
         ///     Gets or sets the TcpClient used by the connection.
@@ -209,7 +206,6 @@ namespace Soulseek.Tcp
 
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
-                Stream = TcpClient.GetStream();
 
                 ChangeState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
@@ -233,7 +229,7 @@ namespace Soulseek.Tcp
 
                 InactivityTimer?.Stop();
                 WatchdogTimer?.Stop();
-                Stream?.Close();
+                Stream.Value?.Close();
                 TcpClient?.Close();
 
                 ChangeState(ConnectionState.Disconnected, message);
@@ -356,7 +352,7 @@ namespace Soulseek.Tcp
                     Disconnect();
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
-                    Stream?.Dispose();
+                    Stream.Value?.Dispose();
                     TcpClient?.Dispose();
                 }
 
@@ -380,7 +376,7 @@ namespace Soulseek.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await Stream.Value.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
                     if (bytesRead == 0)
                     {
@@ -409,7 +405,7 @@ namespace Soulseek.Tcp
         {
             try
             {
-                await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+                await Stream.Value.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
                 InactivityTimer?.Reset();
             }
             catch (Exception ex)
