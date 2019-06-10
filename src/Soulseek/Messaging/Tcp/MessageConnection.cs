@@ -33,9 +33,10 @@ namespace Soulseek.Messaging.Tcp
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="initialState">The optional initial state of the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : this(type, ipAddress, port, options, tcpClient)
+        internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ConnectionState initialState = ConnectionState.Pending, ITcpClient tcpClient = null)
+            : this(type, ipAddress, port, options, initialState, tcpClient)
         {
             Username = username;
         }
@@ -47,9 +48,10 @@ namespace Soulseek.Messaging.Tcp
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="initialState">The optional initial state of the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(MessageConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : base(ipAddress, port, options, tcpClient)
+        internal MessageConnection(MessageConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ConnectionState initialState = ConnectionState.Pending, ITcpClient tcpClient = null)
+            : base(ipAddress, port, options, initialState, tcpClient)
         {
             Type = type;
 
@@ -69,6 +71,11 @@ namespace Soulseek.Messaging.Tcp
                 {
                     Task.Run(() => ReadContinuouslyAsync()).Forget();
                 };
+            }
+
+            if (State == ConnectionState.Connected)
+            {
+                Task.Run(() => ReadContinuouslyAsync()).Forget();
             }
         }
 

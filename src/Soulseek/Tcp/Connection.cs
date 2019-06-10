@@ -33,12 +33,14 @@ namespace Soulseek.Tcp
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="initialState">The optional initial state of the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ConnectionState initialState = ConnectionState.Pending, ITcpClient tcpClient = null)
         {
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new ConnectionOptions();
+            State = initialState;
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
 
             InactivityTimer = new SystemTimer()
@@ -64,6 +66,14 @@ namespace Soulseek.Tcp
                     Disconnect($"The server connection was closed unexpectedly.");
                 }
             };
+
+            if (State == ConnectionState.Connected)
+            {
+                Console.WriteLine($"Connection initialized as connected, starting watchdog");
+                InactivityTimer?.Start();
+                WatchdogTimer.Start();
+                Stream = TcpClient.GetStream();
+            }
         }
 
         /// <summary>
@@ -114,7 +124,7 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Gets or sets the current connection state.
         /// </summary>
-        public ConnectionState State { get; protected set; } = ConnectionState.Pending;
+        public ConnectionState State { get; protected set; }
 
         /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
@@ -197,6 +207,7 @@ namespace Soulseek.Tcp
                     }
                 }
 
+                InactivityTimer?.Start();
                 WatchdogTimer.Start();
                 Stream = TcpClient.GetStream();
 
@@ -264,20 +275,20 @@ namespace Soulseek.Tcp
         /// <returns>The read bytes.</returns>
         public Task<byte[]> ReadAsync(int length, CancellationToken? cancellationToken = null)
         {
-            //if (length < 0)
-            //{
-            //    throw new ArgumentException($"The requested length must be greater than or equal to zero.");
-            //}
+            if (length < 0)
+            {
+                throw new ArgumentException($"The requested length must be greater than or equal to zero.");
+            }
 
-            //if (!TcpClient.Connected)
-            //{
-            //    throw new InvalidOperationException($"The underlying Tcp connection is closed.");
-            //}
+            if (!TcpClient.Connected)
+            {
+                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
+            }
 
-            //if (State != ConnectionState.Connected)
-            //{
-            //    throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
-            //}
+            if (State != ConnectionState.Connected)
+            {
+                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
+            }
 
             return ReadInternalAsync(length, cancellationToken ?? CancellationToken.None);
         }
