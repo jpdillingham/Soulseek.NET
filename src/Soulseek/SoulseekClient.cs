@@ -119,8 +119,8 @@ namespace Soulseek
                 }
                 else
                 {
-                    var connection = await ConnectionManager.AddIncomingTransferConnectionAsync(new ConnectionKey(e.IPAddress, e.Port), e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
-                    Waiter.Complete(new WaitKey("transfer", e.Username), connection);
+                    var connection = await ConnectionManager.AddDirectTransferConnectionAsync(new ConnectionKey(e.IPAddress, e.Port), e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
+                    Waiter.Complete(new WaitKey(Constants.DIRECTTRANSFER, e.Username), connection);
                 }
             };
 
@@ -717,6 +717,8 @@ namespace Soulseek
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token, options);
+            var downloadWaitKey = new WaitKey(Constants.DOWNLOAD, download.Username);
+
             Task<byte[]> downloadCompleted = null;
             var directConnection = false;
             var lastState = DownloadStates.None;
@@ -794,22 +796,22 @@ namespace Soulseek
                     // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
                     // transfer connection. this operation is somewhat indirect because we aren't sure which download an incoming
                     // connection refers to until we connect and retrieve the token.
-                    var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(download.WaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
+                    var solicitedTransferConnectionInitialized = Waiter.Wait<IConnection>(download.SolicitedTransferWaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
 
                     // prepare another wait for the direct connection which may follow.
-                    var directTransferConnectionInitialized = Waiter.Wait<IConnection>(new WaitKey("transfer", download.Username), timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
+                    var directTransferConnectionInitialized = Waiter.Wait<IConnection>(download.DirectTransferWaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
 
                     // also prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(new WaitKey(download.Username), cancellationToken);
+                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(downloadWaitKey, cancellationToken);
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
                     peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                    var connectionInitialized = await Task.WhenAny(indirectTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
+                    var connectionInitialized = await Task.WhenAny(solicitedTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
 
-                    if (connectionInitialized == indirectTransferConnectionInitialized)
+                    if (connectionInitialized == solicitedTransferConnectionInitialized)
                     {
                         Console.WriteLine($"----------------- Indirect");
                     }
@@ -827,15 +829,15 @@ namespace Soulseek
                 {
                     if (download.State.HasFlag(DownloadStates.Succeeded))
                     {
-                        Waiter.Complete(new WaitKey(download.Username), download.Data);
+                        Waiter.Complete(downloadWaitKey, download.Data);
                     }
                     else if (download.State.HasFlag(DownloadStates.TimedOut))
                     {
-                        Waiter.Throw(download.WaitKey, new TimeoutException(message));
+                        Waiter.Throw(downloadWaitKey, new TimeoutException(message));
                     }
                     else
                     {
-                        Waiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+                        Waiter.Throw(downloadWaitKey, new ConnectionException($"Transfer failed: {message}"));
                     }
                 };
 
@@ -1036,7 +1038,7 @@ namespace Soulseek
 
             if (download != default(Download))
             {
-                Waiter.Complete(download.WaitKey, connection);
+                Waiter.Complete(download.SolicitedTransferWaitKey, connection);
             }
         }
 
