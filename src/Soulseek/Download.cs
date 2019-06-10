@@ -163,9 +163,14 @@ namespace Soulseek
         internal IConnection Connection { get; set; }
 
         /// <summary>
-        ///     Gets the unique wait key for the download.
+        ///     Gets the wait key for direct transfers.
         /// </summary>
-        internal WaitKey WaitKey => new WaitKey(Username, Filename, Token);
+        internal WaitKey DirectTransferWaitKey => new WaitKey(Constants.DIRECTTRANSFER, Username);
+
+        /// <summary>
+        ///     Gets the wait key for solicited.
+        /// </summary>
+        internal WaitKey SolicitedTransferWaitKey => new WaitKey(Username, Filename, Token);
 
         /// <summary>
         ///     Updates the download progress.
