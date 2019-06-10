@@ -251,6 +251,29 @@ namespace Soulseek
             return connection;
         }
 
+        public async Task<IMessageConnection> GetOrAddIncomingConnectionAsync(ConnectionKey connectionKey, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new MessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options, ConnectionState.Connected, tcpClient);
+            connection.MessageRead += messageHandler;
+            connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
+
+            var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                Console.WriteLine($"Updating incoming connection.");
+                // always overwrite an existing connection with one that is incoming; the official client drops indirect connections when a direct connection is established.
+                PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+
+            return connection;
+        }
+
         /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
@@ -300,6 +323,7 @@ namespace Soulseek
 
         private void RemoveMessageConnection(IMessageConnection connection)
         {
+            Console.WriteLine($"disconnectin connection to {connection.Username} {connection.IPAddress} {connection.Port}");
             if (PeerConnections.TryRemove(connection.Key, out _))
             {
                 // only release if we successfully removed a connection.  this can throw

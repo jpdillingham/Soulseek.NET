@@ -91,6 +91,8 @@ namespace Soulseek
         /// <returns>The existing or new connection.</returns>
         Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
+        Task<IMessageConnection> GetOrAddIncomingConnectionAsync(ConnectionKey connectionKey, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+
         /// <summary>
         ///     Disposes and removes all active and queued connections.
         /// </summary>
