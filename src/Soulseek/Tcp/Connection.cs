@@ -352,7 +352,12 @@ namespace Soulseek.Tcp
                     Disconnect();
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
-                    Stream.Value?.Dispose();
+
+                    if (Stream.IsValueCreated)
+                    {
+                        Stream.Value?.Dispose();
+                    }
+
                     TcpClient?.Dispose();
                 }
 
