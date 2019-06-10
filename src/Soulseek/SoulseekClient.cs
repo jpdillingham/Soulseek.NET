@@ -108,13 +108,20 @@ namespace Soulseek
             Listener = new Listener(54859);
             Listener.Accepted += (sender, e) =>
             {
-                Console.WriteLine($"Accepted connection from {e.IPAddress}:{e.Port}.............");
-                ConnectionManager.GetOrAddIncomingConnectionAsync(
-                    new ConnectionKey(e.Username, e.IPAddress, e.Port, MessageConnectionType.Peer),
-                    e.TcpClient,
-                    PeerConnection_MessageRead,
-                    Options.PeerConnectionOptions,
-                    CancellationToken.None);
+                if (e.Type == "P")
+                {
+                    ConnectionManager.GetOrAddIncomingConnectionAsync(
+                        new ConnectionKey(e.Username, e.IPAddress, e.Port, MessageConnectionType.Peer),
+                        e.TcpClient,
+                        PeerConnection_MessageRead,
+                        Options.PeerConnectionOptions,
+                        CancellationToken.None);
+                }
+                else
+                {
+                    ConnectionManager.AddIncomingTransferConnectionAsync(new ConnectionKey(e.IPAddress, e.Port), e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
+                }
+
             };
 
             Listener.Start();
