@@ -125,6 +125,15 @@ namespace Soulseek
             return connection;
         }
 
+        public async Task<IConnection> AddIncomingTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new Connection(connectionKey.IPAddress, connectionKey.Port, options, tcpClient);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+
+            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+            return connection;
+        }
+
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager"/>.
         /// </summary>
@@ -253,7 +262,7 @@ namespace Soulseek
 
         public async Task<IMessageConnection> GetOrAddIncomingConnectionAsync(ConnectionKey connectionKey, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
-            var connection = new MessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options, ConnectionState.Connected, tcpClient);
+            var connection = new MessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options, tcpClient);
             connection.MessageRead += messageHandler;
             connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
 
