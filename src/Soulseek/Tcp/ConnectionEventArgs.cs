@@ -97,14 +97,18 @@ namespace Soulseek.Tcp
 
     internal sealed class ConnectionAcceptedEventArgs : ConnectionEventArgs
     {
-        internal ConnectionAcceptedEventArgs(ITcpClient tcpClient)
+        internal ConnectionAcceptedEventArgs(ITcpClient tcpClient, string type, string username)
         {
             TcpClient = tcpClient;
+            Type = type;
+            Username = username;
         }
 
         public ITcpClient TcpClient { get; }
         private IPEndPoint EndPoint => (IPEndPoint)TcpClient.Client.RemoteEndPoint;
         public IPAddress IPAddress => EndPoint.Address;
         public int Port => EndPoint.Port;
+        public string Type { get; }
+        public string Username { get; }
     }
 }
