@@ -92,7 +92,7 @@ namespace Soulseek
         Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         Task<IMessageConnection> GetOrAddIncomingConnectionAsync(ConnectionKey connectionKey, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
-        Task<IConnection> AddIncomingTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IConnection> AddDirectTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.

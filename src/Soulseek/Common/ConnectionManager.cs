@@ -125,7 +125,7 @@ namespace Soulseek
             return connection;
         }
 
-        public async Task<IConnection> AddIncomingTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken)
+        public async Task<IConnection> AddDirectTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var connection = new Connection(connectionKey.IPAddress, connectionKey.Port, options, tcpClient);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
