@@ -72,7 +72,7 @@
 
                     Console.WriteLine(string.Join(" ", restBytes.Select(x => (int)x).ToArray()));
 
-                    Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client), type, name));
+                    Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client), type, name, token));
                 }
 
                 // todo: handle pierce firewall
