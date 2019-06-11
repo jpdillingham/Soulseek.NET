@@ -106,12 +106,14 @@ namespace Soulseek
             ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
 
             Listener = new Listener(54859);
-            Listener.Accepted += async (sender, e) =>
+            Listener.Accepted += (sender, e) =>
             {
                 if (e.Type == "P")
                 {
-                    await ConnectionManager.GetOrAddIncomingConnectionAsync(
-                        new ConnectionKey(e.Username, e.IPAddress, e.Port, MessageConnectionType.Peer),
+                    ConnectionManager.GetOrAddDirectConnectionAsync(
+                        e.Username,
+                        e.IPAddress,
+                        e.Port,
                         e.TcpClient,
                         PeerConnection_MessageRead,
                         Options.PeerConnectionOptions,
@@ -119,7 +121,7 @@ namespace Soulseek
                 }
                 else
                 {
-                    var connection = await ConnectionManager.AddDirectTransferConnectionAsync(new ConnectionKey(e.IPAddress, e.Port), e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
+                    var connection = ConnectionManager.AddDirectTransferConnection(e.IPAddress, e.Port, e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
                     Waiter.Complete(new WaitKey(Constants.DIRECTTRANSFER, e.Username), connection);
                 }
             };

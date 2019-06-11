@@ -15,6 +15,7 @@ namespace Soulseek
     using System;
     using System.Collections.Concurrent;
     using System.Linq;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging;
@@ -81,6 +82,25 @@ namespace Soulseek
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
 
         /// <summary>
+        ///     Adds a new transfer <see cref="IConnection"/> from an incoming direct connection.
+        /// </summary>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="token">The transfer token.</param>
+        /// <param name="tcpClient">The TCP client for the established connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        public IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new Connection(ipAddress, port, options, tcpClient);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+
+            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+            return connection;
+        }
+
+        /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
@@ -125,15 +145,6 @@ namespace Soulseek
             return connection;
         }
 
-        public async Task<IConnection> AddDirectTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = new Connection(connectionKey.IPAddress, connectionKey.Port, options, tcpClient);
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
-
-            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
-            return connection;
-        }
-
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager"/>.
         /// </summary>
@@ -146,9 +157,46 @@ namespace Soulseek
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
         /// </summary>
-        /// <remarks>
-        ///     A solicited connection is one which is initiated remotely by sending a <see cref="ConnectToPeerResponse"/>.
-        /// </remarks>
+        /// <param name="username">The username of the connection.</param>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="tcpClient">The TCP client for the established connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        public async Task<IMessageConnection> GetOrAddDirectConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options, tcpClient);
+            var connectionKey = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+
+            connection.MessageRead += messageHandler;
+            connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
+
+            var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                Console.WriteLine($"Updating incoming connection.");
+                // always overwrite an existing connection with one that is incoming; the official client drops indirect
+                // connections when a direct connection is established.
+                PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+
+            return connection;
+        }
+
+        /// <summary>
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
+        /// </summary>
+        /// <remarks>A solicited connection is one which is initiated remotely by sending a <see cref="ConnectToPeerResponse"/>.</remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <param name="messageHandler">
         ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
@@ -161,11 +209,12 @@ namespace Soulseek
             var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
             IMessageConnection connection = null;
 
-            // get or add a connection.  we only care about the semphore at this point, so discard the connection.
+            // get or add a connection. we only care about the semphore at this point, so discard the connection.
             var (semaphore, _) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
 
-            // await the semaphore we got back to ensure exclusive access over the code that follows. this is important because while the GetOrAdd above either gets or retrieves a connection in a thread safe manner (through ConcurrentDictionary),
-            // the connection itself is not synchronized.
+            // await the semaphore we got back to ensure exclusive access over the code that follows. this is important because
+            // while the GetOrAdd above either gets or retrieves a connection in a thread safe manner (through
+            // ConcurrentDictionary), the connection itself is not synchronized.
             await semaphore.WaitAsync().ConfigureAwait(false);
 
             try
@@ -173,8 +222,9 @@ namespace Soulseek
                 // retrieve the connection now that we have exclusive access to the record.
                 (_, connection) = await GetOrAddMessageConnectionAsync(key).ConfigureAwait(false);
 
-                // the connection is null when added, so if it is no longer null then it was either already established prior to this method being invoked, or has been established
-                // by another thread between the first and second calls to GetOrAddMessageConnectionAsync().  either way, return it as is.
+                // the connection is null when added, so if it is no longer null then it was either already established prior to
+                // this method being invoked, or has been established by another thread between the first and second calls to
+                // GetOrAddMessageConnectionAsync(). either way, return it as is.
                 if (connection != null)
                 {
                     return connection;
@@ -190,8 +240,8 @@ namespace Soulseek
 
                     await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
-                    // update the dictionary to replace the null value with the new connection. if the record was removed between the previous call to GetOrAddMessageConnectionAsync(),
-                    // a new record is inserted with the existing semaphore.
+                    // update the dictionary to replace the null value with the new connection. if the record was removed between
+                    // the previous call to GetOrAddMessageConnectionAsync(), a new record is inserted with the existing semaphore.
                     PeerConnections.AddOrUpdate(key, (semaphore, connection), (k, v) => (v.Semaphore, connection));
 
                     var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage();
@@ -211,11 +261,10 @@ namespace Soulseek
         /// </summary>
         /// <remarks>
         ///     <para>
-        ///         An unsolicited connection is one which is initiated locally for purposes of retrieving user info, browsing shares, etc.
+        ///         An unsolicited connection is one which is initiated locally for purposes of retrieving user info, browsing
+        ///         shares, etc.
         ///     </para>
-        ///     <para>
-        ///         Solicited connections (such as one used to retrieve search results) will be reused if possible.
-        ///     </para>
+        ///     <para>Solicited connections (such as one used to retrieve search results) will be reused if possible.</para>
         /// </remarks>
         /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
         /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
@@ -251,29 +300,6 @@ namespace Soulseek
 
                     await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.NextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-
-            return connection;
-        }
-
-        public async Task<IMessageConnection> GetOrAddIncomingConnectionAsync(ConnectionKey connectionKey, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = new MessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, options, tcpClient);
-            connection.MessageRead += messageHandler;
-            connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
-
-            var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
-            await semaphore.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                Console.WriteLine($"Updating incoming connection.");
-                // always overwrite an existing connection with one that is incoming; the official client drops indirect connections when a direct connection is established.
-                PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
             }
             finally
             {
@@ -335,9 +361,8 @@ namespace Soulseek
             Console.WriteLine($"disconnectin connection to {connection.Username} {connection.IPAddress} {connection.Port}");
             if (PeerConnections.TryRemove(connection.Key, out _))
             {
-                // only release if we successfully removed a connection.  this can throw
-                // if another thread released it first and the semaphore tries to release more
-                // than its capacity.
+                // only release if we successfully removed a connection. this can throw if another thread released it first and the
+                // semaphore tries to release more than its capacity.
                 PeerSemaphore.Release();
             }
         }

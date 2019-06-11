@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging;
@@ -46,6 +47,18 @@ namespace Soulseek
         int WaitingPeerConnections { get; }
 
         /// <summary>
+        ///     Adds a new transfer <see cref="IConnection"/> from an incoming direct connection.
+        /// </summary>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="token">The transfer token.</param>
+        /// <param name="tcpClient">The TCP client for the established connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
@@ -64,6 +77,21 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
         Task<IConnection> AddUnsolicitedTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
+        /// </summary>
+        /// <param name="username">The username of the connection.</param>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="tcpClient">The TCP client for the established connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        Task<IMessageConnection> GetOrAddDirectConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
@@ -90,9 +118,6 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The existing or new connection.</returns>
         Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
-
-        Task<IMessageConnection> GetOrAddIncomingConnectionAsync(ConnectionKey connectionKey, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
-        Task<IConnection> AddDirectTransferConnectionAsync(ConnectionKey connectionKey, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
