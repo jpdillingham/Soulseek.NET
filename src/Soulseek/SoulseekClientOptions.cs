@@ -49,6 +49,7 @@ namespace Soulseek
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
             StartingToken = startingToken;
+            ListenerOptions = listenerOptions ?? new ListenerOptions();
             ServerConnectionOptions = serverConnectionOptions ?? new ConnectionOptions();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
             TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
