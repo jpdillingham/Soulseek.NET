@@ -62,6 +62,7 @@ namespace Soulseek
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="connectionManager">The IConnectionManager instance to use.</param>
+        /// <param name="listener">The IListener instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory to use.</param>
@@ -71,6 +72,7 @@ namespace Soulseek
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IConnectionManager connectionManager = null,
+            IListener listener = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
@@ -105,28 +107,27 @@ namespace Soulseek
 
             ConnectionManager = connectionManager ?? new ConnectionManager(Options.ConcurrentPeerConnections);
 
-            Listener = new Listener(54859);
-            Listener.Accepted += (sender, e) =>
-            {
-                if (e.Type == "P")
-                {
-                    ConnectionManager.GetOrAddDirectPeerConnectionAsync(
-                        e.Username,
-                        e.IPAddress,
-                        e.Port,
-                        e.TcpClient,
-                        PeerConnection_MessageRead,
-                        Options.PeerConnectionOptions,
-                        CancellationToken.None);
-                }
-                else
-                {
-                    var connection = ConnectionManager.AddDirectTransferConnection(e.IPAddress, e.Port, e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
-                    Waiter.Complete(new WaitKey(Constants.DIRECTTRANSFER, e.Username), connection);
-                }
-            };
+            Listener = listener;
 
-            Listener.Start();
+            if (Listener == null && Options.ListenerOptions.Enabled)
+            {
+                Listener = new Listener(Options.ListenerOptions.Port);
+
+                Listener.Accepted += (sender, e) =>
+                {
+                    if (e.Type == "P")
+                    {
+                        ConnectionManager.GetOrAddDirectPeerConnectionAsync(e.Username, e.IPAddress, e.Port, e.TcpClient, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None);
+                    }
+                    else if (e.Type == "F")
+                    {
+                        var connection = ConnectionManager.AddDirectTransferConnection(e.IPAddress, e.Port, e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
+                        Waiter.Complete(new WaitKey(Constants.DIRECTTRANSFER, e.Username), connection);
+                    }
+
+                    // todo: diagnostic for unknown type
+                };
+            }
         }
 
         /// <summary>
@@ -307,6 +308,8 @@ namespace Soulseek
 
             try
             {
+                Listener?.Start();
+
                 await ServerConnection.ConnectAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
             }
             catch (Exception ex)
@@ -323,6 +326,8 @@ namespace Soulseek
         {
             ServerConnection.Disconnected -= ServerConnection_Disconnected;
             ServerConnection?.Disconnect(message ?? "Client disconnected.");
+
+            Listener?.Stop();
 
             ConnectionManager?.RemoveAndDisposeAll();
 
