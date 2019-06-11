@@ -22,14 +22,14 @@ namespace Soulseek.Tcp
         /// </summary>
         /// <param name="enabled">A value indicating whether to listen for incoming connections.</param>
         /// <param name="port">The listening port.</param>
-        public ListenerOptions(bool enabled = true, int port = 2234)
+        public ListenerOptions(bool enabled = false, int port = 2234)
         {
             Enabled = enabled;
             Port = port;
         }
 
         /// <summary>
-        ///     Gets a value indicating whether to listen for incoming connections. (Default = true).
+        ///     Gets a value indicating whether to listen for incoming connections. (Default = false).
         /// </summary>
         public bool Enabled { get; }
 
