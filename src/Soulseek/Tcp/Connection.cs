@@ -229,7 +229,12 @@ namespace Soulseek.Tcp
 
                 InactivityTimer?.Stop();
                 WatchdogTimer?.Stop();
-                Stream.Value?.Close();
+
+                if (Stream.IsValueCreated)
+                {
+                    Stream.Value?.Close();
+                }
+
                 TcpClient?.Close();
 
                 ChangeState(ConnectionState.Disconnected, message);
