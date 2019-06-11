@@ -26,6 +26,7 @@ namespace Soulseek.Tests.Unit
             bool autoAcknowledgePrivateMessages,
             DiagnosticLevel minimumDiagnosticLevel,
             int startingToken,
+            ListenerOptions listenerOptions,
             ConnectionOptions serverConnectionOptions,
             ConnectionOptions peerConnectionOptions,
             ConnectionOptions transferConnectionOptions)
@@ -36,6 +37,7 @@ namespace Soulseek.Tests.Unit
                 autoAcknowledgePrivateMessages,
                 minimumDiagnosticLevel,
                 startingToken,
+                listenerOptions,
                 serverConnectionOptions,
                 peerConnectionOptions,
                 transferConnectionOptions);

@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
@@ -118,7 +118,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
@@ -146,7 +146,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Throws(new ConnectionWriteException());
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
@@ -177,7 +177,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
 
             var connManager = new Mock<IConnectionManager>();
-            connManager.Setup(m => m.GetOrAddUnsolicitedConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);

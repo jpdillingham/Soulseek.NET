@@ -115,7 +115,6 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
-            await c.ConnectAsync();
 
             await c.WriteMessageAsync(msg);
 
@@ -141,8 +140,6 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
-
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
 
@@ -175,7 +172,6 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
-            await c.ConnectAsync();
 
             await c.WriteMessageAsync(msg);
 
@@ -206,7 +202,6 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
-            await c.ConnectAsync();
 
             await c.WriteMessageAsync(msg);
 
@@ -217,7 +212,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
 
         [Trait("Category", "ReadContinuouslyAsync")]
         [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
-        public async Task ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
+        public void ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
         {
             int callCount = 0;
 
@@ -249,8 +244,6 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
 
             c.MessageRead += (sender, e) => readMessage = e;
-
-            await c.ConnectAsync();
 
             Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 

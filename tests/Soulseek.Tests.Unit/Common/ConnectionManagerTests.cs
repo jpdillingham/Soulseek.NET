@@ -203,7 +203,7 @@ namespace Soulseek.Tests.Unit
 
             IMessageConnection connection = null;
 
-            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
+            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
 
             Assert.Null(ex);
 
@@ -230,7 +230,7 @@ namespace Soulseek.Tests.Unit
 
             IMessageConnection connection = null;
 
-            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
+            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
 
             Assert.Null(ex);
 
@@ -266,7 +266,7 @@ namespace Soulseek.Tests.Unit
 
             IMessageConnection connection = null;
 
-            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
+            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
 
             Assert.Null(ex);
 
@@ -291,7 +291,7 @@ namespace Soulseek.Tests.Unit
 
             IMessageConnection connection = null;
 
-            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
+            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
 
             Assert.Null(ex);
 
@@ -331,8 +331,8 @@ namespace Soulseek.Tests.Unit
             var c = new ConnectionManager(1, tokenFactory.Object, connFactory.Object);
 
 #pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-            c.GetOrAddUnsolicitedConnectionAsync(key1, username, messageHandler, options, CancellationToken.None);
-            c.GetOrAddUnsolicitedConnectionAsync(key2, username, messageHandler, options, CancellationToken.None);
+            c.GetOrAddUnsolicitedPeerConnectionAsync(key1, username, messageHandler, options, CancellationToken.None);
+            c.GetOrAddUnsolicitedPeerConnectionAsync(key2, username, messageHandler, options, CancellationToken.None);
 #pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
             Assert.Equal(1, c.ActivePeerConnections);

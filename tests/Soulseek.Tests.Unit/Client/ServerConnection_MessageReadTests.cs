@@ -292,7 +292,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var connMgr = new Mock<IConnectionManager>();
             connMgr
-                .Setup(m => m.GetOrAddSolicitedConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.GetOrAddSolicitedPeerConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new Mock<IMessageConnection>().Object))
                 .Callback<ConnectToPeerResponse, EventHandler<Message>, ConnectionOptions, CancellationToken>((r, e, c, t) => response = r);
 
@@ -316,7 +316,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(ip, response.IPAddress);
                 Assert.Equal(port, response.Port);
 
-                connMgr.Verify(m => m.GetOrAddSolicitedConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
+                connMgr.Verify(m => m.GetOrAddSolicitedPeerConnectionAsync(It.IsAny<ConnectToPeerResponse>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
