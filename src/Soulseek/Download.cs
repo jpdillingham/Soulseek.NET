@@ -163,6 +163,11 @@ namespace Soulseek
         internal IConnection Connection { get; set; }
 
         /// <summary>
+        ///     Gets the wait key for the download.
+        /// </summary>
+        internal WaitKey WaitKey => new WaitKey(Constants.DOWNLOAD, Username);
+
+        /// <summary>
         ///     Gets the wait key for direct transfers.
         /// </summary>
         internal WaitKey DirectTransferWaitKey => new WaitKey(Constants.DIRECTTRANSFER, Username);

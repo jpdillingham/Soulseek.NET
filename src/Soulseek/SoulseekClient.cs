@@ -719,7 +719,6 @@ namespace Soulseek
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token, options);
-            var downloadWaitKey = new WaitKey(Constants.DOWNLOAD, download.Username);
 
             Task<byte[]> downloadCompleted = null;
             var directConnection = false;
@@ -804,7 +803,7 @@ namespace Soulseek
                     var directTransferConnectionInitialized = Waiter.Wait<IConnection>(download.DirectTransferWaitKey, timeout: Options.PeerConnectionOptions.ReadTimeout, cancellationToken: cancellationToken);
 
                     // also prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(downloadWaitKey, cancellationToken);
+                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
@@ -831,15 +830,15 @@ namespace Soulseek
                 {
                     if (download.State.HasFlag(DownloadStates.Succeeded))
                     {
-                        Waiter.Complete(downloadWaitKey, download.Data);
+                        Waiter.Complete(download.WaitKey, download.Data);
                     }
                     else if (download.State.HasFlag(DownloadStates.TimedOut))
                     {
-                        Waiter.Throw(downloadWaitKey, new TimeoutException(message));
+                        Waiter.Throw(download.WaitKey, new TimeoutException(message));
                     }
                     else
                     {
-                        Waiter.Throw(downloadWaitKey, new ConnectionException($"Transfer failed: {message}"));
+                        Waiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
                     }
                 };
 
