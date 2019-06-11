@@ -18,6 +18,7 @@ namespace Soulseek
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Runtime.ExceptionServices;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
@@ -815,19 +816,19 @@ namespace Soulseek
                     peerConnection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                    var connectionInitialized = await Task.WhenAny(solicitedTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
-
-                    if (connectionInitialized == solicitedTransferConnectionInitialized)
+                    try
                     {
-                        Console.WriteLine($"----------------- Indirect");
-                    }
-                    else
-                    {
-                        Console.WriteLine($"+++++++++++++++++++++ Direct");
-                        directConnection = true;
-                    }
+                        var connectionInitialized = await Task.WhenAny(solicitedTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
+                        directConnection = connectionInitialized == directTransferConnectionInitialized;
 
-                    download.Connection = connectionInitialized.Result;
+                        Diagnostic.Info($"{(directConnection ? "Direct" : "Indirect")} transfer connection to {username} established.");
+
+                        download.Connection = connectionInitialized.Result;
+                    }
+                    catch (AggregateException ex)
+                    {
+                        ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                    }
                 }
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
