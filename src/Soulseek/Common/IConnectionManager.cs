@@ -91,7 +91,7 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        Task<IMessageConnection> GetOrAddDirectConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
@@ -103,12 +103,18 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The existing or new connection.</returns>
-        Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initializes new instance if one does not exist.
         /// </summary>
-        /// <remarks>Solicited connections (such as one used to retrieve search results) will be reused if possible.</remarks>
+        /// <remarks>
+        ///     <para>
+        ///         An unsolicited connection is one which is initiated locally for purposes of retrieving user info, browsing
+        ///         shares, etc.
+        ///     </para>
+        ///     <para>Solicited connections (such as one used to retrieve search results) will be reused if possible.</para>
+        /// </remarks>
         /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
         /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
         /// <param name="messageHandler">
@@ -117,7 +123,7 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The existing or new connection.</returns>
-        Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddUnsolicitedPeerConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.

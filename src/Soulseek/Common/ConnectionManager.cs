@@ -167,7 +167,7 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        public async Task<IMessageConnection> GetOrAddDirectConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        public async Task<IMessageConnection> GetOrAddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var connection = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options, tcpClient);
             var connectionKey = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
@@ -181,6 +181,7 @@ namespace Soulseek
             try
             {
                 Console.WriteLine($"Updating incoming connection.");
+
                 // always overwrite an existing connection with one that is incoming; the official client drops indirect
                 // connections when a direct connection is established.
                 PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
@@ -204,7 +205,7 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The existing or new connection.</returns>
-        public async Task<IMessageConnection> GetOrAddSolicitedConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        public async Task<IMessageConnection> GetOrAddSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
             IMessageConnection connection = null;
@@ -274,7 +275,7 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The existing or new connection.</returns>
-        public async Task<IMessageConnection> GetOrAddUnsolicitedConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        public async Task<IMessageConnection> GetOrAddUnsolicitedPeerConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
             var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);

@@ -110,7 +110,7 @@ namespace Soulseek
             {
                 if (e.Type == "P")
                 {
-                    ConnectionManager.GetOrAddDirectConnectionAsync(
+                    ConnectionManager.GetOrAddDirectPeerConnectionAsync(
                         e.Username,
                         e.IPAddress,
                         e.Port,
@@ -683,7 +683,7 @@ namespace Soulseek
                 var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(new WaitKey(MessageCode.PeerBrowseResponse, username), cancellationToken);
 
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
-                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
                 connection.Disconnected += (sender, message) =>
                 {
@@ -746,7 +746,7 @@ namespace Soulseek
             try
             {
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
-                var peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                var peerConnection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
                 Downloads.TryAdd(download.Token, download);
 
@@ -808,7 +808,7 @@ namespace Soulseek
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                    peerConnection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                    peerConnection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                     var connectionInitialized = await Task.WhenAny(solicitedTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
@@ -932,7 +932,7 @@ namespace Soulseek
                 var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
 
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
-                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
                 connection.Disconnected += (sender, message) =>
                 {
@@ -977,7 +977,7 @@ namespace Soulseek
                 var infoWait = Waiter.Wait<PeerInfoResponse>(new WaitKey(MessageCode.PeerInfoResponse, username), cancellationToken: cancellationToken);
 
                 var connectionKey = await GetPeerConnectionKeyAsync(username, cancellationToken).ConfigureAwait(false);
-                connection = await ConnectionManager.GetOrAddUnsolicitedConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
+                connection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
 
                 connection.Disconnected += (sender, message) =>
                 {
@@ -1259,7 +1259,7 @@ namespace Soulseek
                         }
                         else
                         {
-                            await ConnectionManager.GetOrAddSolicitedConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                            await ConnectionManager.GetOrAddSolicitedPeerConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
                         }
 
                         break;
