@@ -525,7 +525,7 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns(Task.Run(() => (int)length));
+                .Returns(Task.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
@@ -533,10 +533,11 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+            // this throws but we don't care because we're only testing the code that negotiates data type.
+            await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
-            Assert.Null(ex);
-
+            // the test passes if it throws as long as ReadAsync on the stream mock is invoked; the code made it past the
+            // data type negotiation.
             s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -661,9 +662,11 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            //await c.ConnectAsync();
 
-            await c.ReadAsync(1);
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 
@@ -717,13 +720,12 @@ namespace Soulseek.Tests.Unit.Tcp
 
             c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
 
-            await c.ReadAsync(1);
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
-            Thread.Sleep(2000);
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
-
-            s.Verify(m => m.Close(), Times.Once);
         }
     }
 }
