@@ -16,6 +16,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
+    using Soulseek.Tcp;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
@@ -36,7 +37,9 @@
             WebRoot = Configuration.GetValue<string>("WEBROOT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
 
-            var options = new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug);
+            var options = new SoulseekClientOptions(
+                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                listenerOptions: new ListenerOptions(enabled: true, port: 54859));
 
             Client = new SoulseekClient(options);
             Client.DiagnosticGenerated += (e, args) => Console.WriteLine($"[DIAG] [{args.Level}] {args.Message}");
