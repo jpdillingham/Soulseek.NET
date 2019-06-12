@@ -856,15 +856,9 @@ namespace Soulseek
 
                     UpdateState(DownloadStates.InProgress);
 
-                    if (directConnection)
-                    {
-                        // not sure what this is, but the remote client writes 4 garbage bytes prior to the file when we are directly connected
-                        await download.Connection.ReadAsync(4, cancellationToken).ConfigureAwait(false);
-                    }
+                    var bytes = await download.Connection.ReadAsync(download.Size + (directConnection ? 4 : 0), cancellationToken).ConfigureAwait(false);
 
-                    var bytes = await download.Connection.ReadAsync(download.Size, cancellationToken).ConfigureAwait(false);
-
-                    download.Data = bytes;
+                    download.Data = bytes.Skip(directConnection ? 4 : 0).ToArray();
                     download.State = DownloadStates.Succeeded;
                     download.Connection.Disconnect("Transfer complete.");
                 }
