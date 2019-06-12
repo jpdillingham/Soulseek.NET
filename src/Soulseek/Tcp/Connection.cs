@@ -70,6 +70,7 @@ namespace Soulseek.Tcp
                 State = ConnectionState.Connected;
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
+                Stream = TcpClient.GetStream();
             }
         }
 
@@ -134,9 +135,9 @@ namespace Soulseek.Tcp
         protected SystemTimer InactivityTimer { get; set; }
 
         /// <summary>
-        ///     Gets the network stream for the connection.
+        ///     Gets or sets sthe network stream for the connection.
         /// </summary>
-        protected Lazy<INetworkStream> Stream => new Lazy<INetworkStream>(() => TcpClient.GetStream());
+        protected INetworkStream Stream { get; set; }
 
         /// <summary>
         ///     Gets or sets the TcpClient used by the connection.
@@ -206,6 +207,7 @@ namespace Soulseek.Tcp
 
                 InactivityTimer?.Start();
                 WatchdogTimer.Start();
+                Stream = TcpClient.GetStream();
 
                 ChangeState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
@@ -229,12 +231,7 @@ namespace Soulseek.Tcp
 
                 InactivityTimer?.Stop();
                 WatchdogTimer?.Stop();
-
-                if (Stream.IsValueCreated)
-                {
-                    Stream.Value?.Close();
-                }
-
+                Stream?.Close();
                 TcpClient?.Close();
 
                 ChangeState(ConnectionState.Disconnected, message);
@@ -357,12 +354,7 @@ namespace Soulseek.Tcp
                     Disconnect();
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
-
-                    if (Stream.IsValueCreated)
-                    {
-                        Stream.Value?.Dispose();
-                    }
-
+                    Stream?.Dispose();
                     TcpClient?.Dispose();
                 }
 
@@ -386,12 +378,11 @@ namespace Soulseek.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                    var bytesRead = await Stream.Value.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
                     if (bytesRead == 0)
                     {
-                        Disconnect($"Remote connection closed.");
-                        break;
+                        throw new ConnectionException($"Remote connection closed.");
                     }
 
                     totalBytesRead += bytesRead;
@@ -415,7 +406,8 @@ namespace Soulseek.Tcp
         {
             try
             {
-                await Stream.Value.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
+                InactivityTimer?.Reset();
+                await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
                 InactivityTimer?.Reset();
             }
             catch (Exception ex)
