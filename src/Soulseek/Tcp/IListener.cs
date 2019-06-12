@@ -14,10 +14,34 @@ namespace Soulseek.Tcp
 {
     using System;
 
+    /// <summary>
+    ///     Listens for client connections for TCP network services.
+    /// </summary>
     internal interface IListener
     {
+        /// <summary>
+        ///     Occurs when a new connection is accepted.
+        /// </summary>
         event EventHandler<ConnectionAcceptedEventArgs> Accepted;
+
+        /// <summary>
+        ///     Gets a value indicating whether the listener is listening for connections.
+        /// </summary>
+        bool Listening { get; }
+
+        /// <summary>
+        ///     Gets the port of the listener.
+        /// </summary>
+        int Port { get; }
+
+        /// <summary>
+        ///     Starts the listener.
+        /// </summary>
         void Start();
+
+        /// <summary>
+        ///     Stops the listener.
+        /// </summary>
         void Stop();
     }
 }
