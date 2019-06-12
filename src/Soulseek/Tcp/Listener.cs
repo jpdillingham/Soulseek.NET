@@ -121,7 +121,7 @@ namespace Soulseek.Tcp
             }
             catch (Exception ex)
             {
-                throw new ConnectionException($"Failed to initialize incoming connection from {endPoint.Address}.");
+                throw new ConnectionException($"Failed to initialize incoming connection from {endPoint.Address}: {ex.Message}", ex);
             }
             finally
             {
