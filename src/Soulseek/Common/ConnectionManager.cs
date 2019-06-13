@@ -179,7 +179,7 @@ namespace Soulseek
 
             TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
-            await connection.WriteAsync(new PeerInitRequest(localUsername, Constants.TransferType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(new PeerInitRequest(localUsername, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
             return connection;
         }
@@ -298,7 +298,7 @@ namespace Soulseek
 
                     PeerConnections.AddOrUpdate(connectionKey, (semaphore, connection), (k, v) => (v.Semaphore, connection));
 
-                    await connection.WriteAsync(new PeerInitRequest(localUsername, Constants.TransferType.Peer, TokenFactory.NextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await connection.WriteAsync(new PeerInitRequest(localUsername, Constants.ConnectionType.Peer, TokenFactory.NextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
             }
             finally
@@ -358,7 +358,7 @@ namespace Soulseek
 
         private void RemoveMessageConnection(IMessageConnection connection)
         {
-            Console.WriteLine($"disconnectin connection to {connection.Username} {connection.IPAddress} {connection.Port}");
+            Console.WriteLine($"disconnecting connection to {connection.Username} {connection.IPAddress} {connection.Port}");
             if (PeerConnections.TryRemove(connection.Key, out _))
             {
                 // only release if we successfully removed a connection. this can throw if another thread released it first and the
