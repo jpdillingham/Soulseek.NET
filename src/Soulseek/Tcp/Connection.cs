@@ -125,11 +125,6 @@ namespace Soulseek.Tcp
         public ConnectionState State { get; protected set; }
 
         /// <summary>
-        ///     Gets or sets the TcpClient used by the connection.
-        /// </summary>
-        public ITcpClient TcpClient { get; protected set; }
-
-        /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
         /// </summary>
         protected bool Disposed { get; set; } = false;
@@ -143,6 +138,11 @@ namespace Soulseek.Tcp
         ///     Gets or sets sthe network stream for the connection.
         /// </summary>
         protected INetworkStream Stream { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the TcpClient used by the connection.
+        /// </summary>
+        protected ITcpClient TcpClient { get; set; }
 
         /// <summary>
         ///     Gets or sets the timer used to monitor the status of the TcpClient.
@@ -245,6 +245,21 @@ namespace Soulseek.Tcp
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Decouples and returns the underlying TCP connection for this connection, allowing the TCP connection to survive
+        ///     beyond the lifespan of this instance.
+        /// </summary>
+        /// <returns>The underlying TCP connection for this connection.</returns>
+        public ITcpClient HandoffTcpClient()
+        {
+            var tcpClient = TcpClient;
+
+            TcpClient = null;
+            Stream = null;
+
+            return tcpClient;
         }
 
         /// <summary>

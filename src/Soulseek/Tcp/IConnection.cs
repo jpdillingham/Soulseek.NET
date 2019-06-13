@@ -73,11 +73,6 @@ namespace Soulseek.Tcp
         ConnectionState State { get; }
 
         /// <summary>
-        ///     Gets the TcpClient used by the connection.
-        /// </summary>
-        ITcpClient TcpClient { get; }
-
-        /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -89,6 +84,13 @@ namespace Soulseek.Tcp
         /// </summary>
         /// <param name="message">The optional message or reason for the disconnect.</param>
         void Disconnect(string message = null);
+
+        /// <summary>
+        ///     Decouples and returns the underlying TCP connection for this connection, allowing the TCP connection to survive
+        ///     beyond the lifespan of this instance.
+        /// </summary>
+        /// <returns>The underlying TCP connection for this connection.</returns>
+        ITcpClient HandoffTcpClient();
 
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
