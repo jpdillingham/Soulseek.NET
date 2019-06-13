@@ -89,9 +89,8 @@ namespace Soulseek
         /// <param name="token">The transfer token.</param>
         /// <param name="tcpClient">The TCP client for the established connection.</param>
         /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        public IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken)
+        public IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options)
         {
             var connection = new Connection(ipAddress, port, options, tcpClient);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);

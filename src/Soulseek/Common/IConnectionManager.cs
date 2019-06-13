@@ -54,9 +54,8 @@ namespace Soulseek
         /// <param name="token">The transfer token.</param>
         /// <param name="tcpClient">The TCP client for the established connection.</param>
         /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken);
+        IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options);
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
