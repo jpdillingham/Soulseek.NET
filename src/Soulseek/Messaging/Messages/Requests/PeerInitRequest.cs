@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerInitRequest"/> class.
         /// </summary>
-        /// <param name="username">The username of the currently logged in account.</param>
+        /// <param name="username">The username of the currently logged in user.</param>
         /// <param name="transferType">The transfer type (P or F).</param>
         /// <param name="token">The unique token for the connection.</param>
         public PeerInitRequest(string username, string transferType, int token)
