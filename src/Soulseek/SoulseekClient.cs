@@ -116,14 +116,14 @@ namespace Soulseek
 
                 Listener.Accepted += (sender, e) =>
                 {
-                    if (e.Type == "P")
+                    if (e.Type == Constants.TransferType.Peer)
                     {
                         ConnectionManager.GetOrAddDirectPeerConnectionAsync(e.Username, e.IPAddress, e.Port, e.TcpClient, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None);
                     }
-                    else if (e.Type == "F")
+                    else if (e.Type == Constants.TransferType.Tranfer)
                     {
                         var connection = ConnectionManager.AddDirectTransferConnection(e.IPAddress, e.Port, e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
-                        Waiter.Complete(new WaitKey(Constants.DIRECTTRANSFER, e.Username), connection);
+                        Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, e.Username), connection);
                     }
 
                     // todo: diagnostic for unknown type
@@ -1243,7 +1243,7 @@ namespace Soulseek
                     case MessageCode.ServerConnectToPeer:
                         var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
 
-                        if (connectToPeerResponse.Type == "F")
+                        if (connectToPeerResponse.Type == Constants.TransferType.Tranfer)
                         {
                             // ensure that we are expecting at least one file from this user before we connect. the response
                             // doesn't contain any other identifying information about the file.

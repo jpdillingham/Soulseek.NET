@@ -83,17 +83,14 @@ namespace Soulseek.Tcp
 
         private async Task InitializeConnectionAsync(TcpClient client)
         {
-            var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-
             try
             {
                 var lengthBytes = await ReadAsync(client, 5).ConfigureAwait(false);
                 var length = BitConverter.ToInt32(lengthBytes, 0);
-                var code = (int)lengthBytes.Skip(4).ToArray()[0];
+                var code = (InitializationCode)lengthBytes.Skip(4).ToArray()[0];
                 var bytesRemaining = length - 1;
 
-                // peer init
-                if (code == 1)
+                if (code == InitializationCode.PeerInit)
                 {
                     var restBytes = await ReadAsync(client, bytesRemaining).ConfigureAwait(false);
                     var nameLen = BitConverter.ToInt32(restBytes, 0);
@@ -104,7 +101,7 @@ namespace Soulseek.Tcp
 
                     Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client), type, name, token));
                 }
-                else if (code == 0)
+                else if (code == InitializationCode.PierceFirewall)
                 {
                     // todo: handle pierce firewall
                 }
@@ -112,7 +109,7 @@ namespace Soulseek.Tcp
             catch (Exception ex)
             {
                 client.Dispose();
-                throw new ConnectionException($"Failed to initialize incoming connection from {endPoint.Address}: {ex.Message}", ex);
+                throw new ConnectionException($"Failed to initialize incoming connection from {((IPEndPoint)client.Client.RemoteEndPoint).Address}: {ex.Message}", ex);
             }
         }
 

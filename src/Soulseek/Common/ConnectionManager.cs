@@ -140,7 +140,7 @@ namespace Soulseek
 
             TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
-            await connection.WriteAsync(new PeerInitRequest(localUsername, "F", token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(new PeerInitRequest(localUsername, Constants.TransferType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
             return connection;
         }
@@ -299,7 +299,7 @@ namespace Soulseek
 
                     PeerConnections.AddOrUpdate(connectionKey, (semaphore, connection), (k, v) => (v.Semaphore, connection));
 
-                    await connection.WriteAsync(new PeerInitRequest(localUsername, "P", TokenFactory.NextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await connection.WriteAsync(new PeerInitRequest(localUsername, Constants.TransferType.Peer, TokenFactory.NextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
             }
             finally

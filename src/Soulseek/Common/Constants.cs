@@ -2,7 +2,16 @@
 {
     internal static class Constants
     {
-        public const string DOWNLOAD = "Download";
-        public const string DIRECTTRANSFER = "DirectTransfer";
+        internal static class WaitKey
+        {
+            public const string Download = "Download";
+            public const string DirectTransfer = "DirectTransfer";
+        }
+
+        internal static class TransferType
+        {
+            public const string Peer = "P";
+            public const string Tranfer = "F";
+        }
     }
 }
