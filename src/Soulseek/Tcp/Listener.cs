@@ -90,27 +90,17 @@ namespace Soulseek.Tcp
                 var lengthBytes = await ReadAsync(client, 5).ConfigureAwait(false);
                 var length = BitConverter.ToInt32(lengthBytes, 0);
                 var code = (int)lengthBytes.Skip(4).ToArray()[0];
+                var bytesRemaining = length - 1;
 
                 // peer init
                 if (code == 1)
                 {
-                    Console.WriteLine($"Length: {length}, Code: {code}");
-
-                    var bytesRemaining = length - 1;
-
                     var restBytes = await ReadAsync(client, bytesRemaining).ConfigureAwait(false);
                     var nameLen = BitConverter.ToInt32(restBytes, 0);
-                    Console.WriteLine($"Name len: {nameLen}");
                     var name = Encoding.ASCII.GetString(restBytes.Skip(4).Take(nameLen).ToArray());
-                    Console.WriteLine($"Name: {name}");
                     var typeLen = BitConverter.ToInt32(restBytes, 4 + nameLen);
-                    Console.WriteLine($"Type len: {typeLen}");
                     var type = Encoding.ASCII.GetString(restBytes.Skip(4 + nameLen + 4).Take(typeLen).ToArray());
-                    Console.WriteLine($"Type: {type}");
                     var token = BitConverter.ToInt32(restBytes, 4 + nameLen + 4 + typeLen);
-                    Console.WriteLine($"Token: {token}");
-
-                    Console.WriteLine(string.Join(" ", restBytes.Select(x => (int)x).ToArray()));
 
                     Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client), type, name, token));
                 }
@@ -121,11 +111,8 @@ namespace Soulseek.Tcp
             }
             catch (Exception ex)
             {
-                throw new ConnectionException($"Failed to initialize incoming connection from {endPoint.Address}: {ex.Message}", ex);
-            }
-            finally
-            {
                 client.Dispose();
+                throw new ConnectionException($"Failed to initialize incoming connection from {endPoint.Address}: {ex.Message}", ex);
             }
         }
 
