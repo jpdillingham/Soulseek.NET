@@ -16,7 +16,7 @@ namespace Soulseek.Messaging.Messages
     using System.Collections.Generic;
 
     /// <summary>
-    ///     Pierces a peer's firewall.
+    ///     Pierces a peer's firewall to initate a connection.
     /// </summary>
     public class PierceFirewallRequest
     {
