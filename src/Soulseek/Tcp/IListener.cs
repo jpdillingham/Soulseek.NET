@@ -22,7 +22,7 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Occurs when a new connection is accepted.
         /// </summary>
-        event EventHandler<ConnectionAcceptedEventArgs> Accepted;
+        event EventHandler<IConnection> Accepted;
 
         /// <summary>
         ///     Gets a value indicating whether the listener is listening for connections.

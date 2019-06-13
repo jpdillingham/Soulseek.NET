@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit
         {
             var d = new Download(username, filename, token);
 
-            Assert.Equal(new WaitKey(Constants.DOWNLOAD, username), d.WaitKey);
+            Assert.Equal(new WaitKey(Constants.WaitKey.Download, username), d.WaitKey);
         }
 
         [Trait("Category", "State")]

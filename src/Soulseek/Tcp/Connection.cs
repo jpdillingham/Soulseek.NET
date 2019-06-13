@@ -125,6 +125,11 @@ namespace Soulseek.Tcp
         public ConnectionState State { get; protected set; }
 
         /// <summary>
+        ///     Gets or sets the TcpClient used by the connection.
+        /// </summary>
+        public ITcpClient TcpClient { get; protected set; }
+
+        /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
         /// </summary>
         protected bool Disposed { get; set; } = false;
@@ -138,11 +143,6 @@ namespace Soulseek.Tcp
         ///     Gets or sets sthe network stream for the connection.
         /// </summary>
         protected INetworkStream Stream { get; set; }
-
-        /// <summary>
-        ///     Gets or sets the TcpClient used by the connection.
-        /// </summary>
-        protected ITcpClient TcpClient { get; set; }
 
         /// <summary>
         ///     Gets or sets the timer used to monitor the status of the TcpClient.
@@ -168,7 +168,7 @@ namespace Soulseek.Tcp
             cancellationToken = cancellationToken ?? CancellationToken.None;
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
-            // that ends when the result is set programmatically.  create another for cancellation via the externally provided token.
+            // that ends when the result is set programmatically. create another for cancellation via the externally provided token.
             var timeoutTaskCompletionSource = new TaskCompletionSource<bool>();
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -182,8 +182,8 @@ namespace Soulseek.Tcp
                     var connectTask = TcpClient.ConnectAsync(IPAddress, Port);
 
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
-                    // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same TCS.
-                    // either the timeout or the external token can now cancel the operation.
+                    // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same
+                    // TCS. either the timeout or the external token can now cancel the operation.
                     using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
                     using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
                     {

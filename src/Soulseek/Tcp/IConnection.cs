@@ -73,6 +73,11 @@ namespace Soulseek.Tcp
         ConnectionState State { get; }
 
         /// <summary>
+        ///     Gets the TcpClient used by the connection.
+        /// </summary>
+        ITcpClient TcpClient { get; }
+
+        /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>

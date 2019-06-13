@@ -13,11 +13,8 @@
 namespace Soulseek.Tcp
 {
     using System;
-    using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
-    using System.Text;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -39,7 +36,7 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Occurs when a new connection is accepted.
         /// </summary>
-        public event EventHandler<ConnectionAcceptedEventArgs> Accepted;
+        public event EventHandler<IConnection> Accepted;
 
         /// <summary>
         ///     Gets a value indicating whether the listener is listening for connections.
@@ -77,67 +74,14 @@ namespace Soulseek.Tcp
             while (Listening)
             {
                 var client = await TcpListener.AcceptTcpClientAsync().ConfigureAwait(false);
-                Task.Run(() => InitializeConnectionAsync(client)).Forget();
-            }
-        }
 
-        private async Task InitializeConnectionAsync(TcpClient client)
-        {
-            try
-            {
-                var lengthBytes = await ReadAsync(client, 5).ConfigureAwait(false);
-                var length = BitConverter.ToInt32(lengthBytes, 0);
-                var code = (InitializationCode)lengthBytes.Skip(4).ToArray()[0];
-                var bytesRemaining = length - 1;
-
-                if (code == InitializationCode.PeerInit)
+                Task.Run(() =>
                 {
-                    var restBytes = await ReadAsync(client, bytesRemaining).ConfigureAwait(false);
-                    var nameLen = BitConverter.ToInt32(restBytes, 0);
-                    var name = Encoding.ASCII.GetString(restBytes.Skip(4).Take(nameLen).ToArray());
-                    var typeLen = BitConverter.ToInt32(restBytes, 4 + nameLen);
-                    var type = Encoding.ASCII.GetString(restBytes.Skip(4 + nameLen + 4).Take(typeLen).ToArray());
-                    var token = BitConverter.ToInt32(restBytes, 4 + nameLen + 4 + typeLen);
-
-                    Accepted?.Invoke(this, new ConnectionAcceptedEventArgs(new TcpClientAdapter(client), type, name, token));
-                }
-                else if (code == InitializationCode.PierceFirewall)
-                {
-                    // todo: handle pierce firewall
-                }
+                    var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
+                    var eventArgs = new Connection(endPoint.Address, endPoint.Port, null, new TcpClientAdapter(client));
+                    Accepted?.Invoke(this, eventArgs);
+                }).Forget();
             }
-            catch (Exception ex)
-            {
-                client.Dispose();
-                throw new ConnectionException($"Failed to initialize incoming connection from {((IPEndPoint)client.Client.RemoteEndPoint).Address}: {ex.Message}", ex);
-            }
-        }
-
-        private async Task<byte[]> ReadAsync(TcpClient tcpClient, int length)
-        {
-            var result = new List<byte>();
-
-            var buffer = new byte[4096];
-            var totalBytesRead = 0;
-
-            while (totalBytesRead < length)
-            {
-                var bytesRemaining = length - totalBytesRead;
-                var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
-
-                var bytesRead = await tcpClient.GetStream().ReadAsync(buffer, 0, bytesToRead).ConfigureAwait(false);
-
-                if (bytesRead == 0)
-                {
-                    throw new ConnectionException($"Remote connection closed.");
-                }
-
-                totalBytesRead += bytesRead;
-                var data = buffer.Take(bytesRead);
-                result.AddRange(data);
-            }
-
-            return result.ToArray();
         }
     }
 }

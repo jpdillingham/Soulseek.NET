@@ -19,6 +19,7 @@ namespace Soulseek
     using System.Net;
     using System.Net.Sockets;
     using System.Runtime.ExceptionServices;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
@@ -113,21 +114,7 @@ namespace Soulseek
             if (Listener == null && Options.ListenerOptions.Enabled)
             {
                 Listener = new Listener(Options.ListenerOptions.Port);
-
-                Listener.Accepted += (sender, e) =>
-                {
-                    if (e.Type == Constants.TransferType.Peer)
-                    {
-                        ConnectionManager.GetOrAddDirectPeerConnectionAsync(e.Username, e.IPAddress, e.Port, e.TcpClient, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None);
-                    }
-                    else if (e.Type == Constants.TransferType.Tranfer)
-                    {
-                        var connection = ConnectionManager.AddDirectTransferConnection(e.IPAddress, e.Port, e.Token, e.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
-                        Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, e.Username), connection);
-                    }
-
-                    // todo: diagnostic for unknown type
-                };
+                Listener.Accepted += Listener_Accepted;
             }
         }
 
@@ -1212,6 +1199,51 @@ namespace Soulseek
         private void ServerConnection_Disconnected(object sender, string e)
         {
             Disconnect(e);
+        }
+
+        private async void Listener_Accepted(object sender, IConnection connection)
+        {
+            try
+            {
+                var lengthBytes = await connection.ReadAsync(5).ConfigureAwait(false);
+                var length = BitConverter.ToInt32(lengthBytes, 0);
+                var code = (InitializationCode)lengthBytes.Skip(4).ToArray()[0];
+                var bytesRemaining = length - 1;
+
+                string type = null;
+                string name = null;
+                int token = 0;
+
+                if (code == InitializationCode.PeerInit)
+                {
+                    var restBytes = await connection.ReadAsync(bytesRemaining).ConfigureAwait(false);
+                    var nameLen = BitConverter.ToInt32(restBytes, 0);
+                    name = Encoding.ASCII.GetString(restBytes.Skip(4).Take(nameLen).ToArray());
+                    var typeLen = BitConverter.ToInt32(restBytes, 4 + nameLen);
+                    type = Encoding.ASCII.GetString(restBytes.Skip(4 + nameLen + 4).Take(typeLen).ToArray());
+                    token = BitConverter.ToInt32(restBytes, 4 + nameLen + 4 + typeLen);
+                }
+                else if (code == InitializationCode.PierceFirewall)
+                {
+                    // todo: handle pierce firewall
+                }
+
+                if (type == Constants.TransferType.Peer)
+                {
+                    await ConnectionManager.GetOrAddDirectPeerConnectionAsync(name, connection.IPAddress, connection.Port, connection.TcpClient, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                }
+                else if (type == Constants.TransferType.Tranfer)
+                {
+                    var cconnection = ConnectionManager.AddDirectTransferConnection(connection.IPAddress, connection.Port, token, connection.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
+                    Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, name), cconnection);
+                }
+            }
+            catch
+            {
+                //connection.Dispose();
+            }
+
+            //// todo: diagnostic for unknown type
         }
 
         private async void ServerConnection_MessageRead(object sender, Message message)
