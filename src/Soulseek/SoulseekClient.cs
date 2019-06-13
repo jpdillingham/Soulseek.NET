@@ -1230,11 +1230,11 @@ namespace Soulseek
 
                 if (type == Constants.TransferType.Peer)
                 {
-                    await ConnectionManager.GetOrAddDirectPeerConnectionAsync(name, connection.IPAddress, connection.Port, connection.TcpClient, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                    await ConnectionManager.GetOrAddDirectPeerConnectionAsync(name, connection.IPAddress, connection.Port, connection.HandoffTcpClient(), PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
                 }
                 else if (type == Constants.TransferType.Tranfer)
                 {
-                    var cconnection = ConnectionManager.AddDirectTransferConnection(connection.IPAddress, connection.Port, token, connection.TcpClient, Options.PeerConnectionOptions, CancellationToken.None);
+                    var cconnection = ConnectionManager.AddDirectTransferConnection(connection.IPAddress, connection.Port, token, connection.HandoffTcpClient(), Options.TransferConnectionOptions);
                     Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, name), cconnection);
                 }
             }
