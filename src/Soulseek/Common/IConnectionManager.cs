@@ -47,6 +47,21 @@ namespace Soulseek
         int WaitingPeerConnections { get; }
 
         /// <summary>
+        ///     Adds a new peer <see cref="IMessageConnection"/> from an incoming direct connection.
+        /// </summary>
+        /// <param name="username">The username of the connection.</param>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="tcpClient">The TCP client for the established connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        Task<IMessageConnection> AddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
+
+        /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> from an incoming direct connection.
         /// </summary>
         /// <param name="ipAddress">The IP address of the connection.</param>
@@ -76,21 +91,6 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
         Task<IConnection> AddUnsolicitedTransferConnectionAsync(ConnectionKey connectionKey, int token, string localUsername, ConnectionOptions options, CancellationToken cancellationToken);
-
-        /// <summary>
-        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
-        /// </summary>
-        /// <param name="username">The username of the connection.</param>
-        /// <param name="ipAddress">The IP address of the connection.</param>
-        /// <param name="port">The port of the connection.</param>
-        /// <param name="tcpClient">The TCP client for the established connection.</param>
-        /// <param name="messageHandler">
-        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
-        /// </param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The new connection.</returns>
-        Task<IMessageConnection> GetOrAddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.

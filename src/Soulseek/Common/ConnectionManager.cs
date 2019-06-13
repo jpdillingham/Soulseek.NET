@@ -82,6 +82,46 @@ namespace Soulseek
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
 
         /// <summary>
+        ///     Adds a new peer <see cref="IMessageConnection"/> from an incoming direct connection.
+        /// </summary>
+        /// <param name="username">The username of the connection.</param>
+        /// <param name="ipAddress">The IP address of the connection.</param>
+        /// <param name="port">The port of the connection.</param>
+        /// <param name="tcpClient">The TCP client for the established connection.</param>
+        /// <param name="messageHandler">
+        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
+        /// </param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
+        /// <returns>The new connection.</returns>
+        public async Task<IMessageConnection> AddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
+        {
+            var connection = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options, tcpClient);
+            var connectionKey = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+
+            connection.MessageRead += messageHandler;
+            connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
+
+            var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                Console.WriteLine($"Updating incoming connection.");
+
+                // always overwrite an existing connection with one that is incoming; the official client drops indirect
+                // connections when a direct connection is established.
+                PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+
+            return connection;
+        }
+
+        /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> from an incoming direct connection.
         /// </summary>
         /// <param name="ipAddress">The IP address of the connection.</param>
@@ -151,46 +191,6 @@ namespace Soulseek
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
-        /// </summary>
-        /// <param name="username">The username of the connection.</param>
-        /// <param name="ipAddress">The IP address of the connection.</param>
-        /// <param name="port">The port of the connection.</param>
-        /// <param name="tcpClient">The TCP client for the established connection.</param>
-        /// <param name="messageHandler">
-        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
-        /// </param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The new connection.</returns>
-        public async Task<IMessageConnection> GetOrAddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken)
-        {
-            var connection = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options, tcpClient);
-            var connectionKey = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-
-            connection.MessageRead += messageHandler;
-            connection.Disconnected += (sender, e) => RemoveMessageConnection(connection);
-
-            var (semaphore, _) = await GetOrAddMessageConnectionAsync(connectionKey).ConfigureAwait(false);
-            await semaphore.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                Console.WriteLine($"Updating incoming connection.");
-
-                // always overwrite an existing connection with one that is incoming; the official client drops indirect
-                // connections when a direct connection is established.
-                PeerConnections.AddOrUpdate(connectionKey, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-
-            return connection;
         }
 
         /// <summary>
