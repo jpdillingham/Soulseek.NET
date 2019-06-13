@@ -1205,42 +1205,43 @@ namespace Soulseek
         {
             try
             {
-                var lengthBytes = await connection.ReadAsync(5).ConfigureAwait(false);
+                var lengthBytes = await connection.ReadAsync(4).ConfigureAwait(false);
                 var length = BitConverter.ToInt32(lengthBytes, 0);
-                var code = (InitializationCode)lengthBytes.Skip(4).ToArray()[0];
-                var bytesRemaining = length - 1;
 
-                string type = null;
-                string name = null;
-                int token = 0;
+                var bodyBytes = await connection.ReadAsync(length).ConfigureAwait(false);
+                byte[] message = lengthBytes.Concat(bodyBytes).ToArray();
 
-                if (code == InitializationCode.PeerInit)
+                if (PeerInitResponse.TryParse(message, out var peerInit))
                 {
-                    var restBytes = await connection.ReadAsync(bytesRemaining).ConfigureAwait(false);
-                    var nameLen = BitConverter.ToInt32(restBytes, 0);
-                    name = Encoding.ASCII.GetString(restBytes.Skip(4).Take(nameLen).ToArray());
-                    var typeLen = BitConverter.ToInt32(restBytes, 4 + nameLen);
-                    type = Encoding.ASCII.GetString(restBytes.Skip(4 + nameLen + 4).Take(typeLen).ToArray());
-                    token = BitConverter.ToInt32(restBytes, 4 + nameLen + 4 + typeLen);
-                }
-                else if (code == InitializationCode.PierceFirewall)
-                {
-                    // todo: handle pierce firewall
+                    if (peerInit.TransferType == Constants.TransferType.Peer)
+                    {
+                        await ConnectionManager.GetOrAddDirectPeerConnectionAsync(
+                            peerInit.Username,
+                            connection.IPAddress,
+                            connection.Port,
+                            connection.HandoffTcpClient(),
+                            PeerConnection_MessageRead,
+                            Options.PeerConnectionOptions,
+                            CancellationToken.None).ConfigureAwait(false);
+                    }
+                    else if (peerInit.TransferType == Constants.TransferType.Tranfer)
+                    {
+                        var cconnection = ConnectionManager.AddDirectTransferConnection(
+                            connection.IPAddress,
+                            connection.Port,
+                            peerInit.Token,
+                            connection.HandoffTcpClient(),
+                            Options.TransferConnectionOptions);
+
+                        Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username), cconnection);
+                    }
                 }
 
-                if (type == Constants.TransferType.Peer)
-                {
-                    await ConnectionManager.GetOrAddDirectPeerConnectionAsync(name, connection.IPAddress, connection.Port, connection.HandoffTcpClient(), PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
-                }
-                else if (type == Constants.TransferType.Tranfer)
-                {
-                    var cconnection = ConnectionManager.AddDirectTransferConnection(connection.IPAddress, connection.Port, token, connection.HandoffTcpClient(), Options.TransferConnectionOptions);
-                    Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, name), cconnection);
-                }
+                // todo: pierce firewall response
             }
             catch
             {
-                //connection.Dispose();
+                connection.Dispose();
             }
 
             //// todo: diagnostic for unknown type
