@@ -39,7 +39,11 @@
 
             var options = new SoulseekClientOptions(
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
-                listenerOptions: new ListenerOptions(enabled: true, port: 54859));
+                concurrentPeerConnections: 1000000,
+                serverConnectionOptions: new ConnectionOptions(readTimeout: 15),
+                listenerOptions: new ListenerOptions(enabled: true, port: 54859),
+                peerConnectionOptions: new ConnectionOptions(readTimeout: 5),
+                transferConnectionOptions: new ConnectionOptions(readTimeout: 5));
 
             Client = new SoulseekClient(options);
             Client.DiagnosticGenerated += (e, args) => Console.WriteLine($"[DIAG] [{args.Level}] {args.Message}");
