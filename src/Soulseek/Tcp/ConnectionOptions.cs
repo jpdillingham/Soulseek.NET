@@ -22,12 +22,12 @@ namespace Soulseek.Tcp
         /// </summary>
         /// <param name="bufferSize">The read and write buffer size for underlying TCP connections.</param>
         /// <param name="connectTimeout">The connection timeout, in seconds, for client and peer TCP connections.</param>
-        /// <param name="readTimeout">The read timeout, in seconds, for peer TCP connections.</param>
-        public ConnectionOptions(int bufferSize = 4096, int connectTimeout = 5, int readTimeout = 5)
+        /// <param name="inactivityTimeout">The inactivity timeout, in seconds, for peer TCP connections.</param>
+        public ConnectionOptions(int bufferSize = 4096, int connectTimeout = 5, int inactivityTimeout = 30)
         {
             BufferSize = bufferSize;
             ConnectTimeout = connectTimeout;
-            ReadTimeout = readTimeout;
+            InactivityTimeout = inactivityTimeout;
         }
 
         /// <summary>
@@ -41,12 +41,12 @@ namespace Soulseek.Tcp
         public int ConnectTimeout { get; }
 
         /// <summary>
-        ///     Gets the read timeout, in seconds, for peer TCP connections.
+        ///     Gets the inactivity timeout, in seconds, for peer TCP connections.
         /// </summary>
         /// <remarks>
         ///     Once connected and after reading data, if a no additional data is read within this threshold the connection will be
         ///     forcibly disconnected.
         /// </remarks>
-        public int ReadTimeout { get; }
+        public int InactivityTimeout { get; }
     }
 }
