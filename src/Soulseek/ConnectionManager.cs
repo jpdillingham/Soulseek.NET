@@ -164,9 +164,9 @@ namespace Soulseek
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        public async Task<IConnection> AddSolicitedTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken)
+        public async Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, CancellationToken? cancellationToken = null)
         {
-            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, options);
+            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, SoulseekClient.Options.TransferConnectionOptions);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);

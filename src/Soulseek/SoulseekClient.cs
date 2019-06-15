@@ -1046,7 +1046,7 @@ namespace Soulseek
             try
             {
                 connection = await ConnectionManager
-                    .AddSolicitedTransferConnectionAsync(downloadResponse, Options.TransferConnectionOptions, CancellationToken.None)
+                    .AddTransferConnectionAsync(downloadResponse)
                     .ConfigureAwait(false);
 
                 var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
@@ -1282,8 +1282,7 @@ namespace Soulseek
                         }
                         else
                         {
-                            await ConnectionManager.GetOrAddSolicitedPeerConnectionAsync(connectToPeerResponse);
-                            //await ConnectionManager.GetOrAddSolicitedPeerConnectionAsync(connectToPeerResponse, PeerConnection_MessageRead, Options.PeerConnectionOptions, CancellationToken.None).ConfigureAwait(false);
+                            await ConnectionManager.GetOrAddSolicitedPeerConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                         }
 
                         break;

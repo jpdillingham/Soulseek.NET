@@ -47,39 +47,13 @@ namespace Soulseek
         int WaitingPeerConnections { get; }
 
         /// <summary>
-        ///     Adds a new peer <see cref="IMessageConnection"/> from an incoming direct connection.
-        /// </summary>
-        /// <param name="username">The username of the connection.</param>
-        /// <param name="ipAddress">The IP address of the connection.</param>
-        /// <param name="port">The port of the connection.</param>
-        /// <param name="tcpClient">The TCP client for the established connection.</param>
-        /// <param name="messageHandler">
-        ///     The message handler to subscribe to the connection's <see cref="IMessageConnection.MessageRead"/> event.
-        /// </param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The new connection.</returns>
-        Task<IMessageConnection> AddDirectPeerConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient, ConnectionOptions options, CancellationToken cancellationToken);
-
-        /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/> from an incoming direct connection.
-        /// </summary>
-        /// <param name="ipAddress">The IP address of the connection.</param>
-        /// <param name="port">The port of the connection.</param>
-        /// <param name="token">The transfer token.</param>
-        /// <param name="tcpClient">The TCP client for the established connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <returns>The new connection.</returns>
-        IConnection AddDirectTransferConnection(IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options);
-
-        /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
         /// <returns>The new connection.</returns>
-        Task<IConnection> AddSolicitedTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IConnection> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and sends a peer init request.
@@ -95,26 +69,6 @@ namespace Soulseek
         Task<IMessageConnection> GetPeerConnectionAsync(string username, ConnectionOptions options, CancellationToken cancellationToken);
 
         Task<IMessageConnection> GetOrAddSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-
-        /// <summary>
-        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initializes new instance if one does not exist.
-        /// </summary>
-        /// <remarks>
-        ///     <para>
-        ///         An unsolicited connection is one which is initiated locally for purposes of retrieving user info, browsing
-        ///         shares, etc.
-        ///     </para>
-        ///     <para>Solicited connections (such as one used to retrieve search results) will be reused if possible.</para>
-        /// </remarks>
-        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
-        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
-        /// <param name="messageHandler">
-        ///     The message handler to substribe to the conection's <see cref="IMessageConnection.MessageRead"/> event.
-        /// </param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The existing or new connection.</returns>
-        //Task<IMessageConnection> GetOrAddUnsolicitedPeerConnectionAsync(ConnectionKey connectionKey, string localUsername, EventHandler<Message> messageHandler, ConnectionOptions options, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
