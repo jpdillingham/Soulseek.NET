@@ -33,7 +33,6 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerConnectionManager"/> class.
         /// </summary>
-        /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
         internal PeerConnectionManager(
             IListener listener,
@@ -44,14 +43,14 @@ namespace Soulseek
             IConnectionFactory connectionFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = soulseekClient;
-            ConcurrentMessageConnectionLimit = concurrentMessageConnectionLimit;
-
-            if (ConcurrentMessageConnectionLimit < 1)
+            if (concurrentMessageConnectionLimit < 1)
             {
                 throw new ArgumentOutOfRangeException(nameof(concurrentMessageConnectionLimit), $"Concurrent message connection limit must be greater than zero.");
             }
 
+            ConcurrentMessageConnectionLimit = concurrentMessageConnectionLimit;
+
+            SoulseekClient = soulseekClient;
             MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
             MessageConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
 
@@ -62,8 +61,8 @@ namespace Soulseek
             Listener = listener;
             Listener.Accepted += Listener_Accepted;
 
-            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             MessageHandler = messageHandler;
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
@@ -318,26 +317,34 @@ namespace Soulseek
 
                     try
                     {
+                        Diagnostic.Debug($"Attempting direct connection to {username} ({address.IPAddress}:{address.Port})");
+
                         connection = await GetUnsolicitedPeerConnectionAsync(connectionKey, MessageHandler, options, cancellationToken).ConfigureAwait(false);
                         MessageConnections.AddOrUpdate(connectionKey.Username, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+
+                        Diagnostic.Debug($"Direct connection to {username} ({address.IPAddress}:{address.Port}) established.");
                         return connection;
                     }
                     catch
                     {
                         try
                         {
+                            Diagnostic.Debug($"Direct connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
+
                             connection = await GetIndirectMessageConnection(username, cancellationToken).ConfigureAwait(false);
                             MessageConnections.AddOrUpdate(connectionKey.Username, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+
+                            Diagnostic.Debug($"Indirect connection to {username} ({address.IPAddress}:{address.Port})");
                             return connection;
                         }
                         catch
                         {
-                            throw new ConnectionException($"Unable to establish connection to {username} ({address.IPAddress}:{address.Port})");
+                            var msg = $"Failed to establish connection to {username} ({address.IPAddress}:{address.Port})";
+                            Diagnostic.Warning(msg);
+                            throw new ConnectionException(msg);
                         }
                     }
                 }
-
-
             }
             finally
             {
