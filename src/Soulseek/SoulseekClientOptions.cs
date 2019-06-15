@@ -23,7 +23,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
-        /// <param name="concurrentPeerConnectionLimit">The number of allowed concurrent outgoing peer message connections.</param>
+        /// <param name="concurrentPeerMessageConnectionLimit">The number of allowed concurrent outgoing peer message connections.</param>
         /// <param name="messageTimeout">The message timeout, in seconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
@@ -35,7 +35,7 @@ namespace Soulseek
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         public SoulseekClientOptions(
             int? listenPort = null,
-            int concurrentPeerConnectionLimit = 500,
+            int concurrentPeerMessageConnectionLimit = 500,
             int messageTimeout = 5,
             bool autoAcknowledgePrivateMessages = true,
             DiagnosticLevel minimumDiagnosticLevel = DiagnosticLevel.Info,
@@ -45,7 +45,7 @@ namespace Soulseek
             ConnectionOptions transferConnectionOptions = null)
         {
             ListenPort = listenPort;
-            ConcurrentPeerConnectionLimit = concurrentPeerConnectionLimit;
+            ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
             MessageTimeout = messageTimeout;
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
@@ -63,7 +63,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
         /// </summary>
-        public int ConcurrentPeerConnectionLimit { get; }
+        public int ConcurrentPeerMessageConnectionLimit { get; }
 
         /// <summary>
         ///     Gets the port on which to listen for incoming connections. (Default = null; do not listen).

@@ -37,9 +37,14 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of waiting peer message connections.
         /// </summary>
-        int WaitingPeerConnections { get; }
+        int WaitingMessageConnections { get; }
 
-        int ConcurrentPeerConnectionLimit { get; }
+        int ConcurrentMessageConnectionLimit { get; }
+
+        /// <summary>
+        ///     Occurs when an internal diagnostic message is generated.
+        /// </summary>
+        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
@@ -61,7 +66,7 @@ namespace Soulseek
         /// <returns>The new connection.</returns>
         Task<IConnection> AddUnsolicitedTransferConnectionAsync(ConnectionKey connectionKey, int token, ConnectionOptions options, CancellationToken cancellationToken);
 
-        Task<IMessageConnection> GetPeerConnectionAsync(string username, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetMessageConnectionAsync(string username, ConnectionOptions options, CancellationToken cancellationToken);
 
         Task<IMessageConnection> GetOrAddSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
 

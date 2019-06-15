@@ -79,8 +79,8 @@
 
             var options = new SoulseekClientOptions(
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 5),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, readTimeout: 10)
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 15),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 5)
             );
 
             using (var client = new SoulseekClient(options))

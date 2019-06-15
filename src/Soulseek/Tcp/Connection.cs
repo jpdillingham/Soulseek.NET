@@ -45,10 +45,10 @@ namespace Soulseek.Tcp
             {
                 Enabled = false,
                 AutoReset = false,
-                Interval = Options.ReadTimeout * 1000,
+                Interval = Options.InactivityTimeout * 1000,
             };
 
-            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {Options.ReadTimeout} seconds was reached.");
+            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
 
             WatchdogTimer = new SystemTimer()
             {
