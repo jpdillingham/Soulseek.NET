@@ -1,4 +1,4 @@
-﻿// <copyright file="IConnectionManager.cs" company="JP Dillingham">
+﻿// <copyright file="IPeerConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -22,12 +22,12 @@ namespace Soulseek
     /// <summary>
     ///     Manages peer <see cref="IConnection"/> instances for the application.
     /// </summary>
-    internal interface IConnectionManager : IDisposable
+    internal interface IPeerConnectionManager : IDisposable
     {
         /// <summary>
-        ///     Gets the number of active peer message connections.
+        ///     Gets the number of active peer connections.
         /// </summary>
-        int ActivePeerConnections { get; }
+        int ActiveMessageConnections { get; }
 
         /// <summary>
         ///     Gets the number of active transfer connections.
@@ -35,14 +35,11 @@ namespace Soulseek
         int ActiveTransferConnections { get; }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent peer message connections.
-        /// </summary>
-        int ConcurrentPeerConnections { get; }
-
-        /// <summary>
         ///     Gets the number of waiting peer message connections.
         /// </summary>
         int WaitingPeerConnections { get; }
+
+        int ConcurrentPeerConnectionLimit { get; }
 
         /// <summary>
         ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.

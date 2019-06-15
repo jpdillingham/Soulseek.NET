@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionManager.cs" company="JP Dillingham">
+﻿// <copyright file="PeerConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -24,35 +24,35 @@ namespace Soulseek
     using Soulseek.Tcp;
 
     /// <summary>
-    ///     Manages a queue of <see cref="IConnection"/>.
+    ///     Manages peer <see cref="IConnection"/> instances for the application.
     /// </summary>
-    internal sealed class ConnectionManager : IConnectionManager
+    internal sealed class PeerConnectionManager : IPeerConnectionManager
     {
         private int waitingPeerConnections = 0;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionManager"/> class.
+        ///     Initializes a new instance of the <see cref="PeerConnectionManager"/> class.
         /// </summary>
-        /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
-        internal ConnectionManager(
-            ISoulseekClient soulseekClient,
+        internal PeerConnectionManager(
+            int concurrentPeerConnectionLimit,
             IListener listener,
+            ISoulseekClient soulseekClient,
             EventHandler<Message> peerMessageHandler,
             IDiagnosticFactory diagnosticFactory,
             IWaiter waiter = null,
             IConnectionFactory connectionFactory = null)
         {
             SoulseekClient = soulseekClient;
-            ConcurrentPeerConnections = SoulseekClient.Options.ConcurrentPeerConnections;
+            ConcurrentPeerConnectionLimit = concurrentPeerConnectionLimit;
 
-            if (ConcurrentPeerConnections < 1)
+            if (ConcurrentPeerConnectionLimit < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(ConcurrentPeerConnections), $"Concurrent connection option must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(concurrentPeerConnectionLimit), $"Concurrent peer connection option must be greater than zero.");
             }
 
-            PeerSemaphore = new SemaphoreSlim(ConcurrentPeerConnections, ConcurrentPeerConnections);
+            PeerSemaphore = new SemaphoreSlim(ConcurrentPeerConnectionLimit, ConcurrentPeerConnectionLimit);
             PeerConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
 
             TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
@@ -80,7 +80,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of allowed concurrent peer message connections.
         /// </summary>
-        public int ConcurrentPeerConnections { get; }
+        public int ConcurrentPeerConnectionLimit { get; }
 
         /// <summary>
         ///     Gets the number of waiting peer message connections.
@@ -97,7 +97,7 @@ namespace Soulseek
         private ConcurrentDictionary<int, string> PendingSolicitedConnections { get; set; } = new ConcurrentDictionary<int, string>();
         private ISoulseekClient SoulseekClient { get; }
         private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
-        private IWaiter Waiter { get; }
+        //private IWaiter Waiter { get; }
 
         /// <summary>
         ///     Adds a new peer <see cref="IMessageConnection"/> from an incoming direct connection.
