@@ -118,7 +118,6 @@ namespace Soulseek
                 listener: Listener,
                 soulseekClient: this,
                 messageHandler: PeerConnection_MessageRead,
-                diagnosticFactory: Diagnostic,
                 waiter: Waiter);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
@@ -1057,7 +1056,7 @@ namespace Soulseek
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
+                //Diagnostic.Warning($"Error initializing download connection from {downloadResponse.Username}: {ex.Message}", ex);
                 connection?.Disconnect($"Failed to initialize transfer: {ex.Message}");
                 return;
             }
