@@ -95,11 +95,6 @@ namespace Soulseek.Tcp
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        ///     Gets or sets the generic connection context.
-        /// </summary>
-        public object Context { get; set; }
-
-        /// <summary>
         ///     Gets or sets the remote IP address of the connection.
         /// </summary>
         public IPAddress IPAddress { get; protected set; }
