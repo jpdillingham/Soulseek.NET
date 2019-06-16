@@ -359,7 +359,6 @@ namespace Soulseek
                     .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToMessage(), cancellationToken)
                     .ConfigureAwait(false);
 
-                Console.WriteLine($"Waiting on {username} {token}");
                 var connection = await Waiter.Wait<IMessageConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, token), null, cancellationToken).ConfigureAwait(false);
 
                 MessageConnections.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
