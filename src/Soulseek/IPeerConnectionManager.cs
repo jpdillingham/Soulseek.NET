@@ -66,9 +66,9 @@ namespace Soulseek
         /// <returns>The new connection.</returns>
         Task<IConnection> AddUnsolicitedTransferConnectionAsync(ConnectionKey connectionKey, int token, ConnectionOptions options, CancellationToken cancellationToken);
 
-        Task<IMessageConnection> GetMessageConnectionAsync(string username, ConnectionOptions options, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, CancellationToken cancellationToken);
 
-        Task<IMessageConnection> GetOrAddSolicitedPeerConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
+        Task<IMessageConnection> AddOrUpdateMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
 
         /// <summary>
         ///     Disposes and removes all active and queued connections.
