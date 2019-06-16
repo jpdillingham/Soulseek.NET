@@ -46,7 +46,15 @@
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5));
 
             Client = new SoulseekClient(options);
-            Client.DiagnosticGenerated += (e, args) => Console.WriteLine($"[DIAG:{e.GetType().Name}] [{args.Level}] {args.Message}");
+            Client.DiagnosticGenerated += (e, args) =>
+            {
+                if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
+                if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+
+                Console.WriteLine($"[DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+                Console.ResetColor();
+            };
+
             Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
             //Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
