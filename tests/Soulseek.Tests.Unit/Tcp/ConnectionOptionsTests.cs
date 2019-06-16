@@ -30,7 +30,7 @@ namespace Soulseek.Tests.Unit.Tcp
 
             Assert.Equal(8192, o.BufferSize);
             Assert.Equal(10, o.ConnectTimeout);
-            Assert.Equal(30, o.ReadTimeout);
+            Assert.Equal(30, o.InactivityTimeout);
         }
     }
 }

@@ -42,7 +42,6 @@ namespace Soulseek.Tests.Unit.Tcp
             Assert.Equal(port, c.Port);
             Assert.Equal(new ConnectionKey(ip, port), c.Key);
             Assert.Equal(ConnectionState.Pending, c.State);
-            Assert.Null(c.Context);
         }
 
         [Trait("Category", "Instantiation")]
@@ -73,22 +72,6 @@ namespace Soulseek.Tests.Unit.Tcp
             var ct = c.GetProperty<ITcpClient>("TcpClient");
 
             Assert.Equal(t.Object, ct);
-        }
-
-        [Trait("Category", "Context")]
-        [Fact(DisplayName = "Context get and set")]
-        public void Context_Get_And_Set()
-        {
-            var ip = new IPAddress(0x0);
-            var port = 1;
-
-            var c = new Connection(ip, port);
-
-            var context = Guid.NewGuid();
-
-            c.Context = context;
-
-            Assert.Equal(context, c.Context);
         }
 
         [Trait("Category", "Dispose")]
