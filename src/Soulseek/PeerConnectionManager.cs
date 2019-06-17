@@ -158,7 +158,7 @@ namespace Soulseek
                     connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, SoulseekClient.Options.PeerConnectionOptions);
 
                     connection.MessageRead += MessageHandler;
-                    connection.Disconnected += (sender, e) => RemoveMessageConnectionRecord(connection);
+                    connection.Disconnected += MessageConnection_Disconnected;
 
                     await connection.ConnectAsync().ConfigureAwait(false);
 
@@ -313,7 +313,7 @@ namespace Soulseek
             var connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, connectionKey.Username, connectionKey.IPAddress, connectionKey.Port, SoulseekClient.Options.PeerConnectionOptions, tcpClient);
 
             connection.MessageRead += MessageHandler;
-            connection.Disconnected += (sender, e) => RemoveMessageConnectionRecord(connection);
+            connection.Disconnected += MessageConnection_Disconnected;
 
             var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(connectionKey.Username).ConfigureAwait(false);
             await semaphore.WaitAsync().ConfigureAwait(false);
@@ -350,7 +350,7 @@ namespace Soulseek
             var connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, SoulseekClient.Options.PeerConnectionOptions);
 
             connection.MessageRead += MessageHandler;
-            connection.Disconnected += (sender, e) => RemoveMessageConnectionRecord(connection);
+            connection.Disconnected += MessageConnection_Disconnected;
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
             await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
@@ -376,9 +376,15 @@ namespace Soulseek
                     .GetMessageConnection(MessageConnectionType.Peer, username, incomingConnection.IPAddress, incomingConnection.Port, SoulseekClient.Options.PeerConnectionOptions, incomingConnection.HandoffTcpClient());
 
                 connection.MessageRead += MessageHandler;
-                connection.Disconnected += (s, e) => RemoveMessageConnectionRecord(connection);
+                connection.Disconnected += MessageConnection_Disconnected;
 
-                MessageConnections.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) => (v.Semaphore, connection));
+                MessageConnections.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
+                {
+                    // remove the disconnected handler from the connection we are discarding to prevent it from removing the new one when it disconnects.
+                    // todo: do this everywhere
+                    v.Connection.Disconnected -= MessageConnection_Disconnected;
+                    return (v.Semaphore, connection);
+                });
                 return connection;
             }
             finally
@@ -469,6 +475,11 @@ namespace Soulseek
                 connection.Disconnect(ex.Message);
                 connection.Dispose();
             }
+        }
+
+        private void MessageConnection_Disconnected(object sender, string message)
+        {
+            RemoveMessageConnectionRecord((IMessageConnection)sender);
         }
 
         private void RemoveMessageConnectionRecord(IMessageConnection connection)
