@@ -42,7 +42,7 @@ class Downloads extends Component {
                         <Card.Content>
                             <Card.Header>{user.username}</Card.Header>
                             {user.directories && user.directories.map((dir, index) => 
-                                <DownloadList key={index} directoryName={dir.directory} files={dir.files}/>
+                                <DownloadList key={index} username={user.username} directoryName={dir.directory} files={dir.files}/>
                             )}
                         </Card.Content>
                     </Card>
