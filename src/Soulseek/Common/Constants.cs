@@ -18,6 +18,7 @@ namespace Soulseek
         {
             public const string Download = "Download";
             public const string DirectTransfer = "DirectTransfer";
+            public const string IndirectTransfer = "IndirectTransfer";
             public const string SolicitedConnection = "SolicitedConnection";
         }
 

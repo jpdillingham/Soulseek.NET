@@ -170,12 +170,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the wait key for direct transfers.
         /// </summary>
-        internal WaitKey DirectTransferWaitKey => new WaitKey(Constants.WaitKey.DirectTransfer, Username);
+        internal WaitKey DirectTransferWaitKey => new WaitKey(Constants.WaitKey.DirectTransfer, Username, RemoteToken);
 
         /// <summary>
-        ///     Gets the wait key for solicited.
+        ///     Gets the wait key for indirect transfers.
         /// </summary>
-        internal WaitKey SolicitedTransferWaitKey => new WaitKey(Username, Filename, Token);
+        internal WaitKey IndirectTransferWaitKey => new WaitKey(Constants.WaitKey.IndirectTransfer, Username, Filename, RemoteToken);
 
         /// <summary>
         ///     Updates the download progress.

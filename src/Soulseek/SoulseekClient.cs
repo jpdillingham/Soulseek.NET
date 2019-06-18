@@ -772,7 +772,6 @@ namespace Soulseek
 
             try
             {
-                //var peerConnection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, cancellationToken).ConfigureAwait(false);
 
                 Downloads.TryAdd(download.Token, download);
@@ -808,6 +807,7 @@ namespace Soulseek
                     var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
                     var connectionKey = new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
 
+                    // todo: replace this with a call like GetOrAddMessageconnectionAsync()
                     download.Connection = await PeerConnectionManager
                         .AddUnsolicitedTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Options.TransferConnectionOptions, cancellationToken)
                         .ConfigureAwait(false);
@@ -831,7 +831,7 @@ namespace Soulseek
                     // prepare a wait for the ConnectToPeer response which should follow, and the initialization of the associated
                     // transfer connection. this operation is somewhat indirect because we aren't sure which download an incoming
                     // connection refers to until we connect and retrieve the token.
-                    var solicitedTransferConnectionInitialized = Waiter.Wait<IConnection>(download.SolicitedTransferWaitKey, timeout: Options.PeerConnectionOptions.InactivityTimeout, cancellationToken: cancellationToken);
+                    var solicitedTransferConnectionInitialized = Waiter.Wait<IConnection>(download.IndirectTransferWaitKey, timeout: Options.PeerConnectionOptions.InactivityTimeout, cancellationToken: cancellationToken);
 
                     // prepare another wait for the direct connection which may follow.
                     Console.WriteLine($"Waiting for DT for {string.Join(", ", download.DirectTransferWaitKey.TokenParts)}");
@@ -842,17 +842,12 @@ namespace Soulseek
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe its
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                    //peerConnection = await ConnectionManager.GetOrAddUnsolicitedPeerConnectionAsync(connectionKey, Username, PeerConnection_MessageRead, Options.PeerConnectionOptions, cancellationToken).ConfigureAwait(false);
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, cancellationToken).ConfigureAwait(false);
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                     try
                     {
                         var connectionInitialized = await Task.WhenAny(solicitedTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
-                        directConnection = connectionInitialized == directTransferConnectionInitialized;
-
-                        Diagnostic.Info($"XXXXXXXXXXXXXXXXXX {(directConnection ? "Direct" : "Indirect")} transfer connection to {username} established.");
-
                         download.Connection = connectionInitialized.Result;
                     }
                     catch (AggregateException ex)
@@ -861,6 +856,7 @@ namespace Soulseek
                     }
                 }
 
+                download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
                 download.Connection.Disconnected += (sender, message) =>
                 {
                     if (download.State.HasFlag(DownloadStates.Succeeded))
@@ -884,21 +880,6 @@ namespace Soulseek
                     await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
                     UpdateState(DownloadStates.InProgress);
-
-                    // when downloading via direct connection, the remote peer sents an additional 4 bytes prior to the file.
-                    // this is the remote token.
-                    // todo: move this to the listener handler, and use the remote token as part of the wait key.
-                    // todo: investigate whether this breaks with transfers starting immediately (see todo above regarding legacy client)
-                    if (directConnection)
-                    {
-                        var what = await download.Connection.ReadAsync(4, cancellationToken).ConfigureAwait(false);
-                        Console.WriteLine($"??????????????????????? RT: {download.RemoteToken} ? {BitConverter.ToInt32(what, 0)} ??????????????");
-                    }
-
-                    // bind the read handler AFTER we fetch the token above to prevent a read event of 4 bytes 
-                    // once the remote token code is moved to the listener handler, move this binding back to above the disconnect binding
-                    // it really needs to be bound prior to writing anything or we risk losing data
-                    download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
 
                     var bytes = await download.Connection.ReadAsync(download.Size, cancellationToken).ConfigureAwait(false);
 
@@ -1087,7 +1068,7 @@ namespace Soulseek
 
             if (download != default(Download))
             {
-                Waiter.Complete(download.SolicitedTransferWaitKey, connection);
+                Waiter.Complete(download.IndirectTransferWaitKey, connection);
             }
         }
 
