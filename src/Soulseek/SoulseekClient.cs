@@ -800,12 +800,8 @@ namespace Soulseek
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(new WaitKey(download.Username), cancellationToken);
 
-                    var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-                    var connectionKey = new ConnectionKey(username, address.IPAddress, address.Port, MessageConnectionType.Peer);
-
-                    // todo: replace this with a call like GetOrAddMessageconnectionAsync()
                     download.Connection = await PeerConnectionManager
-                        .AddUnsolicitedTransferConnectionAsync(connectionKey, transferRequestAcknowledgement.Token, Options.TransferConnectionOptions, cancellationToken)
+                        .GetTransferConnectionAsync(username, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
                 }
                 else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
@@ -1043,17 +1039,13 @@ namespace Soulseek
 
         private async Task InitializeDownloadAsync(ConnectToPeerResponse downloadResponse)
         {
-            int remoteToken = 0;
-            IConnection connection = null;
+            (IConnection connection, int remoteToken) = (null, 0);
 
             try
             {
-                connection = await PeerConnectionManager
+                (connection, remoteToken) = await PeerConnectionManager
                     .AddTransferConnectionAsync(downloadResponse)
                     .ConfigureAwait(false);
-
-                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
             }
             catch (Exception ex)
             {
