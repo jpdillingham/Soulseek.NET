@@ -452,8 +452,12 @@ namespace Soulseek
                             connection.HandoffTcpClient(),
                             null);
 
-                        Console.WriteLine($"Completing DT wait for {peerInit.Username}");
-                        Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username), cconnection);
+                        // todo: investigate whether this breaks with transfers starting immediately
+                        var remoteTokenBytes = await cconnection.ReadAsync(4).ConfigureAwait(false);
+                        var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+
+                        Console.WriteLine($"Completing DT wait for {peerInit.Username} {peerInit.Token} {remoteToken}");
+                        Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken), cconnection);
                     }
                 }
                 else if (PierceFirewallResponse.TryParse(message, out var pierceFirewall))
