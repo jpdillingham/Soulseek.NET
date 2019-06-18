@@ -168,16 +168,6 @@ namespace Soulseek
         internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Download, Username, Filename, Token);
 
         /// <summary>
-        ///     Gets the wait key for direct transfers.
-        /// </summary>
-        internal WaitKey DirectTransferWaitKey => new WaitKey(Constants.WaitKey.DirectTransfer, Username, RemoteToken);
-
-        /// <summary>
-        ///     Gets the wait key for indirect transfers.
-        /// </summary>
-        internal WaitKey IndirectTransferWaitKey => new WaitKey(Constants.WaitKey.IndirectTransfer, Username, Filename, RemoteToken);
-
-        /// <summary>
         ///     Updates the download progress.
         /// </summary>
         /// <param name="bytesDownloaded">The total number of bytes downloaded.</param>
