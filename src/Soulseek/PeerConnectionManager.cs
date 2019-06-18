@@ -104,11 +104,10 @@ namespace Soulseek
         private IWaiter Waiter { get; }
 
         /// <summary>
-        ///     Gets an existing peer <see cref="IMessageConnection"/>, or adds and initialized a new instance if one does not exist.
+        ///     Adds a new, or updates an existing, connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
-        /// <remarks>A solicited connection is one which is initiated remotely by sending a <see cref="ConnectToPeerResponse"/>.</remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The existing or new connection.</returns>
+        /// <returns>The operation context, including the new or updated connection.</returns>
         public async Task<IMessageConnection> AddOrUpdateMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
             var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
@@ -160,24 +159,22 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/> and pierces the firewall.
+        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The new connection.</returns>
-        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse, CancellationToken? cancellationToken = null)
+        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
+        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
             var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, SoulseekClient.Options.TransferConnectionOptions);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
 
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await connection.ConnectAsync().ConfigureAwait(false);
 
             TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
 
             Console.WriteLine($"Sending PierceFirewall with token {connectToPeerResponse.Token}");
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
 
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
             var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
@@ -186,35 +183,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Adds a new transfer <see cref="IConnection"/> and sends a peer init request.
-        /// </summary>
-        /// <param name="connectionKey">The connection key, comprised of the remote IP address and port.</param>
-        /// <param name="token">The transfer token.</param>
-        /// <param name="localUsername">The username of the local user, required to initiate the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests while the connection is connecting.</param>
-        /// <returns>The new connection.</returns>
-        public async Task<IConnection> GetTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
-        {
-            var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-
-            var connection = ConnectionFactory.GetConnection(address.IPAddress, address.Port, SoulseekClient.Options.TransferConnectionOptions);
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
-
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
-
-            Console.WriteLine($"Sending PeerInit type 'F' with token {token} to {username}");
-            await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-            // todo: attempt indirect connection if this fails
-
-            return connection;
-        }
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IConnectionManager"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
         /// </summary>
         public void Dispose()
         {
@@ -222,6 +191,15 @@ namespace Soulseek
             GC.SuppressFinalize(this);
         }
 
+        /// <summary>
+        ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
+        /// </summary>
+        /// <remarks>
+        ///     If a connection doesn't exist, a new direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.
+        /// </remarks>
+        /// <param name="username">The username of the user to which to connect.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the new or existing connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, CancellationToken cancellationToken)
         {
             bool direct = true;
@@ -275,7 +253,36 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Disposes and removes all active and queued connections.
+        ///     Gets a new transfer connection to the specified <paramref name="username"/> using the specified <paramref name="token"/>.
+        /// </summary>
+        /// <remarks>
+        ///     A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.
+        /// </remarks>
+        /// <param name="username">The username of the user to which to connect.</param>
+        /// <param name="token">The token with which to initialize the connection.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the new connection.</returns>
+        public async Task<IConnection> GetTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
+        {
+            var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+
+            var connection = ConnectionFactory.GetConnection(address.IPAddress, address.Port, SoulseekClient.Options.TransferConnectionOptions);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+
+            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+
+            Console.WriteLine($"Sending PeerInit type 'F' with token {token} to {username}");
+            await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+            // todo: attempt indirect connection if this fails
+
+            return connection;
+        }
+
+        /// <summary>
+        ///     Removes and disposes all active and queued connections.
         /// </summary>
         public void RemoveAndDisposeAll()
         {
