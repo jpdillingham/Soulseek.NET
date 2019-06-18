@@ -235,7 +235,6 @@ namespace Soulseek
 
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, CancellationToken cancellationToken)
         {
-            IMessageConnection connection = null;
             bool direct = true;
 
             var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
@@ -243,7 +242,7 @@ namespace Soulseek
 
             try
             {
-                (_, connection) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
+                var (_, connection) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
 
                 if (connection != null)
                 {
