@@ -906,7 +906,7 @@ namespace Soulseek
                     download.State = DownloadStates.Succeeded;
 
                     download.Connection.Disconnect("Transfer complete.");
-                    Diagnostic.Debug($"Download of {System.IO.Path.GetFileName(download.Filename)} from {username} complete ({download.Data.Length} of {download.Size} bytes).");
+                    Diagnostic.Info($"Download of {System.IO.Path.GetFileName(download.Filename)} from {username} complete ({download.Data.Length} of {download.Size} bytes).");
                 }
                 catch (TimeoutException)
                 {
