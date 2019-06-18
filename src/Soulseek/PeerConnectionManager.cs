@@ -208,6 +208,8 @@ namespace Soulseek
             Console.WriteLine($"Sending PeerInit type 'F' with token {token} to {username}");
             await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
+            // todo: attempt indirect connection if this fails
+
             return connection;
         }
 
