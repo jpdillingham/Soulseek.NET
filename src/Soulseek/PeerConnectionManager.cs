@@ -283,7 +283,7 @@ namespace Soulseek
                 {
                     direct = false;
                     Diagnostic.Debug($"Direct transfer connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
-                    connection = await GetOutboundIndirectTransferConnectionAsync(username, cancellationToken).ConfigureAwait(false);
+                    connection = await GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken).ConfigureAwait(false);
                 }
                 catch
                 {
@@ -429,20 +429,24 @@ namespace Soulseek
             return connection;
         }
 
-        private async Task<IConnection> GetOutboundIndirectTransferConnectionAsync(string username, CancellationToken cancellationToken)
+        private async Task<IConnection> GetOutboundIndirectTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
         {
-            var token = SoulseekClient.GetNextToken();
+            var solicitationToken = SoulseekClient.GetNextToken();
 
             try
             {
-                PendingSolicitations.TryAdd(token, username);
+                PendingSolicitations.TryAdd(solicitationToken, username);
 
                 await ((SoulseekClient)SoulseekClient).ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToMessage(), cancellationToken)
+                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToMessage(), cancellationToken)
                     .ConfigureAwait(false);
 
                 // wait for the listener to complete the wait when it receives an incoming connection
-                var connection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, token), null, cancellationToken).ConfigureAwait(false);
+                var connection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken).ConfigureAwait(false);
+
+                // send the the token (what appears to be the remote token to the peer)
+                await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
+
                 return connection;
             }
             finally
