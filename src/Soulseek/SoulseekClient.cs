@@ -1037,30 +1037,6 @@ namespace Soulseek
             }
         }
 
-        private async Task InitializeDownloadAsync(ConnectToPeerResponse downloadResponse)
-        {
-            (IConnection connection, int remoteToken) = (null, 0);
-
-            try
-            {
-                (connection, remoteToken) = await PeerConnectionManager
-                    .AddTransferConnectionAsync(downloadResponse)
-                    .ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                connection?.Disconnect($"Failed to initialize transfer: {ex.Message}");
-                return;
-            }
-
-            var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == downloadResponse.Username);
-
-            if (download != default(Download))
-            {
-                Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
-            }
-        }
-
         private async Task LoginInternalAsync(string username, string password, CancellationToken cancellationToken)
         {
             try
@@ -1267,23 +1243,22 @@ namespace Soulseek
                             // doesn't contain any other identifying information about the file.
                             if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
                             {
-                                await InitializeDownloadAsync(connectToPeerResponse).ConfigureAwait(false);
+                                var (connection, remoteToken) = await PeerConnectionManager.AddTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                                var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
+
+                                if (download != default(Download))
+                                {
+                                    Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
+                                }
                             }
                             else
                             {
-                                Diagnostic.Warning($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                                throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
                             }
                         }
                         else
                         {
-                            try
-                            {
-                                await PeerConnectionManager.AddOrUpdateMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
-                            }
-                            catch (Exception ex)
-                            {
-                                Diagnostic.Debug($"Failed to establish indirect solicited connection for token {connectToPeerResponse.Token} to {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}): {ex.Message}");
-                            }
+                            await PeerConnectionManager.AddOrUpdateMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                         }
 
                         break;
