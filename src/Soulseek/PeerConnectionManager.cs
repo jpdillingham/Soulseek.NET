@@ -269,14 +269,20 @@ namespace Soulseek
             var connection = ConnectionFactory.GetConnection(address.IPAddress, address.Port, SoulseekClient.Options.TransferConnectionOptions);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
 
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                // todo: attempt indirect connection if this fails
+            }
 
             TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
             Console.WriteLine($"Sending PeerInit type 'F' with token {token} to {username}");
             await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-            // todo: attempt indirect connection if this fails
 
             return connection;
         }
