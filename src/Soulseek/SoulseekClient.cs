@@ -747,9 +747,7 @@ namespace Soulseek
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
         {
             var download = new Download(username, filename, token, options);
-
             Task<byte[]> downloadCompleted = null;
-            var directConnection = false;
             var lastState = DownloadStates.None;
 
             void UpdateState(DownloadStates state)
@@ -793,13 +791,15 @@ namespace Soulseek
                 if (transferRequestAcknowledgement.Allowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
+                    // note that only the legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(DownloadStates.Initializing);
 
                     download.Size = transferRequestAcknowledgement.FileSize;
 
-                    // also prepare a wait for the overall completion of the download
+                    // prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(new WaitKey(download.Username), cancellationToken);
 
+                    // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
                     download.Connection = await PeerConnectionManager
                         .GetTransferConnectionAsync(username, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
@@ -846,6 +846,8 @@ namespace Soulseek
                     }
                     catch (AggregateException ex)
                     {
+                        // todo: write some tests to make sure this surfaces realistic exceptions for different scenarios.  bubbling an AggregateException here
+                        // leaks too many implementation details.
                         ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
                     }
                 }
