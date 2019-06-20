@@ -339,9 +339,9 @@ namespace Soulseek
             return connection;
         }
 
-        private async Task<IConnection> AddInboundTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, ITcpClient tcpClient, ConnectionOptions options)
+        private async Task<IConnection> AddInboundTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, ITcpClient tcpClient)
         {
-            var connection = ConnectionFactory.GetConnection(ipAddress, port, options, tcpClient);
+            var connection = ConnectionFactory.GetConnection(ipAddress, port, SoulseekClient.Options.TransferConnectionOptions, tcpClient);
             connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
 
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
@@ -441,8 +441,10 @@ namespace Soulseek
                     .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToMessage(), cancellationToken)
                     .ConfigureAwait(false);
 
-                // wait for the listener to complete the wait when it receives an incoming connection
-                var connection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken).ConfigureAwait(false);
+                var incomingConnection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken).ConfigureAwait(false);
+
+                var connection = ConnectionFactory
+                    .GetConnection(incomingConnection.IPAddress, incomingConnection.Port, SoulseekClient.Options.TransferConnectionOptions, incomingConnection.HandoffTcpClient());
 
                 // send the the token (what appears to be the remote token to the peer)
                 await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
@@ -467,7 +469,6 @@ namespace Soulseek
                     .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToMessage(), cancellationToken)
                     .ConfigureAwait(false);
 
-                // wait for the listener to complete the wait when it receives an incoming connection
                 var incomingConnection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, token), null, cancellationToken).ConfigureAwait(false);
 
                 var connection = ConnectionFactory
@@ -517,8 +518,7 @@ namespace Soulseek
                             connection.IPAddress,
                             Listener.Port,
                             peerInit.Token,
-                            connection.HandoffTcpClient(),
-                            null).ConfigureAwait(false);
+                            connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
                 }
                 else if (PierceFirewallResponse.TryParse(message, out var pierceFirewall))
