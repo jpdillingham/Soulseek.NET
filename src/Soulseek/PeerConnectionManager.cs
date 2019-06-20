@@ -60,7 +60,11 @@ namespace Soulseek
             MessageHandler = messageHandler;
 
             Listener = listener;
-            Listener.Accepted += Listener_Accepted;
+
+            if (listener != null)
+            {
+                Listener.Accepted += Listener_Accepted;
+            }
 
             Waiter = waiter;
 
