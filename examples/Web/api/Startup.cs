@@ -16,6 +16,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
+    using Soulseek.Tcp;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
@@ -36,10 +37,24 @@
             WebRoot = Configuration.GetValue<string>("WEBROOT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
 
-            var options = new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug);
+            var options = new SoulseekClientOptions(
+                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                concurrentPeerMessageConnectionLimit: 1000000,
+                serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
+                listenPort: 54859,
+                peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
+                transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5));
 
             Client = new SoulseekClient(options);
-            Client.DiagnosticGenerated += (e, args) => Console.WriteLine($"[DIAG] [{args.Level}] {args.Message}");
+            Client.DiagnosticGenerated += (e, args) =>
+            {
+                if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
+                if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+
+                Console.WriteLine($"[DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+                Console.ResetColor();
+            };
+
             Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
             //Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");

@@ -13,6 +13,7 @@
 namespace Soulseek.Tcp
 {
     using System;
+    using System.Net;
 
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events.

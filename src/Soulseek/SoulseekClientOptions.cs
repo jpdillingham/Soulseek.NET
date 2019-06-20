@@ -22,7 +22,8 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
-        /// <param name="concurrentPeerConnections">The number of allowed concurrent peer message connections.</param>
+        /// <param name="listenPort">The port on which to listen for incoming connections.</param>
+        /// <param name="concurrentPeerMessageConnectionLimit">The number of allowed concurrent outgoing peer message connections.</param>
         /// <param name="messageTimeout">The message timeout, in seconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
@@ -32,17 +33,21 @@ namespace Soulseek
         /// <param name="serverConnectionOptions">The options for the server message connection.</param>
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
+        /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         public SoulseekClientOptions(
-            int concurrentPeerConnections = 500,
+            int? listenPort = null,
+            int concurrentPeerMessageConnectionLimit = 500,
             int messageTimeout = 5,
             bool autoAcknowledgePrivateMessages = true,
             DiagnosticLevel minimumDiagnosticLevel = DiagnosticLevel.Info,
             int startingToken = 0,
             ConnectionOptions serverConnectionOptions = null,
             ConnectionOptions peerConnectionOptions = null,
-            ConnectionOptions transferConnectionOptions = null)
+            ConnectionOptions transferConnectionOptions = null,
+            ConnectionOptions incomingConnectionOptions = null)
         {
-            ConcurrentPeerConnections = concurrentPeerConnections;
+            ListenPort = listenPort;
+            ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
             MessageTimeout = messageTimeout;
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
@@ -50,6 +55,7 @@ namespace Soulseek
             ServerConnectionOptions = serverConnectionOptions ?? new ConnectionOptions();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
             TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
+            IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
         }
 
         /// <summary>
@@ -58,12 +64,22 @@ namespace Soulseek
         public bool AutoAcknowledgePrivateMessages { get; }
 
         /// <summary>
-        ///     Gets the number of allowed concurrent peer message connections. (Default = 500).
+        ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
         /// </summary>
-        public int ConcurrentPeerConnections { get; }
+        public int ConcurrentPeerMessageConnectionLimit { get; }
 
         /// <summary>
-        ///     Gets the message timeout, in seconds, used when waiting for a response from the server. (Default = 5).
+        ///     Gets the options for incoming connections.
+        /// </summary>
+        public ConnectionOptions IncomingConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the port on which to listen for incoming connections. (Default = null; do not listen).
+        /// </summary>
+        public int? ListenPort { get; }
+
+        /// <summary>
+        ///     Gets the message timeout, in seconds, used when waiting for a response from the server or peer. (Default = 5).
         /// </summary>
         public int MessageTimeout { get; }
 

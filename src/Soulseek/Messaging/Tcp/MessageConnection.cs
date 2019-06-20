@@ -70,6 +70,11 @@ namespace Soulseek.Messaging.Tcp
                     Task.Run(() => ReadContinuouslyAsync()).Forget();
                 };
             }
+
+            if (State == ConnectionState.Connected)
+            {
+                Task.Run(() => ReadContinuouslyAsync()).Forget();
+            }
         }
 
         /// <summary>
@@ -139,7 +144,17 @@ namespace Soulseek.Messaging.Tcp
 
                 NormalizeMessageCode(messageBytes, (int)Type);
 
-                MessageRead?.Invoke(this, new Message(messageBytes));
+                if (MessageRead != null)
+                {
+                    MessageRead(this, new Message(messageBytes));
+                }
+                else
+                {
+                    // todo: think about how to mitigate this
+                    // there's an outside chance that when an incoming connection is handed off and re-initialized as a message connection,
+                    // the read loop begins before an event handler is bound.  this 
+                    throw new ConnectionException($"Message received but no MessageRead event handler was bound to receive it.  Please report this error on GitHub.");
+                }
             }
         }
     }

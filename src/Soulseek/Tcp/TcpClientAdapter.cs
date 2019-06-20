@@ -38,6 +38,11 @@ namespace Soulseek.Tcp
         }
 
         /// <summary>
+        ///     Gets the underlying <see cref="Socket"/>.
+        /// </summary>
+        public Socket Client => TcpClient.Client;
+
+        /// <summary>
         ///     Gets a value indicating whether the client is connected.
         /// </summary>
         public bool Connected => TcpClient.Connected;

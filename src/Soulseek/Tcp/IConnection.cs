@@ -43,11 +43,6 @@ namespace Soulseek.Tcp
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        ///     Gets or sets the generic connection context.
-        /// </summary>
-        object Context { get; set; }
-
-        /// <summary>
         ///     Gets the remote IP address of the connection.
         /// </summary>
         IPAddress IPAddress { get; }
@@ -84,6 +79,13 @@ namespace Soulseek.Tcp
         /// </summary>
         /// <param name="message">The optional message or reason for the disconnect.</param>
         void Disconnect(string message = null);
+
+        /// <summary>
+        ///     Decouples and returns the underlying TCP connection for this connection, allowing the TCP connection to survive
+        ///     beyond the lifespan of this instance.
+        /// </summary>
+        /// <returns>The underlying TCP connection for this connection.</returns>
+        ITcpClient HandoffTcpClient();
 
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.

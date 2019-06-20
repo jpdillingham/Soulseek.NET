@@ -27,8 +27,10 @@ namespace Soulseek
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options) => new Connection(ipAddress, port, options);
+        public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
+            new Connection(ipAddress, port, options, tcpClient);
 
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> with the specified parameters.
@@ -38,7 +40,9 @@ namespace Soulseek
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        public IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options) => new MessageConnection(type, username, ipAddress, port, options);
+        public IMessageConnection GetMessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
+            new MessageConnection(type, username, ipAddress, port, options, tcpClient);
     }
 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="Constants.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,27 +10,22 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit.Tcp
+namespace Soulseek
 {
-    using Soulseek.Tcp;
-    using Xunit;
-
-    public class ConnectionOptionsTests
+    internal static class Constants
     {
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates properly")]
-        public void Instantiates_Properly()
+        internal static class WaitKey
         {
-            ConnectionOptions o = null;
+            public const string Download = "Download";
+            public const string DirectTransfer = "DirectTransfer";
+            public const string IndirectTransfer = "IndirectTransfer";
+            public const string SolicitedConnection = "SolicitedConnection";
+        }
 
-            var ex = Record.Exception(() => o = new ConnectionOptions(8192, 10, 30));
-
-            Assert.Null(ex);
-            Assert.NotNull(o);
-
-            Assert.Equal(8192, o.BufferSize);
-            Assert.Equal(10, o.ConnectTimeout);
-            Assert.Equal(30, o.InactivityTimeout);
+        internal static class ConnectionType
+        {
+            public const string Peer = "P";
+            public const string Tranfer = "F";
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="InitializationCode.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,27 +10,21 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit.Tcp
+namespace Soulseek.Messaging
 {
-    using Soulseek.Tcp;
-    using Xunit;
-
-    public class ConnectionOptionsTests
+    /// <summary>
+    ///     Connection initialization codes.
+    /// </summary>
+    public enum InitializationCode
     {
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates properly")]
-        public void Instantiates_Properly()
-        {
-            ConnectionOptions o = null;
+        /// <summary>
+        ///     Pierce firewall; sent by peers responding to a solicited connection request.
+        /// </summary>
+        PierceFirewall = 0,
 
-            var ex = Record.Exception(() => o = new ConnectionOptions(8192, 10, 30));
-
-            Assert.Null(ex);
-            Assert.NotNull(o);
-
-            Assert.Equal(8192, o.BufferSize);
-            Assert.Equal(10, o.ConnectTimeout);
-            Assert.Equal(30, o.InactivityTimeout);
-        }
+        /// <summary>
+        ///     Peer init; sent by peers creating a direct connection.
+        /// </summary>
+        PeerInit = 1,
     }
 }

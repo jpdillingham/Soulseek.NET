@@ -45,10 +45,10 @@ namespace Soulseek.Tcp
             {
                 Enabled = false,
                 AutoReset = false,
-                Interval = Options.ReadTimeout * 1000,
+                Interval = Options.InactivityTimeout * 1000,
             };
 
-            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Read timeout of {Options.ReadTimeout} seconds was reached.");
+            InactivityTimer.Elapsed += (sender, e) => Disconnect($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
 
             WatchdogTimer = new SystemTimer()
             {
@@ -64,6 +64,14 @@ namespace Soulseek.Tcp
                     Disconnect($"The server connection was closed unexpectedly.");
                 }
             };
+
+            if (TcpClient.Connected)
+            {
+                State = ConnectionState.Connected;
+                InactivityTimer?.Start();
+                WatchdogTimer.Start();
+                Stream = TcpClient.GetStream();
+            }
         }
 
         /// <summary>
@@ -85,11 +93,6 @@ namespace Soulseek.Tcp
         ///     Occurs when the connection state changes.
         /// </summary>
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
-
-        /// <summary>
-        ///     Gets or sets the generic connection context.
-        /// </summary>
-        public object Context { get; set; }
 
         /// <summary>
         ///     Gets or sets the remote IP address of the connection.
@@ -114,7 +117,7 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Gets or sets the current connection state.
         /// </summary>
-        public ConnectionState State { get; protected set; } = ConnectionState.Pending;
+        public ConnectionState State { get; protected set; }
 
         /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
@@ -127,7 +130,7 @@ namespace Soulseek.Tcp
         protected SystemTimer InactivityTimer { get; set; }
 
         /// <summary>
-        ///     Gets or sets the network stream for the connection.
+        ///     Gets or sets sthe network stream for the connection.
         /// </summary>
         protected INetworkStream Stream { get; set; }
 
@@ -160,7 +163,7 @@ namespace Soulseek.Tcp
             cancellationToken = cancellationToken ?? CancellationToken.None;
 
             // create a new TCS to serve as the trigger which will throw when the CTS times out a TCS is basically a 'fake' task
-            // that ends when the result is set programmatically.  create another for cancellation via the externally provided token.
+            // that ends when the result is set programmatically. create another for cancellation via the externally provided token.
             var timeoutTaskCompletionSource = new TaskCompletionSource<bool>();
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -174,8 +177,8 @@ namespace Soulseek.Tcp
                     var connectTask = TcpClient.ConnectAsync(IPAddress, Port);
 
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
-                    // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same TCS.
-                    // either the timeout or the external token can now cancel the operation.
+                    // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same
+                    // TCS. either the timeout or the external token can now cancel the operation.
                     using (timeoutCancellationTokenSource.Token.Register(() => timeoutTaskCompletionSource.TrySetResult(true)))
                     using (((CancellationToken)cancellationToken).Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
                     {
@@ -197,6 +200,7 @@ namespace Soulseek.Tcp
                     }
                 }
 
+                InactivityTimer?.Start();
                 WatchdogTimer.Start();
                 Stream = TcpClient.GetStream();
 
@@ -236,6 +240,21 @@ namespace Soulseek.Tcp
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Decouples and returns the underlying TCP connection for this connection, allowing the TCP connection to survive
+        ///     beyond the lifespan of this instance.
+        /// </summary>
+        /// <returns>The underlying TCP connection for this connection.</returns>
+        public ITcpClient HandoffTcpClient()
+        {
+            var tcpClient = TcpClient;
+
+            TcpClient = null;
+            Stream = null;
+
+            return tcpClient;
         }
 
         /// <summary>
@@ -373,8 +392,7 @@ namespace Soulseek.Tcp
 
                     if (bytesRead == 0)
                     {
-                        Disconnect($"Remote connection closed.");
-                        break;
+                        throw new ConnectionException($"Remote connection closed.");
                     }
 
                     totalBytesRead += bytesRead;
@@ -398,6 +416,7 @@ namespace Soulseek.Tcp
         {
             try
             {
+                InactivityTimer?.Reset();
                 await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken).ConfigureAwait(false);
                 InactivityTimer?.Reset();
             }

@@ -160,7 +160,7 @@ namespace Soulseek
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously gets the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user whose queue to check.</param>
         /// <param name="filename">The file to check.</param>
@@ -184,6 +184,21 @@ namespace Soulseek
         /// <returns>The next token.</returns>
         /// <threadsafety instance="true"/>
         int GetNextToken();
+
+        /// <summary>
+        ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user from which to fetch the connection information.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the connection information.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the client is not connected to the server, or no user is logged in.
+        /// </exception>
+        /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
+        Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.

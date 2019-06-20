@@ -23,6 +23,11 @@ namespace Soulseek.Tcp
     internal interface ITcpClient : IDisposable
     {
         /// <summary>
+        ///     Gets the underlying <see cref="Socket"/>.
+        /// </summary>
+        Socket Client { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether the underlying <see cref="Socket"/> for an <see cref="ITcpClient"/> is connected to
         ///     a remote host.
         /// </summary>

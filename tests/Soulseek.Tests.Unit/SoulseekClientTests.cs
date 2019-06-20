@@ -247,9 +247,9 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var p = new Mock<IConnectionManager>();
+            var p = new Mock<IPeerConnectionManager>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, connectionManager: p.Object);
+            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object);
             await s.ConnectAsync();
 
             var ex = Record.Exception(() => s.Disconnect());

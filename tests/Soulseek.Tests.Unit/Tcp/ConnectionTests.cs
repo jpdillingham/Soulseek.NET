@@ -42,7 +42,6 @@ namespace Soulseek.Tests.Unit.Tcp
             Assert.Equal(port, c.Port);
             Assert.Equal(new ConnectionKey(ip, port), c.Key);
             Assert.Equal(ConnectionState.Pending, c.State);
-            Assert.Null(c.Context);
         }
 
         [Trait("Category", "Instantiation")]
@@ -73,22 +72,6 @@ namespace Soulseek.Tests.Unit.Tcp
             var ct = c.GetProperty<ITcpClient>("TcpClient");
 
             Assert.Equal(t.Object, ct);
-        }
-
-        [Trait("Category", "Context")]
-        [Fact(DisplayName = "Context get and set")]
-        public void Context_Get_And_Set()
-        {
-            var ip = new IPAddress(0x0);
-            var port = 1;
-
-            var c = new Connection(ip, port);
-
-            var context = Guid.NewGuid();
-
-            c.Context = context;
-
-            Assert.Equal(context, c.Context);
         }
 
         [Trait("Category", "Dispose")]
@@ -424,10 +407,7 @@ namespace Soulseek.Tests.Unit.Tcp
         [Fact(DisplayName = "Write throws if connection is not connected")]
         public async Task Write_Throws_If_Connection_Is_Not_Connected()
         {
-            var t = new Mock<ITcpClient>();
-            t.Setup(m => m.Connected).Returns(true);
-
-            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            var c = new Connection(new IPAddress(0x0), 1);
 
             var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
 
@@ -448,7 +428,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
 
@@ -469,7 +448,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
 
@@ -486,7 +464,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.Connected).Returns(false);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
@@ -498,10 +475,7 @@ namespace Soulseek.Tests.Unit.Tcp
         [Fact(DisplayName = "Read throws if connection is not connected")]
         public async Task Read_Throws_If_Connection_Is_Not_Connected()
         {
-            var t = new Mock<ITcpClient>();
-            t.Setup(m => m.Connected).Returns(true);
-
-            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            var c = new Connection(new IPAddress(0x0), 1);
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
@@ -517,7 +491,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             long length = 2147483648; // max = 2147483647
 
@@ -535,19 +508,19 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
-                .Returns(Task.Run(() => (int)length));
+                .Returns(Task.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
-            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+            // this throws but we don't care because we're only testing the code that negotiates data type.
+            await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
-            Assert.Null(ex);
-
+            // the test passes if it throws as long as ReadAsync on the stream mock is invoked; the code made it past the
+            // data type negotiation.
             s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -564,7 +537,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
@@ -586,7 +558,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             await c.ReadAsync(3);
 
@@ -606,7 +577,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
@@ -625,7 +595,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(0));
 
@@ -640,7 +609,6 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
             var bytes = await c.ReadAsync(0);
 
@@ -677,9 +645,11 @@ namespace Soulseek.Tests.Unit.Tcp
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
-            await c.ConnectAsync();
 
-            await c.ReadAsync(1);
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
 
@@ -703,8 +673,6 @@ namespace Soulseek.Tests.Unit.Tcp
             var eventArgs = new List<ConnectionDataEventArgs>();
 
             c.DataRead += (sender, e) => eventArgs.Add(e);
-
-            await c.ConnectAsync();
 
             await c.ReadAsync(3);
 
@@ -735,14 +703,12 @@ namespace Soulseek.Tests.Unit.Tcp
 
             c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
 
-            await c.ConnectAsync();
-            await c.ReadAsync(1);
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
-            Thread.Sleep(2000);
+            Assert.NotNull(ex);
+            Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
-
-            s.Verify(m => m.Close(), Times.Once);
         }
     }
 }

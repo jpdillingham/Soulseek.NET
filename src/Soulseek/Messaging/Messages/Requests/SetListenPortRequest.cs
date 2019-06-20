@@ -1,4 +1,4 @@
-﻿// <copyright file="PierceFirewallRequest.cs" company="JP Dillingham">
+﻿// <copyright file="SetListenPortRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,27 +12,24 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
-    ///     Pierces a peer's firewall to initate a connection.
+    ///     Logs in to the server.
     /// </summary>
-    public class PierceFirewallRequest
+    public class SetListenPortRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PierceFirewallRequest"/> class.
+        ///     Initializes a new instance of the <see cref="SetListenPortRequest"/> class.
         /// </summary>
-        /// <param name="token">The unique token for the connection.</param>
-        public PierceFirewallRequest(int token)
+        /// <param name="port">The port on which to listen.</param>
+        public SetListenPortRequest(int port)
         {
-            Token = token;
+            Port = port;
         }
 
         /// <summary>
-        ///     Gets the unique token for the connection.
+        ///     Gets the port on which to listen.
         /// </summary>
-        public int Token { get; }
+        public int Port { get; }
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
@@ -40,13 +37,10 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
-            var bytes = new List<byte> { 0x0 };
-
-            bytes.AddRange(BitConverter.GetBytes(Token));
-
-            bytes.InsertRange(0, BitConverter.GetBytes(bytes.Count));
-
-            return new Message(bytes.ToArray());
+            return new MessageBuilder()
+                .Code(MessageCode.ServerSetListenPort)
+                .WriteInteger(Port)
+                .Build();
         }
     }
 }

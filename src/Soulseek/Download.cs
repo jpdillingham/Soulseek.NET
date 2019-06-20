@@ -163,9 +163,9 @@ namespace Soulseek
         internal IConnection Connection { get; set; }
 
         /// <summary>
-        ///     Gets tue unique wait key for the download.
+        ///     Gets the wait key for the download.
         /// </summary>
-        internal WaitKey WaitKey => new WaitKey(Username, Filename, Token);
+        internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Download, Username, Filename, Token);
 
         /// <summary>
         ///     Updates the download progress.

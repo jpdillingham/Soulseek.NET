@@ -21,7 +21,7 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiation(
-            int concurrentPeerConnections,
+            int concurrentPeerMessageConnectionLimit,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
             DiagnosticLevel minimumDiagnosticLevel,
@@ -31,16 +31,16 @@ namespace Soulseek.Tests.Unit
             ConnectionOptions transferConnectionOptions)
         {
             var o = new SoulseekClientOptions(
-                concurrentPeerConnections,
-                messageTimeout,
-                autoAcknowledgePrivateMessages,
-                minimumDiagnosticLevel,
-                startingToken,
-                serverConnectionOptions,
-                peerConnectionOptions,
-                transferConnectionOptions);
+                concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
+                messageTimeout: messageTimeout,
+                autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
+                minimumDiagnosticLevel: minimumDiagnosticLevel,
+                startingToken: startingToken,
+                serverConnectionOptions: serverConnectionOptions,
+                peerConnectionOptions: peerConnectionOptions,
+                transferConnectionOptions: transferConnectionOptions);
 
-            Assert.Equal(concurrentPeerConnections, o.ConcurrentPeerConnections);
+            Assert.Equal(concurrentPeerMessageConnectionLimit, o.ConcurrentPeerMessageConnectionLimit);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
             Assert.Equal(minimumDiagnosticLevel, o.MinimumDiagnosticLevel);
@@ -53,18 +53,18 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with default options if null"), AutoData]
         public void Instantiation_Defaults_Options_If_Null(
-            int concurrentPeerConnections,
+            int concurrentPeerMessageConnectionLimit,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
             DiagnosticLevel minimumDiagnosticLevel,
             int startingToken)
         {
             var o = new SoulseekClientOptions(
-                concurrentPeerConnections,
-                messageTimeout,
-                autoAcknowledgePrivateMessages,
-                minimumDiagnosticLevel,
-                startingToken);
+                concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
+                messageTimeout: messageTimeout,
+                autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
+                minimumDiagnosticLevel: minimumDiagnosticLevel,
+                startingToken: startingToken);
 
             Assert.NotNull(o.ServerConnectionOptions);
             Assert.NotNull(o.PeerConnectionOptions);

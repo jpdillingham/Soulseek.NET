@@ -1,4 +1,6 @@
 import React from 'react';
+import axios from 'axios';
+import { BASE_URL } from './constants';
 
 import { formatBytes, getFileName } from './util';
 
@@ -25,7 +27,11 @@ const getColor = (state) => {
     }
 }
 
-const DownloadList = ({ directoryName, files }) => (
+const downloadOne = (username, file) => {
+    return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
+}
+
+const DownloadList = ({ username, directoryName, files }) => (
     <div>
         <Header 
             size='small' 
@@ -41,6 +47,7 @@ const DownloadList = ({ directoryName, files }) => (
                         <Table.HeaderCell className='downloadlist-filename'>File</Table.HeaderCell>
                         <Table.HeaderCell className='downloadlist-size'>Size</Table.HeaderCell>
                         <Table.HeaderCell className='downloadlist-progress'>Progress</Table.HeaderCell>
+                        <Table.HeaderCell className='downloadlist-retry'>Retry</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>                                
                 <Table.Body>
@@ -55,6 +62,7 @@ const DownloadList = ({ directoryName, files }) => (
                                     progress color={getColor(f.state)}
                                 />
                             </Table.Cell>
+                            <Table.Cell className='downloadlist-retry'><a onClick={() => downloadOne(username, f)}>Retry</a></Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>
