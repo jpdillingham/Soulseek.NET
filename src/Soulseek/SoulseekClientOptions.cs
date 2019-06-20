@@ -33,6 +33,7 @@ namespace Soulseek
         /// <param name="serverConnectionOptions">The options for the server message connection.</param>
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
+        /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         public SoulseekClientOptions(
             int? listenPort = null,
             int concurrentPeerMessageConnectionLimit = 500,
@@ -42,7 +43,8 @@ namespace Soulseek
             int startingToken = 0,
             ConnectionOptions serverConnectionOptions = null,
             ConnectionOptions peerConnectionOptions = null,
-            ConnectionOptions transferConnectionOptions = null)
+            ConnectionOptions transferConnectionOptions = null,
+            ConnectionOptions incomingConnectionOptions = null)
         {
             ListenPort = listenPort;
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
@@ -53,6 +55,7 @@ namespace Soulseek
             ServerConnectionOptions = serverConnectionOptions ?? new ConnectionOptions();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
             TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
+            IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
         }
 
         /// <summary>
@@ -64,6 +67,11 @@ namespace Soulseek
         ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
         /// </summary>
         public int ConcurrentPeerMessageConnectionLimit { get; }
+
+        /// <summary>
+        ///     Gets the options for incoming connections.
+        /// </summary>
+        public ConnectionOptions IncomingConnectionOptions { get; }
 
         /// <summary>
         ///     Gets the port on which to listen for incoming connections. (Default = null; do not listen).
