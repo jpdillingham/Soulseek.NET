@@ -114,11 +114,12 @@ namespace Soulseek
             }
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(
-                concurrentMessageConnectionLimit: Options.ConcurrentPeerMessageConnectionLimit,
-                listener: Listener,
                 soulseekClient: this,
                 messageHandler: PeerConnection_MessageRead,
-                waiter: Waiter);
+                listener: Listener,
+                waiter: Waiter,
+                concurrentMessageConnectionLimit: Options.ConcurrentPeerMessageConnectionLimit);
+
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
 
