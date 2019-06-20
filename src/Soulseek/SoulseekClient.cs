@@ -1130,10 +1130,11 @@ namespace Soulseek
                         var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
 
-                        var download = Downloads.FirstOrDefault(d => d.Value.Username == connection.Username && d.Value.Filename == uploadFailedResponse.Filename);
-                        if (download.Value != null)
+                        var download = Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
+                        if (download != null)
                         {
-                            Waiter.Throw(download.Value.WaitKey, new DownloadException(msg));
+                            Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new DownloadException(msg));
+                            Waiter.Throw(download.WaitKey, new DownloadException(msg));
                         }
 
                         Diagnostic.Debug(msg);
