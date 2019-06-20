@@ -797,7 +797,7 @@ namespace Soulseek
                     download.Size = transferRequestAcknowledgement.FileSize;
 
                     // prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(new WaitKey(download.Username), cancellationToken);
+                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
                     // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
                     download.Connection = await PeerConnectionManager
@@ -873,7 +873,7 @@ namespace Soulseek
                 {
                     // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
                     // was identified via WireShark.
-                    await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
+                    //await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
                     UpdateState(DownloadStates.InProgress);
 
