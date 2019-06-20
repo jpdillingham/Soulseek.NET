@@ -110,7 +110,7 @@ namespace Soulseek
 
             if (Listener == null && Options.ListenPort.HasValue)
             {
-                Listener = new Listener(Options.ListenPort.Value);
+                Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(
@@ -873,7 +873,7 @@ namespace Soulseek
                 {
                     // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
                     // was identified via WireShark.
-                    //await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
+                    await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
 
                     UpdateState(DownloadStates.InProgress);
 
@@ -1128,7 +1128,15 @@ namespace Soulseek
 
                     case MessageCode.PeerUploadFailed:
                         var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
-                        Diagnostic.Debug($"Upload of {uploadFailedResponse.Filename} from {connection.Username} failed.");
+                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
+
+                        var download = Downloads.FirstOrDefault(d => d.Value.Username == connection.Username && d.Value.Filename == uploadFailedResponse.Filename);
+                        if (download.Value != null)
+                        {
+                            Waiter.Throw(download.Value.WaitKey, new DownloadException(msg));
+                        }
+
+                        Diagnostic.Debug(msg);
                         break;
 
                     default:
