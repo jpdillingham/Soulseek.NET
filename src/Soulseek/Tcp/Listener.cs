@@ -26,10 +26,12 @@ namespace Soulseek.Tcp
         ///     Initializes a new instance of the <see cref="Listener"/> class.
         /// </summary>
         /// <param name="port">The port of the listener.</param>
+        /// <param name="connectionOptions">The optional options to use when creating <see cref="IConnection"/> instances</param>
         /// <param name="tcpListener">The optional TcpClient instance to use.</param>
-        public Listener(int port, ITcpListener tcpListener = null)
+        public Listener(int port, ConnectionOptions connectionOptions, ITcpListener tcpListener = null)
         {
             Port = port;
+            ConnectionOptions = connectionOptions ?? new ConnectionOptions();
             TcpListener = tcpListener ?? new TcpListenerAdapter(new TcpListener(IPAddress.Parse("0.0.0.0"), port));
         }
 
@@ -42,6 +44,11 @@ namespace Soulseek.Tcp
         ///     Gets a value indicating whether the listener is listening for connections.
         /// </summary>
         public bool Listening { get; private set; } = false;
+
+        /// <summary>
+        ///     Gets the options used when creating new <see cref="IConnection"/> instances.
+        /// </summary>
+        public ConnectionOptions ConnectionOptions { get; }
 
         /// <summary>
         ///     Gets the port of the listener.
@@ -78,7 +85,7 @@ namespace Soulseek.Tcp
                 Task.Run(() =>
                 {
                     var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-                    var eventArgs = new Connection(endPoint.Address, endPoint.Port, null, new TcpClientAdapter(client));
+                    var eventArgs = new Connection(endPoint.Address, endPoint.Port, ConnectionOptions, new TcpClientAdapter(client));
                     Accepted?.Invoke(this, eventArgs);
                 }).Forget();
             }
