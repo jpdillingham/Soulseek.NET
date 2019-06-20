@@ -33,12 +33,18 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerConnectionManager"/> class.
         /// </summary>
+        /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
+        /// <param name="messageHandler">The event handler for <see cref="IMessageConnection.MessageRead"/> events.</param>
+        /// <param name="listener">The IListener instance to use.</param>
+        /// <param name="waiter">The IWaiter instance to use.</param>
+        /// <param name="concurrentMessageConnectionLimit">The concurrent message connection limit.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         internal PeerConnectionManager(
-            IListener listener,
-            IWaiter waiter,
             ISoulseekClient soulseekClient,
             EventHandler<Message> messageHandler,
+            IListener listener,
+            IWaiter waiter,
             int concurrentMessageConnectionLimit = 1000,
             IConnectionFactory connectionFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
@@ -51,19 +57,24 @@ namespace Soulseek
             ConcurrentMessageConnectionLimit = concurrentMessageConnectionLimit;
 
             SoulseekClient = soulseekClient;
-            MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
-            MessageConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+            MessageHandler = messageHandler;
+
+            Listener = listener;
+
+            if (listener != null)
+            {
+                Listener.Accepted += Listener_Accepted;
+            }
+
+            Waiter = waiter;
+
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
+            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
             TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
 
-            Waiter = waiter ?? new Waiter(SoulseekClient.Options.MessageTimeout);
-
-            Listener = listener;
-            Listener.Accepted += Listener_Accepted;
-
-            MessageHandler = messageHandler;
-            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
-            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+            MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
+            MessageConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
         }
 
         /// <summary>
@@ -104,7 +115,8 @@ namespace Soulseek
         private IWaiter Waiter { get; }
 
         /// <summary>
-        ///     Adds a new, or updates an existing, connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
+        ///     Adds a new, or updates an existing, connection using the details in the specified
+        ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new or updated connection.</returns>
@@ -159,7 +171,8 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
+        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and
+        ///     pierces the remote peer's firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new connection and the associated remote token.</returns>
@@ -195,7 +208,8 @@ namespace Soulseek
         ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
         /// </summary>
         /// <remarks>
-        ///     If a connection doesn't exist, a new direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.
+        ///     If a connection doesn't exist, a new direct connection is attempted first, and, if unsuccessful, an indirect
+        ///     connection is attempted.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -255,9 +269,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets a new transfer connection to the specified <paramref name="username"/> using the specified <paramref name="token"/>.
         /// </summary>
-        /// <remarks>
-        ///     A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.
-        /// </remarks>
+        /// <remarks>A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.</remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -404,18 +416,6 @@ namespace Soulseek
             return record;
         }
 
-        private async Task<IConnection> GetOutboundDirectTransferConnectionAsync(IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
-        {
-            var connection = ConnectionFactory.GetConnection(ipAddress, port, SoulseekClient.Options.TransferConnectionOptions);
-
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
-
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-            await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-            return connection;
-        }
-
         private async Task<IMessageConnection> GetOutboundDirectMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
             var connection = ConnectionFactory.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, SoulseekClient.Options.PeerConnectionOptions);
@@ -429,32 +429,16 @@ namespace Soulseek
             return connection;
         }
 
-        private async Task<IConnection> GetOutboundIndirectTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
+        private async Task<IConnection> GetOutboundDirectTransferConnectionAsync(IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
         {
-            var solicitationToken = SoulseekClient.GetNextToken();
+            var connection = ConnectionFactory.GetConnection(ipAddress, port, SoulseekClient.Options.TransferConnectionOptions);
 
-            try
-            {
-                PendingSolicitations.TryAdd(solicitationToken, username);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
 
-                await ((SoulseekClient)SoulseekClient).ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToMessage(), cancellationToken)
-                    .ConfigureAwait(false);
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                var incomingConnection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken).ConfigureAwait(false);
-
-                var connection = ConnectionFactory
-                    .GetConnection(incomingConnection.IPAddress, incomingConnection.Port, SoulseekClient.Options.TransferConnectionOptions, incomingConnection.HandoffTcpClient());
-
-                // send the the token (what appears to be the remote token to the peer)
-                await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
-
-                return connection;
-            }
-            finally
-            {
-                PendingSolicitations.TryRemove(token, out var _);
-            }
+            return connection;
         }
 
         private async Task<IMessageConnection> GetOutboundIndirectMessageConnectionAsync(string username, CancellationToken cancellationToken)
@@ -476,6 +460,34 @@ namespace Soulseek
 
                 connection.MessageRead += MessageHandler;
                 connection.Disconnected += MessageConnection_Disconnected;
+
+                return connection;
+            }
+            finally
+            {
+                PendingSolicitations.TryRemove(token, out var _);
+            }
+        }
+
+        private async Task<IConnection> GetOutboundIndirectTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
+        {
+            var solicitationToken = SoulseekClient.GetNextToken();
+
+            try
+            {
+                PendingSolicitations.TryAdd(solicitationToken, username);
+
+                await ((SoulseekClient)SoulseekClient).ServerConnection
+                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToMessage(), cancellationToken)
+                    .ConfigureAwait(false);
+
+                var incomingConnection = await Waiter.Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken).ConfigureAwait(false);
+
+                var connection = ConnectionFactory
+                    .GetConnection(incomingConnection.IPAddress, incomingConnection.Port, SoulseekClient.Options.TransferConnectionOptions, incomingConnection.HandoffTcpClient());
+
+                // send the the token (what appears to be the remote token to the peer)
+                await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
 
                 return connection;
             }

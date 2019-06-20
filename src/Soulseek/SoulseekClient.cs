@@ -65,8 +65,8 @@ namespace Soulseek
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
-        /// <param name="tokenFactory">The ITokenFactory to use.</param>
-        /// <param name="diagnosticFactory">The IDiagnosticFactory to use.</param>
+        /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         internal SoulseekClient(
             string address,
             int port,
@@ -114,11 +114,12 @@ namespace Soulseek
             }
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(
-                concurrentMessageConnectionLimit: Options.ConcurrentPeerMessageConnectionLimit,
-                listener: Listener,
                 soulseekClient: this,
                 messageHandler: PeerConnection_MessageRead,
-                waiter: Waiter);
+                listener: Listener,
+                waiter: Waiter,
+                concurrentMessageConnectionLimit: Options.ConcurrentPeerMessageConnectionLimit);
+
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
 
@@ -192,13 +193,17 @@ namespace Soulseek
         /// </summary>
         public string Username { get; private set; }
 
-        private IPeerConnectionManager PeerConnectionManager { get; }
+        /// <summary>
+        ///     Gets the server message connection.
+        /// </summary>
+        internal IMessageConnection ServerConnection { get; }
+
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
-        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
-        internal IMessageConnection ServerConnection { get; }
         private IListener Listener { get; }
+        private IPeerConnectionManager PeerConnectionManager { get; }
+        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private ITokenFactory TokenFactory { get; }
         private IWaiter Waiter { get; }
 
@@ -790,8 +795,8 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
-                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue.
-                    // note that only the legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
+                    // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
+                    // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(DownloadStates.Initializing);
 
                     download.Size = transferRequestAcknowledgement.FileSize;
@@ -846,8 +851,8 @@ namespace Soulseek
                     }
                     catch (AggregateException ex)
                     {
-                        // todo: write some tests to make sure this surfaces realistic exceptions for different scenarios.  bubbling an AggregateException here
-                        // leaks too many implementation details.
+                        // todo: write some tests to make sure this surfaces realistic exceptions for different scenarios. bubbling
+                        //       an AggregateException here leaks too many implementation details.
                         ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
                     }
                 }
@@ -932,6 +937,8 @@ namespace Soulseek
             }
             finally
             {
+                // clean up the wait in case the code threw before it was awaited.
+                Waiter.Complete(download.WaitKey);
                 Downloads.TryRemove(download.Token, out var _);
 
                 download.Connection?.Dispose();
@@ -1049,8 +1056,10 @@ namespace Soulseek
 
                 var response = await loginWait.ConfigureAwait(false);
 
-                // todo: write a test for this
-                await ServerConnection.WriteMessageAsync(new SetListenPortRequest(54859).ToMessage(), cancellationToken).ConfigureAwait(false);
+                if (Options.ListenPort.HasValue)
+                {
+                    await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
+                }
 
                 if (response.Succeeded)
                 {
