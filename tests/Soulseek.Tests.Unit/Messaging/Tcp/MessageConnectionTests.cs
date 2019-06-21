@@ -46,6 +46,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             Assert.Equal(ipAddress, c.IPAddress);
             Assert.Equal(port, c.Port);
             Assert.Equal(options, c.Options);
+            Assert.False(c.ReadingContinuously);
 
             Assert.Equal(new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer), c.Key);
         }
@@ -242,12 +243,42 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             Message readMessage = null;
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            c.StartReadingContinuously();
 
             c.MessageRead += (sender, e) => readMessage = e;
 
             Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
             Assert.Equal(MessageCode.PeerInfoRequest, readMessage?.Code);
+        }
+
+        [Trait("Category", "ReadingContinuously")]
+        [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
+        public async Task ReadingContinuously_Returns_Expected_Values(string username, IPAddress ipAddress, int port)
+        {
+            bool b = false;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+                {
+                    b = true;
+                })
+                .Throws(new Exception());
+
+            var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(s => s.Connected).Returns(true);
+            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+
+            var a = c.ReadingContinuously;
+
+            await Record.ExceptionAsync(async () => await c.InvokeMethod<Task>("ReadContinuouslyAsync"));
+
+            Assert.False(a);
+            Assert.True(b);
+            Assert.False(c.ReadingContinuously);
         }
     }
 }
