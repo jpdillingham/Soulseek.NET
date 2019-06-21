@@ -29,6 +29,11 @@ namespace Soulseek.Messaging.Tcp
         event EventHandler<Message> MessageRead;
 
         /// <summary>
+        ///     Gets a value indicating whether the internal continuous read loop is running.
+        /// </summary>
+        bool ReadingContinuously { get; }
+
+        /// <summary>
         ///     Gets the connection type (Peer, Server).
         /// </summary>
         MessageConnectionType Type { get; }

@@ -87,6 +87,11 @@ namespace Soulseek.Messaging.Tcp
         public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
 
         /// <summary>
+        ///     Gets a value indicating whether the internal continuous read loop is running.
+        /// </summary>
+        public bool ReadingContinuously { get; private set; }
+
+        /// <summary>
         ///     Gets the connection type (Peer, Server).
         /// </summary>
         public MessageConnectionType Type { get; private set; }
@@ -139,25 +144,34 @@ namespace Soulseek.Messaging.Tcp
 
         private async Task ReadContinuouslyAsync()
         {
-            while (true)
+            ReadingContinuously = true;
+
+            try
             {
-                var message = new List<byte>();
+                while (true)
+                {
+                    var message = new List<byte>();
 
-                var lengthBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
-                var length = BitConverter.ToInt32(lengthBytes, 0);
-                message.AddRange(lengthBytes);
+                    var lengthBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
+                    var length = BitConverter.ToInt32(lengthBytes, 0);
+                    message.AddRange(lengthBytes);
 
-                var codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
-                message.AddRange(codeBytes);
+                    var codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
+                    message.AddRange(codeBytes);
 
-                var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
-                message.AddRange(payloadBytes);
+                    var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
+                    message.AddRange(payloadBytes);
 
-                var messageBytes = message.ToArray();
+                    var messageBytes = message.ToArray();
 
-                NormalizeMessageCode(messageBytes, (int)Type);
+                    NormalizeMessageCode(messageBytes, (int)Type);
 
-                MessageRead?.Invoke(this, new Message(messageBytes));
+                    MessageRead?.Invoke(this, new Message(messageBytes));
+                }
+            }
+            finally
+            {
+                ReadingContinuously = false;
             }
         }
     }
