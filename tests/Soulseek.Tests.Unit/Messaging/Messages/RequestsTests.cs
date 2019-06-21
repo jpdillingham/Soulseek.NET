@@ -360,5 +360,33 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(MessageCode.ServerSetListenPort, msg.Code);
             Assert.Equal(port, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "ConnectToPeerRequest")]
+        [Theory(DisplayName = "ConnectToPeerRequest instantiates properly"), AutoData]
+        public void ConnectToPeerRequest_Instantiates_Properly(int token, string username, string type)
+        {
+            var a = new ConnectToPeerRequest(token, username, type);
+
+            Assert.Equal(token, a.Token);
+            Assert.Equal(username, a.Username);
+            Assert.Equal(type, a.Type);
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Trait("Request", "ConnectToPeerRequest")]
+        [Theory(DisplayName = "ConnectToPeerRequest constructs the correct message"), AutoData]
+        public void ConnectToPeerRequest_Constructs_The_Correct_Message(int token, string username, string type)
+        {
+            var a = new ConnectToPeerRequest(token, username, type);
+            var msg = a.ToMessage();
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(MessageCode.ServerConnectToPeer, msg.Code);
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(type, reader.ReadString());
+        }
     }
 }
