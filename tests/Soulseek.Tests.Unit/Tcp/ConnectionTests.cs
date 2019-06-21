@@ -515,7 +515,7 @@ namespace Soulseek.Tests.Unit.Tcp
             long length = 2147483647; // max = 2147483647
 
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
@@ -524,11 +524,10 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            // this throws but we don't care because we're only testing the code that negotiates data type.
-            await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
-            // the test passes if it throws as long as ReadAsync on the stream mock is invoked; the code made it past the
-            // data type negotiation.
+            Assert.Null(ex);
+
             s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
