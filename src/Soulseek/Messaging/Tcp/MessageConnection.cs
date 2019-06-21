@@ -53,6 +53,10 @@ namespace Soulseek.Messaging.Tcp
         {
             Type = type;
 
+            // if the supplied ITcpClient instance is not null and is Connected, disallow StartReadingContinuously() to prevent
+            // duplicate running loops.
+            CanStartReadingContinuously = tcpClient?.Connected ?? false;
+
             // circumvent the inactivity timer for server connections; this connection is expected to idle.
             if (Type == MessageConnectionType.Server)
             {
@@ -69,11 +73,6 @@ namespace Soulseek.Messaging.Tcp
                 {
                     Task.Run(() => ReadContinuouslyAsync()).Forget();
                 };
-            }
-
-            if (State == ConnectionState.Connected)
-            {
-                Task.Run(() => ReadContinuouslyAsync()).Forget();
             }
         }
 
@@ -96,6 +95,20 @@ namespace Soulseek.Messaging.Tcp
         ///     Gets the username of the peer associated with the connection, if applicable.
         /// </summary>
         public string Username { get; private set; } = string.Empty;
+
+        private bool CanStartReadingContinuously { get; set; }
+
+        /// <summary>
+        ///     Begins the internal continuous read loop, if it has not yet started.
+        /// </summary>
+        public void StartReadingContinuously()
+        {
+            if (CanStartReadingContinuously)
+            {
+                CanStartReadingContinuously = false;
+                Task.Run(() => ReadContinuouslyAsync()).Forget();
+            }
+        }
 
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.
@@ -144,17 +157,7 @@ namespace Soulseek.Messaging.Tcp
 
                 NormalizeMessageCode(messageBytes, (int)Type);
 
-                if (MessageRead != null)
-                {
-                    MessageRead(this, new Message(messageBytes));
-                }
-                else
-                {
-                    // todo: think about how to mitigate this
-                    // there's an outside chance that when an incoming connection is handed off and re-initialized as a message connection,
-                    // the read loop begins before an event handler is bound.  this 
-                    throw new ConnectionException($"Message received but no MessageRead event handler was bound to receive it.  Please report this error on GitHub.");
-                }
+                MessageRead?.Invoke(this, new Message(messageBytes));
             }
         }
     }

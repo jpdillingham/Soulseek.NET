@@ -335,6 +335,8 @@ namespace Soulseek
             connection.MessageRead += MessageHandler;
             connection.Disconnected += MessageConnection_Disconnected;
 
+            connection.StartReadingContinuously();
+
             var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
@@ -460,6 +462,8 @@ namespace Soulseek
 
                 connection.MessageRead += MessageHandler;
                 connection.Disconnected += MessageConnection_Disconnected;
+
+                connection.StartReadingContinuously();
 
                 return connection;
             }
