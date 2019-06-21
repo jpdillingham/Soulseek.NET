@@ -407,7 +407,11 @@ namespace Soulseek.Tests.Unit.Tcp
         [Fact(DisplayName = "Write throws if connection is not connected")]
         public async Task Write_Throws_If_Connection_Is_Not_Connected()
         {
-            var c = new Connection(new IPAddress(0x0), 1);
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            c.SetProperty("State", ConnectionState.Disconnected);
 
             var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
 
@@ -475,7 +479,11 @@ namespace Soulseek.Tests.Unit.Tcp
         [Fact(DisplayName = "Read throws if connection is not connected")]
         public async Task Read_Throws_If_Connection_Is_Not_Connected()
         {
-            var c = new Connection(new IPAddress(0x0), 1);
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            c.SetProperty("State", ConnectionState.Disconnected);
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
@@ -709,6 +717,25 @@ namespace Soulseek.Tests.Unit.Tcp
             Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
+        }
+
+        [Trait("Category", "HandoffTcpClient")]
+        [Fact(DisplayName = "HandoffTcpClient hands off")]
+        public void HandoffTcpClient_Hands_Off()
+        {
+            var t = new Mock<ITcpClient>();
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var first = c.GetProperty<ITcpClient>("TcpClient");
+
+            var tcpClient = c.HandoffTcpClient();
+
+            var second = c.GetProperty<ITcpClient>("TcpClient");
+
+            Assert.Equal(t.Object, tcpClient);
+            Assert.NotNull(first);
+            Assert.Null(second);
         }
     }
 }
