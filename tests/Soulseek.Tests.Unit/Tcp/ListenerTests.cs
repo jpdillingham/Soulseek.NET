@@ -12,11 +12,8 @@
 
 namespace Soulseek.Tests.Unit.Tcp
 {
-    using System;
-    using System.Collections.Generic;
     using System.Net;
     using System.Net.Sockets;
-    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -27,7 +24,7 @@ namespace Soulseek.Tests.Unit.Tcp
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates properly"), AutoData]
-        internal void Instantiates_Properly(int port, ConnectionOptions options)
+        public void Instantiates_Properly(int port, ConnectionOptions options)
         {
             var l = new Listener(port, options);
 
@@ -39,7 +36,7 @@ namespace Soulseek.Tests.Unit.Tcp
 
         [Trait("Category", "Start")]
         [Theory(DisplayName = "Start starts listening"), AutoData]
-        internal void Start_Starts_Listening(int port, ConnectionOptions options)
+        public void Start_Starts_Listening(int port, ConnectionOptions options)
         {
             var l = new Listener(port, options);
 
@@ -53,7 +50,7 @@ namespace Soulseek.Tests.Unit.Tcp
 
         [Trait("Category", "Stop")]
         [Theory(DisplayName = "Stop stops listening"), AutoData]
-        internal void Stop_Stops_Listening(int port, ConnectionOptions options)
+        public void Stop_Stops_Listening(int port, ConnectionOptions options)
         {
             var l = new Listener(port, options);
 
