@@ -21,9 +21,19 @@ namespace Soulseek.Tests.Unit.Tcp
     using Moq;
     using Soulseek.Tcp;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class ConnectionTests
     {
+        private ITestOutputHelper OutputHelper;
+        private Action<string> Output;
+
+        public ConnectionTests(ITestOutputHelper outputHelper)
+        {
+            OutputHelper = outputHelper;
+            Output = (s) => OutputHelper.WriteLine(s);
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates properly")]
         public void Instantiates_Properly()
@@ -708,11 +718,12 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
+            c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 100;
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
             Assert.NotNull(ex);
+            Output(ex.Message);
             Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
