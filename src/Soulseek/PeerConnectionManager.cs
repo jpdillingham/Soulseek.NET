@@ -115,12 +115,46 @@ namespace Soulseek
         private IWaiter Waiter { get; }
 
         /// <summary>
-        ///     Adds a new, or updates an existing, connection using the details in the specified
+        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and
+        ///     pierces the remote peer's firewall.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
+        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
+        {
+            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, SoulseekClient.Options.TransferConnectionOptions);
+            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
+
+            await connection.ConnectAsync().ConfigureAwait(false);
+
+            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
+
+            Console.WriteLine($"Sending PierceFirewall with token {connectToPeerResponse.Token}");
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
+
+            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+
+            return (connection, remoteToken);
+        }
+
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new or updated connection.</returns>
-        public async Task<IMessageConnection> AddOrUpdateMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
+        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
             var key = new ConnectionKey(connectToPeerResponse.Username, connectToPeerResponse.IPAddress, connectToPeerResponse.Port, MessageConnectionType.Peer);
             IMessageConnection connection = null;
@@ -168,40 +202,6 @@ namespace Soulseek
             {
                 semaphore.Release();
             }
-        }
-
-        /// <summary>
-        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and
-        ///     pierces the remote peer's firewall.
-        /// </summary>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
-        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
-        {
-            var connection = ConnectionFactory.GetConnection(connectToPeerResponse.IPAddress, connectToPeerResponse.Port, SoulseekClient.Options.TransferConnectionOptions);
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
-
-            await connection.ConnectAsync().ConfigureAwait(false);
-
-            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
-
-            Console.WriteLine($"Sending PierceFirewall with token {connectToPeerResponse.Token}");
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
-
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
-
-            return (connection, remoteToken);
-        }
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
 
         /// <summary>

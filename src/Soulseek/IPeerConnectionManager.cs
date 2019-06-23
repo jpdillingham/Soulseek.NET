@@ -50,24 +50,27 @@ namespace Soulseek
         int WaitingMessageConnections { get; }
 
         /// <summary>
-        ///     Adds a new, or updates an existing, connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
-        /// </summary>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The operation context, including the new or updated connection.</returns>
-        Task<IMessageConnection> AddOrUpdateMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-
-        /// <summary>
-        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
+        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and
+        ///     pierces the remote peer's firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new connection and the associated remote token.</returns>
         Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
 
         /// <summary>
+        ///     Returns an existing, or gets a new connection using the details in the specified
+        ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context, including the new or updated connection.</returns>
+        Task<IMessageConnection> GetOrAddMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
+
+        /// <summary>
         ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
         /// </summary>
         /// <remarks>
-        ///     If a connection doesn't exist, a new direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.
+        ///     If a connection doesn't exist, a new direct connection is attempted first, and, if unsuccessful, an indirect
+        ///     connection is attempted.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -77,9 +80,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets a new transfer connection to the specified <paramref name="username"/> using the specified <paramref name="token"/>.
         /// </summary>
-        /// <remarks>
-        ///     A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.
-        /// </remarks>
+        /// <remarks>A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.</remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>

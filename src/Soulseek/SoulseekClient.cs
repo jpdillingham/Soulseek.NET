@@ -1278,7 +1278,7 @@ namespace Soulseek
                         }
                         else
                         {
-                            await PeerConnectionManager.AddOrUpdateMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                            await PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                         }
 
                         break;
