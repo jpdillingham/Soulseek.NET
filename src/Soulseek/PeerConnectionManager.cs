@@ -233,26 +233,34 @@ namespace Soulseek
                 {
                     var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
-                    try
-                    {
-                        Diagnostic.Debug($"Attempting direct message connection to {username} ({address.IPAddress}:{address.Port})");
-                        connection = await GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        try
-                        {
-                            direct = false;
-                            Diagnostic.Debug($"Direct message connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
-                            connection = await GetOutboundIndirectMessageConnectionAsync(username, cancellationToken).ConfigureAwait(false);
-                        }
-                        catch
-                        {
-                            var msg = $"Failed to establish message connection to {username} ({address.IPAddress}:{address.Port})";
-                            Diagnostic.Warning(msg);
-                            throw new ConnectionException(msg);
-                        }
-                    }
+                    //try
+                    //{
+                    //    Diagnostic.Debug($"Attempting direct message connection to {username} ({address.IPAddress}:{address.Port})");
+                    //    connection = await GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+                    //}
+                    //catch
+                    //{
+                    //    try
+                    //    {
+                    //        direct = false;
+                    //        Diagnostic.Debug($"Direct message connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
+                    //        connection = await GetOutboundIndirectMessageConnectionAsync(username, cancellationToken).ConfigureAwait(false);
+                    //    }
+                    //    catch
+                    //    {
+                    //        var msg = $"Failed to establish message connection to {username} ({address.IPAddress}:{address.Port})";
+                    //        Diagnostic.Warning(msg);
+                    //        throw new ConnectionException(msg);
+                    //    }
+                    //}
+
+                    var d = GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken);
+                    var i = GetOutboundIndirectMessageConnectionAsync(username, cancellationToken);
+
+                    var first = await Task.WhenAny(d, i).ConfigureAwait(false);
+
+                    direct = first == d;
+                    connection = first.Result;
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
 
@@ -281,29 +289,37 @@ namespace Soulseek
 
             IConnection connection = null;
 
-            try
-            {
-                connection = ConnectionFactory.GetConnection(address.IPAddress, address.Port, SoulseekClient.Options.TransferConnectionOptions);
-                connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+            //try
+            //{
+            //    //connection = ConnectionFactory.GetConnection(address.IPAddress, address.Port, SoulseekClient.Options.TransferConnectionOptions);
+            //    //connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
 
-                Diagnostic.Debug($"Attempting direct transfer connection to {username} ({address.IPAddress}:{address.Port})");
-                connection = await GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken).ConfigureAwait(false);
-            }
-            catch
-            {
-                try
-                {
-                    direct = false;
-                    Diagnostic.Debug($"Direct transfer connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
-                    connection = await GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken).ConfigureAwait(false);
-                }
-                catch
-                {
-                    var msg = $"Failed to establish transfer connection to {username} ({address.IPAddress}:{address.Port})";
-                    Diagnostic.Warning(msg);
-                    throw new ConnectionException(msg);
-                }
-            }
+            //    Diagnostic.Debug($"Attempting direct transfer connection to {username} ({address.IPAddress}:{address.Port})");
+            //    connection = await GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken).ConfigureAwait(false);
+            //}
+            //catch
+            //{
+            //    try
+            //    {
+            //        direct = false;
+            //        Diagnostic.Debug($"Direct transfer connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
+            //        connection = await GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken).ConfigureAwait(false);
+            //    }
+            //    catch
+            //    {
+            //        var msg = $"Failed to establish transfer connection to {username} ({address.IPAddress}:{address.Port})";
+            //        Diagnostic.Warning(msg);
+            //        throw new ConnectionException(msg);
+            //    }
+            //}
+
+            var d = GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken);
+            var i = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken);
+
+            var first = await Task.WhenAny(d, i).ConfigureAwait(false);
+            direct = first == d;
+
+            connection = first.Result;
 
             TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
