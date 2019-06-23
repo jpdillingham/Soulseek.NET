@@ -129,7 +129,6 @@ namespace Soulseek
 
             TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
 
-            Console.WriteLine($"Sending PierceFirewall with token {connectToPeerResponse.Token}");
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
 
@@ -216,8 +215,6 @@ namespace Soulseek
         /// <returns>The operation context, including the new or existing connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, CancellationToken cancellationToken)
         {
-            bool direct = true;
-
             var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
@@ -233,38 +230,17 @@ namespace Soulseek
                 {
                     var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
-                    //try
-                    //{
-                    //    Diagnostic.Debug($"Attempting direct message connection to {username} ({address.IPAddress}:{address.Port})");
-                    //    connection = await GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                    //}
-                    //catch
-                    //{
-                    //    try
-                    //    {
-                    //        direct = false;
-                    //        Diagnostic.Debug($"Direct message connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
-                    //        connection = await GetOutboundIndirectMessageConnectionAsync(username, cancellationToken).ConfigureAwait(false);
-                    //    }
-                    //    catch
-                    //    {
-                    //        var msg = $"Failed to establish message connection to {username} ({address.IPAddress}:{address.Port})";
-                    //        Diagnostic.Warning(msg);
-                    //        throw new ConnectionException(msg);
-                    //    }
-                    //}
+                    var direct = GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken);
+                    var indirect = GetOutboundIndirectMessageConnectionAsync(username, cancellationToken);
 
-                    var d = GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken);
-                    var i = GetOutboundIndirectMessageConnectionAsync(username, cancellationToken);
+                    var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
 
-                    var first = await Task.WhenAny(d, i).ConfigureAwait(false);
-
-                    direct = first == d;
+                    var isDirect = first == direct;
                     connection = first.Result;
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
 
-                    Diagnostic.Debug($"Unsolicited {(direct ? "direct" : "indirect")} message connection to {username} ({address.IPAddress}:{address.Port}) established.");
+                    Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} message connection to {username} ({address.IPAddress}:{address.Port}) established.");
                     return connection;
                 }
             }
@@ -284,46 +260,21 @@ namespace Soulseek
         /// <returns>The operation context, including the new connection.</returns>
         public async Task<IConnection> GetTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
         {
-            bool direct = true;
             var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
             IConnection connection = null;
 
-            //try
-            //{
-            //    //connection = ConnectionFactory.GetConnection(address.IPAddress, address.Port, SoulseekClient.Options.TransferConnectionOptions);
-            //    //connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+            var direct = GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken);
+            var indirect = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken);
 
-            //    Diagnostic.Debug($"Attempting direct transfer connection to {username} ({address.IPAddress}:{address.Port})");
-            //    connection = await GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken).ConfigureAwait(false);
-            //}
-            //catch
-            //{
-            //    try
-            //    {
-            //        direct = false;
-            //        Diagnostic.Debug($"Direct transfer connection to {username} ({address.IPAddress}:{address.Port}) failed.  Attempting indirect connection.");
-            //        connection = await GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken).ConfigureAwait(false);
-            //    }
-            //    catch
-            //    {
-            //        var msg = $"Failed to establish transfer connection to {username} ({address.IPAddress}:{address.Port})";
-            //        Diagnostic.Warning(msg);
-            //        throw new ConnectionException(msg);
-            //    }
-            //}
-
-            var d = GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken);
-            var i = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken);
-
-            var first = await Task.WhenAny(d, i).ConfigureAwait(false);
-            direct = first == d;
+            var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+            var isDirect = first == direct;
 
             connection = first.Result;
 
             TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
-            Diagnostic.Debug($"Unsolicited {(direct ? "direct" : "indirect")} transfer connection to {username} ({address.IPAddress}:{address.Port}) established.");
+            Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} transfer connection to {username} ({address.IPAddress}:{address.Port}) established.");
             return connection;
         }
 
