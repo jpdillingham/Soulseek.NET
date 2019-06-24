@@ -92,7 +92,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.NotNull(result);
 
             Assert.Equal(username, result.Username);
-            Assert.Equal(type.ToString(), result.TransferType);
+            Assert.Equal(type.ToString(CultureInfo.InvariantCulture), result.TransferType);
             Assert.Equal(token, result.Token);
         }
     }

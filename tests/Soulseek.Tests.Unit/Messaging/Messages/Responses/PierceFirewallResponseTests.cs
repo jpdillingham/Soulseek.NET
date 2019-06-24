@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInitResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PierceFirewallResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,8 +14,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
-    using System.Text;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -48,7 +46,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "TryParse")]
-        [Fact(DisplayName = "TryParse returns false on missing data"), AutoData]
+        [Fact(DisplayName = "TryParse returns false on missing data")]
         public void TryParse_Returns_False_On_Missing_Data()
         {
             var msg = new List<byte>();

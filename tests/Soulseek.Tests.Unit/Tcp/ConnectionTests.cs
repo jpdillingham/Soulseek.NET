@@ -25,13 +25,11 @@ namespace Soulseek.Tests.Unit.Tcp
 
     public class ConnectionTests
     {
-        private ITestOutputHelper OutputHelper;
-        private Action<string> Output;
+        private readonly Action<string> output;
 
         public ConnectionTests(ITestOutputHelper outputHelper)
         {
-            OutputHelper = outputHelper;
-            Output = (s) => OutputHelper.WriteLine(s);
+            output = (s) => outputHelper.WriteLine(s);
         }
 
         [Trait("Category", "Instantiation")]
@@ -723,7 +721,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
             Assert.NotNull(ex);
-            Output(ex.Message);
+            output(ex.Message);
             Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
