@@ -227,7 +227,7 @@ namespace Soulseek
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
-        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, CancellationToken cancellationToken)
+        public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
             var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
             await semaphore.WaitAsync().ConfigureAwait(false);
@@ -242,9 +242,7 @@ namespace Soulseek
                 }
                 else
                 {
-                    var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-
-                    var direct = GetOutboundDirectMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken);
+                    var direct = GetOutboundDirectMessageConnectionAsync(username, ipAddress, port, cancellationToken);
                     var indirect = GetOutboundIndirectMessageConnectionAsync(username, cancellationToken);
 
                     var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
@@ -254,7 +252,7 @@ namespace Soulseek
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
 
-                    Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} message connection to {username} ({address.IPAddress}:{address.Port}) established.");
+                    Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} message connection to {username} ({ipAddress}:{port}) established.");
                     return connection;
                 }
             }
@@ -272,13 +270,11 @@ namespace Soulseek
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
-        public async Task<IConnection> GetTransferConnectionAsync(string username, int token, CancellationToken cancellationToken)
+        public async Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
         {
-            var address = await SoulseekClient.GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-
             IConnection connection = null;
 
-            var direct = GetOutboundDirectTransferConnectionAsync(address.IPAddress, address.Port, token, cancellationToken);
+            var direct = GetOutboundDirectTransferConnectionAsync(ipAddress, port, token, cancellationToken);
             var indirect = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken);
 
             var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
@@ -288,7 +284,7 @@ namespace Soulseek
 
             TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
-            Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} transfer connection to {username} ({address.IPAddress}:{address.Port}) established.");
+            Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} transfer connection to {username} ({ipAddress}:{port}) established.");
             return connection;
         }
 

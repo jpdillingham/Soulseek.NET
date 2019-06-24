@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
@@ -75,7 +76,7 @@ namespace Soulseek
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
-        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets a new transfer connection to the specified <paramref name="username"/> using the specified <paramref name="token"/>.
@@ -85,7 +86,7 @@ namespace Soulseek
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
-        Task<IConnection> GetTransferConnectionAsync(string username, int token, CancellationToken cancellationToken);
+        Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Removes and disposes all active and queued connections.
