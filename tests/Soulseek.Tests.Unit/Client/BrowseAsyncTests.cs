@@ -70,127 +70,127 @@ namespace Soulseek.Tests.Unit.Client
             Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        //[Trait("Category", "BrowseInternalAsync")]
-        //[Theory(DisplayName = "BrowseInternalAsync returns expected response on success"), AutoData]
-        //public async Task BrowseInternalAsync_Returns_Expected_Response_On_Success(string username, IPAddress ip, int port, string localUsername, List<Directory> directories)
-        //{
-        //    var response = new BrowseResponse(directories.Count, directories);
+        [Trait("Category", "BrowseInternalAsync")]
+        [Theory(DisplayName = "BrowseInternalAsync returns expected response on success"), AutoData]
+        public async Task BrowseInternalAsync_Returns_Expected_Response_On_Success(string username, IPAddress ip, int port, string localUsername, List<Directory> directories)
+        {
+            var response = new BrowseResponse(directories.Count, directories);
 
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(response));
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.State)
-        //        .Returns(ConnectionState.Connected);
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("Username", localUsername);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
+            s.SetProperty("Username", localUsername);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    var result = await s.BrowseAsync(username);
+            var result = await s.BrowseAsync(username);
 
-        //    Assert.Equal(response, result);
-        //}
+            Assert.Equal(response, result);
+        }
 
-        //[Trait("Category", "BrowseInternalAsync")]
-        //[Theory(DisplayName = "BrowseInternalAsync throws BrowseException on cancellation"), AutoData]
-        //public async Task BrowseInternalAsync_Throws_BrowseException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
-        //{
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+        [Trait("Category", "BrowseInternalAsync")]
+        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on cancellation"), AutoData]
+        public async Task BrowseInternalAsync_Throws_BrowseException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.State)
-        //        .Returns(ConnectionState.Connected);
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("Username", localUsername);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
+            s.SetProperty("Username", localUsername);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    BrowseResponse result = null;
-        //    var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+            BrowseResponse result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
-        //    Assert.NotNull(ex);
-        //    Assert.IsType<BrowseException>(ex);
-        //    Assert.IsType<OperationCanceledException>(ex.InnerException);
-        //}
+            Assert.NotNull(ex);
+            Assert.IsType<BrowseException>(ex);
+            Assert.IsType<OperationCanceledException>(ex.InnerException);
+        }
 
-        //[Trait("Category", "BrowseInternalAsync")]
-        //[Theory(DisplayName = "BrowseInternalAsync throws BrowseException on write exception"), AutoData]
-        //public async Task BrowseInternalAsync_Throws_BrowseException_On_Write_Exception(string username, IPAddress ip, int port, string localUsername)
-        //{
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+        [Trait("Category", "BrowseInternalAsync")]
+        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on write exception"), AutoData]
+        public async Task BrowseInternalAsync_Throws_BrowseException_On_Write_Exception(string username, IPAddress ip, int port, string localUsername)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Throws(new ConnectionWriteException());
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Throws(new ConnectionWriteException());
 
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("Username", localUsername);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
+            s.SetProperty("Username", localUsername);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    BrowseResponse result = null;
-        //    var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+            BrowseResponse result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
-        //    Assert.NotNull(ex);
-        //    Assert.IsType<BrowseException>(ex);
-        //    Assert.IsType<ConnectionWriteException>(ex.InnerException);
-        //}
+            Assert.NotNull(ex);
+            Assert.IsType<BrowseException>(ex);
+            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+        }
 
-        //[Trait("Category", "BrowseInternalAsync")]
-        //[Theory(DisplayName = "BrowseInternalAsync throws BrowseException on disconnect"), AutoData]
-        //public async Task BrowseInternalAsync_Throws_BrowseException_On_Disconnect(string username, IPAddress ip, int port, string localUsername)
-        //{
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
-        //    waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
+        [Trait("Category", "BrowseInternalAsync")]
+        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on disconnect"), AutoData]
+        public async Task BrowseInternalAsync_Throws_BrowseException_On_Disconnect(string username, IPAddress ip, int port, string localUsername)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask)
-        //        .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask)
+                .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
 
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), localUsername, It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("Username", localUsername);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
+            s.SetProperty("Username", localUsername);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    BrowseResponse result = null;
-        //    var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+            BrowseResponse result = null;
+            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
-        //    Assert.NotNull(ex);
-        //    Assert.IsType<BrowseException>(ex);
-        //    Assert.IsType<ConnectionException>(ex.InnerException);
-        //    Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
-        //}
+            Assert.NotNull(ex);
+            Assert.IsType<BrowseException>(ex);
+            Assert.IsType<ConnectionException>(ex.InnerException);
+            Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
+        }
     }
 }
