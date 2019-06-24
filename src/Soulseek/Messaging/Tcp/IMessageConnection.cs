@@ -29,14 +29,32 @@ namespace Soulseek.Messaging.Tcp
         event EventHandler<Message> MessageRead;
 
         /// <summary>
-        ///     Gets the username of the peer associated with the connection, if applicable.
+        ///     Gets a value indicating whether the internal continuous read loop is running.
         /// </summary>
-        string Username { get; }
+        bool ReadingContinuously { get; }
 
         /// <summary>
         ///     Gets the connection type (Peer, Server).
         /// </summary>
         MessageConnectionType Type { get; }
+
+        /// <summary>
+        ///     Gets the username of the peer associated with the connection, if applicable.
+        /// </summary>
+        string Username { get; }
+
+        /// <summary>
+        ///     Begins the internal continuous read loop, if it has not yet started.
+        /// </summary>
+        /// <remarks>
+        ///     This functionality should be used only when an incoming connection has already been established in an IConnection
+        ///     instance and with a Connected ITcpClient, and when that IConnection is upgraded to an IMessageConnection, handing
+        ///     off the ITcpClient instance without disconnecting it. Normally reading begins when the Connected event is fired,
+        ///     but since the connection is already Connected the event will not be fired again. It is important to delay the start
+        ///     of the read loop until after the calling code has had the chance to connect an event handler to the MessageRead
+        ///     event, which is impossible if we simply start the loop immediately upon instantiation.
+        /// </remarks>
+        void StartReadingContinuously();
 
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.

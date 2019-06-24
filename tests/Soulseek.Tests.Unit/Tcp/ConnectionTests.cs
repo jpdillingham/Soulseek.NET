@@ -21,9 +21,17 @@ namespace Soulseek.Tests.Unit.Tcp
     using Moq;
     using Soulseek.Tcp;
     using Xunit;
+    using Xunit.Abstractions;
 
     public class ConnectionTests
     {
+        private readonly Action<string> output;
+
+        public ConnectionTests(ITestOutputHelper outputHelper)
+        {
+            output = (s) => outputHelper.WriteLine(s);
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates properly")]
         public void Instantiates_Properly()
@@ -407,7 +415,11 @@ namespace Soulseek.Tests.Unit.Tcp
         [Fact(DisplayName = "Write throws if connection is not connected")]
         public async Task Write_Throws_If_Connection_Is_Not_Connected()
         {
-            var c = new Connection(new IPAddress(0x0), 1);
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            c.SetProperty("State", ConnectionState.Disconnected);
 
             var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
 
@@ -475,7 +487,11 @@ namespace Soulseek.Tests.Unit.Tcp
         [Fact(DisplayName = "Read throws if connection is not connected")]
         public async Task Read_Throws_If_Connection_Is_Not_Connected()
         {
-            var c = new Connection(new IPAddress(0x0), 1);
+            var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Connected).Returns(true);
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            c.SetProperty("State", ConnectionState.Disconnected);
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
@@ -507,7 +523,7 @@ namespace Soulseek.Tests.Unit.Tcp
             long length = 2147483647; // max = 2147483647
 
             var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>()))
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
@@ -516,11 +532,10 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            // this throws but we don't care because we're only testing the code that negotiates data type.
-            await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+            var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
-            // the test passes if it throws as long as ReadAsync on the stream mock is invoked; the code made it past the
-            // data type negotiation.
+            Assert.Null(ex);
+
             s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
@@ -701,14 +716,34 @@ namespace Soulseek.Tests.Unit.Tcp
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 1;
+            c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 100;
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
             Assert.NotNull(ex);
+            output(ex.Message);
             Assert.IsType<ConnectionReadException>(ex);
 
             Assert.Equal(ConnectionState.Disconnected, c.State);
+        }
+
+        [Trait("Category", "HandoffTcpClient")]
+        [Fact(DisplayName = "HandoffTcpClient hands off")]
+        public void HandoffTcpClient_Hands_Off()
+        {
+            var t = new Mock<ITcpClient>();
+
+            var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+
+            var first = c.GetProperty<ITcpClient>("TcpClient");
+
+            var tcpClient = c.HandoffTcpClient();
+
+            var second = c.GetProperty<ITcpClient>("TcpClient");
+
+            Assert.Equal(t.Object, tcpClient);
+            Assert.NotNull(first);
+            Assert.Null(second);
         }
     }
 }

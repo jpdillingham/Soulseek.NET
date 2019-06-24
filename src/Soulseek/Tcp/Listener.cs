@@ -13,6 +13,7 @@
 namespace Soulseek.Tcp
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -20,6 +21,13 @@ namespace Soulseek.Tcp
     /// <summary>
     ///     Listens for client connections for TCP network services.
     /// </summary>
+    /// <remarks>
+    ///     Excluded from code coverage due to the inability to test the accepted code block; You can't instantiate TcpClient with
+    ///     an ip and port without it connecting immediately, so the test either must create a new connection to *something*, or a
+    ///     bunch of hoops need to be jumped through to handle TcpClients coming from the listener not connected/without an
+    ///     endpoint, both of which will and SHOULD throw exceptions and die.
+    /// </remarks>
+    [ExcludeFromCodeCoverage]
     internal class Listener : IListener
     {
         /// <summary>
@@ -41,14 +49,14 @@ namespace Soulseek.Tcp
         public event EventHandler<IConnection> Accepted;
 
         /// <summary>
-        ///     Gets a value indicating whether the listener is listening for connections.
-        /// </summary>
-        public bool Listening { get; private set; } = false;
-
-        /// <summary>
         ///     Gets the options used when creating new <see cref="IConnection"/> instances.
         /// </summary>
         public ConnectionOptions ConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the listener is listening for connections.
+        /// </summary>
+        public bool Listening { get; private set; } = false;
 
         /// <summary>
         ///     Gets the port of the listener.

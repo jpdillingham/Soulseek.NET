@@ -61,146 +61,76 @@ namespace Soulseek.Tests.Unit.Client
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        //[Trait("Category", "GetUserInfoAsync")]
-        //[Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
-        //public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
-        //{
-        //    var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
+        [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
+        public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        {
+            var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
 
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(result));
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
 
-        //    var serverConn = new Mock<IMessageConnection>();
-        //    serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    var info = await s.GetUserInfoAsync(username);
+            var info = await s.GetUserInfoAsync(username);
 
-        //    Assert.Equal(result.Description, info.Description);
-        //    Assert.Equal(result.HasPicture, info.HasPicture);
-        //    Assert.Equal(result.Picture, info.Picture);
-        //    Assert.Equal(result.UploadSlots, info.UploadSlots);
-        //    Assert.Equal(result.QueueLength, info.QueueLength);
-        //    Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
-        //}
+            Assert.Equal(result.Description, info.Description);
+            Assert.Equal(result.HasPicture, info.HasPicture);
+            Assert.Equal(result.Picture, info.Picture);
+            Assert.Equal(result.UploadSlots, info.UploadSlots);
+            Assert.Equal(result.QueueLength, info.QueueLength);
+            Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
+        }
 
-        //[Trait("Category", "GetUserInfoAsync")]
-        //[Theory(DisplayName = "GetUserInfoAsync throws PeerInfoException on throw"), AutoData]
-        //public async Task GetUserInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
-        //{
-        //    var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
+        [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync throws PeerInfoException on throw"), AutoData]
+        public async Task GetUserInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        {
+            var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
 
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(result));
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
 
-        //    var serverConn = new Mock<IMessageConnection>();
-        //    serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromException(new ConnectionException("foo")));
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException(new ConnectionException("foo")));
 
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
+            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    PeerInfoResponse info = null;
-        //    var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
+            PeerInfoResponse info = null;
+            var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
 
-        //    Assert.NotNull(ex);
-        //    Assert.IsType<UserInfoException>(ex);
-        //    Assert.IsType<ConnectionException>(ex.InnerException);
-        //}        //[Trait("Category", "GetUserInfoAsync")]
-        //[Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
-        //public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
-        //{
-        //    var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
-
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(result));
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
-
-        //    var serverConn = new Mock<IMessageConnection>();
-        //    serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
-
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
-
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
-
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-        //    var info = await s.GetUserInfoAsync(username);
-
-        //    Assert.Equal(result.Description, info.Description);
-        //    Assert.Equal(result.HasPicture, info.HasPicture);
-        //    Assert.Equal(result.Picture, info.Picture);
-        //    Assert.Equal(result.UploadSlots, info.UploadSlots);
-        //    Assert.Equal(result.QueueLength, info.QueueLength);
-        //    Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
-        //}
-
-        //[Trait("Category", "GetUserInfoAsync")]
-        //[Theory(DisplayName = "GetUserInfoAsync throws PeerInfoException on throw"), AutoData]
-        //public async Task GetUserInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
-        //{
-        //    var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
-
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(result));
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
-
-        //    var serverConn = new Mock<IMessageConnection>();
-        //    serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.CompletedTask);
-
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromException(new ConnectionException("foo")));
-
-        //    var connManager = new Mock<IConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddUnsolicitedPeerConnectionAsync(It.IsAny<ConnectionKey>(), It.IsAny<string>(), It.IsAny<EventHandler<Message>>(), It.IsAny<ConnectionOptions>(), It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
-
-        //    var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, connectionManager: connManager.Object);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-        //    PeerInfoResponse info = null;
-        //    var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
-
-        //    Assert.NotNull(ex);
-        //    Assert.IsType<UserInfoException>(ex);
-        //    Assert.IsType<ConnectionException>(ex.InnerException);
-        //}
+            Assert.NotNull(ex);
+            Assert.IsType<UserInfoException>(ex);
+            Assert.IsType<ConnectionException>(ex.InnerException);
+        }
     }
 }

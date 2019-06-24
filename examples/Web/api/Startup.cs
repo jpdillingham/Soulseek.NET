@@ -24,6 +24,7 @@
         private static string Username { get; set; }
         private static string Password { get; set; }
         private static string WebRoot { get; set; }
+        private static int ListenPort { get; set; }
         public static string OutputDirectory { get; private set; }
 
         private SoulseekClient Client { get; }
@@ -35,13 +36,14 @@
             Username = Configuration.GetValue<string>("USERNAME");
             Password = Configuration.GetValue<string>("PASSWORD");
             WebRoot = Configuration.GetValue<string>("WEBROOT");
+            ListenPort = Configuration.GetValue<int>("LISTEN_PORT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
 
             var options = new SoulseekClientOptions(
+                listenPort: ListenPort,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 concurrentPeerMessageConnectionLimit: 1000000,
                 serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
-                listenPort: 54859,
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5));
 
