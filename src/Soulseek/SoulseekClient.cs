@@ -1142,11 +1142,12 @@ namespace Soulseek
 
                         if (transferRequest.Direction == TransferDirection.Upload)
                         {
+                            Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Filename}");
                             Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
                         }
                         else
                         {
-                            Console.WriteLine($"Transfer request: direction: {transferRequest.Direction} {transferRequest.Filename}");
+                            Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Filename}");
                             var response = new PeerTransferResponse(transferRequest.Token, false, 100, "Queued."); // todo: verify the message
                             await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
 
