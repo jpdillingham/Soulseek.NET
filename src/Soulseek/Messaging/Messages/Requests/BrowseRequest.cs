@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerBrowseRequest.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the shared file list from a peer.
     /// </summary>
-    public class PeerBrowseRequest
+    public class BrowseRequest
     {
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
