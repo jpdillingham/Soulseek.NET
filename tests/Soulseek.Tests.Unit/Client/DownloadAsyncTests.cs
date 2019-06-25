@@ -244,7 +244,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, string.Empty);
+            var response = new PeerTransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var waiter = new Mock<IWaiter>();
@@ -279,7 +279,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, string.Empty);
+            var response = new PeerTransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
@@ -328,7 +328,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, string.Empty);
+            var response = new PeerTransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
@@ -371,7 +371,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, string.Empty);
+            var response = new PeerTransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);

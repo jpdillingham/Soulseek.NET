@@ -32,8 +32,16 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var size = Random.Next();
 
             PeerTransferResponse response = null;
+            Exception ex = null;
 
-            var ex = Record.Exception(() => response = new PeerTransferResponse(token, allowed, size));
+            if (allowed)
+            {
+                ex = Record.Exception(() => response = new PeerTransferResponse(token, size));
+            }
+            else
+            {
+                ex = Record.Exception(() => response = new PeerTransferResponse(token, string.Empty));
+            }
 
             Assert.Null(ex);
 
@@ -123,7 +131,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var token = rnd.Next();
             var size = rnd.Next();
             var message = Guid.NewGuid().ToString();
-            var a = new PeerTransferResponse(token, true, size);
+            var a = new PeerTransferResponse(token, size);
             var msg = a.ToMessage();
 
             Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);

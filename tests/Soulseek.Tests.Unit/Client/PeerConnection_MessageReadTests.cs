@@ -131,7 +131,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
 
-            var msg = new PeerTransferResponse(token, true, fileSize).ToMessage();
+            var msg = new PeerTransferResponse(token, fileSize).ToMessage();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
