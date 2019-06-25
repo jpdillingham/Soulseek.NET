@@ -842,9 +842,13 @@ namespace Soulseek
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
+                    Console.WriteLine($"Transfer start recieved.  Trying to connect.");
+
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+
+                    Console.WriteLine($"Sending transfer response.");
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                     try
@@ -1085,7 +1089,7 @@ namespace Soulseek
             }
         }
 
-        private void PeerConnection_MessageRead(object sender, Message message)
+        private async void PeerConnection_MessageRead(object sender, Message message)
         {
             var connection = (IMessageConnection)sender;
             Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
@@ -1129,7 +1133,31 @@ namespace Soulseek
 
                     case MessageCode.PeerTransferRequest:
                         var transferRequest = PeerTransferRequest.Parse(message);
-                        Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+
+                        if (transferRequest.Direction == TransferDirection.Upload)
+                        {
+                            Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Transfer request: direction: {transferRequest.Direction} {transferRequest.Filename}");
+                            var response = new PeerTransferResponse(transferRequest.Token, false, 100, "Queued."); // todo: verify the message
+                            await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
+
+                            var start = new PeerTransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100);
+                            await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
+
+                            var transferConnection = await PeerConnectionManager
+                                .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Token);
+
+                            Console.WriteLine($"Transfer connection established. Trying to read magic 16 bytes");
+
+                            await transferConnection.ReadAsync(16);
+
+                            Console.WriteLine($"Magic bytes read.  Writing 'file'");
+                            await transferConnection.WriteAsync(new byte[100]);
+                        }
+
                         break;
 
                     case MessageCode.PeerQueueFailed:
