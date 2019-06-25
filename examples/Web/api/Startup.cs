@@ -1,6 +1,7 @@
 ﻿namespace WebAPI
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Net;
@@ -16,6 +17,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Tcp;
     using Swashbuckle.AspNetCore.Swagger;
 
@@ -39,6 +41,19 @@
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
 
+            var resolvers = new SoulseekClientResolvers(
+                browseResponse: (u, i, p) => 
+                {
+                    var dir = new Soulseek.Directory(@"\test\test", 3, new List<Soulseek.File>()
+                    {
+                        new Soulseek.File(1, @"anything1.txt", 100, ".txt", 0),
+                        new Soulseek.File(1, @"anything2.txt", 100, ".txt", 0),
+                        new Soulseek.File(2, @"anything3.txt", 100, ".txt", 0),
+                    });
+
+                    return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
+                });
+
             var options = new SoulseekClientOptions(
                 listenPort: ListenPort,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
@@ -47,7 +62,7 @@
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5));
 
-            Client = new SoulseekClient(options);
+            Client = new SoulseekClient(resolvers: resolvers, options: options);
             Client.DiagnosticGenerated += (e, args) =>
             {
                 if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
