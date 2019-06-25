@@ -19,6 +19,7 @@ namespace Soulseek
     using System.Net;
     using System.Net.Sockets;
     using System.Runtime.ExceptionServices;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
@@ -1160,7 +1161,7 @@ namespace Soulseek
                             await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
 
                             Console.WriteLine($"Waiting for transfer response....");
-                            var responseWait = Waiter.Wait<PeerTransferResponse>(
+                            var responseWait = await Waiter.Wait<PeerTransferResponse>(
                                 new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferRequest.Token));
 
                             Console.WriteLine($"Got response.  Getting connection...");
@@ -1173,7 +1174,7 @@ namespace Soulseek
                             await transferConnection.ReadAsync(8);
 
                             Console.WriteLine($"Magic bytes read.  Writing 'file'");
-                            await transferConnection.WriteAsync(new byte[100]);
+                            await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 100)));
                         }
 
                         break;
