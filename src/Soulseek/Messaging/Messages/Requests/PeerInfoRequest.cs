@@ -18,13 +18,6 @@ namespace Soulseek.Messaging.Messages
     public class PeerInfoRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerInfoRequest"/> class.
-        /// </summary>
-        public PeerInfoRequest()
-        {
-        }
-
-        /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
