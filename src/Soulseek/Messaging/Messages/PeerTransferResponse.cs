@@ -24,14 +24,25 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
-        /// <param name="fileSize">The size of the file being transferred, if allowed.</param>
         /// <param name="message">The reason the transfer was disallowed, if applicable.</param>
-        internal PeerTransferResponse(int token, bool allowed, int fileSize, string message)
+        internal PeerTransferResponse(int token, bool allowed, string message)
+        {
+            Token = token;
+            Allowed = allowed;
+            Message = message;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerTransferResponse"/> class.
+        /// </summary>
+        /// <param name="token">The unique token for the transfer.</param>
+        /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
+        /// <param name="fileSize">The size of the file being transferred, if allowed.</param>
+        internal PeerTransferResponse(int token, bool allowed, int fileSize)
         {
             Token = token;
             Allowed = allowed;
             FileSize = fileSize;
-            Message = message;
         }
 
         /// <summary>
@@ -77,13 +88,14 @@ namespace Soulseek.Messaging.Messages
             if (allowed)
             {
                 fileSize = reader.ReadInteger();
+                return new PeerTransferResponse(token, allowed, fileSize);
             }
             else
             {
                 msg = reader.ReadString();
+                return new PeerTransferResponse(token, allowed, msg);
             }
 
-            return new PeerTransferResponse(token, allowed, fileSize, msg);
         }
 
         /// <summary>
