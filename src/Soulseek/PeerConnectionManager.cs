@@ -128,7 +128,11 @@ namespace Soulseek
                 connectToPeerResponse.Port,
                 SoulseekClient.Options.TransferConnectionOptions);
 
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
+            connection.Disconnected += (sender, e) =>
+            {
+                Diagnostic.Debug($"Removing transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port})");
+                TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
+            };
 
             await connection.ConnectAsync().ConfigureAwait(false);
 
@@ -424,7 +428,11 @@ namespace Soulseek
         {
             var connection = ConnectionFactory.GetConnection(ipAddress, port, SoulseekClient.Options.TransferConnectionOptions);
 
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+            connection.Disconnected += (sender, e) =>
+            {
+                Diagnostic.Debug($"Removing transfer connection for token {token} ({ipAddress}:{port})");
+                TransferConnections.TryRemove((connection.Key, token), out _);
+            };
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
