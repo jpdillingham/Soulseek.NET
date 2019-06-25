@@ -23,12 +23,11 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="PeerTransferResponse"/> class.
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
-        /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
-        /// <param name="message">The reason the transfer was disallowed, if applicable.</param>
-        internal PeerTransferResponse(int token, bool allowed, string message)
+        /// <param name="message">The reason the transfer was disallowed.</param>
+        internal PeerTransferResponse(int token, string message)
         {
             Token = token;
-            Allowed = allowed;
+            Allowed = false;
             Message = message;
         }
 
@@ -36,12 +35,11 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="PeerTransferResponse"/> class.
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
-        /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
-        /// <param name="fileSize">The size of the file being transferred, if allowed.</param>
-        internal PeerTransferResponse(int token, bool allowed, long? fileSize)
+        /// <param name="fileSize">The size of the file being transferred.</param>
+        internal PeerTransferResponse(int token, long fileSize)
         {
             Token = token;
-            Allowed = allowed;
+            Allowed = true;
             FileSize = fileSize;
         }
 
@@ -53,7 +51,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the size of the file being transferred, if allowed.
         /// </summary>
-        public long? FileSize { get; }
+        public long FileSize { get; }
 
         /// <summary>
         ///     Gets the reason the transfer was disallowed, if applicable.
@@ -84,19 +82,13 @@ namespace Soulseek.Messaging.Messages
 
             if (allowed)
             {
-                long? fileSize = null;
-
-                if (reader.HasMoreData)
-                {
-                    fileSize = reader.ReadLong();
-                }
-
-                return new PeerTransferResponse(token, allowed, fileSize);
+                var fileSize = reader.ReadLong();
+                return new PeerTransferResponse(token, fileSize);
             }
             else
             {
                 var msg = reader.ReadString();
-                return new PeerTransferResponse(token, allowed, msg);
+                return new PeerTransferResponse(token, msg);
             }
 
         }
@@ -112,9 +104,9 @@ namespace Soulseek.Messaging.Messages
                 .WriteInteger(Token)
                 .WriteByte((byte)(Allowed ? 1 : 0));
 
-            if (Allowed && FileSize.HasValue)
+            if (Allowed)
             {
-                builder.WriteLong(FileSize.Value);
+                builder.WriteLong(FileSize);
             }
             else
             {
