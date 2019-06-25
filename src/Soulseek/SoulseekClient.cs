@@ -856,7 +856,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
                     Console.WriteLine($"Sending transfer response.");
-                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                     try
                     {
@@ -1149,8 +1149,8 @@ namespace Soulseek
                         }
                         else
                         {
-                            Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Filename}");
-                            var response = new PeerTransferResponse(transferRequest.Token, false, 100, "Queued."); // todo: verify the message
+                            Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Token} {transferRequest.Filename}");
+                            var response = new PeerTransferResponse(transferRequest.Token, false, "Queued."); // todo: verify the message
                             await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
 
                             var start = new PeerTransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100);
