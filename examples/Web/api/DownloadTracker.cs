@@ -58,8 +58,8 @@
         public string Filename { get; }
         public string Username { get; }
         public double AverageSpeed { get; }
-        public int BytesDownloaded { get; }
-        public int BytesRemaining { get; }
+        public long BytesDownloaded { get; }
+        public long BytesRemaining { get; }
         public TimeSpan? ElapsedTime { get; }
         public DateTime? EndTime { get; }
         public IPAddress IPAddress { get; }
@@ -67,7 +67,7 @@
         public int? Port { get; }
         public TimeSpan? RemainingTime { get; }
         public int RemoteToken { get; }
-        public int Size { get; }
+        public long Size { get; }
         public DateTime? StartTime { get; }
         public DownloadStates State { get; }
         public int Token { get; }

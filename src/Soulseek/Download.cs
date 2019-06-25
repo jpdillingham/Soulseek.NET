@@ -53,12 +53,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the total number of bytes downloaded.
         /// </summary>
-        public int BytesDownloaded { get; private set; }
+        public long BytesDownloaded { get; private set; }
 
         /// <summary>
         ///     Gets the number of remaining bytes to be downloaded.
         /// </summary>
-        public int BytesRemaining => Size - BytesDownloaded;
+        public long BytesRemaining => Size - BytesDownloaded;
 
         /// <summary>
         ///     Gets the data downloaded.
@@ -113,7 +113,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the size of the file to be downloaded, in bytes.
         /// </summary>
-        public int Size { get; internal set; }
+        public long Size { get; internal set; }
 
         /// <summary>
         ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.InProgress"/> state.
