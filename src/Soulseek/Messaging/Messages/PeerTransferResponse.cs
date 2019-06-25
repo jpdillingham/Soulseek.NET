@@ -104,13 +104,21 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
-            return new MessageBuilder()
+            var builder = new MessageBuilder()
                 .Code(MessageCode.PeerTransferResponse)
                 .WriteInteger(Token)
-                .WriteByte((byte)(Allowed ? 1 : 0))
-                .WriteInteger(FileSize)
-                .WriteString(Message)
-                .Build();
+                .WriteByte((byte)(Allowed ? 1 : 0));
+
+            if (Allowed)
+            {
+                builder.WriteInteger(FileSize);
+            }
+            else
+            {
+                builder.WriteString(Message);
+            }
+
+            return builder.Build();
         }
     }
 }
