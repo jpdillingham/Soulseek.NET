@@ -796,8 +796,12 @@ namespace Soulseek
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
+                Console.WriteLine($"Transfer request ACKed");
+
                 if (transferRequestAcknowledgement.Allowed)
                 {
+                    Console.WriteLine($"Transfer allowed");
+
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(DownloadStates.Initializing);
@@ -818,6 +822,8 @@ namespace Soulseek
                 }
                 else
                 {
+                    Console.WriteLine($"Transfer disallowed");
+
                     // the download is remotely queued, so put it in the local queue.
                     UpdateState(DownloadStates.Queued);
 
