@@ -794,6 +794,7 @@ namespace Soulseek
                 await peerConnection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
                 UpdateState(DownloadStates.Requested);
 
+                Console.WriteLine($"Waiting for ACK {download.Username} {download.Token}");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
                 Console.WriteLine($"Transfer request ACKed");
@@ -1134,6 +1135,7 @@ namespace Soulseek
 
                     case MessageCode.PeerTransferResponse:
                         var transferResponse = PeerTransferResponse.Parse(message);
+                        Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
                         Waiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
 
