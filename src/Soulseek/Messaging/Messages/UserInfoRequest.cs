@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInfoRequest.cs" company="JP Dillingham">
+﻿// <copyright file="UserInfoRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,9 +13,9 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Requests information about a peer.
+    ///     Requests information about a user.
     /// </summary>
-    public class PeerInfoRequest
+    public class UserInfoRequest
     {
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
