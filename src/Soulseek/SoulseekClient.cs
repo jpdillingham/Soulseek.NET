@@ -812,13 +812,14 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
-                    Console.WriteLine($"Transfer allowed");
+                    var tfa = transferRequestAcknowledgement;
+                    Console.WriteLine($"Transfer allowed {tfa.Token} {tfa.FileSize}");
 
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(DownloadStates.Initializing);
 
-                    download.Size = transferRequestAcknowledgement.FileSize ?? 0;
+                    download.Size = transferRequestAcknowledgement.FileSize;
 
                     // prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
@@ -841,6 +842,9 @@ namespace Soulseek
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
+
+                    var tsr = transferStartRequest;
+                    Console.WriteLine($"Start request: token {tsr.Token} filename {tsr.Filename} size: {tsr.FileSize}");
 
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
@@ -867,7 +871,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
                     Console.WriteLine($"Sending transfer response.");
-                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
                     Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
@@ -1201,7 +1205,7 @@ namespace Soulseek
                             Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Token} {transferRequest.Filename}");
 
                             // the official client seems to respond to every request like this with "queued", regardless of whether slots are available, so we'll do the same.
-                            var response = new PeerTransferResponse(transferRequest.Token, true, "Queued."); // todo: verify the message
+                            var response = new PeerTransferResponse(transferRequest.Token, 43); // todo: verify the message
                             await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
 
                             // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
@@ -1224,7 +1228,7 @@ namespace Soulseek
                             var magic = await transferConnection.ReadAsync(8).ConfigureAwait(false);
                             Console.WriteLine($"Magic bytes read: {BitConverter.ToInt64(magic, 0)}  Writing 'file'");
 
-                            await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 100000)))
+                            await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 43)))
                                 .ConfigureAwait(false);
                         }
 
