@@ -46,9 +46,9 @@
                 {
                     var dir = new Soulseek.Directory(@"\test\test", 3, new List<Soulseek.File>()
                     {
-                        new Soulseek.File(1, @"anything1.txt", 100, ".txt", 0),
-                        new Soulseek.File(1, @"anything2.txt", 100, ".txt", 0),
-                        new Soulseek.File(2, @"anything3.txt", 100, ".txt", 0),
+                        new Soulseek.File(1, @"anything1.txt", 43, ".txt", 0),
+                        new Soulseek.File(1, @"anything2.txt", 43, ".txt", 0),
+                        new Soulseek.File(2, @"anything3.txt", 43, ".txt", 0),
                     });
 
                     return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
