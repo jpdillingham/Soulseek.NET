@@ -65,10 +65,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
         public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
@@ -102,10 +102,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync throws PeerInfoException on throw"), AutoData]
         public async Task GetUserInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new PeerInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PeerInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
@@ -125,7 +125,7 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            PeerInfoResponse info = null;
+            UserInfoResponse info = null;
             var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
 
             Assert.NotNull(ex);

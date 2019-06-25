@@ -141,7 +141,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiation throws on a bad address")]
         public void Instantiation_Throws_On_A_Bad_Address()
         {
-            var ex = Record.Exception(() => new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), new SoulseekClientOptions()));
+            var ex = Record.Exception(() => new SoulseekClient(address: Guid.NewGuid().ToString(), port: new Random().Next(), resolvers: null, options: new SoulseekClientOptions()));
 
             Assert.NotNull(ex);
             Assert.IsType<SoulseekClientException>(ex);

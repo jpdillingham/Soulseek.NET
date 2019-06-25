@@ -117,9 +117,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Fact(DisplayName = "PeerBrowseRequest instantiates properly")]
         public void PeerBrowseRequest_Instantiates_Properly()
         {
-            PeerBrowseRequest a = null;
+            BrowseRequest a = null;
 
-            var ex = Record.Exception(() => a = new PeerBrowseRequest());
+            var ex = Record.Exception(() => a = new BrowseRequest());
 
             Assert.Null(ex);
         }
@@ -129,7 +129,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Fact(DisplayName = "PeerBrowseRequest constructs the correct Message")]
         public void PeerBrowseRequest_Constructs_The_Correct_Message()
         {
-            var msg = new PeerBrowseRequest().ToMessage();
+            var msg = new BrowseRequest().ToMessage();
 
             Assert.Equal(MessageCode.PeerBrowseRequest, msg.Code);
             Assert.Equal(4, msg.Length);
@@ -258,7 +258,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Fact(DisplayName = "PeerInfoRequest constructs the correct Message")]
         public void PeerInfoRequest_Constructs_The_Correct_Message()
         {
-            var a = new PeerInfoRequest();
+            var a = new UserInfoRequest();
             var msg = a.ToMessage();
 
             Assert.Equal(MessageCode.PeerInfoRequest, msg.Code);

@@ -162,7 +162,7 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -226,7 +226,7 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -244,7 +244,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, size, string.Empty);
+            var response = new PeerTransferResponse(token, false, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var waiter = new Mock<IWaiter>();
@@ -261,7 +261,7 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -279,7 +279,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, size, string.Empty);
+            var response = new PeerTransferResponse(token, false, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
@@ -310,7 +310,7 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -328,7 +328,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, size, string.Empty);
+            var response = new PeerTransferResponse(token, false, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
@@ -353,7 +353,7 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -371,7 +371,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
-            var response = new PeerTransferResponse(token, false, size, string.Empty);
+            var response = new PeerTransferResponse(token, false, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.PeerTransferResponse, username, token);
 
             var request = new PeerTransferRequest(TransferDirection.Download, token, filename, size);
@@ -404,7 +404,7 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
