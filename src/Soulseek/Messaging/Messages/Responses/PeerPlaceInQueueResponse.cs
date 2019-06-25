@@ -59,5 +59,14 @@ namespace Soulseek.Messaging.Messages
 
             return new PeerPlaceInQueueResponse(filename, placeInQueue);
         }
+
+        public Message ToMessage()
+        {
+            return new MessageBuilder()
+                .Code(MessageCode.PeerPlaceInQueueResponse)
+                .WriteString(Filename)
+                .WriteInteger(PlaceInQueue)
+                .Build();
+        }
     }
 }
