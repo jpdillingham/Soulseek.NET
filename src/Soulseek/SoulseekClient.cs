@@ -857,6 +857,7 @@ namespace Soulseek
 
                     Console.WriteLine($"Sending transfer response.");
                     await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
                     {
@@ -890,6 +891,8 @@ namespace Soulseek
 
                 try
                 {
+                    Console.WriteLine($"Download connection established.  Sending magic bytes...");
+
                     // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
                     // was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
@@ -1156,12 +1159,18 @@ namespace Soulseek
                             var start = new PeerTransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100);
                             await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
 
+                            Console.WriteLine($"Waiting for transfer response....");
+                            var responseWait = Waiter.Wait<PeerTransferResponse>(
+                                new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferRequest.Token));
+
+                            Console.WriteLine($"Got response.  Getting connection...");
+
                             var transferConnection = await PeerConnectionManager
                                 .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Token);
 
                             Console.WriteLine($"Transfer connection established. Trying to read magic 16 bytes");
 
-                            await transferConnection.ReadAsync(16);
+                            await transferConnection.ReadAsync(8);
 
                             Console.WriteLine($"Magic bytes read.  Writing 'file'");
                             await transferConnection.WriteAsync(new byte[100]);
