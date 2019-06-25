@@ -38,7 +38,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
         /// <param name="fileSize">The size of the file being transferred, if allowed.</param>
-        internal PeerTransferResponse(int token, bool allowed, int fileSize)
+        internal PeerTransferResponse(int token, bool allowed, long? fileSize)
         {
             Token = token;
             Allowed = allowed;
@@ -53,7 +53,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the size of the file being transferred, if allowed.
         /// </summary>
-        public int FileSize { get; }
+        public long? FileSize { get; }
 
         /// <summary>
         ///     Gets the reason the transfer was disallowed, if applicable.
@@ -82,17 +82,20 @@ namespace Soulseek.Messaging.Messages
             var token = reader.ReadInteger();
             var allowed = reader.ReadByte() == 1;
 
-            int fileSize = default(int);
-            string msg = default(string);
-
             if (allowed)
             {
-                fileSize = reader.ReadInteger();
+                long? fileSize = null;
+
+                if (reader.HasMoreData)
+                {
+                    fileSize = reader.ReadLong();
+                }
+
                 return new PeerTransferResponse(token, allowed, fileSize);
             }
             else
             {
-                msg = reader.ReadString();
+                var msg = reader.ReadString();
                 return new PeerTransferResponse(token, allowed, msg);
             }
 
@@ -109,9 +112,9 @@ namespace Soulseek.Messaging.Messages
                 .WriteInteger(Token)
                 .WriteByte((byte)(Allowed ? 1 : 0));
 
-            if (Allowed)
+            if (Allowed && FileSize.HasValue)
             {
-                builder.WriteInteger(FileSize);
+                builder.WriteLong(FileSize.Value);
             }
             else
             {

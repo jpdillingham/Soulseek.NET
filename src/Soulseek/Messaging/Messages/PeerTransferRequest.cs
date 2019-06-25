@@ -26,7 +26,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="filename">The name of the file being transferred.</param>
         /// <param name="fileSize">The size of the file being transferred.</param>
-        internal PeerTransferRequest(TransferDirection direction, int token, string filename, int fileSize = 0)
+        internal PeerTransferRequest(TransferDirection direction, int token, string filename, long fileSize = 0)
         {
             Direction = direction;
             Token = token;
@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the size of the file being transferred.
         /// </summary>
-        public int FileSize { get; }
+        public long FileSize { get; }
 
         /// <summary>
         ///     Gets the unique token for the transfer.
@@ -71,7 +71,7 @@ namespace Soulseek.Messaging.Messages
             var direction = (TransferDirection)reader.ReadInteger();
             var token = reader.ReadInteger();
             var filename = reader.ReadString();
-            var fileSize = reader.ReadInteger();
+            var fileSize = reader.ReadLong();
 
             return new PeerTransferRequest(direction, token, filename, fileSize);
         }
@@ -87,7 +87,7 @@ namespace Soulseek.Messaging.Messages
                 .WriteInteger((int)Direction)
                 .WriteInteger(Token)
                 .WriteString(Filename)
-                .WriteInteger(FileSize)
+                .WriteLong(FileSize)
                 .Build();
         }
     }
