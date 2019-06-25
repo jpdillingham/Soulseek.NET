@@ -213,7 +213,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.

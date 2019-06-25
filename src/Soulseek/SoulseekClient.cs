@@ -36,12 +36,18 @@ namespace Soulseek
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
 
+        public SoulseekClient(SoulseekClientResolvers resolvers)
+            : this(DefaultAddress, DefaultPort, resolvers, null)
+        {
+
+        }
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         public SoulseekClient(SoulseekClientOptions options)
-            : this(DefaultAddress, DefaultPort, options)
+            : this(DefaultAddress, DefaultPort, null, options)
         {
         }
 
@@ -51,8 +57,8 @@ namespace Soulseek
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
-        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
-            : this(address, port, options, null)
+        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientResolvers resolvers = null, SoulseekClientOptions options = null)
+            : this(address, port, resolvers, options, null)
         {
         }
 
@@ -71,6 +77,7 @@ namespace Soulseek
         internal SoulseekClient(
             string address,
             int port,
+            SoulseekClientResolvers resolvers = null,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
@@ -82,6 +89,7 @@ namespace Soulseek
             Address = address;
             Port = port;
 
+            Resolvers = resolvers ?? new SoulseekClientResolvers();
             Options = options ?? new SoulseekClientOptions();
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -178,6 +186,8 @@ namespace Soulseek
         ///     Gets the resolved server address.
         /// </summary>
         public SoulseekClientOptions Options { get; }
+
+        public SoulseekClientResolvers Resolvers { get; }
 
         /// <summary>
         ///     Gets server port.
@@ -494,7 +504,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -730,7 +740,7 @@ namespace Soulseek
                 Diagnostic.Debug($"Sending browse request to peer {username}");
                 sw.Start();
 
-                await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new BrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -1022,14 +1032,14 @@ namespace Soulseek
             }
         }
 
-        private async Task<PeerInfoResponse> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserInfoResponse> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
 
             try
             {
                 var waitKey = new WaitKey(MessageCode.PeerInfoResponse, username);
-                var infoWait = Waiter.Wait<PeerInfoResponse>(waitKey, cancellationToken: cancellationToken);
+                var infoWait = Waiter.Wait<UserInfoResponse>(waitKey, cancellationToken: cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
@@ -1039,7 +1049,7 @@ namespace Soulseek
                     Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.WriteMessageAsync(new PeerInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new UserInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await infoWait.ConfigureAwait(false);
 
@@ -1133,7 +1143,7 @@ namespace Soulseek
                         break;
 
                     case MessageCode.PeerInfoResponse:
-                        var infoResponse = PeerInfoResponse.Parse(message);
+                        var infoResponse = UserInfoResponse.Parse(message);
                         Waiter.Complete(new WaitKey(MessageCode.PeerInfoResponse, connection.Username), infoResponse);
                         break;
 
@@ -1157,7 +1167,7 @@ namespace Soulseek
                             var response = new PeerTransferResponse(transferRequest.Token, false, "Queued."); // todo: verify the message
                             await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
 
-                            var start = new PeerTransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100);
+                            var start = new PeerTransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100000);
                             await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
 
                             Console.WriteLine($"Waiting for transfer response....");
@@ -1174,7 +1184,7 @@ namespace Soulseek
                             await transferConnection.ReadAsync(8);
 
                             Console.WriteLine($"Magic bytes read.  Writing 'file'");
-                            await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 100)));
+                            await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 100000)));
                         }
 
                         break;
@@ -1201,6 +1211,11 @@ namespace Soulseek
                         }
 
                         Diagnostic.Debug(msg);
+                        break;
+
+                    case MessageCode.PeerBrowseRequest:
+                        var browseResponse = Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
+                        await connection.WriteMessageAsync(browseResponse.ToMessage()).ConfigureAwait(false);
                         break;
 
                     default:
