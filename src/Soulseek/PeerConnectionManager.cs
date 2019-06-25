@@ -270,12 +270,12 @@ namespace Soulseek
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
-        public async Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
+        public async Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken? cancellationToken = null)
         {
             IConnection connection = null;
 
-            var direct = GetOutboundDirectTransferConnectionAsync(ipAddress, port, token, cancellationToken);
-            var indirect = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken);
+            var direct = GetOutboundDirectTransferConnectionAsync(ipAddress, port, token, cancellationToken ?? CancellationToken.None);
+            var indirect = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken ?? CancellationToken.None);
 
             var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
             var isDirect = first == direct;
