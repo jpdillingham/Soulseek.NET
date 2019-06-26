@@ -796,7 +796,7 @@ namespace Soulseek
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
-                var transferRequestAcknowledged = Waiter.Wait<PeerTransferResponse>(
+                var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
                     new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), null, cancellationToken);
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
                     new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
@@ -871,7 +871,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
                     Console.WriteLine($"Sending transfer response.");
-                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteMessageAsync(new TransferResponse(download.RemoteToken, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
                     Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
@@ -1135,7 +1135,7 @@ namespace Soulseek
 
             Console.WriteLine($"Waiting for transfer response");
             //// here we wait for the peer to respond that they are ready to accept the file
-            var res = await Waiter.Wait<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
+            var res = await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
 
             Console.WriteLine($"Getting transfer connection...");
             // completed in the response handler above, we're now ready to connect and send the file.
@@ -1193,7 +1193,7 @@ namespace Soulseek
                         break;
 
                     case MessageCode.PeerTransferResponse:
-                        var transferResponse = PeerTransferResponse.Parse(message);
+                        var transferResponse = TransferResponse.Parse(message);
                         Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
                         Waiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
@@ -1221,7 +1221,7 @@ namespace Soulseek
                             Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Token} {transferRequest.Filename}");
 
                             // the official client seems to respond to every request like this with "queued", regardless of whether slots are available, so we'll do the same.
-                            var response = new PeerTransferResponse(transferRequest.Token, 43); // todo: verify the message
+                            var response = new TransferResponse(transferRequest.Token, 43); // todo: verify the message
                             await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
 
                             // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
@@ -1231,7 +1231,7 @@ namespace Soulseek
 
                             // here we wait for the peer to respond that they are ready to accept the file
                             Console.WriteLine($"Waiting for transfer response....");
-                            await Waiter.Wait<PeerTransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferRequest.Token)).ConfigureAwait(false);
+                            await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferRequest.Token)).ConfigureAwait(false);
 
                             var transferConnection = await PeerConnectionManager
                                 .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Token)

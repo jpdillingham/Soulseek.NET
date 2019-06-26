@@ -118,8 +118,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Completes wait for PeerTransferResponse"), AutoData]
-        public void Completes_Wait_For_PeerTransferResponse(string username, IPAddress ip, int port, int token, int fileSize)
+        [Theory(DisplayName = "Completes wait for TransferResponse"), AutoData]
+        public void Completes_Wait_For_TransferResponse(string username, IPAddress ip, int port, int token, int fileSize)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)
@@ -131,13 +131,13 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
 
-            var msg = new PeerTransferResponse(token, fileSize).ToMessage();
+            var msg = new TransferResponse(token, fileSize).ToMessage();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerTransferResponse, username, token), It.Is<PeerTransferResponse>(r => r.Token == token)), Times.Once);
+            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerTransferResponse, username, token), It.Is<TransferResponse>(r => r.Token == token)), Times.Once);
         }
 
         [Trait("Category", "Message")]

@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferResponse.cs" company="JP Dillingham">
+﻿// <copyright file="TransferResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,14 +17,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming response to a peer transfer request.
     /// </summary>
-    internal sealed class PeerTransferResponse
+    internal sealed class TransferResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerTransferResponse"/> class.
+        ///     Initializes a new instance of the <see cref="TransferResponse"/> class.
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="message">The reason the transfer was disallowed.</param>
-        internal PeerTransferResponse(int token, string message)
+        internal TransferResponse(int token, string message)
         {
             Token = token;
             Allowed = false;
@@ -32,18 +32,18 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerTransferResponse"/> class.
+        ///     Initializes a new instance of the <see cref="TransferResponse"/> class.
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="fileSize">The size of the file being transferred.</param>
-        internal PeerTransferResponse(int token, long fileSize)
+        internal TransferResponse(int token, long fileSize)
         {
             Token = token;
             Allowed = true;
             FileSize = fileSize;
         }
 
-        internal PeerTransferResponse(int token)
+        internal TransferResponse(int token)
         {
             Token = token;
             Allowed = true;
@@ -70,11 +70,11 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerTransferResponse"/> from the specified <paramref name="message"/>.
+        ///     Parses a new instance of <see cref="TransferResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerTransferResponse Parse(Message message)
+        public static TransferResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -89,15 +89,15 @@ namespace Soulseek.Messaging.Messages
             if (allowed && reader.HasMoreData)
             {
                 var fileSize = reader.ReadLong();
-                return new PeerTransferResponse(token, fileSize);
+                return new TransferResponse(token, fileSize);
             }
             else if (!allowed)
             {
                 var msg = reader.ReadString();
-                return new PeerTransferResponse(token, msg);
+                return new TransferResponse(token, msg);
             }
 
-            return new PeerTransferResponse(token);
+            return new TransferResponse(token);
         }
 
         /// <summary>
