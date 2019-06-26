@@ -36,6 +36,7 @@ namespace Soulseek
             BrowseResponse = browseResponse ?? defaultBrowseResponse;
             UserInfoResponse = userInfoResponse ?? defaultUserInfoResponse;
             QueueDownloadResponse = queueDownloadResponse ?? defaultQueueDownloadResponse;
+            // todo: add private message acknowledgement
         }
 
         public Func<string, IPAddress, int, BrowseResponse> BrowseResponse { get; }
