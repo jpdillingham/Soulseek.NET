@@ -20,20 +20,26 @@ namespace Soulseek
     public class SoulseekClientResolvers
     {
         private readonly Func<string, IPAddress, int, BrowseResponse> defaultBrowseResponse =
-            (u, i, p) => { return new BrowseResponse(0, new List<Directory>()); };
+            (u, i, p) => new BrowseResponse(0, new List<Directory>());
 
         private readonly Func<string, IPAddress, int, UserInfoResponse> defaultUserInfoResponse =
-            (u, i, p) => { return new UserInfoResponse(string.Empty, false, null, 0, 0, false); };
+            (u, i, p) => new UserInfoResponse(string.Empty, false, null, 0, 0, false);
+
+        private readonly Func<string, IPAddress, int, string, (bool Allowed, string Message)> defaultQueueDownloadResponse =
+            (u, i, p, f) => (true, null);
 
         public SoulseekClientResolvers(
                     Func<string, IPAddress, int, BrowseResponse> browseResponse = null,
-                    Func<string, IPAddress, int, UserInfoResponse> userInfoResponse = null)
+                    Func<string, IPAddress, int, UserInfoResponse> userInfoResponse = null,
+                    Func<string, IPAddress, int, string, (bool Allowed, string Message)> queueDownloadResponse = null)
         {
             BrowseResponse = browseResponse ?? defaultBrowseResponse;
             UserInfoResponse = userInfoResponse ?? defaultUserInfoResponse;
+            QueueDownloadResponse = queueDownloadResponse ?? defaultQueueDownloadResponse;
         }
 
         public Func<string, IPAddress, int, BrowseResponse> BrowseResponse { get; }
         public Func<string, IPAddress, int, UserInfoResponse> UserInfoResponse { get; }
+        public Func<string, IPAddress, int, string, (bool Allowed, string Message)> QueueDownloadResponse { get; }
     }
 }
