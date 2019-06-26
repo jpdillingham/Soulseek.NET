@@ -43,6 +43,12 @@ namespace Soulseek.Messaging.Messages
             FileSize = fileSize;
         }
 
+        internal PeerTransferResponse(int token)
+        {
+            Token = token;
+            Allowed = true;
+        }
+
         /// <summary>
         ///     Gets a value indicating whether the transfer is allowed.
         /// </summary>
@@ -80,17 +86,18 @@ namespace Soulseek.Messaging.Messages
             var token = reader.ReadInteger();
             var allowed = reader.ReadByte() == 1;
 
-            if (allowed)
+            if (allowed && reader.HasMoreData)
             {
                 var fileSize = reader.ReadLong();
                 return new PeerTransferResponse(token, fileSize);
             }
-            else
+            else if (!allowed)
             {
                 var msg = reader.ReadString();
                 return new PeerTransferResponse(token, msg);
             }
 
+            return new PeerTransferResponse(token);
         }
 
         /// <summary>
