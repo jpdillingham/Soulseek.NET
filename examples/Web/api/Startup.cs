@@ -44,11 +44,17 @@
             var resolvers = new SoulseekClientResolvers(
                 browseResponse: (u, i, p) => 
                 {
-                    var dir = new Soulseek.Directory(@"\test\test", 3, new List<Soulseek.File>()
+                    var dir = new Soulseek.Directory(@"\test\test", 9, new List<Soulseek.File>()
                     {
-                        new Soulseek.File(1, @"anything1.txt", 43, ".txt", 0),
-                        new Soulseek.File(1, @"anything2.txt", 43, ".txt", 0),
-                        new Soulseek.File(2, @"anything3.txt", 43, ".txt", 0),
+                        new Soulseek.File(1, @"anything1.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything2.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything3.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything4.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything5.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything6.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything7.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything8.txt", 57, ".txt", 0),
+                        new Soulseek.File(1, @"anything9.txt", 57, ".txt", 0),
                     });
 
                     return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
