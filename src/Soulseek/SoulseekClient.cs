@@ -798,11 +798,11 @@ namespace Soulseek
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<PeerTransferResponse>(
                     new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), null, cancellationToken);
-                var transferStartRequested = Waiter.WaitIndefinitely<PeerTransferRequest>(
+                var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
                     new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file
-                await peerConnection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+                await peerConnection.WriteMessageAsync(new TransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
                 UpdateState(DownloadStates.Requested);
 
                 Console.WriteLine($"Waiting for ACK {download.Username} {download.Token}");
@@ -1122,7 +1122,7 @@ namespace Soulseek
 
         private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, CancellationToken cancellationToken)
         {
-            var tstart = new PeerTransferRequest(TransferDirection.Upload, token, filename, data.Length);
+            var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
 
             var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
@@ -1209,7 +1209,7 @@ namespace Soulseek
                         break;
 
                     case MessageCode.PeerTransferRequest:
-                        var transferRequest = PeerTransferRequest.Parse(message);
+                        var transferRequest = TransferRequest.Parse(message);
 
                         if (transferRequest.Direction == TransferDirection.Upload)
                         {
@@ -1226,7 +1226,7 @@ namespace Soulseek
 
                             // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
                             // transfer.
-                            var start = new PeerTransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100000);
+                            var start = new TransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100000);
                             await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
 
                             // here we wait for the peer to respond that they are ready to accept the file

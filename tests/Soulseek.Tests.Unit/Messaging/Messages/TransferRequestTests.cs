@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferRequestTests.cs" company="JP Dillingham">
+﻿// <copyright file="TransferRequestTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerTransferRequestTests
+    public class TransferRequestTests
     {
         private Random Random { get; } = new Random();
 
@@ -31,9 +31,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var file = Guid.NewGuid().ToString();
             var size = Random.Next();
 
-            PeerTransferRequest response = null;
+            TransferRequest response = null;
 
-            var ex = Record.Exception(() => response = new PeerTransferRequest(dir, token, file, size));
+            var ex = Record.Exception(() => response = new TransferRequest(dir, token, file, size));
 
             Assert.Null(ex);
 
@@ -51,7 +51,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferRequest.Parse(msg));
+            var ex = Record.Exception(() => TransferRequest.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerTransferRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferRequest.Parse(msg));
+            var ex = Record.Exception(() => TransferRequest.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(size)
                 .Build();
 
-            var response = PeerTransferRequest.Parse(msg);
+            var response = TransferRequest.Parse(msg);
 
             Assert.Equal(dir, (int)response.Direction);
             Assert.Equal(token, response.Token);
@@ -106,7 +106,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var token = rnd.Next();
             var file = Guid.NewGuid().ToString();
             var size = rnd.Next();
-            var a = new PeerTransferRequest(dir, token, file, size);
+            var a = new TransferRequest(dir, token, file, size);
             var msg = a.ToMessage();
 
             Assert.Equal(MessageCode.PeerTransferRequest, msg.Code);

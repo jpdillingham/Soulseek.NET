@@ -141,8 +141,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Completes wait for PeerTransferRequest"), AutoData]
-        public void Completes_Wait_For_PeerTransferRequest(string username, IPAddress ip, int port, int token, string filename)
+        [Theory(DisplayName = "Completes wait for TransferRequest"), AutoData]
+        public void Completes_Wait_For_TransferRequest(string username, IPAddress ip, int port, int token, string filename)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)
@@ -154,13 +154,13 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
 
-            var msg = new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage();
+            var msg = new TransferRequest(TransferDirection.Download, token, filename).ToMessage();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerTransferRequest, username, filename), It.Is<PeerTransferRequest>(r => r.Token == token)), Times.Once);
+            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerTransferRequest, username, filename), It.Is<TransferRequest>(r => r.Token == token)), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -371,8 +371,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Throws PeerTransferRequest wait on PeerQueueFailed"), AutoData]
-        public void Throws_PeerTransferRequest_Wait_On_PeerQueueFailed(string username, IPAddress ip, int port, string filename, string message)
+        [Theory(DisplayName = "Throws TransferRequest wait on PeerQueueFailed"), AutoData]
+        public void Throws_TransferRequest_Wait_On_PeerQueueFailed(string username, IPAddress ip, int port, string filename, string message)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)
