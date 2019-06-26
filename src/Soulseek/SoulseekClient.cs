@@ -1201,9 +1201,9 @@ namespace Soulseek
                     case MessageCode.PeerQueueDownload:
                         // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
                         // transfer.
-                        var peerQueueDownload = PeerQueueDownload.Parse(message);
-                        var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(peerQueueDownload.Filename)}";
-                        await UploadAsync(connection.Username, peerQueueDownload.Filename, Encoding.ASCII.GetBytes(file))
+                        var queueDownloadRequest = QueueDownloadRequest.Parse(message);
+                        var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(queueDownloadRequest.Filename)}";
+                        await UploadAsync(connection.Username, queueDownloadRequest.Filename, Encoding.ASCII.GetBytes(file))
                             .ConfigureAwait(false);
 
                         break;

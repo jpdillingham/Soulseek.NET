@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerQueueDownload.cs" company="JP Dillingham">
+﻿// <copyright file="QueueDownloadRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,16 +14,16 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
-    internal sealed class PeerQueueDownload
+    internal sealed class QueueDownloadRequest
     {
-        internal PeerQueueDownload(string filename)
+        internal QueueDownloadRequest(string filename)
         {
             Filename = filename;
         }
 
         public string Filename { get; }
 
-        public static PeerQueueDownload Parse(Message message)
+        public static QueueDownloadRequest Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -33,7 +33,7 @@ namespace Soulseek.Messaging.Messages
             }
 
             var filename = reader.ReadString();
-            return new PeerQueueDownload(filename);
+            return new QueueDownloadRequest(filename);
         }
     }
 }
