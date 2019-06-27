@@ -28,6 +28,7 @@
         private static string WebRoot { get; set; }
         private static int ListenPort { get; set; }
         public static string OutputDirectory { get; private set; }
+        private static string SharedDirectory { get; set; }
 
         private SoulseekClient Client { get; }
 
@@ -40,29 +41,25 @@
             WebRoot = Configuration.GetValue<string>("WEBROOT");
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
+            SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
+
+            SharedDirectory = @"\\WSE\Music\Processed\Rage Against the Machine\Bootlegs\Killing Your Enemy In 1995";
 
             var resolvers = new SoulseekClientResolvers(
                 browseResponse: (u, i, p) => 
                 {
-                    var dir = new Soulseek.Directory(@"\test\test", 9, new List<Soulseek.File>()
-                    {
-                        new Soulseek.File(1, @"anything1.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything2.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything3.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything4.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything5.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything6.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything7.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything8.txt", 57, ".txt", 0),
-                        new Soulseek.File(1, @"anything9.txt", 57, ".txt", 0),
-                    });
+                    // limited to just the root for now
+                    var files = System.IO.Directory.GetFiles(SharedDirectory)
+                        .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0));
+
+                    var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
 
                     return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
                 }, queueDownloadResponse: (u, i, p, f) =>
                 {
                     Console.WriteLine($"Dispositioning {f}");
-                    var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(f)}";
-                    Task.Run(async () => await Client.UploadAsync(u, f, System.Text.Encoding.ASCII.GetBytes(file)))
+                    //var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(f)}";
+                    Task.Run(async () => await Client.UploadAsync(u, f, System.IO.File.ReadAllBytes(f)))
                         .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
 
                     return (true, null);
