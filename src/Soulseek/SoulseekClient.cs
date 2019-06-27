@@ -1127,43 +1127,45 @@ namespace Soulseek
 
             Console.WriteLine($"    [{username}/{filename}] Awaiting semaphore for {username}");
             await semaphore.WaitAsync().ConfigureAwait(false);
+            Console.WriteLine($"    [{username}/{filename}] Semaphore for {username} lock obtained.");
 
             try
             {
                 // in case the Upload record was removed via cleanup while we were waiting, add it back.
-                var _ = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
-
-                var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
+                semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-
                 var connection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
                     .ConfigureAwait(false);
 
-                Console.WriteLine($"[{username}/{filename}] Writing transfer request");
+                var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
                 await connection.WriteMessageAsync(tstart.ToMessage()).ConfigureAwait(false);
 
-                Console.WriteLine($"[{username}/{filename}] Waiting for transfer response");
                 //// here we wait for the peer to respond that they are ready to accept the file
                 var res = await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
 
-                Console.WriteLine($"[{username}/{filename}] Getting transfer connection...");
-                // completed in the response handler above, we're now ready to connect and send the file.
                 var ttransferConnection = await PeerConnectionManager
                     .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
                     .ConfigureAwait(false);
 
-                // we know from the download logic that each transfer begins with some number of magic bytes, either 8 or 16.
-                // read those, then continue.
-                // todo: inspect this and figure out what this data is, understand how many bytes are actually written and under what conditions
-                //await ttransferConnection.WriteAsync(BitConverter.GetBytes(res.Token)).ConfigureAwait(false);
+                var completed = Waiter.WaitIndefinitely(new WaitKey("Upload", username, filename));
+                ttransferConnection.Disconnected += (e, a) =>
+                {
+                    Waiter.Complete(new WaitKey("Upload", username, filename));
+                };
 
-                // write the file to the connection.
-                //Console.WriteLine($"Magic bytes read.  Writing 'file'");
-                Console.WriteLine($"[{username}/{filename}] Writing file");
                 await ttransferConnection.WriteAsync(data)
                     .ConfigureAwait(false);
+
+                // todo: incorporate a LingerTime option
+                await Task.Delay(2500);
+
+                ttransferConnection.Disconnect("Transfer complete.");
+
+                Console.WriteLine($"Waiting for disconnect...");
+                await completed.ConfigureAwait(false);
+                Console.WriteLine($"Disconnected/wait completed");
             }
             finally
             {

@@ -72,7 +72,7 @@ namespace Soulseek
             Diagnostic = diagnosticFactory ?? 
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
+            //TransferConnections = new ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection>();
 
             MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
             MessageConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
@@ -91,7 +91,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of active transfer connections.
         /// </summary>
-        public int ActiveTransferConnections => TransferConnections.Count;
+        //public int ActiveTransferConnections => TransferConnections.Count;
 
         /// <summary>
         ///     Gets the number of allowed concurrent peer message connections.
@@ -112,7 +112,7 @@ namespace Soulseek
         private SemaphoreSlim MessageSemaphore { get; }
         private ConcurrentDictionary<int, string> PendingSolicitations { get; set; } = new ConcurrentDictionary<int, string>();
         private ISoulseekClient SoulseekClient { get; }
-        private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
+        //private ConcurrentDictionary<(ConnectionKey Key, int Token), IConnection> TransferConnections { get; set; }
         private IWaiter Waiter { get; }
 
         /// <summary>
@@ -131,12 +131,12 @@ namespace Soulseek
             connection.Disconnected += (sender, e) =>
             {
                 Diagnostic.Debug($"Removing transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port})");
-                TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
+                //TransferConnections.TryRemove((connection.Key, connectToPeerResponse.Token), out _);
             };
 
             await connection.ConnectAsync().ConfigureAwait(false);
 
-            TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
+            //TransferConnections.AddOrUpdate((connection.Key, connectToPeerResponse.Token), connection, (k, v) => connection);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
@@ -286,7 +286,7 @@ namespace Soulseek
 
             connection = first.Result;
 
-            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+            //TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
             Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} transfer connection to {username} ({ipAddress}:{port}) established.");
             return connection;
@@ -306,7 +306,7 @@ namespace Soulseek
                 }
             }
 
-            TransferConnections.RemoveAndDisposeAll();
+            //TransferConnections.RemoveAndDisposeAll();
         }
 
         private async Task<IMessageConnection> AddInboundMessageConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient)
@@ -343,12 +343,12 @@ namespace Soulseek
         private async Task<IConnection> AddInboundTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, ITcpClient tcpClient)
         {
             var connection = ConnectionFactory.GetConnection(ipAddress, port, SoulseekClient.Options.TransferConnectionOptions, tcpClient);
-            connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
+            //connection.Disconnected += (sender, e) => TransferConnections.TryRemove((connection.Key, token), out _);
 
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
             var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
 
-            TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
+            //TransferConnections.AddOrUpdate((connection.Key, token), connection, (k, v) => connection);
 
             Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
 
@@ -431,13 +431,15 @@ namespace Soulseek
             connection.Disconnected += (sender, e) =>
             {
                 Diagnostic.Debug($"Removing transfer connection for token {token} ({ipAddress}:{port})");
-                TransferConnections.TryRemove((connection.Key, token), out _);
+                //TransferConnections.TryRemove((connection.Key, token), out _);
             };
 
+            //await Task.Delay(30000);
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
 
             var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token);
             await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
 
             return connection;
         }
@@ -504,9 +506,9 @@ namespace Soulseek
                 connection.Disconnected += (sender, e) =>
                 {
                     Diagnostic.Debug($"Removing transfer connection for token {token} ({incomingConnection.IPAddress}:{incomingConnection.Port})");
-                    TransferConnections.TryRemove((connection.Key, token), out _);
+                    //TransferConnections.TryRemove((connection.Key, token), out _);
                 };
-
+               
                 // send the the token (what appears to be the remote token to the peer)
                 await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
 
