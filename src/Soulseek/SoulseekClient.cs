@@ -211,10 +211,11 @@ namespace Soulseek
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<int, Download> Downloads { get; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private IListener Listener { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
-        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+        private ConcurrentDictionary<int, Search> Searches { get; } = new ConcurrentDictionary<int, Search>();
         private ITokenFactory TokenFactory { get; }
         private IWaiter Waiter { get; }
 
@@ -1122,37 +1123,50 @@ namespace Soulseek
 
         private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, CancellationToken cancellationToken)
         {
-            var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
+            var semaphore = Uploads.GetOrAdd(username, new SemaphoreSlim(1, 1));
 
-            var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+            Console.WriteLine($"    [{username}/{filename}] Awaiting semaphore for {username}");
+            await semaphore.WaitAsync().ConfigureAwait(false);
 
-            var connection = await PeerConnectionManager
-                .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
-                .ConfigureAwait(false);
+            try
+            {
+                var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
 
-            Console.WriteLine($"Writing transfer request");
-            await connection.WriteMessageAsync(tstart.ToMessage()).ConfigureAwait(false);
+                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
-            Console.WriteLine($"Waiting for transfer response");
-            //// here we wait for the peer to respond that they are ready to accept the file
-            var res = await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
+                var connection = await PeerConnectionManager
+                    .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+                    .ConfigureAwait(false);
 
-            Console.WriteLine($"Getting transfer connection...");
-            // completed in the response handler above, we're now ready to connect and send the file.
-            var ttransferConnection = await PeerConnectionManager
-                .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
-                .ConfigureAwait(false);
+                Console.WriteLine($"[{username}/{filename}] Writing transfer request");
+                await connection.WriteMessageAsync(tstart.ToMessage()).ConfigureAwait(false);
 
-            // we know from the download logic that each transfer begins with some number of magic bytes, either 8 or 16.
-            // read those, then continue.
-            // todo: inspect this and figure out what this data is, understand how many bytes are actually written and under what conditions
-            //await ttransferConnection.WriteAsync(BitConverter.GetBytes(res.Token)).ConfigureAwait(false);
+                Console.WriteLine($"[{username}/{filename}] Waiting for transfer response");
+                //// here we wait for the peer to respond that they are ready to accept the file
+                var res = await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
 
-            // write the file to the connection.
-            //Console.WriteLine($"Magic bytes read.  Writing 'file'");
-            Console.WriteLine($"Writing file");
-            await ttransferConnection.WriteAsync(data)
-                .ConfigureAwait(false);
+                Console.WriteLine($"[{username}/{filename}] Getting transfer connection...");
+                // completed in the response handler above, we're now ready to connect and send the file.
+                var ttransferConnection = await PeerConnectionManager
+                    .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
+                    .ConfigureAwait(false);
+
+                // we know from the download logic that each transfer begins with some number of magic bytes, either 8 or 16.
+                // read those, then continue.
+                // todo: inspect this and figure out what this data is, understand how many bytes are actually written and under what conditions
+                //await ttransferConnection.WriteAsync(BitConverter.GetBytes(res.Token)).ConfigureAwait(false);
+
+                // write the file to the connection.
+                //Console.WriteLine($"Magic bytes read.  Writing 'file'");
+                Console.WriteLine($"[{username}/{filename}] Writing file");
+                await ttransferConnection.WriteAsync(data)
+                    .ConfigureAwait(false);
+            }
+            finally
+            {
+                Console.WriteLine($"    [{username}/{filename}] Releasing semaphore for {username}");
+                semaphore.Release();
+            }
         }
 
         private async void PeerConnection_MessageRead(object sender, Message message)
@@ -1202,9 +1216,13 @@ namespace Soulseek
                         // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
                         // transfer.
                         var queueDownloadRequest = QueueDownloadRequest.Parse(message);
-                        var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(queueDownloadRequest.Filename)}";
-                        await UploadAsync(connection.Username, queueDownloadRequest.Filename, Encoding.ASCII.GetBytes(file))
-                            .ConfigureAwait(false);
+                        var (queueAllowed, queueRejectionMessage) = Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename);
+
+                        if (!queueAllowed)
+                        {
+                            Console.WriteLine($"Queue not allowed: {queueRejectionMessage}");
+                            await connection.WriteMessageAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToMessage()).ConfigureAwait(false);
+                        }
 
                         break;
 
@@ -1217,41 +1235,54 @@ namespace Soulseek
                         }
                         else
                         {
-                            // this is sent when a peer requests a file, i think only when it has identified that slots are available.
-                            Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Token} {transferRequest.Filename}");
+                            var (transferAllowed, transferRejectionMessage) = Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, transferRequest.Filename);
 
-                            // the official client seems to respond to every request like this with "queued", regardless of whether slots are available, so we'll do the same.
-                            var response = new TransferResponse(transferRequest.Token, 43); // todo: verify the message
-                            await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
+                            if (!transferAllowed)
+                            {
+                                Console.WriteLine($"Queue not allowed: {transferRejectionMessage}");
+                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage).ToMessage()).ConfigureAwait(false);
+                                await connection.WriteMessageAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToMessage()).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, "Queued.").ToMessage()).ConfigureAwait(false);
+                            }
 
-                            // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
-                            // transfer.
-                            var start = new TransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100000);
-                            await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
+                            //// this is sent when a peer requests a file, i think only when it has identified that slots are available.
+                            //Console.WriteLine($"Transfer request from {connection.Username}: direction: {transferRequest.Direction} {transferRequest.Token} {transferRequest.Filename}");
 
-                            // here we wait for the peer to respond that they are ready to accept the file
-                            Console.WriteLine($"Waiting for transfer response....");
-                            await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferRequest.Token)).ConfigureAwait(false);
+                            //// the official client seems to respond to every request like this with "queued", regardless of whether slots are available, so we'll do the same.
+                            //var response = new TransferResponse(transferRequest.Token, 43); // todo: verify the message
+                            //await connection.WriteMessageAsync(response.ToMessage()).ConfigureAwait(false);
 
-                            var transferConnection = await PeerConnectionManager
-                                .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Token)
-                                .ConfigureAwait(false);
+                            //// the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
+                            //// transfer.
+                            //var start = new TransferRequest(TransferDirection.Upload, transferRequest.Token, transferRequest.Filename, 100000);
+                            //await connection.WriteMessageAsync(start.ToMessage()).ConfigureAwait(false);
 
-                            // we know from the download logic that each transfer begins with some number of magic bytes, either 8 or 16.
-                            // read those, then continue.
-                            // todo: inspect this and figure out what this data is, understand how many bytes are actually written and under what conditions
-                            Console.WriteLine($"Transfer connection established. Trying to read magic bytes");
-                            var magic = await transferConnection.ReadAsync(8).ConfigureAwait(false);
-                            Console.WriteLine($"Magic bytes read: {BitConverter.ToInt64(magic, 0)}  Writing 'file'");
+                            //// here we wait for the peer to respond that they are ready to accept the file
+                            //Console.WriteLine($"Waiting for transfer response....");
+                            //await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferRequest.Token)).ConfigureAwait(false);
 
-                            await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 43)))
-                                .ConfigureAwait(false);
+                            //var transferConnection = await PeerConnectionManager
+                            //    .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Token)
+                            //    .ConfigureAwait(false);
+
+                            //// we know from the download logic that each transfer begins with some number of magic bytes, either 8 or 16.
+                            //// read those, then continue.
+                            //// todo: inspect this and figure out what this data is, understand how many bytes are actually written and under what conditions
+                            //Console.WriteLine($"Transfer connection established. Trying to read magic bytes");
+                            //var magic = await transferConnection.ReadAsync(8).ConfigureAwait(false);
+                            //Console.WriteLine($"Magic bytes read: {BitConverter.ToInt64(magic, 0)}  Writing 'file'");
+
+                            //await transferConnection.WriteAsync(Encoding.ASCII.GetBytes(new string('a', 43)))
+                            //    .ConfigureAwait(false);
                         }
 
                         break;
 
                     case MessageCode.PeerQueueFailed:
-                        var queueFailedResponse = PeerQueueFailedResponse.Parse(message);
+                        var queueFailedResponse = QueueFailedResponse.Parse(message);
                         Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
                         break;
 
