@@ -1130,6 +1130,9 @@ namespace Soulseek
 
             try
             {
+                // in case the Upload record was removed via cleanup while we were waiting, add it back.
+                var _ = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
                 var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1166,6 +1169,11 @@ namespace Soulseek
             {
                 Console.WriteLine($"    [{username}/{filename}] Releasing semaphore for {username}");
                 semaphore.Release();
+
+                if (Uploads.TryRemove(username, out var _))
+                {
+                    Console.WriteLine("Purged upload record");
+                }
             }
         }
 
