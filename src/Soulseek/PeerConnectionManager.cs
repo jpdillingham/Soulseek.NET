@@ -501,6 +501,12 @@ namespace Soulseek
                     SoulseekClient.Options.TransferConnectionOptions,
                     incomingConnection.HandoffTcpClient());
 
+                connection.Disconnected += (sender, e) =>
+                {
+                    Diagnostic.Debug($"Removing transfer connection for token {token} ({incomingConnection.IPAddress}:{incomingConnection.Port})");
+                    TransferConnections.TryRemove((connection.Key, token), out _);
+                };
+
                 // send the the token (what appears to be the remote token to the peer)
                 await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
 
