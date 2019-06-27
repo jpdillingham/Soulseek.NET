@@ -58,6 +58,14 @@
                     });
 
                     return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
+                }, queueDownloadResponse: (u, i, p, f) =>
+                {
+                    Console.WriteLine($"Dispositioning {f}");
+                    var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(f)}";
+                    Task.Run(async () => await Client.UploadAsync(u, f, System.Text.Encoding.ASCII.GetBytes(file)))
+                        .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+                    return (true, null);
                 });
 
             var options = new SoulseekClientOptions(
