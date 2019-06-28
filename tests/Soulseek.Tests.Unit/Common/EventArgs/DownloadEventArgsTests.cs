@@ -22,11 +22,11 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "DownloadEventArgs Instantiates with the given data"), AutoData]
         internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferOptions options)
         {
-            var dl = new Download(username, filename, token, options);
-            var d = new DownloadEventArgs(dl);
+            var dl = new Transfer(TransferDirection.Download, username, filename, token, options);
+            var d = new TransferEventArgs(dl);
 
             Assert.Equal(0, d.AverageSpeed);
-            Assert.Equal(0, d.BytesDownloaded);
+            Assert.Equal(0, d.BytesTransferred);
             Assert.Equal(0, d.BytesRemaining);
             Assert.Equal(default(TimeSpan), d.ElapsedTime);
             Assert.Equal(default(TimeSpan), d.RemainingTime);
@@ -49,20 +49,20 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "DownloadProgressUpdatedEventArgs Instantiates with the given data"), AutoData]
         internal void DownloadProgressUpdatedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, int bytesDownloaded)
         {
-            var dl = new Download(username, filename, token);
+            var dl = new Transfer(TransferDirection.Download, username, filename, token);
             dl.Size = size;
 
-            var d = new DownloadProgressUpdatedEventArgs(bytesDownloaded, dl);
+            var d = new TransferProgressUpdatedEventArgs(bytesDownloaded, dl);
 
-            Assert.Equal(bytesDownloaded, d.PreviousBytesDownloaded);
+            Assert.Equal(bytesDownloaded, d.PreviousBytesTransferred);
         }
 
         [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadStateChangedEventArgs Instantiates with the given data"), AutoData]
         internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferStates TransferStates)
         {
-            var dl = new Download(username, filename, token);
-            var d = new DownloadStateChangedEventArgs(TransferStates, dl);
+            var dl = new Transfer(TransferDirection.Download, username, filename, token);
+            var d = new TransferStateChangedEventArgs(TransferStates, dl);
 
             Assert.Equal(TransferStates, d.PreviousState);
         }

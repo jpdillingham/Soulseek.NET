@@ -16,7 +16,7 @@ namespace Soulseek
     {
         internal static class WaitKey
         {
-            public const string Download = "Download";
+            public const string Transfer = "Transfer";
             public const string DirectTransfer = "DirectTransfer";
             public const string IndirectTransfer = "IndirectTransfer";
             public const string SolicitedConnection = "SolicitedConnection";

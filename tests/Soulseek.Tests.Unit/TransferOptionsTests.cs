@@ -21,8 +21,8 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Defaults(
-            Action<DownloadStateChangedEventArgs> stateChanged,
-            Action<DownloadProgressUpdatedEventArgs> progressUpdated)
+            Action<TransferStateChangedEventArgs> stateChanged,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated)
         {
             var o = new TransferOptions(
                 stateChanged,

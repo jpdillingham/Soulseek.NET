@@ -31,14 +31,14 @@ namespace Soulseek
         event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Occurs when an active download receives data.
+        ///     Occurs when an active transfer sends or receives data.
         /// </summary>
-        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
 
         /// <summary>
-        ///     Occurs when a download changes state.
+        ///     Occurs when a transfer changes state.
         /// </summary>
-        event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
+        event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
         ///     Occurs when a private message is received.

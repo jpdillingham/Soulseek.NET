@@ -15,31 +15,31 @@ namespace Soulseek
     using System;
 
     /// <summary>
-    ///     Options for the download operation.
+    ///     Options for transfer operations.
     /// </summary>
     public sealed class TransferOptions
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.
         /// </summary>
-        /// <param name="stateChanged">The Action to invoke when the download changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the download receives data.</param>
+        /// <param name="stateChanged">The Action to invoke when the transfer changes state.</param>
+        /// <param name="progressUpdated">The Action to invoke when the transfer receives data.</param>
         public TransferOptions(
-            Action<DownloadStateChangedEventArgs> stateChanged = null,
-            Action<DownloadProgressUpdatedEventArgs> progressUpdated = null)
+            Action<TransferStateChangedEventArgs> stateChanged = null,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated = null)
         {
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
         }
 
         /// <summary>
-        ///     Gets the Action to invoke when the download receives data.
+        ///     Gets the Action to invoke when the transfer receives data.
         /// </summary>
-        public Action<DownloadProgressUpdatedEventArgs> ProgressUpdated { get; }
+        public Action<TransferProgressUpdatedEventArgs> ProgressUpdated { get; }
 
         /// <summary>
-        ///     Gets the Action to invoke when the download changes state.
+        ///     Gets the Action to invoke when the transfer changes state.
         /// </summary>
-        public Action<DownloadStateChangedEventArgs> StateChanged { get; }
+        public Action<TransferStateChangedEventArgs> StateChanged { get; }
     }
 }

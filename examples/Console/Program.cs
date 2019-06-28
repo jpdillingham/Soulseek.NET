@@ -237,7 +237,7 @@
                         var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename.ToLocalOSPath()).Length);
                         var fn = Path.GetFileName(e.Filename.ToLocalOSPath()).PadRight(longest);
 
-                        var size = $"{e.BytesDownloaded.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
+                        var size = $"{e.BytesTransferred.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
                         var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
                         Console.Write($"\r {progress.Spinner}  {fn}  {size}  {percent}  [{status}]  {progress.ProgressBar} {e.AverageSpeed.ToMB()}/s {e.ElapsedTime.Value.ToString(@"m\:ss")} / {e.RemainingTime.Value.ToString(@"m\:ss")}");

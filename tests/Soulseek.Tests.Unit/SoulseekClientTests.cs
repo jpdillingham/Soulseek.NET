@@ -228,9 +228,9 @@ namespace Soulseek.Tests.Unit
             var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
             await s.ConnectAsync();
 
-            var downloads = new ConcurrentDictionary<int, Download>();
-            downloads.TryAdd(0, new Download(string.Empty, string.Empty, 0));
-            downloads.TryAdd(1, new Download(string.Empty, string.Empty, 1));
+            var downloads = new ConcurrentDictionary<int, Transfer>();
+            downloads.TryAdd(0, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0));
+            downloads.TryAdd(1, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 1));
 
             s.SetProperty("Downloads", downloads);
 

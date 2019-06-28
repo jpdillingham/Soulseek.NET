@@ -99,8 +99,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var queued = new ConcurrentDictionary<int, Download>();
-                queued.TryAdd(1, new Download("foo", "bar", 1));
+                var queued = new ConcurrentDictionary<int, Transfer>();
+                queued.TryAdd(1, new Transfer(TransferDirection.Download, "foo", "bar", 1));
 
                 s.SetProperty("Downloads", queued);
 

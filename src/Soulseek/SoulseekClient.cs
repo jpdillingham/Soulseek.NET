@@ -138,14 +138,14 @@ namespace Soulseek
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Occurs when an active download receives data.
+        ///     Occurs when an active transfer sends or receives data.
         /// </summary>
-        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        public event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
 
         /// <summary>
-        ///     Occurs when a download changes state.
+        ///     Occurs when a transfer changes state.
         /// </summary>
-        public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
+        public event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
         ///     Occurs when a private message is received.
@@ -211,7 +211,7 @@ namespace Soulseek
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private ConcurrentDictionary<int, Download> Downloads { get; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
         private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private IListener Listener { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
@@ -765,26 +765,26 @@ namespace Soulseek
 
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var download = new Download(username, filename, token, options);
+            var download = new Transfer(TransferDirection.Download, username, filename, token, options);
             Task<byte[]> downloadCompleted = null;
             var lastState = TransferStates.None;
 
             void UpdateState(TransferStates state)
             {
                 download.State = state;
-                var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: download);
                 lastState = state;
                 options.StateChanged?.Invoke(args);
-                DownloadStateChanged?.Invoke(this, args);
+                TransferStateChanged?.Invoke(this, args);
             }
 
             void UpdateProgress(int bytesDownloaded)
             {
-                var lastBytes = download.BytesDownloaded;
+                var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new DownloadProgressUpdatedEventArgs(lastBytes, download);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, download);
                 options.ProgressUpdated?.Invoke(eventArgs);
-                DownloadProgressUpdated?.Invoke(this, eventArgs);
+                TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
             try
@@ -872,7 +872,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
                     Console.WriteLine($"Sending transfer response.");
-                    await peerConnection.WriteMessageAsync(new TransferResponse(download.RemoteToken, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteMessageAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
                     Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
@@ -1433,7 +1433,7 @@ namespace Soulseek
                                 var (connection, remoteToken) = await PeerConnectionManager.AddTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                                 var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
 
-                                if (download != default(Download))
+                                if (download != default(Transfer))
                                 {
                                     Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
                                 }
