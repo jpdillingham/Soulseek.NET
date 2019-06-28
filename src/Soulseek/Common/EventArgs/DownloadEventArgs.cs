@@ -72,7 +72,7 @@ namespace Soulseek
         public TimeSpan? ElapsedTime { get; }
 
         /// <summary>
-        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
+        ///     Gets the time at which the download transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; }
 
@@ -89,7 +89,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the options for the transfer.
         /// </summary>
-        public DownloadOptions Options { get; }
+        public TransferOptions Options { get; }
 
         /// <summary>
         ///     Gets the current progress in percent.
@@ -117,14 +117,14 @@ namespace Soulseek
         public long Size { get; }
 
         /// <summary>
-        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.InProgress"/> state.
+        ///     Gets the time at which the download transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
         public DateTime? StartTime { get; }
 
         /// <summary>
         ///     Gets the state of the download.
         /// </summary>
-        public DownloadStates State { get; }
+        public TransferStates State { get; }
 
         /// <summary>
         ///     Gets the unique token for thr transfer.
@@ -169,7 +169,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="previousState">The previous state of the download.</param>
         /// <param name="download">The download which raised the event.</param>
-        internal DownloadStateChangedEventArgs(DownloadStates previousState, Download download)
+        internal DownloadStateChangedEventArgs(TransferStates previousState, Download download)
             : base(download)
         {
             PreviousState = previousState;
@@ -178,6 +178,6 @@ namespace Soulseek
         /// <summary>
         ///     Gets the previous state of the download.
         /// </summary>
-        public DownloadStates PreviousState { get; }
+        public TransferStates PreviousState { get; }
     }
 }

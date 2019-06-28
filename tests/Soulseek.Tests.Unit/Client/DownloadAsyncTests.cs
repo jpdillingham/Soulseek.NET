@@ -166,7 +166,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DownloadException>(ex);
@@ -196,7 +196,7 @@ namespace Soulseek.Tests.Unit.Client
         //    {
         //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
@@ -230,7 +230,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DownloadException>(ex);
@@ -265,7 +265,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DownloadException>(ex);
@@ -314,7 +314,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DownloadException>(ex);
@@ -357,7 +357,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DownloadException>(ex);
@@ -409,7 +409,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 byte[] downloadedData = null;
-                var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.Null(ex);
                 Assert.Equal(data, downloadedData);
@@ -462,7 +462,7 @@ namespace Soulseek.Tests.Unit.Client
         //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
         //        byte[] downloadedData = null;
-        //        var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.Null(ex);
         //        Assert.Equal(data, downloadedData);
@@ -515,7 +515,7 @@ namespace Soulseek.Tests.Unit.Client
         //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
         //        byte[] downloadedData = null;
-        //        var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
@@ -573,24 +573,24 @@ namespace Soulseek.Tests.Unit.Client
         //            events.Add(e);
         //        };
 
-        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null);
+        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null);
 
         //        Assert.Equal(5, events.Count);
 
-        //        Assert.Equal(DownloadStates.None, events[0].PreviousState);
-        //        Assert.Equal(DownloadStates.Requested, events[0].State);
+        //        Assert.Equal(TransferStates.None, events[0].PreviousState);
+        //        Assert.Equal(TransferStates.Requested, events[0].State);
 
-        //        Assert.Equal(DownloadStates.Requested, events[1].PreviousState);
-        //        Assert.Equal(DownloadStates.Queued, events[1].State);
+        //        Assert.Equal(TransferStates.Requested, events[1].PreviousState);
+        //        Assert.Equal(TransferStates.Queued, events[1].State);
 
-        //        Assert.Equal(DownloadStates.Queued, events[2].PreviousState);
-        //        Assert.Equal(DownloadStates.Initializing, events[2].State);
+        //        Assert.Equal(TransferStates.Queued, events[2].PreviousState);
+        //        Assert.Equal(TransferStates.Initializing, events[2].State);
 
-        //        Assert.Equal(DownloadStates.Initializing, events[3].PreviousState);
-        //        Assert.Equal(DownloadStates.InProgress, events[3].State);
+        //        Assert.Equal(TransferStates.Initializing, events[3].PreviousState);
+        //        Assert.Equal(TransferStates.InProgress, events[3].State);
 
-        //        Assert.Equal(DownloadStates.InProgress, events[4].PreviousState);
-        //        Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[4].State);
+        //        Assert.Equal(TransferStates.InProgress, events[4].PreviousState);
+        //        Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[4].State);
         //    }
         //}
 
@@ -639,7 +639,7 @@ namespace Soulseek.Tests.Unit.Client
 
         //        var fired = false;
 
-        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(stateChanged: (e) => fired = true), null);
+        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(stateChanged: (e) => fired = true), null);
 
         //        Assert.True(fired);
         //    }
@@ -697,13 +697,13 @@ namespace Soulseek.Tests.Unit.Client
 
         //        s.DownloadProgressUpdated += (d, e) => events.Add(e);
 
-        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null);
+        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null);
 
         //        Assert.Equal(2, events.Count);
         //        Assert.Equal(1, events[0].BytesDownloaded);
-        //        Assert.Equal(DownloadStates.InProgress, events[0].State);
+        //        Assert.Equal(TransferStates.InProgress, events[0].State);
 
-        //        Assert.Equal(DownloadStates.Completed | DownloadStates.Succeeded, events[1].State);
+        //        Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[1].State);
         //    }
         //}
 
@@ -757,7 +757,7 @@ namespace Soulseek.Tests.Unit.Client
 
         //        var fired = false;
 
-        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(progressUpdated: (e) => fired = true), null);
+        //        await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(progressUpdated: (e) => fired = true), null);
 
         //        Assert.True(fired);
         //    }
@@ -813,14 +813,14 @@ namespace Soulseek.Tests.Unit.Client
         //            events.Add(e);
         //        };
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
         //        Assert.IsType<MessageReadException>(ex.InnerException);
 
-        //        Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
-        //        Assert.Equal(DownloadStates.Completed | DownloadStates.Errored, events[events.Count - 1].State);
+        //        Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
+        //        Assert.Equal(TransferStates.Completed | TransferStates.Errored, events[events.Count - 1].State);
         //    }
         //}
 
@@ -874,14 +874,14 @@ namespace Soulseek.Tests.Unit.Client
         //            events.Add(e);
         //        };
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
         //        Assert.IsType<TimeoutException>(ex.InnerException);
 
-        //        Assert.Equal(DownloadStates.InProgress, events[events.Count - 1].PreviousState);
-        //        Assert.Equal(DownloadStates.Completed | DownloadStates.TimedOut, events[events.Count - 1].State);
+        //        Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
+        //        Assert.Equal(TransferStates.Completed | TransferStates.TimedOut, events[events.Count - 1].State);
         //    }
         //}
 
@@ -908,13 +908,13 @@ namespace Soulseek.Tests.Unit.Client
         //            events.Add(e);
         //        };
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
         //        Assert.IsType<OperationCanceledException>(ex.InnerException);
 
-        //        Assert.Equal(DownloadStates.Completed | DownloadStates.Cancelled, events[events.Count - 1].State);
+        //        Assert.Equal(TransferStates.Completed | TransferStates.Cancelled, events[events.Count - 1].State);
         //    }
         //}
 
@@ -963,7 +963,7 @@ namespace Soulseek.Tests.Unit.Client
         //    {
         //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
@@ -1017,7 +1017,7 @@ namespace Soulseek.Tests.Unit.Client
         //    {
         //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);
@@ -1069,7 +1069,7 @@ namespace Soulseek.Tests.Unit.Client
         //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
         //        byte[] downloadedData = null;
-        //        var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new DownloadOptions(), null));
+        //        var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
         //        Assert.NotNull(ex);
         //        Assert.IsType<DownloadException>(ex);

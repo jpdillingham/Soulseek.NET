@@ -20,7 +20,7 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "DownloadEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadOptions options)
+        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferOptions options)
         {
             var dl = new Download(username, filename, token, options);
             var d = new DownloadEventArgs(dl);
@@ -59,12 +59,12 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadStateChangedEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadStates downloadStates)
+        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferStates TransferStates)
         {
             var dl = new Download(username, filename, token);
-            var d = new DownloadStateChangedEventArgs(downloadStates, dl);
+            var d = new DownloadStateChangedEventArgs(TransferStates, dl);
 
-            Assert.Equal(downloadStates, d.PreviousState);
+            Assert.Equal(TransferStates, d.PreviousState);
         }
     }
 }

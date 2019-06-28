@@ -69,7 +69,7 @@
         public int RemoteToken { get; }
         public long Size { get; }
         public DateTime? StartTime { get; }
-        public DownloadStates State { get; }
+        public TransferStates State { get; }
         public int Token { get; }
     }
 }

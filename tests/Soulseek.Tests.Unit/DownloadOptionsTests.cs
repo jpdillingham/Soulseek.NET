@@ -1,4 +1,4 @@
-﻿// <copyright file="DownloadOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="TransferOptionsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Xunit;
 
-    public class DownloadOptionsTests
+    public class TransferOptionsTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
@@ -24,7 +24,7 @@ namespace Soulseek.Tests.Unit
             Action<DownloadStateChangedEventArgs> stateChanged,
             Action<DownloadProgressUpdatedEventArgs> progressUpdated)
         {
-            var o = new DownloadOptions(
+            var o = new TransferOptions(
                 stateChanged,
                 progressUpdated);
 

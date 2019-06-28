@@ -1,4 +1,4 @@
-﻿// <copyright file="DownloadStates.cs" company="JP Dillingham">
+﻿// <copyright file="TransferStates.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,14 +15,14 @@ namespace Soulseek
     using System;
 
     /// <summary>
-    ///     Download state.
+    ///     Transfer state.
     /// </summary>
     /// <remarks>
     ///     The Completed state will be accompanied by one other flag consisting of <see cref="Succeeded"/>,
     ///     <see cref="Cancelled"/>, <see cref="TimedOut"/> or <see cref="Errored"/>.
     /// </remarks>
     [Flags]
-    public enum DownloadStates
+    public enum TransferStates
     {
         /// <summary>
         ///     None.
@@ -35,7 +35,7 @@ namespace Soulseek
         Requested = 1,
 
         /// <summary>
-        ///     Queued remotely.
+        ///     Queued (remotely for downloads, locally for uploads).
         /// </summary>
         Queued = 2,
 

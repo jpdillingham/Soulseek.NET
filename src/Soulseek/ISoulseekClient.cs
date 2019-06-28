@@ -149,7 +149,7 @@ namespace Soulseek
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -157,7 +157,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         Task UploadAsync(string username, string filename, byte[] data, int? token = null, CancellationToken? cancellationToken = null);
 

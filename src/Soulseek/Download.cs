@@ -27,7 +27,7 @@ namespace Soulseek
         private DateTime? lastProgressTime = null;
         private bool speedInitialized = false;
 
-        private DownloadStates state = DownloadStates.None;
+        private TransferStates state = TransferStates.None;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Download"/> class.
@@ -36,13 +36,13 @@ namespace Soulseek
         /// <param name="filename">The filename of the file to be downloaded.</param>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="options">The options for the transfer.</param>
-        internal Download(string username, string filename, int token, DownloadOptions options = null)
+        internal Download(string username, string filename, int token, TransferOptions options = null)
         {
             Username = username;
             Filename = filename;
             Token = token;
 
-            Options = options ?? new DownloadOptions();
+            Options = options ?? new TransferOptions();
         }
 
         /// <summary>
@@ -71,7 +71,7 @@ namespace Soulseek
         public TimeSpan? ElapsedTime => StartTime == null ? default(TimeSpan) : (EndTime ?? DateTime.Now) - StartTime;
 
         /// <summary>
-        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
+        ///     Gets the time at which the download transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; private set; }
 
@@ -88,7 +88,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the options for the transfer.
         /// </summary>
-        public DownloadOptions Options { get; }
+        public TransferOptions Options { get; }
 
         /// <summary>
         ///     Gets the current progress in percent.
@@ -116,14 +116,14 @@ namespace Soulseek
         public long Size { get; internal set; }
 
         /// <summary>
-        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.InProgress"/> state.
+        ///     Gets the time at which the download transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
         public DateTime? StartTime { get; private set; }
 
         /// <summary>
         ///     Gets the state of the download.
         /// </summary>
-        public DownloadStates State
+        public TransferStates State
         {
             get
             {
@@ -132,12 +132,12 @@ namespace Soulseek
 
             internal set
             {
-                if (!state.HasFlag(DownloadStates.InProgress) && value.HasFlag(DownloadStates.InProgress))
+                if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
                 {
                     StartTime = DateTime.Now;
                     EndTime = null;
                 }
-                else if (!state.HasFlag(DownloadStates.Completed) && value.HasFlag(DownloadStates.Completed))
+                else if (!state.HasFlag(TransferStates.Completed) && value.HasFlag(TransferStates.Completed))
                 {
                     EndTime = DateTime.Now;
                 }

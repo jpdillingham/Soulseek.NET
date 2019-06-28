@@ -51,8 +51,8 @@
         [Argument('z', "get-user-status")]
         private static string GetUserStatus { get; set; }
 
-        private static ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)> Downloads { get; set; } 
-            = new ConcurrentDictionary<(string Username, string Filename, int Token), (DownloadStates State, Spinner Spinner, ProgressBar ProgressBar)>();
+        private static ConcurrentDictionary<(string Username, string Filename, int Token), (TransferStates State, Spinner Spinner, ProgressBar ProgressBar)> Downloads { get; set; } 
+            = new ConcurrentDictionary<(string Username, string Filename, int Token), (TransferStates State, Spinner Spinner, ProgressBar ProgressBar)>();
 
         [Argument('s', "search")]
         private static string Search { get; set; }
@@ -208,17 +208,17 @@
             {
                 try
                 {
-                    var bytes = await client.DownloadAsync(username, file, index++, new DownloadOptions(stateChanged: (e) =>
+                    var bytes = await client.DownloadAsync(username, file, index++, new TransferOptions(stateChanged: (e) =>
                     {
                         var key = (e.Username, e.Filename, e.Token);
                         var progress = Downloads.GetOrAdd(key, (e.State, null, new ProgressBar(10)));
                         progress.State = e.State;
-                        progress.ProgressBar = new ProgressBar(10, format: new ProgressBarFormat(left: "[", right: "]", full: '=', tip: '>', empty: ' ', emptyWhen: () => Downloads[key].State.HasFlag(DownloadStates.Completed)));
-                        progress.Spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => Downloads[key].State.HasFlag(DownloadStates.Completed)));
+                        progress.ProgressBar = new ProgressBar(10, format: new ProgressBarFormat(left: "[", right: "]", full: '=', tip: '>', empty: ' ', emptyWhen: () => Downloads[key].State.HasFlag(TransferStates.Completed)));
+                        progress.Spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => Downloads[key].State.HasFlag(TransferStates.Completed)));
                         
                         Downloads.AddOrUpdate(key, progress, (k, v) => progress);
 
-                        if (progress.State.HasFlag(DownloadStates.Completed))
+                        if (progress.State.HasFlag(TransferStates.Completed))
                         {
                             o(string.Empty); // new line
                         }
@@ -230,7 +230,7 @@
                         progress.State = e.State;
                         progress.ProgressBar.Value = (int)e.PercentComplete;
 
-                        var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(DownloadStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
+                        var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(TransferStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
 
                         Downloads.AddOrUpdate(key, progress, (k, v) => progress);
 

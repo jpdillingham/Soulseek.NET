@@ -34,7 +34,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Properties")]
         [Theory(DisplayName = "Properties default to expected values"), AutoData]
-        internal void Properties_Default_To_Expected_Values(string username, string filename, int token, DownloadOptions options)
+        internal void Properties_Default_To_Expected_Values(string username, string filename, int token, TransferOptions options)
         {
             var d = new Download(username, filename, token, options);
 
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.Data);
             Assert.Equal(0, d.RemoteToken);
             Assert.Equal(0, d.Size);
-            Assert.Equal(DownloadStates.None, d.State);
+            Assert.Equal(TransferStates.None, d.State);
             Assert.Equal(0, d.AverageSpeed);
             Assert.Equal(0, d.BytesDownloaded);
             Assert.Equal(0, d.BytesRemaining);
@@ -95,14 +95,14 @@ namespace Soulseek.Tests.Unit
             var et1 = d.ElapsedTime;
             var rt1 = d.RemainingTime;
 
-            d.State = DownloadStates.InProgress;
+            d.State = TransferStates.InProgress;
 
             var s2 = d.StartTime;
             var e2 = d.EndTime;
             var et2 = d.ElapsedTime;
             var rt2 = d.RemainingTime;
 
-            d.State = DownloadStates.Completed;
+            d.State = TransferStates.Completed;
 
             Assert.Null(s1);
             Assert.Null(e1);
@@ -178,7 +178,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(0, d.AverageSpeed);
 
             d.SetField("progressUpdateLimit", 0);
-            d.SetProperty("State", DownloadStates.InProgress);
+            d.SetProperty("State", TransferStates.InProgress);
             d.InvokeMethod("UpdateProgress", 100000);
 
             Assert.NotEqual(0, d.AverageSpeed);
@@ -193,7 +193,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(0, d.AverageSpeed);
 
             d.SetField("progressUpdateLimit", 0);
-            d.SetProperty("State", DownloadStates.InProgress);
+            d.SetProperty("State", TransferStates.InProgress);
             d.InvokeMethod("UpdateProgress", 100000);
 
             var v1 = d.AverageSpeed;
@@ -212,7 +212,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(0, d.AverageSpeed);
 
-            d.SetProperty("State", DownloadStates.InProgress);
+            d.SetProperty("State", TransferStates.InProgress);
             d.InvokeMethod("UpdateProgress", 100000);
 
             Assert.Equal(0, d.AverageSpeed);
