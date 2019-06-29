@@ -41,9 +41,8 @@ namespace Soulseek.Tcp
             Options = options ?? new ConnectionOptions();
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
-            TcpClient.Client.ReceiveBufferSize = options.ReadBufferSize;
-            TcpClient.Client.SendBufferSize = options.WriteBufferSize;
-            TcpClient.Client.LingerState = new LingerOption(true, 5);
+            TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
+            TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
             TcpClient.Client.NoDelay = true;
 
             InactivityTimer = new SystemTimer()
@@ -400,8 +399,7 @@ namespace Soulseek.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                    //var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
-                    var bytesRead = TcpClient.Client.Receive(buffer, 0, bytesToRead, SocketFlags.None);
+                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
                     if (bytesRead == 0)
                     {
