@@ -971,7 +971,7 @@ namespace Soulseek
             finally
             {
                 // clean up the wait in case the code threw before it was awaited.
-                Waiter.Complete(download.WaitKey);
+                Waiter.Complete<byte[]>(download.WaitKey, null);
                 Downloads.TryRemove(download.Token, out var _);
 
                 download.Connection?.Dispose();
