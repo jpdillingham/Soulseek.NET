@@ -32,6 +32,8 @@ namespace Soulseek.Tcp
         /// </summary>
         event EventHandler<ConnectionDataEventArgs> DataRead;
 
+        event EventHandler<ConnectionDataEventArgs> DataWritten;
+
         /// <summary>
         ///     Occurs when the connection is disconnected.
         /// </summary>
