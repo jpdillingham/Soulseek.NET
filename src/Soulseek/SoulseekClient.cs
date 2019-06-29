@@ -1194,10 +1194,12 @@ namespace Soulseek
                 await upload.Connection.WriteAsync(data)
                     .ConfigureAwait(false);
 
-                // todo: incorporate a LingerTime option
-                await Task.Delay(2500).ConfigureAwait(false);
 
-                upload.Connection.Disconnect("Transfer complete.");
+                // todo: incorporate a LingerTime option
+                //await Task.Delay(5000).ConfigureAwait(false);
+                upload.Connection.Shutdown(SocketShutdown.Receive);
+
+                //upload.Connection.Disconnect("Transfer complete.");
 
                 Console.WriteLine($"Waiting for disconnect...");
                 await uploadCompleted.ConfigureAwait(false);

@@ -43,6 +43,8 @@ namespace Soulseek.Tcp
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
             TcpClient.Client.ReceiveBufferSize = options.ReadBufferSize;
             TcpClient.Client.SendBufferSize = options.WriteBufferSize;
+            TcpClient.Client.LingerState = new LingerOption(true, 5);
+            TcpClient.Client.NoDelay = true;
 
             InactivityTimer = new SystemTimer()
             {
@@ -219,6 +221,11 @@ namespace Soulseek.Tcp
             }
         }
 
+        public void Shutdown(SocketShutdown socketShutdown)
+        {
+            TcpClient.Client.Shutdown(socketShutdown);
+        }
+
         /// <summary>
         ///     Disconnects the client.
         /// </summary>
@@ -383,7 +390,7 @@ namespace Soulseek.Tcp
 
             var result = new List<byte>();
 
-            var buffer = new byte[Options.ReadBufferSize];
+            var buffer = new byte[TcpClient.Client.ReceiveBufferSize];
             var totalBytesRead = 0;
 
             try
@@ -393,7 +400,8 @@ namespace Soulseek.Tcp
                     var bytesRemaining = length - totalBytesRead;
                     var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
 
-                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+                    //var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
+                    var bytesRead = TcpClient.Client.Receive(buffer, 0, bytesToRead, SocketFlags.None);
 
                     if (bytesRead == 0)
                     {
@@ -422,26 +430,21 @@ namespace Soulseek.Tcp
             InactivityTimer?.Reset();
 
             var totalBytesWritten = 0;
-            var bytesRemaining = bytes.Length;
 
             try
             {
-                //while (totalBytesWritten < bytes.Length)
-                //{
-                    //var bytesToWrite = bytesRemaining < 4096 ? bytesRemaining : 4096;
+                while (totalBytesWritten < bytes.Length)
+                {
+                    var bytesRemaining = bytes.Length - totalBytesWritten;
+                    var bytesToWrite = bytesRemaining > TcpClient.Client.SendBufferSize ? TcpClient.Client.SendBufferSize : bytesRemaining;
 
-                    //Console.WriteLine($"Write offset {totalBytesWritten} size {bytesToWrite} byte");
-                    //await Stream.WriteAsync(bytes, totalBytesWritten, bytesToWrite, cancellationToken).ConfigureAwait(false);
+                    await Stream.WriteAsync(bytes, totalBytesWritten, bytesToWrite, cancellationToken).ConfigureAwait(false);
 
+                    totalBytesWritten += bytesToWrite;
 
-                    //totalBytesWritten += bytesToWrite;
-                    //bytesRemaining -= bytesToWrite;
-                    //Console.WriteLine($"Done. bytes written: {totalBytesWritten}");
-
-                    //DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, bytes.Length));
-                    //InactivityTimer?.Reset();
-                    await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
-                //}
+                    DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, bytes.Length));
+                    InactivityTimer?.Reset();
+                }
             }
             catch (Exception ex)
             {
