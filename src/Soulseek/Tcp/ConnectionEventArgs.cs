@@ -30,12 +30,10 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionDataEventArgs"/> class.
         /// </summary>
-        /// <param name="data">The data associated with the event.</param>
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
-        internal ConnectionDataEventArgs(byte[] data, int currentLength, int totalLength)
+        internal ConnectionDataEventArgs(int currentLength, int totalLength)
         {
-            Data = data;
             CurrentLength = currentLength;
             TotalLength = totalLength;
         }
@@ -44,11 +42,6 @@ namespace Soulseek.Tcp
         ///     Gets the length of the event data.
         /// </summary>
         public int CurrentLength { get; }
-
-        /// <summary>
-        ///     Gets the data associated with the event.
-        /// </summary>
-        public byte[] Data { get; }
 
         /// <summary>
         ///     Gets the progress of the data transfer as a percentage of current and total data length.
