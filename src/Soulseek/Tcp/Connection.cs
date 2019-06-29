@@ -88,6 +88,9 @@ namespace Soulseek.Tcp
         /// </summary>
         public event EventHandler<ConnectionDataEventArgs> DataRead;
 
+        /// <summary>
+        ///     Occurs when data has been written to the connection.
+        /// </summary>
         public event EventHandler<ConnectionDataEventArgs> DataWritten;
 
         /// <summary>
@@ -218,11 +221,6 @@ namespace Soulseek.Tcp
 
                 throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
-        }
-
-        public void Shutdown(SocketShutdown socketShutdown)
-        {
-            TcpClient.Client.Shutdown(socketShutdown);
         }
 
         /// <summary>

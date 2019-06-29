@@ -14,7 +14,6 @@ namespace Soulseek.Tcp
 {
     using System;
     using System.Net;
-    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -33,6 +32,9 @@ namespace Soulseek.Tcp
         /// </summary>
         event EventHandler<ConnectionDataEventArgs> DataRead;
 
+        /// <summary>
+        ///     Occurs when data has been written to the connection.
+        /// </summary>
         event EventHandler<ConnectionDataEventArgs> DataWritten;
 
         /// <summary>
@@ -49,8 +51,6 @@ namespace Soulseek.Tcp
         ///     Gets the remote IP address of the connection.
         /// </summary>
         IPAddress IPAddress { get; }
-
-        void Shutdown(SocketShutdown socketShutdown);
 
         /// <summary>
         ///     Gets the unique identifier of the connection.
