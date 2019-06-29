@@ -1115,17 +1115,42 @@ namespace Soulseek
             }
         }
 
-        public Task UploadAsync(string username, string filename, byte[] data, int? token = null, CancellationToken? cancellationToken = null)
+        public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             token = token ?? GetNextToken();
-            return UploadInternalAsync(username, filename, data, (int)token, cancellationToken ?? CancellationToken.None);
+            options = options ?? new TransferOptions();
+
+            return UploadInternalAsync(username, filename, data, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
-        private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, CancellationToken cancellationToken)
+        private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            var upload = new Transfer(TransferDirection.Upload, username, filename, token, options);
+            var lastState = TransferStates.None;
+
+            void UpdateState(TransferStates state)
+            {
+                upload.State = state;
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: upload);
+                lastState = state;
+                options.StateChanged?.Invoke(args);
+                TransferStateChanged?.Invoke(this, args);
+            }
+
+            void UpdateProgress(int bytesDownloaded)
+            {
+                var lastBytes = upload.BytesTransferred;
+                upload.UpdateProgress(bytesDownloaded);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, upload);
+                options.ProgressUpdated?.Invoke(eventArgs);
+                TransferProgressUpdated?.Invoke(this, eventArgs);
+            }
+
             // fetch (or create) the semaphore for this user.  the official client can't handle concurrent downloads,
             // so we need to enforce this regardless of what downstream implementations do.
             var semaphore = Uploads.GetOrAdd(username, new SemaphoreSlim(1, 1));
+
+            UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
             try
@@ -1141,29 +1166,38 @@ namespace Soulseek
                 var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
                 await connection.WriteMessageAsync(tstart.ToMessage()).ConfigureAwait(false);
 
+                UpdateState(TransferStates.Requested);
+
                 //// here we wait for the peer to respond that they are ready to accept the file
                 var res = await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
 
-                var ttransferConnection = await PeerConnectionManager
+                UpdateState(TransferStates.Initializing);
+
+                var uploadCompleted = Waiter.WaitIndefinitely(new WaitKey("Upload", username, filename));
+
+                upload.Connection = await PeerConnectionManager
                     .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
                     .ConfigureAwait(false);
 
-                var completed = Waiter.WaitIndefinitely(new WaitKey("Upload", username, filename));
-                ttransferConnection.Disconnected += (e, a) =>
+                upload.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
+                upload.Connection.Disconnected += (e, a) =>
                 {
                     Waiter.Complete(new WaitKey("Upload", username, filename));
                 };
 
-                await ttransferConnection.WriteAsync(data)
+                UpdateState(TransferStates.InProgress);
+
+                await upload.Connection.WriteAsync(data)
                     .ConfigureAwait(false);
 
                 // todo: incorporate a LingerTime option
-                await Task.Delay(2500);
+                await Task.Delay(2500).ConfigureAwait(false);
 
-                ttransferConnection.Disconnect("Transfer complete.");
+                upload.Connection.Disconnect("Transfer complete.");
 
                 Console.WriteLine($"Waiting for disconnect...");
-                await completed.ConfigureAwait(false);
+                await uploadCompleted.ConfigureAwait(false);
+                UpdateState(TransferStates.Completed);
                 Console.WriteLine($"Disconnected/wait completed");
             }
             finally

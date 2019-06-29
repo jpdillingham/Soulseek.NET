@@ -159,7 +159,7 @@ namespace Soulseek
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
-        Task UploadAsync(string username, string filename, byte[] data, int? token = null, CancellationToken? cancellationToken = null);
+        Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
