@@ -39,7 +39,10 @@ namespace Soulseek.Tcp
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new ConnectionOptions();
+
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
+            TcpClient.Client.ReceiveBufferSize = options.ReadBufferSize;
+            TcpClient.Client.SendBufferSize = options.WriteBufferSize;
 
             InactivityTimer = new SystemTimer()
             {
@@ -380,7 +383,7 @@ namespace Soulseek.Tcp
 
             var result = new List<byte>();
 
-            var buffer = new byte[Options.BufferSize];
+            var buffer = new byte[Options.ReadBufferSize];
             var totalBytesRead = 0;
 
             try
@@ -425,7 +428,7 @@ namespace Soulseek.Tcp
                 while (totalBytesWritten < bytes.Length)
                 {
                     var bytesRemaining = bytes.Length - totalBytesWritten;
-                    var bytesToWrite = bytesRemaining < Options.BufferSize ? bytesRemaining : Options.BufferSize;
+                    var bytesToWrite = bytesRemaining < Options.WriteBufferSize ? bytesRemaining : Options.WriteBufferSize;
 
                     await Stream.WriteAsync(bytes, totalBytesWritten, bytesToWrite, cancellationToken).ConfigureAwait(false);
 
