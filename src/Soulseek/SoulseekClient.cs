@@ -909,9 +909,9 @@ namespace Soulseek
                 {
                     Console.WriteLine($"Download connection established.  Sending magic bytes...");
 
-                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
+                    // this needs to be 16? bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
                     // was identified via WireShark.
-                    await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
+                    await download.Connection.WriteAsync(new byte[8], cancellationToken).ConfigureAwait(false);
 
                     UpdateState(TransferStates.InProgress);
 
@@ -1186,25 +1186,41 @@ namespace Soulseek
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
                 upload.Connection.Disconnected += (e, a) =>
                 {
+                    Console.WriteLine($"-------------------------------- Disconnected: {a}");
                     Waiter.Complete(new WaitKey("Upload", username, filename));
                 };
+
+                // read the 8 magic bytes.  not sure why.
+                var magicBytes = await upload.Connection.ReadAsync(8).ConfigureAwait(false);
 
                 UpdateState(TransferStates.InProgress);
 
                 await upload.Connection.WriteAsync(data)
                     .ConfigureAwait(false);
 
-
                 // todo: incorporate a LingerTime option
                 //await Task.Delay(5000).ConfigureAwait(false);
-                upload.Connection.Shutdown(SocketShutdown.Receive);
+                //upload.Connection.Shutdown(SocketShutdown.Receive);
 
                 //upload.Connection.Disconnect("Transfer complete.");
+
+                try
+                {
+                    await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                }
+                catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
+                {
+                    Console.WriteLine($"----------------------------- early detection disconnect!");
+                }
 
                 Console.WriteLine($"Waiting for disconnect...");
                 await uploadCompleted.ConfigureAwait(false);
                 UpdateState(TransferStates.Completed);
                 Console.WriteLine($"Disconnected/wait completed");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Failed to upload: {ex.Message}");
             }
             finally
             {
