@@ -85,7 +85,7 @@
 
             Client.TransferStateChanged += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
-            Client.TransferProgressUpdated += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
+            //Client.TransferProgressUpdated += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
         }
 
         public IConfiguration Configuration { get; }
