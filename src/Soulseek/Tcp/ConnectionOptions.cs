@@ -20,10 +20,11 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionOptions"/> class.
         /// </summary>
-        /// <param name="readBufferSize">The read and write buffer size for underlying TCP connections.</param>
+        /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
+        /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
         /// <param name="connectTimeout">The connection timeout, in seconds, for client and peer TCP connections.</param>
         /// <param name="inactivityTimeout">The inactivity timeout, in seconds, for peer TCP connections.</param>
-        public ConnectionOptions(int readBufferSize = 4096, int writeBufferSize = 4096, int connectTimeout = 5, int inactivityTimeout = 30)
+        public ConnectionOptions(int readBufferSize = 8192, int writeBufferSize = 8192, int connectTimeout = 5, int inactivityTimeout = 30)
         {
             ReadBufferSize = readBufferSize;
             WriteBufferSize = writeBufferSize;
@@ -32,12 +33,12 @@ namespace Soulseek.Tcp
         }
 
         /// <summary>
-        ///     Gets the read and write buffer size for underlying TCP connections. (Default = 4096).
+        ///     Gets the read buffer size for underlying TCP connections. (Default = 8192).
         /// </summary>
         public int ReadBufferSize { get; }
 
         /// <summary>
-        ///     Gets the read and write buffer size for underlying TCP connections. (Default = 4096).
+        ///     Gets the write buffer size for underlying TCP connections. (Default = 8192).
         /// </summary>
         public int WriteBufferSize { get; }
 
