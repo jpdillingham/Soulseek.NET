@@ -1125,7 +1125,11 @@ namespace Soulseek
 
         private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var upload = new Transfer(TransferDirection.Upload, username, filename, token, options);
+            var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
+            {
+                Size = data.Length,
+            };
+
             var lastState = TransferStates.None;
 
             void UpdateState(TransferStates state)
@@ -1137,10 +1141,10 @@ namespace Soulseek
                 TransferStateChanged?.Invoke(this, args);
             }
 
-            void UpdateProgress(int bytesDownloaded)
+            void UpdateProgress(int bytesUploaded)
             {
                 var lastBytes = upload.BytesTransferred;
-                upload.UpdateProgress(bytesDownloaded);
+                upload.UpdateProgress(bytesUploaded);
                 var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, upload);
                 options.ProgressUpdated?.Invoke(eventArgs);
                 TransferProgressUpdated?.Invoke(this, eventArgs);
@@ -1179,7 +1183,7 @@ namespace Soulseek
                     .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
                     .ConfigureAwait(false);
 
-                upload.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
+                upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
                 upload.Connection.Disconnected += (e, a) =>
                 {
                     Waiter.Complete(new WaitKey("Upload", username, filename));
