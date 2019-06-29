@@ -422,21 +422,26 @@ namespace Soulseek.Tcp
             InactivityTimer?.Reset();
 
             var totalBytesWritten = 0;
+            var bytesRemaining = bytes.Length;
 
             try
             {
-                while (totalBytesWritten < bytes.Length)
-                {
-                    var bytesRemaining = bytes.Length - totalBytesWritten;
-                    var bytesToWrite = bytesRemaining < Options.WriteBufferSize ? bytesRemaining : Options.WriteBufferSize;
+                //while (totalBytesWritten < bytes.Length)
+                //{
+                    //var bytesToWrite = bytesRemaining < 4096 ? bytesRemaining : 4096;
 
-                    await Stream.WriteAsync(bytes, totalBytesWritten, bytesToWrite, cancellationToken).ConfigureAwait(false);
+                    //Console.WriteLine($"Write offset {totalBytesWritten} size {bytesToWrite} byte");
+                    //await Stream.WriteAsync(bytes, totalBytesWritten, bytesToWrite, cancellationToken).ConfigureAwait(false);
 
-                    totalBytesWritten += bytesToWrite;
 
-                    DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, bytes.Length));
-                    InactivityTimer?.Reset();
-                }
+                    //totalBytesWritten += bytesToWrite;
+                    //bytesRemaining -= bytesToWrite;
+                    //Console.WriteLine($"Done. bytes written: {totalBytesWritten}");
+
+                    //DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, bytes.Length));
+                    //InactivityTimer?.Reset();
+                    await Stream.WriteAsync(bytes, 0, bytes.Length, cancellationToken);
+                //}
             }
             catch (Exception ex)
             {
