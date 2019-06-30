@@ -832,7 +832,7 @@ namespace Soulseek
                 }
                 else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    throw new DownloadRejectedException(transferRequestAcknowledgement.Message);
+                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }
                 else
                 {
@@ -938,19 +938,19 @@ namespace Soulseek
                 download.Data = await downloadCompleted.ConfigureAwait(false);
                 return download.Data;
             }
-            catch (DownloadRejectedException ex)
+            catch (TransferRejectedException ex)
             {
                 download.State = TransferStates.Rejected;
                 download.Connection?.Disconnect("Transfer rejected.");
 
-                throw new DownloadException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
+                throw new TransferException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 download.State = TransferStates.Cancelled;
                 download.Connection?.Disconnect("Transfer cancelled.");
 
-                throw new DownloadException($"Download of file {filename} from user {username} was cancelled.", ex);
+                throw new TransferException($"Download of file {filename} from user {username} was cancelled.", ex);
             }
             catch (TimeoutException ex)
             {
@@ -958,7 +958,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer timed out.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
@@ -966,7 +966,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer error.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
             {
@@ -1177,57 +1177,111 @@ namespace Soulseek
 
                 UpdateState(TransferStates.Initializing);
 
-                var uploadCompleted = Waiter.WaitIndefinitely(new WaitKey("Upload", username, filename));
+                var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey);
 
                 upload.Connection = await PeerConnectionManager
                     .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
                     .ConfigureAwait(false);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
-                upload.Connection.Disconnected += (e, a) =>
+                upload.Connection.Disconnected += (sender, message) =>
                 {
-                    Console.WriteLine($"-------------------------------- Disconnected: {a}");
-                    Waiter.Complete(new WaitKey("Upload", username, filename));
+                    if (upload.State.HasFlag(TransferStates.Succeeded))
+                    {
+                        Waiter.Complete(upload.WaitKey);
+                    }
+                    else if (upload.State.HasFlag(TransferStates.TimedOut))
+                    {
+                        Waiter.Throw(upload.WaitKey, new TimeoutException(message));
+                    }
+                    else
+                    {
+                        Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+                    }
                 };
-
-                // read the 8 magic bytes.  not sure why.
-                var magicBytes = await upload.Connection.ReadAsync(8).ConfigureAwait(false);
-
-                UpdateState(TransferStates.InProgress);
-
-                await upload.Connection.WriteAsync(data)
-                    .ConfigureAwait(false);
-
-                // todo: incorporate a LingerTime option
-                //await Task.Delay(5000).ConfigureAwait(false);
-                //upload.Connection.Shutdown(SocketShutdown.Receive);
-
-                //upload.Connection.Disconnect("Transfer complete.");
 
                 try
                 {
-                    await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                    Console.WriteLine($"Reading magic bytes");
+                    // read the 8 magic bytes.  not sure why.
+                    var magic = await upload.Connection.ReadAsync(8).ConfigureAwait(false);
+                    Console.WriteLine($"Magic bytes: {string.Join(" ", magic)}");
+
+                    UpdateState(TransferStates.InProgress);
+
+                    await upload.Connection.WriteAsync(data).ConfigureAwait(false);
+
+                    upload.State = TransferStates.Succeeded;
+
+                    // force a disconnect of the connection by trying to read.  this may be unreliable if a client
+                    // actually sends data after the magic bytes.
+                    try
+                    {
+                        await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
+                    {
+                        // swallow
+                    }
+
+                    Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({upload.Data.Length} of {upload.Size} bytes).");
                 }
-                catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
+                catch (TimeoutException)
                 {
-                    Console.WriteLine($"----------------------------- early detection disconnect!");
+                    upload.State = TransferStates.TimedOut;
+                    upload.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
+                }
+                catch (Exception ex)
+                {
+                    upload.Connection.Disconnect(ex.Message);
                 }
 
-                Console.WriteLine($"Waiting for disconnect...");
                 await uploadCompleted.ConfigureAwait(false);
-                UpdateState(TransferStates.Completed);
-                Console.WriteLine($"Disconnected/wait completed");
+            }
+            catch (TransferRejectedException ex)
+            {
+                upload.State = TransferStates.Rejected;
+                upload.Connection?.Disconnect("Transfer rejected.");
+
+                throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
+            }
+            catch (OperationCanceledException ex)
+            {
+                upload.State = TransferStates.Cancelled;
+                upload.Connection?.Disconnect("Transfer cancelled.");
+
+                throw new TransferException($"Upload of file {filename} to user {username} was cancelled.", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                upload.State = TransferStates.TimedOut;
+                upload.Connection?.Disconnect("Transfer timed out.");
+
+                Diagnostic.Debug(ex.ToString());
+                throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Failed to upload: {ex.Message}");
+                upload.State = TransferStates.Errored;
+                upload.Connection?.Disconnect("Transfer error.");
+
+                Diagnostic.Debug(ex.ToString());
+                throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
             }
             finally
             {
+                // clean up the wait in case the code threw before it was awaited.
+                Waiter.Complete(upload.WaitKey);
+
                 // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained
                 // if there are other threads waiting on it, and it is added back after the await above.
                 semaphore.Release();
                 Uploads.TryRemove(username, out var _);
+
+                upload.Connection?.Dispose();
+
+                upload.State = TransferStates.Completed | upload.State;
+                UpdateState(upload.State);
             }
         }
 
@@ -1345,7 +1399,7 @@ namespace Soulseek
 
                     case MessageCode.PeerQueueFailed:
                         var queueFailedResponse = QueueFailedResponse.Parse(message);
-                        Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
+                        Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
                         break;
 
                     case MessageCode.PeerPlaceInQueueResponse:
@@ -1360,8 +1414,8 @@ namespace Soulseek
                         var download = Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
                         if (download != null)
                         {
-                            Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new DownloadException(msg));
-                            Waiter.Throw(download.WaitKey, new DownloadException(msg));
+                            Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new TransferException(msg));
+                            Waiter.Throw(download.WaitKey, new TransferException(msg));
                         }
 
                         Diagnostic.Debug(msg);
