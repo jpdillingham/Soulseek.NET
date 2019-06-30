@@ -223,9 +223,11 @@ namespace Soulseek
             var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
+            IMessageConnection connection;
+
             try
             {
-                var (_, connection) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
+                (_, connection) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
 
                 if (connection != null)
                 {
@@ -233,13 +235,44 @@ namespace Soulseek
                 }
                 else
                 {
-                    var direct = GetMessageConnectionOutboundDirectAsync(username, ipAddress, port, cancellationToken);
-                    var indirect = GetMessageConnectionOutboundIndirectAsync(username, cancellationToken);
+                    var directCts = new CancellationTokenSource();
+                    var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
 
-                    var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                    var indirectCts = new CancellationTokenSource();
+                    var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
 
-                    var isDirect = first == direct;
-                    connection = first.Result;
+                    var direct = GetMessageConnectionOutboundDirectAsync(username, ipAddress, port, directLinkedCts.Token);
+                    var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
+
+                    Diagnostic.Debug($"Attempting direct and indirect message connections to {username} ({ipAddress}:{port})");
+
+                    List<Task<IMessageConnection>> tasks = new List<Task<IMessageConnection>>() { direct, indirect };
+                    Task<IMessageConnection> task;
+                    do
+                    {
+                        task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                        tasks.Remove(task);
+                    }
+                    while (task.IsFaulted && tasks.Count > 0);
+
+                    if (task.IsFaulted)
+                    {
+                        throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
+                    }
+
+                    connection = await task.ConfigureAwait(false);
+                    var isDirect = task == direct;
+
+                    Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
+                    (isDirect ? indirectCts : directCts).Cancel();
+
+                    if (isDirect)
+                    {
+                        // if connecting directly, init the connection.  for indirect connections the incoming peerinit is handled in the listener code to determine the
+                        // connection type, so we don't need to handle it here.
+                        var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken());
+                        await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    }
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
 
@@ -261,13 +294,13 @@ namespace Soulseek
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
-        public async Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken? cancellationToken = null)
+        public async Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
         {
             var directCts = new CancellationTokenSource();
-            var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None, directCts.Token);
+            var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
 
             var indirectCts = new CancellationTokenSource();
-            var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken ?? CancellationToken.None, indirectCts.Token);
+            var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
 
             var direct = GetTransferConnectionOutboundDirectAsync(ipAddress, port, token, directLinkedCts.Token);
             var indirect = GetTransferConnectionOutboundIndirectAsync(username, token, indirectLinkedCts.Token);
@@ -296,6 +329,8 @@ namespace Soulseek
 
             if (isDirect)
             {
+                // if connecting directly, init the connection.  for indirect connections the incoming peerinit is handled in the listener code to determine the
+                // connection type, so we don't need to handle it here.
                 var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token);
                 await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
@@ -406,9 +441,6 @@ namespace Soulseek
             connection.Disconnected += MessageConnection_Disconnected;
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-            var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken());
-            await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
             return connection;
         }
