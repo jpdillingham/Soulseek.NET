@@ -1188,7 +1188,7 @@ namespace Soulseek
                 var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey, cancellationToken);
 
                 upload.Connection = await PeerConnectionManager
-                    .GetTransferConnectionAsync(upload.Username, address.IPAddress, address.Port, upload.Token)
+                    .GetTransferConnectionAsync(upload.Username, address.IPAddress, address.Port, upload.Token, cancellationToken)
                     .ConfigureAwait(false);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
