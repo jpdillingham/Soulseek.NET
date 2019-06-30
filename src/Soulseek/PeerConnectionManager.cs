@@ -233,8 +233,8 @@ namespace Soulseek
                 }
                 else
                 {
-                    var direct = GetOutboundDirectMessageConnectionAsync(username, ipAddress, port, cancellationToken);
-                    var indirect = GetOutboundIndirectMessageConnectionAsync(username, cancellationToken);
+                    var direct = GetMessageConnectionOutboundDirectAsync(username, ipAddress, port, cancellationToken);
+                    var indirect = GetMessageConnectionOutboundIndirectAsync(username, cancellationToken);
 
                     var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
 
@@ -393,28 +393,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username)
-        {
-            if (MessageConnections.TryGetValue(username, out var record))
-            {
-                return record;
-            }
-
-            Interlocked.Increment(ref waitingMessageConnections);
-            await MessageSemaphore.WaitAsync().ConfigureAwait(false);
-            Interlocked.Decrement(ref waitingMessageConnections);
-
-            record = MessageConnections.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
-
-            if (record.Connection == null)
-            {
-                Diagnostic.Debug($"Initialized message connection to {username}");
-            }
-
-            return record;
-        }
-
-        private async Task<IMessageConnection> GetOutboundDirectMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
+        private async Task<IMessageConnection> GetMessageConnectionOutboundDirectAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
             var connection = ConnectionFactory.GetMessageConnection(
                 MessageConnectionType.Peer,
@@ -434,7 +413,7 @@ namespace Soulseek
             return connection;
         }
 
-        private async Task<IMessageConnection> GetOutboundIndirectMessageConnectionAsync(string username, CancellationToken cancellationToken)
+        private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, CancellationToken cancellationToken)
         {
             var token = SoulseekClient.GetNextToken();
 
@@ -469,6 +448,27 @@ namespace Soulseek
             {
                 PendingSolicitations.TryRemove(token, out var _);
             }
+        }
+
+        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username)
+        {
+            if (MessageConnections.TryGetValue(username, out var record))
+            {
+                return record;
+            }
+
+            Interlocked.Increment(ref waitingMessageConnections);
+            await MessageSemaphore.WaitAsync().ConfigureAwait(false);
+            Interlocked.Decrement(ref waitingMessageConnections);
+
+            record = MessageConnections.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
+
+            if (record.Connection == null)
+            {
+                Diagnostic.Debug($"Initialized message connection to {username}");
+            }
+
+            return record;
         }
 
         private async Task<IConnection> GetTransferConnectionOutboundDirectAsync(IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
