@@ -281,6 +281,9 @@ namespace Soulseek
             var direct = GetOutboundDirectTransferConnectionAsync(ipAddress, port, token, cancellationToken ?? CancellationToken.None);
             var indirect = GetOutboundIndirectTransferConnectionAsync(username, token, cancellationToken ?? CancellationToken.None);
 
+            // todo: prevent both of these connections from fully connecting.  catch the first socket to get established and pierce/peerinit only that one.
+            // connecting twice causes the remote client to switch to the most recent connection, while we rely on the first.
+
             var first = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
             var isDirect = first == direct;
 

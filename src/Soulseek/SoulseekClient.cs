@@ -1123,6 +1123,177 @@ namespace Soulseek
             return UploadInternalAsync(username, filename, data, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
 
+        //private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
+        //{
+        //    var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
+        //    {
+        //        Size = data.Length,
+        //    };
+
+        //    var lastState = TransferStates.None;
+
+        //    void UpdateState(TransferStates state)
+        //    {
+        //        upload.State = state;
+        //        var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: upload);
+        //        lastState = state;
+        //        options.StateChanged?.Invoke(args);
+        //        TransferStateChanged?.Invoke(this, args);
+        //    }
+
+        //    void UpdateProgress(int bytesUploaded)
+        //    {
+        //        var lastBytes = upload.BytesTransferred;
+        //        upload.UpdateProgress(bytesUploaded);
+        //        var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, upload);
+        //        options.ProgressUpdated?.Invoke(eventArgs);
+        //        TransferProgressUpdated?.Invoke(this, eventArgs);
+        //    }
+
+        //    // fetch (or create) the semaphore for this user.  the official client can't handle concurrent downloads,
+        //    // so we need to enforce this regardless of what downstream implementations do.
+        //    var semaphore = Uploads.GetOrAdd(username, new SemaphoreSlim(1, 1));
+
+        //    UpdateState(TransferStates.Queued);
+        //    await semaphore.WaitAsync().ConfigureAwait(false);
+
+        //    try
+        //    {
+        //        // in case the Upload record was removed via cleanup while we were waiting, add it back.
+        //        semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+        //        var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+        //        var messageConnection = await PeerConnectionManager
+        //            .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+        //            .ConfigureAwait(false);
+
+        //        // prepare a wait for the transfer response
+        //        var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
+        //            new WaitKey(MessageCode.PeerTransferResponse, upload.Username, upload.Token));
+
+        //        // request to start the upload
+        //        var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);
+        //        await messageConnection.WriteMessageAsync(transferRequest.ToMessage(), cancellationToken).ConfigureAwait(false);
+        //        UpdateState(TransferStates.Requested);
+
+        //        var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+
+        //        if (!transferRequestAcknowledgement.Allowed)
+        //        {
+        //            throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+        //        }
+
+        //        UpdateState(TransferStates.Initializing);
+
+        //        var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey, cancellationToken);
+
+        //        upload.Connection = await PeerConnectionManager
+        //            .GetTransferConnectionAsync(upload.Username, address.IPAddress, address.Port, upload.Token)
+        //            .ConfigureAwait(false);
+
+        //        upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
+        //        upload.Connection.Disconnected += (sender, message) =>
+        //        {
+        //            if (upload.State.HasFlag(TransferStates.Succeeded))
+        //            {
+        //                Waiter.Complete(upload.WaitKey);
+        //            }
+        //            else if (upload.State.HasFlag(TransferStates.TimedOut))
+        //            {
+        //                Waiter.Throw(upload.WaitKey, new TimeoutException(message));
+        //            }
+        //            else
+        //            {
+        //                Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+        //            }
+        //        };
+
+        //        try
+        //        {
+        //            Console.WriteLine($"Reading magic bytes");
+        //            // read the 8 magic bytes.  not sure why.
+        //            var magic = await upload.Connection.ReadAsync(8).ConfigureAwait(false);
+        //            Console.WriteLine($"Magic bytes: {string.Join(" ", magic)}");
+
+        //            UpdateState(TransferStates.InProgress);
+
+        //            await upload.Connection.WriteAsync(data).ConfigureAwait(false);
+
+        //            upload.State = TransferStates.Succeeded;
+
+        //            // force a disconnect of the connection by trying to read.  this may be unreliable if a client
+        //            // actually sends data after the magic bytes.
+        //            try
+        //            {
+        //                await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+        //            }
+        //            catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
+        //            {
+        //                Console.WriteLine($"caught it");
+        //                // swallow this specific exception
+        //            }
+
+        //            Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({upload.Data.Length} of {upload.Size} bytes).");
+        //        }
+        //        catch (TimeoutException)
+        //        {
+        //            upload.State = TransferStates.TimedOut;
+        //            upload.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
+        //        }
+        //        catch (Exception ex)
+        //        {
+        //            upload.Connection.Disconnect(ex.Message);
+        //        }
+
+        //        await uploadCompleted.ConfigureAwait(false);
+        //    }
+        //    catch (TransferRejectedException ex)
+        //    {
+        //        upload.State = TransferStates.Rejected;
+        //        upload.Connection?.Disconnect("Transfer rejected.");
+
+        //        throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
+        //    }
+        //    catch (OperationCanceledException ex)
+        //    {
+        //        upload.State = TransferStates.Cancelled;
+        //        upload.Connection?.Disconnect("Transfer cancelled.");
+
+        //        throw new TransferException($"Upload of file {filename} to user {username} was cancelled.", ex);
+        //    }
+        //    catch (TimeoutException ex)
+        //    {
+        //        upload.State = TransferStates.TimedOut;
+        //        upload.Connection?.Disconnect("Transfer timed out.");
+
+        //        Diagnostic.Debug(ex.ToString());
+        //        throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        upload.State = TransferStates.Errored;
+        //        upload.Connection?.Disconnect("Transfer error.");
+
+        //        Diagnostic.Debug(ex.ToString());
+        //        throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
+        //    }
+        //    finally
+        //    {
+        //        // clean up the wait in case the code threw before it was awaited.
+        //        Waiter.Complete(upload.WaitKey);
+
+        //        // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained
+        //        // if there are other threads waiting on it, and it is added back after the await above.
+        //        semaphore.Release();
+        //        Uploads.TryRemove(username, out var _);
+
+        //        //upload.Connection?.Dispose();
+
+        //        upload.State = TransferStates.Completed | upload.State;
+        //        UpdateState(upload.State);
+        //    }
+        //}
+
         private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
@@ -1163,29 +1334,38 @@ namespace Soulseek
                 semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-                var connection = await PeerConnectionManager
+                var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
                     .ConfigureAwait(false);
 
-                var tstart = new TransferRequest(TransferDirection.Upload, token, filename, data.Length);
-                await connection.WriteMessageAsync(tstart.ToMessage()).ConfigureAwait(false);
+                // prepare a wait for the transfer response
+                var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
+                    new WaitKey(MessageCode.PeerTransferResponse, upload.Username, upload.Token));
 
+                // request to start the upload
+                var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);
+                await messageConnection.WriteMessageAsync(transferRequest.ToMessage(), cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
-                //// here we wait for the peer to respond that they are ready to accept the file
-                var res = await Waiter.Wait<TransferResponse>(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, token)).ConfigureAwait(false);
+                var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+
+                if (!transferRequestAcknowledgement.Allowed)
+                {
+                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+                }
 
                 UpdateState(TransferStates.Initializing);
 
-                var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey);
+                var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey, cancellationToken);
 
                 upload.Connection = await PeerConnectionManager
-                    .GetTransferConnectionAsync(connection.Username, connection.IPAddress, connection.Port, token)
+                    .GetTransferConnectionAsync(upload.Username, address.IPAddress, address.Port, upload.Token)
                     .ConfigureAwait(false);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
                 upload.Connection.Disconnected += (sender, message) =>
                 {
+                    Console.WriteLine($"---------------- disconn {message}");
                     if (upload.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(upload.WaitKey);
@@ -1205,7 +1385,8 @@ namespace Soulseek
                     Console.WriteLine($"Reading magic bytes");
                     // read the 8 magic bytes.  not sure why.
                     var magic = await upload.Connection.ReadAsync(8).ConfigureAwait(false);
-                    Console.WriteLine($"Magic bytes: {string.Join(" ", magic)}");
+                    //await upload.Connection.WriteAsync(new byte[8]).ConfigureAwait(false);
+                    Console.WriteLine($"Magic bytes:");
 
                     UpdateState(TransferStates.InProgress);
 
@@ -1217,11 +1398,13 @@ namespace Soulseek
                     // actually sends data after the magic bytes.
                     try
                     {
+                        Console.WriteLine($"Trying fake read:");
                         await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                        Console.WriteLine($"Fake read successful");
                     }
                     catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
                     {
-                        // swallow
+                        // swallow this specific exception
                     }
 
                     Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({upload.Data.Length} of {upload.Size} bytes).");
