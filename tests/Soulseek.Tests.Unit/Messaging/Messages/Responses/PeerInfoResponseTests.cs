@@ -24,9 +24,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            PeerInfoResponse response = null;
+            UserInfoResponse response = null;
 
-            var ex = Record.Exception(() => response = new PeerInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeSlot));
+            var ex = Record.Exception(() => response = new UserInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeSlot));
 
             Assert.Null(ex);
 
@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerInfoResponse.Parse(msg));
+            var ex = Record.Exception(() => UserInfoResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("foo")
                 .Build();
 
-            var ex = Record.Exception(() => PeerInfoResponse.Parse(msg));
+            var ex = Record.Exception(() => UserInfoResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -82,7 +82,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte((byte)(hasFreeSlot ? 1 : 0))
                 .Build();
 
-            var response = PeerInfoResponse.Parse(msg);
+            var response = UserInfoResponse.Parse(msg);
 
             Assert.Equal(description, response.Description);
             Assert.True(response.HasPicture);
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte((byte)(hasFreeSlot ? 1 : 0))
                 .Build();
 
-            var response = PeerInfoResponse.Parse(msg);
+            var response = UserInfoResponse.Parse(msg);
 
             Assert.Equal(description, response.Description);
             Assert.False(response.HasPicture);

@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferResponse.cs" company="JP Dillingham">
+﻿// <copyright file="TransferResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,21 +17,36 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming response to a peer transfer request.
     /// </summary>
-    internal sealed class PeerTransferResponse
+    internal sealed class TransferResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerTransferResponse"/> class.
+        ///     Initializes a new instance of the <see cref="TransferResponse"/> class.
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
-        /// <param name="allowed">A value indicating whether the transfer is allowed.</param>
-        /// <param name="fileSize">The size of the file being transferred, if allowed.</param>
-        /// <param name="message">The reason the transfer was disallowed, if applicable.</param>
-        internal PeerTransferResponse(int token, bool allowed, int fileSize, string message)
+        /// <param name="message">The reason the transfer was disallowed.</param>
+        internal TransferResponse(int token, string message)
         {
             Token = token;
-            Allowed = allowed;
-            FileSize = fileSize;
+            Allowed = false;
             Message = message;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TransferResponse"/> class.
+        /// </summary>
+        /// <param name="token">The unique token for the transfer.</param>
+        /// <param name="fileSize">The size of the file being transferred.</param>
+        internal TransferResponse(int token, long fileSize)
+        {
+            Token = token;
+            Allowed = true;
+            FileSize = fileSize;
+        }
+
+        internal TransferResponse(int token)
+        {
+            Token = token;
+            Allowed = true;
         }
 
         /// <summary>
@@ -42,7 +57,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the size of the file being transferred, if allowed.
         /// </summary>
-        public int FileSize { get; }
+        public long FileSize { get; }
 
         /// <summary>
         ///     Gets the reason the transfer was disallowed, if applicable.
@@ -55,11 +70,11 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerTransferResponse"/> from the specified <paramref name="message"/>.
+        ///     Parses a new instance of <see cref="TransferResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerTransferResponse Parse(Message message)
+        public static TransferResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -71,19 +86,18 @@ namespace Soulseek.Messaging.Messages
             var token = reader.ReadInteger();
             var allowed = reader.ReadByte() == 1;
 
-            int fileSize = default(int);
-            string msg = default(string);
-
-            if (allowed)
+            if (allowed && reader.HasMoreData)
             {
-                fileSize = reader.ReadInteger();
+                var fileSize = reader.ReadLong();
+                return new TransferResponse(token, fileSize);
             }
-            else
+            else if (!allowed)
             {
-                msg = reader.ReadString();
+                var msg = reader.ReadString();
+                return new TransferResponse(token, msg);
             }
 
-            return new PeerTransferResponse(token, allowed, fileSize, msg);
+            return new TransferResponse(token);
         }
 
         /// <summary>
@@ -92,13 +106,21 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
-            return new MessageBuilder()
+            var builder = new MessageBuilder()
                 .Code(MessageCode.PeerTransferResponse)
                 .WriteInteger(Token)
-                .WriteByte((byte)(Allowed ? 1 : 0))
-                .WriteInteger(FileSize)
-                .WriteString(Message)
-                .Build();
+                .WriteByte((byte)(Allowed ? 1 : 0));
+
+            if (Allowed)
+            {
+                builder.WriteLong(FileSize);
+            }
+            else
+            {
+                builder.WriteString(Message);
+            }
+
+            return builder.Build();
         }
     }
 }

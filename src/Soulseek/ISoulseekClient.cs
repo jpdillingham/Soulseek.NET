@@ -31,14 +31,14 @@ namespace Soulseek
         event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Occurs when an active download receives data.
+        ///     Occurs when an active transfer sends or receives data.
         /// </summary>
-        event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
 
         /// <summary>
-        ///     Occurs when a download changes state.
+        ///     Occurs when a transfer changes state.
         /// </summary>
-        event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
+        event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
         ///     Occurs when a private message is received.
@@ -149,7 +149,7 @@ namespace Soulseek
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -157,7 +157,9 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+
+        Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
@@ -213,7 +215,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.

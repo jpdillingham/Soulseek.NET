@@ -1,4 +1,4 @@
-﻿// <copyright file="Constants.cs" company="JP Dillingham">
+﻿// <copyright file="TransferOptionsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,22 +10,26 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek
+namespace Soulseek.Tests.Unit
 {
-    internal static class Constants
-    {
-        internal static class WaitKey
-        {
-            public const string Transfer = "Transfer";
-            public const string DirectTransfer = "DirectTransfer";
-            public const string IndirectTransfer = "IndirectTransfer";
-            public const string SolicitedConnection = "SolicitedConnection";
-        }
+    using System;
+    using AutoFixture.Xunit2;
+    using Xunit;
 
-        internal static class ConnectionType
+    public class TransferOptionsTests
+    {
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with given data"), AutoData]
+        public void Instantiates_With_Defaults(
+            Action<TransferStateChangedEventArgs> stateChanged,
+            Action<TransferProgressUpdatedEventArgs> progressUpdated)
         {
-            public const string Peer = "P";
-            public const string Tranfer = "F";
+            var o = new TransferOptions(
+                stateChanged,
+                progressUpdated);
+
+            Assert.Equal(stateChanged, o.StateChanged);
+            Assert.Equal(progressUpdated, o.ProgressUpdated);
         }
     }
 }

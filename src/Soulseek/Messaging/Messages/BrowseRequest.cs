@@ -1,4 +1,4 @@
-﻿// <copyright file="DownloadOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,26 +10,22 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit
+namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using AutoFixture.Xunit2;
-    using Xunit;
-
-    public class DownloadOptionsTests
+    /// <summary>
+    ///     Requests the shared file list from a peer.
+    /// </summary>
+    public class BrowseRequest
     {
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Instantiates_With_Defaults(
-            Action<DownloadStateChangedEventArgs> stateChanged,
-            Action<DownloadProgressUpdatedEventArgs> progressUpdated)
+        /// <summary>
+        ///     Constructs a <see cref="Message"/> from this request.
+        /// </summary>
+        /// <returns>The constructed message.</returns>
+        public Message ToMessage()
         {
-            var o = new DownloadOptions(
-                stateChanged,
-                progressUpdated);
-
-            Assert.Equal(stateChanged, o.StateChanged);
-            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            return new MessageBuilder()
+                .Code(MessageCode.PeerBrowseRequest)
+                .Build();
         }
     }
 }

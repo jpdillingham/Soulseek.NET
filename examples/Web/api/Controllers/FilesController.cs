@@ -57,7 +57,7 @@
         public async Task<IActionResult> Download([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token, [FromQuery]bool toDisk = true)
         {
             var fileBytes = await Client.DownloadAsync(username, filename, token, 
-                new DownloadOptions(stateChanged: (e) => Tracker.AddOrUpdate(e), progressUpdated: (e) => Tracker.AddOrUpdate(e)));
+                new TransferOptions(stateChanged: (e) => Tracker.AddOrUpdate(e), progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
             if (toDisk)
             {
@@ -81,16 +81,16 @@
         {
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
 
-            var downloadTask = Client.DownloadAsync(username, filename, token, new DownloadOptions(stateChanged: (e) =>
+            var downloadTask = Client.DownloadAsync(username, filename, token, new TransferOptions(stateChanged: (e) =>
             {
                 Tracker.AddOrUpdate(e);
 
-                if (e.State == DownloadStates.Queued)
+                if (e.State == TransferStates.Queued)
                 {
                     waitUntilEnqueue.SetResult(true);
                 }
 
-                if (e.State.HasFlag(DownloadStates.Completed) && e.State.HasFlag(DownloadStates.Succeeded))
+                if (e.State.HasFlag(TransferStates.Completed) && e.State.HasFlag(TransferStates.Succeeded))
                 {
                     SaveLocalFile(filename, OutputDirectory, e.Data);
                 }

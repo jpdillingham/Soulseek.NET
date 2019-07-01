@@ -118,8 +118,8 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var dict = new ConcurrentDictionary<int, Download>();
-            dict.GetOrAdd(0, new Download(username, filename, 0));
+            var dict = new ConcurrentDictionary<int, Transfer>();
+            dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
 
             s.SetProperty("Downloads", dict);
 
@@ -153,8 +153,8 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var dict = new ConcurrentDictionary<int, Download>();
-            dict.GetOrAdd(0, new Download(username, filename, 0));
+            var dict = new ConcurrentDictionary<int, Transfer>();
+            dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
 
             s.SetProperty("Downloads", dict);
 

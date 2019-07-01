@@ -1,6 +1,7 @@
 ﻿namespace WebAPI
 {
     using System;
+    using System.Collections.Generic;
     using System.IO;
     using System.Linq;
     using System.Net;
@@ -16,6 +17,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Tcp;
     using Swashbuckle.AspNetCore.Swagger;
 
@@ -26,6 +28,7 @@
         private static string WebRoot { get; set; }
         private static int ListenPort { get; set; }
         public static string OutputDirectory { get; private set; }
+        private static string SharedDirectory { get; set; }
 
         private SoulseekClient Client { get; }
 
@@ -38,6 +41,29 @@
             WebRoot = Configuration.GetValue<string>("WEBROOT");
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
+            SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
+
+            SharedDirectory = @"\\WSE\Music\Processed\Rage Against the Machine\Bootlegs\Killing Your Enemy In 1995";
+
+            var resolvers = new SoulseekClientResolvers(
+                browseResponse: (u, i, p) => 
+                {
+                    // limited to just the root for now
+                    var files = System.IO.Directory.GetFiles(SharedDirectory)
+                        .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0));
+
+                    var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
+
+                    return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
+                }, queueDownloadResponse: (u, i, p, f) =>
+                {
+                    Console.WriteLine($"Dispositioning {f}");
+                    //var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(f)}";
+                    Task.Run(async () => await Client.UploadAsync(u, f, System.IO.File.ReadAllBytes(f)))
+                        .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+                    return (true, null);
+                });
 
             var options = new SoulseekClientOptions(
                 listenPort: ListenPort,
@@ -47,7 +73,7 @@
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5));
 
-            Client = new SoulseekClient(options);
+            Client = new SoulseekClient(resolvers: resolvers, options: options);
             Client.DiagnosticGenerated += (e, args) =>
             {
                 if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
@@ -57,9 +83,9 @@
                 Console.ResetColor();
             };
 
-            Client.DownloadStateChanged += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
+            Client.TransferStateChanged += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
-            //Client.DownloadProgressUpdated += (e, args) => Console.WriteLine($"[Download] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
+            //Client.TransferProgressUpdated += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
         }
 
         public IConfiguration Configuration { get; }

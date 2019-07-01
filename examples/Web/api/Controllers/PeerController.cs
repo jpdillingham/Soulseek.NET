@@ -29,7 +29,7 @@
         /// <param name="username">The user from which to download.</param>
         /// <returns></returns>
         [HttpGet("{username}")]
-        public async Task<PeerInfoResponse> Get([FromRoute, Required]string username)
+        public async Task<UserInfoResponse> Get([FromRoute, Required]string username)
         {
             var response = await Client.GetUserInfoAsync(username);
             return response;

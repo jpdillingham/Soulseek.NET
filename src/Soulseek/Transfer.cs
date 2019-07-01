@@ -1,4 +1,4 @@
-﻿// <copyright file="Download.cs" company="JP Dillingham">
+﻿// <copyright file="Transfer.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,9 +17,9 @@ namespace Soulseek
     using Soulseek.Tcp;
 
     /// <summary>
-    ///     A single file download.
+    ///     A single file transfer.
     /// </summary>
-    public sealed class Download
+    public sealed class Transfer
     {
         private readonly int progressUpdateLimit = 100;
         private readonly double speedAlpha = 2f / 10;
@@ -27,23 +27,27 @@ namespace Soulseek
         private DateTime? lastProgressTime = null;
         private bool speedInitialized = false;
 
-        private DownloadStates state = DownloadStates.None;
+        private TransferStates state = TransferStates.None;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Download"/> class.
+        ///     Initializes a new instance of the <see cref="Transfer"/> class.
         /// </summary>
-        /// <param name="username">The username of the peer from which the file is to be downloaded.</param>
-        /// <param name="filename">The filename of the file to be downloaded.</param>
+        /// <param name="direction">The transfer direction.</param>
+        /// <param name="username">The username of the peer to or from which the file is to be transferred.</param>
+        /// <param name="filename">The filename of the file to be transferred.</param>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="options">The options for the transfer.</param>
-        internal Download(string username, string filename, int token, DownloadOptions options = null)
+        internal Transfer(TransferDirection direction, string username, string filename, int token, TransferOptions options = null)
         {
+            Direction = direction;
             Username = username;
             Filename = filename;
             Token = token;
 
-            Options = options ?? new DownloadOptions();
+            Options = options ?? new TransferOptions();
         }
+
+        public TransferDirection Direction { get; }
 
         /// <summary>
         ///     Gets the current average download speed.
@@ -51,32 +55,32 @@ namespace Soulseek
         public double AverageSpeed { get; private set; }
 
         /// <summary>
-        ///     Gets the total number of bytes downloaded.
+        ///     Gets the total number of bytes transferred.
         /// </summary>
-        public int BytesDownloaded { get; private set; }
+        public long BytesTransferred { get; private set; }
 
         /// <summary>
-        ///     Gets the number of remaining bytes to be downloaded.
+        ///     Gets the number of remaining bytes to be transferred.
         /// </summary>
-        public int BytesRemaining => Size - BytesDownloaded;
+        public long BytesRemaining => Size - BytesTransferred;
 
         /// <summary>
-        ///     Gets the data downloaded.
+        ///     Gets the data transferred.
         /// </summary>
         public byte[] Data { get; internal set; }
 
         /// <summary>
-        ///     Gets the current duration of the download, if it has been started.
+        ///     Gets the current duration of the transfer, if it has been started.
         /// </summary>
         public TimeSpan? ElapsedTime => StartTime == null ? default(TimeSpan) : (EndTime ?? DateTime.Now) - StartTime;
 
         /// <summary>
-        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.Completed"/> state.
+        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
         public DateTime? EndTime { get; private set; }
 
         /// <summary>
-        ///     Gets the filename of the file to be downloaded.
+        ///     Gets the filename of the file to be transferred.
         /// </summary>
         public string Filename { get; }
 
@@ -88,12 +92,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the options for the transfer.
         /// </summary>
-        public DownloadOptions Options { get; }
+        public TransferOptions Options { get; }
 
         /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
-        public double PercentComplete => Size == 0 ? 0 : (BytesDownloaded / (double)Size) * 100;
+        public double PercentComplete => Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
 
         /// <summary>
         ///     Gets the port of the remote transfer connection, if one has been established.
@@ -101,29 +105,29 @@ namespace Soulseek
         public int? Port => Connection?.Port;
 
         /// <summary>
-        ///     Gets the projected remaining duration of the download.
+        ///     Gets the projected remaining duration of the transfer.
         /// </summary>
         public TimeSpan? RemainingTime => AverageSpeed == 0 ? default(TimeSpan) : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
 
         /// <summary>
         ///     Gets the remote unique token for the transfer.
         /// </summary>
-        public int RemoteToken { get; internal set; }
+        public int? RemoteToken { get; internal set; }
 
         /// <summary>
-        ///     Gets the size of the file to be downloaded, in bytes.
+        ///     Gets the size of the file to be transferred, in bytes.
         /// </summary>
-        public int Size { get; internal set; }
+        public long Size { get; internal set; }
 
         /// <summary>
-        ///     Gets the time at which the download transitioned into the <see cref="DownloadStates.InProgress"/> state.
+        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
         public DateTime? StartTime { get; private set; }
 
         /// <summary>
-        ///     Gets the state of the download.
+        ///     Gets the state of the transfer.
         /// </summary>
-        public DownloadStates State
+        public TransferStates State
         {
             get
             {
@@ -132,12 +136,12 @@ namespace Soulseek
 
             internal set
             {
-                if (!state.HasFlag(DownloadStates.InProgress) && value.HasFlag(DownloadStates.InProgress))
+                if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
                 {
                     StartTime = DateTime.Now;
                     EndTime = null;
                 }
-                else if (!state.HasFlag(DownloadStates.Completed) && value.HasFlag(DownloadStates.Completed))
+                else if (!state.HasFlag(TransferStates.Completed) && value.HasFlag(TransferStates.Completed))
                 {
                     EndTime = DateTime.Now;
                 }
@@ -147,12 +151,12 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the unique token for thr transfer.
+        ///     Gets the unique token for the transfer.
         /// </summary>
         public int Token { get; }
 
         /// <summary>
-        ///     Gets the username of the peer from which the file is to be downloaded.
+        ///     Gets the username of the peer to or from which the file is to be transferred.
         /// </summary>
         public string Username { get; }
 
@@ -163,27 +167,27 @@ namespace Soulseek
         internal IConnection Connection { get; set; }
 
         /// <summary>
-        ///     Gets the wait key for the download.
+        ///     Gets the wait key for the transfer.
         /// </summary>
-        internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Download, Username, Filename, Token);
+        internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
 
         /// <summary>
-        ///     Updates the download progress.
+        ///     Updates the transfer progress.
         /// </summary>
-        /// <param name="bytesDownloaded">The total number of bytes downloaded.</param>
-        internal void UpdateProgress(int bytesDownloaded)
+        /// <param name="bytesTransferred">The total number of bytes transferred.</param>
+        internal void UpdateProgress(int bytesTransferred)
         {
-            BytesDownloaded = bytesDownloaded;
+            BytesTransferred = bytesTransferred;
 
             var ts = DateTime.Now - (lastProgressTime ?? StartTime);
 
-            if (ts.HasValue && ts.Value.TotalMilliseconds >= progressUpdateLimit)
+            if (ts.HasValue && (!speedInitialized || ts.Value.TotalMilliseconds >= progressUpdateLimit))
             {
-                var currentSpeed = (BytesDownloaded - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
+                var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.Now;
-                lastProgressBytes = BytesDownloaded;
+                lastProgressBytes = BytesTransferred;
             }
         }
     }

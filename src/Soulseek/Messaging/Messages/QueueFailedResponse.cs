@@ -17,14 +17,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response received when an attempt to queue a file for downloading has failed.
     /// </summary>
-    internal sealed class PeerQueueFailedResponse
+    internal sealed class QueueFailedResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerQueueFailedResponse"/> class.
+        ///     Initializes a new instance of the <see cref="QueueFailedResponse"/> class.
         /// </summary>
         /// <param name="filename">The filename which failed to be queued.</param>
         /// <param name="message">The reason for the failure.</param>
-        internal PeerQueueFailedResponse(string filename, string message)
+        internal QueueFailedResponse(string filename, string message)
         {
             Filename = filename;
             Message = message;
@@ -41,11 +41,11 @@ namespace Soulseek.Messaging.Messages
         public string Message { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerQueueFailedResponse"/> from the specified <paramref name="message"/>.
+        ///     Parses a new instance of <see cref="QueueFailedResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerQueueFailedResponse Parse(Message message)
+        public static QueueFailedResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -57,7 +57,16 @@ namespace Soulseek.Messaging.Messages
             var filename = reader.ReadString();
             var msg = reader.ReadString();
 
-            return new PeerQueueFailedResponse(filename, msg);
+            return new QueueFailedResponse(filename, msg);
+        }
+
+        public Message ToMessage()
+        {
+            return new MessageBuilder()
+                .Code(MessageCode.PeerQueueFailed)
+                .WriteString(Filename)
+                .WriteString(Message)
+                .Build();
         }
     }
 }

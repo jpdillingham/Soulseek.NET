@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInfoResponse.cs" company="JP Dillingham">
+﻿// <copyright file="UserInfoResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,12 +15,12 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     The response to a peer info request.
+    ///     The response to a user info request.
     /// </summary>
-    public sealed class PeerInfoResponse
+    public sealed class UserInfoResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerInfoResponse"/> class.
+        ///     Initializes a new instance of the <see cref="UserInfoResponse"/> class.
         /// </summary>
         /// <param name="description">The peer's description.</param>
         /// <param name="hasPicture">A value indicating whether a picture has been configured.</param>
@@ -28,7 +28,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSlots">The number of configured upload slots.</param>
         /// <param name="queueLength">The current queue length.</param>
         /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
-        internal PeerInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
+        internal UserInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
             Description = description;
             HasPicture = hasPicture;
@@ -39,7 +39,7 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Gets the peer's description.
+        ///     Gets the user's description.
         /// </summary>
         public string Description { get; }
 
@@ -69,11 +69,11 @@ namespace Soulseek.Messaging.Messages
         public bool HasFreeUploadSlot { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerInfoResponse"/> from the specified <paramref name="message"/>.
+        ///     Parses a new instance of <see cref="UserInfoResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerInfoResponse Parse(Message message)
+        public static UserInfoResponse Parse(Message message)
         {
             var reader = new MessageReader(message);
 
@@ -96,7 +96,7 @@ namespace Soulseek.Messaging.Messages
             var queueLength = reader.ReadInteger();
             var hasFreeUploadSlot = reader.ReadByte() > 0;
 
-            return new PeerInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeUploadSlot);
+            return new UserInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeUploadSlot);
         }
     }
 }

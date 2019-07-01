@@ -16,6 +16,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
     using System.Collections.Concurrent;
     using System.IO;
     using System.Net;
+    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -108,6 +109,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
@@ -133,6 +135,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
@@ -165,6 +168,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Returns(Task.CompletedTask);
 
             var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
@@ -195,6 +199,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Returns(Task.CompletedTask);
 
             var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
@@ -237,6 +242,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Returns(Task.Run(() => 4));
 
             var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
@@ -267,6 +273,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .Throws(new Exception());
 
             var tcpMock = new Mock<ITcpClient>();
+            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 

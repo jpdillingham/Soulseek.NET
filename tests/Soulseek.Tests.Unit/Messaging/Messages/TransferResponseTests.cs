@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerTransferResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="TransferResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,33 +13,44 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
+    using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerTransferResponseTests
+    public class TransferResponseTests
     {
-        private Random Random { get; } = new Random();
-
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with the given data")]
-        public void Instantiates_With_The_Given_Data()
+        [Theory(DisplayName = "Instantiates with the proper data when disallowed"), AutoData]
+        public void Instantiates_With_The_Proper_Data_When_Disallowed(int token, string msg)
         {
-            var token = Random.Next();
-            var allowed = Random.Next() % 2 == 0;
-            var msg = Guid.NewGuid().ToString();
-            var size = Random.Next();
+            TransferResponse response = null;
+            Exception ex = null;
 
-            PeerTransferResponse response = null;
-
-            var ex = Record.Exception(() => response = new PeerTransferResponse(token, allowed, size, msg));
+            ex = Record.Exception(() => response = new TransferResponse(token, msg));
 
             Assert.Null(ex);
 
             Assert.Equal(token, response.Token);
-            Assert.Equal(allowed, response.Allowed);
+            Assert.False(response.Allowed);
+
             Assert.Equal(msg, response.Message);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with the proper data when allowed"), AutoData]
+        public void Instantiates_With_The_Proper_Data_When_Allowed(int token, long size)
+        {
+            TransferResponse response = null;
+            Exception ex = null;
+
+            ex = Record.Exception(() => response = new TransferResponse(token, size));
+
+            Assert.Null(ex);
+
+            Assert.Equal(token, response.Token);
+            Assert.True(response.Allowed);
             Assert.Equal(size, response.FileSize);
         }
 
@@ -51,7 +62,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferResponse.Parse(msg));
+            var ex = Record.Exception(() => TransferResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -65,27 +76,24 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerTransferResponse)
                 .Build();
 
-            var ex = Record.Exception(() => PeerTransferResponse.Parse(msg));
+            var ex = Record.Exception(() => TransferResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data when allowed")]
-        public void Parse_Returns_Expected_Data_When_Allowed()
+        [Theory(DisplayName = "Parse returns expected data when allowed"), AutoData]
+        public void Parse_Returns_Expected_Data_When_Allowed(int token, long size)
         {
-            var token = Random.Next();
-            var size = Random.Next();
-
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerTransferResponse)
                 .WriteInteger(token)
                 .WriteByte(0x1)
-                .WriteInteger(size)
+                .WriteLong(size)
                 .Build();
 
-            var response = PeerTransferResponse.Parse(msg);
+            var response = TransferResponse.Parse(msg);
 
             Assert.Equal(token, response.Token);
             Assert.True(response.Allowed);
@@ -93,13 +101,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data when disallowed")]
-        public void Parse_Returns_Expected_Data_When_Disallowed()
+        [Theory(DisplayName = "Parse returns expected data when disallowed"), AutoData]
+        public void Parse_Returns_Expected_Data_When_Disallowed(int token, string message)
         {
-            var token = Random.Next();
-
-            var message = Guid.NewGuid().ToString();
-
             var msg = new MessageBuilder()
                 .Code(MessageCode.PeerTransferResponse)
                 .WriteInteger(token)
@@ -107,7 +111,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(message)
                 .Build();
 
-            var response = PeerTransferResponse.Parse(msg);
+            var response = TransferResponse.Parse(msg);
 
             Assert.Equal(token, response.Token);
             Assert.False(response.Allowed);
@@ -115,25 +119,40 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToMessage")]
-        [Fact(DisplayName = "ToMessage constructs the correct Message")]
-        public void ToMessage_Constructs_The_Correct_Message()
+        [Theory(DisplayName = "ToMessage constructs the correct Message when allowed"), AutoData]
+        public void ToMessage_Constructs_The_Correct_Message_When_Allowed(int token, long size)
         {
-            var rnd = new Random();
-
-            var token = rnd.Next();
-            var size = rnd.Next();
-            var message = Guid.NewGuid().ToString();
-            var a = new PeerTransferResponse(token, true, size, message);
+            var a = new TransferResponse(token, size);
             var msg = a.ToMessage();
 
             Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
-            Assert.Equal(4 + 4 + 1 + 4 + 4 + message.Length, msg.Length);
+
+            // code + token + allowed + size
+            Assert.Equal(4 + 4 + 1 + 8, msg.Length);
 
             var reader = new MessageReader(msg);
 
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(1, reader.ReadByte());
-            Assert.Equal(size, reader.ReadInteger());
+            Assert.Equal(size, reader.ReadLong());
+        }
+
+        [Trait("Category", "ToMessage")]
+        [Theory(DisplayName = "ToMessage constructs the correct Message when disallowed"), AutoData]
+        public void ToMessage_Constructs_The_Correct_Message_When_Disallowed(int token, string message)
+        {
+            var a = new TransferResponse(token, message);
+            var msg = a.ToMessage();
+
+            Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
+
+            // code + token + allowed + message len + message
+            Assert.Equal(4 + 4 + 1 + 4 + message.Length, msg.Length);
+
+            var reader = new MessageReader(msg);
+
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(0, reader.ReadByte());
             Assert.Equal(message, reader.ReadString());
         }
     }

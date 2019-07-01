@@ -74,6 +74,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
 
             var c = new Connection(ip, port, tcpClient: t.Object);
 
@@ -198,6 +199,8 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
+
             var c = new Connection(ip, port, tcpClient: t.Object);
 
             var ex = await Record.ExceptionAsync(async () => await c.ConnectAsync());
@@ -216,6 +219,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
                 .Returns(Task.Run(() => Thread.Sleep(10000)));
 
@@ -239,6 +243,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
                 .Returns(Task.Run(() => Thread.Sleep(10000)));
 
@@ -268,6 +273,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
                 .Returns(Task.Run(() => throw new SocketException()));
 
@@ -290,6 +296,8 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
+
             var c = new Connection(ip, port, tcpClient: t.Object);
 
             var eventArgs = new List<EventArgs>();
@@ -312,6 +320,8 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
+
             var c = new Connection(ip, port, tcpClient: t.Object);
 
             var eventArgs = new List<ConnectionStateChangedEventArgs>();
@@ -338,6 +348,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var port = 1;
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(false);
 
             var c = new Connection(ip, port, tcpClient: t.Object);
@@ -386,6 +397,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Write_Throws_Given_Zero_Bytes()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -401,6 +413,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Write_Throws_If_TcpClient_Is_Not_Connected()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(false);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -416,6 +429,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Write_Throws_If_Connection_Is_Not_Connected()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -436,6 +450,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Throws(new SocketException());
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -456,6 +471,7 @@ namespace Soulseek.Tests.Unit.Tcp
         {
             var s = new Mock<INetworkStream>();
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -473,6 +489,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Read_Throws_If_TcpClient_Is_Not_Connected()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(false);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -488,9 +505,11 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Read_Throws_If_Connection_Is_Not_Connected()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             c.SetProperty("State", ConnectionState.Disconnected);
 
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
@@ -504,6 +523,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Read_Throws_If_Length_Is_Long_And_Larger_Than_Int()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -527,6 +547,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Returns(Task.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -548,6 +569,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -569,6 +591,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -588,6 +611,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Throws(new SocketException());
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -608,6 +632,7 @@ namespace Soulseek.Tests.Unit.Tcp
         {
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
@@ -621,6 +646,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Read_Returns_Empty_Byte_Array_Given_Zero_Length()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -637,6 +663,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public async Task Read_Throws_Given_Negative_Length(int length)
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
@@ -656,6 +683,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Returns(Task.Run(() => 0));
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -680,6 +708,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -711,6 +740,7 @@ namespace Soulseek.Tests.Unit.Tcp
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
             t.Setup(m => m.GetStream()).Returns(s.Object);
 
@@ -732,6 +762,7 @@ namespace Soulseek.Tests.Unit.Tcp
         public void HandoffTcpClient_Hands_Off()
         {
             var t = new Mock<ITcpClient>();
+            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 

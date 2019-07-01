@@ -1,4 +1,4 @@
-﻿// <copyright file="DownloadException.cs" company="JP Dillingham">
+﻿// <copyright file="TransferException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,31 +17,31 @@ namespace Soulseek.Exceptions
     using System.Runtime.Serialization;
 
     /// <summary>
-    ///     Represents errors that occur while downloading a remote file.
+    ///     Represents errors that occur while transferring a file.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class DownloadException : SoulseekClientException
+    public class TransferException : SoulseekClientException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadException"/> class.
+        ///     Initializes a new instance of the <see cref="TransferException"/> class.
         /// </summary>
-        public DownloadException()
+        public TransferException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="TransferException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public DownloadException(string message)
+        public TransferException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="TransferException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -49,48 +49,48 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
         ///     exception is specified.
         /// </param>
-        public DownloadException(string message, Exception innerException)
+        public TransferException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="TransferException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected DownloadException(SerializationInfo info, StreamingContext context)
+        protected TransferException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
     }
 
     /// <summary>
-    ///     Represents errors that occur when a download request is rejected.
+    ///     Represents errors that occur when a transfer request is rejected.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class DownloadRejectedException : SoulseekClientException
+    public class TransferRejectedException : SoulseekClientException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadRejectedException"/> class.
+        ///     Initializes a new instance of the <see cref="TransferRejectedException"/> class.
         /// </summary>
-        public DownloadRejectedException()
+        public TransferRejectedException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadRejectedException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="TransferRejectedException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public DownloadRejectedException(string message)
+        public TransferRejectedException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadRejectedException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="TransferRejectedException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -98,17 +98,17 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
         ///     exception is specified.
         /// </param>
-        public DownloadRejectedException(string message, Exception innerException)
+        public TransferRejectedException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadRejectedException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="TransferRejectedException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected DownloadRejectedException(SerializationInfo info, StreamingContext context)
+        protected TransferRejectedException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }

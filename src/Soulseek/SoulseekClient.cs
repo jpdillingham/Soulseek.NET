@@ -19,6 +19,7 @@ namespace Soulseek
     using System.Net;
     using System.Net.Sockets;
     using System.Runtime.ExceptionServices;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
@@ -35,12 +36,18 @@ namespace Soulseek
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
 
+        public SoulseekClient(SoulseekClientResolvers resolvers)
+            : this(DefaultAddress, DefaultPort, resolvers, null)
+        {
+
+        }
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
         public SoulseekClient(SoulseekClientOptions options)
-            : this(DefaultAddress, DefaultPort, options)
+            : this(DefaultAddress, DefaultPort, null, options)
         {
         }
 
@@ -50,8 +57,8 @@ namespace Soulseek
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
-        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
-            : this(address, port, options, null)
+        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientResolvers resolvers = null, SoulseekClientOptions options = null)
+            : this(address, port, resolvers, options, null)
         {
         }
 
@@ -70,6 +77,7 @@ namespace Soulseek
         internal SoulseekClient(
             string address,
             int port,
+            SoulseekClientResolvers resolvers = null,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
@@ -81,6 +89,7 @@ namespace Soulseek
             Address = address;
             Port = port;
 
+            Resolvers = resolvers ?? new SoulseekClientResolvers();
             Options = options ?? new SoulseekClientOptions();
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -129,14 +138,14 @@ namespace Soulseek
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Occurs when an active download receives data.
+        ///     Occurs when an active transfer sends or receives data.
         /// </summary>
-        public event EventHandler<DownloadProgressUpdatedEventArgs> DownloadProgressUpdated;
+        public event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
 
         /// <summary>
-        ///     Occurs when a download changes state.
+        ///     Occurs when a transfer changes state.
         /// </summary>
-        public event EventHandler<DownloadStateChangedEventArgs> DownloadStateChanged;
+        public event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
         ///     Occurs when a private message is received.
@@ -178,6 +187,8 @@ namespace Soulseek
         /// </summary>
         public SoulseekClientOptions Options { get; }
 
+        public SoulseekClientResolvers Resolvers { get; }
+
         /// <summary>
         ///     Gets server port.
         /// </summary>
@@ -200,7 +211,8 @@ namespace Soulseek
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private ConcurrentDictionary<int, Download> Downloads { get; set; } = new ConcurrentDictionary<int, Download>();
+        private ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private IListener Listener { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
         private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
@@ -356,7 +368,7 @@ namespace Soulseek
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="token">The unique download token.</param>
-        /// <param name="options">The operation <see cref="DownloadOptions"/>.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including a byte array containing the file contents.</returns>
         /// <exception cref="ArgumentException">
@@ -364,7 +376,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, DownloadOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -398,7 +410,7 @@ namespace Soulseek
                 throw new ArgumentException($"An active of queued download of {filename} from {username} is already in progress.");
             }
 
-            options = options ?? new DownloadOptions();
+            options = options ?? new TransferOptions();
 
             return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
         }
@@ -493,7 +505,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<PeerInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -729,7 +741,7 @@ namespace Soulseek
                 Diagnostic.Debug($"Sending browse request to peer {username}");
                 sw.Start();
 
-                await connection.WriteMessageAsync(new PeerBrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new BrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -751,28 +763,28 @@ namespace Soulseek
             StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
         }
 
-        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, DownloadOptions options, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var download = new Download(username, filename, token, options);
+            var download = new Transfer(TransferDirection.Download, username, filename, token, options);
             Task<byte[]> downloadCompleted = null;
-            var lastState = DownloadStates.None;
+            var lastState = TransferStates.None;
 
-            void UpdateState(DownloadStates state)
+            void UpdateState(TransferStates state)
             {
                 download.State = state;
-                var args = new DownloadStateChangedEventArgs(previousState: lastState, download: download);
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: download);
                 lastState = state;
                 options.StateChanged?.Invoke(args);
-                DownloadStateChanged?.Invoke(this, args);
+                TransferStateChanged?.Invoke(this, args);
             }
 
             void UpdateProgress(int bytesDownloaded)
             {
-                var lastBytes = download.BytesDownloaded;
+                var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new DownloadProgressUpdatedEventArgs(lastBytes, download);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, download);
                 options.ProgressUpdated?.Invoke(eventArgs);
-                DownloadProgressUpdated?.Invoke(this, eventArgs);
+                TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
             try
@@ -785,22 +797,28 @@ namespace Soulseek
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
-                var transferRequestAcknowledged = Waiter.Wait<PeerTransferResponse>(
+                var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
                     new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), null, cancellationToken);
-                var transferStartRequested = Waiter.WaitIndefinitely<PeerTransferRequest>(
+                var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
                     new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file
-                await peerConnection.WriteMessageAsync(new PeerTransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
-                UpdateState(DownloadStates.Requested);
+                await peerConnection.WriteMessageAsync(new TransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+                UpdateState(TransferStates.Requested);
 
+                Console.WriteLine($"Waiting for ACK {download.Username} {download.Token}");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+
+                Console.WriteLine($"Transfer request ACKed");
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
+                    var tfa = transferRequestAcknowledgement;
+                    Console.WriteLine($"Transfer allowed {tfa.Token} {tfa.FileSize}");
+
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
-                    UpdateState(DownloadStates.Initializing);
+                    UpdateState(TransferStates.Initializing);
 
                     download.Size = transferRequestAcknowledgement.FileSize;
 
@@ -814,19 +832,24 @@ namespace Soulseek
                 }
                 else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    throw new DownloadRejectedException(transferRequestAcknowledgement.Message);
+                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }
                 else
                 {
+                    Console.WriteLine($"Transfer disallowed");
+
                     // the download is remotely queued, so put it in the local queue.
-                    UpdateState(DownloadStates.Queued);
+                    UpdateState(TransferStates.Queued);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
 
+                    var tsr = transferStartRequest;
+                    Console.WriteLine($"Start request: token {tsr.Token} filename {tsr.Filename} size: {tsr.FileSize}");
+
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
-                    UpdateState(DownloadStates.Initializing);
+                    UpdateState(TransferStates.Initializing);
 
                     // wait for both direct and indirect connections, since the official client attempts both types immediately
                     var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
@@ -842,10 +865,15 @@ namespace Soulseek
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
+                    Console.WriteLine($"Transfer start recieved.  Trying to connect.");
+
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                    await peerConnection.WriteMessageAsync(new PeerTransferResponse(download.RemoteToken, true, download.Size, string.Empty).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                    Console.WriteLine($"Sending transfer response.");
+                    await peerConnection.WriteMessageAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
                     {
@@ -863,11 +891,11 @@ namespace Soulseek
                 download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
                 download.Connection.Disconnected += (sender, message) =>
                 {
-                    if (download.State.HasFlag(DownloadStates.Succeeded))
+                    if (download.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(download.WaitKey, download.Data);
                     }
-                    else if (download.State.HasFlag(DownloadStates.TimedOut))
+                    else if (download.State.HasFlag(TransferStates.TimedOut))
                     {
                         Waiter.Throw(download.WaitKey, new TimeoutException(message));
                     }
@@ -879,23 +907,25 @@ namespace Soulseek
 
                 try
                 {
-                    // this needs to be 16 bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
-                    // was identified via WireShark.
-                    await download.Connection.WriteAsync(new byte[16], cancellationToken).ConfigureAwait(false);
+                    Console.WriteLine($"Download connection established.  Sending magic bytes...");
 
-                    UpdateState(DownloadStates.InProgress);
+                    // this needs to be 16? bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
+                    // was identified via WireShark.
+                    await download.Connection.WriteAsync(new byte[8], cancellationToken).ConfigureAwait(false);
+
+                    UpdateState(TransferStates.InProgress);
 
                     var bytes = await download.Connection.ReadAsync(download.Size, cancellationToken).ConfigureAwait(false);
 
                     download.Data = bytes.ToArray();
-                    download.State = DownloadStates.Succeeded;
+                    download.State = TransferStates.Succeeded;
 
                     download.Connection.Disconnect("Transfer complete.");
                     Diagnostic.Info($"Download of {System.IO.Path.GetFileName(download.Filename)} from {username} complete ({download.Data.Length} of {download.Size} bytes).");
                 }
                 catch (TimeoutException)
                 {
-                    download.State = DownloadStates.TimedOut;
+                    download.State = TransferStates.TimedOut;
                     download.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
                 }
                 catch (Exception ex)
@@ -908,47 +938,47 @@ namespace Soulseek
                 download.Data = await downloadCompleted.ConfigureAwait(false);
                 return download.Data;
             }
-            catch (DownloadRejectedException ex)
+            catch (TransferRejectedException ex)
             {
-                download.State = DownloadStates.Rejected;
+                download.State = TransferStates.Rejected;
                 download.Connection?.Disconnect("Transfer rejected.");
 
-                throw new DownloadException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
+                throw new TransferException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
-                download.State = DownloadStates.Cancelled;
+                download.State = TransferStates.Cancelled;
                 download.Connection?.Disconnect("Transfer cancelled.");
 
-                throw new DownloadException($"Download of file {filename} from user {username} was cancelled.", ex);
+                throw new TransferException($"Download of file {filename} from user {username} was cancelled.", ex);
             }
             catch (TimeoutException ex)
             {
-                download.State = DownloadStates.TimedOut;
+                download.State = TransferStates.TimedOut;
                 download.Connection?.Disconnect("Transfer timed out.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             catch (Exception ex)
             {
-                download.State = DownloadStates.Errored;
+                download.State = TransferStates.Errored;
                 download.Connection?.Disconnect("Transfer error.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new DownloadException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
             {
                 // clean up the wait in case the code threw before it was awaited.
-                Waiter.Complete(download.WaitKey);
+                Waiter.Complete<byte[]>(download.WaitKey, null);
                 Downloads.TryRemove(download.Token, out var _);
 
                 download.Connection?.Dispose();
 
                 // change state so we can fire the progress update a final time with the updated state little bit of a hack to
                 // avoid cloning the download
-                download.State = DownloadStates.Completed | download.State;
+                download.State = TransferStates.Completed | download.State;
                 UpdateProgress(download.Data?.Length ?? 0);
                 UpdateState(download.State);
             }
@@ -1007,14 +1037,14 @@ namespace Soulseek
             }
         }
 
-        private async Task<PeerInfoResponse> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserInfoResponse> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
 
             try
             {
                 var waitKey = new WaitKey(MessageCode.PeerInfoResponse, username);
-                var infoWait = Waiter.Wait<PeerInfoResponse>(waitKey, cancellationToken: cancellationToken);
+                var infoWait = Waiter.Wait<UserInfoResponse>(waitKey, cancellationToken: cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
@@ -1024,7 +1054,7 @@ namespace Soulseek
                     Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.WriteMessageAsync(new PeerInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new UserInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await infoWait.ConfigureAwait(false);
 
@@ -1085,7 +1115,183 @@ namespace Soulseek
             }
         }
 
-        private void PeerConnection_MessageRead(object sender, Message message)
+        public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            token = token ?? GetNextToken();
+            options = options ?? new TransferOptions();
+
+            return UploadInternalAsync(username, filename, data, (int)token, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
+        {
+            var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
+            {
+                Size = data.Length,
+            };
+
+            var lastState = TransferStates.None;
+
+            void UpdateState(TransferStates state)
+            {
+                upload.State = state;
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: upload);
+                lastState = state;
+                options.StateChanged?.Invoke(args);
+                TransferStateChanged?.Invoke(this, args);
+            }
+
+            void UpdateProgress(int bytesUploaded)
+            {
+                var lastBytes = upload.BytesTransferred;
+                upload.UpdateProgress(bytesUploaded);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, upload);
+                options.ProgressUpdated?.Invoke(eventArgs);
+                TransferProgressUpdated?.Invoke(this, eventArgs);
+            }
+
+            // fetch (or create) the semaphore for this user.  the official client can't handle concurrent downloads,
+            // so we need to enforce this regardless of what downstream implementations do.
+            var semaphore = Uploads.GetOrAdd(username, new SemaphoreSlim(1, 1));
+
+            UpdateState(TransferStates.Queued);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                // in case the Upload record was removed via cleanup while we were waiting, add it back.
+                semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+                var messageConnection = await PeerConnectionManager
+                    .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+                    .ConfigureAwait(false);
+
+                // prepare a wait for the transfer response
+                var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
+                    new WaitKey(MessageCode.PeerTransferResponse, upload.Username, upload.Token));
+
+                // request to start the upload
+                var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);
+                await messageConnection.WriteMessageAsync(transferRequest.ToMessage(), cancellationToken).ConfigureAwait(false);
+                UpdateState(TransferStates.Requested);
+
+                var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
+
+                if (!transferRequestAcknowledgement.Allowed)
+                {
+                    throw new TransferRejectedException(transferRequestAcknowledgement.Message);
+                }
+
+                UpdateState(TransferStates.Initializing);
+
+                var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey, cancellationToken);
+
+                upload.Connection = await PeerConnectionManager
+                    .GetTransferConnectionAsync(upload.Username, address.IPAddress, address.Port, upload.Token, cancellationToken)
+                    .ConfigureAwait(false);
+
+                upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
+                upload.Connection.Disconnected += (sender, message) =>
+                {
+                    if (upload.State.HasFlag(TransferStates.Succeeded))
+                    {
+                        Waiter.Complete(upload.WaitKey);
+                    }
+                    else if (upload.State.HasFlag(TransferStates.TimedOut))
+                    {
+                        Waiter.Throw(upload.WaitKey, new TimeoutException(message));
+                    }
+                    else
+                    {
+                        Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+                    }
+                };
+
+                try
+                {
+                    // read the 8 magic bytes.  not sure why.
+                    await upload.Connection.ReadAsync(8).ConfigureAwait(false);
+
+                    UpdateState(TransferStates.InProgress);
+
+                    await upload.Connection.WriteAsync(data).ConfigureAwait(false);
+
+                    upload.State = TransferStates.Succeeded;
+
+                    // force a disconnect of the connection by trying to read.  this may be unreliable if a client
+                    // actually sends data after the magic bytes.
+                    try
+                    {
+                        await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
+                    }
+                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
+                    {
+                        // swallow this specific exception
+                    }
+
+                    Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({upload.Data.Length} of {upload.Size} bytes).");
+                }
+                catch (TimeoutException)
+                {
+                    upload.State = TransferStates.TimedOut;
+                    upload.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
+                }
+                catch (Exception ex)
+                {
+                    upload.Connection.Disconnect(ex.Message);
+                }
+
+                await uploadCompleted.ConfigureAwait(false);
+            }
+            catch (TransferRejectedException ex)
+            {
+                upload.State = TransferStates.Rejected;
+                upload.Connection?.Disconnect("Transfer rejected.");
+
+                throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
+            }
+            catch (OperationCanceledException ex)
+            {
+                upload.State = TransferStates.Cancelled;
+                upload.Connection?.Disconnect("Transfer cancelled.");
+
+                throw new TransferException($"Upload of file {filename} to user {username} was cancelled.", ex);
+            }
+            catch (TimeoutException ex)
+            {
+                upload.State = TransferStates.TimedOut;
+                upload.Connection?.Disconnect("Transfer timed out.");
+
+                Diagnostic.Debug(ex.ToString());
+                throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
+            }
+            catch (Exception ex)
+            {
+                upload.State = TransferStates.Errored;
+                upload.Connection?.Disconnect("Transfer error.");
+
+                Diagnostic.Debug(ex.ToString());
+                throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
+            }
+            finally
+            {
+                // clean up the wait in case the code threw before it was awaited.
+                Waiter.Complete(upload.WaitKey);
+
+                // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained
+                // if there are other threads waiting on it, and it is added back after the await above.
+                semaphore.Release();
+                Uploads.TryRemove(username, out var _);
+
+                upload.Connection?.Dispose();
+
+                upload.State = TransferStates.Completed | upload.State;
+                UpdateState(upload.State);
+            }
+        }
+
+        private async void PeerConnection_MessageRead(object sender, Message message)
         {
             var connection = (IMessageConnection)sender;
             Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
@@ -1118,23 +1324,56 @@ namespace Soulseek
                         break;
 
                     case MessageCode.PeerInfoResponse:
-                        var infoResponse = PeerInfoResponse.Parse(message);
+                        var infoResponse = UserInfoResponse.Parse(message);
                         Waiter.Complete(new WaitKey(MessageCode.PeerInfoResponse, connection.Username), infoResponse);
                         break;
 
                     case MessageCode.PeerTransferResponse:
-                        var transferResponse = PeerTransferResponse.Parse(message);
+                        var transferResponse = TransferResponse.Parse(message);
+                        Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
                         Waiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
 
+                    case MessageCode.PeerQueueDownload:
+                        // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
+                        // transfer.
+                        var queueDownloadRequest = QueueDownloadRequest.Parse(message);
+                        var (queueAllowed, queueRejectionMessage) = Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename);
+
+                        if (!queueAllowed)
+                        {
+                            await connection.WriteMessageAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToMessage()).ConfigureAwait(false);
+                        }
+
+                        break;
+
                     case MessageCode.PeerTransferRequest:
-                        var transferRequest = PeerTransferRequest.Parse(message);
-                        Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                        var transferRequest = TransferRequest.Parse(message);
+
+                        if (transferRequest.Direction == TransferDirection.Upload)
+                        {
+                            Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                        }
+                        else
+                        {
+                            var (transferAllowed, transferRejectionMessage) = Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, transferRequest.Filename);
+
+                            if (!transferAllowed)
+                            {
+                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage).ToMessage()).ConfigureAwait(false);
+                                await connection.WriteMessageAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToMessage()).ConfigureAwait(false);
+                            }
+                            else
+                            {
+                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, "Queued.").ToMessage()).ConfigureAwait(false);
+                            }
+                        }
+
                         break;
 
                     case MessageCode.PeerQueueFailed:
-                        var queueFailedResponse = PeerQueueFailedResponse.Parse(message);
-                        Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new DownloadRejectedException(queueFailedResponse.Message));
+                        var queueFailedResponse = QueueFailedResponse.Parse(message);
+                        Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
                         break;
 
                     case MessageCode.PeerPlaceInQueueResponse:
@@ -1149,11 +1388,16 @@ namespace Soulseek
                         var download = Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
                         if (download != null)
                         {
-                            Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new DownloadException(msg));
-                            Waiter.Throw(download.WaitKey, new DownloadException(msg));
+                            Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new TransferException(msg));
+                            Waiter.Throw(download.WaitKey, new TransferException(msg));
                         }
 
                         Diagnostic.Debug(msg);
+                        break;
+
+                    case MessageCode.PeerBrowseRequest:
+                        var browseResponse = Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
+                        await connection.WriteMessageAsync(browseResponse.ToMessage()).ConfigureAwait(false);
                         break;
 
                     default:
@@ -1273,7 +1517,7 @@ namespace Soulseek
                                 var (connection, remoteToken) = await PeerConnectionManager.AddTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                                 var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
 
-                                if (download != default(Download))
+                                if (download != default(Transfer))
                                 {
                                     Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
                                 }

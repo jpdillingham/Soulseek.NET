@@ -109,5 +109,39 @@ namespace Soulseek.Messaging.Messages
 
             return new BrowseResponse(directoryCount, directoryList);
         }
+
+        public Message ToMessage()
+        {
+            var builder = new MessageBuilder()
+                .Code(MessageCode.PeerBrowseResponse)
+                .WriteInteger(DirectoryCount);
+
+            foreach (var directory in Directories)
+            {
+                builder
+                    .WriteString(directory.Directoryname)
+                    .WriteInteger(directory.FileCount);
+
+                foreach (var file in directory.Files)
+                {
+                    builder
+                        .WriteByte((byte)file.Code)
+                        .WriteString(file.Filename)
+                        .WriteLong(file.Size)
+                        .WriteString(file.Extension)
+                        .WriteInteger(file.AttributeCount);
+
+                    foreach (var attribute in file.Attributes)
+                    {
+                        builder
+                            .WriteInteger((int)attribute.Type)
+                            .WriteInteger(attribute.Value);
+                    }
+                }
+            }
+
+            builder.Compress();
+            return builder.Build();
+        }
     }
 }

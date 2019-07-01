@@ -8,7 +8,7 @@
     public interface IDownloadTracker
     {
         ConcurrentDictionary<string, ConcurrentDictionary<string, Download>> Downloads { get; }
-        void AddOrUpdate(DownloadEventArgs args);
+        void AddOrUpdate(TransferEventArgs args);
     }
 
     public class DownloadTracker : IDownloadTracker
@@ -16,7 +16,7 @@
         public ConcurrentDictionary<string, ConcurrentDictionary<string, Download>> Downloads { get; private set; } = 
             new ConcurrentDictionary<string, ConcurrentDictionary<string, Download>>();
 
-        public void AddOrUpdate(DownloadEventArgs args)
+        public void AddOrUpdate(TransferEventArgs args)
         {
             Downloads.AddOrUpdate(args.Username, GetNewDictionary(args), (user, dict) =>
             {
@@ -25,7 +25,7 @@
             });
         }
 
-        private ConcurrentDictionary<string, Download> GetNewDictionary(DownloadEventArgs args)
+        private ConcurrentDictionary<string, Download> GetNewDictionary(TransferEventArgs args)
         {
             var r = new ConcurrentDictionary<string, Download>();
             r.AddOrUpdate(args.Filename, new Download(args), (key, value) => new Download(args));
@@ -35,12 +35,12 @@
 
     public class Download
     {
-        internal Download(DownloadEventArgs e)
+        internal Download(TransferEventArgs e)
         {
             Filename = e.Filename;
             Username = e.Username;
             AverageSpeed = e.AverageSpeed;
-            BytesDownloaded = e.BytesDownloaded;
+            BytesTransferred = e.BytesTransferred;
             BytesRemaining = e.BytesRemaining;
             ElapsedTime = e.ElapsedTime;
             EndTime = e.EndTime;
@@ -58,18 +58,18 @@
         public string Filename { get; }
         public string Username { get; }
         public double AverageSpeed { get; }
-        public int BytesDownloaded { get; }
-        public int BytesRemaining { get; }
+        public long BytesTransferred { get; }
+        public long BytesRemaining { get; }
         public TimeSpan? ElapsedTime { get; }
         public DateTime? EndTime { get; }
         public IPAddress IPAddress { get; }
         public double PercentComplete { get; }
         public int? Port { get; }
         public TimeSpan? RemainingTime { get; }
-        public int RemoteToken { get; }
-        public int Size { get; }
+        public int? RemoteToken { get; }
+        public long Size { get; }
         public DateTime? StartTime { get; }
-        public DownloadStates State { get; }
+        public TransferStates State { get; }
         public int Token { get; }
     }
 }

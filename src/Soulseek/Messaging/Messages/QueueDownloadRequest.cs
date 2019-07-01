@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerBrowseRequest.cs" company="JP Dillingham">
+﻿// <copyright file="QueueDownloadRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,20 +12,28 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    /// <summary>
-    ///     Requests the shared file list from a peer.
-    /// </summary>
-    public class PeerBrowseRequest
+    using Soulseek.Exceptions;
+
+    internal sealed class QueueDownloadRequest
     {
-        /// <summary>
-        ///     Constructs a <see cref="Message"/> from this request.
-        /// </summary>
-        /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        internal QueueDownloadRequest(string filename)
         {
-            return new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
-                .Build();
+            Filename = filename;
+        }
+
+        public string Filename { get; }
+
+        public static QueueDownloadRequest Parse(Message message)
+        {
+            var reader = new MessageReader(message);
+
+            if (reader.Code != MessageCode.PeerQueueDownload)
+            {
+                throw new MessageException($"Message Code mismatch creating Peer Queue Download (expected: {(int)MessageCode.PeerQueueDownload}, received: {(int)reader.Code}.");
+            }
+
+            var filename = reader.ReadString();
+            return new QueueDownloadRequest(filename);
         }
     }
 }

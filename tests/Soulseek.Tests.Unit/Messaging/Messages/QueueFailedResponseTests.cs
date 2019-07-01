@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerQueueFailedResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="QueueFailedResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerQueueFailedResponseTests
+    public class QueueFailedResponseTests
     {
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with the given data")]
@@ -27,9 +27,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var file = Guid.NewGuid().ToString();
             var reason = Guid.NewGuid().ToString();
 
-            PeerQueueFailedResponse response = null;
+            QueueFailedResponse response = null;
 
-            var ex = Record.Exception(() => response = new PeerQueueFailedResponse(file, reason));
+            var ex = Record.Exception(() => response = new QueueFailedResponse(file, reason));
 
             Assert.Null(ex);
 
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerBrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerQueueFailedResponse.Parse(msg));
+            var ex = Record.Exception(() => QueueFailedResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Code(MessageCode.PeerQueueFailed)
                 .Build();
 
-            var ex = Record.Exception(() => PeerQueueFailedResponse.Parse(msg));
+            var ex = Record.Exception(() => QueueFailedResponse.Parse(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(reason)
                 .Build();
 
-            var response = PeerQueueFailedResponse.Parse(msg);
+            var response = QueueFailedResponse.Parse(msg);
 
             Assert.Equal(file, response.Filename);
             Assert.Equal(reason, response.Message);

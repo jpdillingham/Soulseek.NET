@@ -20,13 +20,13 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "DownloadEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadOptions options)
+        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferOptions options)
         {
-            var dl = new Download(username, filename, token, options);
-            var d = new DownloadEventArgs(dl);
+            var dl = new Transfer(TransferDirection.Download, username, filename, token, options);
+            var d = new TransferEventArgs(dl);
 
             Assert.Equal(0, d.AverageSpeed);
-            Assert.Equal(0, d.BytesDownloaded);
+            Assert.Equal(0, d.BytesTransferred);
             Assert.Equal(0, d.BytesRemaining);
             Assert.Equal(default(TimeSpan), d.ElapsedTime);
             Assert.Equal(default(TimeSpan), d.RemainingTime);
@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.IPAddress);
             Assert.Equal(0, d.PercentComplete);
             Assert.Null(d.Port);
-            Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(dl.RemoteToken, d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(dl.Username, d.Username);
             Assert.Equal(dl.Filename, d.Filename);
@@ -49,22 +49,22 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "DownloadProgressUpdatedEventArgs Instantiates with the given data"), AutoData]
         internal void DownloadProgressUpdatedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, int bytesDownloaded)
         {
-            var dl = new Download(username, filename, token);
+            var dl = new Transfer(TransferDirection.Download, username, filename, token);
             dl.Size = size;
 
-            var d = new DownloadProgressUpdatedEventArgs(bytesDownloaded, dl);
+            var d = new TransferProgressUpdatedEventArgs(bytesDownloaded, dl);
 
-            Assert.Equal(bytesDownloaded, d.PreviousBytesDownloaded);
+            Assert.Equal(bytesDownloaded, d.PreviousBytesTransferred);
         }
 
         [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]
         [Theory(DisplayName = "DownloadStateChangedEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, DownloadStates downloadStates)
+        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferStates TransferStates)
         {
-            var dl = new Download(username, filename, token);
-            var d = new DownloadStateChangedEventArgs(downloadStates, dl);
+            var dl = new Transfer(TransferDirection.Download, username, filename, token);
+            var d = new TransferStateChangedEventArgs(TransferStates, dl);
 
-            Assert.Equal(downloadStates, d.PreviousState);
+            Assert.Equal(TransferStates, d.PreviousState);
         }
     }
 }

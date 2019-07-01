@@ -38,7 +38,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of active transfer connections.
         /// </summary>
-        int ActiveTransferConnections { get; }
+        //int ActiveTransferConnections { get; }
 
         /// <summary>
         ///     Gets the concurrent message connection limit.
