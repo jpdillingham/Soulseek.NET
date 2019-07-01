@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
+    using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -85,7 +86,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(dir)
                 .WriteInteger(token)
                 .WriteString(file)
-                .WriteInteger(size)
+                .WriteLong(size)
                 .Build();
 
             var response = TransferRequest.Parse(msg);
@@ -97,27 +98,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "ToMessage")]
-        [Fact(DisplayName = "ToMessage constructs the correct Message")]
-        public void ToMessage_Constructs_The_Correct_Message()
+        [Theory(DisplayName = "ToMessage constructs the correct Message"), AutoData]
+        public void ToMessage_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)
         {
-            var rnd = new Random();
-
-            var dir = TransferDirection.Download;
-            var token = rnd.Next();
-            var file = Guid.NewGuid().ToString();
-            var size = rnd.Next();
             var a = new TransferRequest(dir, token, file, size);
             var msg = a.ToMessage();
 
             Assert.Equal(MessageCode.PeerTransferRequest, msg.Code);
-            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 4, msg.Length);
+
+            // code + direction + token + file length + filename + size
+            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 8, msg.Length);
 
             var reader = new MessageReader(msg);
 
             Assert.Equal(0, reader.ReadInteger()); // direction
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(file, reader.ReadString());
-            Assert.Equal(size, reader.ReadInteger());
+            Assert.Equal(size, reader.ReadLong());
         }
     }
 }
