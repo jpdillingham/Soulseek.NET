@@ -42,7 +42,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.IPAddress);
             Assert.Null(d.Port);
             Assert.Null(d.Data);
-            Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(null, d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(TransferStates.None, d.State);
             Assert.Equal(0, d.AverageSpeed);
@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.StartTime);
             Assert.Null(d.EndTime);
             Assert.Equal(0, d.PercentComplete);
-            Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(null, d.RemoteToken);
             Assert.Equal(options, d.Options);
         }
 
@@ -77,11 +77,11 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Wait Key")]
         [Theory(DisplayName = "Wait key is expected value"), AutoData]
-        internal void Wait_Key_Is_Expected_Value(string username, string filename, int token)
+        internal void Wait_Key_Is_Expected_Value(string username, string filename, int token, TransferDirection direction)
         {
-            var d = new Transfer(TransferDirection.Download, username, filename, token);
+            var d = new Transfer(direction, username, filename, token);
 
-            Assert.Equal(new WaitKey(Constants.WaitKey.Transfer, username, filename, token), d.WaitKey);
+            Assert.Equal(new WaitKey(Constants.WaitKey.Transfer, direction, username, filename, token), d.WaitKey);
         }
 
         [Trait("Category", "State")]
@@ -150,7 +150,7 @@ namespace Soulseek.Tests.Unit
 
             d.SetProperty("AverageSpeed", 1);
             d.SetProperty("Size", 2);
-            d.SetProperty("BytesDownloaded", 1);
+            d.SetProperty("BytesTransferred", 1);
 
             Assert.Equal(TimeSpan.FromSeconds(1), d.RemainingTime);
         }
@@ -164,7 +164,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(0, d.PercentComplete);
 
             d.SetProperty("Size", 100);
-            d.SetProperty("BytesDownloaded", 50);
+            d.SetProperty("BytesTransferred", 50);
 
             Assert.Equal(50, d.PercentComplete);
         }
@@ -202,20 +202,6 @@ namespace Soulseek.Tests.Unit
             d.InvokeMethod("UpdateProgress", 10);
 
             Assert.NotEqual(v1, d.AverageSpeed);
-        }
-
-        [Trait("Category", "UpdateProgress")]
-        [Fact(DisplayName = "UpdateProgress ignores AverageSpeed if window less than progressUpdateLimit")]
-        internal void UpdateProgress_Ignores_AverageSpeed_If_Window_Less_Than_progressUpdateLimit()
-        {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
-
-            Assert.Equal(0, d.AverageSpeed);
-
-            d.SetProperty("State", TransferStates.InProgress);
-            d.InvokeMethod("UpdateProgress", 100000);
-
-            Assert.Equal(0, d.AverageSpeed);
         }
 
         [Trait("Category", "UpdateProgress")]

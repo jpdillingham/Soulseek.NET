@@ -35,7 +35,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.IPAddress);
             Assert.Equal(0, d.PercentComplete);
             Assert.Null(d.Port);
-            Assert.Equal(0, d.RemoteToken);
+            Assert.Equal(dl.RemoteToken, d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(dl.Username, d.Username);
             Assert.Equal(dl.Filename, d.Filename);

@@ -211,11 +211,11 @@ namespace Soulseek
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
+        private ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
         private IListener Listener { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
-        private ConcurrentDictionary<int, Search> Searches { get; } = new ConcurrentDictionary<int, Search>();
+        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private ITokenFactory TokenFactory { get; }
         private IWaiter Waiter { get; }
 
