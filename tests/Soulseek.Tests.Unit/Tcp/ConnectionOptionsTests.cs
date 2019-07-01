@@ -12,25 +12,27 @@
 
 namespace Soulseek.Tests.Unit.Tcp
 {
+    using AutoFixture.Xunit2;
     using Soulseek.Tcp;
     using Xunit;
 
     public class ConnectionOptionsTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates properly")]
-        public void Instantiates_Properly()
+        [Theory(DisplayName = "Instantiates properly"), AutoData]
+        public void Instantiates_Properly(int read, int write, int timeout, int inactivity)
         {
             ConnectionOptions o = null;
 
-            var ex = Record.Exception(() => o = new ConnectionOptions(8192, 10, 30));
+            var ex = Record.Exception(() => o = new ConnectionOptions(read, write, timeout, inactivity));
 
             Assert.Null(ex);
             Assert.NotNull(o);
 
-            Assert.Equal(8192, o.BufferSize);
-            Assert.Equal(10, o.ConnectTimeout);
-            Assert.Equal(30, o.InactivityTimeout);
+            Assert.Equal(read, o.ReadBufferSize);
+            Assert.Equal(write, o.WriteBufferSize);
+            Assert.Equal(timeout, o.ConnectTimeout);
+            Assert.Equal(inactivity, o.InactivityTimeout);
         }
     }
 }

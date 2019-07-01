@@ -25,12 +25,11 @@ namespace Soulseek.Tests.Unit.Tcp
 
             ConnectionDataEventArgs d = null;
 
-            var ex = Record.Exception(() => d = new ConnectionDataEventArgs(data, data.Length, 20));
+            var ex = Record.Exception(() => d = new ConnectionDataEventArgs(data.Length, 20));
 
             Assert.Null(ex);
             Assert.NotNull(d);
 
-            Assert.Equal(data, d.Data);
             Assert.Equal(3, d.CurrentLength);
             Assert.Equal(20, d.TotalLength);
             Assert.Equal(15d, d.PercentComplete);
