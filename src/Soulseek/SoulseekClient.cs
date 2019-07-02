@@ -1093,15 +1093,39 @@ namespace Soulseek
 
                 var response = await loginWait.ConfigureAwait(false);
 
-                if (Options.ListenPort.HasValue)
-                {
-                    await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
-                }
-
                 if (response.Succeeded)
                 {
+                    if (Options.ListenPort.HasValue)
+                    {
+                        await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    }
+
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    await Task.Delay(1000);
+
+                    Console.WriteLine($"Sending HaveNoParents");
+                    //await ServerConnection.WriteMessageAsync(new HaveNoParentsRequest(true).ToMessage(), cancellationToken).ConfigureAwait(false);
+
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(0).WriteInteger(0).Build());
+
+                    await ServerConnection
+                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(255).Build());
+
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build());
+
+                    //await ServerConnection.WriteMessageAsync(new NetInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerParentsIP).WriteString(string.Empty).Build());
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchLevel).WriteInteger(0).Build());
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchRoot).WriteString(string.Empty).Build());
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerAcceptChildren).WriteByte(0).Build());
                 }
                 else
                 {
