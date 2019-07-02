@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Collections;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
@@ -1083,13 +1084,24 @@ namespace Soulseek
             }
         }
 
+        public static byte[] StringToByteArray(string hex)
+        {
+            return Enumerable.Range(0, hex.Length)
+                             .Where(x => x % 2 == 0)
+                             .Select(x => Convert.ToByte(hex.Substring(x, 2), 16))
+                             .ToArray();
+        }
+
         private async Task LoginInternalAsync(string username, string password, CancellationToken cancellationToken)
         {
             try
             {
                 var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin), cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage(), cancellationToken).ConfigureAwait(false);
+                var nicLogin = StringToByteArray("49000000010000000900000070726165746f722d32080000004a796939387561739d000000200000006464616561633633383034646136326534353365643631366338616262306166110000000800000002000000ba080000");
+
+                await ServerConnection.WriteAsync(nicLogin);
+                //await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await loginWait.ConfigureAwait(false);
 
@@ -1108,7 +1120,7 @@ namespace Soulseek
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port
                         // we don't support obfuscation, so we send only the listen port.  it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
+                        //await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
                     }
 
                     // todo: send have no parent:01
@@ -1117,21 +1129,48 @@ namespace Soulseek
 
                     //await ServerConnection.WriteMessageAsync(new HaveNoParentsRequest(true).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                    await Task.Delay(5000);
+                    var nicOther = StringToByteArray("0c000000230000000000000000000000080000001c00000002000000050000004700000001");
+                    Console.WriteLine(BitConverter.ToString(nicOther).Replace("-", string.Empty));
 
-                    await ServerConnection
-                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build());
-
-                    await ServerConnection
-                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchRoot).WriteString(Username).Build());
-                    await ServerConnection
-                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchLevel).WriteInteger(0).Build());
-
-                    await ServerConnection
-                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(61).WriteInteger(839).Build());
-
+                    await ServerConnection.WriteAsync(nicOther);
+                    //Console.WriteLine($"Sending set online status = 2");
                     //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerRoomList).WriteByte(1).Build());
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build())
+                    //    .ConfigureAwait(false);
+
+                    //Console.WriteLine($"Sending have no parents = true");
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build())
+                    //    .ConfigureAwait(false);
+
+                    ////await ServerConnection
+                    ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchRoot).WriteString(Username).Build());
+                    ////await ServerConnection
+                    ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchLevel).WriteInteger(0).Build());
+
+                    //Console.WriteLine($"Sending shared folders and files = 61/839");
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(61).WriteInteger(839).Build())
+                    //    .ConfigureAwait(false);
+
+                    var init = new List<byte>();
+
+                    init.AddRange(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles - 10000).WriteInteger(0).WriteInteger(0).Build().ToByteArray());
+                    init.AddRange(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus - 10000).WriteInteger(2).Build().ToByteArray());
+                    init.AddRange(new MessageBuilder().Code(MessageCode.ServerHaveNoParents - 10000).WriteByte(1).Build().ToByteArray());
+
+                    Console.WriteLine(BitConverter.ToString(init.ToArray()).Replace("-", string.Empty));
+                    
+
+                    ////await ServerConnection
+                    ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerRoomList).WriteByte(1).Build());
+
+                    //await Task.Delay(5000).ConfigureAwait(false);
+
+                    //Console.WriteLine($"Sending have no parents again...");
+                    //await ServerConnection
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build())
+                    //    .ConfigureAwait(false);
                 }
                 else
                 {
