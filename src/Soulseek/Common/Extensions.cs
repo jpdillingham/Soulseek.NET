@@ -135,7 +135,7 @@ namespace Soulseek
             {
                 byte[] inputBytes = Encoding.ASCII.GetBytes(str);
                 byte[] hashBytes = md5.ComputeHash(inputBytes);
-                return Encoding.ASCII.GetString(hashBytes);
+                return BitConverter.ToString(hashBytes).Replace("-", string.Empty);
             }
         }
     }
