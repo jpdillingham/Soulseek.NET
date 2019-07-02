@@ -1095,37 +1095,43 @@ namespace Soulseek
 
                 if (response.Succeeded)
                 {
-                    if (Options.ListenPort.HasValue)
-                    {
-                        await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
-                    }
-
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    await Task.Delay(1000);
+                    // the following sequence was captured from a login of SoulseekQt build 2017.2.20
+                    // note that the official client sends 05/add user and 24/get user status for each user in the user list
+                    // since this is a library, leave this to the implementing code to implement later.
 
-                    Console.WriteLine($"Sending HaveNoParents");
+                    // todo: check privileges
+
+                    if (Options.ListenPort.HasValue)
+                    {
+                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port
+                        // we don't support obfuscation, so we send only the listen port.  it probably wouldn't hurt to send an 00 afterwards.
+                        await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    }
+
+                    // todo: send have no parent:01
+                    // todo: send branch root = Username
+                    // todo: send branch depth = 0
+
                     //await ServerConnection.WriteMessageAsync(new HaveNoParentsRequest(true).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(0).WriteInteger(0).Build());
+                    await Task.Delay(5000);
 
                     await ServerConnection
-                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(255).Build());
+                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build());
+
+                    await ServerConnection
+                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchRoot).WriteString(Username).Build());
+                    await ServerConnection
+                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchLevel).WriteInteger(0).Build());
+
+                    await ServerConnection
+                        .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(61).WriteInteger(839).Build());
 
                     //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build());
-
-                    //await ServerConnection.WriteMessageAsync(new NetInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerParentsIP).WriteString(string.Empty).Build());
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchLevel).WriteInteger(0).Build());
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchRoot).WriteString(string.Empty).Build());
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerAcceptChildren).WriteByte(0).Build());
+                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerRoomList).WriteByte(1).Build());
                 }
                 else
                 {
