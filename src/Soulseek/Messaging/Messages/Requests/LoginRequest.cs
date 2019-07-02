@@ -36,7 +36,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the minor client version.
         /// </summary>
-        public int MinorVersion => 1;
+        public int MinorVersion => 100;
 
         /// <summary>
         ///     Gets the password.
@@ -51,7 +51,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the client version.
         /// </summary>
-        public int Version => 181;
+        public int Version => 157;
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
