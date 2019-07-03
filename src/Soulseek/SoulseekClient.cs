@@ -1098,10 +1098,7 @@ namespace Soulseek
             {
                 var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin), cancellationToken: cancellationToken);
 
-                var nicLogin = StringToByteArray("49000000010000000900000070726165746f722d32080000004a796939387561739d000000200000006464616561633633383034646136326534353365643631366338616262306166110000000800000002000000ba080000");
-
-                await ServerConnection.WriteAsync(nicLogin);
-                //await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage(), cancellationToken).ConfigureAwait(false);
 
                 var response = await loginWait.ConfigureAwait(false);
 
@@ -1116,11 +1113,13 @@ namespace Soulseek
 
                     // todo: check privileges
 
+                    var messages = new List<Message>();
+
                     if (Options.ListenPort.HasValue)
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port
                         // we don't support obfuscation, so we send only the listen port.  it probably wouldn't hurt to send an 00 afterwards.
-                        //await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
+                        messages.Add(new SetListenPortRequest(Options.ListenPort.Value).ToMessage());
                     }
 
                     // todo: send have no parent:01
@@ -1129,10 +1128,10 @@ namespace Soulseek
 
                     //await ServerConnection.WriteMessageAsync(new HaveNoParentsRequest(true).ToMessage(), cancellationToken).ConfigureAwait(false);
 
-                    var nicOther = StringToByteArray("0c000000230000000000000000000000080000001c00000002000000050000004700000001");
-                    Console.WriteLine(BitConverter.ToString(nicOther).Replace("-", string.Empty));
+                    //var nicOther = StringToByteArray("0c000000230000000000000000000000080000001c00000002000000050000004700000001");
+                    //Console.WriteLine(BitConverter.ToString(nicOther).Replace("-", string.Empty));
 
-                    await ServerConnection.WriteAsync(nicOther);
+                    //await ServerConnection.WriteAsync(nicOther);
                     //Console.WriteLine($"Sending set online status = 2");
                     //await ServerConnection
                     //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build())
@@ -1155,12 +1154,12 @@ namespace Soulseek
 
                     var init = new List<byte>();
 
-                    init.AddRange(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles - 10000).WriteInteger(0).WriteInteger(0).Build().ToByteArray());
-                    init.AddRange(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus - 10000).WriteInteger(2).Build().ToByteArray());
-                    init.AddRange(new MessageBuilder().Code(MessageCode.ServerHaveNoParents - 10000).WriteByte(1).Build().ToByteArray());
+                    messages.Add(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(0).WriteInteger(0).Build());
+                    messages.Add(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build());
+                    messages.Add(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build());
 
-                    Console.WriteLine(BitConverter.ToString(init.ToArray()).Replace("-", string.Empty));
-                    
+                    //Console.WriteLine(BitConverter.ToString(init.ToArray()).Replace("-", string.Empty));
+                    ServerConnection.WriteMessagesAsync(messages, cancellationToken).ConfigureAwait(false);
 
                     ////await ServerConnection
                     ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerRoomList).WriteByte(1).Build());
