@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging.Tcp
 {
     using System;
+    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging;
@@ -55,6 +56,8 @@ namespace Soulseek.Messaging.Tcp
         ///     event, which is impossible if we simply start the loop immediately upon instantiation.
         /// </remarks>
         void StartReadingContinuously();
+
+        Task WriteMessagesAsync(IEnumerable<Message> messages, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.

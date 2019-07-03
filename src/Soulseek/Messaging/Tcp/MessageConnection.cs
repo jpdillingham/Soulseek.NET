@@ -14,6 +14,7 @@ namespace Soulseek.Messaging.Tcp
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -115,6 +116,34 @@ namespace Soulseek.Messaging.Tcp
             }
         }
 
+        public async Task WriteMessagesAsync(IEnumerable<Message> messages, CancellationToken? cancellationToken = null)
+        {
+            if (messages == null || !messages.Any() || messages.Any(m => m == null || m.Length == 0))
+            {
+                throw new ArgumentException($"The specified list of Messages is null, empty, or contains at least one Message which is null or empty.", nameof(messages));
+            }
+
+            if (State != ConnectionState.Connected)
+            {
+                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
+            }
+
+            var bytes = new List<byte>();
+
+            foreach (var message in messages)
+            {
+                cancellationToken?.ThrowIfCancellationRequested();
+
+                var messageBytes = message.ToByteArray();
+                NormalizeMessageCode(messageBytes, 0 - (int)Type);
+
+                bytes.AddRange(messageBytes);
+            }
+
+            Console.WriteLine(BitConverter.ToString(bytes.ToArray()).Replace("-", string.Empty));
+            await WriteAsync(bytes.ToArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+        }
+
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.
         /// </summary>
@@ -123,6 +152,11 @@ namespace Soulseek.Messaging.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         public async Task WriteMessageAsync(Message message, CancellationToken? cancellationToken = null)
         {
+            if (message == null || message.Length == 0)
+            {
+                throw new ArgumentException($"The specified Message is null or contains no data.", nameof(message));
+            }
+
             if (State != ConnectionState.Connected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
@@ -131,6 +165,8 @@ namespace Soulseek.Messaging.Tcp
             var bytes = message.ToByteArray();
 
             NormalizeMessageCode(bytes, 0 - (int)Type);
+
+            Console.WriteLine(BitConverter.ToString(bytes).Replace("-", string.Empty));
             await WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
         }
 
