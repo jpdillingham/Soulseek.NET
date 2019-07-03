@@ -270,8 +270,8 @@ namespace Soulseek
                     {
                         // if connecting directly, init the connection.  for indirect connections the incoming peerinit is handled in the listener code to determine the
                         // connection type, so we don't need to handle it here.
-                        var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken());
-                        await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToMessage().ToByteArray();
+                        await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                     }
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
@@ -331,8 +331,8 @@ namespace Soulseek
             {
                 // if connecting directly, init the connection.  for indirect connections the incoming peerinit is handled in the listener code to determine the
                 // connection type, so we don't need to handle it here.
-                var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token);
-                await connection.WriteAsync(request.ToMessage().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray();
+                await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
             }
 
             // send our token (the remote token from the other side's perspective)
