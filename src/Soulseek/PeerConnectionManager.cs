@@ -193,8 +193,8 @@ namespace Soulseek
 
                     await connection.ConnectAsync().ConfigureAwait(false);
 
-                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage();
-                    await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage().ToByteArray();
+                    await connection.WriteAsync(request).ConfigureAwait(false);
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(connectToPeerResponse.Username, connection);
 
@@ -454,7 +454,7 @@ namespace Soulseek
                 PendingSolicitations.TryAdd(token, username);
 
                 await ((SoulseekClient)SoulseekClient).ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToMessage(), cancellationToken)
+                    .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer), cancellationToken)
                     .ConfigureAwait(false);
 
                 var incomingConnection = await Waiter
@@ -523,7 +523,7 @@ namespace Soulseek
                 PendingSolicitations.TryAdd(solicitationToken, username);
 
                 await ((SoulseekClient)SoulseekClient).ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToMessage(), cancellationToken)
+                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer), cancellationToken)
                     .ConfigureAwait(false);
 
                 var incomingConnection = await Waiter

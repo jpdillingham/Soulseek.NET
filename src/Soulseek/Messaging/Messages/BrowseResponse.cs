@@ -110,6 +110,15 @@ namespace Soulseek.Messaging.Messages
             return new BrowseResponse(directoryCount, directoryList);
         }
 
+        /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator Message(BrowseResponse instance)
+        {
+            return instance.ToMessage();
+        }
+
         public Message ToMessage()
         {
             var builder = new MessageBuilder()

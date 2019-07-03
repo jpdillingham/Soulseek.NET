@@ -70,6 +70,15 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator Message(TransferResponse instance)
+        {
+            return instance.ToMessage();
+        }
+
+        /// <summary>
         ///     Parses a new instance of <see cref="TransferResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
