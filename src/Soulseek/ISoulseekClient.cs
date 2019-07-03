@@ -125,6 +125,9 @@ namespace Soulseek
         /// <returns>The operation context, including the fetched list of files.</returns>
         Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
+        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+        Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
+
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>

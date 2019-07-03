@@ -1108,9 +1108,7 @@ namespace Soulseek
                         messages.Add(new SetListenPortRequest(Options.ListenPort.Value));
                     }
 
-                    messages.Add(new SetSharedCountsRequest(1234, 5678));
-                    messages.Add(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build());
-                    messages.Add(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build());
+                    messages.Add(new HaveNoParentsRequest(true));
 
                     await ServerConnection.WriteMessagesAsync(messages, cancellationToken).ConfigureAwait(false);
                 }
@@ -1124,6 +1122,16 @@ namespace Soulseek
             {
                 throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
             }
+        }
+
+        public async Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        { 
+            await ServerConnection.WriteMessageAsync(new SetStatusRequest(status), cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
+        {
+            await ServerConnection.WriteMessageAsync(new SetSharedCountsRequest(directories, files), cancellationToken ?? CancellationToken.None);
         }
 
         public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
