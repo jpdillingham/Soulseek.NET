@@ -1107,12 +1107,6 @@ namespace Soulseek
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    // the following sequence was captured from a login of SoulseekQt build 2017.2.20
-                    // note that the official client sends 05/add user and 24/get user status for each user in the user list
-                    // since this is a library, leave this to the implementing code to implement later.
-
-                    // todo: check privileges
-
                     var messages = new List<Message>();
 
                     if (Options.ListenPort.HasValue)
@@ -1122,54 +1116,11 @@ namespace Soulseek
                         messages.Add(new SetListenPortRequest(Options.ListenPort.Value).ToMessage());
                     }
 
-                    // todo: send have no parent:01
-                    // todo: send branch root = Username
-                    // todo: send branch depth = 0
-
-                    //await ServerConnection.WriteMessageAsync(new HaveNoParentsRequest(true).ToMessage(), cancellationToken).ConfigureAwait(false);
-
-                    //var nicOther = StringToByteArray("0c000000230000000000000000000000080000001c00000002000000050000004700000001");
-                    //Console.WriteLine(BitConverter.ToString(nicOther).Replace("-", string.Empty));
-
-                    //await ServerConnection.WriteAsync(nicOther);
-                    //Console.WriteLine($"Sending set online status = 2");
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build())
-                    //    .ConfigureAwait(false);
-
-                    //Console.WriteLine($"Sending have no parents = true");
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build())
-                    //    .ConfigureAwait(false);
-
-                    ////await ServerConnection
-                    ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchRoot).WriteString(Username).Build());
-                    ////await ServerConnection
-                    ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerBranchLevel).WriteInteger(0).Build());
-
-                    //Console.WriteLine($"Sending shared folders and files = 61/839");
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(61).WriteInteger(839).Build())
-                    //    .ConfigureAwait(false);
-
-                    var init = new List<byte>();
-
                     messages.Add(new MessageBuilder().Code(MessageCode.ServerSharedFoldersAndFiles).WriteInteger(0).WriteInteger(0).Build());
                     messages.Add(new MessageBuilder().Code(MessageCode.ServerSetOnlineStatus).WriteInteger(2).Build());
                     messages.Add(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build());
 
-                    //Console.WriteLine(BitConverter.ToString(init.ToArray()).Replace("-", string.Empty));
-                    ServerConnection.WriteMessagesAsync(messages, cancellationToken).ConfigureAwait(false);
-
-                    ////await ServerConnection
-                    ////    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerRoomList).WriteByte(1).Build());
-
-                    //await Task.Delay(5000).ConfigureAwait(false);
-
-                    //Console.WriteLine($"Sending have no parents again...");
-                    //await ServerConnection
-                    //    .WriteMessageAsync(new MessageBuilder().Code(MessageCode.ServerHaveNoParents).WriteByte(1).Build())
-                    //    .ConfigureAwait(false);
+                    await ServerConnection.WriteMessagesAsync(messages, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
