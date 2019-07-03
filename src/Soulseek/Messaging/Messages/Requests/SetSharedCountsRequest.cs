@@ -1,4 +1,4 @@
-﻿// <copyright file="SetSharingInfoRequest.cs" company="JP Dillingham">
+﻿// <copyright file="SetSharedCountsRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,16 +13,16 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Adds a peer to the server-side watch list.
+    ///     Informs the server of the current number of shared directories and files.
     /// </summary>
-    public class SetSharingInfoRequest
+    public class SetSharedCountsRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetSharingInfoRequest"/> class.
+        ///     Initializes a new instance of the <see cref="SetSharedCountsRequest"/> class.
         /// </summary>
         /// <param name="directoryCount">The number of shared directories.</param>
         /// <param name="fileCount">The number of shared files.</param>
-        public SetSharingInfoRequest(int directoryCount, int fileCount)
+        public SetSharedCountsRequest(int directoryCount, int fileCount)
         {
             DirectoryCount = directoryCount;
             FileCount = fileCount;
@@ -42,7 +42,7 @@ namespace Soulseek.Messaging.Messages
         ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
         /// </summary>
         /// <param name="instance">The instance to convert.</param>
-        public static implicit operator Message(SetSharingInfoRequest instance)
+        public static implicit operator Message(SetSharedCountsRequest instance)
         {
             return instance.ToMessage();
         }
