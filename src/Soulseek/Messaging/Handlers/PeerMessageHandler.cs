@@ -1,4 +1,4 @@
-﻿namespace Soulseek
+﻿namespace Soulseek.Messaging.Handlers
 {
     using System;
     using System.Linq;
@@ -7,7 +7,7 @@
     using Soulseek.Messaging.Messages;
     using Soulseek.Messaging.Tcp;
 
-    internal sealed class PeerMessageHandler
+    internal sealed class PeerMessageHandler : IPeerMessageHandler
     {
         public PeerMessageHandler(
             ISoulseekClient soulseekClient,
