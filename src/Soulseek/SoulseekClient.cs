@@ -130,12 +130,16 @@ namespace Soulseek
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
-
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            DistributedConnectionManager = DistributedConnectionManager ?? new DistributedConnectionManager(this);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
 
         internal IPeerMessageHandler PeerMessageHandler { get; }
         internal IServerMessageHandler ServerMessageHandler { get; }
+
+        internal IDistributedConnectionManager DistributedConnectionManager { get; }
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
