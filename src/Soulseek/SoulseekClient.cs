@@ -225,19 +225,14 @@ namespace Soulseek
         /// <returns>A Task representing the operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
-        public Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
+        public async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
 
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to browse.");
-            }
-
-            return AcknowledgePrivateMessageInternalAsync(privateMessageId, cancellationToken ?? CancellationToken.None);
+            await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId), cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -747,18 +742,6 @@ namespace Soulseek
                 }
 
                 Disposed = true;
-            }
-        }
-
-        private async Task AcknowledgePrivateMessageInternalAsync(int privateMessageId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId), cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new PrivateMessageException($"Failed to send an acknowledgement for private message id {privateMessageId}: {ex.Message}", ex);
             }
         }
 
@@ -1442,7 +1425,7 @@ namespace Soulseek
 
                         if (Options.AutoAcknowledgePrivateMessages)
                         {
-                            await AcknowledgePrivateMessageInternalAsync(pm.Id, CancellationToken.None).ConfigureAwait(false);
+                            await AcknowledgePrivateMessageAsync(pm.Id, CancellationToken.None).ConfigureAwait(false);
                         }
 
                         break;
