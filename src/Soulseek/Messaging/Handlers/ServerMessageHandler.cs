@@ -71,7 +71,7 @@
                             // doesn't contain any other identifying information about the file.
                             if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
                             {
-                                var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                                var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                                 var download = SoulseekClient.Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
 
                                 if (download != default(Transfer))

@@ -43,6 +43,8 @@ namespace Soulseek
         {
             SoulseekClient = (SoulseekClient)soulseekClient;
 
+            ConcurrentMessageConnectionLimit = SoulseekClient.Options.ConcurrentPeerMessageConnectionLimit;
+
             if (SoulseekClient.Listener != null)
             {
                 SoulseekClient.Listener.Accepted += Listener_Accepted;
@@ -83,32 +85,6 @@ namespace Soulseek
         private SemaphoreSlim MessageSemaphore { get; }
         private ConcurrentDictionary<int, string> PendingSolicitations { get; set; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
-
-        /// <summary>
-        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and
-        ///     pierces the remote peer's firewall.
-        /// </summary>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
-        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
-        {
-            var connection = ConnectionFactory.GetConnection(
-                connectToPeerResponse.IPAddress,
-                connectToPeerResponse.Port,
-                SoulseekClient.Options.TransferConnectionOptions);
-
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
-
-            await connection.ConnectAsync().ConfigureAwait(false);
-
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
-
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
-
-            return (connection, remoteToken);
-        }
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
@@ -244,8 +220,8 @@ namespace Soulseek
 
                     if (isDirect)
                     {
-                        // if connecting directly, init the connection.  for indirect connections the incoming peerinit is handled in the listener code to determine the
-                        // connection type, so we don't need to handle it here.
+                        // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled
+                        // in the listener code to determine the connection type, so we don't need to handle it here.
                         var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToMessage().ToByteArray();
                         await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                     }
@@ -260,6 +236,32 @@ namespace Soulseek
             {
                 semaphore.Release();
             }
+        }
+
+        /// <summary>
+        ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>, pierces
+        ///     the remote peer's firewall, and retrieves the remote token.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
+        public async Task<(IConnection Connection, int RemoteToken)> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
+        {
+            var connection = ConnectionFactory.GetConnection(
+                connectToPeerResponse.IPAddress,
+                connectToPeerResponse.Port,
+                SoulseekClient.Options.TransferConnectionOptions);
+
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
+
+            await connection.ConnectAsync().ConfigureAwait(false);
+
+            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
+
+            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+
+            return (connection, remoteToken);
         }
 
         /// <summary>
@@ -305,8 +307,8 @@ namespace Soulseek
 
             if (isDirect)
             {
-                // if connecting directly, init the connection.  for indirect connections the incoming peerinit is handled in the listener code to determine the
-                // connection type, so we don't need to handle it here.
+                // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled in the
+                // listener code to determine the connection type, so we don't need to handle it here.
                 var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray();
                 await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
             }
