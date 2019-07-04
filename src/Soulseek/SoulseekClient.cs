@@ -23,6 +23,7 @@ namespace Soulseek
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
@@ -128,18 +129,13 @@ namespace Soulseek
             PeerMessageHandler = new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(
-                soulseekClient: this,
-                messageHandler: PeerMessageHandler.HandleMessage,
-                listener: Listener,
-                waiter: Waiter,
-                concurrentMessageConnectionLimit: Options.ConcurrentPeerMessageConnectionLimit);
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
 
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
 
-        internal PeerMessageHandler PeerMessageHandler { get; }
-        internal ServerMessageHandler ServerMessageHandler { get; }
+        internal IPeerMessageHandler PeerMessageHandler { get; }
+        internal IServerMessageHandler ServerMessageHandler { get; }
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
@@ -221,7 +217,7 @@ namespace Soulseek
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
-        private IListener Listener { get; }
+        internal IListener Listener { get; }
         internal IPeerConnectionManager PeerConnectionManager { get; }
         internal ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private ITokenFactory TokenFactory { get; }
