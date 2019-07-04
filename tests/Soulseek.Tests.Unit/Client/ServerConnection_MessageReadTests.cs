@@ -225,13 +225,13 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerRoomList"), AutoData]
-        public void Handles_ServerRoomList(List<Room> rooms)
+        public void Handles_ServerRoomList(List<(string Name, int UserCount)> rooms)
         {
-            IReadOnlyCollection<Room> result = null;
+            IReadOnlyCollection<(string Name, int UserCount)> result = null;
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
-                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
+            waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<(string Name, int UserCount)>>()))
+                .Callback<WaitKey, IReadOnlyCollection<(string Name, int UserCount)>>((key, response) => result = response);
 
             var builder = new MessageBuilder()
                 .Code(MessageCode.ServerRoomList)
