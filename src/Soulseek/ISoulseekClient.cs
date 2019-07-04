@@ -23,13 +23,8 @@ namespace Soulseek
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
-    public interface ISoulseekClient : IDisposable
+    public interface ISoulseekClient : IDisposable, IDiagnosticGenerator
     {
-        /// <summary>
-        ///     Occurs when an internal diagnostic message is generated.
-        /// </summary>
-        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
-
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
