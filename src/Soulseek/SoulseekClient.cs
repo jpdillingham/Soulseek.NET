@@ -681,7 +681,7 @@ namespace Soulseek
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user information (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
             }
 
             await ServerConnection.WriteMessageAsync(new SetSharedCountsRequest(directories, files), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
@@ -699,7 +699,7 @@ namespace Soulseek
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user information (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
             }
 
             await ServerConnection.WriteMessageAsync(new SetStatusRequest(status), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
