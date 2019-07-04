@@ -23,13 +23,8 @@ namespace Soulseek
     /// <summary>
     ///     Manages peer <see cref="IConnection"/> instances for the application.
     /// </summary>
-    internal interface IPeerConnectionManager : IDisposable
+    internal interface IPeerConnectionManager : IDisposable, IDiagnosticGenerator
     {
-        /// <summary>
-        ///     Occurs when an internal diagnostic message is generated.
-        /// </summary>
-        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
-
         /// <summary>
         ///     Gets the number of active peer connections.
         /// </summary>
