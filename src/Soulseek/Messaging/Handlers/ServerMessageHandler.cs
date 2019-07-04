@@ -62,6 +62,15 @@
                         SoulseekClient.Waiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
                         break;
 
+                    case MessageCode.ServerNetInfo:
+                        var netInfo = NetInfo.Parse(message);
+                        foreach (var peer in netInfo.Parents)
+                        {
+                            Console.WriteLine($"{peer.Username} {peer.IPAddress} {peer.Port}");
+                        }
+
+                        break;
+
                     case MessageCode.ServerConnectToPeer:
                         var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
 
