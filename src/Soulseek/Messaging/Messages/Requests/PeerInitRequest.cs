@@ -55,7 +55,7 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
-            var bytes = new List<byte> { 0x1 };
+            var bytes = new List<byte> { (byte)InitializationCode.PeerInit };
 
             bytes.AddRange(BitConverter.GetBytes(Username.Length));
             bytes.AddRange(Encoding.ASCII.GetBytes(Username));

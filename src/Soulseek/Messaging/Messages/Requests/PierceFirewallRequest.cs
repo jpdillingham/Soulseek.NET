@@ -40,7 +40,7 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed message.</returns>
         public Message ToMessage()
         {
-            var bytes = new List<byte> { 0x0 };
+            var bytes = new List<byte> { (byte)InitializationCode.PierceFirewall };
 
             bytes.AddRange(BitConverter.GetBytes(Token));
 
