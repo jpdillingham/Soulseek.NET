@@ -12,9 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using System.Collections.Generic;
-
     /// <summary>
     ///     Pierces a peer's firewall to initate a connection.
     /// </summary>
@@ -40,13 +37,10 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The request as a byte array.</returns>
         public byte[] ToMessage()
         {
-            var bytes = new List<byte> { (byte)InitializationCode.PierceFirewall };
-
-            bytes.AddRange(BitConverter.GetBytes(Token));
-
-            bytes.InsertRange(0, BitConverter.GetBytes(bytes.Count));
-
-            return bytes.ToArray();
+            return new MessageBuilder()
+                .WriteCode(InitializationCode.PierceFirewall)
+                .WriteInteger(Token)
+                .Build();
         }
     }
 }
