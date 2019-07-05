@@ -35,10 +35,10 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Constructs a <see cref="Message"/> from this request.
+        ///     Returns the request as a byte array.
         /// </summary>
-        /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        /// <returns>The request as a byte array.</returns>
+        public byte[] ToByteArray()
         {
             var bytes = new List<byte> { (byte)InitializationCode.PierceFirewall };
 
@@ -46,7 +46,7 @@ namespace Soulseek.Messaging.Messages
 
             bytes.InsertRange(0, BitConverter.GetBytes(bytes.Count));
 
-            return new Message(bytes.ToArray());
+            return bytes.ToArray();
         }
     }
 }
