@@ -145,7 +145,7 @@ namespace Soulseek
 
                     await connection.ConnectAsync().ConfigureAwait(false);
 
-                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToMessage().ToByteArray();
+                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToByteArray();
                     await connection.WriteAsync(request).ConfigureAwait(false);
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(connectToPeerResponse.Username, connection);
@@ -222,7 +222,7 @@ namespace Soulseek
                     {
                         // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled
                         // in the listener code to determine the connection type, so we don't need to handle it here.
-                        var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToMessage().ToByteArray();
+                        var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
                         await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                     }
 
@@ -256,7 +256,7 @@ namespace Soulseek
             await connection.ConnectAsync().ConfigureAwait(false);
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToMessage().ToByteArray()).ConfigureAwait(false);
+            await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
             var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
@@ -309,7 +309,7 @@ namespace Soulseek
             {
                 // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled in the
                 // listener code to determine the connection type, so we don't need to handle it here.
-                var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToMessage().ToByteArray();
+                var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToByteArray();
                 await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
             }
 
