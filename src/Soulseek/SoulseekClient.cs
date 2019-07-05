@@ -1151,7 +1151,7 @@ namespace Soulseek
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    var messages = new List<Message>();
+                    var messages = new List<byte[]>();
 
                     if (Options.ListenPort.HasValue)
                     {

@@ -15,7 +15,7 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Distributed message codes.
     /// </summary>
-    public enum DistributedCode
+    public enum DistributedCode : byte
     {
         /// <summary>
         ///     0

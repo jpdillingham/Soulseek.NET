@@ -35,7 +35,7 @@ namespace Soulseek.Messaging.Messages
         ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
         /// </summary>
         /// <param name="instance">The instance to convert.</param>
-        public static implicit operator Message(GetStatusRequest instance)
+        public static implicit operator byte[](GetStatusRequest instance)
         {
             return instance.ToMessage();
         }
@@ -44,10 +44,10 @@ namespace Soulseek.Messaging.Messages
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.ServerGetStatus)
+                .WriteCode(MessageCode.ServerGetStatus)
                 .WriteString(Username)
                 .Build();
         }

@@ -58,7 +58,7 @@ namespace Soulseek.Messaging.Messages
         ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
         /// </summary>
         /// <param name="instance">The instance to convert.</param>
-        public static implicit operator Message(TransferRequest instance)
+        public static implicit operator byte[](TransferRequest instance)
         {
             return instance.ToMessage();
         }
@@ -68,13 +68,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static TransferRequest Parse(Message message)
+        public static TransferRequest Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.PeerTransferRequest)
+            if (code != MessageCode.PeerTransferRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Request response (expected: {(int)MessageCode.PeerTransferRequest}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Request response (expected: {(int)MessageCode.PeerTransferRequest}, received: {(int)code}.");
             }
 
             var direction = (TransferDirection)reader.ReadInteger();
@@ -89,10 +90,10 @@ namespace Soulseek.Messaging.Messages
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerTransferRequest)
+                .WriteCode(MessageCode.PeerTransferRequest)
                 .WriteInteger((int)Direction)
                 .WriteInteger(Token)
                 .WriteString(Filename)

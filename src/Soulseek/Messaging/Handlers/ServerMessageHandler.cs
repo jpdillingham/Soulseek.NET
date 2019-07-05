@@ -36,30 +36,31 @@
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
-        public async void HandleMessage(object sender, Message message)
+        public async void HandleMessage(object sender, byte[] message)
         {
-            Diagnostic.Debug($"Server message received: {message.Code}");
+            var code = new MessageReader<MessageCode>(message).ReadCode();
+            Diagnostic.Debug($"Server message received: {code}");
 
             try
             {
-                switch (message.Code)
+                switch (code)
                 {
                     case MessageCode.ServerParentMinSpeed:
                     case MessageCode.ServerParentSpeedRatio:
                     case MessageCode.ServerWishlistInterval:
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.Parse(message));
                         break;
 
                     case MessageCode.ServerLogin:
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.Parse(message));
                         break;
 
                     case MessageCode.ServerRoomList:
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.Parse(message));
                         break;
 
                     case MessageCode.ServerPrivilegedUsers:
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.Parse(message));
                         break;
 
                     case MessageCode.ServerNetInfo:
@@ -102,12 +103,12 @@
 
                     case MessageCode.ServerAddUser:
                         var addUserResponse = AddUserResponse.Parse(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code, addUserResponse.Username), addUserResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
                         break;
 
                     case MessageCode.ServerGetStatus:
                         var statsResponse = GetStatusResponse.Parse(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code, statsResponse.Username), statsResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
 
@@ -124,17 +125,17 @@
 
                     case MessageCode.ServerGetPeerAddress:
                         var peerAddressResponse = GetPeerAddressResponse.Parse(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(message.Code, peerAddressResponse.Username), peerAddressResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 
                     default:
-                        Diagnostic.Debug($"Unhandled server message: {message.Code}; {message.Payload.Length} bytes");
+                        Diagnostic.Debug($"Unhandled server message: {code}; {message.Length} bytes");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error handling server message: {message.Code}; {ex.Message}", ex);
+                Diagnostic.Warning($"Error handling server message: {code}; {ex.Message}", ex);
             }
         }
     }

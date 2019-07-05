@@ -28,13 +28,14 @@ namespace Soulseek.Messaging.Messages
         public int ParentCount { get; }
         public IEnumerable<(string Username, IPAddress IPAddress, int Port)> Parents { get; }
 
-        public static NetInfo Parse(Message message)
+        public static NetInfo Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.ServerNetInfo)
+            if (code != MessageCode.ServerNetInfo)
             {
-                throw new MessageException($"Message Code mismatch creating Net Info (expected: {(int)MessageCode.ServerGetStatus}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Net Info (expected: {(int)MessageCode.ServerGetStatus}, received: {(int)code}.");
             }
 
             var parentCount = reader.ReadInteger();

@@ -54,13 +54,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static LoginResponse Parse(Message message)
+        public static LoginResponse Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.ServerLogin)
+            if (code != MessageCode.ServerLogin)
             {
-                throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.ServerLogin}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Login response (expected: {(int)MessageCode.ServerLogin}, received: {(int)code}");
             }
 
             var succeeded = reader.ReadByte() == 1;

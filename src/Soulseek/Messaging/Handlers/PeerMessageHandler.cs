@@ -23,14 +23,16 @@
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
-        public async void HandleMessage(object sender, Message message)
+        public async void HandleMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
-            Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
+            var code = new MessageReader<MessageCode>(message).ReadCode();
+
+            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 
             try
             {
-                switch (message.Code)
+                switch (code)
                 {
                     case MessageCode.PeerSearchResponse:
                         var searchResponse = SearchResponseSlim.Parse(message);
@@ -133,13 +135,13 @@
                         break;
 
                     default:
-                        Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
+                        Diagnostic.Debug($"Unhandled peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Length} bytes");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error handling peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
+                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
             }
         }
     }

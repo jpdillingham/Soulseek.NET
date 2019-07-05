@@ -16,6 +16,6 @@ namespace Soulseek.Messaging.Handlers
 
     internal interface IMessageHandler : IDiagnosticGenerator
     {
-        void HandleMessage(object sender, Message message);
+        void HandleMessage(object sender, byte[] message);
     }
 }

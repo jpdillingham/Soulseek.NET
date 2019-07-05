@@ -80,7 +80,7 @@ namespace Soulseek.Messaging.Tcp
         /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
-        public event EventHandler<Message> MessageRead;
+        public event EventHandler<byte[]> MessageRead;
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -116,7 +116,7 @@ namespace Soulseek.Messaging.Tcp
             }
         }
 
-        public async Task WriteMessagesAsync(IEnumerable<Message> messages, CancellationToken? cancellationToken = null)
+        public async Task WriteMessagesAsync(IEnumerable<byte[]> messages, CancellationToken? cancellationToken = null)
         {
             if (messages == null || !messages.Any() || messages.Any(m => m == null || m.Length == 0))
             {
@@ -134,7 +134,8 @@ namespace Soulseek.Messaging.Tcp
             {
                 cancellationToken?.ThrowIfCancellationRequested();
 
-                var messageBytes = message.ToByteArray();
+                // todo: fix this
+                var messageBytes = message;
                 NormalizeMessageCode(messageBytes, 0 - (int)Type);
 
                 bytes.AddRange(messageBytes);
@@ -153,7 +154,7 @@ namespace Soulseek.Messaging.Tcp
         /// <param name="message">The message to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteMessageAsync(Message message, CancellationToken? cancellationToken = null)
+        public async Task WriteMessageAsync(byte[] message, CancellationToken? cancellationToken = null)
         {
             if (message == null || message.Length == 0)
             {
@@ -164,8 +165,8 @@ namespace Soulseek.Messaging.Tcp
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
             }
-
-            var bytes = message.ToByteArray();
+            // todo: remove this
+            var bytes = message;
 
             NormalizeMessageCode(bytes, 0 - (int)Type);
 
@@ -205,7 +206,7 @@ namespace Soulseek.Messaging.Tcp
 
                     NormalizeMessageCode(messageBytes, (int)Type);
 
-                    MessageRead?.Invoke(this, new Message(messageBytes));
+                    MessageRead?.Invoke(this, messageBytes);
                 }
             }
             finally

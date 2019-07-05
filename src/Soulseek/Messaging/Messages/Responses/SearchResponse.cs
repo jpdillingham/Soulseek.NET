@@ -105,7 +105,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static SearchResponse Parse(Message message)
+        public static SearchResponse Parse(byte[] message)
         {
             var slim = SearchResponseSlim.Parse(message);
             return new SearchResponse(slim);
@@ -121,7 +121,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="reader">The reader from which to parse the file list.</param>
         /// <param name="count">The expected number of files.</param>
         /// <returns>The list of parsed files.</returns>
-        private static IReadOnlyCollection<File> ParseFiles(MessageReader reader, int count)
+        private static IReadOnlyCollection<File> ParseFiles(MessageReader<MessageCode> reader, int count)
         {
             var files = new List<File>();
 
