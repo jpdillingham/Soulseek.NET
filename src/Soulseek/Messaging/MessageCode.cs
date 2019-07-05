@@ -521,30 +521,5 @@ namespace Soulseek.Messaging
         ///     51
         /// </summary>
         PeerPlaceInQueueRequest = 20051,
-
-        /// <summary>
-        ///     0
-        /// </summary>
-        DistributedPing = 30000,
-
-        /// <summary>
-        ///     3
-        /// </summary>
-        DistributedSearchRequest = 30003,
-
-        /// <summary>
-        ///     4
-        /// </summary>
-        DistributedBanchLevel = 30004,
-
-        /// <summary>
-        ///     5
-        /// </summary>
-        DistributedBranchRoot = 30005,
-
-        /// <summary>
-        ///     7
-        /// </summary>
-        DistributedChildDepth = 30007,
     }
 }
