@@ -23,6 +23,9 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Builds a message.
     /// </summary>
+    /// <remarks>
+    ///     Only to be used for messages with a code length of 4 bytes.
+    /// </remarks>
     public class MessageBuilder
     {
         private List<byte> CodeBytes { get; set; } = new List<byte>();

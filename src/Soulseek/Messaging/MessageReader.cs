@@ -21,6 +21,9 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Reads data from a Message payload.
     /// </summary>
+    /// <remarks>
+    ///     Only to be used for messages with a code length of 4 bytes.
+    /// </remarks>
     public class MessageReader
     {
         /// <summary>

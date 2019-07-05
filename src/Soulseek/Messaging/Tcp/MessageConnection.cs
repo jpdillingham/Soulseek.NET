@@ -147,6 +147,9 @@ namespace Soulseek.Messaging.Tcp
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.
         /// </summary>
+        /// <remarks>
+        ///     Only to be used for messages with a code length of 4 bytes.  For messages with a single byte code, write the data directly with <see cref="IConnection.WriteAsync"/>.
+        /// </remarks>
         /// <param name="message">The message to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
