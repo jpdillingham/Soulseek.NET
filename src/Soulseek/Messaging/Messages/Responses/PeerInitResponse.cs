@@ -50,30 +50,27 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerInitResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Parses a new instance of <see cref="PeerInitResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
-        /// <param name="bytes">The message from which to parse.</param>
+        /// <param name="message">The message from which to parse.</param>
         /// <param name="response">The parsed instance.</param>
         /// <returns>A value indicating whether the message was successfully parsed.</returns>
-        public static bool TryParse(byte[] bytes, out PeerInitResponse response)
+        public static bool TryParse(byte[] message, out PeerInitResponse response)
         {
             response = null;
 
             try
             {
-                var code = (InitializationCode)bytes.Skip(4).ToArray()[0];
+                var reader = new MessageReader<InitializationCode>(message);
 
-                if (code != InitializationCode.PeerInit)
+                if (reader.ReadCode() != InitializationCode.PeerInit)
                 {
                     return false;
                 }
 
-                var restBytes = bytes.Skip(5).ToArray();
-                var nameLen = BitConverter.ToInt32(restBytes, 0);
-                var username = Encoding.ASCII.GetString(restBytes.Skip(4).Take(nameLen).ToArray());
-                var typeLen = BitConverter.ToInt32(restBytes, 4 + nameLen);
-                var transferType = Encoding.ASCII.GetString(restBytes.Skip(4 + nameLen + 4).Take(typeLen).ToArray());
-                var token = BitConverter.ToInt32(restBytes, 4 + nameLen + 4 + typeLen);
+                var username = reader.ReadString();
+                var transferType = reader.ReadString();
+                var token = reader.ReadInteger();
 
                 response = new PeerInitResponse(username, transferType, token);
                 return true;

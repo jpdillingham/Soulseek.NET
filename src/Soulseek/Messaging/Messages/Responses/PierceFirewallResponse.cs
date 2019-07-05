@@ -35,25 +35,25 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PierceFirewallResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Parses a new instance of <see cref="PierceFirewallResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
-        /// <param name="bytes">The message from which to parse.</param>
+        /// <param name="message">The message from which to parse.</param>
         /// <param name="response">The parsed instance.</param>
         /// <returns>A value indicating whether the message was successfully parsed.</returns>
-        public static bool TryParse(byte[] bytes, out PierceFirewallResponse response)
+        public static bool TryParse(byte[] message, out PierceFirewallResponse response)
         {
             response = null;
 
             try
             {
-                var code = (InitializationCode)bytes.Skip(4).ToArray()[0];
+                var reader = new MessageReader<InitializationCode>(message);
 
-                if (code != InitializationCode.PierceFirewall)
+                if (reader.ReadCode() != InitializationCode.PierceFirewall)
                 {
                     return false;
                 }
 
-                var token = BitConverter.ToInt32(bytes.Skip(5).ToArray(), 0);
+                var token = reader.ReadInteger();
 
                 response = new PierceFirewallResponse(token);
                 return true;
