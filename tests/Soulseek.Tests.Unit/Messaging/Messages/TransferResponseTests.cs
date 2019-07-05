@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.PeerBrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => TransferResponse.Parse(msg));
@@ -73,7 +73,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.PeerTransferResponse)
                 .Build();
 
             var ex = Record.Exception(() => TransferResponse.Parse(msg));
@@ -87,7 +87,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_When_Allowed(int token, long size)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.PeerTransferResponse)
                 .WriteInteger(token)
                 .WriteByte(0x1)
                 .WriteLong(size)
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_When_Disallowed(int token, string message)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.PeerTransferResponse)
                 .WriteInteger(token)
                 .WriteByte(0x0)
                 .WriteString(message)
@@ -125,13 +125,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new TransferResponse(token, size);
             var msg = a.ToMessage();
 
-            Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
+            var reader = new MessageReader<MessageCode>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.PeerTransferResponse, code);
 
             // code + token + allowed + size
             Assert.Equal(4 + 4 + 1 + 8, msg.Length);
-
-            var reader = new MessageReader(msg);
-
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(1, reader.ReadByte());
             Assert.Equal(size, reader.ReadLong());
@@ -144,12 +144,14 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new TransferResponse(token, message);
             var msg = a.ToMessage();
 
-            Assert.Equal(MessageCode.PeerTransferResponse, msg.Code);
+            var code = new MessageReader<MessageCode>(msg).ReadCode();
+
+            Assert.Equal(MessageCode.PeerTransferResponse, code);
 
             // code + token + allowed + message len + message
             Assert.Equal(4 + 4 + 1 + 4 + message.Length, msg.Length);
 
-            var reader = new MessageReader(msg);
+            var reader = new MessageReader<MessageCode>(msg);
 
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(0, reader.ReadByte());

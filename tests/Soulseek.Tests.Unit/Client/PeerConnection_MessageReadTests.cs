@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<string>(msg => messages.Add(msg));
 
             var message = new MessageBuilder()
-                .Code(MessageCode.ServerParentMinSpeed)
+                .WriteCode(MessageCode.ServerParentMinSpeed)
                 .WriteInteger(1)
                 .Build();
 
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<string>(msg => messages.Add(msg));
 
             var message = new MessageBuilder()
-                .Code(MessageCode.PeerUploadFailed)
+                .WriteCode(MessageCode.PeerUploadFailed)
                 .WriteString("foo")
                 .Build();
 
@@ -107,7 +107,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<string, Exception>((msg, ex) => messages.Add(msg));
 
             var message = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.PeerTransferResponse)
                 .Build(); // malformed message
 
             var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
@@ -155,7 +155,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoResponse)
+                .WriteCode(MessageCode.PeerInfoResponse)
                 .WriteString(description)
                 .WriteByte(1)
                 .WriteInteger(picture.Length)
@@ -187,7 +187,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerPlaceInQueueResponse)
+                .WriteCode(MessageCode.PeerPlaceInQueueResponse)
                 .WriteString(filename)
                 .WriteInteger(placeInQueue)
                 .Build();
@@ -217,7 +217,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.PeerBrowseResponse)
                 .WriteInteger(1) // directory count
                 .WriteString(directoryName) // first directory name
                 .WriteInteger(0) // first directory file count
@@ -246,7 +246,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.PeerBrowseResponse)
                 .Build();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
@@ -271,7 +271,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -311,7 +311,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -362,7 +362,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerQueueFailed)
+                .WriteCode(MessageCode.PeerQueueFailed)
                 .WriteString(filename)
                 .WriteString(message)
                 .Build();

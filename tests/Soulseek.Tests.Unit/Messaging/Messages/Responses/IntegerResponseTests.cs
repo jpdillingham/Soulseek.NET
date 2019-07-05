@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerGetPeerAddress)
+                .WriteCode(MessageCode.ServerGetPeerAddress)
                 .Build();
 
             var ex = Record.Exception(() => IntegerResponse.Parse(msg));
@@ -41,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var num = new Random().Next();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerGetPeerAddress)
+                .WriteCode(MessageCode.ServerGetPeerAddress)
                 .WriteInteger(num)
                 .Build();
 
