@@ -38,7 +38,7 @@ namespace Soulseek.Messaging.Messages
         ///     Returns the request as a byte array.
         /// </summary>
         /// <returns>The request as a byte array.</returns>
-        public byte[] ToByteArray()
+        public byte[] ToMessage()
         {
             var bytes = new List<byte> { (byte)InitializationCode.PierceFirewall };
 

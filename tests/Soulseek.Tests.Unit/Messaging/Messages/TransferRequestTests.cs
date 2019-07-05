@@ -49,7 +49,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.PeerBrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => TransferRequest.Parse(msg));
@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerTransferRequest)
+                .WriteCode(MessageCode.PeerTransferRequest)
                 .Build();
 
             var ex = Record.Exception(() => TransferRequest.Parse(msg));
@@ -82,7 +82,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var size = Random.Next();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerTransferRequest)
+                .WriteCode(MessageCode.PeerTransferRequest)
                 .WriteInteger(dir)
                 .WriteInteger(token)
                 .WriteString(file)
@@ -104,13 +104,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new TransferRequest(dir, token, file, size);
             var msg = a.ToMessage();
 
-            Assert.Equal(MessageCode.PeerTransferRequest, msg.Code);
+            var reader = new MessageReader<MessageCode>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.PeerTransferRequest, code);
 
             // code + direction + token + file length + filename + size
             Assert.Equal(4 + 4 + 4 + 4 + file.Length + 8, msg.Length);
-
-            var reader = new MessageReader(msg);
-
             Assert.Equal(0, reader.ReadInteger()); // direction
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(file, reader.ReadString());

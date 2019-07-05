@@ -28,12 +28,12 @@ namespace Soulseek.Tests.Unit
         /// </remarks>
         /// <param name="message">The Message to modify.</param>
         /// <returns>The MessageReader for the given Message.</returns>
-        public static MessageReader ToPeerMessageReader(this Message message)
+        public static MessageReader<MessageCode> ToPeerMessageReader(this byte[] message)
         {
-            var bytes = message.ToByteArray().ToList();
+            var bytes = message.ToList();
             bytes.InsertRange(0, new byte[] { 0x0, 0x0, 0x0 });
 
-            return new MessageReader(bytes.ToArray());
+            return new MessageReader<MessageCode>(bytes.ToArray());
         }
     }
 }

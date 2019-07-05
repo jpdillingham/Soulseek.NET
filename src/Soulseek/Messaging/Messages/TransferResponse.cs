@@ -73,7 +73,7 @@ namespace Soulseek.Messaging.Messages
         ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
         /// </summary>
         /// <param name="instance">The instance to convert.</param>
-        public static implicit operator Message(TransferResponse instance)
+        public static implicit operator byte[](TransferResponse instance)
         {
             return instance.ToMessage();
         }
@@ -83,13 +83,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static TransferResponse Parse(Message message)
+        public static TransferResponse Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.PeerTransferResponse)
+            if (code != MessageCode.PeerTransferResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.PeerTransferResponse}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.PeerTransferResponse}, received: {(int)code}.");
             }
 
             var token = reader.ReadInteger();
@@ -113,10 +114,10 @@ namespace Soulseek.Messaging.Messages
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        public byte[] ToMessage()
         {
             var builder = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.PeerTransferResponse)
                 .WriteInteger(Token)
                 .WriteByte((byte)(Allowed ? 1 : 0));
 

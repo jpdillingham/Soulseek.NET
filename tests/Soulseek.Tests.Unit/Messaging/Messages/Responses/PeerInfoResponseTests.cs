@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.PeerBrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => UserInfoResponse.Parse(msg));
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoResponse)
+                .WriteCode(MessageCode.PeerInfoResponse)
                 .WriteString("foo")
                 .Build();
 
@@ -72,7 +72,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_With_Picture(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoResponse)
+                .WriteCode(MessageCode.PeerInfoResponse)
                 .WriteString(description)
                 .WriteByte(1)
                 .WriteInteger(picture.Length)
@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_Without_Picture(string description, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoResponse)
+                .WriteCode(MessageCode.PeerInfoResponse)
                 .WriteString(description)
                 .WriteByte(0)
                 .WriteInteger(uploadSlots)

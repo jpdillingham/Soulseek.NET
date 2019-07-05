@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object);
@@ -99,7 +99,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionException("foo"));
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object);

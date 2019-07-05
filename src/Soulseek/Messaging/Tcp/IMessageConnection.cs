@@ -16,7 +16,6 @@ namespace Soulseek.Messaging.Tcp
     using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Messaging;
     using Soulseek.Tcp;
 
     /// <summary>
@@ -27,7 +26,7 @@ namespace Soulseek.Messaging.Tcp
         /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
-        event EventHandler<Message> MessageRead;
+        event EventHandler<byte[]> MessageRead;
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.
@@ -57,7 +56,7 @@ namespace Soulseek.Messaging.Tcp
         /// </remarks>
         void StartReadingContinuously();
 
-        Task WriteMessagesAsync(IEnumerable<Message> messages, CancellationToken? cancellationToken = null);
+        Task WriteMessagesAsync(IEnumerable<byte[]> messages, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously writes the specified message to the connection.
@@ -65,6 +64,6 @@ namespace Soulseek.Messaging.Tcp
         /// <param name="message">The message to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        Task WriteMessageAsync(Message message, CancellationToken? cancellationToken = null);
+        Task WriteMessageAsync(byte[] message, CancellationToken? cancellationToken = null);
     }
 }

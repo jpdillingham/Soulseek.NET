@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging
 {
     using System;
+    using System.Globalization;
     using System.IO;
     using System.Text;
     using Soulseek.Exceptions;
@@ -21,23 +22,13 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Reads data from a Message payload.
     /// </summary>
-    /// <remarks>
-    ///     Only to be used for messages with a code length of 4 bytes.
-    /// </remarks>
-    public class MessageReader
+    /// <typeparam name="T">The Type of the message code.</typeparam>
+    /// <remarks>Only to be used for messages with a code length of 4 bytes.</remarks>
+    public class MessageReader<T>
+        where T : Enum
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageReader"/> class from the specified <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message with which to initialize the reader.</param>
-        public MessageReader(Message message)
-        {
-            Message = message ?? throw new ArgumentNullException(nameof(message), "Invalid attempt to initialize MessageReader with a null Message");
-            Payload = Message.Payload;
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageReader"/> class from the specified <paramref name="bytes"/>.
+        ///     Initializes a new instance of the <see cref="MessageReader{T}"/> class from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array with which to initialize the reader.</param>
         public MessageReader(byte[] bytes)
@@ -52,14 +43,19 @@ namespace Soulseek.Messaging
                 throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to initialize MessageReader with byte array of length less than the minimum (8 bytes).");
             }
 
-            Message = new Message(bytes);
-            Payload = Message.Payload;
-        }
+            Message = bytes.AsMemory();
 
-        /// <summary>
-        ///     Gets the Message Code.
-        /// </summary>
-        public MessageCode Code => Message.Code;
+            if (Enum.GetUnderlyingType(typeof(T)) == typeof(byte))
+            {
+                CodeLength = 1;
+            }
+            else
+            {
+                CodeLength = 4;
+            }
+
+            Payload = Message.Slice(4 + CodeLength);
+        }
 
         /// <summary>
         ///     Gets a value indicating whether additional, unread data exists in the payload.
@@ -76,14 +72,15 @@ namespace Soulseek.Messaging
         /// </summary>
         public int Position { get; private set; } = 0;
 
+        private int CodeLength { get; }
         private bool Decompressed { get; set; } = false;
-        private Message Message { get; set; }
+        private Memory<byte> Message { get; }
 
         /// <summary>
         ///     Decompresses the message payload.
         /// </summary>
         /// <returns>This MessageReader.</returns>
-        public MessageReader Decompress()
+        public MessageReader<T> Decompress()
         {
             if (Payload.Length == 0)
             {
@@ -96,13 +93,7 @@ namespace Soulseek.Messaging
             }
 
             Decompress(Payload.ToArray(), out byte[] decompressedPayload);
-
-            Message = new MessageBuilder()
-                .Code(Code)
-                .WriteBytes(decompressedPayload)
-                .Build();
-
-            Payload = Message.Payload;
+            Payload = decompressedPayload;
 
             Decompressed = true;
 
@@ -142,6 +133,18 @@ namespace Soulseek.Messaging
             var retVal = Payload.Slice(Position, count).ToArray();
             Position += count;
             return retVal;
+        }
+
+        public T ReadCode()
+        {
+            try
+            {
+                return (T)Enum.Parse(typeof(T), BitConverter.ToInt32(Message.Slice(4, CodeLength).ToArray(), 0).ToString(CultureInfo.InvariantCulture));
+            }
+            catch (Exception ex)
+            {
+                throw new MessageReadException($"Failed to read message code: {ex.Message}.", ex);
+            }
         }
 
         /// <summary>

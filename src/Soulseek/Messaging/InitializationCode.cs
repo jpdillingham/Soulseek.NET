@@ -15,7 +15,7 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Connection initialization codes.
     /// </summary>
-    public enum InitializationCode
+    public enum InitializationCode : byte
     {
         /// <summary>
         ///     Pierce firewall; sent by peers responding to a solicited connection request.

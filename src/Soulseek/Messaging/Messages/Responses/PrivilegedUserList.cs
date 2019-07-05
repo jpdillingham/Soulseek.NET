@@ -25,13 +25,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<string> Parse(Message message)
+        public static IReadOnlyCollection<string> Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.ServerPrivilegedUsers)
+            if (code != MessageCode.ServerPrivilegedUsers)
             {
-                throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.ServerPrivilegedUsers}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Privileged Users response (expected: {(int)MessageCode.ServerPrivilegedUsers}, received: {(int)code}");
             }
 
             var count = reader.ReadInteger();

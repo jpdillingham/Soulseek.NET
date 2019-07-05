@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), CancellationToken.None))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), CancellationToken.None))
                 .Throws(new ConnectionWriteException());
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);

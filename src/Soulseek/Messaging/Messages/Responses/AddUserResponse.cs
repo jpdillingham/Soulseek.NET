@@ -87,13 +87,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static AddUserResponse Parse(Message message)
+        public static AddUserResponse Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.ServerAddUser)
+            if (code != MessageCode.ServerAddUser)
             {
-                throw new MessageException($"Message Code mismatch creating Add User Response (expected: {(int)MessageCode.ServerAddUser}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Add User Response (expected: {(int)MessageCode.ServerAddUser}, received: {(int)code}.");
             }
 
             var username = reader.ReadString();

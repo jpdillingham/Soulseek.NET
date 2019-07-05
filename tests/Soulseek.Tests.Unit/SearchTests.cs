@@ -184,7 +184,7 @@ namespace Soulseek.Tests.Unit
             };
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
@@ -201,7 +201,7 @@ namespace Soulseek.Tests.Unit
                 .WriteBytes(new byte[4]) // unknown 4 bytes
                 .Build();
 
-            var reader = new MessageReader(msg);
+            var reader = new MessageReader<MessageCode>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
             s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
@@ -233,7 +233,7 @@ namespace Soulseek.Tests.Unit
             };
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
@@ -250,7 +250,7 @@ namespace Soulseek.Tests.Unit
                 .WriteBytes(new byte[4]) // unknown 4 bytes
                 .Build();
 
-            var reader = new MessageReader(msg);
+            var reader = new MessageReader<MessageCode>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
             s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
@@ -273,7 +273,7 @@ namespace Soulseek.Tests.Unit
             };
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
@@ -290,7 +290,7 @@ namespace Soulseek.Tests.Unit
                 .WriteBytes(new byte[4]) // unknown 4 bytes
                 .Build();
 
-            var reader = new MessageReader(msg);
+            var reader = new MessageReader<MessageCode>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file lists
 
             var task = s.WaitForCompletion(CancellationToken.None);
@@ -319,7 +319,7 @@ namespace Soulseek.Tests.Unit
             };
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
@@ -336,7 +336,7 @@ namespace Soulseek.Tests.Unit
                 .WriteBytes(new byte[4]) // unknown 4 bytes
                 .Build();
 
-            var reader = new MessageReader(msg);
+            var reader = new MessageReader<MessageCode>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file lists
 
             var task = s.WaitForCompletion(CancellationToken.None);
@@ -363,7 +363,7 @@ namespace Soulseek.Tests.Unit
             s.ResponseReceived += (response) => addResponse = response;
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.PeerSearchResponse)
                 .WriteString(username)
                 .WriteInteger(token) // token
                 .WriteInteger(1) // file count
@@ -380,7 +380,7 @@ namespace Soulseek.Tests.Unit
                 .WriteBytes(new byte[4]) // unknown 4 bytes
                 .Build();
 
-            var reader = new MessageReader(msg);
+            var reader = new MessageReader<MessageCode>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
             s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));

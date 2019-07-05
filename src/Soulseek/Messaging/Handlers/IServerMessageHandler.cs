@@ -28,6 +28,6 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         event EventHandler<PrivateMessage> PrivateMessageReceived;
 
-        void HandleMessage(object sender, Message message);
+        void HandleMessage(object sender, byte[] message);
     }
 }
