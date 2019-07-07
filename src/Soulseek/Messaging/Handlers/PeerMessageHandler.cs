@@ -26,7 +26,7 @@
         public async void HandleMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
-            var code = new MessageReader<MessageCode>(message).ReadCode();
+            var code = new MessageReader<MessageCode.Peer>(message).ReadCode();
 
             Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 
@@ -34,7 +34,7 @@
             {
                 switch (code)
                 {
-                    case MessageCode.PeerSearchResponse:
+                    case MessageCode.Peer.SearchResponse:
                         var searchResponse = SearchResponseSlim.Parse(message);
                         if (SoulseekClient.Searches.TryGetValue(searchResponse.Token, out var search))
                         {
@@ -43,8 +43,8 @@
 
                         break;
 
-                    case MessageCode.PeerBrowseResponse:
-                        var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Username);
+                    case MessageCode.Peer.BrowseResponse:
+                        var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, connection.Username);
                         try
                         {
                             SoulseekClient.Waiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
@@ -57,18 +57,18 @@
 
                         break;
 
-                    case MessageCode.PeerInfoResponse:
+                    case MessageCode.Peer.InfoResponse:
                         var infoResponse = UserInfoResponse.Parse(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.PeerInfoResponse, connection.Username), infoResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), infoResponse);
                         break;
 
-                    case MessageCode.PeerTransferResponse:
+                    case MessageCode.Peer.TransferResponse:
                         var transferResponse = TransferResponse.Parse(message);
                         Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
-                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
 
-                    case MessageCode.PeerQueueDownload:
+                    case MessageCode.Peer.QueueDownload:
                         // the end state here is to wait until there's actually a free slot, then send this request to the peer to
                         // let them know we are ready to start the actual transfer.
                         var queueDownloadRequest = QueueDownloadRequest.Parse(message);
@@ -81,12 +81,12 @@
 
                         break;
 
-                    case MessageCode.PeerTransferRequest:
+                    case MessageCode.Peer.TransferRequest:
                         var transferRequest = TransferRequest.Parse(message);
 
                         if (transferRequest.Direction == TransferDirection.Upload)
                         {
-                            SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                            SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, transferRequest.Filename), transferRequest);
                         }
                         else
                         {
@@ -105,31 +105,31 @@
 
                         break;
 
-                    case MessageCode.PeerQueueFailed:
+                    case MessageCode.Peer.QueueFailed:
                         var queueFailedResponse = QueueFailedResponse.Parse(message);
-                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
+                        SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
                         break;
 
-                    case MessageCode.PeerPlaceInQueueResponse:
+                    case MessageCode.Peer.PlaceInQueueResponse:
                         var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.PeerPlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.PlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
                         break;
 
-                    case MessageCode.PeerUploadFailed:
+                    case MessageCode.Peer.UploadFailed:
                         var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
                         if (download != null)
                         {
-                            SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new TransferException(msg));
+                            SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), new TransferException(msg));
                             SoulseekClient.Waiter.Throw(download.WaitKey, new TransferException(msg));
                         }
 
                         Diagnostic.Debug(msg);
                         break;
 
-                    case MessageCode.PeerBrowseRequest:
+                    case MessageCode.Peer.BrowseRequest:
                         var browseResponse = SoulseekClient.Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
                         await connection.WriteMessageAsync(browseResponse).ConfigureAwait(false);
                         break;

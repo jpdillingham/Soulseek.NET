@@ -32,7 +32,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="messageReader">The MessageReader instance used to parse the file list.</param>
-        internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode> messageReader)
+        internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode.Peer> messageReader)
         {
             Username = username;
             Token = token;
@@ -56,7 +56,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the MessageReader instance used to parse the file list.
         /// </summary>
-        public MessageReader<MessageCode> MessageReader { get; }
+        public MessageReader<MessageCode.Peer> MessageReader { get; }
 
         /// <summary>
         ///     Gets the length of the peer's upload queue.
@@ -85,12 +85,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         internal static SearchResponseSlim Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerSearchResponse)
+            if (code != MessageCode.Peer.SearchResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.Peer.SearchResponse}, received: {(int)code}");
             }
 
             reader.Decompress();

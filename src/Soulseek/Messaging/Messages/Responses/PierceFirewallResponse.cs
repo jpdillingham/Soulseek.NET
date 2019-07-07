@@ -46,9 +46,9 @@ namespace Soulseek.Messaging.Messages
 
             try
             {
-                var reader = new MessageReader<InitializationCode>(message);
+                var reader = new MessageReader<MessageCode.Initialization>(message);
 
-                if (reader.ReadCode() != InitializationCode.PierceFirewall)
+                if (reader.ReadCode() != MessageCode.Initialization.PierceFirewall)
                 {
                     return false;
                 }

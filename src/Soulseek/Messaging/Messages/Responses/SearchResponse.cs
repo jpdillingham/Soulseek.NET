@@ -121,7 +121,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="reader">The reader from which to parse the file list.</param>
         /// <param name="count">The expected number of files.</param>
         /// <returns>The list of parsed files.</returns>
-        private static IReadOnlyCollection<File> ParseFiles(MessageReader<MessageCode> reader, int count)
+        private static IReadOnlyCollection<File> ParseFiles(MessageReader<MessageCode.Peer> reader, int count)
         {
             var files = new List<File>();
 

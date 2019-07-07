@@ -117,7 +117,7 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="code">The desired message code.</param>
         /// <returns>This MessageBuilder.</returns>
-        public MessageBuilder WriteCode(DistributedCode code)
+        public MessageBuilder WriteCode(MessageCode.Distributed code)
         {
             return WriteCode(BitConverter.GetBytes(Convert.ToByte(code, CultureInfo.InvariantCulture)));
         }
@@ -127,7 +127,7 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="code">The desired message code.</param>
         /// <returns>This MessageBuilder.</returns>
-        public MessageBuilder WriteCode(InitializationCode code)
+        public MessageBuilder WriteCode(MessageCode.Initialization code)
         {
             return WriteCode(BitConverter.GetBytes(Convert.ToByte(code, CultureInfo.InvariantCulture)));
         }
@@ -137,7 +137,17 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="code">The desired message code.</param>
         /// <returns>This MessageBuilder.</returns>
-        public MessageBuilder WriteCode(MessageCode code)
+        public MessageBuilder WriteCode(MessageCode.Server code)
+        {
+            return WriteCode(BitConverter.GetBytes((int)code));
+        }
+
+        /// <summary>
+        ///     Sets the message code.
+        /// </summary>
+        /// <param name="code">The desired message code.</param>
+        /// <returns>This MessageBuilder.</returns>
+        public MessageBuilder WriteCode(MessageCode.Peer code)
         {
             return WriteCode(BitConverter.GetBytes((int)code));
         }
