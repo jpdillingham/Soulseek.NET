@@ -25,7 +25,6 @@ namespace Soulseek
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
 
     /// <summary>

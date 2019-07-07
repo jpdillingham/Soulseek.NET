@@ -10,15 +10,13 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Messaging.Tcp
+namespace Soulseek.Messaging
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Messaging;
     using Soulseek.Tcp;
 
     /// <summary>
@@ -37,13 +35,17 @@ namespace Soulseek.Messaging.Tcp
         internal MessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : this(ipAddress, port, options, tcpClient)
         {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+            }
+
             Username = username;
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
@@ -55,11 +57,9 @@ namespace Soulseek.Messaging.Tcp
             // duplicate running loops.
             CanStartReadingContinuously = tcpClient?.Connected ?? false;
 
-            // if the InactivityTimeout value is negative, disable the timer.
-            if (options.InactivityTimeout < 0)
+            // if Username is empty, this is a server connection.  begin reading continuously, and throw on exception.
+            if (string.IsNullOrEmpty(Username))
             {
-                InactivityTimer = null;
-
                 Connected += (sender, e) =>
                 {
                     Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
@@ -69,6 +69,7 @@ namespace Soulseek.Messaging.Tcp
             {
                 Connected += (sender, e) =>
                 {
+                    // swallow exceptions from peer connections.
                     Task.Run(() => ReadContinuouslyAsync()).Forget();
                 };
             }

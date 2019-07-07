@@ -13,7 +13,7 @@
 namespace Soulseek
 {
     using System.Net;
-    using Soulseek.Messaging.Tcp;
+    using Soulseek.Messaging;
     using Soulseek.Tcp;
 
     /// <summary>

@@ -17,7 +17,7 @@ namespace Soulseek
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
+    using Soulseek.Messaging;
     using Soulseek.Tcp;
 
     /// <summary>
