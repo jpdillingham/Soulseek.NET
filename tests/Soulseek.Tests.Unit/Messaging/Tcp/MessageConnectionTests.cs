@@ -40,69 +40,67 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
         public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPAddress ipAddress, int port, ConnectionOptions options)
         {
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options);
+            var c = new MessageConnection(username, ipAddress, port, options);
 
-            Assert.Equal(MessageConnectionType.Peer, c.Type);
             Assert.Equal(username, c.Username);
             Assert.Equal(ipAddress, c.IPAddress);
             Assert.Equal(port, c.Port);
             Assert.Equal(options, c.Options);
             Assert.False(c.ReadingContinuously);
 
-            Assert.Equal(new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer), c.Key);
+            Assert.Equal(new ConnectionKey(username, ipAddress, port), c.Key);
         }
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates server connection with given IP"), AutoData]
         public void Instantiates_Peer_Connection_With_Given_IP(IPAddress ipAddress, int port, ConnectionOptions options)
         {
-            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, options);
+            var c = new MessageConnection(ipAddress, port, options);
 
-            Assert.Equal(MessageConnectionType.Server, c.Type);
             Assert.Equal(ipAddress, c.IPAddress);
             Assert.Equal(port, c.Port);
             Assert.Equal(options, c.Options);
 
-            Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port, MessageConnectionType.Server), c.Key);
+            Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port), c.Key);
         }
 
-        [Trait("Category", "WriteMessageAsync")]
-        [Theory(DisplayName = "WriteMessageAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task WriteMessageAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
+            var c = new MessageConnection(username, ipAddress, port);
             c.SetProperty("State", ConnectionState.Disconnected);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        [Trait("Category", "WriteMessageAsync")]
-        [Theory(DisplayName = "WriteMessageAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task WriteMessageAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
+        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
+            var c = new MessageConnection(username, ipAddress, port);
             c.SetProperty("State", ConnectionState.Disconnecting);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<InvalidOperationException>(ex);
         }
 
-        [Trait("Category", "WriteMessageAsync")]
-        [Theory(DisplayName = "WriteMessageAsync writes when connected"), AutoData]
-        public async Task WriteMessageAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync writes when connected"), AutoData]
+        public async Task WriteAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -117,16 +115,16 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
 
-            await c.WriteMessageAsync(msg);
+            await c.WriteAsync(msg);
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
-        [Trait("Category", "WriteMessageAsync")]
-        [Theory(DisplayName = "WriteMessageAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
-        public async Task WriteMessageAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
+        [Trait("Category", "WriteAsync")]
+        [Theory(DisplayName = "WriteAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
+        public async Task WriteAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -143,9 +141,9 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(ipAddress, port, tcpClient: tcpMock.Object);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteMessageAsync(msg));
+            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<ConnectionWriteException>(ex);
@@ -176,9 +174,9 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .WriteCode(MessageCode.Server.AddUser)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(ipAddress, port, tcpClient: tcpMock.Object);
 
-            await c.WriteMessageAsync(msg);
+            await c.WriteAsync(msg);
 
             Assert.Equal((int)MessageCode.Server.AddUser - 10000, code);
 
@@ -207,9 +205,9 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                 .WriteCode(MessageCode.Peer.InfoRequest)
                 .Build();
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
 
-            await c.WriteMessageAsync(msg);
+            await c.WriteAsync(msg);
 
             Assert.Equal((int)MessageCode.Peer.InfoRequest - 20000, code);
 
@@ -248,7 +246,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
 
             byte[] readMessage = null;
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
             c.StartReadingContinuously();
 
             c.MessageRead += (sender, e) => readMessage = e;
@@ -277,7 +275,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
+            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
 
             var a = c.ReadingContinuously;
 

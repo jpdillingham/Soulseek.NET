@@ -139,8 +139,8 @@ namespace Soulseek.Tests.Unit.Client
         //}
 
         [Trait("Category", "DownloadInternalAsync")]
-        [Theory(DisplayName = "DownloadInternalAsync throws TransferException when WriteMessageAsync throws"), AutoData]
-        public async Task DownloadInternalAsync_Throws_TransferException_When_WriteMessageAsync_Throws(string username, IPAddress ip, int port, string filename, int token)
+        [Theory(DisplayName = "DownloadInternalAsync throws TransferException when WriteAsync throws"), AutoData]
+        public async Task DownloadInternalAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPAddress ip, int port, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), CancellationToken.None))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None))
                 .Throws(new ConnectionWriteException());
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);

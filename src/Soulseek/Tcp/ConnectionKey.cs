@@ -14,7 +14,6 @@ namespace Soulseek.Tcp
 {
     using System;
     using System.Net;
-    using Soulseek.Messaging.Tcp;
 
     /// <summary>
     ///     Uniquely identifies a <see cref="Connection"/> instance.
@@ -27,7 +26,7 @@ namespace Soulseek.Tcp
         /// <param name="ipAddress">The IP address of the connection.</param>
         /// <param name="port">The port of the connection.</param>
         public ConnectionKey(IPAddress ipAddress, int port)
-            : this(null, ipAddress, port, MessageConnectionType.Default)
+            : this(null, ipAddress, port)
         {
         }
 
@@ -37,13 +36,11 @@ namespace Soulseek.Tcp
         /// <param name="username">The username associated with the connection.</param>
         /// <param name="ipAddress">The IP address of the connection.</param>
         /// <param name="port">The port of the connection.</param>
-        /// <param name="type">The connection type.</param>
-        public ConnectionKey(string username, IPAddress ipAddress, int port, MessageConnectionType type)
+        public ConnectionKey(string username, IPAddress ipAddress, int port)
         {
             Username = username;
             IPAddress = ipAddress;
             Port = port;
-            Type = type;
         }
 
         /// <summary>
@@ -55,11 +52,6 @@ namespace Soulseek.Tcp
         ///     Gets the port of the connection.
         /// </summary>
         public int Port { get; private set; }
-
-        /// <summary>
-        ///     Gets the connection type.
-        /// </summary>
-        public MessageConnectionType Type { get; private set; }
 
         /// <summary>
         ///     Gets the username associated with the connection.
@@ -75,8 +67,7 @@ namespace Soulseek.Tcp
         {
             return Username == other.Username &&
                 IPAddress.ToString() == other.IPAddress.ToString() &&
-                Port == other.Port &&
-                Type == other.Type;
+                Port == other.Port;
         }
 
         /// <summary>
@@ -104,7 +95,7 @@ namespace Soulseek.Tcp
         {
             var u = Username?.GetHashCode() ?? 0;
             var i = IPAddress?.ToString().GetHashCode() ?? 0;
-            return u ^ i ^ Port.GetHashCode() ^ Type.GetHashCode();
+            return u ^ i ^ Port.GetHashCode();
         }
     }
 }

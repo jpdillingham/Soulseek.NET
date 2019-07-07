@@ -29,14 +29,13 @@ namespace Soulseek.Messaging.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="type">The connection type (Peer, Server).</param>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : this(type, ipAddress, port, options, tcpClient)
+        internal MessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : this(ipAddress, port, options, tcpClient)
         {
             Username = username;
         }
@@ -49,17 +48,15 @@ namespace Soulseek.Messaging.Tcp
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(MessageConnectionType type, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        internal MessageConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(ipAddress, port, options, tcpClient)
         {
-            Type = type;
-
             // if the supplied ITcpClient instance is not null and is Connected, disallow StartReadingContinuously() to prevent
             // duplicate running loops.
             CanStartReadingContinuously = tcpClient?.Connected ?? false;
 
-            // circumvent the inactivity timer for server connections; this connection is expected to idle.
-            if (Type == MessageConnectionType.Server)
+            // if the InactivityTimeout value is negative, disable the timer.
+            if (options.InactivityTimeout < 0)
             {
                 InactivityTimer = null;
 
@@ -85,17 +82,12 @@ namespace Soulseek.Messaging.Tcp
         /// <summary>
         ///     Gets the unique identifier for the connection.
         /// </summary>
-        public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port, Type);
+        public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port);
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.
         /// </summary>
         public bool ReadingContinuously { get; private set; }
-
-        /// <summary>
-        ///     Gets the connection type (Peer, Server).
-        /// </summary>
-        public MessageConnectionType Type { get; private set; }
 
         /// <summary>
         ///     Gets the username of the peer associated with the connection, if applicable.

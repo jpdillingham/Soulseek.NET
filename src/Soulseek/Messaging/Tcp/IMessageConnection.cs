@@ -31,11 +31,6 @@ namespace Soulseek.Messaging.Tcp
         bool ReadingContinuously { get; }
 
         /// <summary>
-        ///     Gets the connection type (Peer, Server).
-        /// </summary>
-        MessageConnectionType Type { get; }
-
-        /// <summary>
         ///     Gets the username of the peer associated with the connection, if applicable.
         /// </summary>
         string Username { get; }

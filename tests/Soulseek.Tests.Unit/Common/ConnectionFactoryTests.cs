@@ -33,9 +33,9 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "GetMessageConnection")]
         [Theory(DisplayName = "GetMessageConnection returns the expected connection"), AutoData]
-        internal void GetMessageConneciton_Returns_The_Expected_Connection(MessageConnectionType type, string username, IPAddress ipAddress, int port, ConnectionOptions options)
+        internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPAddress ipAddress, int port, ConnectionOptions options)
         {
-            var c = new ConnectionFactory().GetMessageConnection(type, username, ipAddress, port, options);
+            var c = new ConnectionFactory().GetMessageConnection(username, ipAddress, port, options);
 
             Assert.Equal(ipAddress, c.IPAddress);
             Assert.Equal(port, c.Port);

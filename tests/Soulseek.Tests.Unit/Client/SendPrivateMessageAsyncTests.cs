@@ -74,7 +74,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task AcknowledgePrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
@@ -161,7 +161,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SendPrivateMessageAsync_Throws_PrivateMessageException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))

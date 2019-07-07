@@ -106,8 +106,7 @@ namespace Soulseek
             var key = new ConnectionKey(
                 connectToPeerResponse.Username,
                 connectToPeerResponse.IPAddress,
-                connectToPeerResponse.Port,
-                MessageConnectionType.Peer);
+                connectToPeerResponse.Port);
 
             IMessageConnection connection = null;
 
@@ -134,7 +133,6 @@ namespace Soulseek
                 else
                 {
                     connection = ConnectionFactory.GetMessageConnection(
-                        MessageConnectionType.Peer,
                         connectToPeerResponse.Username,
                         connectToPeerResponse.IPAddress,
                         connectToPeerResponse.Port,
@@ -336,7 +334,6 @@ namespace Soulseek
         private async Task<IMessageConnection> AddInboundMessageConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient)
         {
             var connection = ConnectionFactory.GetMessageConnection(
-                MessageConnectionType.Peer,
                 username,
                 ipAddress,
                 port,
@@ -409,7 +406,6 @@ namespace Soulseek
         private async Task<IMessageConnection> GetMessageConnectionOutboundDirectAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
             var connection = ConnectionFactory.GetMessageConnection(
-                MessageConnectionType.Peer,
                 username,
                 ipAddress,
                 port,
@@ -440,7 +436,6 @@ namespace Soulseek
                     .ConfigureAwait(false);
 
                 var connection = ConnectionFactory.GetMessageConnection(
-                    MessageConnectionType.Peer,
                     username,
                     incomingConnection.IPAddress,
                     incomingConnection.Port,

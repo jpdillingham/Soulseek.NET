@@ -104,11 +104,11 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -139,11 +139,11 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
 
             var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();

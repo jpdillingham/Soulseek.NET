@@ -113,7 +113,11 @@ namespace Soulseek
                 ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
                 ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-                ServerConnection = new MessageConnection(MessageConnectionType.Server, IPAddress, Port, Options.ServerConnectionOptions);
+                // substitute the existing inactivity value with -1 to keep the connection open indefinitely
+                var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
+                var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
+
+                ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
                 ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
                 ServerConnection.Disconnected += ServerConnection_Disconnected;
                 ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;

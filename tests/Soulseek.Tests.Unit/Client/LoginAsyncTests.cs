@@ -151,7 +151,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Exception>(new ConnectionWriteException()));
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);

@@ -33,16 +33,6 @@ namespace Soulseek.Tcp
         }
 
         /// <summary>
-        ///     Gets the read buffer size for underlying TCP connections. (Default = 8192).
-        /// </summary>
-        public int ReadBufferSize { get; }
-
-        /// <summary>
-        ///     Gets the write buffer size for underlying TCP connections. (Default = 8192).
-        /// </summary>
-        public int WriteBufferSize { get; }
-
-        /// <summary>
         ///     Gets the connection timeout, in seconds, for client and peer TCP connections.
         /// </summary>
         public int ConnectTimeout { get; }
@@ -55,5 +45,30 @@ namespace Soulseek.Tcp
         ///     forcibly disconnected.
         /// </remarks>
         public int InactivityTimeout { get; }
+
+        /// <summary>
+        ///     Gets the read buffer size for underlying TCP connections. (Default = 8192).
+        /// </summary>
+        public int ReadBufferSize { get; }
+
+        /// <summary>
+        ///     Gets the write buffer size for underlying TCP connections. (Default = 8192).
+        /// </summary>
+        public int WriteBufferSize { get; }
+
+        /// <summary>
+        ///     Deconstructs this instance.
+        /// </summary>
+        /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
+        /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
+        /// <param name="connectTimeout">The connection timeout, in seconds, for client and peer TCP connections.</param>
+        /// <param name="inactivityTimeout">The inactivity timeout, in seconds, for peer TCP connections.</param>
+        public void Deconstruct(out int readBufferSize, out int writeBufferSize, out int connectTimeout, out int inactivityTimeout)
+        {
+            readBufferSize = ReadBufferSize;
+            writeBufferSize = WriteBufferSize;
+            connectTimeout = ConnectTimeout;
+            inactivityTimeout = InactivityTimeout;
+        }
     }
 }

@@ -85,7 +85,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -142,7 +142,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.Is<byte[]>(n => new MessageReader<MessageCode.Peer>(n).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.Is<byte[]>(n => new MessageReader<MessageCode.Peer>(n).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             var connManager = new Mock<IPeerConnectionManager>();
@@ -172,7 +172,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
 
