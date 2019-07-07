@@ -108,7 +108,7 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -146,7 +146,7 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msg = new MessageBuilder()
@@ -162,7 +162,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-                conn.Verify(m => m.WriteMessageAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
+                conn.Verify(m => m.WriteAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 

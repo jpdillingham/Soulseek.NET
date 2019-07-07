@@ -19,8 +19,8 @@ namespace Soulseek
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
 
     /// <summary>
@@ -106,8 +106,7 @@ namespace Soulseek
             var key = new ConnectionKey(
                 connectToPeerResponse.Username,
                 connectToPeerResponse.IPAddress,
-                connectToPeerResponse.Port,
-                MessageConnectionType.Peer);
+                connectToPeerResponse.Port);
 
             IMessageConnection connection = null;
 
@@ -134,7 +133,6 @@ namespace Soulseek
                 else
                 {
                     connection = ConnectionFactory.GetMessageConnection(
-                        MessageConnectionType.Peer,
                         connectToPeerResponse.Username,
                         connectToPeerResponse.IPAddress,
                         connectToPeerResponse.Port,
@@ -336,7 +334,6 @@ namespace Soulseek
         private async Task<IMessageConnection> AddInboundMessageConnectionAsync(string username, IPAddress ipAddress, int port, ITcpClient tcpClient)
         {
             var connection = ConnectionFactory.GetMessageConnection(
-                MessageConnectionType.Peer,
                 username,
                 ipAddress,
                 port,
@@ -409,7 +406,6 @@ namespace Soulseek
         private async Task<IMessageConnection> GetMessageConnectionOutboundDirectAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
             var connection = ConnectionFactory.GetMessageConnection(
-                MessageConnectionType.Peer,
                 username,
                 ipAddress,
                 port,
@@ -432,7 +428,7 @@ namespace Soulseek
                 PendingSolicitations.TryAdd(token, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer), cancellationToken)
                     .ConfigureAwait(false);
 
                 var incomingConnection = await SoulseekClient.Waiter
@@ -440,7 +436,6 @@ namespace Soulseek
                     .ConfigureAwait(false);
 
                 var connection = ConnectionFactory.GetMessageConnection(
-                    MessageConnectionType.Peer,
                     username,
                     incomingConnection.IPAddress,
                     incomingConnection.Port,
@@ -501,7 +496,7 @@ namespace Soulseek
                 PendingSolicitations.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer), cancellationToken)
                     .ConfigureAwait(false);
 
                 var incomingConnection = await SoulseekClient.Waiter

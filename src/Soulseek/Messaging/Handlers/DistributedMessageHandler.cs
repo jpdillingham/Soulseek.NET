@@ -1,11 +1,7 @@
 ﻿namespace Soulseek.Messaging.Handlers
 {
     using System;
-    using System.Linq;
-    using Soulseek.Exceptions;
     using Soulseek.Messaging;
-    using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
 
     internal sealed class DistributedMessageHandler : IDistributedMessageHandler
     {

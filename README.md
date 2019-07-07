@@ -8,30 +8,6 @@
 
 A .NET Standard client library for the Soulseek network.
 
-This library aims to provide more control over searches and downloads
-from the Soulseek network, namely to support download automation and
-quality control.
+# Pardon the dust
 
-This library does NOT aim to provide the full functionality required to create 
-a replacement for the desktop client.
-
-The Soulseek network relies on sharing to operate.  If you're using this library to
-download files, you should also run a copy of the desktop client to share a number of 
-files proportional to your download activity.  Taking without giving goes against the
-spirit of the network.
-
-## Supported and Planned Functionality
-
-- [ ] Private messaging
-- [x] Searching the network 
-- [x] Browsing individual user shares
-- [x] Downloading of files
-
-## Unsupported Functionality
-
-- Sharing of files:
-  - Providing the server with a list of shared files
-  - Accepting or responding to distributed search requests
-  - Uploading files
-- Downloads from users behind a firewall
-- Chat rooms
+There's a big refactoring effort underway to add support for incoming connections, distributed messaging, and uploads.  Once everything is settled this library will support all of the functionality required for a full client implementation.
