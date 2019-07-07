@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => PrivilegedUserList.Parse(msg));
@@ -39,7 +39,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerPrivilegedUsers)
+                .WriteCode(MessageCode.Server.PrivilegedUsers)
                 .WriteInteger(1)
                 .Build();
 
@@ -54,7 +54,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerPrivilegedUsers)
+                .WriteCode(MessageCode.Server.PrivilegedUsers)
                 .WriteInteger(4)
                 .WriteString("larry")
                 .WriteString("moe")

@@ -43,7 +43,6 @@ namespace Soulseek.Tcp
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
             TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
             TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
-            TcpClient.Client.NoDelay = true;
 
             InactivityTimer = new SystemTimer()
             {

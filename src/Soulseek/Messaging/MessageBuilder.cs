@@ -14,6 +14,7 @@ namespace Soulseek.Messaging
 {
     using System;
     using System.Collections.Generic;
+    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Text;
@@ -33,7 +34,7 @@ namespace Soulseek.Messaging
         ///     Builds the message.
         /// </summary>
         /// <returns>The built message.</returns>
-        public Message Build()
+        public byte[] Build()
         {
             if (CodeBytes.Count == 0)
             {
@@ -43,18 +44,7 @@ namespace Soulseek.Messaging
             var withLength = new List<byte>(BitConverter.GetBytes(CodeBytes.Count + PayloadBytes.Count));
             withLength.AddRange(CodeBytes);
             withLength.AddRange(PayloadBytes);
-            return new Message(withLength.ToArray());
-        }
-
-        /// <summary>
-        ///     Sets the message code.
-        /// </summary>
-        /// <param name="code">The desired message code.</param>
-        /// <returns>This MessageBuilder.</returns>
-        public MessageBuilder Code(MessageCode code)
-        {
-            CodeBytes = BitConverter.GetBytes((int)code).ToList();
-            return this;
+            return withLength.ToArray();
         }
 
         /// <summary>
@@ -62,7 +52,9 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <returns>This MessageBuilder.</returns>
         /// <exception cref="InvalidOperationException">Thrown when attempting to compress an empty message.</exception>
-        /// <exception cref="MessageCompressionException">Thrown when an error is encountered while compressing the message payload.</exception>
+        /// <exception cref="MessageCompressionException">
+        ///     Thrown when an error is encountered while compressing the message payload.
+        /// </exception>
         public MessageBuilder Compress()
         {
             if (PayloadBytes.Count == 0)
@@ -88,7 +80,9 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when attempting to write additional data to a message that has been compressed.
+        /// </exception>
         public MessageBuilder WriteByte(byte value)
         {
             return WriteBytes(new[] { value });
@@ -99,7 +93,9 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
         /// <returns>This MessageBuilder.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when attempting to write additional data to a message that has been compressed.
+        /// </exception>
         public MessageBuilder WriteBytes(byte[] bytes)
         {
             if (Compressed)
@@ -117,11 +113,54 @@ namespace Soulseek.Messaging
         }
 
         /// <summary>
+        ///     Sets the message code.
+        /// </summary>
+        /// <param name="code">The desired message code.</param>
+        /// <returns>This MessageBuilder.</returns>
+        public MessageBuilder WriteCode(MessageCode.Distributed code)
+        {
+            return WriteCode(BitConverter.GetBytes(Convert.ToByte(code, CultureInfo.InvariantCulture)));
+        }
+
+        /// <summary>
+        ///     Sets the message code.
+        /// </summary>
+        /// <param name="code">The desired message code.</param>
+        /// <returns>This MessageBuilder.</returns>
+        public MessageBuilder WriteCode(MessageCode.Initialization code)
+        {
+            byte codeByte = Convert.ToByte(code, CultureInfo.InvariantCulture);
+            return WriteCode(new byte[] { codeByte });
+        }
+
+        /// <summary>
+        ///     Sets the message code.
+        /// </summary>
+        /// <param name="code">The desired message code.</param>
+        /// <returns>This MessageBuilder.</returns>
+        public MessageBuilder WriteCode(MessageCode.Server code)
+        {
+            return WriteCode(BitConverter.GetBytes((int)code));
+        }
+
+        /// <summary>
+        ///     Sets the message code.
+        /// </summary>
+        /// <param name="code">The desired message code.</param>
+        /// <returns>This MessageBuilder.</returns>
+        public MessageBuilder WriteCode(MessageCode.Peer code)
+        {
+            return WriteCode(BitConverter.GetBytes((int)code));
+        }
+
+        /// <summary>
         ///     Writes the specified integer <paramref name="value"/> to the message.
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when attempting to write additional data to a message that has been compressed.
+        /// </exception>
         public MessageBuilder WriteInteger(int value)
         {
             return WriteBytes(BitConverter.GetBytes(value));
@@ -132,7 +171,9 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when attempting to write additional data to a message that has been compressed.
+        /// </exception>
         public MessageBuilder WriteLong(long value)
         {
             return WriteBytes(BitConverter.GetBytes(value));
@@ -143,7 +184,9 @@ namespace Soulseek.Messaging
         /// </summary>
         /// <param name="value">The value to write.</param>
         /// <returns>This MessageBuilder.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when attempting to write additional data to a message that has been compressed.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when attempting to write additional data to a message that has been compressed.
+        /// </exception>
         public MessageBuilder WriteString(string value)
         {
             return WriteBytes(BitConverter.GetBytes(value.Length))
@@ -180,6 +223,12 @@ namespace Soulseek.Messaging
             {
                 throw new MessageCompressionException($"Failed to compress the message payload.", ex);
             }
+        }
+
+        private MessageBuilder WriteCode(byte[] code)
+        {
+            CodeBytes = code.ToList();
+            return this;
         }
     }
 }

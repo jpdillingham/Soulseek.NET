@@ -19,6 +19,9 @@ namespace Soulseek
 
     public class SoulseekClientResolvers
     {
+        private readonly Func<string, IPAddress, int, string, int, SearchResponse> defaultSearchResponse =
+            (u, i, p, s, t) => new SearchResponse(u, t, 0, 0, 0, 0);
+
         private readonly Func<string, IPAddress, int, BrowseResponse> defaultBrowseResponse =
             (u, i, p) => new BrowseResponse(0, new List<Directory>());
 
@@ -29,16 +32,18 @@ namespace Soulseek
             (u, i, p, f) => (true, null);
 
         public SoulseekClientResolvers(
-                    Func<string, IPAddress, int, BrowseResponse> browseResponse = null,
-                    Func<string, IPAddress, int, UserInfoResponse> userInfoResponse = null,
-                    Func<string, IPAddress, int, string, (bool Allowed, string Message)> queueDownloadResponse = null)
+            Func<string, IPAddress, int, string, int, SearchResponse> searchResponse = null,
+            Func<string, IPAddress, int, BrowseResponse> browseResponse = null,
+            Func<string, IPAddress, int, UserInfoResponse> userInfoResponse = null,
+            Func<string, IPAddress, int, string, (bool Allowed, string Message)> queueDownloadResponse = null)
         {
+            SearchResponse = searchResponse ?? defaultSearchResponse;
             BrowseResponse = browseResponse ?? defaultBrowseResponse;
             UserInfoResponse = userInfoResponse ?? defaultUserInfoResponse;
             QueueDownloadResponse = queueDownloadResponse ?? defaultQueueDownloadResponse;
-            // todo: add private message acknowledgement
         }
 
+        public Func<string, IPAddress, int, string, int, SearchResponse> SearchResponse { get; }
         public Func<string, IPAddress, int, BrowseResponse> BrowseResponse { get; }
         public Func<string, IPAddress, int, UserInfoResponse> UserInfoResponse { get; }
         public Func<string, IPAddress, int, string, (bool Allowed, string Message)> QueueDownloadResponse { get; }

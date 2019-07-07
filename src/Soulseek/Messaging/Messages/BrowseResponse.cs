@@ -50,13 +50,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static BrowseResponse Parse(Message message)
+        public static BrowseResponse Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.PeerBrowseResponse)
+            if (code != MessageCode.Peer.BrowseResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Browse Response (expected: {(int)MessageCode.PeerBrowseResponse}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Peer Browse Response (expected: {(int)MessageCode.Peer.BrowseResponse}, received: {(int)code}");
             }
 
             reader.Decompress();
@@ -110,10 +111,19 @@ namespace Soulseek.Messaging.Messages
             return new BrowseResponse(directoryCount, directoryList);
         }
 
-        public Message ToMessage()
+        /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator byte[](BrowseResponse instance)
+        {
+            return instance.ToMessage();
+        }
+
+        public byte[] ToMessage()
         {
             var builder = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(DirectoryCount);
 
             foreach (var directory in Directories)

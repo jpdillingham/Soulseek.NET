@@ -12,514 +12,567 @@
 
 namespace Soulseek.Messaging
 {
-    /// <summary>
-    ///     Server and peer message codes.
-    /// </summary>
-    public enum MessageCode
+    public static class MessageCode
     {
         /// <summary>
-        ///     0/Unknown
-        /// </summary>
-        Unknown = 0,
-
-        /// <summary>
-        ///     1
-        /// </summary>
-        ServerLogin = 10001,
-
-        /// <summary>
-        ///     2
-        /// </summary>
-        ServerSetListenPort = 10002,
-
-        /// <summary>
-        ///     3
-        /// </summary>
-        ServerGetPeerAddress = 10003,
-
-        /// <summary>
-        ///     5
-        /// </summary>
-        ServerAddUser = 10005,
-
-        /// <summary>
-        ///     7
-        /// </summary>
-        ServerGetStatus = 10007,
-
-        /// <summary>
-        ///     13
-        /// </summary>
-        ServerSayInChatRoom = 10013,
-
-        /// <summary>
-        ///     14
-        /// </summary>
-        ServerJoinRoom = 10014,
-
-        /// <summary>
-        ///     15
-        /// </summary>
-        ServerLeaveRoom = 10015,
-
-        /// <summary>
-        ///     16
-        /// </summary>
-        ServerUserJoinedRoom = 10016,
-
-        /// <summary>
-        ///     17
-        /// </summary>
-        ServerUserLeftRoom = 10017,
-
-        /// <summary>
-        ///     18
-        /// </summary>
-        ServerConnectToPeer = 10018,
-
-        /// <summary>
-        ///     22
-        /// </summary>
-        ServerPrivateMessage = 10022,
-
-        /// <summary>
-        ///     23
-        /// </summary>
-        ServerAcknowledgePrivateMessage = 10023,
-
-        /// <summary>
-        ///     26
-        /// </summary>
-        ServerFileSearch = 10026,
-
-        /// <summary>
-        ///     28
-        /// </summary>
-        ServerSetOnlineStatus = 10028,
-
-        /// <summary>
-        ///     32
-        /// </summary>
-        ServerPing = 10032,
-
-        /// <summary>
-        ///     34
-        /// </summary>
-        ServerSendSpeed = 10034,
-
-        /// <summary>
-        ///     35
-        /// </summary>
-        ServerSharedFoldersAndFiles = 10035,
-
-        /// <summary>
-        ///     36
-        /// </summary>
-        ServerGetUserStats = 10036,
-
-        /// <summary>
-        ///     40
-        /// </summary>
-        ServerQueuedDownloads = 10040,
-
-        /// <summary>
-        ///     41
-        /// </summary>
-        ServerKickedFromServer = 10041,
-
-        /// <summary>
-        ///     42
-        /// </summary>
-        ServerUserSearch = 10042,
-
-        /// <summary>
-        ///     51
-        /// </summary>
-        ServerInterestAdd = 10051,
-
-        /// <summary>
-        ///     52
-        /// </summary>
-        ServerInterestRemove = 10052,
-
-        /// <summary>
-        ///     54
-        /// </summary>
-        ServerGetRecommendations = 10054,
-
-        /// <summary>
-        ///     56
-        /// </summary>
-        ServerGetGlobalRecommendations = 10056,
-
-        /// <summary>
-        ///     57
-        /// </summary>
-        ServerGetUserInterests = 10057,
-
-        /// <summary>
-        ///     64
-        /// </summary>
-        ServerRoomList = 10064,
-
-        /// <summary>
-        ///     65
-        /// </summary>
-        ServerExactFileSearch = 10065,
-
-        /// <summary>
-        ///     66
-        /// </summary>
-        ServerGlobalAdminMessage = 10066,
-
-        /// <summary>
-        ///     69
-        /// </summary>
-        ServerPrivilegedUsers = 10069,
-
-        /// <summary>
-        ///     71
-        /// </summary>
-        ServerHaveNoParents = 10071,
-
-        /// <summary>
-        ///     73
-        /// </summary>
-        ServerParentsIP = 10073,
-
-        /// <summary>
-        ///     83
-        /// </summary>
-        ServerParentMinSpeed = 10083,
-
-        /// <summary>
-        ///     84
-        /// </summary>
-        ServerParentSpeedRatio = 10084,
-
-        /// <summary>
-        ///     86
-        /// </summary>
-        ServerParentInactivityTimeout = 10086,
-
-        /// <summary>
-        ///     87
-        /// </summary>
-        ServerSearchInactivityTimeout = 10087,
-
-        /// <summary>
-        ///     88
-        /// </summary>
-        ServerMinimumParentsInCache = 10088,
-
-        /// <summary>
-        ///     90
-        /// </summary>
-        ServerDistributedAliveInterval = 10090,
-
-        /// <summary>
-        ///     91
-        /// </summary>
-        ServerAddPrivilegedUser = 10091,
-
-        /// <summary>
-        ///     92
-        /// </summary>
-        ServerCheckPrivileges = 10092,
-
-        /// <summary>
-        ///     93
-        /// </summary>
-        ServerSearchRequest = 10093,
-
-        /// <summary>
-        ///     100
-        /// </summary>
-        ServerAcceptChildren = 10100,
-
-        /// <summary>
-        ///     102
-        /// </summary>
-        ServerNetInfo = 10102,
-
-        /// <summary>
-        ///     103
-        /// </summary>
-        ServerWishlistSearch = 10103,
-
-        /// <summary>
-        ///     104
-        /// </summary>
-        ServerWishlistInterval = 10104,
-
-        /// <summary>
-        ///     110
-        /// </summary>
-        ServerGetSimilarUsers = 10110,
-
-        /// <summary>
-        ///     111
-        /// </summary>
-        ServerGetItemRecommendations = 10111,
-
-        /// <summary>
-        ///     112
-        /// </summary>
-        ServerGetItemSimilarUsers = 10112,
-
-        /// <summary>
-        ///     113
-        /// </summary>
-        ServerRoomTickers = 10113,
-
-        /// <summary>
-        ///     114
-        /// </summary>
-        ServerRoomTickerAdd = 10114,
-
-        /// <summary>
-        ///     115
-        /// </summary>
-        ServerRoomTickerRemove = 10115,
-
-        /// <summary>
-        ///     116
-        /// </summary>
-        ServerSetRoomTicker = 10116,
-
-        /// <summary>
-        ///     117
-        /// </summary>
-        ServerHatedInterestAdd = 10117,
-
-        /// <summary>
-        ///     118
-        /// </summary>
-        ServerHatedInterestRemove = 10118,
-
-        /// <summary>
-        ///     120
-        /// </summary>
-        ServerRoomSearch = 10120,
-
-        /// <summary>
-        ///     121
-        /// </summary>
-        ServerSendUploadSpeed = 10121,
-
-        /// <summary>
-        ///     122
-        /// </summary>
-        ServerUserPrivileges = 10122,
-
-        /// <summary>
-        ///     123
-        /// </summary>
-        ServerGivePrivileges = 10123,
-
-        /// <summary>
-        ///     124
-        /// </summary>
-        ServerNotifyPrivileges = 10124,
-
-        /// <summary>
-        ///     125
-        /// </summary>
-        ServerAcknowledgeNotifyPrivileges = 10125,
-
-        /// <summary>
-        ///     126
-        /// </summary>
-        ServerBranchLevel = 10126,
-
-        /// <summary>
-        ///     127
-        /// </summary>
-        ServerBranchRoot = 10127,
-
-        /// <summary>
-        ///     129
-        /// </summary>
-        ServerChildDepth = 10129,
-
-        /// <summary>
-        ///     133
-        /// </summary>
-        ServerPrivateRoomUsers = 10133,
-
-        /// <summary>
-        ///     134
-        /// </summary>
-        ServerPrivateRoomAddUser = 10134,
-
-        /// <summary>
-        ///     135
-        /// </summary>
-        ServerPrivateRoomRemoveUser = 10135,
-
-        /// <summary>
-        ///     136
-        /// </summary>
-        ServerPrivateRoomDropMembership = 10136,
-
-        /// <summary>
-        ///     137
-        /// </summary>
-        ServerPrivateRoomDropOwnership = 10137,
-
-        /// <summary>
-        ///     138
-        /// </summary>
-        ServerPrivateRoomUnknown = 10138,
-
-        /// <summary>
-        ///     139
-        /// </summary>
-        ServerPrivateRoomAdded = 10139,
-
-        /// <summary>
-        ///     140
-        /// </summary>
-        ServerPrivateRoomRemoved = 10140,
-
-        /// <summary>
-        ///     141
-        /// </summary>
-        ServerPrivateRoomToggle = 10141,
-
-        /// <summary>
-        ///     142
-        /// </summary>
-        ServerNewPassword = 10142,
-
-        /// <summary>
-        ///     143
-        /// </summary>
-        ServerPrivateRoomAddOperator = 10143,
-
-        /// <summary>
-        ///     144
-        /// </summary>
-        ServerPrivateRoomRemoveOperator = 10144,
-
-        /// <summary>
-        ///     145
-        /// </summary>
-        ServerPrivateRoomOperatorAdded = 10145,
-
-        /// <summary>
-        ///     146
-        /// </summary>
-        ServerPrivateRoomOperatorRemoved = 10146,
-
-        /// <summary>
-        ///     148
-        /// </summary>
-        ServerPrivateRoomOwned = 10148,
-
-        /// <summary>
-        ///     149
-        /// </summary>
-        ServerMessageUsers = 10149,
-
-        /// <summary>
-        ///     150
-        /// </summary>
-        ServerAskPublicChat = 10150,
-
-        /// <summary>
-        ///     151
-        /// </summary>
-        ServerStopPublicChat = 10151,
-
-        /// <summary>
-        ///     152
-        /// </summary>
-        ServerPublicChat = 10152,
-
-        /// <summary>
-        ///     1
-        /// </summary>
-        ServerCannotConnect = 11001,
-
-        /// <summary>
-        ///     4
-        /// </summary>
-        PeerBrowseRequest = 20004,
-
-        /// <summary>
-        ///     5
-        /// </summary>
-        PeerBrowseResponse = 20005,
-
-        /// <summary>
-        ///     8
-        /// </summary>
-        PeerSearchRequest = 20008,
-
-        /// <summary>
-        ///     9
-        /// </summary>
-        PeerSearchResponse = 20009,
-
-        /// <summary>
-        ///     15
-        /// </summary>
-        PeerInfoRequest = 20015,
-
-        /// <summary>
-        ///     16
-        /// </summary>
-        PeerInfoResponse = 20016,
-
-        /// <summary>
-        ///     36
-        /// </summary>
-        PeerFolderContentsRequest = 20036,
-
-        /// <summary>
-        ///     37
-        /// </summary>
-        PeerFolderContentsResponse = 20037,
-
-        /// <summary>
-        ///     40
-        /// </summary>
-        PeerTransferRequest = 20040,
-
-        /// <summary>
-        ///     41
-        /// </summary>
-        PeerTransferResponse = 20041,
-
-        /// <summary>
-        ///     42
-        /// </summary>
-        PeerUploadPlacehold = 20042,
-
-        /// <summary>
-        ///     43
-        /// </summary>
-        PeerQueueDownload = 20043,
-
-        /// <summary>
-        ///     44
-        /// </summary>
-        PeerPlaceInQueueResponse = 20044,
-
-        /// <summary>
-        ///     46
-        /// </summary>
-        PeerUploadFailed = 20046,
-
-        /// <summary>
-        ///     50
-        /// </summary>
-        PeerQueueFailed = 20050,
-
-        /// <summary>
-        ///     51
-        /// </summary>
-        PeerPlaceInQueueRequest = 20051,
+        ///     Distributed message codes.
+        /// </summary>
+        public enum Distributed : byte
+        {
+            /// <summary>
+            ///     0
+            /// </summary>
+            Ping = 0,
+
+            /// <summary>
+            ///     3
+            /// </summary>
+            SearchRequest = 3,
+
+            /// <summary>
+            ///     4
+            /// </summary>
+            BanchLevel = 4,
+
+            /// <summary>
+            ///     5
+            /// </summary>
+            BranchRoot = 5,
+
+            /// <summary>
+            ///     7
+            /// </summary>
+            ChildDepth = 7,
+        }
+
+        /// <summary>
+        ///     Connection initialization codes.
+        /// </summary>
+        public enum Initialization : byte
+        {
+            /// <summary>
+            ///     Pierce firewall; sent by peers responding to a solicited connection request.
+            /// </summary>
+            PierceFirewall = 0,
+
+            /// <summary>
+            ///     Peer init; sent by peers creating a direct connection.
+            /// </summary>
+            PeerInit = 1,
+        }
+
+        /// <summary>
+        ///     Server message codes.
+        /// </summary>
+        public enum Server
+        {
+            /// <summary>
+            ///     0/Unknown
+            /// </summary>
+            Unknown = 0,
+
+            /// <summary>
+            ///     1
+            /// </summary>
+            Login = 1,
+
+            /// <summary>
+            ///     2
+            /// </summary>
+            SetListenPort = 2,
+
+            /// <summary>
+            ///     3
+            /// </summary>
+            GetPeerAddress = 3,
+
+            /// <summary>
+            ///     5
+            /// </summary>
+            AddUser = 5,
+
+            /// <summary>
+            ///     7
+            /// </summary>
+            GetStatus = 7,
+
+            /// <summary>
+            ///     13
+            /// </summary>
+            SayInChatRoom = 13,
+
+            /// <summary>
+            ///     14
+            /// </summary>
+            JoinRoom = 14,
+
+            /// <summary>
+            ///     15
+            /// </summary>
+            LeaveRoom = 15,
+
+            /// <summary>
+            ///     16
+            /// </summary>
+            UserJoinedRoom = 16,
+
+            /// <summary>
+            ///     17
+            /// </summary>
+            UserLeftRoom = 17,
+
+            /// <summary>
+            ///     18
+            /// </summary>
+            ConnectToPeer = 18,
+
+            /// <summary>
+            ///     22
+            /// </summary>
+            PrivateMessage = 22,
+
+            /// <summary>
+            ///     23
+            /// </summary>
+            AcknowledgePrivateMessage = 23,
+
+            /// <summary>
+            ///     26
+            /// </summary>
+            FileSearch = 26,
+
+            /// <summary>
+            ///     28
+            /// </summary>
+            SetOnlineStatus = 28,
+
+            /// <summary>
+            ///     32
+            /// </summary>
+            Ping = 32,
+
+            /// <summary>
+            ///     34
+            /// </summary>
+            SendSpeed = 34,
+
+            /// <summary>
+            ///     35
+            /// </summary>
+            SharedFoldersAndFiles = 35,
+
+            /// <summary>
+            ///     36
+            /// </summary>
+            GetUserStats = 36,
+
+            /// <summary>
+            ///     40
+            /// </summary>
+            QueuedDownloads = 40,
+
+            /// <summary>
+            ///     41
+            /// </summary>
+            KickedFromServer = 41,
+
+            /// <summary>
+            ///     42
+            /// </summary>
+            UserSearch = 42,
+
+            /// <summary>
+            ///     51
+            /// </summary>
+            InterestAdd = 51,
+
+            /// <summary>
+            ///     52
+            /// </summary>
+            InterestRemove = 52,
+
+            /// <summary>
+            ///     54
+            /// </summary>
+            GetRecommendations = 54,
+
+            /// <summary>
+            ///     56
+            /// </summary>
+            GetGlobalRecommendations = 56,
+
+            /// <summary>
+            ///     57
+            /// </summary>
+            GetUserInterests = 57,
+
+            /// <summary>
+            ///     64
+            /// </summary>
+            RoomList = 64,
+
+            /// <summary>
+            ///     65
+            /// </summary>
+            ExactFileSearch = 65,
+
+            /// <summary>
+            ///     66
+            /// </summary>
+            GlobalAdminMessage = 66,
+
+            /// <summary>
+            ///     69
+            /// </summary>
+            PrivilegedUsers = 69,
+
+            /// <summary>
+            ///     71
+            /// </summary>
+            HaveNoParents = 71,
+
+            /// <summary>
+            ///     73
+            /// </summary>
+            ParentsIP = 73,
+
+            /// <summary>
+            ///     83
+            /// </summary>
+            ParentMinSpeed = 83,
+
+            /// <summary>
+            ///     84
+            /// </summary>
+            ParentSpeedRatio = 84,
+
+            /// <summary>
+            ///     86
+            /// </summary>
+            ParentInactivityTimeout = 86,
+
+            /// <summary>
+            ///     87
+            /// </summary>
+            SearchInactivityTimeout = 87,
+
+            /// <summary>
+            ///     88
+            /// </summary>
+            MinimumParentsInCache = 88,
+
+            /// <summary>
+            ///     90
+            /// </summary>
+            DistributedAliveInterval = 90,
+
+            /// <summary>
+            ///     91
+            /// </summary>
+            AddPrivilegedUser = 91,
+
+            /// <summary>
+            ///     92
+            /// </summary>
+            CheckPrivileges = 92,
+
+            /// <summary>
+            ///     93
+            /// </summary>
+            SearchRequest = 93,
+
+            /// <summary>
+            ///     100
+            /// </summary>
+            AcceptChildren = 100,
+
+            /// <summary>
+            ///     102
+            /// </summary>
+            NetInfo = 102,
+
+            /// <summary>
+            ///     103
+            /// </summary>
+            WishlistSearch = 103,
+
+            /// <summary>
+            ///     104
+            /// </summary>
+            WishlistInterval = 104,
+
+            /// <summary>
+            ///     110
+            /// </summary>
+            GetSimilarUsers = 110,
+
+            /// <summary>
+            ///     111
+            /// </summary>
+            GetItemRecommendations = 111,
+
+            /// <summary>
+            ///     112
+            /// </summary>
+            GetItemSimilarUsers = 112,
+
+            /// <summary>
+            ///     113
+            /// </summary>
+            RoomTickers = 113,
+
+            /// <summary>
+            ///     114
+            /// </summary>
+            RoomTickerAdd = 114,
+
+            /// <summary>
+            ///     115
+            /// </summary>
+            RoomTickerRemove = 115,
+
+            /// <summary>
+            ///     116
+            /// </summary>
+            SetRoomTicker = 116,
+
+            /// <summary>
+            ///     117
+            /// </summary>
+            HatedInterestAdd = 117,
+
+            /// <summary>
+            ///     118
+            /// </summary>
+            HatedInterestRemove = 118,
+
+            /// <summary>
+            ///     120
+            /// </summary>
+            RoomSearch = 120,
+
+            /// <summary>
+            ///     121
+            /// </summary>
+            SendUploadSpeed = 121,
+
+            /// <summary>
+            ///     122
+            /// </summary>
+            UserPrivileges = 122,
+
+            /// <summary>
+            ///     123
+            /// </summary>
+            GivePrivileges = 123,
+
+            /// <summary>
+            ///     124
+            /// </summary>
+            NotifyPrivileges = 124,
+
+            /// <summary>
+            ///     125
+            /// </summary>
+            AcknowledgeNotifyPrivileges = 125,
+
+            /// <summary>
+            ///     126
+            /// </summary>
+            BranchLevel = 126,
+
+            /// <summary>
+            ///     127
+            /// </summary>
+            BranchRoot = 127,
+
+            /// <summary>
+            ///     129
+            /// </summary>
+            ChildDepth = 129,
+
+            /// <summary>
+            ///     133
+            /// </summary>
+            PrivateRoomUsers = 133,
+
+            /// <summary>
+            ///     134
+            /// </summary>
+            PrivateRoomAddUser = 134,
+
+            /// <summary>
+            ///     135
+            /// </summary>
+            PrivateRoomRemoveUser = 135,
+
+            /// <summary>
+            ///     136
+            /// </summary>
+            PrivateRoomDropMembership = 136,
+
+            /// <summary>
+            ///     137
+            /// </summary>
+            PrivateRoomDropOwnership = 137,
+
+            /// <summary>
+            ///     138
+            /// </summary>
+            PrivateRoomUnknown = 138,
+
+            /// <summary>
+            ///     139
+            /// </summary>
+            PrivateRoomAdded = 139,
+
+            /// <summary>
+            ///     140
+            /// </summary>
+            PrivateRoomRemoved = 140,
+
+            /// <summary>
+            ///     141
+            /// </summary>
+            PrivateRoomToggle = 141,
+
+            /// <summary>
+            ///     142
+            /// </summary>
+            NewPassword = 142,
+
+            /// <summary>
+            ///     143
+            /// </summary>
+            PrivateRoomAddOperator = 143,
+
+            /// <summary>
+            ///     144
+            /// </summary>
+            PrivateRoomRemoveOperator = 144,
+
+            /// <summary>
+            ///     145
+            /// </summary>
+            PrivateRoomOperatorAdded = 145,
+
+            /// <summary>
+            ///     146
+            /// </summary>
+            PrivateRoomOperatorRemoved = 146,
+
+            /// <summary>
+            ///     148
+            /// </summary>
+            PrivateRoomOwned = 148,
+
+            /// <summary>
+            ///     149
+            /// </summary>
+            MessageUsers = 149,
+
+            /// <summary>
+            ///     150
+            /// </summary>
+            AskPublicChat = 150,
+
+            /// <summary>
+            ///     151
+            /// </summary>
+            StopPublicChat = 151,
+
+            /// <summary>
+            ///     152
+            /// </summary>
+            PublicChat = 152,
+
+            /// <summary>
+            ///     1
+            /// </summary>
+            CannotConnect = 1001,
+        }
+
+        public enum Peer
+        {
+            /// <summary>
+            ///     4
+            /// </summary>
+            BrowseRequest = 4,
+
+            /// <summary>
+            ///     5
+            /// </summary>
+            BrowseResponse = 5,
+
+            /// <summary>
+            ///     8
+            /// </summary>
+            SearchRequest = 8,
+
+            /// <summary>
+            ///     9
+            /// </summary>
+            SearchResponse = 9,
+
+            /// <summary>
+            ///     15
+            /// </summary>
+            InfoRequest = 15,
+
+            /// <summary>
+            ///     16
+            /// </summary>
+            InfoResponse = 16,
+
+            /// <summary>
+            ///     36
+            /// </summary>
+            FolderContentsRequest = 36,
+
+            /// <summary>
+            ///     37
+            /// </summary>
+            FolderContentsResponse = 37,
+
+            /// <summary>
+            ///     40
+            /// </summary>
+            TransferRequest = 40,
+
+            /// <summary>
+            ///     41
+            /// </summary>
+            TransferResponse = 41,
+
+            /// <summary>
+            ///     42
+            /// </summary>
+            UploadPlacehold = 42,
+
+            /// <summary>
+            ///     43
+            /// </summary>
+            QueueDownload = 43,
+
+            /// <summary>
+            ///     44
+            /// </summary>
+            PlaceInQueueResponse = 44,
+
+            /// <summary>
+            ///     46
+            /// </summary>
+            UploadFailed = 46,
+
+            /// <summary>
+            ///     50
+            /// </summary>
+            QueueFailed = 50,
+
+            /// <summary>
+            ///     51
+            /// </summary>
+            PlaceInQueueRequest = 51,
+        }
     }
 }

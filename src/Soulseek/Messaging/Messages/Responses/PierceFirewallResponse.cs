@@ -46,14 +46,14 @@ namespace Soulseek.Messaging.Messages
 
             try
             {
-                var code = (InitializationCode)message.Skip(4).ToArray()[0];
+                var reader = new MessageReader<MessageCode.Initialization>(message);
 
-                if (code != InitializationCode.PierceFirewall)
+                if (reader.ReadCode() != MessageCode.Initialization.PierceFirewall)
                 {
                     return false;
                 }
 
-                var token = BitConverter.ToInt32(message.Skip(5).ToArray(), 0);
+                var token = reader.ReadInteger();
 
                 response = new PierceFirewallResponse(token);
                 return true;

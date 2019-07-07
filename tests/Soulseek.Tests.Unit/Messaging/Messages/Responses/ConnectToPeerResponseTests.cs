@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => ConnectToPeerResponse.Parse(msg));
@@ -66,7 +66,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .WriteString("foo")
                 .WriteString("F")
                 .Build();
@@ -92,7 +92,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var token = Random.Next();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .WriteString(un)
                 .WriteString(type)
                 .WriteBytes(ipBytes)

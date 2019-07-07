@@ -12,6 +12,8 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using System;
+
     /// <summary>
     ///     A simple integer response.
     /// </summary>
@@ -22,9 +24,10 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static int Parse(Message message)
+        public static int Parse<T>(byte[] message)
+            where T : Enum
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<T>(message);
             return reader.ReadInteger();
         }
     }

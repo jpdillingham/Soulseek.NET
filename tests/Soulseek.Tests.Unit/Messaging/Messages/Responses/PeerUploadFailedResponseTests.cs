@@ -38,7 +38,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => PeerUploadFailedResponse.Parse(msg));
@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerUploadFailed)
+                .WriteCode(MessageCode.Peer.UploadFailed)
                 .Build();
 
             var ex = Record.Exception(() => PeerUploadFailedResponse.Parse(msg));
@@ -66,7 +66,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data(string file)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerUploadFailed)
+                .WriteCode(MessageCode.Peer.UploadFailed)
                 .WriteString(file)
                 .Build();
 

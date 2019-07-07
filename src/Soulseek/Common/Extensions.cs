@@ -15,6 +15,7 @@ namespace Soulseek
     using System;
     using System.Collections.Concurrent;
     using System.Diagnostics.CodeAnalysis;
+    using System.Globalization;
     using System.Linq;
     using System.Net;
     using System.Security.Cryptography;
@@ -131,11 +132,18 @@ namespace Soulseek
         [SuppressMessage("Microsoft.NetCore.CSharp.Analyzers", "CA5351", Justification = "Required by the Soulseek protocol.")]
         public static string ToMD5Hash(this string str)
         {
-            using (MD5 md5 = MD5.Create())
+            using (MD5 md5Hash = MD5.Create())
             {
-                byte[] inputBytes = Encoding.ASCII.GetBytes(str);
-                byte[] hashBytes = md5.ComputeHash(inputBytes);
-                return Encoding.ASCII.GetString(hashBytes);
+                byte[] data = md5Hash.ComputeHash(Encoding.UTF8.GetBytes(str));
+
+                StringBuilder sBuilder = new StringBuilder();
+
+                for (int i = 0; i < data.Length; i++)
+                {
+                    sBuilder.Append(data[i].ToString("x2", CultureInfo.InvariantCulture));
+                }
+
+                return sBuilder.ToString();
             }
         }
     }

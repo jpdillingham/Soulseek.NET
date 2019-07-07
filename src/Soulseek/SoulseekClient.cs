@@ -19,11 +19,11 @@ namespace Soulseek
     using System.Net;
     using System.Net.Sockets;
     using System.Runtime.ExceptionServices;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
@@ -39,7 +39,6 @@ namespace Soulseek
         public SoulseekClient(SoulseekClientResolvers resolvers)
             : this(DefaultAddress, DefaultPort, resolvers, null)
         {
-
         }
 
         /// <summary>
@@ -109,10 +108,15 @@ namespace Soulseek
                     throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
                 }
 
+                ServerMessageHandler = new ServerMessageHandler(this);
+                ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
+                ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+                ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
                 ServerConnection = new MessageConnection(MessageConnectionType.Server, IPAddress, Port, Options.ServerConnectionOptions);
                 ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
                 ServerConnection.Disconnected += ServerConnection_Disconnected;
-                ServerConnection.MessageRead += ServerConnection_MessageRead;
+                ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
             }
 
             Listener = listener;
@@ -122,30 +126,25 @@ namespace Soulseek
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(
-                soulseekClient: this,
-                messageHandler: PeerConnection_MessageRead,
-                listener: Listener,
-                waiter: Waiter,
-                concurrentMessageConnectionLimit: Options.ConcurrentPeerMessageConnectionLimit);
+            PeerMessageHandler = new PeerMessageHandler(this);
+            PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            DistributedConnectionManager = DistributedConnectionManager ?? new DistributedConnectionManager(this);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
+
+        internal IPeerMessageHandler PeerMessageHandler { get; }
+        internal IServerMessageHandler ServerMessageHandler { get; }
+
+        internal IDistributedConnectionManager DistributedConnectionManager { get; }
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
-
-        /// <summary>
-        ///     Occurs when an active transfer sends or receives data.
-        /// </summary>
-        public event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
-
-        /// <summary>
-        ///     Occurs when a transfer changes state.
-        /// </summary>
-        public event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
         ///     Occurs when a private message is received.
@@ -168,6 +167,16 @@ namespace Soulseek
         public event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
 
         /// <summary>
+        ///     Occurs when an active transfer sends or receives data.
+        /// </summary>
+        public event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
+
+        /// <summary>
+        ///     Occurs when a transfer changes state.
+        /// </summary>
+        public event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
@@ -187,12 +196,12 @@ namespace Soulseek
         /// </summary>
         public SoulseekClientOptions Options { get; }
 
-        public SoulseekClientResolvers Resolvers { get; }
-
         /// <summary>
         ///     Gets server port.
         /// </summary>
         public int Port { get; }
+
+        internal SoulseekClientResolvers Resolvers { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -211,13 +220,13 @@ namespace Soulseek
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        private ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
-        private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private IListener Listener { get; }
-        private IPeerConnectionManager PeerConnectionManager { get; }
-        private ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+        internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal IListener Listener { get; }
+        internal IPeerConnectionManager PeerConnectionManager { get; }
+        internal ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private ITokenFactory TokenFactory { get; }
-        private IWaiter Waiter { get; }
+        private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        internal IWaiter Waiter { get; }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -227,19 +236,14 @@ namespace Soulseek
         /// <returns>A Task representing the operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
-        public Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
+        public async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
 
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to browse.");
-            }
-
-            return AcknowledgePrivateMessageInternalAsync(privateMessageId, cancellationToken ?? CancellationToken.None);
+            await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId), cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -375,7 +379,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -671,6 +675,67 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
+        /// </summary>
+        /// <param name="directories">The number of shared directories.</param>
+        /// <param name="files">The number of shared files.</param>
+        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
+            }
+
+            return ServerConnection.WriteMessageAsync(new SetSharedCountsRequest(directories, files), cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
+        /// </summary>
+        /// <param name="status">The current status.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
+            }
+
+            return ServerConnection.WriteMessageAsync(new SetStatusRequest(status), cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified
+        ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="username">The user to which to upload the file.</param>
+        /// <param name="filename">The filename of the file to upload.</param>
+        /// <param name="data">The data to upload.</param>
+        /// <param name="token">The unique upload token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            token = token ?? GetNextToken();
+            options = options ?? new TransferOptions();
+
+            return UploadInternalAsync(username, filename, data, (int)token, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Disposes this instance.
         /// </summary>
         /// <param name="disposing">A value indicating whether disposal is in progress.</param>
@@ -691,24 +756,12 @@ namespace Soulseek
             }
         }
 
-        private async Task AcknowledgePrivateMessageInternalAsync(int privateMessageId, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await ServerConnection.WriteMessageAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToMessage(), cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new PrivateMessageException($"Failed to send an acknowledgement for private message id {privateMessageId}: {ex.Message}", ex);
-            }
-        }
-
         private async Task<AddUserResponse> AddUserInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
-                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.ServerAddUser, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteMessageAsync(new AddUserRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.Server.AddUser, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteMessageAsync(new AddUserRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await addUserWait.ConfigureAwait(false);
 
@@ -726,7 +779,7 @@ namespace Soulseek
 
             try
             {
-                var waitKey = new WaitKey(MessageCode.PeerBrowseResponse, username);
+                var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
                 var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(waitKey, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -741,7 +794,7 @@ namespace Soulseek
                 Diagnostic.Debug($"Sending browse request to peer {username}");
                 sw.Start();
 
-                await connection.WriteMessageAsync(new BrowseRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new BrowseRequest(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -798,12 +851,12 @@ namespace Soulseek
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), null, cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), null, cancellationToken);
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
-                    new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file
-                await peerConnection.WriteMessageAsync(new TransferRequest(TransferDirection.Download, token, filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+                await peerConnection.WriteMessageAsync(new TransferRequest(TransferDirection.Download, token, filename), cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
                 Console.WriteLine($"Waiting for ACK {download.Username} {download.Token}");
@@ -872,7 +925,7 @@ namespace Soulseek
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
                     Console.WriteLine($"Sending transfer response.");
-                    await peerConnection.WriteMessageAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToMessage(), cancellationToken).ConfigureAwait(false);
+                    await peerConnection.WriteMessageAsync(new TransferResponse(download.RemoteToken.Value, download.Size), cancellationToken).ConfigureAwait(false);
                     Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
@@ -883,7 +936,7 @@ namespace Soulseek
                     catch (AggregateException ex)
                     {
                         // todo: write some tests to make sure this surfaces realistic exceptions for different scenarios. bubbling
-                        //       an AggregateException here leaks too many implementation details.
+                        // an AggregateException here leaks too many implementation details.
                         ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
                     }
                 }
@@ -990,7 +1043,7 @@ namespace Soulseek
 
             try
             {
-                var waitKey = new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename);
+                var waitKey = new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename);
                 var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1001,7 +1054,7 @@ namespace Soulseek
                     Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.WriteMessageAsync(new PeerPlaceInQueueRequest(filename).ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new PeerPlaceInQueueRequest(filename), cancellationToken).ConfigureAwait(false);
 
                 var response = await responseWait.ConfigureAwait(false);
 
@@ -1017,10 +1070,10 @@ namespace Soulseek
         {
             try
             {
-                var waitKey = new WaitKey(MessageCode.ServerGetPeerAddress, username);
+                var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
                 var addressWait = Waiter.Wait<GetPeerAddressResponse>(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteMessageAsync(new GetPeerAddressRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteMessageAsync(new GetPeerAddressRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var address = await addressWait.ConfigureAwait(false);
 
@@ -1043,7 +1096,7 @@ namespace Soulseek
 
             try
             {
-                var waitKey = new WaitKey(MessageCode.PeerInfoResponse, username);
+                var waitKey = new WaitKey(MessageCode.Peer.InfoResponse, username);
                 var infoWait = Waiter.Wait<UserInfoResponse>(waitKey, cancellationToken: cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1054,7 +1107,7 @@ namespace Soulseek
                     Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.WriteMessageAsync(new UserInfoRequest().ToMessage(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteMessageAsync(new UserInfoRequest(), cancellationToken).ConfigureAwait(false);
 
                 var response = await infoWait.ConfigureAwait(false);
 
@@ -1070,8 +1123,8 @@ namespace Soulseek
         {
             try
             {
-                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.ServerGetStatus, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteMessageAsync(new GetStatusRequest(username).ToMessage(), cancellationToken).ConfigureAwait(false);
+                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
+                await ServerConnection.WriteMessageAsync(new GetStatusRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await getStatusWait.ConfigureAwait(false);
 
@@ -1087,21 +1140,29 @@ namespace Soulseek
         {
             try
             {
-                var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin), cancellationToken: cancellationToken);
+                var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password).ToMessage(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteMessageAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
 
                 var response = await loginWait.ConfigureAwait(false);
-
-                if (Options.ListenPort.HasValue)
-                {
-                    await ServerConnection.WriteMessageAsync(new SetListenPortRequest(Options.ListenPort.Value).ToMessage(), cancellationToken).ConfigureAwait(false);
-                }
 
                 if (response.Succeeded)
                 {
                     Username = username;
                     ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    var messages = new List<byte[]>();
+
+                    if (Options.ListenPort.HasValue)
+                    {
+                        // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
+                        // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
+                        messages.Add(new SetListenPortRequest(Options.ListenPort.Value));
+                    }
+
+                    messages.Add(new HaveNoParentsRequest(true));
+
+                    await ServerConnection.WriteMessagesAsync(messages, cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {
@@ -1115,12 +1176,72 @@ namespace Soulseek
             }
         }
 
-        public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
         {
-            token = token ?? GetNextToken();
-            options = options ?? new TransferOptions();
+            var search = new Search(searchText, token, options);
+            var lastState = SearchStates.None;
 
-            return UploadInternalAsync(username, filename, data, (int)token, options, cancellationToken ?? CancellationToken.None);
+            void UpdateState(SearchStates state)
+            {
+                search.State = state;
+                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
+                lastState = state;
+                options.StateChanged?.Invoke(args);
+                SearchStateChanged?.Invoke(this, args);
+            }
+
+            try
+            {
+                search.ResponseReceived = (response) =>
+                {
+                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
+                    options.ResponseReceived?.Invoke(eventArgs);
+                    SearchResponseReceived?.Invoke(this, eventArgs);
+                };
+
+                Searches.TryAdd(search.Token, search);
+                UpdateState(SearchStates.Requested);
+
+                await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token), cancellationToken).ConfigureAwait(false);
+                UpdateState(SearchStates.InProgress);
+
+                var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
+                return responses.ToList().AsReadOnly();
+            }
+            catch (OperationCanceledException ex)
+            {
+                search.Complete(SearchStates.Cancelled);
+                throw new SearchException($"Search for {searchText} ({token}) was cancelled.", ex);
+            }
+            catch (Exception ex)
+            {
+                search.Complete(SearchStates.Errored);
+                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
+            }
+            finally
+            {
+                Searches.TryRemove(search.Token, out _);
+
+                UpdateState(SearchStates.Completed | search.State);
+                search.Dispose();
+            }
+        }
+
+        private async Task SendPrivateMessageInternalAsync(string username, string message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteMessageAsync(new PrivateMessageRequest(username, message), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private void ServerConnection_Disconnected(object sender, string e)
+        {
+            Disconnect(e);
         }
 
         private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -1150,8 +1271,8 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
-            // fetch (or create) the semaphore for this user.  the official client can't handle concurrent downloads,
-            // so we need to enforce this regardless of what downstream implementations do.
+            // fetch (or create) the semaphore for this user. the official client can't handle concurrent downloads, so we need to
+            // enforce this regardless of what downstream implementations do.
             var semaphore = Uploads.GetOrAdd(username, new SemaphoreSlim(1, 1));
 
             UpdateState(TransferStates.Queued);
@@ -1169,11 +1290,11 @@ namespace Soulseek
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.PeerTransferResponse, upload.Username, upload.Token));
+                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token));
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);
-                await messageConnection.WriteMessageAsync(transferRequest.ToMessage(), cancellationToken).ConfigureAwait(false);
+                await messageConnection.WriteMessageAsync(transferRequest, cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
@@ -1210,7 +1331,7 @@ namespace Soulseek
 
                 try
                 {
-                    // read the 8 magic bytes.  not sure why.
+                    // read the 8 magic bytes. not sure why.
                     await upload.Connection.ReadAsync(8).ConfigureAwait(false);
 
                     UpdateState(TransferStates.InProgress);
@@ -1219,8 +1340,8 @@ namespace Soulseek
 
                     upload.State = TransferStates.Succeeded;
 
-                    // force a disconnect of the connection by trying to read.  this may be unreliable if a client
-                    // actually sends data after the magic bytes.
+                    // force a disconnect of the connection by trying to read. this may be unreliable if a client actually sends
+                    // data after the magic bytes.
                     try
                     {
                         await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
@@ -1279,8 +1400,8 @@ namespace Soulseek
                 // clean up the wait in case the code threw before it was awaited.
                 Waiter.Complete(upload.WaitKey);
 
-                // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained
-                // if there are other threads waiting on it, and it is added back after the await above.
+                // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained if
+                // there are other threads waiting on it, and it is added back after the await above.
                 semaphore.Release();
                 Uploads.TryRemove(username, out var _);
 
@@ -1288,287 +1409,6 @@ namespace Soulseek
 
                 upload.State = TransferStates.Completed | upload.State;
                 UpdateState(upload.State);
-            }
-        }
-
-        private async void PeerConnection_MessageRead(object sender, Message message)
-        {
-            var connection = (IMessageConnection)sender;
-            Diagnostic.Debug($"Peer message received: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
-
-            try
-            {
-                switch (message.Code)
-                {
-                    case MessageCode.PeerSearchResponse:
-                        var searchResponse = SearchResponseSlim.Parse(message);
-                        if (Searches.TryGetValue(searchResponse.Token, out var search))
-                        {
-                            search.AddResponse(searchResponse);
-                        }
-
-                        break;
-
-                    case MessageCode.PeerBrowseResponse:
-                        var browseWaitKey = new WaitKey(MessageCode.PeerBrowseResponse, connection.Username);
-                        try
-                        {
-                            Waiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
-                        }
-                        catch (Exception ex)
-                        {
-                            Waiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
-                            throw;
-                        }
-
-                        break;
-
-                    case MessageCode.PeerInfoResponse:
-                        var infoResponse = UserInfoResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(MessageCode.PeerInfoResponse, connection.Username), infoResponse);
-                        break;
-
-                    case MessageCode.PeerTransferResponse:
-                        var transferResponse = TransferResponse.Parse(message);
-                        Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
-                        Waiter.Complete(new WaitKey(MessageCode.PeerTransferResponse, connection.Username, transferResponse.Token), transferResponse);
-                        break;
-
-                    case MessageCode.PeerQueueDownload:
-                        // the end state here is to wait until there's actually a free slot, then send this request to the peer to let them know we are ready to start the actual
-                        // transfer.
-                        var queueDownloadRequest = QueueDownloadRequest.Parse(message);
-                        var (queueAllowed, queueRejectionMessage) = Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename);
-
-                        if (!queueAllowed)
-                        {
-                            await connection.WriteMessageAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToMessage()).ConfigureAwait(false);
-                        }
-
-                        break;
-
-                    case MessageCode.PeerTransferRequest:
-                        var transferRequest = TransferRequest.Parse(message);
-
-                        if (transferRequest.Direction == TransferDirection.Upload)
-                        {
-                            Waiter.Complete(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, transferRequest.Filename), transferRequest);
-                        }
-                        else
-                        {
-                            var (transferAllowed, transferRejectionMessage) = Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, transferRequest.Filename);
-
-                            if (!transferAllowed)
-                            {
-                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage).ToMessage()).ConfigureAwait(false);
-                                await connection.WriteMessageAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToMessage()).ConfigureAwait(false);
-                            }
-                            else
-                            {
-                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, "Queued.").ToMessage()).ConfigureAwait(false);
-                            }
-                        }
-
-                        break;
-
-                    case MessageCode.PeerQueueFailed:
-                        var queueFailedResponse = QueueFailedResponse.Parse(message);
-                        Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
-                        break;
-
-                    case MessageCode.PeerPlaceInQueueResponse:
-                        var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(MessageCode.PeerPlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
-                        break;
-
-                    case MessageCode.PeerUploadFailed:
-                        var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
-                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
-
-                        var download = Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
-                        if (download != null)
-                        {
-                            Waiter.Throw(new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), new TransferException(msg));
-                            Waiter.Throw(download.WaitKey, new TransferException(msg));
-                        }
-
-                        Diagnostic.Debug(msg);
-                        break;
-
-                    case MessageCode.PeerBrowseRequest:
-                        var browseResponse = Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
-                        await connection.WriteMessageAsync(browseResponse.ToMessage()).ConfigureAwait(false);
-                        break;
-
-                    default:
-                        Diagnostic.Debug($"Unhandled peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Payload.Length} bytes");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Diagnostic.Warning($"Error handling peer message: {message.Code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
-            }
-        }
-
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
-        {
-            var search = new Search(searchText, token, options);
-            var lastState = SearchStates.None;
-
-            void UpdateState(SearchStates state)
-            {
-                search.State = state;
-                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
-                lastState = state;
-                options.StateChanged?.Invoke(args);
-                SearchStateChanged?.Invoke(this, args);
-            }
-
-            try
-            {
-                search.ResponseReceived = (response) =>
-                {
-                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
-                    options.ResponseReceived?.Invoke(eventArgs);
-                    SearchResponseReceived?.Invoke(this, eventArgs);
-                };
-
-                Searches.TryAdd(search.Token, search);
-                UpdateState(SearchStates.Requested);
-
-                await ServerConnection.WriteMessageAsync(new SearchRequest(search.SearchText, search.Token).ToMessage(), cancellationToken).ConfigureAwait(false);
-                UpdateState(SearchStates.InProgress);
-
-                var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
-                return responses.ToList().AsReadOnly();
-            }
-            catch (OperationCanceledException ex)
-            {
-                search.Complete(SearchStates.Cancelled);
-                throw new SearchException($"Search for {searchText} ({token}) was cancelled.", ex);
-            }
-            catch (Exception ex)
-            {
-                search.Complete(SearchStates.Errored);
-                throw new SearchException($"Failed to search for {searchText} ({token}): {ex.Message}", ex);
-            }
-            finally
-            {
-                Searches.TryRemove(search.Token, out _);
-
-                UpdateState(SearchStates.Completed | search.State);
-                search.Dispose();
-            }
-        }
-
-        private async Task SendPrivateMessageInternalAsync(string username, string message, CancellationToken cancellationToken)
-        {
-            try
-            {
-                await ServerConnection.WriteMessageAsync(new PrivateMessageRequest(username, message).ToMessage(), cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
-            }
-        }
-
-        private void ServerConnection_Disconnected(object sender, string e)
-        {
-            Disconnect(e);
-        }
-
-        private async void ServerConnection_MessageRead(object sender, Message message)
-        {
-            Diagnostic.Debug($"Server message received: {message.Code}");
-
-            try
-            {
-                switch (message.Code)
-                {
-                    case MessageCode.ServerParentMinSpeed:
-                    case MessageCode.ServerParentSpeedRatio:
-                    case MessageCode.ServerWishlistInterval:
-                        Waiter.Complete(new WaitKey(message.Code), IntegerResponse.Parse(message));
-                        break;
-
-                    case MessageCode.ServerLogin:
-                        Waiter.Complete(new WaitKey(message.Code), LoginResponse.Parse(message));
-                        break;
-
-                    case MessageCode.ServerRoomList:
-                        Waiter.Complete(new WaitKey(message.Code), RoomList.Parse(message));
-                        break;
-
-                    case MessageCode.ServerPrivilegedUsers:
-                        Waiter.Complete(new WaitKey(message.Code), PrivilegedUserList.Parse(message));
-                        break;
-
-                    case MessageCode.ServerConnectToPeer:
-                        var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
-
-                        if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
-                        {
-                            // ensure that we are expecting at least one file from this user before we connect. the response
-                            // doesn't contain any other identifying information about the file.
-                            if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
-                            {
-                                var (connection, remoteToken) = await PeerConnectionManager.AddTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
-                                var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
-
-                                if (download != default(Transfer))
-                                {
-                                    Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
-                                }
-                            }
-                            else
-                            {
-                                throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
-                            }
-                        }
-                        else
-                        {
-                            await PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
-                        }
-
-                        break;
-
-                    case MessageCode.ServerAddUser:
-                        var addUserResponse = AddUserResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(message.Code, addUserResponse.Username), addUserResponse);
-                        break;
-
-                    case MessageCode.ServerGetStatus:
-                        var statsResponse = GetStatusResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(message.Code, statsResponse.Username), statsResponse);
-                        UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
-                        break;
-
-                    case MessageCode.ServerPrivateMessage:
-                        var pm = PrivateMessage.Parse(message);
-                        PrivateMessageReceived?.Invoke(this, pm);
-
-                        if (Options.AutoAcknowledgePrivateMessages)
-                        {
-                            await AcknowledgePrivateMessageInternalAsync(pm.Id, CancellationToken.None).ConfigureAwait(false);
-                        }
-
-                        break;
-
-                    case MessageCode.ServerGetPeerAddress:
-                        var peerAddressResponse = GetPeerAddressResponse.Parse(message);
-                        Waiter.Complete(new WaitKey(message.Code, peerAddressResponse.Username), peerAddressResponse);
-                        break;
-
-                    default:
-                        Diagnostic.Debug($"Unhandled server message: {message.Code}; {message.Payload.Length} bytes");
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Diagnostic.Warning($"Error handling server message: {message.Code}; {ex.Message}", ex);
             }
         }
     }

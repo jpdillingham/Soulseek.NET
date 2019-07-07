@@ -39,13 +39,22 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator byte[](SearchRequest instance)
+        {
+            return instance.ToMessage();
+        }
+
+        /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        internal Message ToMessage()
+        internal byte[] ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.ServerFileSearch)
+                .WriteCode(MessageCode.Server.FileSearch)
                 .WriteInteger(Token)
                 .WriteString(SearchText)
                 .Build();

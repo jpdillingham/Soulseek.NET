@@ -23,23 +23,8 @@ namespace Soulseek
     /// <summary>
     ///     A client for the Soulseek file sharing network.
     /// </summary>
-    public interface ISoulseekClient : IDisposable
+    public interface ISoulseekClient : IDisposable, IDiagnosticGenerator
     {
-        /// <summary>
-        ///     Occurs when an internal diagnostic message is generated.
-        /// </summary>
-        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
-
-        /// <summary>
-        ///     Occurs when an active transfer sends or receives data.
-        /// </summary>
-        event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
-
-        /// <summary>
-        ///     Occurs when a transfer changes state.
-        /// </summary>
-        event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
-
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
@@ -59,6 +44,16 @@ namespace Soulseek
         ///     Occurs when the client changes state.
         /// </summary>
         event EventHandler<SoulseekClientStateChangedEventArgs> StateChanged;
+
+        /// <summary>
+        ///     Occurs when an active transfer sends or receives data.
+        /// </summary>
+        event EventHandler<TransferProgressUpdatedEventArgs> TransferProgressUpdated;
+
+        /// <summary>
+        ///     Occurs when a transfer changes state.
+        /// </summary>
+        event EventHandler<TransferStateChangedEventArgs> TransferStateChanged;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -156,10 +151,8 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="DownloadException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
-
-        Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
@@ -275,5 +268,44 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
+        /// </summary>
+        /// <param name="directories">The number of shared directories.</param>
+        /// <param name="files">The number of shared files.</param>
+        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
+        Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
+        /// </summary>
+        /// <param name="status">The current status.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
+        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified
+        ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="username">The user to which to upload the file.</param>
+        /// <param name="filename">The filename of the file to upload.</param>
+        /// <param name="data">The data to upload.</param>
+        /// <param name="token">The unique upload token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
     }
 }

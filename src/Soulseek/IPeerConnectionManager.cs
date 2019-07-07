@@ -23,13 +23,8 @@ namespace Soulseek
     /// <summary>
     ///     Manages peer <see cref="IConnection"/> instances for the application.
     /// </summary>
-    internal interface IPeerConnectionManager : IDisposable
+    internal interface IPeerConnectionManager : IDisposable, IDiagnosticGenerator
     {
-        /// <summary>
-        ///     Occurs when an internal diagnostic message is generated.
-        /// </summary>
-        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
-
         /// <summary>
         ///     Gets the number of active peer connections.
         /// </summary>
@@ -51,14 +46,6 @@ namespace Soulseek
         int WaitingMessageConnections { get; }
 
         /// <summary>
-        ///     Adds a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/> and
-        ///     pierces the remote peer's firewall.
-        /// </summary>
-        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
-        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
-        Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-
-        /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
@@ -77,6 +64,14 @@ namespace Soulseek
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
+
+        /// <summary>
+        ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>, pierces
+        ///     the remote peer's firewall, and retrieves the remote token.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context, including the new connection and the associated remote token.</returns>
+        Task<(IConnection Connection, int RemoteToken)> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
 
         /// <summary>
         ///     Gets a new transfer connection to the specified <paramref name="username"/> using the specified <paramref name="token"/>.

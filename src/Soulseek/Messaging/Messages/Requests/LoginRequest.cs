@@ -36,7 +36,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the minor client version.
         /// </summary>
-        public int MinorVersion => 1;
+        public int MinorVersion => 17;
 
         /// <summary>
         ///     Gets the password.
@@ -51,16 +51,25 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the client version.
         /// </summary>
-        public int Version => 181;
+        public int Version => 157;
+
+        /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator byte[](LoginRequest instance)
+        {
+            return instance.ToMessage();
+        }
 
         /// <summary>
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.ServerLogin)
+                .WriteCode(MessageCode.Server.Login)
                 .WriteString(Username)
                 .WriteString(Password)
                 .WriteInteger(Version)

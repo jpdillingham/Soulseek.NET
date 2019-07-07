@@ -32,7 +32,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="messageReader">The MessageReader instance used to parse the file list.</param>
-        internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader messageReader)
+        internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode.Peer> messageReader)
         {
             Username = username;
             Token = token;
@@ -56,7 +56,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the MessageReader instance used to parse the file list.
         /// </summary>
-        public MessageReader MessageReader { get; }
+        public MessageReader<MessageCode.Peer> MessageReader { get; }
 
         /// <summary>
         ///     Gets the length of the peer's upload queue.
@@ -83,13 +83,14 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static SearchResponseSlim Parse(Message message)
+        internal static SearchResponseSlim Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.PeerSearchResponse)
+            if (code != MessageCode.Peer.SearchResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.PeerSearchResponse}, received: {(int)reader.Code}");
+                throw new MessageException($"Message Code mismatch creating Peer Search Response (expected: {(int)MessageCode.Peer.SearchResponse}, received: {(int)code}");
             }
 
             reader.Decompress();

@@ -61,19 +61,16 @@ namespace Soulseek.Messaging.Messages
 
             try
             {
-                var code = (InitializationCode)message.Skip(4).ToArray()[0];
+                var reader = new MessageReader<MessageCode.Initialization>(message);
 
-                if (code != InitializationCode.PeerInit)
+                if (reader.ReadCode() != MessageCode.Initialization.PeerInit)
                 {
                     return false;
                 }
 
-                var restBytes = message.Skip(5).ToArray();
-                var nameLen = BitConverter.ToInt32(restBytes, 0);
-                var username = Encoding.ASCII.GetString(restBytes.Skip(4).Take(nameLen).ToArray());
-                var typeLen = BitConverter.ToInt32(restBytes, 4 + nameLen);
-                var transferType = Encoding.ASCII.GetString(restBytes.Skip(4 + nameLen + 4).Take(typeLen).ToArray());
-                var token = BitConverter.ToInt32(restBytes, 4 + nameLen + 4 + typeLen);
+                var username = reader.ReadString();
+                var transferType = reader.ReadString();
+                var token = reader.ReadInteger();
 
                 response = new PeerInitResponse(username, transferType, token);
                 return true;

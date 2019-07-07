@@ -29,12 +29,12 @@ namespace Soulseek.Tests.Unit
             using (var waiter = new Waiter())
             {
                 var result = Guid.NewGuid();
-                var task = waiter.Wait<Guid>(new WaitKey(MessageCode.ServerLogin));
-                waiter.Complete(new WaitKey(MessageCode.ServerLogin), result);
+                var task = waiter.Wait<Guid>(new WaitKey(MessageCode.Server.Login));
+                waiter.Complete(new WaitKey(MessageCode.Server.Login), result);
 
                 var waitResult = await task;
 
-                var key = new WaitKey(MessageCode.ServerLogin);
+                var key = new WaitKey(MessageCode.Server.Login);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var waiter = new Waiter())
             {
-                var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.ServerAddPrivilegedUser), null));
+                var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.Server.AddPrivilegedUser), null));
 
                 Assert.Null(ex);
             }
@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var waiter = new Waiter())
             {
-                var ex = Record.Exception(() => waiter.Complete(new WaitKey(MessageCode.ServerAddPrivilegedUser)));
+                var ex = Record.Exception(() => waiter.Complete(new WaitKey(MessageCode.Server.AddPrivilegedUser)));
 
                 Assert.Null(ex);
             }
@@ -75,7 +75,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Expiration ignores non-timed out waits")]
         public void Expiration_Ignores_Non_Timed_Out_Waits()
         {
-            var key = new WaitKey(MessageCode.ServerLogin);
+            var key = new WaitKey(MessageCode.Server.Login);
 
             using (var waiter = new Waiter(0))
             {
@@ -139,10 +139,10 @@ namespace Soulseek.Tests.Unit
         {
             using (var waiter = new Waiter())
             {
-                var task1 = waiter.Wait<object>(new WaitKey(MessageCode.ServerLogin));
-                var task2 = waiter.Wait<object>(new WaitKey(MessageCode.ServerLogin));
+                var task1 = waiter.Wait<object>(new WaitKey(MessageCode.Server.Login));
+                var task2 = waiter.Wait<object>(new WaitKey(MessageCode.Server.Login));
 
-                var key = new WaitKey(MessageCode.ServerLogin);
+                var key = new WaitKey(MessageCode.Server.Login);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
@@ -165,11 +165,11 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Wait Creation")]
         [Theory(DisplayName = "Wait invocation creates valid Wait")]
-        [InlineData(MessageCode.ServerLogin, null, null)]
-        [InlineData(MessageCode.ServerLogin, "token", null)]
-        [InlineData(MessageCode.ServerLogin, null, 13)]
-        [InlineData(MessageCode.ServerLogin, "token", 13)]
-        public void Wait_Invocation_Creates_Valid_Wait(MessageCode code, string token, int? timeout)
+        [InlineData(MessageCode.Server.Login, null, null)]
+        [InlineData(MessageCode.Server.Login, "token", null)]
+        [InlineData(MessageCode.Server.Login, null, 13)]
+        [InlineData(MessageCode.Server.Login, "token", 13)]
+        public void Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
         {
             var key = new WaitKey(code, token);
 
@@ -201,11 +201,11 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Wait Creation")]
         [Theory(DisplayName = "Non generic Wait invocation creates valid Wait")]
-        [InlineData(MessageCode.ServerLogin, null, null)]
-        [InlineData(MessageCode.ServerLogin, "token", null)]
-        [InlineData(MessageCode.ServerLogin, null, 13)]
-        [InlineData(MessageCode.ServerLogin, "token", 13)]
-        public void Non_Generic_Wait_Invocation_Creates_Valid_Wait(MessageCode code, string token, int? timeout)
+        [InlineData(MessageCode.Server.Login, null, null)]
+        [InlineData(MessageCode.Server.Login, "token", null)]
+        [InlineData(MessageCode.Server.Login, null, 13)]
+        [InlineData(MessageCode.Server.Login, "token", 13)]
+        public void Non_Generic_Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
         {
             var key = new WaitKey(code, token);
 
@@ -239,7 +239,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Wait throws and is dequeued when timing out")]
         public void Wait_Throws_And_Is_Dequeued_When_Timing_out()
         {
-            var key = new WaitKey(MessageCode.ServerLogin);
+            var key = new WaitKey(MessageCode.Server.Login);
 
             using (var waiter = new Waiter(0))
             {
@@ -275,7 +275,7 @@ namespace Soulseek.Tests.Unit
             {
                 tcs.CancelAfter(100);
 
-                var key = new WaitKey(MessageCode.ServerLogin);
+                var key = new WaitKey(MessageCode.Server.Login);
 
                 using (var waiter = new Waiter(0))
                 {
@@ -312,7 +312,7 @@ namespace Soulseek.Tests.Unit
             {
                 tcs.CancelAfter(100);
 
-                var key = new WaitKey(MessageCode.ServerLogin);
+                var key = new WaitKey(MessageCode.Server.Login);
 
                 using (var waiter = new Waiter(0))
                 {
@@ -339,9 +339,9 @@ namespace Soulseek.Tests.Unit
         public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
         {
             var waiter = new Waiter(0);
-            var loginKey = new WaitKey(MessageCode.ServerLogin, "1");
-            var loginKey2 = new WaitKey(MessageCode.ServerLogin, "2");
-            var leaveKey = new WaitKey(MessageCode.ServerLeaveRoom);
+            var loginKey = new WaitKey(MessageCode.Server.Login, "1");
+            var loginKey2 = new WaitKey(MessageCode.Server.Login, "2");
+            var leaveKey = new WaitKey(MessageCode.Server.LeaveRoom);
 
             var loginTask = waiter.Wait<object>(loginKey);
             var loginTask2 = waiter.Wait<object>(loginKey2);
@@ -358,7 +358,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Wait throws and is dequeued when thrown")]
         public void Wait_Throws_And_Is_Dequeued_When_Thrown()
         {
-            var key = new WaitKey(MessageCode.ServerLogin);
+            var key = new WaitKey(MessageCode.Server.Login);
 
             using (var waiter = new Waiter(0))
             {
@@ -389,7 +389,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "WaitIndefinitely invocation creates Wait with max timeout")]
         public void WaitIndefinitely_Invocation_Creates_Wait_With_Max_Timeout()
         {
-            var key = new WaitKey(MessageCode.ServerLogin);
+            var key = new WaitKey(MessageCode.Server.Login);
 
             using (var waiter = new Waiter())
             {
@@ -419,7 +419,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Non generic WaitIndefinitely invocation creates Wait with max timeout")]
         public void Non_Generic_WaitIndefinitely_Invocation_Creates_Wait_With_Max_Timeout()
         {
-            var key = new WaitKey(MessageCode.ServerLogin);
+            var key = new WaitKey(MessageCode.Server.Login);
 
             using (var waiter = new Waiter())
             {

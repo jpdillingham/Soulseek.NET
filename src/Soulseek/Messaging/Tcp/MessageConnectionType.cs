@@ -34,5 +34,10 @@ namespace Soulseek.Messaging.Tcp
         ///     Peer.
         /// </summary>
         Peer = 20000,
+
+        /// <summary>
+        ///     Distributed.
+        /// </summary>
+        Distributed = 30000,
     }
 }

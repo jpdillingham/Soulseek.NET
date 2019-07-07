@@ -12,10 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using System.Collections.Generic;
-    using System.Text;
-
     /// <summary>
     ///     Initializes a peer connection.
     /// </summary>
@@ -50,22 +46,17 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Constructs a <see cref="Message"/> from this request.
+        ///     Returns the request as a byte array.
         /// </summary>
-        /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        /// <returns>The request as a byte array.</returns>
+        public byte[] ToMessage()
         {
-            var bytes = new List<byte> { 0x1 };
-
-            bytes.AddRange(BitConverter.GetBytes(Username.Length));
-            bytes.AddRange(Encoding.ASCII.GetBytes(Username));
-            bytes.AddRange(BitConverter.GetBytes(TransferType.Length));
-            bytes.AddRange(Encoding.ASCII.GetBytes(TransferType));
-            bytes.AddRange(BitConverter.GetBytes(Token));
-
-            bytes.InsertRange(0, BitConverter.GetBytes(bytes.Count));
-
-            return new Message(bytes.ToArray());
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Initialization.PeerInit)
+                .WriteString(Username)
+                .WriteString(TransferType)
+                .WriteInteger(Token)
+                .Build();
         }
     }
 }

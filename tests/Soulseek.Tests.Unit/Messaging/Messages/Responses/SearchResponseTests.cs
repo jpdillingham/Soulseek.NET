@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => SearchResponse.Parse(msg));
@@ -75,7 +75,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageCompressionException_On_Uncompressed_Payload()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2, 0x3 })
                 .Build();
 
@@ -91,7 +91,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString("foo")
                 .Compress()
                 .Build();
@@ -107,7 +107,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_File_Count_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString("foo")
                 .WriteInteger(0)
                 .WriteInteger(20) // file count
@@ -143,7 +143,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Handles_Empty_Responses(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(0) // file count
@@ -217,7 +217,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Handles_Multiple_Files(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(2) // file count
@@ -272,7 +272,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Handles_Empty_Attributes(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -299,7 +299,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Handles_Multiple_Attributes(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count

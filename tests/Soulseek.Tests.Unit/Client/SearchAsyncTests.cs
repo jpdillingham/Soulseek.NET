@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SearchOptions(searchTimeout: 1);
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -116,7 +116,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Build();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Client
             search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -174,7 +174,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SearchInternalAsync_Creates_Token_When_Not_Given(string searchText)
         {
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -201,7 +201,7 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SearchOptions();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -223,7 +223,7 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SearchOptions(searchTimeout: 1);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception("foo")));
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -251,7 +251,7 @@ namespace Soulseek.Tests.Unit.Client
             search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -280,7 +280,7 @@ namespace Soulseek.Tests.Unit.Client
             search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -303,7 +303,7 @@ namespace Soulseek.Tests.Unit.Client
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
@@ -328,7 +328,7 @@ namespace Soulseek.Tests.Unit.Client
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.IsAny<Message>(), null))
+            conn.Setup(m => m.WriteMessageAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);

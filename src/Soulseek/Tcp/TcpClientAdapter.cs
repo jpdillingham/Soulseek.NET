@@ -71,9 +71,9 @@ namespace Soulseek.Tcp
         /// </exception>
         /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
-        public async Task ConnectAsync(IPAddress address, int port)
+        public Task ConnectAsync(IPAddress address, int port)
         {
-            await TcpClient.ConnectAsync(address, port).ConfigureAwait(false);
+            return TcpClient.ConnectAsync(address, port);
         }
 
         /// <summary>

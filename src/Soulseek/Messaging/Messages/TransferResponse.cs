@@ -70,17 +70,27 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator byte[](TransferResponse instance)
+        {
+            return instance.ToMessage();
+        }
+
+        /// <summary>
         ///     Parses a new instance of <see cref="TransferResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static TransferResponse Parse(Message message)
+        public static TransferResponse Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.PeerTransferResponse)
+            if (code != MessageCode.Peer.TransferResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.PeerTransferResponse}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.Peer.TransferResponse}, received: {(int)code}.");
             }
 
             var token = reader.ReadInteger();
@@ -104,10 +114,10 @@ namespace Soulseek.Messaging.Messages
         ///     Constructs a <see cref="Message"/> from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        public Message ToMessage()
+        public byte[] ToMessage()
         {
             var builder = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.Peer.TransferResponse)
                 .WriteInteger(Token)
                 .WriteByte((byte)(Allowed ? 1 : 0));
 

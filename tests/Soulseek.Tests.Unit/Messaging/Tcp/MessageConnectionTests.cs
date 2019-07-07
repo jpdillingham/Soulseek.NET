@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
         public async Task WriteMessageAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
         public async Task WriteMessageAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPAddress ipAddress, int port)
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port);
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
@@ -140,7 +140,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
@@ -173,14 +173,14 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.ServerAddUser)
+                .WriteCode(MessageCode.Server.AddUser)
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Server, ipAddress, port, tcpClient: tcpMock.Object);
 
             await c.WriteMessageAsync(msg);
 
-            Assert.Equal((int)MessageCode.ServerAddUser - 10000, code);
+            Assert.Equal((int)MessageCode.Server.AddUser - 10000, code);
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -204,14 +204,14 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .Build();
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
 
             await c.WriteMessageAsync(msg);
 
-            Assert.Equal((int)MessageCode.PeerInfoRequest - 20000, code);
+            Assert.Equal((int)MessageCode.Peer.InfoRequest - 20000, code);
 
             streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
@@ -233,7 +233,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                     }
                     else if (callCount % 2 == 1)
                     {
-                        var data = BitConverter.GetBytes((int)MessageCode.PeerInfoRequest - 20000);
+                        var data = BitConverter.GetBytes((int)MessageCode.Peer.InfoRequest - 20000);
                         Array.Copy(data, bytes, data.Length);
                     }
 
@@ -246,7 +246,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
             tcpMock.Setup(s => s.Connected).Returns(true);
             tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            Message readMessage = null;
+            byte[] readMessage = null;
 
             var c = new MessageConnection(MessageConnectionType.Peer, username, ipAddress, port, tcpClient: tcpMock.Object);
             c.StartReadingContinuously();
@@ -255,7 +255,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
 
             Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
-            Assert.Equal(MessageCode.PeerInfoRequest, readMessage?.Code);
+            Assert.Equal(MessageCode.Peer.InfoRequest, new MessageReader<MessageCode.Peer>(readMessage).ReadCode());
         }
 
         [Trait("Category", "ReadingContinuously")]

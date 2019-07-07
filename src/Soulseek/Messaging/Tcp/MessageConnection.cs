@@ -14,6 +14,7 @@ namespace Soulseek.Messaging.Tcp
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -79,7 +80,7 @@ namespace Soulseek.Messaging.Tcp
         /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
-        public event EventHandler<Message> MessageRead;
+        public event EventHandler<byte[]> MessageRead;
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -115,22 +116,61 @@ namespace Soulseek.Messaging.Tcp
             }
         }
 
-        /// <summary>
-        ///     Asynchronously writes the specified message to the connection.
-        /// </summary>
-        /// <param name="message">The message to write.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A Task representing the asynchronous operation.</returns>
-        public async Task WriteMessageAsync(Message message, CancellationToken? cancellationToken = null)
+        public async Task WriteMessagesAsync(IEnumerable<byte[]> messages, CancellationToken? cancellationToken = null)
         {
+            if (messages == null || !messages.Any() || messages.Any(m => m == null || m.Length == 0))
+            {
+                throw new ArgumentException($"The specified list of Messages is null, empty, or contains at least one Message which is null or empty.", nameof(messages));
+            }
+
             if (State != ConnectionState.Connected)
             {
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
             }
 
-            var bytes = message.ToByteArray();
+            var bytes = new List<byte>();
 
-            NormalizeMessageCode(bytes, 0 - (int)Type);
+            foreach (var message in messages)
+            {
+                cancellationToken?.ThrowIfCancellationRequested();
+
+                // todo: fix this
+                var messageBytes = message;
+                //NormalizeMessageCode(messageBytes, 0 - (int)Type);
+
+                bytes.AddRange(messageBytes);
+            }
+
+            Console.WriteLine(BitConverter.ToString(bytes.ToArray()).Replace("-", string.Empty));
+            await WriteAsync(bytes.ToArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Asynchronously writes the specified message to the connection.
+        /// </summary>
+        /// <remarks>
+        ///     Only to be used for messages with a code length of 4 bytes.  For messages with a single byte code, write the data directly with <see cref="IConnection.WriteAsync"/>.
+        /// </remarks>
+        /// <param name="message">The message to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>A Task representing the asynchronous operation.</returns>
+        public async Task WriteMessageAsync(byte[] message, CancellationToken? cancellationToken = null)
+        {
+            if (message == null || message.Length == 0)
+            {
+                throw new ArgumentException($"The specified Message is null or contains no data.", nameof(message));
+            }
+
+            if (State != ConnectionState.Connected)
+            {
+                throw new InvalidOperationException($"Invalid attempt to send to a disconnected or disconnecting connection (current state: {State})");
+            }
+            // todo: remove this
+            var bytes = message;
+
+            //NormalizeMessageCode(bytes, 0 - (int)Type);
+
+            Console.WriteLine(BitConverter.ToString(bytes).Replace("-", string.Empty));
             await WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
         }
 
@@ -164,9 +204,9 @@ namespace Soulseek.Messaging.Tcp
 
                     var messageBytes = message.ToArray();
 
-                    NormalizeMessageCode(messageBytes, (int)Type);
+                    //NormalizeMessageCode(messageBytes, (int)Type);
 
-                    MessageRead?.Invoke(this, new Message(messageBytes));
+                    MessageRead?.Invoke(this, messageBytes);
                 }
             }
             finally

@@ -1,4 +1,4 @@
-﻿// <copyright file="Room.cs" company="JP Dillingham">
+﻿// <copyright file="IDiagnosticGenerator.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,30 +12,16 @@
 
 namespace Soulseek
 {
+    using System;
+
     /// <summary>
-    ///     A chat room.
+    ///     Generates diagnostic message events.
     /// </summary>
-    public sealed class Room
+    public interface IDiagnosticGenerator
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Room"/> class.
+        ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        /// <param name="name">The room name.</param>
-        /// <param name="userCount">The number of users in the room.</param>
-        public Room(string name, int userCount)
-        {
-            Name = name;
-            UserCount = userCount;
-        }
-
-        /// <summary>
-        ///     Gets the name of the room.
-        /// </summary>
-        public string Name { get; }
-
-        /// <summary>
-        ///     Gets the number of users in the room.
-        /// </summary>
-        public int UserCount { get; }
+        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
     }
 }

@@ -60,7 +60,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.Peer.TransferResponse)
                 .Build();
 
             var ex = Record.Exception(() => BrowseResponse.Parse(msg));
@@ -75,7 +75,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageCompressionException_On_Uncompressed_Payload()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2, 0x3 })
                 .Build();
 
@@ -92,7 +92,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Empty_Response_Given_Empty_Message()
         {
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(0)
                 .Compress()
                 .Build();
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var name = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(1) // directory count
                 .WriteString(name) // first directory name
                 .WriteInteger(0) // first directory file count
@@ -144,7 +144,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var name = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(1) // directory count
                 .WriteString(name) // first directory name
                 // missing count
@@ -166,7 +166,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var name = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(1) // directory count
                 .WriteString(name) // first directory name
                 .WriteInteger(1) // first directory file count
@@ -215,7 +215,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             }
 
             var builder = new MessageBuilder()
-                .Code(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(dirs.Count);
 
             foreach (var dir in dirs)

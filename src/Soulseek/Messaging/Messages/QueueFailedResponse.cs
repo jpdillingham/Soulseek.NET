@@ -41,17 +41,27 @@ namespace Soulseek.Messaging.Messages
         public string Message { get; }
 
         /// <summary>
+        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        /// </summary>
+        /// <param name="instance">The instance to convert.</param>
+        public static implicit operator byte[](QueueFailedResponse instance)
+        {
+            return instance.ToMessage();
+        }
+
+        /// <summary>
         ///     Parses a new instance of <see cref="QueueFailedResponse"/> from the specified <paramref name="message"/>.
         /// </summary>
         /// <param name="message">The message from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static QueueFailedResponse Parse(Message message)
+        public static QueueFailedResponse Parse(byte[] message)
         {
-            var reader = new MessageReader(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
+            var code = reader.ReadCode();
 
-            if (reader.Code != MessageCode.PeerQueueFailed)
+            if (code != MessageCode.Peer.QueueFailed)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.PeerQueueFailed}, received: {(int)reader.Code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.Peer.QueueFailed}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();
@@ -60,10 +70,10 @@ namespace Soulseek.Messaging.Messages
             return new QueueFailedResponse(filename, msg);
         }
 
-        public Message ToMessage()
+        public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .Code(MessageCode.PeerQueueFailed)
+                .WriteCode(MessageCode.Peer.QueueFailed)
                 .WriteString(Filename)
                 .WriteString(Message)
                 .Build();

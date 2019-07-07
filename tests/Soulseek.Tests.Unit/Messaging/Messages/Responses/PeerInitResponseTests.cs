@@ -41,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var msg = new List<byte>();
 
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
-            msg.Add((byte)InitializationCode.PierceFirewall);
+            msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
             var r = PeerInitResponse.TryParse(msg.ToArray(), out var result);
 
@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var msg = new List<byte>();
 
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
-            msg.Add((byte)InitializationCode.PeerInit);
+            msg.Add((byte)MessageCode.Initialization.PeerInit);
 
             msg.AddRange(BitConverter.GetBytes(3)); // name len
             msg.AddRange(Encoding.ASCII.GetBytes(username)); // name
@@ -77,7 +77,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var msg = new List<byte>();
 
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
-            msg.Add((byte)InitializationCode.PeerInit);
+            msg.Add((byte)MessageCode.Initialization.PeerInit);
 
             msg.AddRange(BitConverter.GetBytes(username.Length)); // name len
             msg.AddRange(Encoding.ASCII.GetBytes(username)); // name
