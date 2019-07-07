@@ -432,7 +432,7 @@ namespace Soulseek
                 PendingSolicitations.TryAdd(token, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer), cancellationToken)
                     .ConfigureAwait(false);
 
                 var incomingConnection = await SoulseekClient.Waiter
@@ -501,7 +501,7 @@ namespace Soulseek
                 PendingSolicitations.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteMessageAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer), cancellationToken)
                     .ConfigureAwait(false);
 
                 var incomingConnection = await SoulseekClient.Waiter

@@ -76,7 +76,7 @@
 
                         if (!queueAllowed)
                         {
-                            await connection.WriteMessageAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
+                            await connection.WriteAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
                         }
 
                         break;
@@ -94,12 +94,12 @@
 
                             if (!transferAllowed)
                             {
-                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
-                                await connection.WriteMessageAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
                             }
                             else
                             {
-                                await connection.WriteMessageAsync(new TransferResponse(transferRequest.Token, "Queued.")).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued.")).ConfigureAwait(false);
                             }
                         }
 
@@ -131,7 +131,7 @@
 
                     case MessageCode.Peer.BrowseRequest:
                         var browseResponse = SoulseekClient.Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
-                        await connection.WriteMessageAsync(browseResponse).ConfigureAwait(false);
+                        await connection.WriteAsync(browseResponse).ConfigureAwait(false);
                         break;
 
                     default:
