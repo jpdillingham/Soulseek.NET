@@ -40,7 +40,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => AddUserResponse.Parse(msg));
@@ -54,7 +54,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerAddUser)
+                .WriteCode(MessageCode.Server.AddUser)
                 .Build();
 
             var ex = Record.Exception(() => AddUserResponse.Parse(msg));
@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_When_User_Exists(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, string countryCode)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerAddUser)
+                .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)status)
@@ -96,7 +96,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data_When_User_Does_Not_Exist(string username)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerAddUser)
+                .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(0) // exists = false
                 .Build();
@@ -118,7 +118,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Does_Not_Throw_If_CountryCode_Is_Missing(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerAddUser)
+                .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)status)

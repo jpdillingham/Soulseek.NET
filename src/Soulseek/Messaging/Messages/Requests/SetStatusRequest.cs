@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerSetOnlineStatus)
+                .WriteCode(MessageCode.Server.SetOnlineStatus)
                 .WriteInteger((int)Status)
                 .Build();
         }

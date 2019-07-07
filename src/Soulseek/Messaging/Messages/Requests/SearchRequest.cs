@@ -54,7 +54,7 @@ namespace Soulseek.Messaging.Messages
         internal byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerFileSearch)
+                .WriteCode(MessageCode.Server.FileSearch)
                 .WriteInteger(Token)
                 .WriteString(SearchText)
                 .Build();

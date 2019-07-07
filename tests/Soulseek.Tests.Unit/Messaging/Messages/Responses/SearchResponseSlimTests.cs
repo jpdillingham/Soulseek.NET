@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Given_Data(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
-            var messageReader = new MessageReader<MessageCode>(new byte[8]);
+            var messageReader = new MessageReader<MessageCode.Peer>(new byte[8]);
 
             var r = new SearchResponseSlim(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength, messageReader);
 
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => SearchResponseSlim.Parse(msg));
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageCompressionException_On_Uncompressed_Payload()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2, 0x3 })
                 .Build();
 
@@ -73,7 +73,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString("foo")
                 .Compress()
                 .Build();
@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count

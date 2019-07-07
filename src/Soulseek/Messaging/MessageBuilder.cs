@@ -129,7 +129,8 @@ namespace Soulseek.Messaging
         /// <returns>This MessageBuilder.</returns>
         public MessageBuilder WriteCode(MessageCode.Initialization code)
         {
-            return WriteCode(BitConverter.GetBytes(Convert.ToByte(code, CultureInfo.InvariantCulture)));
+            byte codeByte = Convert.ToByte(code, CultureInfo.InvariantCulture);
+            return WriteCode(new byte[] { codeByte });
         }
 
         /// <summary>

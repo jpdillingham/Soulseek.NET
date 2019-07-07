@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetPeerAddress)
+                .WriteCode(MessageCode.Server.GetPeerAddress)
                 .WriteString(Username)
                 .Build();
         }

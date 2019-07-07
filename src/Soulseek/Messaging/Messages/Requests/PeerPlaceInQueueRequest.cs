@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.PeerPlaceInQueueRequest)
+                .WriteCode(MessageCode.Peer.PlaceInQueueRequest)
                 .WriteString(Filename)
                 .Build();
         }

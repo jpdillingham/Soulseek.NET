@@ -54,12 +54,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static GetStatusResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Server>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.ServerGetStatus)
+            if (code != MessageCode.Server.GetStatus)
             {
-                throw new MessageException($"Message Code mismatch creating Get Status Response (expected: {(int)MessageCode.ServerGetStatus}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Get Status Response (expected: {(int)MessageCode.Server.GetStatus}, received: {(int)code}.");
             }
 
             var username = reader.ReadString();

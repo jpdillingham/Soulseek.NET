@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SearchOptions(searchTimeout: 1);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count

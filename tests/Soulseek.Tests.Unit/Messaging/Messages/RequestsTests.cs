@@ -39,10 +39,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var num = new Random().Next();
             var msg = new AcknowledgePrivateMessageRequest(num).ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerAcknowledgePrivateMessage, code);
+            Assert.Equal(MessageCode.Server.AcknowledgePrivateMessage, code);
             Assert.Equal(8, msg.Length);
             Assert.Equal(num, reader.ReadInteger());
         }
@@ -66,10 +66,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var name = Guid.NewGuid().ToString();
             var msg = new GetPeerAddressRequest(name).ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerGetPeerAddress, code);
+            Assert.Equal(MessageCode.Server.GetPeerAddress, code);
             Assert.Equal(name.Length + 8, msg.Length); 
             Assert.Equal(name, reader.ReadString());
         }
@@ -100,10 +100,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new LoginRequest(name, password);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerLogin, code);
+            Assert.Equal(MessageCode.Server.Login, code);
             Assert.Equal(name.Length + password.Length + a.Hash.Length + 24, msg.Length);
             Assert.Equal(name, reader.ReadString());
             Assert.Equal(password, reader.ReadString());
@@ -131,10 +131,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var msg = new BrowseRequest().ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerBrowseRequest, code);
+            Assert.Equal(MessageCode.Peer.BrowseRequest, code);
             Assert.Equal(4, msg.Length);
         }
 
@@ -162,10 +162,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new PeerInitRequest(name, "P", token);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<InitializationCode>(msg);
+            var reader = new MessageReader<MessageCode.Initialization>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(InitializationCode.PeerInit, code);
+            Assert.Equal(MessageCode.Initialization.PeerInit, code);
             Assert.Equal(1 + 4 + name.Length + "P".Length + 8, msg.Length);
 
 
@@ -193,10 +193,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new PeerSearchRequest(text, token);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerSearchRequest, code);
+            Assert.Equal(MessageCode.Peer.SearchRequest, code);
             Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
 
             Assert.Equal(token, reader.ReadInteger());
@@ -223,10 +223,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new PierceFirewallRequest(token);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<InitializationCode>(msg);
+            var reader = new MessageReader<MessageCode.Initialization>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(InitializationCode.PierceFirewall, code);
+            Assert.Equal(MessageCode.Initialization.PierceFirewall, code);
             Assert.Equal(1 + 4, msg.Length);
 
             Assert.Equal(token, reader.ReadInteger());
@@ -251,10 +251,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new SearchRequest(text, token);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerFileSearch, code);
+            Assert.Equal(MessageCode.Server.FileSearch, code);
             Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(text, reader.ReadString());
@@ -268,10 +268,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new UserInfoRequest();
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerInfoRequest, code);
+            Assert.Equal(MessageCode.Peer.InfoRequest, code);
             Assert.Equal(4, msg.Length);
         }
 
@@ -293,10 +293,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new PeerPlaceInQueueRequest(filename);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerPlaceInQueueRequest, code);
+            Assert.Equal(MessageCode.Peer.PlaceInQueueRequest, code);
             Assert.Equal(filename, reader.ReadString());
         }
 
@@ -318,10 +318,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new AddUserRequest(username);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerAddUser, code);
+            Assert.Equal(MessageCode.Server.AddUser, code);
             Assert.Equal(username, reader.ReadString());
         }
 
@@ -343,10 +343,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new GetStatusRequest(username);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerGetStatus, code);
+            Assert.Equal(MessageCode.Server.GetStatus, code);
             Assert.Equal(username, reader.ReadString());
         }
 
@@ -368,10 +368,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new SetListenPortRequest(port);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerSetListenPort, code);
+            Assert.Equal(MessageCode.Server.SetListenPort, code);
             Assert.Equal(port, reader.ReadInteger());
         }
 
@@ -395,10 +395,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var a = new ConnectToPeerRequest(token, username, type);
             var msg = a.ToMessage();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.ServerConnectToPeer, code);
+            Assert.Equal(MessageCode.Server.ConnectToPeer, code);
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(username, reader.ReadString());
             Assert.Equal(type, reader.ReadString());

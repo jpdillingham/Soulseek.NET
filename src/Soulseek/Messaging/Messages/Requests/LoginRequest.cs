@@ -69,7 +69,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerLogin)
+                .WriteCode(MessageCode.Server.Login)
                 .WriteString(Username)
                 .WriteString(Password)
                 .WriteInteger(Version)

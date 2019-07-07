@@ -54,7 +54,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerSharedFoldersAndFiles)
+                .WriteCode(MessageCode.Server.SharedFoldersAndFiles)
                 .WriteInteger(DirectoryCount)
                 .WriteInteger(FileCount)
                 .Build();

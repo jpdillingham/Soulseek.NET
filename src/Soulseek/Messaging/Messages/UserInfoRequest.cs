@@ -33,7 +33,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .Build();
         }
     }

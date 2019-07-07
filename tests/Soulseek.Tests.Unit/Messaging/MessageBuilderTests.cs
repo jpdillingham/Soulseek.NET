@@ -40,11 +40,11 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var builder = new MessageBuilder();
 
-            builder.WriteCode(MessageCode.PeerBrowseRequest);
+            builder.WriteCode(MessageCode.Peer.BrowseRequest);
 
             var code = builder.GetProperty<List<byte>>("CodeBytes");
 
-            Assert.Equal(BitConverter.GetBytes((int)MessageCode.PeerBrowseRequest), code);
+            Assert.Equal(BitConverter.GetBytes((int)MessageCode.Peer.BrowseRequest), code);
         }
 
         [Trait("Category", "Code")]
@@ -53,16 +53,16 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var builder = new MessageBuilder();
 
-            builder.WriteCode(MessageCode.PeerBrowseRequest);
+            builder.WriteCode(MessageCode.Peer.BrowseRequest);
 
             var code1 = builder.GetProperty<List<byte>>("CodeBytes");
 
-            builder.WriteCode(MessageCode.PeerBrowseResponse);
+            builder.WriteCode(MessageCode.Peer.BrowseResponse);
 
             var code2 = builder.GetProperty<List<byte>>("CodeBytes");
 
-            Assert.Equal(BitConverter.GetBytes((int)MessageCode.PeerBrowseRequest).ToList(), code1);
-            Assert.Equal(BitConverter.GetBytes((int)MessageCode.PeerBrowseResponse).ToList(), code2);
+            Assert.Equal(BitConverter.GetBytes((int)MessageCode.Peer.BrowseRequest).ToList(), code1);
+            Assert.Equal(BitConverter.GetBytes((int)MessageCode.Peer.BrowseResponse).ToList(), code2);
         }
 
         [Trait("Category", "Build")]
@@ -82,13 +82,13 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Build_Returns_Empty_Message_When_Empty()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerBrowseRequest, code);
+            Assert.Equal(MessageCode.Peer.BrowseRequest, code);
             Assert.False(reader.HasMoreData);
         }
 
@@ -97,14 +97,14 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Compress_Produces_Valid_Data(string txt, int num, string txt2)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .WriteString(txt)
                 .WriteInteger(num)
                 .WriteString(txt2)
                 .Compress()
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             reader.Decompress();
 
@@ -118,7 +118,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Compress_Throws_When_Payload_Is_Empty()
         {
             var ex = Record.Exception(() => new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .Compress());
 
             Assert.NotNull(ex);
@@ -130,7 +130,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Compress_Throws_When_Already_Compressed()
         {
             var ex = Record.Exception(() => new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .WriteString("foo")
                 .Compress()
                 .Compress());
@@ -158,7 +158,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void WriteBytes_Throws_When_Payload_Has_Been_Compressed()
         {
             var builder = new MessageBuilder();
-            builder.WriteCode(MessageCode.PeerBrowseRequest);
+            builder.WriteCode(MessageCode.Peer.BrowseRequest);
             builder.WriteString("foo");
             builder.Compress();
 

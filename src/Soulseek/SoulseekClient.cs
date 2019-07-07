@@ -683,14 +683,14 @@ namespace Soulseek
         /// <returns>The operation context.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
+        public Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
             }
 
-            await ServerConnection.WriteMessageAsync(new SetSharedCountsRequest(directories, files), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            return ServerConnection.WriteMessageAsync(new SetSharedCountsRequest(directories, files), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -701,14 +701,14 @@ namespace Soulseek
         /// <returns>The operation context.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        public Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
             }
 
-            await ServerConnection.WriteMessageAsync(new SetStatusRequest(status), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            return ServerConnection.WriteMessageAsync(new SetStatusRequest(status), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -760,7 +760,7 @@ namespace Soulseek
         {
             try
             {
-                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.ServerAddUser, username), cancellationToken: cancellationToken);
+                var addUserWait = Waiter.Wait<AddUserResponse>(new WaitKey(MessageCode.Server.AddUser, username), cancellationToken: cancellationToken);
                 await ServerConnection.WriteMessageAsync(new AddUserRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await addUserWait.ConfigureAwait(false);
@@ -779,7 +779,7 @@ namespace Soulseek
 
             try
             {
-                var waitKey = new WaitKey(MessageCode.PeerBrowseResponse, username);
+                var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
                 var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(waitKey, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -851,9 +851,9 @@ namespace Soulseek
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
                 // immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.PeerTransferResponse, download.Username, download.Token), null, cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), null, cancellationToken);
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
-                    new WaitKey(MessageCode.PeerTransferRequest, download.Username, download.Filename), cancellationToken);
+                    new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), cancellationToken);
 
                 // request the file
                 await peerConnection.WriteMessageAsync(new TransferRequest(TransferDirection.Download, token, filename), cancellationToken).ConfigureAwait(false);
@@ -1043,7 +1043,7 @@ namespace Soulseek
 
             try
             {
-                var waitKey = new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename);
+                var waitKey = new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename);
                 var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1070,7 +1070,7 @@ namespace Soulseek
         {
             try
             {
-                var waitKey = new WaitKey(MessageCode.ServerGetPeerAddress, username);
+                var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
                 var addressWait = Waiter.Wait<GetPeerAddressResponse>(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteMessageAsync(new GetPeerAddressRequest(username), cancellationToken).ConfigureAwait(false);
@@ -1096,7 +1096,7 @@ namespace Soulseek
 
             try
             {
-                var waitKey = new WaitKey(MessageCode.PeerInfoResponse, username);
+                var waitKey = new WaitKey(MessageCode.Peer.InfoResponse, username);
                 var infoWait = Waiter.Wait<UserInfoResponse>(waitKey, cancellationToken: cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1123,7 +1123,7 @@ namespace Soulseek
         {
             try
             {
-                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.ServerGetStatus, username), cancellationToken: cancellationToken);
+                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
                 await ServerConnection.WriteMessageAsync(new GetStatusRequest(username), cancellationToken).ConfigureAwait(false);
 
                 var response = await getStatusWait.ConfigureAwait(false);
@@ -1140,7 +1140,7 @@ namespace Soulseek
         {
             try
             {
-                var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.ServerLogin), cancellationToken: cancellationToken);
+                var loginWait = Waiter.Wait<LoginResponse>(new WaitKey(MessageCode.Server.Login), cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteMessageAsync(new LoginRequest(username, password), cancellationToken).ConfigureAwait(false);
 
@@ -1290,7 +1290,7 @@ namespace Soulseek
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.PeerTransferResponse, upload.Username, upload.Token));
+                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token));
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);

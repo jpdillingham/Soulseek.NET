@@ -38,7 +38,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(InitializationCode.PierceFirewall)
+                .WriteCode(MessageCode.Initialization.PierceFirewall)
                 .WriteInteger(Token)
                 .Build();
         }

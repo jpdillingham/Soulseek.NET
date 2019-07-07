@@ -40,12 +40,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static PeerUploadFailedResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerUploadFailed)
+            if (code != MessageCode.Peer.UploadFailed)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Upload Failed Response (expected: {(int)MessageCode.PeerUploadFailed}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Upload Failed Response (expected: {(int)MessageCode.Peer.UploadFailed}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();

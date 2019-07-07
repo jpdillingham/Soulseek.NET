@@ -61,9 +61,9 @@ namespace Soulseek.Messaging.Messages
 
             try
             {
-                var reader = new MessageReader<InitializationCode>(message);
+                var reader = new MessageReader<MessageCode.Initialization>(message);
 
-                if (reader.ReadCode() != InitializationCode.PeerInit)
+                if (reader.ReadCode() != MessageCode.Initialization.PeerInit)
                 {
                     return false;
                 }

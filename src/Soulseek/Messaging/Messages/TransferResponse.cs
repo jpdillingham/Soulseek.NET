@@ -85,12 +85,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static TransferResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerTransferResponse)
+            if (code != MessageCode.Peer.TransferResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.PeerTransferResponse}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.Peer.TransferResponse}, received: {(int)code}.");
             }
 
             var token = reader.ReadInteger();
@@ -117,7 +117,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.Peer.TransferResponse)
                 .WriteInteger(Token)
                 .WriteByte((byte)(Allowed ? 1 : 0));
 

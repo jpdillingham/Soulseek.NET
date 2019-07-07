@@ -136,7 +136,7 @@ namespace Soulseek.Messaging.Tcp
 
                 // todo: fix this
                 var messageBytes = message;
-                NormalizeMessageCode(messageBytes, 0 - (int)Type);
+                //NormalizeMessageCode(messageBytes, 0 - (int)Type);
 
                 bytes.AddRange(messageBytes);
             }
@@ -168,7 +168,7 @@ namespace Soulseek.Messaging.Tcp
             // todo: remove this
             var bytes = message;
 
-            NormalizeMessageCode(bytes, 0 - (int)Type);
+            //NormalizeMessageCode(bytes, 0 - (int)Type);
 
             Console.WriteLine(BitConverter.ToString(bytes).Replace("-", string.Empty));
             await WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
@@ -204,7 +204,7 @@ namespace Soulseek.Messaging.Tcp
 
                     var messageBytes = message.ToArray();
 
-                    NormalizeMessageCode(messageBytes, (int)Type);
+                    //NormalizeMessageCode(messageBytes, (int)Type);
 
                     MessageRead?.Invoke(this, messageBytes);
                 }

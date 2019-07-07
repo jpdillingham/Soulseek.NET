@@ -47,12 +47,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static PeerPlaceInQueueResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerPlaceInQueueResponse)
+            if (code != MessageCode.Peer.PlaceInQueueResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Place In Queue Response (expected: {(int)MessageCode.PeerPlaceInQueueResponse}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Place In Queue Response (expected: {(int)MessageCode.Peer.PlaceInQueueResponse}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();
@@ -64,7 +64,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.PeerPlaceInQueueResponse)
+                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
                 .WriteString(Filename)
                 .WriteInteger(PlaceInQueue)
                 .Build();

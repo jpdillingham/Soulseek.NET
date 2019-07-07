@@ -27,12 +27,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static IReadOnlyCollection<(string Name, int UserCount)> Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Server>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.ServerRoomList)
+            if (code != MessageCode.Server.RoomList)
             {
-                throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.ServerRoomList}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating Room List response (expected: {(int)MessageCode.Server.RoomList}, received: {(int)code}");
             }
 
             var roomCount = reader.ReadInteger();

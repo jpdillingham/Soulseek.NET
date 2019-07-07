@@ -56,12 +56,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static GetPeerAddressResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Server>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.ServerGetPeerAddress)
+            if (code != MessageCode.Server.GetPeerAddress)
             {
-                throw new MessageException($"Message Code mismatch creating Get Peer Address response (expected: {(int)MessageCode.ServerGetPeerAddress}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Get Peer Address response (expected: {(int)MessageCode.Server.GetPeerAddress}, received: {(int)code}.");
             }
 
             var username = reader.ReadString();

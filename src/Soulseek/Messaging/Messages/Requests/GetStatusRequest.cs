@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetStatus)
+                .WriteCode(MessageCode.Server.GetStatus)
                 .WriteString(Username)
                 .Build();
         }

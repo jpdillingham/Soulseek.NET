@@ -36,7 +36,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => GetStatusResponse.Parse(msg));
@@ -50,7 +50,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetStatus)
+                .WriteCode(MessageCode.Server.GetStatus)
                 .Build();
 
             var ex = Record.Exception(() => GetStatusResponse.Parse(msg));
@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Returns_Expected_Data(string username, UserStatus status, bool privileged)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetStatus)
+                .WriteCode(MessageCode.Server.GetStatus)
                 .WriteString(username)
                 .WriteInteger((int)status)
                 .WriteByte((byte)(privileged ? 1 : 0))

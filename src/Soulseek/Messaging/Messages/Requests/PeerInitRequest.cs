@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(InitializationCode.PeerInit)
+                .WriteCode(MessageCode.Initialization.PeerInit)
                 .WriteString(Username)
                 .WriteString(TransferType)
                 .WriteInteger(Token)

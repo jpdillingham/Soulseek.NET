@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerAcknowledgePrivateMessage)
+                .WriteCode(MessageCode.Server.AcknowledgePrivateMessage)
                 .WriteInteger(Id)
                 .Build();
         }

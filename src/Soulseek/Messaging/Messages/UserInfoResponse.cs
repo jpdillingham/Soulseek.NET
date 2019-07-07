@@ -75,12 +75,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static UserInfoResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerInfoResponse)
+            if (code != MessageCode.Peer.InfoResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Info Response (expected: {(int)MessageCode.PeerInfoResponse}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Info Response (expected: {(int)MessageCode.Peer.InfoResponse}, received: {(int)code}.");
             }
 
             var description = reader.ReadString();

@@ -38,32 +38,32 @@
 
         public async void HandleMessage(object sender, byte[] message)
         {
-            var code = new MessageReader<MessageCode>(message).ReadCode();
+            var code = new MessageReader<MessageCode.Server>(message).ReadCode();
             Diagnostic.Debug($"Server message received: {code}");
 
             try
             {
                 switch (code)
                 {
-                    case MessageCode.ServerParentMinSpeed:
-                    case MessageCode.ServerParentSpeedRatio:
-                    case MessageCode.ServerWishlistInterval:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.Parse(message));
+                    case MessageCode.Server.ParentMinSpeed:
+                    case MessageCode.Server.ParentSpeedRatio:
+                    case MessageCode.Server.WishlistInterval:
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.Parse<MessageCode.Server>(message));
                         break;
 
-                    case MessageCode.ServerLogin:
+                    case MessageCode.Server.Login:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.Parse(message));
                         break;
 
-                    case MessageCode.ServerRoomList:
+                    case MessageCode.Server.RoomList:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.Parse(message));
                         break;
 
-                    case MessageCode.ServerPrivilegedUsers:
+                    case MessageCode.Server.PrivilegedUsers:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.Parse(message));
                         break;
 
-                    case MessageCode.ServerNetInfo:
+                    case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.Parse(message);
                         foreach (var peer in netInfo.Parents)
                         {
@@ -72,7 +72,7 @@
 
                         break;
 
-                    case MessageCode.ServerConnectToPeer:
+                    case MessageCode.Server.ConnectToPeer:
                         var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
 
                         if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
@@ -101,18 +101,18 @@
 
                         break;
 
-                    case MessageCode.ServerAddUser:
+                    case MessageCode.Server.AddUser:
                         var addUserResponse = AddUserResponse.Parse(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
                         break;
 
-                    case MessageCode.ServerGetStatus:
+                    case MessageCode.Server.GetStatus:
                         var statsResponse = GetStatusResponse.Parse(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
 
-                    case MessageCode.ServerPrivateMessage:
+                    case MessageCode.Server.PrivateMessage:
                         var pm = PrivateMessage.Parse(message);
                         PrivateMessageReceived?.Invoke(this, pm);
 
@@ -123,7 +123,7 @@
 
                         break;
 
-                    case MessageCode.ServerGetPeerAddress:
+                    case MessageCode.Server.GetPeerAddress:
                         var peerAddressResponse = GetPeerAddressResponse.Parse(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;

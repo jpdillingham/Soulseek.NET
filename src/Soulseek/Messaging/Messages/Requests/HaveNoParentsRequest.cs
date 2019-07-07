@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerHaveNoParents)
+                .WriteCode(MessageCode.Server.HaveNoParents)
                 .WriteByte((byte)(HaveNoParents ? 1 : 0))
                 .Build();
         }

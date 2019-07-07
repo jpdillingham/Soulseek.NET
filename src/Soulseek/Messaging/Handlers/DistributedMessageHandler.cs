@@ -26,7 +26,7 @@
         public async void HandleMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
-            var code = new MessageReader<DistributedCode>(message).ReadCode();
+            var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
 
             Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 

@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageException_On_Code_Mismatch()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
             var ex = Record.Exception(() => PrivateMessage.Parse(msg));
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerPrivateMessage)
+                .WriteCode(MessageCode.Server.PrivateMessage)
                 .Build();
 
             var ex = Record.Exception(() => PrivateMessage.Parse(msg));
@@ -74,7 +74,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerPrivateMessage)
+                .WriteCode(MessageCode.Server.PrivateMessage)
                 .WriteInteger(id)
                 .WriteInteger(timeOffset)
                 .WriteString(username)

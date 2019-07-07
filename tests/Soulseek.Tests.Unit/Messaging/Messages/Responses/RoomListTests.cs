@@ -26,7 +26,7 @@
 //        public void Parse_Throws_MessageException_On_Code_Mismatch()
 //        {
 //            var msg = new MessageBuilder()
-//                .Code(MessageCode.PeerBrowseRequest)
+//                .Code(MessageCode.Peer.BrowseRequest)
 //                .Build();
 
 //            var ex = Record.Exception(() => RoomList.Parse(msg));
@@ -40,7 +40,7 @@
 //        public void Parse_Throws_MessageReadException_On_Missing_Data()
 //        {
 //            var msg = new MessageBuilder()
-//                .Code(MessageCode.ServerRoomList)
+//                .Code(MessageCode.Server.RoomList)
 //                .WriteInteger(1)
 //                .Build();
 
@@ -63,7 +63,7 @@
 //            };
 
 //            var builder = new MessageBuilder()
-//                .Code(MessageCode.ServerRoomList)
+//                .Code(MessageCode.Server.RoomList)
 //                .WriteInteger(rooms.Count);
 
 //            rooms.ForEach(room => builder.WriteString(room.Name));

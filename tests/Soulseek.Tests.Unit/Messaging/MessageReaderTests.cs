@@ -27,7 +27,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Instantiation_Throws_ArgumentNullException_Given_Null_Byte_Array()
         {
             byte[] bytes = null;
-            var ex = Record.Exception(() => new MessageReader<MessageCode>(bytes));
+            var ex = Record.Exception(() => new MessageReader<MessageCode.Server>(bytes));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentNullException>(ex);
@@ -38,7 +38,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Instantiation_Throws_ArgumentOutOfRangeException_Given_Short_Byte_Array()
         {
             byte[] bytes = new byte[7];
-            var ex = Record.Exception(() => new MessageReader<MessageCode>(bytes));
+            var ex = Record.Exception(() => new MessageReader<MessageCode.Server>(bytes));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -49,7 +49,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Instantiation_Throws_ArgumentOutOfRangeException_Given_Empty_Byte_Array()
         {
             byte[] bytes = Array.Empty<byte>();
-            var ex = Record.Exception(() => new MessageReader<MessageCode>(bytes));
+            var ex = Record.Exception(() => new MessageReader<MessageCode.Server>(bytes));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -60,7 +60,7 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Instantiation_Throws_ArgumentNullException_Given_Null_Message()
         {
             byte[] msg = null;
-            var ex = Record.Exception(() => new MessageReader<MessageCode>(msg));
+            var ex = Record.Exception(() => new MessageReader<MessageCode.Server>(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentNullException>(ex);
@@ -72,14 +72,14 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerBrowseRequest, code);
+            Assert.Equal(MessageCode.Peer.BrowseRequest, code);
             Assert.Equal(BitConverter.GetBytes(num), reader.Payload.ToArray());
             Assert.Equal(0, reader.Position);
             Assert.Equal(num, reader.ReadInteger());
@@ -92,14 +92,14 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msgBytes = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msgBytes);
+            var reader = new MessageReader<MessageCode.Peer>(msgBytes);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.PeerBrowseRequest, code);
+            Assert.Equal(MessageCode.Peer.BrowseRequest, code);
             Assert.Equal(BitConverter.GetBytes(num), reader.Payload.ToArray());
             Assert.Equal(0, reader.Position);
             Assert.Equal(num, reader.ReadInteger());
@@ -112,11 +112,11 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var initial = reader.Position;
 
@@ -132,11 +132,11 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.Seek(-1));
 
@@ -150,11 +150,11 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.Seek(5));
 
@@ -168,11 +168,11 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             Assert.Equal(num, reader.ReadInteger());
         }
@@ -182,10 +182,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadInteger_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadInteger());
 
@@ -199,11 +199,11 @@ namespace Soulseek.Tests.Unit.Messaging
         {
             var num = new Random().Next();
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteLong((long)num)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             Assert.Equal(num, reader.ReadLong());
         }
@@ -213,10 +213,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadLong_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadLong());
 
@@ -232,11 +232,11 @@ namespace Soulseek.Tests.Unit.Messaging
             new Random().NextBytes(bytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteByte(bytes[0])
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             Assert.Equal(bytes[0], reader.ReadByte());
         }
@@ -246,10 +246,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadByte_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadByte());
 
@@ -267,11 +267,11 @@ namespace Soulseek.Tests.Unit.Messaging
             new Random().NextBytes(bytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteBytes(bytes)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             Assert.Equal(bytes.Length, reader.Payload.Length);
             Assert.Equal(bytes, reader.ReadBytes(bytes.Length));
@@ -287,12 +287,12 @@ namespace Soulseek.Tests.Unit.Messaging
             new Random().NextBytes(bytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteString("foo")
                 .WriteBytes(bytes)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             reader.ReadString();
 
@@ -304,10 +304,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadBytes_Throws_MessageReadException_If_No_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadBytes(1));
 
@@ -320,11 +320,11 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadBytes_Throws_MessageReadException_If_Length_Greater_Than_Payload_Length()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2 })
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadBytes(4));
 
@@ -337,12 +337,12 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadBytes_From_Nonzero_Position_Throws_MessageReadException_If_Length_Greater_Than_Payload_Length()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(42)
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2 })
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var integer = reader.ReadInteger();
 
@@ -360,11 +360,11 @@ namespace Soulseek.Tests.Unit.Messaging
             var str = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteString(str)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             Assert.Equal(str, reader.ReadString());
         }
@@ -374,11 +374,11 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadString_Returns_Empty_String_Given_Empty_String()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteString(string.Empty)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             Assert.Equal(string.Empty, reader.ReadString());
         }
@@ -390,12 +390,12 @@ namespace Soulseek.Tests.Unit.Messaging
             var str = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(42)
                 .WriteString(str)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.ReadInteger();
 
             Assert.Equal(str, reader.ReadString());
@@ -406,10 +406,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void ReadString_Throws_MessageReadException_Given_No_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadString());
 
@@ -424,12 +424,12 @@ namespace Soulseek.Tests.Unit.Messaging
             var str = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger((str.Length * 8) + 1)
                 .WriteBytes(Encoding.ASCII.GetBytes(str))
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.ReadString());
 
@@ -443,14 +443,14 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Decompress_Produces_Valid_Data(string txt, int num, string txt2)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .WriteString(txt)
                 .WriteInteger(num)
                 .WriteString(txt2)
                 .Compress()
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             reader.Decompress();
 
@@ -464,10 +464,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Decompress_Throws_InvalidOperationException_On_Empty_Payload()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.Decompress());
 
@@ -482,12 +482,12 @@ namespace Soulseek.Tests.Unit.Messaging
             var txt = Guid.NewGuid().ToString();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .WriteString(txt)
                 .Compress()
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             reader.Decompress();
 
@@ -502,10 +502,10 @@ namespace Soulseek.Tests.Unit.Messaging
         public void Decompress_Throws_MessageCompressionException_On_Compression_Exception()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoRequest)
+                .WriteCode(MessageCode.Peer.InfoRequest)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
 
             var ex = Record.Exception(() => reader.InvokeMethod("Decompress", BindingFlags.NonPublic | BindingFlags.Instance, null, null));
 
@@ -520,12 +520,12 @@ namespace Soulseek.Tests.Unit.Messaging
         public void HasMoreData_Returns_Expected_Value()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseRequest)
+                .WriteCode(MessageCode.Peer.BrowseRequest)
                 .WriteInteger(1)
                 .WriteInteger(2)
                 .Build();
 
-            var reader = new MessageReader<MessageCode>(msg);
+            var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.ReadCode();
 
             Assert.True(reader.HasMoreData);

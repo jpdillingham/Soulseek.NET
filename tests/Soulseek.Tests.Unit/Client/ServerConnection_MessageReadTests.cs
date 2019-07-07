@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Client
             diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.ServerParentMinSpeed)
+                .WriteCode(MessageCode.Server.ParentMinSpeed)
                 .WriteInteger(1)
                 .Build();
 
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Client
             diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
                 .Callback<string>(m => msg = m);
 
-            var message = new MessageBuilder().WriteCode(MessageCode.ServerPrivateRoomOwned).Build();
+            var message = new MessageBuilder().WriteCode(MessageCode.Server.PrivateRoomOwned).Build();
 
             using (var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object))
             {
@@ -85,7 +85,7 @@ namespace Soulseek.Tests.Unit.Client
             Array.Reverse(ipBytes);
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetPeerAddress)
+                .WriteCode(MessageCode.Server.GetPeerAddress)
                 .WriteString(username)
                 .WriteBytes(ipBytes)
                 .WriteInteger(port)
@@ -115,7 +115,7 @@ namespace Soulseek.Tests.Unit.Client
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerPrivateMessage)
+                .WriteCode(MessageCode.Server.PrivateMessage)
                 .WriteInteger(id)
                 .WriteInteger(timeOffset)
                 .WriteString(username)
@@ -146,11 +146,11 @@ namespace Soulseek.Tests.Unit.Client
             var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteMessageAsync(It.Is<byte[]>(a => new MessageReader<MessageCode>(a).ReadInteger() == id), It.IsAny<CancellationToken>()))
+            conn.Setup(m => m.WriteMessageAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerPrivateMessage)
+                .WriteCode(MessageCode.Server.PrivateMessage)
                 .WriteInteger(id)
                 .WriteInteger(timeOffset)
                 .WriteString(username)
@@ -162,16 +162,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.InvokeMethod("ServerConnection_MessageRead", null, msg);
 
-                conn.Verify(m => m.WriteMessageAsync(It.Is<byte[]>(a => new MessageReader<MessageCode>(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
+                conn.Verify(m => m.WriteMessageAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()), Times.Once);
             }
         }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles IntegerResponse messages")]
-        [InlineData(MessageCode.ServerParentMinSpeed)]
-        [InlineData(MessageCode.ServerParentSpeedRatio)]
-        [InlineData(MessageCode.ServerWishlistInterval)]
-        public void Handles_IntegerResponse_Messages(MessageCode code)
+        [InlineData(MessageCode.Server.ParentMinSpeed)]
+        [InlineData(MessageCode.Server.ParentSpeedRatio)]
+        [InlineData(MessageCode.Server.WishlistInterval)]
+        public void Handles_IntegerResponse_Messages(MessageCode.Server code)
         {
             int value = new Random().Next();
             int? result = null;
@@ -207,7 +207,7 @@ namespace Soulseek.Tests.Unit.Client
             Array.Reverse(ipBytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerLogin)
+                .WriteCode(MessageCode.Server.Login)
                 .WriteByte((byte)(success ? 1 : 0))
                 .WriteString(message)
                 .WriteBytes(ipBytes)
@@ -234,7 +234,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<WaitKey, IReadOnlyCollection<(string Name, int UserCount)>>((key, response) => result = response);
 
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.ServerRoomList)
+                .WriteCode(MessageCode.Server.RoomList)
                 .WriteInteger(rooms.Count);
 
             rooms.ForEach(room => builder.WriteString(room.Name));
@@ -263,7 +263,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
 
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.ServerPrivilegedUsers)
+                .WriteCode(MessageCode.Server.PrivilegedUsers)
                 .WriteInteger(names.Length);
 
             foreach (var name in names)
@@ -300,7 +300,7 @@ namespace Soulseek.Tests.Unit.Client
             Array.Reverse(ipBytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .WriteString(username)
                 .WriteString("P")
                 .WriteBytes(ipBytes)
@@ -331,7 +331,7 @@ namespace Soulseek.Tests.Unit.Client
             Array.Reverse(ipBytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .WriteString(username)
                 .WriteString("F")
                 .WriteBytes(ipBytes)
@@ -360,7 +360,7 @@ namespace Soulseek.Tests.Unit.Client
             Array.Reverse(ipBytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .WriteString(username)
                 .WriteString("F")
                 .WriteBytes(ipBytes)
@@ -393,7 +393,7 @@ namespace Soulseek.Tests.Unit.Client
             Array.Reverse(ipBytes);
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .WriteString(username)
                 .WriteString("F")
                 .WriteBytes(ipBytes)
@@ -430,7 +430,7 @@ namespace Soulseek.Tests.Unit.Client
             diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.ServerConnectToPeer)
+                .WriteCode(MessageCode.Server.ConnectToPeer)
                 .Build();
 
             var diagnostics = new List<DiagnosticGeneratedEventArgs>();
@@ -461,7 +461,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<WaitKey, AddUserResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.ServerAddUser)
+                .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
                 .WriteInteger((int)status)
@@ -498,7 +498,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetStatus)
+                .WriteCode(MessageCode.Server.GetStatus)
                 .WriteString(username)
                 .WriteInteger((int)status)
                 .WriteByte((byte)(privileged ? 1 : 0))
@@ -525,7 +525,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.ServerGetStatus)
+                .WriteCode(MessageCode.Server.GetStatus)
                 .WriteString(username)
                 .WriteInteger((int)status)
                 .WriteByte((byte)(privileged ? 1 : 0))

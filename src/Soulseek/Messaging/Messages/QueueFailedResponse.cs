@@ -56,12 +56,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The parsed instance.</returns>
         public static QueueFailedResponse Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerQueueFailed)
+            if (code != MessageCode.Peer.QueueFailed)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.PeerQueueFailed}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.Peer.QueueFailed}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();
@@ -73,7 +73,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.PeerQueueFailed)
+                .WriteCode(MessageCode.Peer.QueueFailed)
                 .WriteString(Filename)
                 .WriteString(Message)
                 .Build();

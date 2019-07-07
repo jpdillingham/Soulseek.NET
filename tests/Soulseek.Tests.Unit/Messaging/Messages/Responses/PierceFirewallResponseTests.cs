@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var msg = new List<byte>();
 
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
-            msg.Add((byte)InitializationCode.PeerInit);
+            msg.Add((byte)MessageCode.Initialization.PeerInit);
 
             var r = PierceFirewallResponse.TryParse(msg.ToArray(), out var result);
 
@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var msg = new List<byte>();
 
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
-            msg.Add((byte)InitializationCode.PierceFirewall);
+            msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
             // omit token
             var r = PierceFirewallResponse.TryParse(msg.ToArray(), out var result);
@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var msg = new List<byte>();
 
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
-            msg.Add((byte)InitializationCode.PierceFirewall);
+            msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
             msg.AddRange(BitConverter.GetBytes(token));
 

@@ -25,12 +25,12 @@ namespace Soulseek.Messaging.Messages
 
         public static QueueDownloadRequest Parse(byte[] message)
         {
-            var reader = new MessageReader<MessageCode>(message);
+            var reader = new MessageReader<MessageCode.Peer>(message);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.PeerQueueDownload)
+            if (code != MessageCode.Peer.QueueDownload)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Queue Download (expected: {(int)MessageCode.PeerQueueDownload}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Queue Download (expected: {(int)MessageCode.Peer.QueueDownload}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();

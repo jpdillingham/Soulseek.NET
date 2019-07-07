@@ -24,7 +24,7 @@
 //        {
 //            var num = new Random().Next();
 //            var bytes = new MessageBuilder()
-//                .Code(MessageCode.ServerLogin)
+//                .Code(MessageCode.Server.Login)
 //                .WriteInteger(num)
 //                .Build()
 //                .ToByteArray();
@@ -53,7 +53,7 @@
 //        {
 //            var num = new Random().Next();
 //            var bytes = new MessageBuilder()
-//                .WriteCode(MessageCode.ServerLogin)
+//                .WriteCode(MessageCode.Server.Login)
 //                .WriteInteger(num)
 //                .Build();
 
@@ -66,11 +66,11 @@
 //        {
 //            var num = new Random().Next();
 //            var bytes = new MessageBuilder()
-//                .WriteCode(MessageCode.ServerLogin)
+//                .WriteCode(MessageCode.Server.Login)
 //                .WriteInteger(num)
 //                .Build();
 
-//            Assert.Equal(MessageCode.ServerLogin, new MessageReader(bytes).ReadCode<MessageCode>());
+//            Assert.Equal(MessageCode.Server.Login, new MessageReader(bytes).ReadCode<MessageCode>());
 //            Assert.Equal(8, bytes.Length);
 //            Assert.Equal(BitConverter.GetBytes(num), bytes);
 //        }

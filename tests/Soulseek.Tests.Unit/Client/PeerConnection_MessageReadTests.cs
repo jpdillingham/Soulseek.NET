@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<string>(msg => messages.Add(msg));
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.ServerParentMinSpeed)
+                .WriteCode(MessageCode.Server.ParentMinSpeed)
                 .WriteInteger(1)
                 .Build();
 
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<string>(msg => messages.Add(msg));
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.PeerUploadFailed)
+                .WriteCode(MessageCode.Peer.UploadFailed)
                 .WriteString("foo")
                 .Build();
 
@@ -107,7 +107,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Callback<string, Exception>((msg, ex) => messages.Add(msg));
 
             var message = new MessageBuilder()
-                .WriteCode(MessageCode.PeerTransferResponse)
+                .WriteCode(MessageCode.Peer.TransferResponse)
                 .Build(); // malformed message
 
             var s = new SoulseekClient("127.0.0.1", 1, diagnosticFactory: diagnostic.Object);
@@ -137,7 +137,7 @@ namespace Soulseek.Tests.Unit.Client
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerTransferResponse, username, token), It.Is<TransferResponse>(r => r.Token == token)), Times.Once);
+            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferResponse, username, token), It.Is<TransferResponse>(r => r.Token == token)), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -155,7 +155,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerInfoResponse)
+                .WriteCode(MessageCode.Peer.InfoResponse)
                 .WriteString(description)
                 .WriteByte(1)
                 .WriteInteger(picture.Length)
@@ -169,7 +169,7 @@ namespace Soulseek.Tests.Unit.Client
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerInfoResponse, username), It.IsAny<UserInfoResponse>()), Times.Once);
+            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.InfoResponse, username), It.IsAny<UserInfoResponse>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -187,7 +187,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerPlaceInQueueResponse)
+                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
                 .WriteString(filename)
                 .WriteInteger(placeInQueue)
                 .Build();
@@ -198,7 +198,7 @@ namespace Soulseek.Tests.Unit.Client
 
             waiter.Verify(
                 m => m.Complete(
-                    new WaitKey(MessageCode.PeerPlaceInQueueResponse, username, filename),
+                    new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename),
                     It.Is<PeerPlaceInQueueResponse>(r => r.Filename == filename && r.PlaceInQueue == placeInQueue)), Times.Once);
         }
 
@@ -217,7 +217,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(1) // directory count
                 .WriteString(directoryName) // first directory name
                 .WriteInteger(0) // first directory file count
@@ -228,7 +228,7 @@ namespace Soulseek.Tests.Unit.Client
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.PeerBrowseResponse, username), It.Is<BrowseResponse>(r => r.Directories.First().Directoryname == directoryName)), Times.Once);
+            waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.BrowseResponse, username), It.Is<BrowseResponse>(r => r.Directories.First().Directoryname == directoryName)), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -246,14 +246,14 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerBrowseResponse)
+                .WriteCode(MessageCode.Peer.BrowseResponse)
                 .Build();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Throw(new WaitKey(MessageCode.PeerBrowseResponse, username), It.IsAny<MessageReadException>()), Times.Once);
+            waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.BrowseResponse, username), It.IsAny<MessageReadException>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -271,7 +271,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -311,7 +311,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerSearchResponse)
+                .WriteCode(MessageCode.Peer.SearchResponse)
                 .WriteString(username)
                 .WriteInteger(token)
                 .WriteInteger(1) // file count
@@ -362,7 +362,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
 
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.PeerQueueFailed)
+                .WriteCode(MessageCode.Peer.QueueFailed)
                 .WriteString(filename)
                 .WriteString(message)
                 .Build();
@@ -371,7 +371,7 @@ namespace Soulseek.Tests.Unit.Client
 
             s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
 
-            waiter.Verify(m => m.Throw(new WaitKey(MessageCode.PeerTransferRequest, username, filename), It.IsAny<Exception>()), Times.Once);
+            waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<Exception>()), Times.Once);
         }
     }
 }

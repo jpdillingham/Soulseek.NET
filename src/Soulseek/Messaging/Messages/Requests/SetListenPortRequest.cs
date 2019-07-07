@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToMessage()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.ServerSetListenPort)
+                .WriteCode(MessageCode.Server.SetListenPort)
                 .WriteInteger(Port)
                 .Build();
         }
