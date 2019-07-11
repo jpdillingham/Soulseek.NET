@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClientResolvers.cs" company="JP Dillingham">
+﻿// <copyright file="ResponseResolvers.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,7 +17,7 @@ namespace Soulseek
     using System.Net;
     using Soulseek.Messaging.Messages;
 
-    public class SoulseekClientResolvers
+    public class ResponseResolvers
     {
         private readonly Func<string, IPAddress, int, string, int, SearchResponse> defaultSearchResponse =
             (u, i, p, s, t) => new SearchResponse(u, t, 0, 0, 0, 0);
@@ -31,7 +31,7 @@ namespace Soulseek
         private readonly Func<string, IPAddress, int, string, (bool Allowed, string Message)> defaultQueueDownloadResponse =
             (u, i, p, f) => (true, null);
 
-        public SoulseekClientResolvers(
+        public ResponseResolvers(
             Func<string, IPAddress, int, string, int, SearchResponse> searchResponse = null,
             Func<string, IPAddress, int, BrowseResponse> browseResponse = null,
             Func<string, IPAddress, int, UserInfoResponse> userInfoResponse = null,

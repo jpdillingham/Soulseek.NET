@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClientOptions.cs" company="JP Dillingham">
+﻿// <copyright file="ClientOptions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,10 +17,10 @@ namespace Soulseek
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>
-    public sealed class SoulseekClientOptions
+    public sealed class ClientOptions
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
+        ///     Initializes a new instance of the <see cref="ClientOptions"/> class.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="concurrentPeerMessageConnectionLimit">The number of allowed concurrent outgoing peer message connections.</param>
@@ -34,7 +34,7 @@ namespace Soulseek
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
-        public SoulseekClientOptions(
+        public ClientOptions(
             int? listenPort = null,
             int concurrentPeerMessageConnectionLimit = 500,
             int messageTimeout = 5,

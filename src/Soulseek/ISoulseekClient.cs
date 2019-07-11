@@ -73,12 +73,17 @@ namespace Soulseek
         /// <summary>
         ///     Gets the client options.
         /// </summary>
-        SoulseekClientOptions Options { get; }
+        ClientOptions Options { get; }
 
         /// <summary>
         ///     Gets the server port.
         /// </summary>
         int Port { get; }
+
+        /// <summary>
+        ///     Gets the response message resolvers.
+        /// </summary>
+        ResponseResolvers Resolvers { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

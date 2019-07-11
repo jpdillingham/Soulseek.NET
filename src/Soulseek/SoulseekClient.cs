@@ -35,7 +35,11 @@ namespace Soulseek
         private const string DefaultAddress = "vps.slsknet.org";
         private const int DefaultPort = 2271;
 
-        public SoulseekClient(SoulseekClientResolvers resolvers)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
+        /// <param name="resolvers">The response message resolvers.</param>
+        public SoulseekClient(ResponseResolvers resolvers)
             : this(DefaultAddress, DefaultPort, resolvers, null)
         {
         }
@@ -43,8 +47,8 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
-        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
-        public SoulseekClient(SoulseekClientOptions options)
+        /// <param name="options">The client options.</param>
+        public SoulseekClient(ClientOptions options)
             : this(DefaultAddress, DefaultPort, null, options)
         {
         }
@@ -54,8 +58,9 @@ namespace Soulseek
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
-        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientResolvers resolvers = null, SoulseekClientOptions options = null)
+        /// <param name="resolvers">The response message resolvers.</param>
+        /// <param name="options">The client options.</param>
+        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, ResponseResolvers resolvers = null, ClientOptions options = null)
             : this(address, port, resolvers, options, null)
         {
         }
@@ -65,7 +70,8 @@ namespace Soulseek
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        /// <param name="options">The client <see cref="SoulseekClientOptions"/>.</param>
+        /// <param name="resolvers">The response message resolvers.</param>
+        /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
@@ -75,8 +81,8 @@ namespace Soulseek
         internal SoulseekClient(
             string address,
             int port,
-            SoulseekClientResolvers resolvers = null,
-            SoulseekClientOptions options = null,
+            ResponseResolvers resolvers = null,
+            ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
             IListener listener = null,
@@ -87,8 +93,8 @@ namespace Soulseek
             Address = address;
             Port = port;
 
-            Resolvers = resolvers ?? new SoulseekClientResolvers();
-            Options = options ?? new SoulseekClientOptions();
+            Resolvers = resolvers ?? new ResponseResolvers();
+            Options = options ?? new ClientOptions();
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
@@ -138,11 +144,6 @@ namespace Soulseek
             DistributedConnectionManager = DistributedConnectionManager ?? new DistributedConnectionManager(this);
             DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
-
-        internal IPeerMessageHandler PeerMessageHandler { get; }
-        internal IServerMessageHandler ServerMessageHandler { get; }
-
-        internal IDistributedConnectionManager DistributedConnectionManager { get; }
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
@@ -197,14 +198,17 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public SoulseekClientOptions Options { get; }
+        public ClientOptions Options { get; }
 
         /// <summary>
         ///     Gets server port.
         /// </summary>
         public int Port { get; }
 
-        internal SoulseekClientResolvers Resolvers { get; }
+        /// <summary>
+        ///     Gets the response message resolvers.
+        /// </summary>
+        public ResponseResolvers Resolvers { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -216,20 +220,24 @@ namespace Soulseek
         /// </summary>
         public string Username { get; private set; }
 
+        internal IDistributedConnectionManager DistributedConnectionManager { get; }
+        internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal IListener Listener { get; }
+        internal IPeerConnectionManager PeerConnectionManager { get; }
+        internal IPeerMessageHandler PeerMessageHandler { get; }
+        internal ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+
         /// <summary>
         ///     Gets the server message connection.
         /// </summary>
         internal IMessageConnection ServerConnection { get; }
+        internal IServerMessageHandler ServerMessageHandler { get; }
+        internal IWaiter Waiter { get; }
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
-        internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
-        internal IListener Listener { get; }
-        internal IPeerConnectionManager PeerConnectionManager { get; }
-        internal ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        internal IWaiter Waiter { get; }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
