@@ -238,7 +238,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadInternalAsync")]
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferRequest cancellation"), AutoData]
-        public async Task DownloadInternalAsync_Throws_TransferException_On_TransferRequest_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task DownloadInternalAsync_Throws_TransferException_On_TransferRequest_Cancellation(string username, IPAddress ip, int port, string filename, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 

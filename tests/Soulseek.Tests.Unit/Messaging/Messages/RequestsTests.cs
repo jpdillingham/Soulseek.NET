@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Server.GetPeerAddress, code);
-            Assert.Equal(name.Length + 8, msg.Length); 
+            Assert.Equal(name.Length + 8, msg.Length);
             Assert.Equal(name, reader.ReadString());
         }
 
@@ -167,7 +167,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Initialization.PeerInit, code);
             Assert.Equal(1 + 4 + name.Length + "P".Length + 8, msg.Length);
-
 
             Assert.Equal(name, reader.ReadString());
             Assert.Equal("P", reader.ReadString());
