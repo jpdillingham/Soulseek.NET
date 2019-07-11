@@ -19,7 +19,7 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging.Tcp;
+    using Soulseek.Messaging;
     using Soulseek.Tcp;
     using Xunit;
 

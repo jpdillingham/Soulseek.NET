@@ -14,7 +14,6 @@ namespace Soulseek.Tests.Unit.Tcp
 {
     using System.Collections.Generic;
     using System.Net;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
     using Xunit;
 

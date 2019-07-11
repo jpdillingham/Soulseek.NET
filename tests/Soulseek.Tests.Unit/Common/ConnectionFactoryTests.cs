@@ -14,7 +14,6 @@ namespace Soulseek.Tests.Unit
 {
     using System.Net;
     using AutoFixture.Xunit2;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
     using Xunit;
 

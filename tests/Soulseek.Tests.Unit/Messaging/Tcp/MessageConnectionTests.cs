@@ -13,7 +13,6 @@
 namespace Soulseek.Tests.Unit.Messaging.Tcp
 {
     using System;
-    using System.Collections.Concurrent;
     using System.IO;
     using System.Net;
     using System.Net.Sockets;
@@ -22,7 +21,6 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
     using Xunit;
     using Xunit.Abstractions;

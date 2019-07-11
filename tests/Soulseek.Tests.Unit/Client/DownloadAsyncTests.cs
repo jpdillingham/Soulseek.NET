@@ -14,7 +14,6 @@ namespace Soulseek.Tests.Unit.Client
 {
     using System;
     using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -23,7 +22,6 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
     using Xunit;
 

@@ -17,7 +17,6 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using Moq;
     using Soulseek.Messaging;
-    using Soulseek.Messaging.Tcp;
     using Soulseek.Tcp;
     using Xunit;
 
