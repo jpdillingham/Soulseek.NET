@@ -14,7 +14,6 @@ namespace Soulseek.Tcp
 {
     using System;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
@@ -163,6 +162,12 @@ namespace Soulseek.Tcp
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection is already connected, or is transitioning between states.
         /// </exception>
+        /// <exception cref="TimeoutException">
+        ///     Thrown when the time attempting to connect exceeds the configured <see cref="ConnectionOptions.ConnectTimeout"/> value.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        ///     Thrown when <paramref name="cancellationToken"/> cancellation is requested.
+        /// </exception>
         /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
         public async Task ConnectAsync(CancellationToken? cancellationToken = null)
         {
@@ -217,7 +222,7 @@ namespace Soulseek.Tcp
 
                 ChangeState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
 
@@ -271,28 +276,17 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionReadException"/> is thrown.</remarks>
         /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The read bytes.</returns>
-        public async Task<byte[]> ReadAsync(long length, CancellationToken? cancellationToken = null)
-        {
-            // NetworkStream.ReadAsync doesn't support long, so if we were to support this we'd need to split the long up into
-            // int-sized chunks and iterate. that's for later, if ever.
-            if (!int.TryParse(length.ToString(CultureInfo.InvariantCulture), out var intLength))
-            {
-                throw new NotImplementedException($"File sizes exceeding ~2gb are not yet supported.");
-            }
-
-            return await ReadAsync(intLength, cancellationToken).ConfigureAwait(false);
-        }
-
-        /// <summary>
-        ///     Asynchronously reads the specified number of bytes from the connection.
-        /// </summary>
-        /// <param name="length">The number of bytes to read.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The read bytes.</returns>
-        public Task<byte[]> ReadAsync(int length, CancellationToken? cancellationToken = null)
+        /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
+        public Task<byte[]> ReadAsync(long length, CancellationToken? cancellationToken = null)
         {
             if (length < 0)
             {
@@ -309,15 +303,27 @@ namespace Soulseek.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            return ReadInternalAsync(length, cancellationToken ?? CancellationToken.None);
+            if (length <= int.MaxValue)
+            {
+                return ReadInternalAsync((int)length, cancellationToken ?? CancellationToken.None);
+            }
+
+            return ReadLongInternalAsync(length, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
         public Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
             if (bytes == null || bytes.Length == 0)
@@ -421,6 +427,26 @@ namespace Soulseek.Tcp
                 Disconnect($"Read error: {ex.Message}");
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
+        }
+
+        private async Task<byte[]> ReadLongInternalAsync(long length, CancellationToken cancellationToken)
+        {
+            // NetworkStream.ReadAsync doesn't support long, so we need to break this up into int-sized chunks.
+            var remainingLength = length;
+            var allBytes = new List<byte>();
+
+            do
+            {
+                var currentLength = remainingLength > int.MaxValue ? int.MaxValue : (int)remainingLength;
+
+                var bytes = await ReadInternalAsync(currentLength, cancellationToken).ConfigureAwait(false);
+                allBytes.AddRange(bytes.ToList());
+
+                remainingLength -= currentLength;
+            }
+            while (remainingLength > 0);
+
+            return allBytes.ToArray();
         }
 
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
