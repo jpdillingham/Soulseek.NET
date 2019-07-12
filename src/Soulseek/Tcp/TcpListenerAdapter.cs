@@ -12,13 +12,14 @@
 
 namespace Soulseek.Tcp
 {
+    using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
     /// <summary>
-    ///     Provides a listener for TCP network services.
+    ///     Listens for connections from TCP network clients.
     /// </summary>
     /// <remarks>
     ///     This is a pass-through implementation of <see cref="ITcpListener"/> over <see cref="TcpListener"/> intended to enable
@@ -31,31 +32,54 @@ namespace Soulseek.Tcp
         ///     Initializes a new instance of the <see cref="TcpListenerAdapter"/> class with an optional <paramref name="tcpListener"/>.
         /// </summary>
         /// <param name="tcpListener">The optional TcpListener to wrap.</param>
-        internal TcpListenerAdapter(TcpListener tcpListener = null)
+        public TcpListenerAdapter(TcpListener tcpListener = null)
         {
             TcpListener = tcpListener ?? new TcpListener(IPAddress.Parse("0.0.0.0"), 1);
         }
 
         private TcpListener TcpListener { get; set; }
 
+        /// <summary>
+        ///     Accepts a pending connection request as an asynchronous operation.
+        /// </summary>
+        /// <returns>The operation context, including the new connection client.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the listener has not been started with a call to Start().
+        /// </exception>
+        /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
+        public Task<TcpClient> AcceptTcpClientAsync()
+        {
+            return TcpListener.AcceptTcpClientAsync();
+        }
+
+        /// <summary>
+        ///     Determines if there are pending connection requests.
+        /// </summary>
+        /// <returns>A value indicating whether there are pending connection requests.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the listener has not been started with a call to Start().
+        /// </exception>
         public bool Pending()
         {
             return TcpListener.Pending();
         }
 
+        /// <summary>
+        ///     Starts listening for incoming connection requests.
+        /// </summary>
+        /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
         public void Start()
         {
             TcpListener.Start();
         }
 
+        /// <summary>
+        ///     Closes the listener.
+        /// </summary>
+        /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
         public void Stop()
         {
             TcpListener.Stop();
-        }
-
-        public Task<TcpClient> AcceptTcpClientAsync()
-        {
-            return TcpListener.AcceptTcpClientAsync();
         }
     }
 }

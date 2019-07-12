@@ -32,7 +32,7 @@ namespace Soulseek.Tcp
         ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class with an optional <paramref name="tcpClient"/>.
         /// </summary>
         /// <param name="tcpClient">The optional TcpClient to wrap.</param>
-        internal TcpClientAdapter(TcpClient tcpClient = null)
+        public TcpClientAdapter(TcpClient tcpClient = null)
         {
             TcpClient = tcpClient ?? new TcpClient();
         }

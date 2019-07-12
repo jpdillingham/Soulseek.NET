@@ -12,14 +12,44 @@
 
 namespace Soulseek.Tcp
 {
+    using System;
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
+    /// <summary>
+    ///     Listens for connections from TCP network clients.
+    /// </summary>
     internal interface ITcpListener
     {
+        /// <summary>
+        ///     Accepts a pending connection request as an asynchronous operation.
+        /// </summary>
+        /// <returns>The operation context, including the new connection client.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the listener has not been started with a call to Start().
+        /// </exception>
+        /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
         Task<TcpClient> AcceptTcpClientAsync();
-        void Start();
-        void Stop();
+
+        /// <summary>
+        ///     Determines if there are pending connection requests.
+        /// </summary>
+        /// <returns>A value indicating whether there are pending connection requests.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the listener has not been started with a call to Start().
+        /// </exception>
         bool Pending();
+
+        /// <summary>
+        ///     Starts listening for incoming connection requests.
+        /// </summary>
+        /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
+        void Start();
+
+        /// <summary>
+        ///     Closes the listener.
+        /// </summary>
+        /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
+        void Stop();
     }
 }
