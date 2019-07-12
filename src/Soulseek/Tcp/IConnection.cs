@@ -77,6 +77,16 @@ namespace Soulseek.Tcp
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection is already connected, or is transitioning between states.
+        /// </exception>
+        /// <exception cref="TimeoutException">
+        ///     Thrown when the time attempting to connect exceeds the configured <see cref="ConnectionOptions.ConnectTimeout"/> value.
+        /// </exception>
+        /// <exception cref="OperationCanceledException">
+        ///     Thrown when <paramref name="cancellationToken"/> cancellation is requested.
+        /// </exception>
+        /// <exception cref="ConnectionException">Thrown when an unexpected error occurs.</exception>
         Task ConnectAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -95,25 +105,31 @@ namespace Soulseek.Tcp
         /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionReadException"/> is thrown.</remarks>
         /// <param name="length">The number of bytes to read.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The read bytes.</returns>
-        Task<byte[]> ReadAsync(int length, CancellationToken? cancellationToken = null);
-
-        /// <summary>
-        ///     Asynchronously reads the specified number of bytes from the connection.
-        /// </summary>
-        /// <param name="length">The number of bytes to read.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The read bytes.</returns>
+        /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
         Task<byte[]> ReadAsync(long length, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
+        /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
+        ///     is not connected.
+        /// </exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
         Task WriteAsync(byte[] bytes, CancellationToken? cancellationToken = null);
     }
 }

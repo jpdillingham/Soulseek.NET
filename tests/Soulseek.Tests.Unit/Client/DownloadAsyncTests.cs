@@ -118,7 +118,7 @@ namespace Soulseek.Tests.Unit.Client
         //    conn.Setup(m => m.State)
         //        .Returns(ConnectionState.Connected);
 
-        //    var options = new SoulseekClientOptions(messageTimeout: 1);
+        //    var options = new ClientOptions(messageTimeout: 1);
 
         //    var waiter = new Mock<IWaiter>();
         //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -140,7 +140,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException when WriteAsync throws"), AutoData]
         public async Task DownloadInternalAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPAddress ip, int port, string filename, int token)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 1);
+            var options = new ClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -176,7 +176,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferResponse timeout"), AutoData]
         //public async Task DownloadInternalAsync_Throws_TransferException_On_TransferResponse_Timeout(string username, IPAddress ip, int port, string filename, int token)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 1);
+        //    var options = new ClientOptions(messageTimeout: 1);
 
         //    var waiter = new Mock<IWaiter>();
         //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -206,7 +206,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferResponse cancellation"), AutoData]
         public async Task DownloadInternalAsync_Throws_TransferException_On_TransferResponse_Cancellation(string username, IPAddress ip, int port, string filename, int token)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new ClientOptions(messageTimeout: 5);
 
             var waitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
@@ -240,7 +240,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferRequest cancellation"), AutoData]
         public async Task DownloadInternalAsync_Throws_TransferException_On_TransferRequest_Cancellation(string username, IPAddress ip, int port, string filename, int token)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new ClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -275,7 +275,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException on download cancellation"), AutoData]
         public async Task DownloadInternalAsync_Throws_TransferException_On_Download_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new ClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -324,7 +324,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException on download start timeout"), AutoData]
         public async Task DownloadInternalAsync_Throws_TransferException_On_Download_Start_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new ClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -367,7 +367,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "DownloadInternalAsync returns expected data on completion"), AutoData]
         public async Task DownloadInternalAsync_Returns_Expected_Data_On_Completion(string username, IPAddress ip, int port, string filename, int token, int size)
         {
-            var options = new SoulseekClientOptions(messageTimeout: 5);
+            var options = new ClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -418,7 +418,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync returns expected data when acknowledgement is allowed"), AutoData]
         //public async Task DownloadInternalAsync_Returns_Expected_Data_When_Acknowledgement_Is_Allowed(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(token, true, size, string.Empty); // allowed
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -471,7 +471,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync throws DownloadRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
         //public async Task DownloadInternalAsync_Throws_DownloadRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(token, false, size, "File not shared."); // not shared
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -525,7 +525,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync raises expected events on success"), AutoData]
         //public async Task DownloadInternalAsync_Raises_Expected_Events_On_Success(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -596,7 +596,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync invokes StateChanged delegate on state change"), AutoData]
         //public async Task DownloadInternalAsync_Invokes_StateChanged_Delegate_On_State_Change(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -647,7 +647,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync raises DownloadProgressUpdated event on data read"), AutoData]
         //public async Task DownloadInternalAsync_Raises_DownloadProgressUpdated_Event_On_Data_Read(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -709,7 +709,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync invokes ProgressUpdated delegate on data read"), AutoData]
         //public async Task DownloadInternalAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -765,7 +765,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync raises Download events on failure"), AutoData]
         //public async Task DownloadInternalAsync_Raises_Download_Events_On_Failure(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(token, false, size, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -826,7 +826,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync raises Download events on timeout"), AutoData]
         //public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -920,7 +920,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync throws TransferException and ConnectionException on transfer exception"), AutoData]
         //public async Task DownloadInternalAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -974,7 +974,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync throws TransferException and TimeoutException on transfer timeout"), AutoData]
         //public async Task DownloadInternalAsync_Throws_TransferException_And_TimeoutException_On_Transfer_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(1, false, 1, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);
@@ -1027,7 +1027,7 @@ namespace Soulseek.Tests.Unit.Client
         //[Theory(DisplayName = "DownloadInternalAsync throws TransferException on transfer rejection"), AutoData]
         //public async Task DownloadInternalAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, int token, int size)
         //{
-        //    var options = new SoulseekClientOptions(messageTimeout: 5);
+        //    var options = new ClientOptions(messageTimeout: 5);
 
         //    var response = new TransferResponse(token, false, size, string.Empty);
         //    var responseWaitKey = new WaitKey(MessageCode.TransferResponse, username, token);

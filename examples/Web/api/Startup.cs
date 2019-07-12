@@ -45,7 +45,7 @@
 
             SharedDirectory = @"\\WSE\Music\Processed\Rage Against the Machine\Bootlegs\Killing Your Enemy In 1995";
 
-            var resolvers = new SoulseekClientResolvers(
+            var resolvers = new ResponseResolvers(
                 browseResponse: (u, i, p) => 
                 {
                     // limited to just the root for now
@@ -65,7 +65,7 @@
                     return (true, null);
                 });
 
-            var options = new SoulseekClientOptions(
+            var options = new ClientOptions(
                 listenPort: ListenPort,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 concurrentPeerMessageConnectionLimit: 1000000,

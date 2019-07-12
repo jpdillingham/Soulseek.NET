@@ -1,4 +1,4 @@
-﻿// <copyright file="SoulseekClientOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="ClientOptionsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -16,7 +16,7 @@ namespace Soulseek.Tests.Unit
     using Soulseek.Tcp;
     using Xunit;
 
-    public class SoulseekClientOptionsTests
+    public class ClientOptionsTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
@@ -30,7 +30,7 @@ namespace Soulseek.Tests.Unit
             ConnectionOptions peerConnectionOptions,
             ConnectionOptions transferConnectionOptions)
         {
-            var o = new SoulseekClientOptions(
+            var o = new ClientOptions(
                 concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit
             DiagnosticLevel minimumDiagnosticLevel,
             int startingToken)
         {
-            var o = new SoulseekClientOptions(
+            var o = new ClientOptions(
                 concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,

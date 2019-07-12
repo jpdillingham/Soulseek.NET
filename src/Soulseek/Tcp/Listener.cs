@@ -34,7 +34,7 @@ namespace Soulseek.Tcp
         ///     Initializes a new instance of the <see cref="Listener"/> class.
         /// </summary>
         /// <param name="port">The port of the listener.</param>
-        /// <param name="connectionOptions">The optional options to use when creating <see cref="IConnection"/> instances</param>
+        /// <param name="connectionOptions">The optional options to use when creating <see cref="IConnection"/> instances.</param>
         /// <param name="tcpListener">The optional TcpClient instance to use.</param>
         public Listener(int port, ConnectionOptions connectionOptions, ITcpListener tcpListener = null)
         {
