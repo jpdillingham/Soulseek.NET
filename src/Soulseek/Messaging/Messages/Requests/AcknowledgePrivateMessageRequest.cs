@@ -32,9 +32,9 @@ namespace Soulseek.Messaging.Messages
         public int Id { get; }
 
         /// <summary>
-        ///     Constructs a <see cref="byte"/> array from this request.
+        ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
-        /// <returns>The constructed message.</returns>
+        /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
