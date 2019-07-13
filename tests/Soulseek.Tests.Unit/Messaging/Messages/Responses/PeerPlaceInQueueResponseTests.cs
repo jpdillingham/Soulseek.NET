@@ -38,7 +38,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerPlaceInQueueResponse.Parse(msg));
+            var ex = Record.Exception(() => PeerPlaceInQueueResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
                 .Build();
 
-            var ex = Record.Exception(() => PeerPlaceInQueueResponse.Parse(msg));
+            var ex = Record.Exception(() => PeerPlaceInQueueResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(placeInQueue)
                 .Build();
 
-            var response = PeerPlaceInQueueResponse.Parse(msg);
+            var response = PeerPlaceInQueueResponse.FromByteArray(msg);
 
             Assert.Equal(filename, response.Filename);
             Assert.Equal(placeInQueue, response.PlaceInQueue);

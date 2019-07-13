@@ -101,13 +101,13 @@ namespace Soulseek.Messaging.Messages
         private IEnumerable<File> FileList { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="SearchResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static SearchResponse Parse(byte[] message)
+        public static SearchResponse FromByteArray(byte[] bytes)
         {
-            var slim = SearchResponseSlim.Parse(message);
+            var slim = SearchResponseSlim.Parse(bytes);
             return new SearchResponse(slim);
         }
 

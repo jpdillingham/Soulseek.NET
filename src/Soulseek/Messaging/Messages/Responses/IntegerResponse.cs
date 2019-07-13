@@ -20,14 +20,15 @@ namespace Soulseek.Messaging.Messages
     public static class IntegerResponse
     {
         /// <summary>
-        ///     Parses a new instance of <see cref="IntegerResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="IntegerResponse"/> with message code <typeparamref name="T"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
-        /// <returns>The parsed instance.</returns>
-        public static int Parse<T>(byte[] message)
+        /// <typeparam name="T">The expected message code type.</typeparam>
+        /// <param name="bytes">The byte array from which to parse.</param>
+        /// <returns>The created instance.</returns>
+        public static int FromByteArray<T>(byte[] bytes)
             where T : Enum
         {
-            var reader = new MessageReader<T>(message);
+            var reader = new MessageReader<T>(bytes);
             return reader.ReadInteger();
         }
     }

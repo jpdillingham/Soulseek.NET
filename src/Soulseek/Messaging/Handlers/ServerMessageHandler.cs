@@ -48,11 +48,11 @@
                     case MessageCode.Server.ParentMinSpeed:
                     case MessageCode.Server.ParentSpeedRatio:
                     case MessageCode.Server.WishlistInterval:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.Parse<MessageCode.Server>(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
                         break;
 
                     case MessageCode.Server.Login:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.RoomList:
@@ -64,7 +64,7 @@
                         break;
 
                     case MessageCode.Server.NetInfo:
-                        var netInfo = NetInfo.Parse(message);
+                        var netInfo = NetInfo.FromByteArray(message);
                         foreach (var peer in netInfo.Parents)
                         {
                             Console.WriteLine($"{peer.Username} {peer.IPAddress} {peer.Port}");

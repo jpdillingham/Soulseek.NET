@@ -41,13 +41,13 @@ namespace Soulseek.Messaging.Messages
         public int PlaceInQueue { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerPlaceInQueueResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="PeerPlaceInQueueResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerPlaceInQueueResponse Parse(byte[] message)
+        public static PeerPlaceInQueueResponse FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.PlaceInQueueResponse)
@@ -59,15 +59,6 @@ namespace Soulseek.Messaging.Messages
             var placeInQueue = reader.ReadInteger();
 
             return new PeerPlaceInQueueResponse(filename, placeInQueue);
-        }
-
-        public byte[] ToMessage()
-        {
-            return new MessageBuilder()
-                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
-                .WriteString(Filename)
-                .WriteInteger(PlaceInQueue)
-                .Build();
         }
     }
 }

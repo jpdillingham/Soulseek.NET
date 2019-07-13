@@ -111,12 +111,12 @@
                         break;
 
                     case MessageCode.Peer.PlaceInQueueResponse:
-                        var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
+                        var placeInQueueResponse = PeerPlaceInQueueResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.PlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
                         break;
 
                     case MessageCode.Peer.UploadFailed:
-                        var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
+                        var uploadFailedResponse = PeerUploadFailedResponse.FromByteArray(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);

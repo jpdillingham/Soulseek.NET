@@ -51,7 +51,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => LoginResponse.Parse(msg));
+            var ex = Record.Exception(() => LoginResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.Login)
                 .Build();
 
-            var ex = Record.Exception(() => LoginResponse.Parse(msg));
+            var ex = Record.Exception(() => LoginResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -83,7 +83,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(str)
                 .Build();
 
-            var response = LoginResponse.Parse(msg);
+            var response = LoginResponse.FromByteArray(msg);
 
             Assert.False(response.Succeeded);
             Assert.Equal(str, response.Message);
@@ -104,7 +104,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteBytes(ipBytes)
                 .Build();
 
-            var response = LoginResponse.Parse(msg);
+            var response = LoginResponse.FromByteArray(msg);
 
             Assert.True(response.Succeeded);
             Assert.Equal(string.Empty, response.Message);

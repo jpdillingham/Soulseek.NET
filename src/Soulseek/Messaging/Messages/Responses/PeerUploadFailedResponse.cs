@@ -34,13 +34,13 @@ namespace Soulseek.Messaging.Messages
         public string Filename { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PeerUploadFailedResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="PeerPlaceInQueueResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerUploadFailedResponse Parse(byte[] message)
+        public static PeerUploadFailedResponse FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.UploadFailed)

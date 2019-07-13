@@ -531,7 +531,7 @@ namespace Soulseek
                 var bodyBytes = await connection.ReadAsync(length).ConfigureAwait(false);
                 byte[] message = lengthBytes.Concat(bodyBytes).ToArray();
 
-                if (PeerInitResponse.TryParse(message, out var peerInit))
+                if (PeerInitResponse.TryFromByteArray(message, out var peerInit))
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
@@ -555,7 +555,7 @@ namespace Soulseek
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
                 }
-                else if (PierceFirewallResponse.TryParse(message, out var pierceFirewall))
+                else if (PierceFirewallResponse.TryFromByteArray(message, out var pierceFirewall))
                 {
                     // this connection is the result of a ConnectToPeer request sent to the user, and the incoming message will
                     // contain the token that was provided in the request. Ensure this token is among those expected, and use it to

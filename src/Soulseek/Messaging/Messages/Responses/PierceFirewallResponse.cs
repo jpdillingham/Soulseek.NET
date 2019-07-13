@@ -12,9 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using System.Linq;
-
     /// <summary>
     ///     Pierces the local firewall to initiate a connection.
     /// </summary>
@@ -35,18 +32,18 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="PierceFirewallResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="PierceFirewallResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <param name="response">The parsed instance.</param>
         /// <returns>A value indicating whether the message was successfully parsed.</returns>
-        public static bool TryParse(byte[] message, out PierceFirewallResponse response)
+        public static bool TryFromByteArray(byte[] bytes, out PierceFirewallResponse response)
         {
             response = null;
 
             try
             {
-                var reader = new MessageReader<MessageCode.Initialization>(message);
+                var reader = new MessageReader<MessageCode.Initialization>(bytes);
 
                 if (reader.ReadCode() != MessageCode.Initialization.PierceFirewall)
                 {
