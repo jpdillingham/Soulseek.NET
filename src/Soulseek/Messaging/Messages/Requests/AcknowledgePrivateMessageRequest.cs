@@ -32,19 +32,10 @@ namespace Soulseek.Messaging.Messages
         public int Id { get; }
 
         /// <summary>
-        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
-        /// </summary>
-        /// <param name="instance">The instance to convert.</param>
-        public static implicit operator byte[](AcknowledgePrivateMessageRequest instance)
-        {
-            return instance.ToMessage();
-        }
-
-        /// <summary>
-        ///     Constructs a <see cref="Message"/> from this request.
+        ///     Constructs a <see cref="byte"/> array from this request.
         /// </summary>
         /// <returns>The constructed message.</returns>
-        public byte[] ToMessage()
+        public byte[] ToByteArray()
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Server.AcknowledgePrivateMessage)

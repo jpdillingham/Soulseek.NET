@@ -254,7 +254,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
 
-            await ServerConnection.WriteAsync(new AcknowledgePrivateMessageRequest(privateMessageId), cancellationToken).ConfigureAwait(false);
+            await ServerConnection.WriteAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
         }
 
         /// <summary>
