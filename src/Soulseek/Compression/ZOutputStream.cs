@@ -49,7 +49,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Diagnostics.CodeAnalysis;
 
-namespace Soulseek.Zlib
+namespace Soulseek.Compression
 {
     [ExcludeFromCodeCoverage]
     public class ZOutputStream:System.IO.Stream

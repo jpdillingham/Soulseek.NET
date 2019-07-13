@@ -17,7 +17,7 @@ namespace Soulseek.Messaging
     using System.IO;
     using System.Text;
     using Soulseek.Exceptions;
-    using Soulseek.Zlib;
+    using Soulseek.Compression;
 
     /// <summary>
     ///     Reads data from a Message payload.

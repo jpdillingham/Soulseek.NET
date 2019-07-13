@@ -15,10 +15,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Soulseek.Compression;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Zlib;
     using Xunit;
 
     public class BrowseResponseTests
