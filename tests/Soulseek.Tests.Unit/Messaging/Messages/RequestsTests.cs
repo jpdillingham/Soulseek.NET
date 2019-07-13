@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void AcknowledgePrivateMessageRequest_Constructs_The_Correct_Message()
         {
             var num = new Random().Next();
-            var msg = new AcknowledgePrivateMessageRequest(num).ToMessage();
+            var msg = new AcknowledgePrivateMessageRequest(num).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();

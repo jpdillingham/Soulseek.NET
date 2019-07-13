@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => AddUserResponse.Parse(msg));
+            var ex = Record.Exception(() => AddUserResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.AddUser)
                 .Build();
 
-            var ex = Record.Exception(() => AddUserResponse.Parse(msg));
+            var ex = Record.Exception(() => AddUserResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -79,7 +79,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(countryCode)
                 .Build();
 
-            var r = AddUserResponse.Parse(msg);
+            var r = AddUserResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.True(r.Exists);
@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte(0) // exists = false
                 .Build();
 
-            var r = AddUserResponse.Parse(msg);
+            var r = AddUserResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.False(r.Exists);
@@ -128,7 +128,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(directoryCount)
                 .Build();
 
-            var r = AddUserResponse.Parse(msg);
+            var r = AddUserResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.True(r.Exists);

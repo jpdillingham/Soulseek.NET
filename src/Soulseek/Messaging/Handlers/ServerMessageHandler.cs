@@ -73,7 +73,7 @@
                         break;
 
                     case MessageCode.Server.ConnectToPeer:
-                        var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+                        var connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
 
                         if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
                         {
@@ -102,12 +102,12 @@
                         break;
 
                     case MessageCode.Server.AddUser:
-                        var addUserResponse = AddUserResponse.Parse(message);
+                        var addUserResponse = AddUserResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
                         break;
 
                     case MessageCode.Server.GetStatus:
-                        var statsResponse = GetStatusResponse.Parse(message);
+                        var statsResponse = GetStatusResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
@@ -124,7 +124,7 @@
                         break;
 
                     case MessageCode.Server.GetPeerAddress:
-                        var peerAddressResponse = GetPeerAddressResponse.Parse(message);
+                        var peerAddressResponse = GetPeerAddressResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 

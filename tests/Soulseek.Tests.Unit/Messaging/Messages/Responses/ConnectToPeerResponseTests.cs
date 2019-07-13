@@ -55,7 +55,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => ConnectToPeerResponse.Parse(msg));
+            var ex = Record.Exception(() => ConnectToPeerResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("F")
                 .Build();
 
-            var ex = Record.Exception(() => ConnectToPeerResponse.Parse(msg));
+            var ex = Record.Exception(() => ConnectToPeerResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -100,7 +100,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(token)
                 .Build();
 
-            var response = ConnectToPeerResponse.Parse(msg);
+            var response = ConnectToPeerResponse.FromByteArray(msg);
 
             Assert.Equal(un, response.Username);
             Assert.Equal(type, response.Type);
