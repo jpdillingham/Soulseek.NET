@@ -2,6 +2,7 @@
 {
     using System;
     using Soulseek.Messaging;
+    using Soulseek.Tcp;
 
     internal sealed class DistributedMessageHandler : IDistributedMessageHandler
     {

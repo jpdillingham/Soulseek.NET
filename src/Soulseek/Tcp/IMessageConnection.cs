@@ -10,10 +10,9 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Messaging
+namespace Soulseek.Tcp
 {
     using System;
-    using Soulseek.Tcp;
 
     /// <summary>
     ///     Provides client connections to the Soulseek network.
