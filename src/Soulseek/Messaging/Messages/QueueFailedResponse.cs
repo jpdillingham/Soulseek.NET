@@ -41,22 +41,13 @@ namespace Soulseek.Messaging.Messages
         public string Message { get; }
 
         /// <summary>
-        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        ///     Creates a new instance of <see cref="QueueFailedResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="instance">The instance to convert.</param>
-        public static implicit operator byte[](QueueFailedResponse instance)
-        {
-            return instance.ToMessage();
-        }
-
-        /// <summary>
-        ///     Parses a new instance of <see cref="QueueFailedResponse"/> from the specified <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static QueueFailedResponse Parse(byte[] message)
+        public static QueueFailedResponse FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.QueueFailed)
@@ -70,7 +61,11 @@ namespace Soulseek.Messaging.Messages
             return new QueueFailedResponse(filename, msg);
         }
 
-        public byte[] ToMessage()
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Peer.QueueFailed)

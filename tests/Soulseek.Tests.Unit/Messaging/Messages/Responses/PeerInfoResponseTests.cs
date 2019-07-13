@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => UserInfoResponse.Parse(msg));
+            var ex = Record.Exception(() => UserInfoResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("foo")
                 .Build();
 
-            var ex = Record.Exception(() => UserInfoResponse.Parse(msg));
+            var ex = Record.Exception(() => UserInfoResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -82,7 +82,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte((byte)(hasFreeSlot ? 1 : 0))
                 .Build();
 
-            var response = UserInfoResponse.Parse(msg);
+            var response = UserInfoResponse.FromByteArray(msg);
 
             Assert.Equal(description, response.Description);
             Assert.True(response.HasPicture);
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte((byte)(hasFreeSlot ? 1 : 0))
                 .Build();
 
-            var response = UserInfoResponse.Parse(msg);
+            var response = UserInfoResponse.FromByteArray(msg);
 
             Assert.Equal(description, response.Description);
             Assert.False(response.HasPicture);

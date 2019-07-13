@@ -69,13 +69,13 @@ namespace Soulseek.Messaging.Messages
         public bool HasFreeUploadSlot { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="UserInfoResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="UserInfoResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static UserInfoResponse Parse(byte[] message)
+        public static UserInfoResponse FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.InfoResponse)

@@ -130,7 +130,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
 
-            var msg = new TransferResponse(token, fileSize).ToMessage();
+            var msg = new TransferResponse(token, fileSize).ToByteArray();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 

@@ -46,13 +46,13 @@ namespace Soulseek.Messaging.Messages
         private IEnumerable<Directory> DirectoryList { get; }
 
         /// <summary>
-        ///     Parses a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="BrowseResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static BrowseResponse Parse(byte[] message)
+        public static BrowseResponse FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.BrowseResponse)
@@ -112,15 +112,10 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
-        /// <param name="instance">The instance to convert.</param>
-        public static implicit operator byte[](BrowseResponse instance)
-        {
-            return instance.ToMessage();
-        }
-
-        public byte[] ToMessage()
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseResponse)

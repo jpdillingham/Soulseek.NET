@@ -18,19 +18,10 @@ namespace Soulseek.Messaging.Messages
     public class BrowseRequest
     {
         /// <summary>
-        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
-        /// <param name="instance">The instance to convert.</param>
-        public static implicit operator byte[](BrowseRequest instance)
-        {
-            return instance.ToMessage();
-        }
-
-        /// <summary>
-        ///     Constructs a <see cref="Message"/> from this request.
-        /// </summary>
-        /// <returns>The constructed message.</returns>
-        public byte[] ToMessage()
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)

@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => TransferRequest.Parse(msg));
+            var ex = Record.Exception(() => TransferRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -66,7 +66,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.TransferRequest)
                 .Build();
 
-            var ex = Record.Exception(() => TransferRequest.Parse(msg));
+            var ex = Record.Exception(() => TransferRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteLong(size)
                 .Build();
 
-            var response = TransferRequest.Parse(msg);
+            var response = TransferRequest.FromByteArray(msg);
 
             Assert.Equal(dir, (int)response.Direction);
             Assert.Equal(token, response.Token);
@@ -102,7 +102,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void ToMessage_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)
         {
             var a = new TransferRequest(dir, token, file, size);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();

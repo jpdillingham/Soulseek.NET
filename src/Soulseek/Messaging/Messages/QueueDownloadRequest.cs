@@ -14,18 +14,33 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     A request to queue a file.
+    /// </summary>
     internal sealed class QueueDownloadRequest
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="QueueDownloadRequest"/> class.
+        /// </summary>
+        /// <param name="filename">The name of the file being enqueued.</param>
         internal QueueDownloadRequest(string filename)
         {
             Filename = filename;
         }
 
+        /// <summary>
+        ///     Gets the name of the file being enqueued.
+        /// </summary>
         public string Filename { get; }
 
-        public static QueueDownloadRequest Parse(byte[] message)
+        /// <summary>
+        ///     Creates a new instance of <see cref="QueueDownloadRequest"/> from the specified <paramref name="bytes"/>.
+        /// </summary>
+        /// <param name="bytes">The byte array from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
+        public static QueueDownloadRequest FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.QueueDownload)
