@@ -1,4 +1,4 @@
-﻿// <copyright file="TcpListenerAdapter.cs" company="JP Dillingham">
+﻿// <copyright file="ITcpListener.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,35 +10,17 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tcp
+namespace Soulseek.Network.Tcp
 {
     using System;
-    using System.Diagnostics.CodeAnalysis;
-    using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
 
     /// <summary>
     ///     Listens for connections from TCP network clients.
     /// </summary>
-    /// <remarks>
-    ///     This is a pass-through implementation of <see cref="ITcpListener"/> over <see cref="TcpListener"/> intended to enable
-    ///     dependency injection.
-    /// </remarks>
-    [ExcludeFromCodeCoverage]
-    internal sealed class TcpListenerAdapter : ITcpListener
+    internal interface ITcpListener
     {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="TcpListenerAdapter"/> class with an optional <paramref name="tcpListener"/>.
-        /// </summary>
-        /// <param name="tcpListener">The optional TcpListener to wrap.</param>
-        public TcpListenerAdapter(TcpListener tcpListener = null)
-        {
-            TcpListener = tcpListener ?? new TcpListener(IPAddress.Parse("0.0.0.0"), 1);
-        }
-
-        private TcpListener TcpListener { get; set; }
-
         /// <summary>
         ///     Accepts a pending connection request as an asynchronous operation.
         /// </summary>
@@ -47,10 +29,7 @@ namespace Soulseek.Tcp
         ///     Thrown when the listener has not been started with a call to Start().
         /// </exception>
         /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
-        public Task<TcpClient> AcceptTcpClientAsync()
-        {
-            return TcpListener.AcceptTcpClientAsync();
-        }
+        Task<TcpClient> AcceptTcpClientAsync();
 
         /// <summary>
         ///     Determines if there are pending connection requests.
@@ -59,27 +38,18 @@ namespace Soulseek.Tcp
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the listener has not been started with a call to Start().
         /// </exception>
-        public bool Pending()
-        {
-            return TcpListener.Pending();
-        }
+        bool Pending();
 
         /// <summary>
         ///     Starts listening for incoming connection requests.
         /// </summary>
         /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
-        public void Start()
-        {
-            TcpListener.Start();
-        }
+        void Start();
 
         /// <summary>
         ///     Closes the listener.
         /// </summary>
         /// <exception cref="SocketException">Thrown when an error occurrs while accessing the socket.</exception>
-        public void Stop()
-        {
-            TcpListener.Stop();
-        }
+        void Stop();
     }
 }

@@ -21,7 +21,8 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
     using Xunit.Abstractions;
 

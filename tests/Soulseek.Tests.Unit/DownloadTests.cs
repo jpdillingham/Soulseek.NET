@@ -16,7 +16,8 @@ namespace Soulseek.Tests.Unit
     using System.Net;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class DownloadTests

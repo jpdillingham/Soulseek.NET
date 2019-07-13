@@ -1,4 +1,4 @@
-﻿// <copyright file="ITcpClient.cs" company="JP Dillingham">
+﻿// <copyright file="TcpClientAdapter.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,9 +10,10 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tcp
+namespace Soulseek.Network.Tcp
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
@@ -20,23 +21,43 @@ namespace Soulseek.Tcp
     /// <summary>
     ///     Provides client connections for TCP network services.
     /// </summary>
-    internal interface ITcpClient : IDisposable
+    /// <remarks>
+    ///     This is a pass-through implementation of <see cref="ITcpClient"/> over <see cref="TcpClient"/> intended to enable
+    ///     dependency injection.
+    /// </remarks>
+    [ExcludeFromCodeCoverage]
+    internal sealed class TcpClientAdapter : ITcpClient
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TcpClientAdapter"/> class with an optional <paramref name="tcpClient"/>.
+        /// </summary>
+        /// <param name="tcpClient">The optional TcpClient to wrap.</param>
+        public TcpClientAdapter(TcpClient tcpClient = null)
+        {
+            TcpClient = tcpClient ?? new TcpClient();
+        }
+
         /// <summary>
         ///     Gets the underlying <see cref="Socket"/>.
         /// </summary>
-        Socket Client { get; }
+        public Socket Client => TcpClient.Client;
 
         /// <summary>
-        ///     Gets a value indicating whether the underlying <see cref="Socket"/> for an <see cref="ITcpClient"/> is connected to
-        ///     a remote host.
+        ///     Gets a value indicating whether the client is connected.
         /// </summary>
-        bool Connected { get; }
+        public bool Connected => TcpClient.Connected;
+
+        private bool Disposed { get; set; }
+        private TcpClient TcpClient { get; set; }
 
         /// <summary>
-        ///     Disposes this <see cref="ITcpClient"/> and requests that the underlying TCP connection be closed.
+        ///     Closes the client connection.
         /// </summary>
-        void Close();
+        public void Close()
+        {
+            TcpClient.Close();
+            Dispose(false);
+        }
 
         /// <summary>
         ///     Connects the client to a remote TCP host using the specified IP address and port number as an asynchronous operation.
@@ -50,7 +71,18 @@ namespace Soulseek.Tcp
         /// </exception>
         /// <exception cref="SocketException">Thrown when an error occurs while accessing the socket.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
-        Task ConnectAsync(IPAddress address, int port);
+        public Task ConnectAsync(IPAddress address, int port)
+        {
+            return TcpClient.ConnectAsync(address, port);
+        }
+
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="TcpClientAdapter"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         /// <summary>
         ///     Returns the <see cref="NetworkStream"/> used to send and receive data.
@@ -58,6 +90,22 @@ namespace Soulseek.Tcp
         /// <returns>The NetworkStream used to send and receive data.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the TCP client is not connected to a remote host.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the TCP client has been disposed.</exception>
-        INetworkStream GetStream();
+        public INetworkStream GetStream()
+        {
+            return new NetworkStreamAdapter(TcpClient.GetStream());
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    TcpClient.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
     }
 }

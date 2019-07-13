@@ -12,8 +12,6 @@
 
 namespace Soulseek
 {
-    using Soulseek.Tcp;
-
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>

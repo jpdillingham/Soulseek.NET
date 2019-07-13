@@ -23,7 +23,8 @@ namespace Soulseek.Tests.Unit.Client
     using Moq;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class ServerConnection_MessageReadTests

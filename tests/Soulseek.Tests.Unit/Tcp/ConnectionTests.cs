@@ -19,7 +19,8 @@ namespace Soulseek.Tests.Unit.Tcp
     using System.Threading;
     using System.Threading.Tasks;
     using Moq;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
     using Xunit.Abstractions;
 

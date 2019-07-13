@@ -1,4 +1,4 @@
-﻿// <copyright file="INetworkStream.cs" company="JP Dillingham">
+﻿// <copyright file="NetworkStreamAdapter.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,9 +10,10 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tcp
+namespace Soulseek.Network.Tcp
 {
     using System;
+    using System.Diagnostics.CodeAnalysis;
     using System.IO;
     using System.Net.Sockets;
     using System.Threading;
@@ -21,12 +22,40 @@ namespace Soulseek.Tcp
     /// <summary>
     ///     Provides the underlying stream of data for network access.
     /// </summary>
-    internal interface INetworkStream : IDisposable
+    /// <remarks>
+    ///     This is a pass-through implementation of <see cref="INetworkStream"/> over <see cref="NetworkStream"/> intended to
+    ///     enable dependency injection.
+    /// </remarks>
+    [ExcludeFromCodeCoverage]
+    internal sealed class NetworkStreamAdapter : INetworkStream
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="NetworkStreamAdapter"/> class.
+        /// </summary>
+        /// <param name="networkStream">The NetworkStream to wrap.</param>
+        public NetworkStreamAdapter(NetworkStream networkStream)
+        {
+            NetworkStream = networkStream;
+        }
+
+        private bool Disposed { get; set; }
+        private NetworkStream NetworkStream { get; set; }
+
         /// <summary>
         ///     Closes the <see cref="NetworkStream"/>.
         /// </summary>
-        void Close();
+        public void Close()
+        {
+            NetworkStream.Close();
+        }
+
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="NetworkStreamAdapter"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+        }
 
         /// <summary>
         ///     Asynchronously reads data from the <see cref="NetworkStream"/>.
@@ -44,7 +73,10 @@ namespace Soulseek.Tcp
         /// <exception cref="InvalidOperationException">Thrown when the stream is write only.</exception>
         /// <exception cref="IOException">Thrown when an error occurs while reading from the network.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed.</exception>
-        Task<int> ReadAsync(byte[] buffer, int offset, int size);
+        public Task<int> ReadAsync(byte[] buffer, int offset, int size)
+        {
+            return NetworkStream.ReadAsync(buffer, offset, size);
+        }
 
         /// <summary>
         ///     Asynchronously reads data from the <see cref="NetworkStream"/>.
@@ -63,7 +95,10 @@ namespace Soulseek.Tcp
         /// <exception cref="InvalidOperationException">Thrown when the stream is write only.</exception>
         /// <exception cref="IOException">Thrown when an error occurs while reading from the network.</exception>
         /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed.</exception>
-        Task<int> ReadAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken);
+        public Task<int> ReadAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken)
+        {
+            return NetworkStream.ReadAsync(buffer, offset, size, cancellationToken);
+        }
 
         /// <summary>
         ///     Asynchronously writes data to the <see cref="NetworkStream"/>.
@@ -79,8 +114,13 @@ namespace Soulseek.Tcp
         ///     <paramref name="buffer"/> minus the value of the <paramref name="offset"/> parameter.
         /// </exception>
         /// <exception cref="IOException">Thrown when an error occurs while writing to the network.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.</exception>
-        Task WriteAsync(byte[] buffer, int offset, int size);
+        /// <exception cref="ObjectDisposedException">
+        ///     Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.
+        /// </exception>
+        public Task WriteAsync(byte[] buffer, int offset, int size)
+        {
+            return NetworkStream.WriteAsync(buffer, offset, size);
+        }
 
         /// <summary>
         ///     Asynchronously writes data to the <see cref="NetworkStream"/>.
@@ -97,7 +137,25 @@ namespace Soulseek.Tcp
         ///     <paramref name="buffer"/> minus the value of the <paramref name="offset"/> parameter.
         /// </exception>
         /// <exception cref="IOException">Thrown when an error occurs while writing to the network.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.</exception>
-        Task WriteAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken);
+        /// <exception cref="ObjectDisposedException">
+        ///     Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.
+        /// </exception>
+        public Task WriteAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken)
+        {
+            return NetworkStream.WriteAsync(buffer, offset, size, cancellationToken);
+        }
+
+        private void Dispose(bool disposing)
+        {
+            if (!Disposed)
+            {
+                if (disposing)
+                {
+                    NetworkStream.Dispose();
+                }
+
+                Disposed = true;
+            }
+        }
     }
 }

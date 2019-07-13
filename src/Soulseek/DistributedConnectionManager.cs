@@ -17,7 +17,7 @@ namespace Soulseek
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
 
     internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
     {

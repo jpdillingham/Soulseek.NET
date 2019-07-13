@@ -4,7 +4,7 @@
     using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Tcp;
+    using Soulseek.Network.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;

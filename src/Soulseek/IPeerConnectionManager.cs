@@ -17,8 +17,8 @@ namespace Soulseek
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
 
     /// <summary>
     ///     Manages peer <see cref="IConnection"/> instances for the application.

@@ -5,7 +5,7 @@
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
 
     internal sealed class PeerMessageHandler : IPeerMessageHandler
     {

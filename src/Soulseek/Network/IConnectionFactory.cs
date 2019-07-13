@@ -1,4 +1,4 @@
-﻿// <copyright file="ConnectionFactory.cs" company="JP Dillingham">
+﻿// <copyright file="IConnectionFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -10,14 +10,15 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tcp
+namespace Soulseek.Network
 {
+    using Soulseek.Network.Tcp;
     using System.Net;
 
     /// <summary>
     ///     Creates connections.
     /// </summary>
-    internal class ConnectionFactory : IConnectionFactory
+    internal interface IConnectionFactory
     {
         /// <summary>
         ///     Gets a <see cref="IConnection"/> with the specified parameters.
@@ -27,8 +28,7 @@ namespace Soulseek.Tcp
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
-            new Connection(ipAddress, port, options, tcpClient);
+        IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null);
 
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> with the specified parameters.
@@ -39,7 +39,6 @@ namespace Soulseek.Tcp
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        public IMessageConnection GetMessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
-            new MessageConnection(username, ipAddress, port, options, tcpClient);
+        IMessageConnection GetMessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null);
     }
 }

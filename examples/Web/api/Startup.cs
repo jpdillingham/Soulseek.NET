@@ -18,7 +18,7 @@
     using Newtonsoft.Json.Converters;
     using Soulseek;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Tcp;
+    using Soulseek.Network.Tcp;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
