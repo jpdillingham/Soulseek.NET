@@ -47,5 +47,6 @@ namespace Soulseek
         public Func<string, IPAddress, int, BrowseResponse> BrowseResponse { get; }
         public Func<string, IPAddress, int, UserInfoResponse> UserInfoResponse { get; }
         public Func<string, IPAddress, int, string, (bool Allowed, string Message)> QueueDownloadResponse { get; }
+        public Func<string, IPAddress, int, string, int> GetPlaceInLineResponse { get; }
     }
 }

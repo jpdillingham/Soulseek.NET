@@ -199,7 +199,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Verify(
                 m => m.Complete(
                     new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename),
-                    It.Is<PeerPlaceInQueueResponse>(r => r.Filename == filename && r.PlaceInQueue == placeInQueue)), Times.Once);
+                    It.Is<PlaceInQueueResponse>(r => r.Filename == filename && r.PlaceInQueue == placeInQueue)), Times.Once);
         }
 
         [Trait("Category", "Message")]

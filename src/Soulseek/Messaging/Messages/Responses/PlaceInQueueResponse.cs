@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerUploadFailedResponse.cs" company="JP Dillingham">
+﻿// <copyright file="PlaceInQueueResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,15 +17,17 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response received when an attempt to queue a file for downloading has failed.
     /// </summary>
-    internal sealed class PeerUploadFailedResponse
+    internal sealed class PlaceInQueueResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerUploadFailedResponse"/> class.
+        ///     Initializes a new instance of the <see cref="PlaceInQueueResponse"/> class.
         /// </summary>
-        /// <param name="filename">The filename which failed to be queued.</param>
-        internal PeerUploadFailedResponse(string filename)
+        /// <param name="filename">The filename which was checked.</param>
+        /// <param name="placeInQueue">The current place in the peer's queue.</param>
+        internal PlaceInQueueResponse(string filename, int placeInQueue)
         {
             Filename = filename;
+            PlaceInQueue = placeInQueue;
         }
 
         /// <summary>
@@ -34,23 +36,29 @@ namespace Soulseek.Messaging.Messages
         public string Filename { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PeerPlaceInQueueResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Gets the current place in the peer's queue.
+        /// </summary>
+        public int PlaceInQueue { get; }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="PlaceInQueueResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PeerUploadFailedResponse FromByteArray(byte[] bytes)
+        public static PlaceInQueueResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Peer.UploadFailed)
+            if (code != MessageCode.Peer.PlaceInQueueResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Upload Failed Response (expected: {(int)MessageCode.Peer.UploadFailed}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Place In Queue Response (expected: {(int)MessageCode.Peer.PlaceInQueueResponse}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();
+            var placeInQueue = reader.ReadInteger();
 
-            return new PeerUploadFailedResponse(filename);
+            return new PlaceInQueueResponse(filename, placeInQueue);
         }
     }
 }

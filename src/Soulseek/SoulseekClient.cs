@@ -1056,7 +1056,7 @@ namespace Soulseek
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename);
-                var responseWait = Waiter.Wait<PeerPlaceInQueueResponse>(waitKey, null, cancellationToken);
+                var responseWait = Waiter.Wait<PlaceInQueueResponse>(waitKey, null, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 

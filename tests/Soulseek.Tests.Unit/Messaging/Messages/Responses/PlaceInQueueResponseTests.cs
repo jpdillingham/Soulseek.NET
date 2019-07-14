@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerUploadFailedResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PeerPlaceInQueueResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,19 +18,16 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerUploadFailedResponseTests
+    public class PeerPlaceInQueueResponseTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string file)
+        public void Instantiates_With_The_Given_Data(string filename, int placeInQueue)
         {
-            PeerUploadFailedResponse response = null;
+            var a = new PlaceInQueueResponse(filename, placeInQueue);
 
-            var ex = Record.Exception(() => response = new PeerUploadFailedResponse(file));
-
-            Assert.Null(ex);
-
-            Assert.Equal(file, response.Filename);
+            Assert.Equal(filename, a.Filename);
+            Assert.Equal(placeInQueue, a.PlaceInQueue);
         }
 
         [Trait("Category", "Parse")]
@@ -41,7 +38,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PeerUploadFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => PlaceInQueueResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -52,10 +49,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadFailed)
+                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
                 .Build();
 
-            var ex = Record.Exception(() => PeerUploadFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => PlaceInQueueResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -63,16 +60,18 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string file)
+        public void Parse_Returns_Expected_Data(string filename, int placeInQueue)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadFailed)
-                .WriteString(file)
+                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
+                .WriteString(filename)
+                .WriteInteger(placeInQueue)
                 .Build();
 
-            var response = PeerUploadFailedResponse.FromByteArray(msg);
+            var response = PlaceInQueueResponse.FromByteArray(msg);
 
-            Assert.Equal(file, response.Filename);
+            Assert.Equal(filename, response.Filename);
+            Assert.Equal(placeInQueue, response.PlaceInQueue);
         }
     }
 }

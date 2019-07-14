@@ -96,10 +96,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetDownloadPlaceInQueueAsync returns expected info"), AutoData]
         public async Task GetDownloadPlaceInQueueAsync_Returns_Expected_Info(string username, string filename, int placeInQueue)
         {
-            var result = new PeerPlaceInQueueResponse(filename, placeInQueue);
+            var result = new PlaceInQueueResponse(filename, placeInQueue);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PeerPlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
@@ -134,7 +134,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetDownloadPlaceInQueueAsync_Throws_DownloadPlaceInQueueException_On_Exception(string username, string filename)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<PeerPlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
             waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
