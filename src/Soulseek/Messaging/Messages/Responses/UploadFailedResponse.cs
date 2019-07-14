@@ -34,7 +34,7 @@ namespace Soulseek.Messaging.Messages
         public string Filename { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PlaceInQueueResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UploadFailedResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
