@@ -24,14 +24,14 @@ namespace Soulseek
     /// </summary>
     public sealed class ClientOptions
     {
-        private readonly Func<string, IPAddress, int, BrowseResponse> defaultBrowseResponse =
-            (u, i, p) => new BrowseResponse(0, new List<Directory>());
+        private readonly Func<string, IPAddress, int, Task<BrowseResponse>> defaultBrowseResponse =
+            (u, i, p) => Task.FromResult(new BrowseResponse(0, new List<Directory>()));
 
         private readonly Func<string, IPAddress, int, string, Task> defaultQueueDownloadAction =
             (u, i, p, f) => { return Task.CompletedTask; };
 
-        private readonly Func<string, IPAddress, int, UserInfoResponse> defaultUserInfoResponse =
-            (u, i, p) => new UserInfoResponse(string.Empty, false, null, 0, 0, false);
+        private readonly Func<string, IPAddress, int, Task<UserInfoResponse>> defaultUserInfoResponse =
+            (u, i, p) => Task.FromResult(new UserInfoResponse(string.Empty, false, null, 0, 0, false));
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="ClientOptions"/> class.
@@ -72,11 +72,11 @@ namespace Soulseek
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
-            Func<string, IPAddress, int, string, int, SearchResponse> searchResponseResolver = null,
-            Func<string, IPAddress, int, BrowseResponse> browseResponseResolver = null,
-            Func<string, IPAddress, int, UserInfoResponse> userInfoResponseResolver = null,
+            Func<string, IPAddress, int, string, int, Task<SearchResponse>> searchResponseResolver = null,
+            Func<string, IPAddress, int, Task<BrowseResponse>> browseResponseResolver = null,
+            Func<string, IPAddress, int, Task<UserInfoResponse>> userInfoResponseResolver = null,
             Func<string, IPAddress, int, string, Task> queueDownloadAction = null,
-            Func<string, IPAddress, int, string, PlaceInQueueResponse> placeInQueueResponseResolver = null)
+            Func<string, IPAddress, int, string, Task<PlaceInQueueResponse>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
@@ -106,7 +106,7 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the <see cref="BrowseResponse"/> for an incoming request. (Default = a response
         ///     with no files or directories).
         /// </summary>
-        public Func<string, IPAddress, int, BrowseResponse> BrowseResponseResolver { get; }
+        public Func<string, IPAddress, int, Task<BrowseResponse>> BrowseResponseResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
@@ -141,7 +141,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </summary>
-        public Func<string, IPAddress, int, string, PlaceInQueueResponse> PlaceInQueueResponseResolver { get; }
+        public Func<string, IPAddress, int, string, Task<PlaceInQueueResponse>> PlaceInQueueResponseResolver { get; }
 
         /// <summary>
         ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
@@ -155,7 +155,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
         /// </summary>
-        public Func<string, IPAddress, int, string, int, SearchResponse> SearchResponseResolver { get; }
+        public Func<string, IPAddress, int, string, int, Task<SearchResponse>> SearchResponseResolver { get; }
 
         /// <summary>
         ///     Gets the options for the server message connection.
@@ -176,6 +176,6 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the <see cref="UserInfoResponse"/> for an incoming request. (Default = a
         ///     blank/zeroed response).
         /// </summary>
-        public Func<string, IPAddress, int, UserInfoResponse> UserInfoResponseResolver { get; }
+        public Func<string, IPAddress, int, Task<UserInfoResponse>> UserInfoResponseResolver { get; }
     }
 }
