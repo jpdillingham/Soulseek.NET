@@ -132,7 +132,7 @@
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
-                        var browseResponse = SoulseekClient.Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
+                        var browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
                         await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
                         break;
 
