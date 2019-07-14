@@ -39,18 +39,9 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
-        /// <param name="resolvers">The response message resolvers.</param>
-        public SoulseekClient(ResponseResolvers resolvers)
-            : this(DefaultAddress, DefaultPort, resolvers, null)
-        {
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
-        /// </summary>
         /// <param name="options">The client options.</param>
         public SoulseekClient(ClientOptions options)
-            : this(DefaultAddress, DefaultPort, null, options)
+            : this(DefaultAddress, DefaultPort, options)
         {
         }
 
@@ -59,10 +50,9 @@ namespace Soulseek
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        /// <param name="resolvers">The response message resolvers.</param>
         /// <param name="options">The client options.</param>
-        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, ResponseResolvers resolvers = null, ClientOptions options = null)
-            : this(address, port, resolvers, options, null)
+        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, ClientOptions options = null)
+            : this(address, port, options, null)
         {
         }
 
@@ -71,7 +61,6 @@ namespace Soulseek
         /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
-        /// <param name="resolvers">The response message resolvers.</param>
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
@@ -82,7 +71,6 @@ namespace Soulseek
         internal SoulseekClient(
             string address,
             int port,
-            ResponseResolvers resolvers = null,
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
@@ -94,7 +82,6 @@ namespace Soulseek
             Address = address;
             Port = port;
 
-            Resolvers = resolvers ?? new ResponseResolvers();
             Options = options ?? new ClientOptions();
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
@@ -205,11 +192,6 @@ namespace Soulseek
         ///     Gets server port.
         /// </summary>
         public int Port { get; }
-
-        /// <summary>
-        ///     Gets the response message resolvers.
-        /// </summary>
-        public ResponseResolvers Resolvers { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

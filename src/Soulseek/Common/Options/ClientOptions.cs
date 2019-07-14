@@ -12,11 +12,27 @@
 
 namespace Soulseek
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Net;
+    using System.Threading.Tasks;
+    using Soulseek.Exceptions;
+    using Soulseek.Messaging.Messages;
+
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>
     public sealed class ClientOptions
     {
+        private readonly Func<string, IPAddress, int, BrowseResponse> defaultBrowseResponse =
+            (u, i, p) => new BrowseResponse(0, new List<Directory>());
+
+        private readonly Func<string, IPAddress, int, string, Task> defaultQueueDownloadAction =
+            (u, i, p, f) => { return Task.CompletedTask; };
+
+        private readonly Func<string, IPAddress, int, UserInfoResponse> defaultUserInfoResponse =
+            (u, i, p) => new UserInfoResponse(string.Empty, false, null, 0, 0, false);
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="ClientOptions"/> class.
         /// </summary>
@@ -32,6 +48,19 @@ namespace Soulseek
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
+        /// <param name="searchResponseResolver">
+        ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
+        /// </param>
+        /// <param name="browseResponseResolver">
+        ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
+        /// </param>
+        /// <param name="userInfoResponseResolver">
+        ///     The delegate used to resolve the <see cref="UserInfoResponse"/> for an incoming <see cref="UserInfoRequest"/>.
+        /// </param>
+        /// <param name="queueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
+        /// <param name="placeInQueueResponseResolver">
+        ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </param>
         public ClientOptions(
             int? listenPort = null,
             int concurrentPeerMessageConnectionLimit = 500,
@@ -42,7 +71,12 @@ namespace Soulseek
             ConnectionOptions serverConnectionOptions = null,
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
-            ConnectionOptions incomingConnectionOptions = null)
+            ConnectionOptions incomingConnectionOptions = null,
+            Func<string, IPAddress, int, string, int, SearchResponse> searchResponseResolver = null,
+            Func<string, IPAddress, int, BrowseResponse> browseResponseResolver = null,
+            Func<string, IPAddress, int, UserInfoResponse> userInfoResponseResolver = null,
+            Func<string, IPAddress, int, string, Task> queueDownloadAction = null,
+            Func<string, IPAddress, int, string, PlaceInQueueResponse> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
@@ -50,16 +84,29 @@ namespace Soulseek
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
             StartingToken = startingToken;
+
             ServerConnectionOptions = serverConnectionOptions ?? new ConnectionOptions();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
             TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
+
+            SearchResponseResolver = searchResponseResolver;
+            BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
+            UserInfoResponseResolver = userInfoResponseResolver ?? defaultUserInfoResponse;
+            QueueDownloadAction = queueDownloadAction ?? defaultQueueDownloadAction;
+            PlaceInQueueResponseResolver = placeInQueueResponseResolver;
         }
 
         /// <summary>
         ///     Gets a value indicating whether to automatically send a private message acknowledgement upon receipt. (Default = true).
         /// </summary>
         public bool AutoAcknowledgePrivateMessages { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="BrowseResponse"/> for an incoming request. (Default = a response
+        ///     with no files or directories).
+        /// </summary>
+        public Func<string, IPAddress, int, BrowseResponse> BrowseResponseResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
@@ -92,6 +139,25 @@ namespace Soulseek
         public ConnectionOptions PeerConnectionOptions { get; }
 
         /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
+        /// </summary>
+        public Func<string, IPAddress, int, string, PlaceInQueueResponse> PlaceInQueueResponseResolver { get; }
+
+        /// <summary>
+        ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
+        /// </summary>
+        /// <remarks>
+        ///     This delegate must throw an Exception to indicate a rejected download. If the thrown Exception is of type
+        ///     <see cref="QueueDownloadException"/> the message will be sent to the client, otherwise a default message will be sent.
+        /// </remarks>
+        public Func<string, IPAddress, int, string, Task> QueueDownloadAction { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
+        /// </summary>
+        public Func<string, IPAddress, int, string, int, SearchResponse> SearchResponseResolver { get; }
+
+        /// <summary>
         ///     Gets the options for the server message connection.
         /// </summary>
         public ConnectionOptions ServerConnectionOptions { get; }
@@ -105,5 +171,11 @@ namespace Soulseek
         ///     Gets the options for peer transfer connections.
         /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the <see cref="UserInfoResponse"/> for an incoming request. (Default = a
+        ///     blank/zeroed response).
+        /// </summary>
+        public Func<string, IPAddress, int, UserInfoResponse> UserInfoResponseResolver { get; }
     }
 }

@@ -81,11 +81,6 @@ namespace Soulseek
         int Port { get; }
 
         /// <summary>
-        ///     Gets the response message resolvers.
-        /// </summary>
-        ResponseResolvers Resolvers { get; }
-
-        /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
         SoulseekClientStates State { get; }

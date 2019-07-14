@@ -17,14 +17,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response received when an attempt to queue a file for downloading has failed.
     /// </summary>
-    internal sealed class PlaceInQueueResponse
+    public sealed class PlaceInQueueResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PlaceInQueueResponse"/> class.
         /// </summary>
         /// <param name="filename">The filename which was checked.</param>
         /// <param name="placeInQueue">The current place in the peer's queue.</param>
-        internal PlaceInQueueResponse(string filename, int placeInQueue)
+        public PlaceInQueueResponse(string filename, int placeInQueue)
         {
             Filename = filename;
             PlaceInQueue = placeInQueue;
