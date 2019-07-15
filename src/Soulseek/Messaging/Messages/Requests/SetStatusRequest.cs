@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the current user status.
     /// </summary>
-    public class SetStatusRequest
+    internal sealed class SetStatusRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SetStatusRequest"/> class.

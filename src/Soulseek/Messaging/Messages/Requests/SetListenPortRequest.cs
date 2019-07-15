@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Logs in to the server.
     /// </summary>
-    public class SetListenPortRequest
+    internal sealed class SetListenPortRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SetListenPortRequest"/> class.

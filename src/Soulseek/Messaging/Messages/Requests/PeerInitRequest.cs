@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Initializes a peer connection.
     /// </summary>
-    public class PeerInitRequest
+    internal sealed class PeerInitRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerInitRequest"/> class.

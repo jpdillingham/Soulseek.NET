@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Acknowledges the reciept of a private message.
     /// </summary>
-    public class AcknowledgePrivateMessageRequest
+    internal sealed class AcknowledgePrivateMessageRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AcknowledgePrivateMessageRequest"/> class.

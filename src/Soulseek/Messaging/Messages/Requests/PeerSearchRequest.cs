@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests a search from a peer.
     /// </summary>
-    public class PeerSearchRequest
+    internal sealed class PeerSearchRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerSearchRequest"/> class.

@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Adds a peer to the server-side watch list.
     /// </summary>
-    public class HaveNoParentsRequest
+    internal sealed class HaveNoParentsRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="HaveNoParentsRequest"/> class.

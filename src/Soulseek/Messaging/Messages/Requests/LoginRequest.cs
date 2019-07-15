@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Logs in to the server.
     /// </summary>
-    public class LoginRequest
+    internal sealed class LoginRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="LoginRequest"/> class.

@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the status of a peer.
     /// </summary>
-    public class GetStatusRequest
+    internal sealed class GetStatusRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="GetStatusRequest"/> class.

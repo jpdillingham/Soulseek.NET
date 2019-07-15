@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the current number of shared directories and files.
     /// </summary>
-    public class SetSharedCountsRequest
+    internal sealed class SetSharedCountsRequest
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SetSharedCountsRequest"/> class.
