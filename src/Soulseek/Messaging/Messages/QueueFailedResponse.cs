@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerQueueFailedResponse.cs" company="JP Dillingham">
+﻿// <copyright file="QueueFailedResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as

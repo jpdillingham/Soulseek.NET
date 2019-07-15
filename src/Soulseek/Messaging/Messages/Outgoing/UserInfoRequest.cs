@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests information about a user.
     /// </summary>
-    public class UserInfoRequest
+    internal class UserInfoRequest
     {
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.

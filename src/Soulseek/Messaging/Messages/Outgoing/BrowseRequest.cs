@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the shared file list from a peer.
     /// </summary>
-    public class BrowseRequest
+    internal sealed class BrowseRequest
     {
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
