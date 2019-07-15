@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => RoomList.Parse(msg));
+            var ex = Record.Exception(() => RoomList.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => RoomList.Parse(msg));
+            var ex = Record.Exception(() => RoomList.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            var response = RoomList.Parse(builder.Build()).ToList();
+            var response = RoomList.FromByteArray(builder.Build()).ToList();
 
             Assert.Equal(rooms.Count, response.Count);
 

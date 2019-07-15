@@ -76,7 +76,7 @@ namespace Soulseek
             Func<string, IPAddress, int, Task<BrowseResponse>> browseResponseResolver = null,
             Func<string, IPAddress, int, Task<UserInfoResponse>> userInfoResponseResolver = null,
             Func<string, IPAddress, int, string, Task> queueDownloadAction = null,
-            Func<string, IPAddress, int, string, Task<PlaceInQueueResponse>> placeInQueueResponseResolver = null)
+            Func<string, IPAddress, int, string, Task<int>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
@@ -141,7 +141,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </summary>
-        public Func<string, IPAddress, int, string, Task<PlaceInQueueResponse>> PlaceInQueueResponseResolver { get; }
+        public Func<string, IPAddress, int, string, Task<int>> PlaceInQueueResponseResolver { get; }
 
         /// <summary>
         ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).

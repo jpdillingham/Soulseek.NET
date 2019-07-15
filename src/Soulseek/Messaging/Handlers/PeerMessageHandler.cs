@@ -37,7 +37,7 @@
                 switch (code)
                 {
                     case MessageCode.Peer.SearchResponse:
-                        var searchResponse = SearchResponseSlim.Parse(message);
+                        var searchResponse = SearchResponseSlim.FromByteArray(message);
                         if (SoulseekClient.Searches.TryGetValue(searchResponse.Token, out var search))
                         {
                             search.AddResponse(searchResponse);
