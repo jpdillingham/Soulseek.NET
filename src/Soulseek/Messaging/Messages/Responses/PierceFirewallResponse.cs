@@ -15,13 +15,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Pierces the local firewall to initiate a connection.
     /// </summary>
-    public sealed class PierceFirewallResponse
+    internal sealed class PierceFirewallResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PierceFirewallResponse"/> class.
         /// </summary>
         /// <param name="token">The unique token for the connection.</param>
-        internal PierceFirewallResponse(int token)
+        public PierceFirewallResponse(int token)
         {
             Token = token;
         }

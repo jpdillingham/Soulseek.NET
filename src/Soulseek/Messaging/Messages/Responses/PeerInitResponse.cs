@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Initiates a peer connection.
     /// </summary>
-    public sealed class PeerInitResponse
+    internal sealed class PeerInitResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerInitResponse"/> class.
@@ -23,7 +23,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The username of the peer.</param>
         /// <param name="transferType">The transfer type (P or F).</param>
         /// <param name="token">The unique token for the connection.</param>
-        internal PeerInitResponse(string username, string transferType, int token)
+        public PeerInitResponse(string username, string transferType, int token)
         {
             Username = username;
             TransferType = transferType;

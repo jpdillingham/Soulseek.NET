@@ -27,7 +27,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="succeeded">A value indicating whether the login was successful.</param>
         /// <param name="message">The reason for a login failure.</param>
         /// <param name="ipAddress">The client IP address, if the login was successful.</param>
-        internal LoginResponse(bool succeeded, string message, IPAddress ipAddress = null)
+        public LoginResponse(bool succeeded, string message, IPAddress ipAddress = null)
         {
             Succeeded = succeeded;
             Message = message;

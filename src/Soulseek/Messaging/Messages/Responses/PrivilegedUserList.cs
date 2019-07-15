@@ -18,14 +18,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of the privileged users on the server.
     /// </summary>
-    public static class PrivilegedUserList
+    internal static class PrivilegedUserList
     {
         /// <summary>
-        ///     Creates a new instance of <see cref="PrivilegedUserList"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new list of privileged users from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<string> Parse(byte[] bytes)
+        public static IReadOnlyCollection<string> FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();

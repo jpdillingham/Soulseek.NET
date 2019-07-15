@@ -32,7 +32,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="messageReader">The MessageReader instance used to parse the file list.</param>
-        internal SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode.Peer> messageReader)
+        public SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode.Peer> messageReader)
         {
             Username = username;
             Token = token;
@@ -83,7 +83,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static SearchResponseSlim Parse(byte[] bytes)
+        public static SearchResponseSlim FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();

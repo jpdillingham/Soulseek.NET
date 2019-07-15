@@ -29,7 +29,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="ipAddress">The IP address to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
-        internal ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token)
+        public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token)
         {
             Username = username;
             Type = type;

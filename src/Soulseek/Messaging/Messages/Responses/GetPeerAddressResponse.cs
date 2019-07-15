@@ -27,7 +27,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The requested peer username.</param>
         /// <param name="ipAddress">The IP address of the peer.</param>
         /// <param name="port">The port on which the peer is listening.</param>
-        internal GetPeerAddressResponse(string username, IPAddress ipAddress, int port)
+        public GetPeerAddressResponse(string username, IPAddress ipAddress, int port)
         {
             Username = username;
             IPAddress = ipAddress;

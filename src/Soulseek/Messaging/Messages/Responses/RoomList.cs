@@ -18,14 +18,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of available chat rooms.
     /// </summary>
-    public static class RoomList
+    internal static class RoomList
     {
         /// <summary>
-        ///     Creates a new instance of <see cref="RoomList"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new list of rooms from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<(string Name, int UserCount)> Parse(byte[] bytes)
+        public static IReadOnlyCollection<(string Name, int UserCount)> FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();

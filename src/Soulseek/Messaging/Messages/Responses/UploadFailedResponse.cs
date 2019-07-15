@@ -23,7 +23,7 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="UploadFailedResponse"/> class.
         /// </summary>
         /// <param name="filename">The filename which failed to be queued.</param>
-        internal UploadFailedResponse(string filename)
+        public UploadFailedResponse(string filename)
         {
             Filename = filename;
         }

@@ -20,14 +20,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming list of available distributed parent candidates.
     /// </summary>
-    public sealed class NetInfo
+    internal sealed class NetInfo
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="NetInfo"/> class.
         /// </summary>
         /// <param name="parentCount">The number of parent candidates.</param>
         /// <param name="parents">The list of parent candidates.</param>
-        internal NetInfo(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
+        public NetInfo(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
         {
             ParentCount = parentCount;
             Parents = parents;

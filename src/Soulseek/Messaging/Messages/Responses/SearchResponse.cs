@@ -105,9 +105,9 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static SearchResponse FromByteArray(byte[] bytes)
+        internal static SearchResponse FromByteArray(byte[] bytes)
         {
-            var slim = SearchResponseSlim.Parse(bytes);
+            var slim = SearchResponseSlim.FromByteArray(bytes);
             return new SearchResponse(slim);
         }
 
