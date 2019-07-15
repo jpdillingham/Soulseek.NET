@@ -46,10 +46,10 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Returns the request as a byte array.
+        ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
-        /// <returns>The request as a byte array.</returns>
-        public byte[] ToMessage()
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Initialization.PeerInit)

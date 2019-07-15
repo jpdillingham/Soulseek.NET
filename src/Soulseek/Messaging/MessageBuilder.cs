@@ -19,7 +19,7 @@ namespace Soulseek.Messaging
     using System.Linq;
     using System.Text;
     using Soulseek.Exceptions;
-    using Soulseek.Zlib;
+    using Soulseek.Compression;
 
     /// <summary>
     ///     Builds a message.

@@ -22,8 +22,8 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class BrowseAsyncTests

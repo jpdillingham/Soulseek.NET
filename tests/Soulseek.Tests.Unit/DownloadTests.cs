@@ -16,7 +16,8 @@ namespace Soulseek.Tests.Unit
     using System.Net;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class DownloadTests
@@ -42,7 +43,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.IPAddress);
             Assert.Null(d.Port);
             Assert.Null(d.Data);
-            Assert.Equal(null, d.RemoteToken);
+            Assert.Null(d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(TransferStates.None, d.State);
             Assert.Equal(0, d.AverageSpeed);
@@ -53,7 +54,7 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.StartTime);
             Assert.Null(d.EndTime);
             Assert.Equal(0, d.PercentComplete);
-            Assert.Equal(null, d.RemoteToken);
+            Assert.Null(d.RemoteToken);
             Assert.Equal(options, d.Options);
         }
 

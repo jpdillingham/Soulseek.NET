@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.GetPeerAddress)
                 .Build();
 
-            var ex = Record.Exception(() => IntegerResponse.Parse<MessageCode.Server>(msg));
+            var ex = Record.Exception(() => IntegerResponse.FromByteArray<MessageCode.Server>(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(num)
                 .Build();
 
-            var response = IntegerResponse.Parse<MessageCode.Server>(msg);
+            var response = IntegerResponse.FromByteArray<MessageCode.Server>(msg);
 
             Assert.Equal(num, response);
         }

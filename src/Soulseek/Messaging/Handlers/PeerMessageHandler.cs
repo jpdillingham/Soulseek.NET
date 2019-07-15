@@ -2,10 +2,12 @@
 {
     using System;
     using System.Linq;
+    using System.Net;
+    using System.Threading.Tasks;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging;
+    using Soulseek.Network;
 
     internal sealed class PeerMessageHandler : IPeerMessageHandler
     {
@@ -47,7 +49,7 @@
                         var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, connection.Username);
                         try
                         {
-                            SoulseekClient.Waiter.Complete(browseWaitKey, BrowseResponse.Parse(message));
+                            SoulseekClient.Waiter.Complete(browseWaitKey, BrowseResponse.FromByteArray(message));
                         }
                         catch (Exception ex)
                         {
@@ -58,31 +60,31 @@
                         break;
 
                     case MessageCode.Peer.InfoResponse:
-                        var infoResponse = UserInfoResponse.Parse(message);
+                        var infoResponse = UserInfoResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), infoResponse);
                         break;
 
                     case MessageCode.Peer.TransferResponse:
-                        var transferResponse = TransferResponse.Parse(message);
+                        var transferResponse = TransferResponse.FromByteArray(message);
                         Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
 
                     case MessageCode.Peer.QueueDownload:
-                        // the end state here is to wait until there's actually a free slot, then send this request to the peer to
-                        // let them know we are ready to start the actual transfer.
-                        var queueDownloadRequest = QueueDownloadRequest.Parse(message);
-                        var (queueAllowed, queueRejectionMessage) = SoulseekClient.Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename);
+                        var queueDownloadRequest = QueueDownloadRequest.FromByteArray(message);
 
-                        if (!queueAllowed)
+                        var (queueRejected, queueRejectionMessage) =
+                            await TryEnqueueDownloadAsync(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename).ConfigureAwait(false);
+
+                        if (queueRejected)
                         {
-                            await connection.WriteAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage)).ConfigureAwait(false);
+                            await connection.WriteAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToByteArray()).ConfigureAwait(false);
                         }
 
                         break;
 
                     case MessageCode.Peer.TransferRequest:
-                        var transferRequest = TransferRequest.Parse(message);
+                        var transferRequest = TransferRequest.FromByteArray(message);
 
                         if (transferRequest.Direction == TransferDirection.Upload)
                         {
@@ -90,33 +92,33 @@
                         }
                         else
                         {
-                            var (transferAllowed, transferRejectionMessage) = SoulseekClient.Resolvers.QueueDownloadResponse(connection.Username, connection.IPAddress, connection.Port, transferRequest.Filename);
+                            var (transferRejected, transferRejectionMessage) = await TryEnqueueDownloadAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Filename).ConfigureAwait(false);
 
-                            if (!transferAllowed)
+                            if (transferRejected)
                             {
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage)).ConfigureAwait(false);
-                                await connection.WriteAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage)).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
+                                await connection.WriteAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
                             }
                             else
                             {
-                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued.")).ConfigureAwait(false);
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued.").ToByteArray()).ConfigureAwait(false);
                             }
                         }
 
                         break;
 
                     case MessageCode.Peer.QueueFailed:
-                        var queueFailedResponse = QueueFailedResponse.Parse(message);
+                        var queueFailedResponse = QueueFailedResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
                         break;
 
                     case MessageCode.Peer.PlaceInQueueResponse:
-                        var placeInQueueResponse = PeerPlaceInQueueResponse.Parse(message);
+                        var placeInQueueResponse = PlaceInQueueResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.PlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
                         break;
 
                     case MessageCode.Peer.UploadFailed:
-                        var uploadFailedResponse = PeerUploadFailedResponse.Parse(message);
+                        var uploadFailedResponse = UploadFailedResponse.FromByteArray(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
@@ -130,8 +132,8 @@
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
-                        var browseResponse = SoulseekClient.Resolvers.BrowseResponse(connection.Username, connection.IPAddress, connection.Port);
-                        await connection.WriteAsync(browseResponse).ConfigureAwait(false);
+                        var browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
                         break;
 
                     default:
@@ -143,6 +145,32 @@
             {
                 Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
             }
+        }
+
+        private async Task<(bool Rejected, string RejectionMessage)> TryEnqueueDownloadAsync(string username, IPAddress ipAddress, int port, string filename)
+        {
+            bool rejected = false;
+            string rejectionMessage = string.Empty;
+
+            try
+            {
+                await SoulseekClient.Options
+                    .QueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
+            }
+            catch (QueueDownloadException ex)
+            {
+                // pass the exception message through to the remote user only if QueueDownloadException is thrown
+                rejected = true;
+                rejectionMessage = ex.Message;
+            }
+            catch (Exception)
+            {
+                // if any other exception is thrown, return a generic message.  do this to avoid exposing potentially sensitive information that may be contained in the Exception message (filesystem details, etc.)
+                rejected = true;
+                rejectionMessage = "Enqueue failed due to internal error.";
+            }
+
+            return (rejected, rejectionMessage);
         }
     }
 }

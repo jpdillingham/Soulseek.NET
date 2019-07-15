@@ -15,10 +15,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using Soulseek.Compression;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Zlib;
     using Xunit;
 
     public class BrowseResponseTests
@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.TransferResponse)
                 .Build();
 
-            var ex = Record.Exception(() => BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => BrowseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -79,7 +79,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2, 0x3 })
                 .Build();
 
-            var ex = Record.Exception(() => BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => BrowseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageCompressionException>(ex);
@@ -99,7 +99,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             BrowseResponse r = default(BrowseResponse);
 
-            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
             Assert.Null(ex);
             Assert.Equal(0, r.DirectoryCount);
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             BrowseResponse r = default(BrowseResponse);
 
-            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
             Assert.Null(ex);
             Assert.Equal(1, r.DirectoryCount);
@@ -152,7 +152,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
-            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -180,7 +180,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             BrowseResponse r = default(BrowseResponse);
 
-            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
             Assert.Null(ex);
             Assert.Equal(1, r.DirectoryCount);
@@ -229,7 +229,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             BrowseResponse r = default(BrowseResponse);
 
-            var ex = Record.Exception(() => r = BrowseResponse.Parse(msg));
+            var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
             Assert.Null(ex);
             Assert.Equal(dirs.Count, r.DirectoryCount);

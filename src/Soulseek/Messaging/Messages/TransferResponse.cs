@@ -70,22 +70,13 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Implicitly converts an instance to a <see cref="Message"/> via <see cref="ToMessage()"/>.
+        ///     Creates a new instance of <see cref="TransferResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="instance">The instance to convert.</param>
-        public static implicit operator byte[](TransferResponse instance)
-        {
-            return instance.ToMessage();
-        }
-
-        /// <summary>
-        ///     Parses a new instance of <see cref="TransferResponse"/> from the specified <paramref name="message"/>.
-        /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static TransferResponse Parse(byte[] message)
+        public static TransferResponse FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Peer>(message);
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Peer.TransferResponse)
@@ -111,10 +102,10 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Constructs a <see cref="Message"/> from this request.
+        ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
-        /// <returns>The constructed message.</returns>
-        public byte[] ToMessage()
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.TransferResponse)

@@ -17,20 +17,40 @@ namespace Soulseek.Messaging.Messages
     using System.Net;
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     An incoming list of available distributed parent candidates.
+    /// </summary>
     public sealed class NetInfo
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="NetInfo"/> class.
+        /// </summary>
+        /// <param name="parentCount">The number of parent candidates.</param>
+        /// <param name="parents">The list of parent candidates.</param>
         internal NetInfo(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
         {
             ParentCount = parentCount;
             Parents = parents;
         }
 
+        /// <summary>
+        ///     Gets the number of parent candidates.
+        /// </summary>
         public int ParentCount { get; }
+
+        /// <summary>
+        ///     Gets the list of parent candidates.
+        /// </summary>
         public IEnumerable<(string Username, IPAddress IPAddress, int Port)> Parents { get; }
 
-        public static NetInfo Parse(byte[] message)
+        /// <summary>
+        ///     Creates a new instance of <see cref="NetInfo"/> from the specified <paramref name="bytes"/>.
+        /// </summary>
+        /// <param name="bytes">The byte array from which to parse.</param>
+        /// <returns>The created instance.</returns>
+        public static NetInfo FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Server>(message);
+            var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.NetInfo)

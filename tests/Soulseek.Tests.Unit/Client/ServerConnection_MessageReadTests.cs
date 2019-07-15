@@ -23,8 +23,8 @@ namespace Soulseek.Tests.Unit.Client
     using Moq;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class ServerConnection_MessageReadTests
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "Raises PrivateMessageReceived event on ServerPrivateMessage"), AutoData]
         public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
-            var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
+            var options = new ClientOptions(autoAcknowledgePrivateMessages: false);
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
@@ -143,7 +143,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
         public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
-            var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
+            var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.Is<byte[]>(a => new MessageReader<MessageCode.Server>(a).ReadInteger() == id), It.IsAny<CancellationToken>()))

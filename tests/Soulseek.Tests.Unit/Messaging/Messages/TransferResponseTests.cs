@@ -62,7 +62,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => TransferResponse.Parse(msg));
+            var ex = Record.Exception(() => TransferResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.TransferResponse)
                 .Build();
 
-            var ex = Record.Exception(() => TransferResponse.Parse(msg));
+            var ex = Record.Exception(() => TransferResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -93,7 +93,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteLong(size)
                 .Build();
 
-            var response = TransferResponse.Parse(msg);
+            var response = TransferResponse.FromByteArray(msg);
 
             Assert.Equal(token, response.Token);
             Assert.True(response.Allowed);
@@ -111,7 +111,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(message)
                 .Build();
 
-            var response = TransferResponse.Parse(msg);
+            var response = TransferResponse.FromByteArray(msg);
 
             Assert.Equal(token, response.Token);
             Assert.False(response.Allowed);
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void ToMessage_Constructs_The_Correct_Message_When_Allowed(int token, long size)
         {
             var a = new TransferResponse(token, size);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
@@ -142,7 +142,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void ToMessage_Constructs_The_Correct_Message_When_Disallowed(int token, string message)
         {
             var a = new TransferResponse(token, message);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var code = new MessageReader<MessageCode.Peer>(msg).ReadCode();
 

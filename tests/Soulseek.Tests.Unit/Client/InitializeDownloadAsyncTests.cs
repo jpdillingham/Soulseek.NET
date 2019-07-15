@@ -20,7 +20,7 @@
 //    using AutoFixture.Xunit2;
 //    using Moq;
 //    using Soulseek.Messaging.Messages;
-//    using Soulseek.Tcp;
+//    using Soulseek.Network;
 //    using Xunit;
 
 //    public class InitializeDownloadAsyncTests

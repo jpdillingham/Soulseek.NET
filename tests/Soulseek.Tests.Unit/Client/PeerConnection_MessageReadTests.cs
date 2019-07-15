@@ -22,7 +22,7 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Messaging.Tcp;
+    using Soulseek.Network;
     using Xunit;
 
     public class PeerConnection_MessageReadTests
@@ -131,7 +131,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
 
-            var msg = new TransferResponse(token, fileSize).ToMessage();
+            var msg = new TransferResponse(token, fileSize).ToByteArray();
 
             var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object);
 
@@ -199,7 +199,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Verify(
                 m => m.Complete(
                     new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename),
-                    It.Is<PeerPlaceInQueueResponse>(r => r.Filename == filename && r.PlaceInQueue == placeInQueue)), Times.Once);
+                    It.Is<PlaceInQueueResponse>(r => r.Filename == filename && r.PlaceInQueue == placeInQueue)), Times.Once);
         }
 
         [Trait("Category", "Message")]

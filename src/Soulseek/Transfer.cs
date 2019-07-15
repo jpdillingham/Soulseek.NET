@@ -12,9 +12,9 @@
 
 namespace Soulseek
 {
+    using Soulseek.Network.Tcp;
     using System;
     using System.Net;
-    using Soulseek.Tcp;
 
     /// <summary>
     ///     A single file transfer.

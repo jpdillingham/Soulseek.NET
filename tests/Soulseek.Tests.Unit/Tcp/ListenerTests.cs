@@ -12,12 +12,8 @@
 
 namespace Soulseek.Tests.Unit.Tcp
 {
-    using System.Net;
-    using System.Net.Sockets;
-    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
-    using Moq;
-    using Soulseek.Tcp;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class ListenerTests

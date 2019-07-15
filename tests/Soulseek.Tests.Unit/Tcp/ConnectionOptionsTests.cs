@@ -13,7 +13,7 @@
 namespace Soulseek.Tests.Unit.Tcp
 {
     using AutoFixture.Xunit2;
-    using Soulseek.Tcp;
+    using Soulseek.Network;
     using Xunit;
 
     public class ConnectionOptionsTests

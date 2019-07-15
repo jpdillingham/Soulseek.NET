@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void AcknowledgePrivateMessageRequest_Constructs_The_Correct_Message()
         {
             var num = new Random().Next();
-            var msg = new AcknowledgePrivateMessageRequest(num).ToMessage();
+            var msg = new AcknowledgePrivateMessageRequest(num).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -64,13 +64,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void GetPeerAddressRequest_Constructs_The_Correct_Message()
         {
             var name = Guid.NewGuid().ToString();
-            var msg = new GetPeerAddressRequest(name).ToMessage();
+            var msg = new GetPeerAddressRequest(name).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Server.GetPeerAddress, code);
-            Assert.Equal(name.Length + 8, msg.Length); 
+            Assert.Equal(name.Length + 8, msg.Length);
             Assert.Equal(name, reader.ReadString());
         }
 
@@ -98,7 +98,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var name = Guid.NewGuid().ToString();
             var password = Guid.NewGuid().ToString();
             var a = new LoginRequest(name, password);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -129,7 +129,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Fact(DisplayName = "PeerBrowseRequest constructs the correct Message")]
         public void PeerBrowseRequest_Constructs_The_Correct_Message()
         {
-            var msg = new BrowseRequest().ToMessage();
+            var msg = new BrowseRequest().ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
@@ -160,14 +160,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var name = Guid.NewGuid().ToString();
             var token = new Random().Next();
             var a = new PeerInitRequest(name, "P", token);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Initialization>(msg);
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Initialization.PeerInit, code);
             Assert.Equal(1 + 4 + name.Length + "P".Length + 8, msg.Length);
-
 
             Assert.Equal(name, reader.ReadString());
             Assert.Equal("P", reader.ReadString());
@@ -191,7 +190,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PeerSearchRequest_Constructs_The_Correct_Message(string text, int token)
         {
             var a = new PeerSearchRequest(text, token);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
@@ -221,7 +220,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var token = new Random().Next();
             var a = new PierceFirewallRequest(token);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Initialization>(msg);
             var code = reader.ReadCode();
@@ -249,7 +248,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void SearchRequest_Constructs_The_Correct_Message(string text, int token)
         {
             var a = new SearchRequest(text, token);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -266,7 +265,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PeerInfoRequest_Constructs_The_Correct_Message()
         {
             var a = new UserInfoRequest();
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
@@ -291,7 +290,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PeerPlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
         {
             var a = new PeerPlaceInQueueRequest(filename);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
             var code = reader.ReadCode();
@@ -316,7 +315,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void AddUserRequest_Constructs_The_Correct_Message(string username)
         {
             var a = new AddUserRequest(username);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -341,7 +340,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void GetStatusRequest_Constructs_The_Correct_Message(string username)
         {
             var a = new GetStatusRequest(username);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -366,7 +365,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void SetListenPortRequest_Constructs_The_Correct_Message(int port)
         {
             var a = new SetListenPortRequest(port);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -393,7 +392,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void ConnectToPeerRequest_Constructs_The_Correct_Message(int token, string username, string type)
         {
             var a = new ConnectToPeerRequest(token, username, type);
-            var msg = a.ToMessage();
+            var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();

@@ -48,11 +48,11 @@
                     case MessageCode.Server.ParentMinSpeed:
                     case MessageCode.Server.ParentSpeedRatio:
                     case MessageCode.Server.WishlistInterval:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.Parse<MessageCode.Server>(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
                         break;
 
                     case MessageCode.Server.Login:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.RoomList:
@@ -64,7 +64,7 @@
                         break;
 
                     case MessageCode.Server.NetInfo:
-                        var netInfo = NetInfo.Parse(message);
+                        var netInfo = NetInfo.FromByteArray(message);
                         foreach (var peer in netInfo.Parents)
                         {
                             Console.WriteLine($"{peer.Username} {peer.IPAddress} {peer.Port}");
@@ -73,7 +73,7 @@
                         break;
 
                     case MessageCode.Server.ConnectToPeer:
-                        var connectToPeerResponse = ConnectToPeerResponse.Parse(message);
+                        var connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
 
                         if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
                         {
@@ -102,12 +102,12 @@
                         break;
 
                     case MessageCode.Server.AddUser:
-                        var addUserResponse = AddUserResponse.Parse(message);
+                        var addUserResponse = AddUserResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
                         break;
 
                     case MessageCode.Server.GetStatus:
-                        var statsResponse = GetStatusResponse.Parse(message);
+                        var statsResponse = GetStatusResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
@@ -124,7 +124,7 @@
                         break;
 
                     case MessageCode.Server.GetPeerAddress:
-                        var peerAddressResponse = GetPeerAddressResponse.Parse(message);
+                        var peerAddressResponse = GetPeerAddressResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 

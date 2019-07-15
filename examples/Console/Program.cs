@@ -4,7 +4,7 @@
     using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Tcp;
+    using Soulseek.Network.Tcp;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -77,7 +77,7 @@
             EnvironmentVariables.Populate();
             Arguments.Populate(clearExistingValues: false);
 
-            var options = new SoulseekClientOptions(
+            var options = new ClientOptions(
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 15),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 5)

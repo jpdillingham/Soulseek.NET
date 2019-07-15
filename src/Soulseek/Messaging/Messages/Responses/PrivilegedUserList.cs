@@ -21,13 +21,13 @@ namespace Soulseek.Messaging.Messages
     public static class PrivilegedUserList
     {
         /// <summary>
-        ///     Parses a new instance of <see cref="PrivilegedUserList"/> from the specified <paramref name="message"/>.
+        ///     Creates a new instance of <see cref="PrivilegedUserList"/> from the specified <paramref name="bytes"/>.
         /// </summary>
-        /// <param name="message">The message from which to parse.</param>
+        /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<string> Parse(byte[] message)
+        public static IReadOnlyCollection<string> Parse(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Server>(message);
+            var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.PrivilegedUsers)

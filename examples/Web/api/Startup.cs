@@ -18,7 +18,7 @@
     using Newtonsoft.Json.Converters;
     using Soulseek;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Tcp;
+    using Soulseek.Network.Tcp;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
@@ -45,8 +45,14 @@
 
             SharedDirectory = @"\\WSE\Music\Processed\Rage Against the Machine\Bootlegs\Killing Your Enemy In 1995";
 
-            var resolvers = new SoulseekClientResolvers(
-                browseResponse: (u, i, p) => 
+            var options = new ClientOptions(
+                listenPort: ListenPort,
+                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                concurrentPeerMessageConnectionLimit: 1000000,
+                serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
+                peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
+                transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
+                browseResponseResolver: (u, i, p) =>
                 {
                     // limited to just the root for now
                     var files = System.IO.Directory.GetFiles(SharedDirectory)
@@ -54,26 +60,18 @@
 
                     var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
 
-                    return new BrowseResponse(1, new List<Soulseek.Directory>() { dir });
-                }, queueDownloadResponse: (u, i, p, f) =>
+                    return Task.FromResult(new BrowseResponse(1, new List<Soulseek.Directory>() { dir }));
+                }, queueDownloadAction: (u, i, p, f) =>
                 {
                     Console.WriteLine($"Dispositioning {f}");
-                    //var file = $"The quick brown fox jumps over the lazy dog {System.IO.Path.GetFileName(f)}";
+
                     Task.Run(async () => await Client.UploadAsync(u, f, System.IO.File.ReadAllBytes(f)))
                         .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
 
-                    return (true, null);
+                    return Task.CompletedTask;
                 });
 
-            var options = new SoulseekClientOptions(
-                listenPort: ListenPort,
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
-                concurrentPeerMessageConnectionLimit: 1000000,
-                serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
-                peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
-                transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5));
-
-            Client = new SoulseekClient(resolvers: resolvers, options: options);
+            Client = new SoulseekClient(options: options);
             Client.DiagnosticGenerated += (e, args) =>
             {
                 if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;

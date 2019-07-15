@@ -73,7 +73,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the client options.
         /// </summary>
-        SoulseekClientOptions Options { get; }
+        ClientOptions Options { get; }
 
         /// <summary>
         ///     Gets the server port.
