@@ -135,11 +135,18 @@ namespace Soulseek.Messaging
             return retVal;
         }
 
+        /// <summary>
+        ///     Reads the message code.
+        /// </summary>
+        /// <returns>The message code.</returns>
         public T ReadCode()
         {
             try
             {
-                return (T)Enum.Parse(typeof(T), BitConverter.ToInt32(Message.Slice(4, CodeLength).ToArray(), 0).ToString(CultureInfo.InvariantCulture));
+                var codeBytes = Message.Slice(4, CodeLength).ToArray();
+                var codeInt = codeBytes.Length > 1 ? BitConverter.ToInt32(codeBytes, 0) : codeBytes[0];
+
+                return (T)Enum.Parse(typeof(T), codeInt.ToString(CultureInfo.InvariantCulture));
             }
             catch (Exception ex)
             {
