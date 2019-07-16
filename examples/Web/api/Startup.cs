@@ -52,6 +52,18 @@
                 serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
+                userInfoResponseResolver: (u, i, p) =>
+                {
+                    var info = new UserInfoResponse(
+                        description: $"i'm a test! also, your username is {u}, IP address is {i}, and the port on which you connected to me is {p}", 
+                        hasPicture: true, 
+                        picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"), 
+                        uploadSlots: 0, 
+                        queueLength: 0, 
+                        hasFreeUploadSlot: false);
+
+                    return Task.FromResult(info);
+                },
                 browseResponseResolver: (u, i, p) =>
                 {
                     // limited to just the root for now
