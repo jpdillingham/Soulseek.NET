@@ -50,7 +50,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static BrowseResponse FromByteArray(byte[] bytes)
+        internal static BrowseResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
@@ -115,7 +115,7 @@ namespace Soulseek.Messaging.Messages
         ///     Constructs a <see cref="byte"/> array from this message.
         /// </summary>
         /// <returns>The constructed byte array.</returns>
-        public byte[] ToByteArray()
+        internal byte[] ToByteArray()
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseResponse)

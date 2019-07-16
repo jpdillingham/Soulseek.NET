@@ -23,7 +23,7 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="QueueDownloadRequest"/> class.
         /// </summary>
         /// <param name="filename">The name of the file being enqueued.</param>
-        internal QueueDownloadRequest(string filename)
+        public QueueDownloadRequest(string filename)
         {
             Filename = filename;
         }

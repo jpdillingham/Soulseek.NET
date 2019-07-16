@@ -56,11 +56,11 @@
                         break;
 
                     case MessageCode.Server.RoomList:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.Parse(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.NetInfo:
@@ -113,7 +113,7 @@
                         break;
 
                     case MessageCode.Server.PrivateMessage:
-                        var pm = PrivateMessage.Parse(message);
+                        var pm = PrivateMessage.FromByteArray(message);
                         PrivateMessageReceived?.Invoke(this, pm);
 
                         if (SoulseekClient.Options.AutoAcknowledgePrivateMessages)

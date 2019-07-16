@@ -26,7 +26,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="filename">The name of the file being transferred.</param>
         /// <param name="fileSize">The size of the file being transferred.</param>
-        internal TransferRequest(TransferDirection direction, int token, string filename, long fileSize = 0)
+        public TransferRequest(TransferDirection direction, int token, string filename, long fileSize = 0)
         {
             Direction = direction;
             Token = token;
