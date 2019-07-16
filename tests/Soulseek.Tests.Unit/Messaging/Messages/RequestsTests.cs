@@ -43,7 +43,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Server.AcknowledgePrivateMessage, code);
-            Assert.Equal(8, msg.Length);
+
+            // length + code + token
+            Assert.Equal(4 + 4 + 4, msg.Length);
             Assert.Equal(num, reader.ReadInteger());
         }
 
@@ -70,7 +72,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Server.GetPeerAddress, code);
-            Assert.Equal(name.Length + 8, msg.Length);
+
+            // length + code + name length + name string
+            Assert.Equal(4 + 4 + 4 + name.Length, msg.Length);
             Assert.Equal(name, reader.ReadString());
         }
 
@@ -104,7 +108,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Server.Login, code);
-            Assert.Equal(name.Length + password.Length + a.Hash.Length + 24, msg.Length);
+            Assert.Equal(name.Length + password.Length + a.Hash.Length + 28, msg.Length);
             Assert.Equal(name, reader.ReadString());
             Assert.Equal(password, reader.ReadString());
             Assert.Equal(a.Version, reader.ReadInteger());
@@ -135,7 +139,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Peer.BrowseRequest, code);
-            Assert.Equal(4, msg.Length);
+            Assert.Equal(8, msg.Length);
         }
 
         [Trait("Category", "Instantiation")]
@@ -166,7 +170,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Initialization.PeerInit, code);
-            Assert.Equal(1 + 4 + name.Length + "P".Length + 8, msg.Length);
+            Assert.Equal(4 + 1 + 4 + name.Length + "P".Length + 8, msg.Length);
 
             Assert.Equal(name, reader.ReadString());
             Assert.Equal("P", reader.ReadString());
@@ -196,7 +200,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Peer.SearchRequest, code);
-            Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
+            Assert.Equal(4 + 4 + 4 + 4 + text.Length, msg.Length);
 
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(text, reader.ReadString());
@@ -226,7 +230,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Initialization.PierceFirewall, code);
-            Assert.Equal(1 + 4, msg.Length);
+            Assert.Equal(4 + 1 + 4, msg.Length);
 
             Assert.Equal(token, reader.ReadInteger());
         }
@@ -254,7 +258,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Server.FileSearch, code);
-            Assert.Equal(4 + 4 + 4 + text.Length, msg.Length);
+            Assert.Equal(4 + 4 + 4 + 4 + text.Length, msg.Length);
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(text, reader.ReadString());
         }
@@ -271,7 +275,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var code = reader.ReadCode();
 
             Assert.Equal(MessageCode.Peer.InfoRequest, code);
-            Assert.Equal(4, msg.Length);
+            Assert.Equal(8, msg.Length);
         }
 
         [Trait("Category", "Instantiation")]

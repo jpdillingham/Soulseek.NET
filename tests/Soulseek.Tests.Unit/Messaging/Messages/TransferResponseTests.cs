@@ -130,8 +130,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.TransferResponse, code);
 
-            // code + token + allowed + size
-            Assert.Equal(4 + 4 + 1 + 8, msg.Length);
+            // length + code + token + allowed + size
+            Assert.Equal(4 + 4 + 4 + 1 + 8, msg.Length);
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(1, reader.ReadByte());
             Assert.Equal(size, reader.ReadLong());
@@ -148,8 +148,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.TransferResponse, code);
 
-            // code + token + allowed + message len + message
-            Assert.Equal(4 + 4 + 1 + 4 + message.Length, msg.Length);
+            // length + code + token + allowed + message len + message
+            Assert.Equal(4 + 4 + 4 + 1 + 4 + message.Length, msg.Length);
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
 

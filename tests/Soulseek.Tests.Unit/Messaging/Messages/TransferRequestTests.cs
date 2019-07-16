@@ -109,8 +109,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.TransferRequest, code);
 
-            // code + direction + token + file length + filename + size
-            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 8, msg.Length);
+            // length + code + direction + token + file length + filename + size
+            Assert.Equal(4 + 4 + 4 + 4 + 4 + file.Length + 8, msg.Length);
             Assert.Equal(0, reader.ReadInteger()); // direction
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(file, reader.ReadString());
