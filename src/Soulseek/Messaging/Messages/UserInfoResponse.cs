@@ -28,7 +28,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSlots">The number of configured upload slots.</param>
         /// <param name="queueLength">The current queue length.</param>
         /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
-        internal UserInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
+        public UserInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
             Description = description;
             HasPicture = hasPicture;
@@ -98,6 +98,32 @@ namespace Soulseek.Messaging.Messages
             var hasFreeUploadSlot = reader.ReadByte() > 0;
 
             return new UserInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeUploadSlot);
+        }
+
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        internal byte[] ToByteArray()
+        {
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.InfoResponse)
+                .WriteString(Description)
+                .WriteByte((byte)(HasPicture ? 1 : 0));
+
+            if (HasPicture)
+            {
+                builder
+                    .WriteInteger(Picture.Length)
+                    .WriteBytes(Picture);
+            }
+
+            builder
+                .WriteInteger(UploadSlots)
+                .WriteInteger(QueueLength)
+                .WriteByte((byte)(HasFreeUploadSlot ? 1 : 0));
+
+            return builder.Build();
         }
     }
 }
