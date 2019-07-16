@@ -31,7 +31,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(num, a.Id);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "AcknowledgePrivateMessageRequest")]
         [Fact(DisplayName = "AcknowledgePrivateMessageRequest constructs the correct Message")]
         public void AcknowledgePrivateMessageRequest_Constructs_The_Correct_Message()
@@ -60,7 +60,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(name, a.Username);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "GetPeerAddressRequest")]
         [Fact(DisplayName = "GetPeerAddressRequest constructs the correct Message")]
         public void GetPeerAddressRequest_Constructs_The_Correct_Message()
@@ -94,7 +94,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.NotEqual(0, a.MinorVersion);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "LoginRequest")]
         [Fact(DisplayName = "LoginRequest constructs the correct Message")]
         public void LoginRequest_Constructs_The_Correct_Message()
@@ -128,7 +128,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Null(ex);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "PeerBrowseRequest")]
         [Fact(DisplayName = "PeerBrowseRequest constructs the correct Message")]
         public void PeerBrowseRequest_Constructs_The_Correct_Message()
@@ -156,7 +156,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, a.Token);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "PeerInitRequest")]
         [Fact(DisplayName = "PeerInitRequest constructs the correct Message")]
         public void PeerInitRequest_Constructs_The_Correct_Message()
@@ -188,7 +188,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, a.Token);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "PeerSearchRequest")]
         [Theory(DisplayName = "PeerSearchRequest constructs the correct Message"), AutoData]
         public void PeerSearchRequest_Constructs_The_Correct_Message(string text, int token)
@@ -217,7 +217,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, a.Token);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "PierceFirewallRequest")]
         [Fact(DisplayName = "PierceFirewallRequest constructs the correct Message")]
         public void PierceFirewallRequest_Constructs_The_Correct_Message()
@@ -246,7 +246,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, a.Token);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "SearchRequest")]
         [Theory(DisplayName = "SearchRequest constructs the correct Message"), AutoData]
         public void SearchRequest_Constructs_The_Correct_Message(string text, int token)
@@ -263,7 +263,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(text, reader.ReadString());
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "PeerInfoRequest")]
         [Fact(DisplayName = "PeerInfoRequest constructs the correct Message")]
         public void PeerInfoRequest_Constructs_The_Correct_Message()
@@ -288,7 +288,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(filename, a.Filename);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "PeerPlaceInQueueRequest")]
         [Theory(DisplayName = "PeerPlaceInQueueRequest constructs the correct Message"), AutoData]
         public void PeerPlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
@@ -313,7 +313,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(username, a.Username);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "AddUserRequest")]
         [Theory(DisplayName = "AddUserRequest constructs the correct message"), AutoData]
         public void AddUserRequest_Constructs_The_Correct_Message(string username)
@@ -338,7 +338,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(username, a.Username);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "GetStatusRequest")]
         [Theory(DisplayName = "GetStatusRequest constructs the correct message"), AutoData]
         public void GetStatusRequest_Constructs_The_Correct_Message(string username)
@@ -363,7 +363,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(port, a.Port);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "SetListenPortRequest")]
         [Theory(DisplayName = "SetListenPortRequest constructs the correct message"), AutoData]
         public void SetListenPortRequest_Constructs_The_Correct_Message(int port)
@@ -390,7 +390,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(type, a.Type);
         }
 
-        [Trait("Category", "ToMessage")]
+        [Trait("Category", "ToByteArray")]
         [Trait("Request", "ConnectToPeerRequest")]
         [Theory(DisplayName = "ConnectToPeerRequest constructs the correct message"), AutoData]
         public void ConnectToPeerRequest_Constructs_The_Correct_Message(int token, string username, string type)

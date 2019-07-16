@@ -97,9 +97,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(size, response.FileSize);
         }
 
-        [Trait("Category", "ToMessage")]
-        [Theory(DisplayName = "ToMessage constructs the correct Message"), AutoData]
-        public void ToMessage_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray constructs the correct Message"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)
         {
             var a = new TransferRequest(dir, token, file, size);
             var msg = a.ToByteArray();

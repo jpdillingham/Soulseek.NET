@@ -101,7 +101,7 @@
 //        internal async Task AddUnsolicitedTransferConnectionAsync_Connects_And_Sends_PeerInit(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
 //        {
 //            var key = new ConnectionKey(ipAddress, port);
-//            var expectedBytes = new PeerInitRequest(username, "F", token).ToMessage().ToByteArray();
+//            var expectedBytes = new PeerInitRequest(username, "F", token).ToByteArray().ToByteArray();
 //            byte[] actualBytes = Array.Empty<byte>();
 
 //            var conn = new Mock<IConnection>();
@@ -140,7 +140,7 @@
 //        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
 //        {
 //            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
-//            var expectedBytes = new PierceFirewallRequest(token).ToMessage().ToByteArray();
+//            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
 //            byte[] actualBytes = Array.Empty<byte>();
 
 //            var conn = new Mock<IConnection>();
@@ -181,7 +181,7 @@
 //        {
 //            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
 
-//            var expectedBytes = new PierceFirewallRequest(token).ToMessage().ToByteArray();
+//            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
 //            byte[] actualBytes = Array.Empty<byte>();
 
 //            var tokenFactory = new Mock<ITokenFactory>();
@@ -244,7 +244,7 @@
 //        {
 //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
 
-//            var expectedBytes = new PeerInitRequest(username, "P", token).ToMessage().ToByteArray();
+//            var expectedBytes = new PeerInitRequest(username, "P", token).ToByteArray().ToByteArray();
 //            byte[] actualBytes = Array.Empty<byte>();
 
 //            var tokenFactory = new Mock<ITokenFactory>();
