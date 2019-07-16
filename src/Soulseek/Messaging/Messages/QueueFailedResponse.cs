@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="filename">The filename which failed to be queued.</param>
         /// <param name="message">The reason for the failure.</param>
-        internal QueueFailedResponse(string filename, string message)
+        public QueueFailedResponse(string filename, string message)
         {
             Filename = filename;
             Message = message;

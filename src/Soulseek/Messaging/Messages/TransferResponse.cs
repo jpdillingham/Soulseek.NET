@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="message">The reason the transfer was disallowed.</param>
-        internal TransferResponse(int token, string message)
+        public TransferResponse(int token, string message)
         {
             Token = token;
             Allowed = false;
@@ -36,14 +36,18 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="fileSize">The size of the file being transferred.</param>
-        internal TransferResponse(int token, long fileSize)
+        public TransferResponse(int token, long fileSize)
         {
             Token = token;
             Allowed = true;
             FileSize = fileSize;
         }
 
-        internal TransferResponse(int token)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TransferResponse"/> class.
+        /// </summary>
+        /// <param name="token">The unique token for the transfer.</param>
+        public TransferResponse(int token)
         {
             Token = token;
             Allowed = true;
