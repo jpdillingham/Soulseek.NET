@@ -59,9 +59,26 @@
 
                         break;
 
+                    case MessageCode.Peer.InfoRequest:
+                        var outgoingInfo = await new ClientOptions()
+                            .UserInfoResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+
+                        try
+                        {
+                            outgoingInfo = await SoulseekClient.Options
+                                .UserInfoResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to resolve UserInfoResponse: {ex.Message}", ex);
+                        }
+
+                        await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
+                        break;
+
                     case MessageCode.Peer.InfoResponse:
-                        var infoResponse = UserInfoResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), infoResponse);
+                        var incomingInfo = UserInfoResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), incomingInfo);
                         break;
 
                     case MessageCode.Peer.TransferResponse:
