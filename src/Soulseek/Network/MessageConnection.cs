@@ -53,26 +53,20 @@ namespace Soulseek.Network
         internal MessageConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(ipAddress, port, options, tcpClient)
         {
-            // if the supplied ITcpClient instance is not null and is Connected, disallow StartReadingContinuously() to prevent
-            // duplicate running loops.
-            CanStartReadingContinuously = tcpClient?.Connected ?? false;
-
-            // if Username is empty, this is a server connection.  begin reading continuously, and throw on exception.
-            if (string.IsNullOrEmpty(Username))
+            // bind the connected event to begin reading upon connection.  if we received a connected client, this will never fire and the read loop must be started via ReadContinuouslyAsync().
+            Connected += (sender, e) =>
             {
-                Connected += (sender, e) =>
+                // if Username is empty, this is a server connection.  begin reading continuously, and throw on exception.
+                if (string.IsNullOrEmpty(Username))
                 {
                     Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();
-                };
-            }
-            else
-            {
-                Connected += (sender, e) =>
+                }
+                else
                 {
-                    // swallow exceptions from peer connections.
+                    // swallow exceptions from peer connections; these will be handled by timeouts.
                     Task.Run(() => ReadContinuouslyAsync()).Forget();
-                };
-            }
+                }
+            };
         }
 
         /// <summary>
@@ -95,22 +89,24 @@ namespace Soulseek.Network
         /// </summary>
         public string Username { get; private set; } = string.Empty;
 
-        private bool CanStartReadingContinuously { get; set; }
-
         /// <summary>
         ///     Begins the internal continuous read loop, if it has not yet started.
         /// </summary>
         public void StartReadingContinuously()
         {
-            if (CanStartReadingContinuously)
+            if (!ReadingContinuously)
             {
-                CanStartReadingContinuously = false;
                 Task.Run(() => ReadContinuouslyAsync()).Forget();
             }
         }
 
         private async Task ReadContinuouslyAsync()
         {
+            if (ReadingContinuously)
+            {
+                return;
+            }
+
             ReadingContinuously = true;
 
             try
