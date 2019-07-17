@@ -433,5 +433,30 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(dirs, reader.ReadInteger());
             Assert.Equal(files, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SetStatusRequest")]
+        [Theory(DisplayName = "SetStatusRequest instantiates properly"), AutoData]
+        public void SetStatusRequest_Instantiates_Properly(UserStatus status)
+        {
+            var a = new SetStatusRequest(status);
+
+            Assert.Equal(status, a.Status);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "SetStatusRequest")]
+        [Theory(DisplayName = "SetStatusRequest constructs the correct message"), AutoData]
+        public void SetStatusRequest_Constructs_The_Correct_Message(UserStatus status)
+        {
+            var a = new SetStatusRequest(status);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.SetOnlineStatus, code);
+            Assert.Equal((int)status, reader.ReadInteger());
+        }
     }
 }
