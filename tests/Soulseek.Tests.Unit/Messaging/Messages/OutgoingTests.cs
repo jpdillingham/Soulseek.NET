@@ -406,5 +406,32 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(username, reader.ReadString());
             Assert.Equal(type, reader.ReadString());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "SetSharedCountsRequest")]
+        [Theory(DisplayName = "SetSharedCountsRequest instantiates properly"), AutoData]
+        public void SetSharedCountsRequest_Instantiates_Properly(int dirs, int files)
+        {
+            var a = new SetSharedCountsRequest(dirs, files);
+
+            Assert.Equal(dirs, a.DirectoryCount);
+            Assert.Equal(files, a.FileCount);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "SetSharedCountsRequest")]
+        [Theory(DisplayName = "SetSharedCountsRequest constructs the correct message"), AutoData]
+        public void SetSharedCountsRequest_Constructs_The_Correct_Message(int dirs, int files)
+        {
+            var a = new SetSharedCountsRequest(dirs, files);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.SharedFoldersAndFiles, code);
+            Assert.Equal(dirs, reader.ReadInteger());
+            Assert.Equal(files, reader.ReadInteger());
+        }
     }
 }
