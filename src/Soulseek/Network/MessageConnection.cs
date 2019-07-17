@@ -12,12 +12,12 @@
 
 namespace Soulseek.Network
 {
-    using Soulseek.Network.Tcp;
     using System;
     using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Network.Tcp;
 
     /// <summary>
     ///     Provides client connections to the Soulseek network.
