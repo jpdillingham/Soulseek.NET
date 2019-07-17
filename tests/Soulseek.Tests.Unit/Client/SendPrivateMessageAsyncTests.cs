@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<PrivateMessageException>(ex);
