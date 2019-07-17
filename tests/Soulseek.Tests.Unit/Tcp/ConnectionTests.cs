@@ -18,6 +18,7 @@ namespace Soulseek.Tests.Unit.Tcp
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
@@ -230,8 +231,7 @@ namespace Soulseek.Tests.Unit.Tcp
             var ex = await Record.ExceptionAsync(async () => await c.ConnectAsync());
 
             Assert.NotNull(ex);
-            Assert.IsType<ConnectionException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+            Assert.IsType<TimeoutException>(ex);
 
             t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
         }
@@ -260,8 +260,7 @@ namespace Soulseek.Tests.Unit.Tcp
             }
 
             Assert.NotNull(ex);
-            Assert.IsType<ConnectionException>(ex);
-            Assert.IsType<OperationCanceledException>(ex.InnerException);
+            Assert.IsType<OperationCanceledException>(ex);
 
             t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
         }
@@ -520,21 +519,23 @@ namespace Soulseek.Tests.Unit.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Fact(DisplayName = "Read throws if length is long and larger than int")]
-        public async Task Read_Throws_If_Length_Is_Long_And_Larger_Than_Int()
+        [Theory(DisplayName = "Read does not throw if length is long and larger than int"), AutoData]
+        public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Larger_Than_Int(long length)
         {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult((int)length));
+
             var t = new Mock<ITcpClient>();
             t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
             t.Setup(m => m.Connected).Returns(true);
+            t.Setup(m => m.GetStream()).Returns(s.Object);
 
             var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object);
 
-            long length = 2147483648; // max = 2147483647
-
             var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
 
-            Assert.NotNull(ex);
-            Assert.IsType<NotImplementedException>(ex);
+            Assert.Null(ex);
         }
 
         [Trait("Category", "Read")]

@@ -230,7 +230,7 @@ namespace Soulseek.Tests.Unit.Messaging.Tcp
                     }
                     else if (callCount % 2 == 1)
                     {
-                        var data = BitConverter.GetBytes((int)MessageCode.Peer.InfoRequest - 20000);
+                        var data = BitConverter.GetBytes((int)MessageCode.Peer.InfoRequest);
                         Array.Copy(data, bytes, data.Length);
                     }
 
