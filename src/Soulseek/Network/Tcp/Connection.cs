@@ -303,12 +303,7 @@ namespace Soulseek.Network.Tcp
                 throw new InvalidOperationException($"Invalid attempt to send to a disconnected or transitioning connection (current state: {State})");
             }
 
-            if (length <= int.MaxValue)
-            {
-                return ReadInternalAsync((int)length, cancellationToken ?? CancellationToken.None);
-            }
-
-            return ReadLongInternalAsync(length, cancellationToken ?? CancellationToken.None);
+            return ReadInternalAsync(length, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -389,7 +384,7 @@ namespace Soulseek.Network.Tcp
             }
         }
 
-        private async Task<byte[]> ReadInternalAsync(int length, CancellationToken cancellationToken)
+        private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
         {
             InactivityTimer?.Reset();
 
@@ -403,7 +398,7 @@ namespace Soulseek.Network.Tcp
                 while (totalBytesRead < length)
                 {
                     var bytesRemaining = length - totalBytesRead;
-                    var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : bytesRemaining;
+                    var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
 
                     var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
 
@@ -427,26 +422,6 @@ namespace Soulseek.Network.Tcp
                 Disconnect($"Read error: {ex.Message}");
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
-        }
-
-        private async Task<byte[]> ReadLongInternalAsync(long length, CancellationToken cancellationToken)
-        {
-            // NetworkStream.ReadAsync doesn't support long, so we need to break this up into int-sized chunks.
-            var remainingLength = length;
-            var allBytes = new List<byte>();
-
-            do
-            {
-                var currentLength = remainingLength > int.MaxValue ? int.MaxValue : (int)remainingLength;
-
-                var bytes = await ReadInternalAsync(currentLength, cancellationToken).ConfigureAwait(false);
-                allBytes.AddRange(bytes.ToList());
-
-                remainingLength -= currentLength;
-            }
-            while (remainingLength > 0);
-
-            return allBytes.ToArray();
         }
 
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
