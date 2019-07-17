@@ -51,16 +51,47 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates server connection with given IP"), AutoData]
-        public void Instantiates_Peer_Connection_With_Given_IP(IPAddress ipAddress, int port, ConnectionOptions options)
+        [Theory(DisplayName = "Throws when given username is invalid")]
+        [InlineData("")]
+        [InlineData(" ")]
+        [InlineData("\t")]
+        [InlineData(null)]
+        public void Throws_When_Given_Username_Is_Invalid(string username)
         {
-            var c = new MessageConnection(ipAddress, port, options);
+            IMessageConnection c;
+            var ex = Record.Exception(() => c = new MessageConnection(username, IPAddress.Parse("0.0.0.0"), 1, null));
 
-            Assert.Equal(ipAddress, c.IPAddress);
-            Assert.Equal(port, c.Port);
-            Assert.Equal(options, c.Options);
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+        }
 
-            Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port), c.Key);
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates server connection with given IP"), AutoData]
+        public void Instantiates_Server_Connection_With_Given_IP(IPAddress ipAddress, int port, ConnectionOptions options)
+        {
+            using (var c = new MessageConnection(ipAddress, port, options))
+            {
+                Assert.Equal(ipAddress, c.IPAddress);
+                Assert.Equal(port, c.Port);
+                Assert.Equal(options, c.Options);
+
+                Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port), c.Key);
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates peer connection with given IP and username"), AutoData]
+        public void Instantiates_Peer_Connection_With_Given_IP_And_Username(string username, IPAddress ipAddress, int port, ConnectionOptions options)
+        {
+            using (var c = new MessageConnection(username, ipAddress, port, options))
+            {
+                Assert.Equal(username, c.Username);
+                Assert.Equal(ipAddress, c.IPAddress);
+                Assert.Equal(port, c.Port);
+                Assert.Equal(options, c.Options);
+
+                Assert.Equal(new ConnectionKey(username, ipAddress, port), c.Key);
+            }
         }
 
         [Trait("Category", "WriteAsync")]
