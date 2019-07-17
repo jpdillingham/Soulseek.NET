@@ -38,13 +38,6 @@ namespace Soulseek.Messaging
                 throw new ArgumentNullException(nameof(bytes), "Invalid attempt to initialize MessageReader with a null byte array.");
             }
 
-            if (bytes.Length < 8)
-            {
-                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, "Invalid attempt to initialize MessageReader with byte array of length less than the minimum (8 bytes).");
-            }
-
-            Message = bytes.AsMemory();
-
             if (Enum.GetUnderlyingType(typeof(T)) == typeof(byte))
             {
                 CodeLength = 1;
@@ -54,6 +47,12 @@ namespace Soulseek.Messaging
                 CodeLength = 4;
             }
 
+            if (bytes.Length < 4 + CodeLength)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, $"Invalid attempt to initialize MessageReader with byte array of length less than the minimum ({4 + CodeLength} bytes).");
+            }
+
+            Message = bytes.AsMemory();
             Payload = Message.Slice(4 + CodeLength);
         }
 
@@ -141,17 +140,9 @@ namespace Soulseek.Messaging
         /// <returns>The message code.</returns>
         public T ReadCode()
         {
-            try
-            {
-                var codeBytes = Message.Slice(4, CodeLength).ToArray();
-                var codeInt = codeBytes.Length > 1 ? BitConverter.ToInt32(codeBytes, 0) : codeBytes[0];
-
-                return (T)Enum.Parse(typeof(T), codeInt.ToString(CultureInfo.InvariantCulture));
-            }
-            catch (Exception ex)
-            {
-                throw new MessageReadException($"Failed to read message code: {ex.Message}.", ex);
-            }
+            var codeBytes = Message.Slice(4, CodeLength).ToArray();
+            var codeInt = codeBytes.Length > 1 ? BitConverter.ToInt32(codeBytes, 0) : codeBytes[0];
+            return (T)Enum.Parse(typeof(T), codeInt.ToString(CultureInfo.InvariantCulture));
         }
 
         /// <summary>
