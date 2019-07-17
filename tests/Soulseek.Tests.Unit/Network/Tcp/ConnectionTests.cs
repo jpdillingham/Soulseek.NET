@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit.Tcp
+namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using System;
     using System.Collections.Generic;
@@ -20,7 +20,6 @@ namespace Soulseek.Tests.Unit.Tcp
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
     using Xunit.Abstractions;

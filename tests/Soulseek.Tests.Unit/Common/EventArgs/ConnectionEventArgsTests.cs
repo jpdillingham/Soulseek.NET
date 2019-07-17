@@ -10,9 +10,8 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Tests.Unit.Tcp
+namespace Soulseek.Tests.Unit
 {
-    using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
 
