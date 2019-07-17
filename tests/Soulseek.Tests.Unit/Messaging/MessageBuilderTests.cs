@@ -48,6 +48,32 @@ namespace Soulseek.Tests.Unit.Messaging
         }
 
         [Trait("Category", "Code")]
+        [Theory(DisplayName = "Distributed Code sets code bytes"), AutoData]
+        public void Distributed_Code_Sets_Code_Bytes(MessageCode.Distributed code)
+        {
+            var builder = new MessageBuilder();
+
+            builder.WriteCode(code);
+
+            var c = builder.GetProperty<List<byte>>("CodeBytes").ToArray();
+
+            Assert.Equal((byte)code, c[0]);
+        }
+
+        [Trait("Category", "Code")]
+        [Theory(DisplayName = "Initialization Code sets code bytes"), AutoData]
+        public void Initialization_Code_Sets_Code_Bytes(MessageCode.Initialization code)
+        {
+            var builder = new MessageBuilder();
+
+            builder.WriteCode(code);
+
+            var c = builder.GetProperty<List<byte>>("CodeBytes").ToArray();
+
+            Assert.Equal((byte)code, c[0]);
+        }
+
+        [Trait("Category", "Code")]
         [Fact(DisplayName = "Code resets code bytes")]
         public void Code_Resets_Code_Bytes()
         {
