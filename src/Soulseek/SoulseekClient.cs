@@ -88,34 +88,6 @@ namespace Soulseek
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            ServerConnection = serverConnection;
-
-            if (ServerConnection == null)
-            {
-                try
-                {
-                    IPAddress = Address.ResolveIPAddress();
-                }
-                catch (SocketException ex)
-                {
-                    throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
-                }
-
-                ServerMessageHandler = new ServerMessageHandler(this);
-                ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
-                ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
-                ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
-                // substitute the existing inactivity value with -1 to keep the connection open indefinitely
-                var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
-                var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
-
-                ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
-                ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
-                ServerConnection.Disconnected += ServerConnection_Disconnected;
-                ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
-            }
-
             Listener = listener;
 
             if (Listener == null && Options.ListenPort.HasValue)
@@ -131,6 +103,35 @@ namespace Soulseek
 
             DistributedConnectionManager = DistributedConnectionManager ?? new DistributedConnectionManager(this);
             DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            ServerConnection = serverConnection;
+
+            if (ServerConnection == null)
+            {
+                try
+                {
+                    IPAddress = Address.ResolveIPAddress();
+                }
+                catch (SocketException ex)
+                {
+                    throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
+                }
+
+                ServerMessageHandler = new ServerMessageHandler(this, Options, PeerConnectionManager, Waiter, Downloads);
+
+                ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
+                ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+                ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+                // substitute the existing inactivity value with -1 to keep the connection open indefinitely
+                var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
+                var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
+
+                ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
+                ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
+                ServerConnection.Disconnected += ServerConnection_Disconnected;
+                ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
+            }
         }
 
         /// <summary>
