@@ -13,19 +13,17 @@
     {
         public ServerMessageHandler(
             ISoulseekClient soulseekClient,
-            ClientOptions clientOptions,
             IPeerConnectionManager peerConnectionManager,
             IWaiter waiter,
             ConcurrentDictionary<int, Transfer> downloads,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
-            ClientOptions = clientOptions;
             PeerConnectionManager = peerConnectionManager;
             Waiter = waiter;
             Downloads = downloads;
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, ClientOptions.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>
@@ -43,7 +41,6 @@
         /// </summary>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
-        private ClientOptions ClientOptions { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private ConcurrentDictionary<int, Transfer> Downloads { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
@@ -130,7 +127,7 @@
                         var pm = PrivateMessage.FromByteArray(message);
                         PrivateMessageReceived?.Invoke(this, pm);
 
-                        if (ClientOptions.AutoAcknowledgePrivateMessages)
+                        if (SoulseekClient.Options.AutoAcknowledgePrivateMessages)
                         {
                             await SoulseekClient.AcknowledgePrivateMessageAsync(pm.Id, CancellationToken.None).ConfigureAwait(false);
                         }
