@@ -98,8 +98,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateMessageReceived event on ServerPrivateMessage"), AutoData]
         public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
+            var (handler, mocks) = GetFixture();
+
             var options = new ClientOptions(autoAcknowledgePrivateMessages: false);
-            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.Options).Returns(options);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
@@ -130,8 +133,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
         public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
+            var (handler, mocks) = GetFixture();
+
             var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
-            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.Options).Returns(options);
 
             mocks.Client.Setup(m => m.AcknowledgePrivateMessageAsync(id, It.IsAny<CancellationToken>()));
 
@@ -324,7 +330,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
-                new ClientOptions(),
                 mocks.PeerConnectionManager.Object,
                 mocks.Waiter.Object,
                 mocks.Downloads);
@@ -367,7 +372,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
-                new ClientOptions(),
                 mocks.PeerConnectionManager.Object,
                 mocks.Waiter.Object,
                 active);
@@ -403,7 +407,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
-                new ClientOptions(),
                 mocks.PeerConnectionManager.Object,
                 mocks.Waiter.Object,
                 mocks.Downloads);
@@ -513,12 +516,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(privileged, eventArgs.Privileged);
         }
 
-        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions options = null)
+        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture()
         {
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
-                options ?? new ClientOptions(),
                 mocks.PeerConnectionManager.Object,
                 mocks.Waiter.Object,
                 mocks.Downloads,
