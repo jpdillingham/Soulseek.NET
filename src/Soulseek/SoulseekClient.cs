@@ -95,7 +95,8 @@ namespace Soulseek
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
-            PeerMessageHandler = new PeerMessageHandler(this);
+            PeerMessageHandler = new PeerMessageHandler(this, Waiter, Downloads, Searches);
+
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
@@ -117,7 +118,7 @@ namespace Soulseek
                     throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
                 }
 
-                ServerMessageHandler = new ServerMessageHandler(this, Options, PeerConnectionManager, Waiter, Downloads);
+                ServerMessageHandler = new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
 
                 ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
                 ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
