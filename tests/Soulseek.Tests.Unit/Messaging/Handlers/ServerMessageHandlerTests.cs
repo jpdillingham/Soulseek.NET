@@ -532,7 +532,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         private class Mocks
         {
             public Mock<ISoulseekClient> Client { get; } = new Mock<ISoulseekClient>();
-            public ClientOptions Options { get; } = new ClientOptions();
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
