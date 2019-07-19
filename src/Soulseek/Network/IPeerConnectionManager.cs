@@ -17,7 +17,6 @@ namespace Soulseek.Network
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Network;
     using Soulseek.Network.Tcp;
 
     /// <summary>
@@ -29,11 +28,6 @@ namespace Soulseek.Network
         ///     Gets the number of active peer connections.
         /// </summary>
         int ActiveMessageConnections { get; }
-
-        /// <summary>
-        ///     Gets the number of active transfer connections.
-        /// </summary>
-        //int ActiveTransferConnections { get; }
 
         /// <summary>
         ///     Gets the concurrent message connection limit.
@@ -61,6 +55,8 @@ namespace Soulseek.Network
         ///     connection is attempted.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
@@ -78,6 +74,8 @@ namespace Soulseek.Network
         /// </summary>
         /// <remarks>A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.</remarks>
         /// <param name="username">The username of the user to which to connect.</param>
+        /// <param name="ipAddress">The remote IP address of the connection.</param>
+        /// <param name="port">The remote port of the connection.</param>
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
