@@ -17,8 +17,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-    using System.Threading;
-    using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
@@ -26,7 +24,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
-    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class PeerMessageHandlerTests
@@ -255,17 +252,18 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Compress()
                 .Build();
 
-            var search = new Search("foo", token)
+            using (var search = new Search("foo", token)
             {
-                State = SearchStates.InProgress
-            };
+                State = SearchStates.InProgress,
+            })
+            {
+                mocks.Searches.TryAdd(token, search);
 
-            mocks.Searches.TryAdd(token, search);
+                handler.HandleMessage(mocks.Connection.Object, msg);
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
-
-            Assert.Single(search.Responses);
-            Assert.Contains(search.Responses, r => r.Username == username && r.Token == token);
+                Assert.Single(search.Responses);
+                Assert.Contains(search.Responses, r => r.Username == username && r.Token == token);
+            }
         }
 
         private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0)
