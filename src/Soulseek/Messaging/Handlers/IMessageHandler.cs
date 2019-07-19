@@ -12,10 +12,18 @@
 
 namespace Soulseek.Messaging.Handlers
 {
-    using Soulseek.Messaging;
+    using Soulseek.Network;
 
+    /// <summary>
+    ///     Handles incoming messages.
+    /// </summary>
     internal interface IMessageHandler : IDiagnosticGenerator
     {
+        /// <summary>
+        ///     Handles incoming messages.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="message">The message.</param>
         void HandleMessage(object sender, byte[] message);
     }
 }

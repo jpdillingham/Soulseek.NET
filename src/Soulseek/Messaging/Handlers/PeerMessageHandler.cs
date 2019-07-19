@@ -1,4 +1,16 @@
-﻿namespace Soulseek.Messaging.Handlers
+﻿// <copyright file="PeerMessageHandler.cs" company="JP Dillingham">
+//     Copyright (c) JP Dillingham. All rights reserved.
+//
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
+//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//
+//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
+//
+//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+// </copyright>
+
+namespace Soulseek.Messaging.Handlers
 {
     using System;
     using System.Collections.Concurrent;
@@ -10,8 +22,19 @@
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
 
+    /// <summary>
+    ///     Handles incoming messages from peer connections.
+    /// </summary>
     internal sealed class PeerMessageHandler : IPeerMessageHandler
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PeerMessageHandler"/> class.
+        /// </summary>
+        /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
+        /// <param name="waiter">The IWaiter instance to use.</param>
+        /// <param name="downloads">The collection of download transfers.</param>
+        /// <param name="searches">The collection of searches.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public PeerMessageHandler(
             ISoulseekClient soulseekClient,
             IWaiter waiter,
@@ -27,14 +50,22 @@
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
+        /// <summary>
+        ///     Occurs when an internal diagnostic message is generated.
+        /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         private IDiagnosticFactory Diagnostic { get; }
-        private ISoulseekClient SoulseekClient { get; }
         private ConcurrentDictionary<int, Transfer> Downloads { get; }
-        private IWaiter Waiter { get; }
         private ConcurrentDictionary<int, Search> Searches { get; }
+        private ISoulseekClient SoulseekClient { get; }
+        private IWaiter Waiter { get; }
 
+        /// <summary>
+        ///     Handles incoming messages.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="message">The message.</param>
         public async void HandleMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
@@ -192,7 +223,8 @@
             }
             catch (Exception)
             {
-                // if any other exception is thrown, return a generic message.  do this to avoid exposing potentially sensitive information that may be contained in the Exception message (filesystem details, etc.)
+                // if any other exception is thrown, return a generic message. do this to avoid exposing potentially sensitive
+                // information that may be contained in the Exception message (filesystem details, etc.)
                 rejected = true;
                 rejectionMessage = "Enqueue failed due to internal error.";
             }
