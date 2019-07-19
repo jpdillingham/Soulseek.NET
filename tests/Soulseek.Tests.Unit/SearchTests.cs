@@ -35,6 +35,8 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(SearchStates.None, s.State);
             Assert.Empty(s.Responses);
+
+            s.Dispose();
         }
 
         [Trait("Category", "Dispose")]
@@ -46,6 +48,8 @@ namespace Soulseek.Tests.Unit
             var ex = Record.Exception(() => s.Dispose());
 
             Assert.Null(ex);
+
+            s.Dispose();
         }
 
         [Trait("Category", "Complete")]
@@ -58,6 +62,8 @@ namespace Soulseek.Tests.Unit
 
             Assert.True(s.State.HasFlag(SearchStates.Completed));
             Assert.True(s.State.HasFlag(SearchStates.Cancelled));
+
+            s.Dispose();
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -70,6 +76,8 @@ namespace Soulseek.Tests.Unit
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
             Assert.True(filter);
+
+            s.Dispose();
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -85,6 +93,8 @@ namespace Soulseek.Tests.Unit
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
+
+            s.Dispose();
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -100,6 +110,8 @@ namespace Soulseek.Tests.Unit
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
+
+            s.Dispose();
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -115,6 +127,8 @@ namespace Soulseek.Tests.Unit
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
+
+            s.Dispose();
         }
 
         [Trait("Category", "ResponseMeetsOptionCriteria")]
@@ -130,6 +144,8 @@ namespace Soulseek.Tests.Unit
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
             Assert.Equal(expected, filter);
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -138,12 +154,14 @@ namespace Soulseek.Tests.Unit
         {
             var s = new Search("foo", 42)
             {
-                State = SearchStates.Completed
+                State = SearchStates.Completed,
             };
 
             s.AddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -152,12 +170,14 @@ namespace Soulseek.Tests.Unit
         {
             var s = new Search("foo", 42)
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             s.AddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -166,12 +186,14 @@ namespace Soulseek.Tests.Unit
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             s.AddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -180,7 +202,7 @@ namespace Soulseek.Tests.Unit
         {
             var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             var msg = new MessageBuilder()
@@ -216,6 +238,8 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(username, response.Username);
             Assert.Equal(filename, files[0].Filename);
             Assert.Equal(size, files[0].Size);
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -229,7 +253,7 @@ namespace Soulseek.Tests.Unit
 
             var s = new Search("foo", token, options)
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             var msg = new MessageBuilder()
@@ -256,6 +280,8 @@ namespace Soulseek.Tests.Unit
             s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.Empty(s.Responses);
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -269,7 +295,7 @@ namespace Soulseek.Tests.Unit
 
             var s = new Search("foo", token, options)
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             var msg = new MessageBuilder()
@@ -301,6 +327,8 @@ namespace Soulseek.Tests.Unit
 
             Assert.True(s.State.HasFlag(SearchStates.Completed));
             Assert.True(s.State.HasFlag(SearchStates.FileLimitReached));
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -315,7 +343,7 @@ namespace Soulseek.Tests.Unit
 
             var s = new Search("foo", token, options)
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             var msg = new MessageBuilder()
@@ -347,6 +375,8 @@ namespace Soulseek.Tests.Unit
 
             Assert.True(s.State.HasFlag(SearchStates.Completed));
             Assert.True(s.State.HasFlag(SearchStates.ResponseLimitReached));
+
+            s.Dispose();
         }
 
         [Trait("Category", "AddResponse")]
@@ -357,7 +387,7 @@ namespace Soulseek.Tests.Unit
 
             var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
-                State = SearchStates.InProgress
+                State = SearchStates.InProgress,
             };
 
             s.ResponseReceived += (response) => addResponse = response;
@@ -387,6 +417,8 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(addResponse);
             Assert.Equal(filename, addResponse.Files.ToList()[0].Filename);
+
+            s.Dispose();
         }
     }
 }
