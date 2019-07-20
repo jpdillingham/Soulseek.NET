@@ -30,22 +30,24 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with with given options"), AutoData]
         public void Instantiates_With_Given_Options(ClientOptions options)
         {
-            var s = new SoulseekClient(options);
-
-            Assert.Equal(options, s.Options);
+            using (var s = new SoulseekClient(options))
+            {
+                Assert.Equal(options, s.Options);
+            }
         }
 
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates with defaults for minimal constructor")]
         public void Instantiates_With_Defaults_For_Minimal_Constructor()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var defaultServer = s.GetField<string>("DefaultAddress");
+                var defaultPort = s.GetField<int>("DefaultPort");
 
-            var defaultServer = s.GetField<string>("DefaultAddress");
-            var defaultPort = s.GetField<int>("DefaultPort");
-
-            Assert.Equal(defaultServer, s.Address);
-            Assert.Equal(defaultPort, s.Port);
+                Assert.Equal(defaultServer, s.Address);
+                Assert.Equal(defaultPort, s.Port);
+            }
         }
 
         [Trait("Category", "Instantiation")]
@@ -64,31 +66,35 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "State is Disconnected initially")]
         public void State_Is_Disconnected_Initially()
         {
-            var s = new SoulseekClient();
-
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+            using (var s = new SoulseekClient())
+            {
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+            }
         }
 
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Username is null initially")]
         public void Username_Is_Null_Initially()
         {
-            var s = new SoulseekClient();
-
-            Assert.Null(s.Username);
+            using (var s = new SoulseekClient())
+            {
+                Assert.Null(s.Username);
+            }
         }
 
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect fails if connected")]
         public async Task Connect_Fails_If_Connected()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "Connect")]
@@ -98,12 +104,13 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new ConnectionException());
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
-            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
-
-            Assert.NotNull(ex);
-            Assert.IsType<ConnectionException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+            }
         }
 
         [Trait("Category", "Connect")]
@@ -112,11 +119,12 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
-            var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
-
-            Assert.Null(ex);
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "Connect")]
@@ -125,17 +133,19 @@ namespace Soulseek.Tests.Unit
         {
             var fired = false;
 
-            var s = new SoulseekClient();
-            s.StateChanged += (sender, e) => fired = true;
+            using (var s = new SoulseekClient())
+            {
+                s.StateChanged += (sender, e) => fired = true;
 
-            var task = s.ConnectAsync();
+                var task = s.ConnectAsync();
 
-            var c = s.GetProperty<Connection>("ServerConnection");
-            c.RaiseEvent(typeof(Connection), "Connected", EventArgs.Empty);
+                var c = s.GetProperty<Connection>("ServerConnection");
+                c.RaiseEvent(typeof(Connection), "Connected", EventArgs.Empty);
 
-            await task;
+                await task;
 
-            Assert.True(fired);
+                Assert.True(fired);
+            }
         }
 
         [Trait("Category", "Instantiation")]
@@ -154,12 +164,14 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
-            await s.ConnectAsync();
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                await s.ConnectAsync();
 
-            s.InvokeMethod("ServerConnection_Disconnected", null, string.Empty);
+                s.InvokeMethod("ServerConnection_Disconnected", null, string.Empty);
 
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+            }
         }
 
         [Trait("Category", "Disconnect")]
@@ -168,13 +180,15 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
-            await s.ConnectAsync();
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                await s.ConnectAsync();
 
-            var ex = Record.Exception(() => s.Disconnect());
+                var ex = Record.Exception(() => s.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+            }
         }
 
         [Trait("Category", "Disconnect")]
@@ -185,17 +199,19 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
-            s.StateChanged += (sender, e) => fired = true;
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                s.StateChanged += (sender, e) => fired = true;
 
-            s.SetProperty("State", ConnectionState.Connected);
+                s.SetProperty("State", ConnectionState.Connected);
 
-            var ex = Record.Exception(() => s.Disconnect());
+                var ex = Record.Exception(() => s.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-            Assert.True(fired);
+                Assert.True(fired);
+            }
         }
 
         [Trait("Category", "Disconnect")]
@@ -204,20 +220,22 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
-            await s.ConnectAsync();
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                await s.ConnectAsync();
 
-            var searches = new ConcurrentDictionary<int, Search>();
-            searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
-            searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
+                var searches = new ConcurrentDictionary<int, Search>();
+                searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
+                searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
 
-            s.SetProperty("Searches", searches);
+                s.SetProperty("Searches", searches);
 
-            var ex = Record.Exception(() => s.Disconnect());
+                var ex = Record.Exception(() => s.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-            Assert.Empty(searches);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Empty(searches);
+            }
         }
 
         [Trait("Category", "Disconnect")]
@@ -226,20 +244,22 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object);
-            await s.ConnectAsync();
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                await s.ConnectAsync();
 
-            var downloads = new ConcurrentDictionary<int, Transfer>();
-            downloads.TryAdd(0, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0));
-            downloads.TryAdd(1, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 1));
+                var downloads = new ConcurrentDictionary<int, Transfer>();
+                downloads.TryAdd(0, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0));
+                downloads.TryAdd(1, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 1));
 
-            s.SetProperty("Downloads", downloads);
+                s.SetProperty("Downloads", downloads);
 
-            var ex = Record.Exception(() => s.Disconnect());
+                var ex = Record.Exception(() => s.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-            Assert.Empty(downloads);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Empty(downloads);
+            }
         }
 
         [Trait("Category", "Disconnect")]
@@ -250,48 +270,53 @@ namespace Soulseek.Tests.Unit
 
             var p = new Mock<IPeerConnectionManager>();
 
-            var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object);
-            await s.ConnectAsync();
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object))
+            {
+                await s.ConnectAsync();
 
-            var ex = Record.Exception(() => s.Disconnect());
+                var ex = Record.Exception(() => s.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-            p.Verify(m => m.RemoveAndDisposeAll(), Times.AtLeastOnce);
+                p.Verify(m => m.RemoveAndDisposeAll(), Times.AtLeastOnce);
+            }
         }
 
         [Trait("Category", "Dispose/Finalize")]
         [Fact(DisplayName = "Disposes without exception")]
         public void Disposes_Without_Exception()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = Record.Exception(() => s.Dispose());
 
-            var ex = Record.Exception(() => s.Dispose());
-
-            Assert.Null(ex);
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "Dispose/Finalize")]
         [Fact(DisplayName = "Finalizes without exception")]
         public void Finalizes_Without_Exception()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = Record.Exception(() => s.InvokeMethod("Finalize"));
 
-            var ex = Record.Exception(() => s.InvokeMethod("Finalize"));
-
-            Assert.Null(ex);
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "ChangeState")]
         [Fact(DisplayName = "ChangeState does not throw if StateChange is unsubscribed")]
         public void ChangeState_Does_Not_Throw_If_StateChange_Is_Unsubscribed()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty));
 
-            var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty));
-
-            Assert.Null(ex);
+                Assert.Null(ex);
+            }
         }
 
         [Trait("Category", "GetNextToken")]
@@ -302,11 +327,14 @@ namespace Soulseek.Tests.Unit
             f.Setup(m => m.NextToken())
                 .Returns(token);
 
-            var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: f.Object).GetNextToken();
+            using (var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: f.Object))
+            {
+                var t = s.GetNextToken();
 
-            Assert.Equal(token, s);
+                Assert.Equal(token, t);
 
-            f.Verify(m => m.NextToken(), Times.Once);
+                f.Verify(m => m.NextToken(), Times.Once);
+            }
         }
     }
 }

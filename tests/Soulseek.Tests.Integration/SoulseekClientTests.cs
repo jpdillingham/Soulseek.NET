@@ -21,12 +21,13 @@ namespace Soulseek.Tests.Integration
         [Fact(DisplayName = "Client connects")]
         public async Task Client_Connects()
         {
-            var client = new SoulseekClient();
+            using (var client = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
 
-            var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
-
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Connected, client.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Connected, client.State);
+            }
         }
 
         [Trait("Category", "Connectivity")]
@@ -35,27 +36,31 @@ namespace Soulseek.Tests.Integration
         {
             SoulseekClientStateChangedEventArgs args = null;
 
-            var client = new SoulseekClient();
-            client.StateChanged += (sender, e) => args = e;
+            using (var client = new SoulseekClient())
+            {
+                client.StateChanged += (sender, e) => args = e;
 
-            var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
+                var ex = await Record.ExceptionAsync(() => client.ConnectAsync());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Connected, client.State);
-            Assert.Equal(SoulseekClientStates.Connected, args.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Connected, client.State);
+                Assert.Equal(SoulseekClientStates.Connected, args.State);
+            }
         }
 
         [Trait("Category", "Connectivity")]
         [Fact(DisplayName = "Client disconnects")]
         public async Task Client_Disconnects()
         {
-            var client = new SoulseekClient();
-            await client.ConnectAsync();
+            using (var client = new SoulseekClient())
+            {
+                await client.ConnectAsync();
 
-            var ex = Record.Exception(() => client.Disconnect());
+                var ex = Record.Exception(() => client.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, client.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, client.State);
+            }
         }
 
         [Trait("Category", "Connectivity")]
@@ -64,42 +69,46 @@ namespace Soulseek.Tests.Integration
         {
             SoulseekClientStateChangedEventArgs args = null;
 
-            var client = new SoulseekClient();
-            await client.ConnectAsync();
+            using (var client = new SoulseekClient())
+            {
+                await client.ConnectAsync();
 
-            client.StateChanged += (sender, e) => args = e;
+                client.StateChanged += (sender, e) => args = e;
 
-            var ex = Record.Exception(() => client.Disconnect());
+                var ex = Record.Exception(() => client.Disconnect());
 
-            Assert.Null(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, client.State);
-            Assert.Equal(SoulseekClientStates.Disconnected, args.State);
+                Assert.Null(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, client.State);
+                Assert.Equal(SoulseekClientStates.Disconnected, args.State);
+            }
         }
 
         [Trait("Category", "GetNextToken")]
         [Fact(DisplayName = "GetNextToken returns sequential tokens")]
         public void GetNextToken_Returns_Sequential_Tokens()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var t1 = s.GetNextToken();
+                var t2 = s.GetNextToken();
 
-            var t1 = s.GetNextToken();
-            var t2 = s.GetNextToken();
-
-            Assert.Equal(t1 + 1, t2);
+                Assert.Equal(t1 + 1, t2);
+            }
         }
 
         [Trait("Category", "GetNextToken")]
         [Fact(DisplayName = "GetNextToken rolls over at int.MaxValue")]
         public void GetNextToken_Rolls_Over_At_Int_MaxValue()
         {
-            var s = new SoulseekClient(
-                new ClientOptions(startingToken: int.MaxValue));
+            using (var s = new SoulseekClient(
+                new ClientOptions(startingToken: int.MaxValue)))
+            {
+                var t1 = s.GetNextToken();
+                var t2 = s.GetNextToken();
 
-            var t1 = s.GetNextToken();
-            var t2 = s.GetNextToken();
-
-            Assert.Equal(int.MaxValue, t1);
-            Assert.Equal(0, t2);
+                Assert.Equal(int.MaxValue, t1);
+                Assert.Equal(0, t2);
+            }
         }
     }
 }

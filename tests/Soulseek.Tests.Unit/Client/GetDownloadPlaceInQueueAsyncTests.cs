@@ -36,13 +36,15 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("")]
         public async Task GetDownloadPlaceInQueueAsync_Throws_ArgumentException_On_Bad_Username(string username)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, "a"));
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, "a"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
@@ -53,13 +55,15 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("")]
         public async Task GetDownloadPlaceInQueueAsync_Throws_ArgumentException_On_Bad_Filename(string filename)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync("a", filename));
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync("a", filename));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
@@ -70,26 +74,30 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(SoulseekClientStates.LoggedIn)]
         public async Task GetPeerInfoAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", state);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", state);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync("a", "b"));
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync("a", "b"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
         [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws DownloadNotFoundException when download not found"), AutoData]
         public async Task GetDownloadPlaceInQueueAsync_Throws_DownloadNotFoundException_When_Download_Not_Found(string username, string filename)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadNotFoundException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadNotFoundException>(ex);
+            }
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
@@ -116,17 +124,19 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var dict = new ConcurrentDictionary<int, Transfer>();
-            dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var dict = new ConcurrentDictionary<int, Transfer>();
+                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
 
-            s.SetProperty("Downloads", dict);
+                s.SetProperty("Downloads", dict);
 
-            var place = await s.GetDownloadPlaceInQueueAsync(username, filename);
+                var place = await s.GetDownloadPlaceInQueueAsync(username, filename);
 
-            Assert.Equal(placeInQueue, place);
+                Assert.Equal(placeInQueue, place);
+            }
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
@@ -151,18 +161,20 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var dict = new ConcurrentDictionary<int, Transfer>();
-            dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var dict = new ConcurrentDictionary<int, Transfer>();
+                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
 
-            s.SetProperty("Downloads", dict);
+                s.SetProperty("Downloads", dict);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
 
-            Assert.NotNull(ex);
-            Assert.IsType<DownloadPlaceInQueueException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<DownloadPlaceInQueueException>(ex);
+            }
         }
     }
 }
