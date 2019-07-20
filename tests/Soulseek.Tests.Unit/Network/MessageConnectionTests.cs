@@ -39,15 +39,16 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
         public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPAddress ipAddress, int port, ConnectionOptions options)
         {
-            var c = new MessageConnection(username, ipAddress, port, options);
+            using (var c = new MessageConnection(username, ipAddress, port, options))
+            {
+                Assert.Equal(username, c.Username);
+                Assert.Equal(ipAddress, c.IPAddress);
+                Assert.Equal(port, c.Port);
+                Assert.Equal(options, c.Options);
+                Assert.False(c.ReadingContinuously);
 
-            Assert.Equal(username, c.Username);
-            Assert.Equal(ipAddress, c.IPAddress);
-            Assert.Equal(port, c.Port);
-            Assert.Equal(options, c.Options);
-            Assert.False(c.ReadingContinuously);
-
-            Assert.Equal(new ConnectionKey(username, ipAddress, port), c.Key);
+                Assert.Equal(new ConnectionKey(username, ipAddress, port), c.Key);
+            }
         }
 
         [Trait("Category", "Instantiation")]
@@ -102,13 +103,15 @@ namespace Soulseek.Tests.Unit.Network
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(username, ipAddress, port);
-            c.SetProperty("State", ConnectionState.Disconnected);
+            using (var c = new MessageConnection(username, ipAddress, port))
+            {
+                c.SetProperty("State", ConnectionState.Disconnected);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
+                var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "WriteAsync")]
@@ -119,13 +122,15 @@ namespace Soulseek.Tests.Unit.Network
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var c = new MessageConnection(username, ipAddress, port);
-            c.SetProperty("State", ConnectionState.Disconnecting);
+            using (var c = new MessageConnection(username, ipAddress, port))
+            {
+                c.SetProperty("State", ConnectionState.Disconnecting);
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
+                var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "WriteAsync")]
@@ -137,19 +142,24 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
-            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
-            tcpMock.Setup(s => s.Connected).Returns(true);
-            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.BrowseRequest)
-                .Build();
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
+                var msg = new MessageBuilder()
+                    .WriteCode(MessageCode.Peer.BrowseRequest)
+                    .Build();
 
-            await c.WriteAsync(msg);
+                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                {
+                    await c.WriteAsync(msg);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
         }
 
         [Trait("Category", "WriteAsync")]
@@ -163,23 +173,28 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(Task.Run(() => 1));
 
             var tcpMock = new Mock<ITcpClient>();
-            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
-            tcpMock.Setup(s => s.Connected).Returns(true);
-            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.BrowseRequest)
-                .Build();
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var c = new MessageConnection(ipAddress, port, tcpClient: tcpMock.Object);
+                var msg = new MessageBuilder()
+                    .WriteCode(MessageCode.Peer.BrowseRequest)
+                    .Build();
 
-            var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
+                using (var c = new MessageConnection(ipAddress, port, tcpClient: tcpMock.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ConnectionWriteException>(ex);
-            Assert.IsType<IOException>(ex.InnerException);
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionWriteException>(ex);
+                    Assert.IsType<IOException>(ex.InnerException);
 
-            streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                    streamMock.Verify(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
         }
 
         [Trait("Category", "ReadContinuouslyAsync")]
@@ -208,20 +223,26 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(Task.Run(() => 4));
 
             var tcpMock = new Mock<ITcpClient>();
-            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
-            tcpMock.Setup(s => s.Connected).Returns(true);
-            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            byte[] readMessage = null;
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
-            c.StartReadingContinuously();
+                byte[] readMessage = null;
 
-            c.MessageRead += (sender, e) => readMessage = e;
+                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                {
+                    c.StartReadingContinuously();
 
-            Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+                    c.MessageRead += (sender, e) => readMessage = e;
 
-            Assert.Equal(MessageCode.Peer.InfoRequest, new MessageReader<MessageCode.Peer>(readMessage).ReadCode());
+                    Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+
+                    Assert.Equal(MessageCode.Peer.InfoRequest, new MessageReader<MessageCode.Peer>(readMessage).ReadCode());
+                }
+            }
         }
 
         [Trait("Category", "ReadingContinuously")]
@@ -239,19 +260,24 @@ namespace Soulseek.Tests.Unit.Network
                 .Throws(new Exception());
 
             var tcpMock = new Mock<ITcpClient>();
-            tcpMock.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
-            tcpMock.Setup(s => s.Connected).Returns(true);
-            tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object);
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-            var a = c.ReadingContinuously;
+                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                {
+                    var a = c.ReadingContinuously;
 
-            await Record.ExceptionAsync(async () => await c.InvokeMethod<Task>("ReadContinuouslyAsync"));
+                    await Record.ExceptionAsync(async () => await c.InvokeMethod<Task>("ReadContinuouslyAsync"));
 
-            Assert.False(a);
-            Assert.True(b);
-            Assert.False(c.ReadingContinuously);
+                    Assert.False(a);
+                    Assert.True(b);
+                    Assert.False(c.ReadingContinuously);
+                }
+            }
         }
     }
 }

@@ -224,17 +224,21 @@ namespace Soulseek.Tests.Unit
             {
                 await s.ConnectAsync();
 
-                var searches = new ConcurrentDictionary<int, Search>();
-                searches.TryAdd(0, new Search(string.Empty, 0, new SearchOptions()));
-                searches.TryAdd(1, new Search(string.Empty, 1, new SearchOptions()));
+                using (var search1 = new Search(string.Empty, 0, new SearchOptions()))
+                using (var search2 = new Search(string.Empty, 1, new SearchOptions()))
+                {
+                    var searches = new ConcurrentDictionary<int, Search>();
+                    searches.TryAdd(0, search1);
+                    searches.TryAdd(1, search2);
 
-                s.SetProperty("Searches", searches);
+                    s.SetProperty("Searches", searches);
 
-                var ex = Record.Exception(() => s.Disconnect());
+                    var ex = Record.Exception(() => s.Disconnect());
 
-                Assert.Null(ex);
-                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-                Assert.Empty(searches);
+                    Assert.Null(ex);
+                    Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                    Assert.Empty(searches);
+                }
             }
         }
 

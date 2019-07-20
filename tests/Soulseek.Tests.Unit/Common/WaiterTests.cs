@@ -338,20 +338,22 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "All waits are cancelled when CancelAll is invoked")]
         public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
         {
-            var waiter = new Waiter(0);
-            var loginKey = new WaitKey(MessageCode.Server.Login, "1");
-            var loginKey2 = new WaitKey(MessageCode.Server.Login, "2");
-            var leaveKey = new WaitKey(MessageCode.Server.LeaveRoom);
+            using (var waiter = new Waiter(0))
+            {
+                var loginKey = new WaitKey(MessageCode.Server.Login, "1");
+                var loginKey2 = new WaitKey(MessageCode.Server.Login, "2");
+                var leaveKey = new WaitKey(MessageCode.Server.LeaveRoom);
 
-            var loginTask = waiter.Wait<object>(loginKey);
-            var loginTask2 = waiter.Wait<object>(loginKey2);
-            var leaveTask = waiter.Wait<object>(leaveKey);
+                var loginTask = waiter.Wait<object>(loginKey);
+                var loginTask2 = waiter.Wait<object>(loginKey2);
+                var leaveTask = waiter.Wait<object>(leaveKey);
 
-            waiter.CancelAll();
+                waiter.CancelAll();
 
-            Assert.True(loginTask.IsCanceled);
-            Assert.True(loginTask2.IsCanceled);
-            Assert.True(leaveTask.IsCanceled);
+                Assert.True(loginTask.IsCanceled);
+                Assert.True(loginTask2.IsCanceled);
+                Assert.True(leaveTask.IsCanceled);
+            }
         }
 
         [Trait("Category", "Wait Throw")]

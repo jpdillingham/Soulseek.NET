@@ -23,25 +23,26 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "DequeueAndDisposeAll dequeues and disposes all")]
         public void DequeueAndDisposeAll_Dequeues_And_Disposes_All()
         {
-            var t1 = new Timer();
-            var t2 = new Timer();
+            using (var t1 = new Timer())
+            using (var t2 = new Timer())
+            {
+                var queue = new ConcurrentQueue<Timer>();
+                queue.Enqueue(t1);
+                queue.Enqueue(t2);
 
-            var queue = new ConcurrentQueue<Timer>();
-            queue.Enqueue(t1);
-            queue.Enqueue(t2);
+                queue.DequeueAndDisposeAll();
 
-            queue.DequeueAndDisposeAll();
+                var ex1 = Record.Exception(() => t1.Start());
+                var ex2 = Record.Exception(() => t2.Start());
 
-            var ex1 = Record.Exception(() => t1.Start());
-            var ex2 = Record.Exception(() => t2.Start());
+                Assert.Empty(queue);
 
-            Assert.Empty(queue);
+                Assert.NotNull(ex1);
+                Assert.IsType<ObjectDisposedException>(ex1);
 
-            Assert.NotNull(ex1);
-            Assert.IsType<ObjectDisposedException>(ex1);
-
-            Assert.NotNull(ex2);
-            Assert.IsType<ObjectDisposedException>(ex2);
+                Assert.NotNull(ex2);
+                Assert.IsType<ObjectDisposedException>(ex2);
+            }
         }
     }
 }

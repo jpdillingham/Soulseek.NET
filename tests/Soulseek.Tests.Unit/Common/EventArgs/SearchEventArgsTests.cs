@@ -24,15 +24,16 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with valid Search"), AutoData]
         public void SearchEventArgs_Instantiates_With_Valid_Search(string searchText, int token, SearchOptions options)
         {
-            var search = new Search(searchText, token, options);
+            using (var search = new Search(searchText, token, options))
+            {
+                var e = new SearchEventArgs(search);
 
-            var e = new SearchEventArgs(search);
-
-            Assert.Equal(searchText, e.SearchText);
-            Assert.Equal(token, e.Token);
-            Assert.Equal(options, e.Options);
-            Assert.Equal(search.State, e.State);
-            Assert.Empty(e.Responses);
+                Assert.Equal(searchText, e.SearchText);
+                Assert.Equal(token, e.Token);
+                Assert.Equal(options, e.Options);
+                Assert.Equal(search.State, e.State);
+                Assert.Empty(e.Responses);
+            }
         }
 
         [Trait("Category", "Instantiation")]
@@ -43,15 +44,16 @@ namespace Soulseek.Tests.Unit
             var searchText = Guid.NewGuid().ToString();
             var token = new Random().Next();
 
-            var search = new Search(searchText, token, new SearchOptions());
+            using (var search = new Search(searchText, token, new SearchOptions()))
+            {
+                var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
 
-            var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
+                var e = new SearchResponseReceivedEventArgs(response, search);
 
-            var e = new SearchResponseReceivedEventArgs(response, search);
-
-            Assert.Equal(searchText, e.SearchText);
-            Assert.Equal(token, e.Token);
-            Assert.Equal(response, e.Response);
+                Assert.Equal(searchText, e.SearchText);
+                Assert.Equal(token, e.Token);
+                Assert.Equal(response, e.Response);
+            }
         }
 
         [Trait("Category", "Instantiation")]
@@ -62,15 +64,17 @@ namespace Soulseek.Tests.Unit
             var searchText = Guid.NewGuid().ToString();
             var token = new Random().Next();
 
-            var search = new Search(searchText, token, new SearchOptions());
-            search.SetProperty("State", SearchStates.Completed);
+            using (var search = new Search(searchText, token, new SearchOptions()))
+            {
+                search.SetProperty("State", SearchStates.Completed);
 
-            var e = new SearchStateChangedEventArgs(SearchStates.None, search);
+                var e = new SearchStateChangedEventArgs(SearchStates.None, search);
 
-            Assert.Equal(searchText, e.SearchText);
-            Assert.Equal(token, e.Token);
-            Assert.Equal(SearchStates.None, e.PreviousState);
-            Assert.Equal(SearchStates.Completed, e.State);
+                Assert.Equal(searchText, e.SearchText);
+                Assert.Equal(token, e.Token);
+                Assert.Equal(SearchStates.None, e.PreviousState);
+                Assert.Equal(SearchStates.Completed, e.State);
+            }
         }
     }
 }

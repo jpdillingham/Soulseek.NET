@@ -1,4 +1,4 @@
-﻿// <copyright file="RequestsTests.cs" company="JP Dillingham">
+﻿// <copyright file="OutgoingTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class RequestsTests
+    public class OutgoingTests
     {
         [Trait("Category", "Instantiation")]
         [Trait("Request", "AcknowledgePrivateMessageRequest")]

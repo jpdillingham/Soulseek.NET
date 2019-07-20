@@ -32,13 +32,15 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("")]
         public async Task GetUserStatusAsync_Throws_ArgumentException_On_Null_Username(string username)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetUserStatusAsync(username));
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserStatusAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "GetUserStatusAsync")]
@@ -49,13 +51,15 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(SoulseekClientStates.LoggedIn)]
         public async Task GetUserStatusAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", state);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", state);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetUserStatusAsync("a"));
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserStatusAsync("a"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "GetUserStatusAsync")]
@@ -72,14 +76,16 @@ namespace Soulseek.Tests.Unit.Client
             serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var stat = await s.GetUserStatusAsync(username);
+                var stat = await s.GetUserStatusAsync(username);
 
-            Assert.Equal(result.Username, stat.Username);
-            Assert.Equal(result.Status, stat.Status);
-            Assert.Equal(result.Privileged, stat.Privileged);
+                Assert.Equal(result.Username, stat.Username);
+                Assert.Equal(result.Status, stat.Status);
+                Assert.Equal(result.Privileged, stat.Privileged);
+            }
         }
 
         [Trait("Category", "GetUserStatusAsync")]
@@ -96,15 +102,17 @@ namespace Soulseek.Tests.Unit.Client
             serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionException("foo"));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            GetStatusResponse r = null;
-            var ex = await Record.ExceptionAsync(async () => r = await s.GetUserStatusAsync(username));
+                GetStatusResponse r = null;
+                var ex = await Record.ExceptionAsync(async () => r = await s.GetUserStatusAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<UserStatusException>(ex);
-            Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<UserStatusException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+            }
         }
     }
 }
