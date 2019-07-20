@@ -1006,7 +1006,8 @@ namespace Soulseek
                 download.State = TransferStates.Cancelled;
                 download.Connection?.Disconnect("Transfer cancelled.");
 
-                throw new TransferException($"Download of file {filename} from user {username} was cancelled.", ex);
+                Diagnostic.Debug(ex.ToString());
+                throw;
             }
             catch (TimeoutException ex)
             {
@@ -1014,7 +1015,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer timed out.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw;
             }
             catch (Exception ex)
             {
