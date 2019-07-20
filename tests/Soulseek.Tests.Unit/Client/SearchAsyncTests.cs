@@ -22,6 +22,7 @@ namespace Soulseek.Tests.Unit.Client
     using Moq;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
@@ -100,49 +101,52 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        //[Trait("Category", "SearchAsync")]
-        //[Theory(DisplayName = "SearchAsync returns completed search"), AutoData]
-        //public async Task SearchAsync_Returns_Completed_Search(string searchText, int token, string username)
-        //{
-        //    var options = new SearchOptions(searchTimeout: 1);
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync returns completed search"), AutoData]
+        public async Task SearchAsync_Returns_Completed_Search(string searchText, int token, string username)
+        {
+            var options = new SearchOptions(searchTimeout: 1);
 
-        //    var msg = new MessageBuilder()
-        //        .WriteCode(MessageCode.Peer.SearchResponse)
-        //        .WriteString(username)
-        //        .WriteInteger(token)
-        //        .WriteInteger(1) // file count
-        //        .WriteByte(0x2) // code
-        //        .WriteString("filename") // filename
-        //        .WriteLong(3) // size
-        //        .WriteString("ext") // extension
-        //        .WriteInteger(1) // attribute count
-        //        .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
-        //        .WriteInteger(4) // attribute[0].value
-        //        .WriteByte(1)
-        //        .WriteInteger(1)
-        //        .WriteLong(1)
-        //        .WriteBytes(new byte[4]) // unknown 4 bytes
-        //        .Compress()
-        //        .Build();
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchResponse)
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteInteger(1) // file count
+                .WriteByte(0x2) // code
+                .WriteString("filename") // filename
+                .WriteLong(3) // size
+                .WriteString("ext") // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1)
+                .WriteInteger(1)
+                .WriteLong(1)
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Compress()
+                .Build();
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
-        //        .Returns(Task.CompletedTask);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
+                .Returns(Task.CompletedTask);
 
-        //    var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
-        //    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //    var task = s.SearchAsync(searchText, token, options);
+                var task = s.SearchAsync(searchText, token, options);
 
-        //    s.InvokeMethod("PeerConnection_MessageRead", conn.Object, msg);
+                var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
+                handler.HandleMessage(conn.Object, msg);
 
-        //    var responses = await task.ConfigureAwait(false);
+                var responses = await task.ConfigureAwait(false);
 
-        //    var res = responses.ToList()[0];
+                var res = responses.ToList()[0];
 
-        //    Assert.Equal(username, res.Username);
-        //    Assert.Equal(token, res.Token);
-        //}
+                Assert.Equal(username, res.Username);
+                Assert.Equal(token, res.Token);
+            }
+        }
 
         [Trait("Category", "SearchAsync")]
         [Theory(DisplayName = "SearchAsync adds search to ActiveSearches"), AutoData]

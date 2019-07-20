@@ -173,35 +173,36 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
-        //[Trait("Category", "DownloadInternalAsync")]
-        //[Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferResponse timeout"), AutoData]
-        //public async Task DownloadInternalAsync_Throws_TransferException_On_TransferResponse_Timeout(string username, IPAddress ip, int port, string filename, int token)
-        //{
-        //    var options = new ClientOptions(messageTimeout: 1);
+        [Trait("Category", "DownloadInternalAsync")]
+        [Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferResponse timeout"), AutoData]
+        public async Task DownloadInternalAsync_Throws_TransferException_On_TransferResponse_Timeout(string username, IPAddress ip, int port, string filename, int token)
+        {
+            var options = new ClientOptions(messageTimeout: 1);
 
-        //    var waiter = new Mock<IWaiter>();
-        //    waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
 
-        //    var conn = new Mock<IMessageConnection>();
-        //    conn.Setup(m => m.State)
-        //        .Returns(ConnectionState.Connected);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
 
-        //    var connManager = new Mock<IPeerConnectionManager>();
-        //    connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(conn.Object));
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
 
-        //    using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
-        //    {
-        //        s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-        //        var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
-        //        Assert.NotNull(ex);
-        //        Assert.IsType<TransferException>(ex);
-        //        Assert.IsType<TimeoutException>(ex.InnerException);
-        //    }
-        //}
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
 
         [Trait("Category", "DownloadInternalAsync")]
         [Theory(DisplayName = "DownloadInternalAsync throws TransferException on TransferResponse cancellation"), AutoData]
@@ -232,8 +233,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
@@ -267,8 +267,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
@@ -316,8 +315,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
@@ -359,8 +357,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
-                Assert.IsType<TransferException>(ex);
-                Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.IsType<TimeoutException>(ex);
             }
         }
 
