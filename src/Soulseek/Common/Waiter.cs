@@ -24,7 +24,6 @@ namespace Soulseek
     internal class Waiter : IWaiter
     {
         private const int DefaultTimeoutValue = 5;
-        private const int MaxTimeoutValue = 2147483647;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="Waiter"/> class with the default timeout.
@@ -192,7 +191,7 @@ namespace Soulseek
         /// <returns>A Task representing the wait.</returns>
         public Task<T> WaitIndefinitely<T>(WaitKey key, CancellationToken? cancellationToken = null)
         {
-            return Wait<T>(key, MaxTimeoutValue, cancellationToken);
+            return Wait<T>(key, int.MaxValue, cancellationToken);
         }
 
         /// <summary>
