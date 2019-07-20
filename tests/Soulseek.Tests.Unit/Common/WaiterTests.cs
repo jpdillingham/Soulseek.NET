@@ -395,8 +395,6 @@ namespace Soulseek.Tests.Unit
 
             using (var waiter = new Waiter())
             {
-                var maxConst = waiter.GetField<int>("MaxTimeoutValue");
-
                 Task<object> task = waiter.WaitIndefinitely<object>(key);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
@@ -413,7 +411,7 @@ namespace Soulseek.Tests.Unit
                 Assert.NotNull(queue);
                 Assert.Single(queue);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
-                Assert.Equal(maxConst, wait.TimeoutAfter);
+                Assert.Equal(int.MaxValue, wait.TimeoutAfter);
             }
         }
 
@@ -425,8 +423,6 @@ namespace Soulseek.Tests.Unit
 
             using (var waiter = new Waiter())
             {
-                var maxConst = waiter.GetField<int>("MaxTimeoutValue");
-
                 Task task = waiter.WaitIndefinitely(key);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
@@ -443,7 +439,7 @@ namespace Soulseek.Tests.Unit
                 Assert.NotNull(queue);
                 Assert.Single(queue);
                 Assert.NotEqual(new DateTime(), wait.DateTime);
-                Assert.Equal(maxConst, wait.TimeoutAfter);
+                Assert.Equal(int.MaxValue, wait.TimeoutAfter);
             }
         }
     }

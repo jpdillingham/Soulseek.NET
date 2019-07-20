@@ -1088,7 +1088,7 @@ namespace Soulseek
 
                 return (address.IPAddress, address.Port);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserAddressException($"Failed to retrieve address for user {username}: {ex.Message}", ex);
             }
