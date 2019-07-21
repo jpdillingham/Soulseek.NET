@@ -64,6 +64,9 @@ namespace Soulseek
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
+        /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
+        /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
+        /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
@@ -74,6 +77,9 @@ namespace Soulseek
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
+            IDistributedConnectionManager distributedConnectionManager = null,
+            IPeerMessageHandler peerMessageHandler = null,
+            IServerMessageHandler serverMessageHandler = null,
             IListener listener = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
@@ -83,27 +89,6 @@ namespace Soulseek
             Port = port;
 
             Options = options ?? new ClientOptions();
-
-            Waiter = waiter ?? new Waiter(Options.MessageTimeout);
-            TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
-            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-
-            Listener = listener;
-
-            if (Listener == null && Options.ListenPort.HasValue)
-            {
-                Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
-            }
-
-            PeerMessageHandler = new PeerMessageHandler(this, Waiter, Downloads, Searches);
-
-            PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
-            PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
-            DistributedConnectionManager = DistributedConnectionManager ?? new DistributedConnectionManager(this);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerConnection = serverConnection;
 
@@ -118,21 +103,41 @@ namespace Soulseek
                     throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
                 }
 
-                ServerMessageHandler = new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
-
-                ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
-                ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
-                ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
                 // substitute the existing inactivity value with -1 to keep the connection open indefinitely
                 var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
                 var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
 
                 ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
-                ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
-                ServerConnection.Disconnected += ServerConnection_Disconnected;
-                ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
             }
+
+            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
+            ServerConnection.Disconnected += ServerConnection_Disconnected;
+            ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
+
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, Waiter);
+            PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
+            PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
+            ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
+            ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            Listener = listener;
+
+            if (Listener == null && Options.ListenPort.HasValue)
+            {
+                Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
+            }
+
+            Waiter = waiter ?? new Waiter(Options.MessageTimeout);
+            TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
+            Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>
