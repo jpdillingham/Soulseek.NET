@@ -14,35 +14,50 @@ namespace Soulseek.Messaging.Handlers
 {
     using System;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
 
     internal sealed class DistributedMessageHandler : IDistributedMessageHandler
     {
         public DistributedMessageHandler(
             ISoulseekClient soulseekClient,
+            IWaiter waiter,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = (SoulseekClient)soulseekClient;
+            SoulseekClient = soulseekClient;
+            Waiter = waiter;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
+        private IWaiter Waiter { get; }
         private IDiagnosticFactory Diagnostic { get; }
-        private SoulseekClient SoulseekClient { get; }
+        private ISoulseekClient SoulseekClient { get; }
 
         public async void HandleMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
 
-            Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
+            //Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
 
             try
             {
                 switch (code)
                 {
+                    case MessageCode.Distributed.SearchRequest:
+                        var searchRequest = DistributedSearchRequest.FromByteArray(message);
+
+                        if (searchRequest.Query == "killing your enemy in 1995")
+                        {
+                            Diagnostic.Debug($"Distributed Search Request from {searchRequest.Username}: '{searchRequest.Query}'");
+                            // todo: get results, send to peer
+                        }
+
+                        break;
+
                     default:
                         Diagnostic.Debug($"Unhandled distributed message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Length} bytes");
                         break;
