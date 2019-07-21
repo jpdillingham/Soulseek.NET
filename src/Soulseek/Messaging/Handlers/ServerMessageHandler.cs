@@ -37,12 +37,14 @@ namespace Soulseek.Messaging.Handlers
         public ServerMessageHandler(
             ISoulseekClient soulseekClient,
             IPeerConnectionManager peerConnectionManager,
+            IDistributedConnectionManager distributedConnectionManager,
             IWaiter waiter,
             ConcurrentDictionary<int, Transfer> downloads,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
             PeerConnectionManager = peerConnectionManager;
+            DistributedConnectionManager = distributedConnectionManager;
             Waiter = waiter;
             Downloads = downloads;
             Diagnostic = diagnosticFactory ??
@@ -67,6 +69,7 @@ namespace Soulseek.Messaging.Handlers
         private IDiagnosticFactory Diagnostic { get; }
         private ConcurrentDictionary<int, Transfer> Downloads { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
+        private IDistributedConnectionManager DistributedConnectionManager { get; }
         private ISoulseekClient SoulseekClient { get; }
         private IWaiter Waiter { get; }
 
@@ -108,6 +111,8 @@ namespace Soulseek.Messaging.Handlers
                         {
                             Console.WriteLine($"{peer.Username} {peer.IPAddress} {peer.Port}");
                         }
+
+                        await DistributedConnectionManager.UpdateParentPool(netInfo.Parents).ConfigureAwait(false);
 
                         break;
 
