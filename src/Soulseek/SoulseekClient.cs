@@ -65,8 +65,9 @@ namespace Soulseek
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
         /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
-        /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
         /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
+        /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
+        /// <param name="distributedMessageHandler">The IDistributedMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
@@ -78,8 +79,9 @@ namespace Soulseek
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
             IDistributedConnectionManager distributedConnectionManager = null,
-            IPeerMessageHandler peerMessageHandler = null,
             IServerMessageHandler serverMessageHandler = null,
+            IPeerMessageHandler peerMessageHandler = null,
+            IDistributedMessageHandler distributedMessageHandler = null,
             IListener listener = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
@@ -124,21 +126,24 @@ namespace Soulseek
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
+            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, Waiter);
+            DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, Waiter);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
+            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, DistributedConnectionManager, Waiter, Downloads);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
-
-            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
         }
 
         /// <summary>
@@ -211,6 +216,7 @@ namespace Soulseek
         /// </summary>
         public string Username { get; private set; }
 
+        internal IDistributedMessageHandler DistributedMessageHandler { get; }
         internal IDistributedConnectionManager DistributedConnectionManager { get; }
         internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal IListener Listener { get; }
