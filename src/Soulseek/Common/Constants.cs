@@ -26,6 +26,7 @@ namespace Soulseek
         {
             public const string Peer = "P";
             public const string Tranfer = "F";
+            public const string Distributed = "D";
         }
     }
 }
