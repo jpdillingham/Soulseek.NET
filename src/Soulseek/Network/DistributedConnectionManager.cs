@@ -17,18 +17,35 @@ namespace Soulseek.Network
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using Soulseek.Messaging.Handlers;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Network.Tcp;
 
     internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
     {
-        void UpdateParentPool(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents);
+        Task UpdateParentPool(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents);
     }
 
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
-        public DistributedConnectionManager(ISoulseekClient soulseekClient)
+        public DistributedConnectionManager(
+            ISoulseekClient soulseekClient,
+            IWaiter waiter,
+            IDistributedMessageHandler distributedMessageHandler,
+            IConnectionFactory connectionFactory = null,
+            IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = (SoulseekClient)soulseekClient;
+            SoulseekClient = soulseekClient;
+            Waiter = waiter;
+            DistributedMessageHandler = distributedMessageHandler;
+
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
+
+            Diagnostic = diagnosticFactory ??
+                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>
@@ -36,13 +53,14 @@ namespace Soulseek.Network
         /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
-        private SoulseekClient SoulseekClient { get; }
+        private IDistributedMessageHandler DistributedMessageHandler { get; }
+        private IWaiter Waiter { get; }
+        private ISoulseekClient SoulseekClient { get; }
         private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; } = new ConcurrentDictionary<string, IMessageConnection>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
         private IMessageConnection ParentConnection { get; set; }
-        private ConcurrentBag<(string Username, IPAddress IPAddress, int Port)> ParentPool { get; set; } = new ConcurrentBag<(string Username, IPAddress IPAddress, int Port)>();
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
@@ -69,11 +87,47 @@ namespace Soulseek.Network
             }
         }
 
-        public void UpdateParentPool(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
+        public async Task UpdateParentPool(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
         {
-            ParentPool = new ConcurrentBag<(string Username, IPAddress IPAddress, int Port)>(parents);
+            // if we're connected to a parent already, ignore this.
+            if (ParentConnection != null && ParentConnection.State == ConnectionState.Connected)
+            {
+                return;
+            }
 
-            // todo: check if parent is connected and connect if not
+            var parentTasks = parents.Select(p => GetConnection(p.Username, p.IPAddress, p.Port, CancellationToken.None)).ToList();
+
+            Task<IMessageConnection> parent;
+
+            do
+            {
+                parent = await Task.WhenAny(parentTasks).ConfigureAwait(false);
+                parentTasks.Remove(parent);
+            }
+            while (parent.IsFaulted && parentTasks.Count > 0);
+
+            if (parent.IsFaulted)
+            {
+                Console.WriteLine($"Failed to connect to any of the given parents.");
+            }
+
+            ParentConnection = await parent.ConfigureAwait(false);
+
+            // todo: disconnect all others
+            Diagnostic.Debug($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port})");
+        }
+
+        private async Task<IMessageConnection> GetConnection(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
+        {
+            var connection = ConnectionFactory.GetMessageConnection(username, ipAddress, port, SoulseekClient.Options.DistributedConnectionOptions);
+            connection.MessageRead += DistributedMessageHandler.HandleMessage;
+
+            Diagnostic.Debug($"Attempting distributed connection to {username} ({ipAddress}:{port})");
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            Diagnostic.Debug($"Distributed connection to {username} established.");
+
+            return connection;
         }
 
         private void Dispose(bool disposing)
