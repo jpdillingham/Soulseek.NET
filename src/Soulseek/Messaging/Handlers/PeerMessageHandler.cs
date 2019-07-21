@@ -31,21 +31,21 @@ namespace Soulseek.Messaging.Handlers
         ///     Initializes a new instance of the <see cref="PeerMessageHandler"/> class.
         /// </summary>
         /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
-        /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="downloads">The collection of download transfers.</param>
         /// <param name="searches">The collection of searches.</param>
+        /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public PeerMessageHandler(
             ISoulseekClient soulseekClient,
-            IWaiter waiter,
             ConcurrentDictionary<int, Transfer> downloads,
             ConcurrentDictionary<int, Search> searches,
+            IWaiter waiter,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
-            Waiter = waiter;
             Downloads = downloads;
             Searches = searches;
+            Waiter = waiter;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
