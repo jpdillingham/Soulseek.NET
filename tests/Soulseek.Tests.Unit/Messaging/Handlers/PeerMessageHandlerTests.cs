@@ -279,9 +279,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var handler = new PeerMessageHandler(
                 mocks.Client.Object,
-                mocks.Waiter.Object,
                 mocks.Downloads,
                 mocks.Searches,
+                mocks.Waiter.Object,
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);

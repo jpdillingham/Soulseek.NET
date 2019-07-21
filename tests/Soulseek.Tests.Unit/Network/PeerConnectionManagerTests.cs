@@ -21,337 +21,364 @@ namespace Soulseek.Tests.Unit.Network
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class PeerConnectionManagerTests
     {
-//        [Trait("Category", "Instantiation")]
-//        [Fact(DisplayName = "Instantiates properly")]
-//        public void Instantiates_Properly()
-//        {
-//            PeerConnectionManager c = null;
-
-//            var ex = Record.Exception(() => c = new PeerConnectionManager(1000));
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates properly")]
+        public void Instantiates_Properly()
+        {
+            PeerConnectionManager c = null;
 
-//            Assert.Null(ex);
-//            Assert.NotNull(c);
-
-//            Assert.Equal(1000, c.ConcurrentPeerConnections);
-//            Assert.Equal(0, c.ActivePeerConnections);
-//            Assert.Equal(0, c.WaitingPeerConnections);
-//            Assert.Equal(0, c.ActiveTransferConnections);
-//        }
-
-//        [Trait("Category", "Instantiation")]
-//        [Fact(DisplayName = "Throws ArgumentOutOfRangeException when ConcurrentPeerConnections is less than 1.")]
-//        public void Throws_ArgumentOutOfRangeException_When_ConcurrentPeerConnections_Is_Less_than_1()
-//        {
-//            ConnectionManager c = null;
-
-//            var ex = Record.Exception(() => c = new ConnectionManager(0));
-
-//            Assert.NotNull(ex);
-//            Assert.IsType<ArgumentOutOfRangeException>(ex);
-//        }
-
-//        [Trait("Category", "Dispose")]
-//        [Fact(DisplayName = "Disposes without throwing")]
-//        public void Disposes_Without_Throwing()
-//        {
-//            var c = new ConnectionManager(1);
-
-//            var ex = Record.Exception(() => c.Dispose());
-
-//            Assert.Null(ex);
-//        }
-
-//        [Trait("Category", "RemoveAndDisposeAll")]
-//        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
-//        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
-//        {
-//            var c = new ConnectionManager(1);
-
-//            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-//            peer.GetOrAdd(new ConnectionKey(ip, port), (new SemaphoreSlim(1), new Mock<IMessageConnection>().Object));
-
-//            c.SetProperty("PeerConnections", peer);
-
-//            var transfer = new ConcurrentDictionary<(ConnectionKey, int), IConnection>();
-//            transfer.GetOrAdd((new ConnectionKey(ip, port), port), new Mock<IConnection>().Object);
-
-//            c.SetProperty("TransferConnections", transfer);
-
-//            var activePeerBefore = c.ActivePeerConnections;
-//            var activeTransferBefore = c.ActiveTransferConnections;
-
-//            c.RemoveAndDisposeAll();
-
-//            Assert.Equal(1, activePeerBefore);
-//            Assert.Equal(1, activeTransferBefore);
-
-//            Assert.Empty(c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections"));
-//            Assert.Empty(c.GetProperty<ConcurrentDictionary<(ConnectionKey, int), IConnection>>("TransferConnections"));
-//        }
-
-//        [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
-//        [Theory(DisplayName = "AddUnsolicitedTransferConnectionAsync connects and sends PeerInit"), AutoData]
-//        internal async Task AddUnsolicitedTransferConnectionAsync_Connects_And_Sends_PeerInit(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-//        {
-//            var key = new ConnectionKey(ipAddress, port);
-//            var expectedBytes = new PeerInitRequest(username, "F", token).ToByteArray().ToByteArray();
-//            byte[] actualBytes = Array.Empty<byte>();
-
-//            var conn = new Mock<IConnection>();
-//            conn.Setup(m => m.IPAddress)
-//                .Returns(ipAddress);
-//            conn.Setup(m => m.Port)
-//                .Returns(port);
-//            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask);
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask)
-//                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
-
-//            var connFactory = new Mock<IConnectionFactory>();
-//            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-//                .Returns(conn.Object);
-
-//            IConnection newConn = null;
-
-//            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
-//            {
-//                newConn = await c.AddUnsolicitedTransferConnectionAsync(key, token, username, options, CancellationToken.None);
-//            }
-
-//            Assert.Equal(ipAddress, newConn.IPAddress);
-//            Assert.Equal(port, newConn.Port);
+            var ex = Record.Exception(() => (c, _) = GetFixture());
 
-//            Assert.Equal(expectedBytes, actualBytes);
+            Assert.Null(ex);
+            Assert.NotNull(c);
+
+            Assert.Equal(0, c.ActiveMessageConnections);
+            Assert.Equal(new ClientOptions().ConcurrentPeerMessageConnectionLimit, c.ConcurrentMessageConnectionLimit);
+        }
+
+        //        [Trait("Category", "Instantiation")]
+        //        [Fact(DisplayName = "Throws ArgumentOutOfRangeException when ConcurrentPeerConnections is less than 1.")]
+        //        public void Throws_ArgumentOutOfRangeException_When_ConcurrentPeerConnections_Is_Less_than_1()
+        //        {
+        //            ConnectionManager c = null;
+
+        //            var ex = Record.Exception(() => c = new ConnectionManager(0));
+
+        //            Assert.NotNull(ex);
+        //            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        //        }
+
+        //        [Trait("Category", "Dispose")]
+        //        [Fact(DisplayName = "Disposes without throwing")]
+        //        public void Disposes_Without_Throwing()
+        //        {
+        //            var c = new ConnectionManager(1);
+
+        //            var ex = Record.Exception(() => c.Dispose());
+
+        //            Assert.Null(ex);
+        //        }
+
+        //        [Trait("Category", "RemoveAndDisposeAll")]
+        //        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
+        //        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
+        //        {
+        //            var c = new ConnectionManager(1);
+
+        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+        //            peer.GetOrAdd(new ConnectionKey(ip, port), (new SemaphoreSlim(1), new Mock<IMessageConnection>().Object));
+
+        //            c.SetProperty("PeerConnections", peer);
+
+        //            var transfer = new ConcurrentDictionary<(ConnectionKey, int), IConnection>();
+        //            transfer.GetOrAdd((new ConnectionKey(ip, port), port), new Mock<IConnection>().Object);
+
+        //            c.SetProperty("TransferConnections", transfer);
+
+        //            var activePeerBefore = c.ActivePeerConnections;
+        //            var activeTransferBefore = c.ActiveTransferConnections;
+
+        //            c.RemoveAndDisposeAll();
+
+        //            Assert.Equal(1, activePeerBefore);
+        //            Assert.Equal(1, activeTransferBefore);
+
+        //            Assert.Empty(c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections"));
+        //            Assert.Empty(c.GetProperty<ConcurrentDictionary<(ConnectionKey, int), IConnection>>("TransferConnections"));
+        //        }
+
+        //        [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
+        //        [Theory(DisplayName = "AddUnsolicitedTransferConnectionAsync connects and sends PeerInit"), AutoData]
+        //        internal async Task AddUnsolicitedTransferConnectionAsync_Connects_And_Sends_PeerInit(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        //        {
+        //            var key = new ConnectionKey(ipAddress, port);
+        //            var expectedBytes = new PeerInitRequest(username, "F", token).ToByteArray().ToByteArray();
+        //            byte[] actualBytes = Array.Empty<byte>();
+
+        //            var conn = new Mock<IConnection>();
+        //            conn.Setup(m => m.IPAddress)
+        //                .Returns(ipAddress);
+        //            conn.Setup(m => m.Port)
+        //                .Returns(port);
+        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask);
+        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask)
+        //                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
 
-//            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-//            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-//        }
+        //            var connFactory = new Mock<IConnectionFactory>();
+        //            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+        //                .Returns(conn.Object);
+
+        //            IConnection newConn = null;
+
+        //            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
+        //            {
+        //                newConn = await c.AddUnsolicitedTransferConnectionAsync(key, token, username, options, CancellationToken.None);
+        //            }
 
-//        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
-//        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
-//        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-//        {
-//            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
-//            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
-//            byte[] actualBytes = Array.Empty<byte>();
+        //            Assert.Equal(ipAddress, newConn.IPAddress);
+        //            Assert.Equal(port, newConn.Port);
 
-//            var conn = new Mock<IConnection>();
-//            conn.Setup(m => m.IPAddress)
-//                .Returns(ipAddress);
-//            conn.Setup(m => m.Port)
-//                .Returns(port);
-//            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask);
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask)
-//                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+        //            Assert.Equal(expectedBytes, actualBytes);
 
-//            var connFactory = new Mock<IConnectionFactory>();
-//            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-//                .Returns(conn.Object);
+        //            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+        //            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        //        }
 
-//            IConnection newConn = null;
+        //        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
+        //        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
+        //        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        //        {
+        //            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
+        //            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
+        //            byte[] actualBytes = Array.Empty<byte>();
 
-//            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
-//            {
-//                newConn = await c.AddSolicitedTransferConnectionAsync(ctpr, options, CancellationToken.None);
-//            }
+        //            var conn = new Mock<IConnection>();
+        //            conn.Setup(m => m.IPAddress)
+        //                .Returns(ipAddress);
+        //            conn.Setup(m => m.Port)
+        //                .Returns(port);
+        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask);
+        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask)
+        //                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
 
-//            Assert.Equal(ipAddress, newConn.IPAddress);
-//            Assert.Equal(port, newConn.Port);
+        //            var connFactory = new Mock<IConnectionFactory>();
+        //            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
+        //                .Returns(conn.Object);
 
-//            Assert.Equal(expectedBytes, actualBytes);
+        //            IConnection newConn = null;
 
-//            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-//            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-//        }
+        //            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
+        //            {
+        //                newConn = await c.AddSolicitedTransferConnectionAsync(ctpr, options, CancellationToken.None);
+        //            }
 
-//        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
-//        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
-//        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
-//            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-//        {
-//            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
+        //            Assert.Equal(ipAddress, newConn.IPAddress);
+        //            Assert.Equal(port, newConn.Port);
 
-//            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
-//            byte[] actualBytes = Array.Empty<byte>();
+        //            Assert.Equal(expectedBytes, actualBytes);
 
-//            var tokenFactory = new Mock<ITokenFactory>();
-//            tokenFactory.Setup(m => m.NextToken())
-//                .Returns(token);
+        //            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+        //            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
+        //        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask);
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask)
-//                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
+        //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
+        //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
+        //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
+        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        //        {
+        //            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
 
-//            var connFactory = new Mock<IConnectionFactory>();
-//            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
-//                .Returns(conn.Object);
+        //            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
+        //            byte[] actualBytes = Array.Empty<byte>();
 
-//            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
+        //            var tokenFactory = new Mock<ITokenFactory>();
+        //            tokenFactory.Setup(m => m.NextToken())
+        //                .Returns(token);
 
-//            IMessageConnection connection = null;
+        //            var conn = new Mock<IMessageConnection>();
+        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask);
+        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask)
+        //                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
 
-//            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
+        //            var connFactory = new Mock<IConnectionFactory>();
+        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
+        //                .Returns(conn.Object);
 
-//            Assert.Null(ex);
+        //            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
 
-//            Assert.Equal(conn.Object, connection);
+        //            IMessageConnection connection = null;
 
-//            Assert.Equal(expectedBytes, actualBytes);
-//        }
+        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
 
-//        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
-//        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync returns existing connection"), AutoData]
-//        internal async Task GetOrAddSolicitedConnectionAsync_Returns_Existing_Connection(
-//            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-//        {
-//            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
+        //            Assert.Null(ex);
 
-//            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-//            var conn = new Mock<IMessageConnection>();
+        //            Assert.Equal(conn.Object, connection);
 
-//            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-//            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
+        //            Assert.Equal(expectedBytes, actualBytes);
+        //        }
 
-//            var c = new ConnectionManager(10);
-//            c.SetProperty("PeerConnections", peer);
+        //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
+        //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync returns existing connection"), AutoData]
+        //        internal async Task GetOrAddSolicitedConnectionAsync_Returns_Existing_Connection(
+        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        //        {
+        //            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
 
-//            IMessageConnection connection = null;
+        //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+        //            var conn = new Mock<IMessageConnection>();
 
-//            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
+        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+        //            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
 
-//            Assert.Null(ex);
+        //            var c = new ConnectionManager(10);
+        //            c.SetProperty("PeerConnections", peer);
 
-//            Assert.Equal(conn.Object, connection);
-//        }
+        //            IMessageConnection connection = null;
 
-//        [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
-//        [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync connects and sends PeerInit"), AutoData]
-//        internal async Task GetOrAddUnsolicitedConnectionAsync_Connects_And_Sends_PeerInit(
-//            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-//        {
-//            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
 
-//            var expectedBytes = new PeerInitRequest(username, "P", token).ToByteArray().ToByteArray();
-//            byte[] actualBytes = Array.Empty<byte>();
+        //            Assert.Null(ex);
 
-//            var tokenFactory = new Mock<ITokenFactory>();
-//            tokenFactory.Setup(m => m.NextToken())
-//                .Returns(token);
+        //            Assert.Equal(conn.Object, connection);
+        //        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask);
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-//                .Returns(Task.CompletedTask)
-//                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
+        //        [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
+        //        [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync connects and sends PeerInit"), AutoData]
+        //        internal async Task GetOrAddUnsolicitedConnectionAsync_Connects_And_Sends_PeerInit(
+        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        //        {
+        //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
 
-//            var connFactory = new Mock<IConnectionFactory>();
-//            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
-//                .Returns(conn.Object);
+        //            var expectedBytes = new PeerInitRequest(username, "P", token).ToByteArray().ToByteArray();
+        //            byte[] actualBytes = Array.Empty<byte>();
 
-//            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
+        //            var tokenFactory = new Mock<ITokenFactory>();
+        //            tokenFactory.Setup(m => m.NextToken())
+        //                .Returns(token);
 
-//            IMessageConnection connection = null;
+        //            var conn = new Mock<IMessageConnection>();
+        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask);
+        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+        //                .Returns(Task.CompletedTask)
+        //                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
 
-//            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
+        //            var connFactory = new Mock<IConnectionFactory>();
+        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
+        //                .Returns(conn.Object);
 
-//            Assert.Null(ex);
+        //            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
 
-//            Assert.Equal(conn.Object, connection);
+        //            IMessageConnection connection = null;
 
-//            Assert.Equal(expectedBytes, actualBytes);
-//        }
+        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
 
-//        [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
-//        [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync returns existing connection"), AutoData]
-//        internal async Task GetOrAddUnsolicitedConnectionAsync_Returns_Existing_Connection(
-//            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options)
-//        {
-//            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-//            var conn = new Mock<IMessageConnection>();
+        //            Assert.Null(ex);
 
-//            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-//            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
+        //            Assert.Equal(conn.Object, connection);
 
-//            var c = new ConnectionManager(10);
-//            c.SetProperty("PeerConnections", peer);
+        //            Assert.Equal(expectedBytes, actualBytes);
+        //        }
 
-//            IMessageConnection connection = null;
+        //        [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
+        //        [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync returns existing connection"), AutoData]
+        //        internal async Task GetOrAddUnsolicitedConnectionAsync_Returns_Existing_Connection(
+        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options)
+        //        {
+        //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+        //            var conn = new Mock<IMessageConnection>();
 
-//            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
+        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+        //            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
 
-//            Assert.Null(ex);
+        //            var c = new ConnectionManager(10);
+        //            c.SetProperty("PeerConnections", peer);
 
-//            Assert.Equal(conn.Object, connection);
-//        }
+        //            IMessageConnection connection = null;
 
-//        [Trait("Category", "Semaphore")]
-//        [Theory(DisplayName = "GetOrAdd queues connections"), AutoData]
-//        internal void GetOrAdd_Queues_Connections(
-//            string username, IPAddress ipAddress, int port, string username2, IPAddress ipAddress2, int port2, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-//        {
-//            var key1 = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-//            var key2 = new ConnectionKey(username2, ipAddress2, port2, MessageConnectionType.Peer);
+        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
 
-//            var tokenFactory = new Mock<ITokenFactory>();
-//            tokenFactory.Setup(m => m.NextToken())
-//                .Returns(token);
+        //            Assert.Null(ex);
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Key)
-//                .Returns(key1);
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-//                .Returns(() => Task.CompletedTask);
+        //            Assert.Equal(conn.Object, connection);
+        //        }
 
-//            var conn2 = new Mock<IMessageConnection>();
-//            conn2.Setup(m => m.Key)
-//                .Returns(key2);
-//            conn2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-//                .Returns(() => Task.CompletedTask);
+        //        [Trait("Category", "Semaphore")]
+        //        [Theory(DisplayName = "GetOrAdd queues connections"), AutoData]
+        //        internal void GetOrAdd_Queues_Connections(
+        //            string username, IPAddress ipAddress, int port, string username2, IPAddress ipAddress2, int port2, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
+        //        {
+        //            var key1 = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
+        //            var key2 = new ConnectionKey(username2, ipAddress2, port2, MessageConnectionType.Peer);
 
-//            var connFactory = new Mock<IConnectionFactory>();
-//            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
-//                .Returns(conn.Object);
-//            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username2, ipAddress2, port2, options))
-//                .Returns(conn2.Object);
+        //            var tokenFactory = new Mock<ITokenFactory>();
+        //            tokenFactory.Setup(m => m.NextToken())
+        //                .Returns(token);
 
-//            var c = new ConnectionManager(1, tokenFactory.Object, connFactory.Object);
+        //            var conn = new Mock<IMessageConnection>();
+        //            conn.Setup(m => m.Key)
+        //                .Returns(key1);
+        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+        //                .Returns(() => Task.CompletedTask);
 
-//#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-//            c.GetOrAddUnsolicitedPeerConnectionAsync(key1, username, messageHandler, options, CancellationToken.None);
-//            c.GetOrAddUnsolicitedPeerConnectionAsync(key2, username, messageHandler, options, CancellationToken.None);
-//#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        //            var conn2 = new Mock<IMessageConnection>();
+        //            conn2.Setup(m => m.Key)
+        //                .Returns(key2);
+        //            conn2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+        //                .Returns(() => Task.CompletedTask);
 
-//            Assert.Equal(1, c.ActivePeerConnections);
-//            Assert.Equal(1, c.WaitingPeerConnections);
+        //            var connFactory = new Mock<IConnectionFactory>();
+        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
+        //                .Returns(conn.Object);
+        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username2, ipAddress2, port2, options))
+        //                .Returns(conn2.Object);
 
-//            var firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
-//            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
+        //            var c = new ConnectionManager(1, tokenFactory.Object, connFactory.Object);
 
-//            Thread.Sleep(500);
+        //#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
+        //            c.GetOrAddUnsolicitedPeerConnectionAsync(key1, username, messageHandler, options, CancellationToken.None);
+        //            c.GetOrAddUnsolicitedPeerConnectionAsync(key2, username, messageHandler, options, CancellationToken.None);
+        //#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
 
-//            Assert.Equal(1, c.ActivePeerConnections);
-//            Assert.Equal(0, c.WaitingPeerConnections);
+        //            Assert.Equal(1, c.ActivePeerConnections);
+        //            Assert.Equal(1, c.WaitingPeerConnections);
 
-//            firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
-//            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
+        //            var firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
+        //            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
 
-//            Thread.Sleep(500);
+        //            Thread.Sleep(500);
 
-//            Assert.Equal(0, c.ActivePeerConnections);
-//            Assert.Equal(0, c.WaitingPeerConnections);
-//        }
+        //            Assert.Equal(1, c.ActivePeerConnections);
+        //            Assert.Equal(0, c.WaitingPeerConnections);
+
+        //            firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
+        //            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
+
+        //            Thread.Sleep(500);
+
+        //            Assert.Equal(0, c.ActivePeerConnections);
+        //            Assert.Equal(0, c.WaitingPeerConnections);
+        //        }
+
+        private (PeerConnectionManager manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0)
+        {
+            var mocks = new Mocks();
+
+            var handler = new PeerConnectionManager(
+                mocks.Client.Object,
+                mocks.ServerConnection.Object,
+                mocks.Listener.Object,
+                mocks.PeerMessageHandler.Object,
+                mocks.Waiter.Object,
+                mocks.ConnectionFactory.Object,
+                mocks.Diagnostic.Object);
+
+            return (handler, mocks);
+        }
+
+        private class Mocks
+        {
+            public Mock<ISoulseekClient> Client { get; } = new Mock<ISoulseekClient>();
+            public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
+            public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
+            public Mock<IListener> Listener { get; } = new Mock<IListener>();
+            public Mock<IPeerMessageHandler> PeerMessageHandler { get; } = new Mock<IPeerMessageHandler>();
+            public Mock<IConnectionFactory> ConnectionFactory { get; } = new Mock<IConnectionFactory>();
+            public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
+        }
     }
 }
