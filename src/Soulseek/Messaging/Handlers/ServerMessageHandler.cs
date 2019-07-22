@@ -107,12 +107,11 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.FromByteArray(message);
-                        foreach (var peer in netInfo.Parents)
-                        {
-                            Console.WriteLine($"{peer.Username} {peer.IPAddress} {peer.Port}");
-                        }
 
-                        await DistributedConnectionManager.UpdateParentPool(netInfo.Parents).ConfigureAwait(false);
+                        if (!DistributedConnectionManager.HasParent)
+                        {
+                            await DistributedConnectionManager.ConnectParentAsync(netInfo.Parents).ConfigureAwait(false);
+                        }
 
                         break;
 
