@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Threading;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -22,11 +23,13 @@ namespace Soulseek.Messaging.Handlers
         public DistributedMessageHandler(
             ISoulseekClient soulseekClient,
             IMessageConnection serverConnection,
+            IPeerConnectionManager peerConnectionManager,
             IWaiter waiter,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
             ServerConnection = serverConnection;
+            PeerConnectionManager = peerConnectionManager;
             Waiter = waiter;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
@@ -34,6 +37,7 @@ namespace Soulseek.Messaging.Handlers
 
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
+        private IPeerConnectionManager PeerConnectionManager { get; }
         private IMessageConnection ServerConnection { get; }
         private IWaiter Waiter { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -52,11 +56,19 @@ namespace Soulseek.Messaging.Handlers
                 {
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
+                        SearchResponse searchResponse;
 
-                        if (searchRequest.Query == "killing your enemy in 1995")
+                        try
                         {
-                            Diagnostic.Debug($"Distributed Search Request from {searchRequest.Username}: '{searchRequest.Query}'");
-                            // todo: get results, send to peer
+                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+                            var (ip, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+
+                            var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ip, port, CancellationToken.None).ConfigureAwait(false);
+                            await peerConnection.WriteAsync(searchResponse.ToByteArray());
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
                         }
 
                         break;
@@ -70,11 +82,13 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
+                        Diagnostic.Debug($"Distributed branch level: {branchLevel.Level}");
                         await ServerConnection.WriteAsync(new BranchLevel(branchLevel.Level).ToByteArray()).ConfigureAwait(false);
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
+                        Diagnostic.Debug($"Distributed branch root: {branchRoot.Username}");
                         await ServerConnection.WriteAsync(new BranchRoot(branchRoot.Username).ToByteArray()).ConfigureAwait(false);
                         break;
 
