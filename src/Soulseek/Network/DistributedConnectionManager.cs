@@ -130,6 +130,8 @@ namespace Soulseek.Network
 
             // todo: disconnect all others
             Diagnostic.Debug($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port})");
+
+            // todo: return this connection, turn this method into GetParentConnectionAsync(), update server with parent info
         }
 
         private IMessageConnection GetDistributedConnection(string username, IPAddress ipAddress, int port)
