@@ -1,4 +1,4 @@
-﻿// <copyright file="NetInfo.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedChildDepth.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,42 +14,45 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
-    internal sealed class DistributedSearchRequest
+    internal sealed class DistributedChildDepth
     {
-        public DistributedSearchRequest(string username, int token, string query)
+        public DistributedChildDepth(int depth)
         {
-            Username = username;
-            Token = token;
-            Query = query;
+            Depth = depth;
         }
 
-        public string Username { get; }
-        public int Token { get; }
-        public string Query { get; }
+        public int Depth { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="DistributedSearchRequest"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="DistributedChildDepth"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static DistributedSearchRequest FromByteArray(byte[] bytes)
+        public static DistributedChildDepth FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Distributed>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Distributed.SearchRequest)
+            if (code != MessageCode.Distributed.ChildDepth)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Distributed.SearchRequest}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Distributed Child Depth (expected: {(int)MessageCode.Distributed.ChildDepth}, received: {(int)code}.");
             }
 
-            // nobody knows what this is.
-            reader.ReadInteger();
+            var depth = reader.ReadInteger();
 
-            var username = reader.ReadString();
-            var token = reader.ReadInteger();
-            var query = reader.ReadString();
+            return new DistributedChildDepth(depth);
+        }
 
-            return new DistributedSearchRequest(username, token, query);
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ChildDepth)
+                .WriteInteger(Depth)
+                .Build();
         }
     }
 }
