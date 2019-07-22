@@ -18,8 +18,8 @@ namespace Soulseek.Messaging
     using System.IO;
     using System.Linq;
     using System.Text;
-    using Soulseek.Exceptions;
     using Soulseek.Compression;
+    using Soulseek.Exceptions;
 
     /// <summary>
     ///     Builds a message.

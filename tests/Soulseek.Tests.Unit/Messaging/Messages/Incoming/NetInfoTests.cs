@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerPlaceInQueueResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="NetInfoTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,22 +12,29 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
+    using System;
+    using System.Collections.Generic;
+    using System.Net;
     using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerPlaceInQueueResponseTests
+    public class NetInfoTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string filename, int placeInQueue)
+        public void Instantiates_With_The_Given_Data(List<(string Username, IPAddress IPAddress, int Port)> parents)
         {
-            var a = new PlaceInQueueResponse(filename, placeInQueue);
+            NetInfo response = null;
 
-            Assert.Equal(filename, a.Filename);
-            Assert.Equal(placeInQueue, a.PlaceInQueue);
+            var ex = Record.Exception(() => response = new NetInfo(parents.Count, parents));
+
+            Assert.Null(ex);
+
+            Assert.Equal(parents.Count, response.ParentCount);
+            Assert.Equal(parents, response.Parents);
         }
 
         [Trait("Category", "Parse")]
@@ -38,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PlaceInQueueResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => NetInfo.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -49,29 +56,38 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
+                .WriteCode(MessageCode.Server.NetInfo)
                 .Build();
 
-            var ex = Record.Exception(() => PlaceInQueueResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => NetInfo.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
 
         [Trait("Category", "Parse")]
-        [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string filename, int placeInQueue)
+        [Theory(DisplayName = "Parse returns expected data on failure"), AutoData]
+        public void Parse_Returns_Expected_Data_On_Failure(List<(string Username, IPAddress IPAddress, int Port)> parents)
         {
-            var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
-                .WriteString(filename)
-                .WriteInteger(placeInQueue)
-                .Build();
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NetInfo)
+                .WriteInteger(parents.Count);
 
-            var response = PlaceInQueueResponse.FromByteArray(msg);
+            foreach (var parent in parents)
+            {
+                var ipBytes = parent.IPAddress.GetAddressBytes();
+                Array.Reverse(ipBytes);
 
-            Assert.Equal(filename, response.Filename);
-            Assert.Equal(placeInQueue, response.PlaceInQueue);
+                builder
+                    .WriteString(parent.Username)
+                    .WriteBytes(ipBytes)
+                    .WriteInteger(parent.Port);
+            }
+
+            var response = NetInfo.FromByteArray(builder.Build());
+
+            Assert.Equal(parents.Count, response.ParentCount);
+            Assert.Equal(parents, response.Parents);
         }
     }
 }

@@ -97,9 +97,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(size, response.FileSize);
         }
 
-        [Trait("Category", "ToMessage")]
-        [Theory(DisplayName = "ToMessage constructs the correct Message"), AutoData]
-        public void ToMessage_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray constructs the correct Message"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message(TransferDirection dir, int token, string file, long size)
         {
             var a = new TransferRequest(dir, token, file, size);
             var msg = a.ToByteArray();
@@ -109,8 +109,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.TransferRequest, code);
 
-            // code + direction + token + file length + filename + size
-            Assert.Equal(4 + 4 + 4 + 4 + file.Length + 8, msg.Length);
+            // length + code + direction + token + file length + filename + size
+            Assert.Equal(4 + 4 + 4 + 4 + 4 + file.Length + 8, msg.Length);
             Assert.Equal(0, reader.ReadInteger()); // direction
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(file, reader.ReadString());

@@ -1,4 +1,4 @@
-﻿// <copyright file="DownloadEventArgsTests.cs" company="JP Dillingham">
+﻿// <copyright file="TransferEventArgsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -16,15 +16,16 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Xunit;
 
-    public class DownloadEventArgsTests
+    public class TransferEventArgsTests
     {
-        [Trait("Category", "DownloadEventArgs Instantiation")]
-        [Theory(DisplayName = "DownloadEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferOptions options)
+        [Trait("Category", "TransferEventArgs Instantiation")]
+        [Theory(DisplayName = "TransferEventArgs Instantiates with the given data"), AutoData]
+        internal void TransferEventArgs_Instantiates_With_The_Given_Data(TransferDirection direction, string username, string filename, int token, TransferOptions options)
         {
-            var dl = new Transfer(TransferDirection.Download, username, filename, token, options);
+            var dl = new Transfer(direction, username, filename, token, options);
             var d = new TransferEventArgs(dl);
 
+            Assert.Equal(direction, d.Direction);
             Assert.Equal(0, d.AverageSpeed);
             Assert.Equal(0, d.BytesTransferred);
             Assert.Equal(0, d.BytesRemaining);
@@ -45,9 +46,9 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(dl.Data, d.Data);
         }
 
-        [Trait("Category", "DownloadProgressUpdatedEventArgs Instantiation")]
-        [Theory(DisplayName = "DownloadProgressUpdatedEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadProgressUpdatedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, int bytesDownloaded)
+        [Trait("Category", "TransferProgressUpdatedEventArgs Instantiation")]
+        [Theory(DisplayName = "TransferProgressUpdatedEventArgs Instantiates with the given data"), AutoData]
+        internal void TransferProgressUpdatedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, int bytesDownloaded)
         {
             var dl = new Transfer(TransferDirection.Download, username, filename, token);
             dl.Size = size;
@@ -57,9 +58,9 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(bytesDownloaded, d.PreviousBytesTransferred);
         }
 
-        [Trait("Category", "DownloadStateChangedEventArgs Instantiation")]
-        [Theory(DisplayName = "DownloadStateChangedEventArgs Instantiates with the given data"), AutoData]
-        internal void DownloadStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferStates transferStates)
+        [Trait("Category", "TransferStateChangedEventArgs Instantiation")]
+        [Theory(DisplayName = "TransferStateChangedEventArgs Instantiates with the given data"), AutoData]
+        internal void TransferStateChangedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, TransferStates transferStates)
         {
             var dl = new Transfer(TransferDirection.Download, username, filename, token);
             var d = new TransferStateChangedEventArgs(transferStates, dl);

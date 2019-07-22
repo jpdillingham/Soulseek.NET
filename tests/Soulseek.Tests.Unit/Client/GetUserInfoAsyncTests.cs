@@ -19,7 +19,6 @@ namespace Soulseek.Tests.Unit.Client
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
@@ -34,13 +33,15 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("")]
         public async Task GetUserInfoAsync_Throws_ArgumentException_On_Null_Username(string username)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync(username));
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "GetUserInfoAsync")]
@@ -51,13 +52,15 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(SoulseekClientStates.LoggedIn)]
         public async Task GetUserInfoAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", state);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", state);
 
-            var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync("a"));
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserInfoAsync("a"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "GetUserInfoAsync")]
@@ -84,17 +87,19 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var info = await s.GetUserInfoAsync(username);
+                var info = await s.GetUserInfoAsync(username);
 
-            Assert.Equal(result.Description, info.Description);
-            Assert.Equal(result.HasPicture, info.HasPicture);
-            Assert.Equal(result.Picture, info.Picture);
-            Assert.Equal(result.UploadSlots, info.UploadSlots);
-            Assert.Equal(result.QueueLength, info.QueueLength);
-            Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
+                Assert.Equal(result.Description, info.Description);
+                Assert.Equal(result.HasPicture, info.HasPicture);
+                Assert.Equal(result.Picture, info.Picture);
+                Assert.Equal(result.UploadSlots, info.UploadSlots);
+                Assert.Equal(result.QueueLength, info.QueueLength);
+                Assert.Equal(result.HasFreeUploadSlot, info.HasFreeUploadSlot);
+            }
         }
 
         [Trait("Category", "GetUserInfoAsync")]
@@ -121,15 +126,17 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            UserInfoResponse info = null;
-            var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
+                UserInfoResponse info = null;
+                var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<UserInfoException>(ex);
-            Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<UserInfoException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+            }
         }
     }
 }

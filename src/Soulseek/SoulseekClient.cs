@@ -64,6 +64,10 @@ namespace Soulseek
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
+        /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
+        /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
+        /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
+        /// <param name="distributedMessageHandler">The IDistributedMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
@@ -74,6 +78,10 @@ namespace Soulseek
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
+            IDistributedConnectionManager distributedConnectionManager = null,
+            IServerMessageHandler serverMessageHandler = null,
+            IPeerMessageHandler peerMessageHandler = null,
+            IDistributedMessageHandler distributedMessageHandler = null,
             IListener listener = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
@@ -101,20 +109,15 @@ namespace Soulseek
                     throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
                 }
 
-                ServerMessageHandler = new ServerMessageHandler(this);
-                ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
-                ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
-                ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
                 // substitute the existing inactivity value with -1 to keep the connection open indefinitely
                 var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
                 var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
 
                 ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
-                ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
-                ServerConnection.Disconnected += ServerConnection_Disconnected;
-                ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
             }
+
+            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
+            ServerConnection.Disconnected += ServerConnection_Disconnected;
 
             Listener = listener;
 
@@ -123,14 +126,24 @@ namespace Soulseek
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
-            PeerMessageHandler = new PeerMessageHandler(this);
+            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, Waiter);
+            DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, Waiter);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            DistributedConnectionManager = DistributedConnectionManager ?? new DistributedConnectionManager(this);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, DistributedConnectionManager, Waiter, Downloads);
+            ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
+            ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
         }
 
         /// <summary>
@@ -203,6 +216,7 @@ namespace Soulseek
         /// </summary>
         public string Username { get; private set; }
 
+        internal IDistributedMessageHandler DistributedMessageHandler { get; }
         internal IDistributedConnectionManager DistributedConnectionManager { get; }
         internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal IListener Listener { get; }
@@ -237,7 +251,14 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
 
-            await ServerConnection.WriteAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                throw new PrivateMessageException($"Failed to acknowledge private message with ID {privateMessageId}: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -997,7 +1018,8 @@ namespace Soulseek
                 download.State = TransferStates.Cancelled;
                 download.Connection?.Disconnect("Transfer cancelled.");
 
-                throw new TransferException($"Download of file {filename} from user {username} was cancelled.", ex);
+                Diagnostic.Debug(ex.ToString());
+                throw;
             }
             catch (TimeoutException ex)
             {
@@ -1005,7 +1027,7 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer timed out.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
+                throw;
             }
             catch (Exception ex)
             {
@@ -1078,7 +1100,7 @@ namespace Soulseek
 
                 return (address.IPAddress, address.Port);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserAddressException($"Failed to retrieve address for user {username}: {ex.Message}", ex);
             }

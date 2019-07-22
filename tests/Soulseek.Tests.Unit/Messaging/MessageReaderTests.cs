@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit.Messaging
 {
     using System;
+    using System.Collections.Generic;
     using System.Reflection;
     using System.Text;
     using AutoFixture.Xunit2;
@@ -537,6 +538,19 @@ namespace Soulseek.Tests.Unit.Messaging
             reader.ReadInteger();
 
             Assert.False(reader.HasMoreData);
+        }
+
+        [Trait("Category", "ReadCode")]
+        [Theory(DisplayName = "ReadCode returns expected data"), AutoData]
+        public void ReadCode_Returns_Expected_Data(MessageCode.Peer code)
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(code)
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+
+            Assert.Equal(code, reader.ReadCode());
         }
     }
 }

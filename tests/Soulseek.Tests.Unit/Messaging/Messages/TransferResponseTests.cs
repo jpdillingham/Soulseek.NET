@@ -118,9 +118,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(message, response.Message);
         }
 
-        [Trait("Category", "ToMessage")]
-        [Theory(DisplayName = "ToMessage constructs the correct Message when allowed"), AutoData]
-        public void ToMessage_Constructs_The_Correct_Message_When_Allowed(int token, long size)
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray constructs the correct Message when allowed"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message_When_Allowed(int token, long size)
         {
             var a = new TransferResponse(token, size);
             var msg = a.ToByteArray();
@@ -130,16 +130,16 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.TransferResponse, code);
 
-            // code + token + allowed + size
-            Assert.Equal(4 + 4 + 1 + 8, msg.Length);
+            // length + code + token + allowed + size
+            Assert.Equal(4 + 4 + 4 + 1 + 8, msg.Length);
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(1, reader.ReadByte());
             Assert.Equal(size, reader.ReadLong());
         }
 
-        [Trait("Category", "ToMessage")]
-        [Theory(DisplayName = "ToMessage constructs the correct Message when disallowed"), AutoData]
-        public void ToMessage_Constructs_The_Correct_Message_When_Disallowed(int token, string message)
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray constructs the correct Message when disallowed"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message_When_Disallowed(int token, string message)
         {
             var a = new TransferResponse(token, message);
             var msg = a.ToByteArray();
@@ -148,8 +148,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Peer.TransferResponse, code);
 
-            // code + token + allowed + message len + message
-            Assert.Equal(4 + 4 + 1 + 4 + message.Length, msg.Length);
+            // length + code + token + allowed + message len + message
+            Assert.Equal(4 + 4 + 4 + 1 + 4 + message.Length, msg.Length);
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
 

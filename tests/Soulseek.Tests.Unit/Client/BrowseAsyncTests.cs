@@ -35,39 +35,43 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("   ")]
         public async Task BrowseAsync_Throws_ArgumentException_Given_Bad_Username(string username)
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync(username));
 
-            var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync(username));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "BrowseAsync")]
         [Fact(DisplayName = "BrowseAsync throws InvalidOperationException when not connected")]
         public async Task BrowseAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
-            var s = new SoulseekClient();
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync("foo"));
 
-            var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync("foo"));
-
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
 
         [Trait("Category", "BrowseAsync")]
         [Fact(DisplayName = "BrowseAsync throws InvalidOperationException when not logged in")]
         public async Task BrowseAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync("foo"));
+                var ex = await Record.ExceptionAsync(async () => await s.BrowseAsync("foo"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
-            Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
 
         [Trait("Category", "BrowseInternalAsync")]
@@ -92,13 +96,15 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("Username", localUsername);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var result = await s.BrowseAsync(username);
+                var result = await s.BrowseAsync(username);
 
-            Assert.Equal(response, result);
+                Assert.Equal(response, result);
+            }
         }
 
         [Trait("Category", "BrowseInternalAsync")]
@@ -121,16 +127,18 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("Username", localUsername);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            BrowseResponse result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                BrowseResponse result = null;
+                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<BrowseException>(ex);
-            Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<OperationCanceledException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "BrowseInternalAsync")]
@@ -149,16 +157,18 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("Username", localUsername);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            BrowseResponse result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                BrowseResponse result = null;
+                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<BrowseException>(ex);
-            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "BrowseInternalAsync")]
@@ -180,17 +190,19 @@ namespace Soulseek.Tests.Unit.Client
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
-            var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object);
-            s.SetProperty("Username", localUsername);
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            BrowseResponse result = null;
-            var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                BrowseResponse result = null;
+                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
-            Assert.NotNull(ex);
-            Assert.IsType<BrowseException>(ex);
-            Assert.IsType<ConnectionException>(ex.InnerException);
-            Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
+                Assert.NotNull(ex);
+                Assert.IsType<BrowseException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.Contains("disconnected unexpectedly", ex.InnerException.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
         }
     }
 }

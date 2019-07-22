@@ -12,8 +12,8 @@
 
 namespace Soulseek
 {
-    using Soulseek.Network.Tcp;
     using System;
+    using Soulseek.Network.Tcp;
 
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events.
@@ -32,7 +32,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
-        internal ConnectionDataEventArgs(int currentLength, int totalLength)
+        internal ConnectionDataEventArgs(int currentLength, long totalLength)
         {
             CurrentLength = currentLength;
             TotalLength = totalLength;
@@ -51,7 +51,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the total expected length of the data transfer.
         /// </summary>
-        public int TotalLength { get; }
+        public long TotalLength { get; }
     }
 
     /// <summary>

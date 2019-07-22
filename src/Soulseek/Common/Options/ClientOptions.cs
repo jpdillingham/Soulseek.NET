@@ -48,6 +48,7 @@ namespace Soulseek
         /// <param name="peerConnectionOptions">The options for peer message connections.</param>
         /// <param name="transferConnectionOptions">The options for peer transfer connections.</param>
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
+        /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <param name="searchResponseResolver">
         ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
@@ -72,6 +73,7 @@ namespace Soulseek
             ConnectionOptions peerConnectionOptions = null,
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
+            ConnectionOptions distributedConnectionOptions = null,
             Func<string, IPAddress, int, string, int, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPAddress, int, Task<BrowseResponse>> browseResponseResolver = null,
             Func<string, IPAddress, int, Task<UserInfoResponse>> userInfoResponseResolver = null,
@@ -89,6 +91,7 @@ namespace Soulseek
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
             TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
+            DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
 
             SearchResponseResolver = searchResponseResolver;
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
@@ -112,6 +115,11 @@ namespace Soulseek
         ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
         /// </summary>
         public int ConcurrentPeerMessageConnectionLimit { get; }
+
+        /// <summary>
+        ///     Gets the options for distributed message connections.
+        /// </summary>
+        public ConnectionOptions DistributedConnectionOptions { get; }
 
         /// <summary>
         ///     Gets the options for incoming connections.

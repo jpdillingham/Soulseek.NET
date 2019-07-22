@@ -18,7 +18,6 @@ namespace Soulseek.Tests.Unit.Client
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
@@ -29,13 +28,15 @@ namespace Soulseek.Tests.Unit.Client
         [Fact(DisplayName = "LoginAsync throws ArgumentException on null username")]
         public async Task LoginAsync_Throws_ArgumentException_On_Null_Username()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(null, Guid.NewGuid().ToString()));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(null, Guid.NewGuid().ToString()));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
@@ -48,39 +49,45 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(null, null)]
         public async Task LoginAsync_Throws_ArgumentException_On_Bad_Input(string username, string password)
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(username, password));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(username, password));
 
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
         [Fact(DisplayName = "LoginAsync throws InvalidOperationException if logged in")]
         public async Task LoginAsync_Throws_InvalidOperationException_If_Logged_In()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
         [Fact(DisplayName = "LoginAsync throws InvalidOperationException if not connected")]
         public async Task LoginAsync_Throws_InvalidOperationException_If_Not_Connected()
         {
-            var s = new SoulseekClient();
-            s.SetProperty("State", SoulseekClientStates.Disconnected);
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Disconnected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync("a", "b"));
 
-            Assert.NotNull(ex);
-            Assert.IsType<InvalidOperationException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
@@ -93,13 +100,15 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            await s.LoginAsync(user, password);
+                await s.LoginAsync(user, password);
 
-            Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
-            Assert.Equal(user, s.Username);
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
+                Assert.Equal(user, s.Username);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
@@ -112,15 +121,17 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
 
-            Assert.NotNull(ex);
-            Assert.IsType<LoginException>(ex);
-            Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-            Assert.Null(s.Username);
+                Assert.NotNull(ex);
+                Assert.IsType<LoginException>(ex);
+                Assert.Equal(SoulseekClientStates.Disconnected, s.State);
+                Assert.Null(s.Username);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
@@ -133,14 +144,16 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
 
-            Assert.NotNull(ex);
-            Assert.IsType<LoginException>(ex);
-            Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<LoginException>(ex);
+                Assert.IsType<TimeoutException>(ex.InnerException);
+            }
         }
 
         [Trait("Category", "LoginAsync")]
@@ -153,14 +166,16 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Exception>(new ConnectionWriteException()));
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object);
-            s.SetProperty("State", SoulseekClientStates.Connected);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
-            var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
 
-            Assert.NotNull(ex);
-            Assert.IsType<LoginException>(ex);
-            Assert.IsType<ConnectionWriteException>(ex.InnerException);
+                Assert.NotNull(ex);
+                Assert.IsType<LoginException>(ex);
+                Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
         }
     }
 }
