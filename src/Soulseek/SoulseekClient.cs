@@ -126,7 +126,7 @@ namespace Soulseek
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
-            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, Waiter);
+            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, ServerConnection, Waiter);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
@@ -1174,7 +1174,7 @@ namespace Soulseek
                         await ServerConnection.WriteAsync(new SetListenPortRequest(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
-                    await ServerConnection.WriteAsync(new HaveNoParentsRequest(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new HaveNoParents(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {

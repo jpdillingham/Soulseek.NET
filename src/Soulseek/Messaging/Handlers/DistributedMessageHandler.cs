@@ -21,10 +21,12 @@ namespace Soulseek.Messaging.Handlers
     {
         public DistributedMessageHandler(
             ISoulseekClient soulseekClient,
+            IMessageConnection serverConnection,
             IWaiter waiter,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
+            ServerConnection = serverConnection;
             Waiter = waiter;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
@@ -32,6 +34,7 @@ namespace Soulseek.Messaging.Handlers
 
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
+        private IMessageConnection ServerConnection { get; }
         private IWaiter Waiter { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private ISoulseekClient SoulseekClient { get; }
@@ -56,6 +59,23 @@ namespace Soulseek.Messaging.Handlers
                             // todo: get results, send to peer
                         }
 
+                        break;
+
+                    case MessageCode.Distributed.Ping:
+                        Diagnostic.Debug($"PING?");
+                        var pingResponse = new PingResponse(SoulseekClient.GetNextToken());
+                        await connection.WriteAsync(pingResponse.ToByteArray()).ConfigureAwait(false);
+                        Diagnostic.Debug($"PONG!");
+                        break;
+
+                    case MessageCode.Distributed.BranchLevel:
+                        var branchLevel = DistributedBranchLevel.FromByteArray(message);
+                        await ServerConnection.WriteAsync(new BranchLevel(branchLevel.Level).ToByteArray()).ConfigureAwait(false);
+                        break;
+
+                    case MessageCode.Distributed.BranchRoot:
+                        var branchRoot = DistributedBranchRoot.FromByteArray(message);
+                        await ServerConnection.WriteAsync(new BranchRoot(branchRoot.Username).ToByteArray()).ConfigureAwait(false);
                         break;
 
                     default:
