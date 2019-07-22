@@ -331,6 +331,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
                 mocks.PeerConnectionManager.Object,
+                mocks.DistributedConnectionManager.Object,
                 mocks.Waiter.Object,
                 mocks.Downloads);
 
@@ -373,6 +374,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
                 mocks.PeerConnectionManager.Object,
+                mocks.DistributedConnectionManager.Object,
                 mocks.Waiter.Object,
                 active);
 
@@ -408,6 +410,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
                 mocks.PeerConnectionManager.Object,
+                mocks.DistributedConnectionManager.Object,
                 mocks.Waiter.Object,
                 mocks.Downloads);
 
@@ -522,6 +525,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
                 mocks.PeerConnectionManager.Object,
+                mocks.DistributedConnectionManager.Object,
                 mocks.Waiter.Object,
                 mocks.Downloads,
                 mocks.Diagnostic.Object);
@@ -533,6 +537,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             public Mock<ISoulseekClient> Client { get; } = new Mock<ISoulseekClient>();
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
+            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
