@@ -1,4 +1,4 @@
-﻿// <copyright file="HaveNoParentsRequest.cs" company="JP Dillingham">
+﻿// <copyright file="HaveNoParents.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Adds a peer to the server-side watch list.
+    ///     Informs the server that we have no distributed parent.
     /// </summary>
-    internal sealed class HaveNoParentsRequest
+    internal sealed class HaveNoParents
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="HaveNoParentsRequest"/> class.
+        ///     Initializes a new instance of the <see cref="HaveNoParents"/> class.
         /// </summary>
-        /// <param name="haveNoParents">A value indicating whether distributed parent connections have been established.</param>
-        public HaveNoParentsRequest(bool haveNoParents)
+        /// <param name="haveParents">A value indicating whether distributed parent connections have been established.</param>
+        public HaveNoParents(bool haveParents)
         {
-            HaveNoParents = haveNoParents;
+            HaveParents = haveParents;
         }
 
         /// <summary>
         ///     Gets a value indicating whether distributed parent connections have been established.
         /// </summary>
-        public bool HaveNoParents { get; }
+        public bool HaveParents { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -39,7 +39,7 @@ namespace Soulseek.Messaging.Messages
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Server.HaveNoParents)
-                .WriteByte((byte)(HaveNoParents ? 1 : 0))
+                .WriteByte((byte)(HaveParents ? 1 : 0))
                 .Build();
         }
     }
