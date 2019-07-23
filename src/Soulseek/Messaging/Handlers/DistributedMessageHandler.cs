@@ -61,10 +61,14 @@ namespace Soulseek.Messaging.Handlers
                         try
                         {
                             searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
-                            var (ip, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
 
-                            var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ip, port, CancellationToken.None).ConfigureAwait(false);
-                            await peerConnection.WriteAsync(searchResponse.ToByteArray());
+                            if (searchResponse != null && searchResponse.FileCount > 0)
+                            {
+                                var (ip, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+
+                                var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ip, port, CancellationToken.None).ConfigureAwait(false);
+                                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+                            }
                         }
                         catch (Exception ex)
                         {
