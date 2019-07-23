@@ -363,6 +363,7 @@ namespace Soulseek.Tests.Unit.Network
                 mocks.ServerConnection.Object,
                 mocks.Listener.Object,
                 mocks.PeerMessageHandler.Object,
+                mocks.DistributedMessageHandler.Object,
                 mocks.Waiter.Object,
                 mocks.ConnectionFactory.Object,
                 mocks.Diagnostic.Object);
@@ -377,6 +378,7 @@ namespace Soulseek.Tests.Unit.Network
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
             public Mock<IPeerMessageHandler> PeerMessageHandler { get; } = new Mock<IPeerMessageHandler>();
+            public Mock<IDistributedMessageHandler> DistributedMessageHandler { get; } = new Mock<IDistributedMessageHandler>();
             public Mock<IConnectionFactory> ConnectionFactory { get; } = new Mock<IConnectionFactory>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
         }

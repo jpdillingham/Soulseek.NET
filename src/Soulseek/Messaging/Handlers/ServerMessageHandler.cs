@@ -37,14 +37,14 @@ namespace Soulseek.Messaging.Handlers
         public ServerMessageHandler(
             ISoulseekClient soulseekClient,
             IPeerConnectionManager peerConnectionManager,
-            IDistributedConnectionManager distributedConnectionManager,
+            //IDistributedConnectionManager distributedConnectionManager,
             IWaiter waiter,
             ConcurrentDictionary<int, Transfer> downloads,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
             PeerConnectionManager = peerConnectionManager;
-            DistributedConnectionManager = distributedConnectionManager;
+            //DistributedConnectionManager = distributedConnectionManager;
             Waiter = waiter;
             Downloads = downloads;
             Diagnostic = diagnosticFactory ??
@@ -69,7 +69,7 @@ namespace Soulseek.Messaging.Handlers
         private IDiagnosticFactory Diagnostic { get; }
         private ConcurrentDictionary<int, Transfer> Downloads { get; }
         private IPeerConnectionManager PeerConnectionManager { get; }
-        private IDistributedConnectionManager DistributedConnectionManager { get; }
+        //private IDistributedConnectionManager DistributedConnectionManager { get; }
         private ISoulseekClient SoulseekClient { get; }
         private IWaiter Waiter { get; }
 
@@ -107,11 +107,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.FromByteArray(message);
-
-                        if (!DistributedConnectionManager.HasParent)
-                        {
-                            await DistributedConnectionManager.ConnectParentAsync(netInfo.Parents).ConfigureAwait(false);
-                        }
+                        await PeerConnectionManager.GetDistributedConnectionAsync(netInfo.Parents).ConfigureAwait(false);
 
                         break;
 

@@ -78,7 +78,7 @@ namespace Soulseek
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
-            IDistributedConnectionManager distributedConnectionManager = null,
+            //IDistributedConnectionManager distributedConnectionManager = null,
             IServerMessageHandler serverMessageHandler = null,
             IPeerMessageHandler peerMessageHandler = null,
             IDistributedMessageHandler distributedMessageHandler = null,
@@ -129,16 +129,16 @@ namespace Soulseek
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, Waiter);
-            PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
             DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, ServerConnection, PeerConnectionManager, Waiter);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, DistributedMessageHandler, Waiter);
+            PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, DistributedConnectionManager, Waiter, Downloads);
+            //DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
+            //DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -217,7 +217,7 @@ namespace Soulseek
         public string Username { get; private set; }
 
         internal IDistributedMessageHandler DistributedMessageHandler { get; }
-        internal IDistributedConnectionManager DistributedConnectionManager { get; }
+        //internal IDistributedConnectionManager DistributedConnectionManager { get; }
         internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal IListener Listener { get; }
         internal IPeerConnectionManager PeerConnectionManager { get; }
@@ -235,6 +235,14 @@ namespace Soulseek
         private bool Disposed { get; set; } = false;
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+
+        public async Task SendSearchResponseAsync(string username, SearchResponse searchResponse, CancellationToken? cancellationToken = null)
+        {
+            var (ip, port) = await GetUserAddressAsync(username).ConfigureAwait(false);
+
+            var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, ip, port, CancellationToken.None).ConfigureAwait(false);
+            await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+        }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.

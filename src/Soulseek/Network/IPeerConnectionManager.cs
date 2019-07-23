@@ -13,6 +13,7 @@
 namespace Soulseek.Network
 {
     using System;
+    using System.Collections.Generic;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -80,6 +81,8 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
         Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken);
+
+        Task GetDistributedConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
 
         /// <summary>
         ///     Removes and disposes all active and queued connections.
