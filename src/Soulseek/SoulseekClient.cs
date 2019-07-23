@@ -129,7 +129,7 @@ namespace Soulseek
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, ServerConnection, Waiter);
+            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, DistributedMessageHandler, Waiter);
@@ -721,19 +721,6 @@ namespace Soulseek
             }
 
             return ServerConnection.WriteAsync(new SetStatusRequest(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task SendSearchResponseAsync(string username, SearchResponse searchResponse, CancellationToken? cancellationToken = null)
-        {
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
-            }
-
-            var (ip, port) = await GetUserAddressAsync(username).ConfigureAwait(false);
-
-            var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, ip, port, CancellationToken.None).ConfigureAwait(false);
-            await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
         }
 
         /// <summary>

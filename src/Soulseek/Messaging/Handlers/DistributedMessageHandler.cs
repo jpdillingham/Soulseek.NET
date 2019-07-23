@@ -21,25 +21,18 @@ namespace Soulseek.Messaging.Handlers
     internal sealed class DistributedMessageHandler : IDistributedMessageHandler
     {
         public DistributedMessageHandler(
-            ISoulseekClient soulseekClient,
-            IMessageConnection serverConnection,
-            IWaiter waiter,
+            SoulseekClient soulseekClient,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
-            ServerConnection = serverConnection;
-            Waiter = waiter;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
-        private Lazy<IPeerConnectionManager> PeerConnectionManager { get; }
-        private IMessageConnection ServerConnection { get; }
-        private IWaiter Waiter { get; }
         private IDiagnosticFactory Diagnostic { get; }
-        private ISoulseekClient SoulseekClient { get; }
+        private SoulseekClient SoulseekClient { get; }
 
         public async void HandleMessage(object sender, byte[] message)
         {
@@ -62,7 +55,10 @@ namespace Soulseek.Messaging.Handlers
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {
-                                await SoulseekClient.SendSearchResponseAsync(searchResponse.Username, searchResponse).ConfigureAwait(false);
+                                var (ip, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ip, port, CancellationToken.None).ConfigureAwait(false);
+                                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
                             }
                         }
                         catch (Exception ex)
@@ -82,13 +78,13 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
                         Diagnostic.Debug($"Distributed branch level: {branchLevel.Level}");
-                        await ServerConnection.WriteAsync(new BranchLevel(branchLevel.Level).ToByteArray()).ConfigureAwait(false);
+                        await SoulseekClient.ServerConnection.WriteAsync(new BranchLevel(branchLevel.Level).ToByteArray()).ConfigureAwait(false);
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
                         Diagnostic.Debug($"Distributed branch root: {branchRoot.Username}");
-                        await ServerConnection.WriteAsync(new BranchRoot(branchRoot.Username).ToByteArray()).ConfigureAwait(false);
+                        await SoulseekClient.ServerConnection.WriteAsync(new BranchRoot(branchRoot.Username).ToByteArray()).ConfigureAwait(false);
                         break;
 
                     default:

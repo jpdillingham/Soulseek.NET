@@ -307,7 +307,5 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
-
-        Task SendSearchResponseAsync(string username, SearchResponse searchResponse, CancellationToken? cancellationToken = null);
     }
 }
