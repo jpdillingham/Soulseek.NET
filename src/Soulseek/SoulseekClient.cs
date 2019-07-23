@@ -129,14 +129,11 @@ namespace Soulseek
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, ServerConnection, PeerConnectionManager, Waiter);
+            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, ServerConnection, Waiter);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, DistributedMessageHandler, Waiter);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
-            //DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
-            //DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
@@ -235,14 +232,6 @@ namespace Soulseek
         private bool Disposed { get; set; } = false;
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-
-        public async Task SendSearchResponseAsync(string username, SearchResponse searchResponse, CancellationToken? cancellationToken = null)
-        {
-            var (ip, port) = await GetUserAddressAsync(username).ConfigureAwait(false);
-
-            var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, ip, port, CancellationToken.None).ConfigureAwait(false);
-            await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-        }
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -732,6 +721,19 @@ namespace Soulseek
             }
 
             return ServerConnection.WriteAsync(new SetStatusRequest(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+        }
+
+        public async Task SendSearchResponseAsync(string username, SearchResponse searchResponse, CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
+            }
+
+            var (ip, port) = await GetUserAddressAsync(username).ConfigureAwait(false);
+
+            var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, ip, port, CancellationToken.None).ConfigureAwait(false);
+            await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
         }
 
         /// <summary>

@@ -51,6 +51,7 @@ namespace Soulseek.Network
             Waiter = waiter;
             PeerMessageHandler = peerMessageHandler;
             DistributedMessageHandler = distributedMessageHandler;
+
             ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
                 ?? new ClientOptions().ConcurrentPeerMessageConnectionLimit;
 
@@ -114,14 +115,21 @@ namespace Soulseek.Network
             GC.SuppressFinalize(this);
         }
 
-        public async Task GetDistributedConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
+        public async Task AddDistributedConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
             var cts = new CancellationTokenSource();
+            var options = SoulseekClient.Options.DistributedConnectionOptions;
 
             // create a new connection for each potential parent, but don't connect it
             var connections = parentCandidates
-                .Select(p => GetDistributedConnection(p.Username, p.IPAddress, p.Port))
+                .Select(p => ConnectionFactory.GetMessageConnection(p.Username, p.IPAddress, p.Port, options))
                 .ToList();
+
+            // bind the message handler
+            foreach (var connection in connections)
+            {
+                connection.MessageRead += DistributedMessageHandler.HandleMessage;
+            }
 
             // create a list of tasks to connect each connection
             var connectTasks = connections.Select(c => ConnectDistributedConnectionAsync(c, cts.Token)).ToList();
@@ -154,16 +162,6 @@ namespace Soulseek.Network
 
             // todo: disconnect all others
             Diagnostic.Debug($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port})");
-
-            // todo: return this connection, turn this method into GetParentConnectionAsync(), update server with parent info
-        }
-
-        private IMessageConnection GetDistributedConnection(string username, IPAddress ipAddress, int port)
-        {
-            var connection = ConnectionFactory.GetMessageConnection(username, ipAddress, port, SoulseekClient.Options.DistributedConnectionOptions);
-            connection.MessageRead += DistributedMessageHandler.HandleMessage;
-
-            return connection;
         }
 
         private async Task<IMessageConnection> ConnectDistributedConnectionAsync(IMessageConnection connection, CancellationToken cancellationToken)

@@ -23,13 +23,11 @@ namespace Soulseek.Messaging.Handlers
         public DistributedMessageHandler(
             ISoulseekClient soulseekClient,
             IMessageConnection serverConnection,
-            IPeerConnectionManager peerConnectionManager,
             IWaiter waiter,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
             ServerConnection = serverConnection;
-            PeerConnectionManager = peerConnectionManager;
             Waiter = waiter;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
@@ -37,7 +35,7 @@ namespace Soulseek.Messaging.Handlers
 
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
-        private IPeerConnectionManager PeerConnectionManager { get; }
+        private Lazy<IPeerConnectionManager> PeerConnectionManager { get; }
         private IMessageConnection ServerConnection { get; }
         private IWaiter Waiter { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -64,7 +62,7 @@ namespace Soulseek.Messaging.Handlers
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {
-                                await SoulseekClient.SendSearchResponseAsync(searchRequest.Username, searchResponse).ConfigureAwait(false);
+                                await SoulseekClient.SendSearchResponseAsync(searchResponse.Username, searchResponse).ConfigureAwait(false);
                             }
                         }
                         catch (Exception ex)

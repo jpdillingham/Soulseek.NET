@@ -107,7 +107,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.FromByteArray(message);
-                        await PeerConnectionManager.GetDistributedConnectionAsync(netInfo.Parents).ConfigureAwait(false);
+                        await PeerConnectionManager.AddDistributedConnectionAsync(netInfo.Parents).ConfigureAwait(false);
 
                         break;
 
