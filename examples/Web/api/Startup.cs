@@ -81,6 +81,19 @@
                         .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
 
                     return Task.CompletedTask;
+                }, searchResponseResolver: (u, t, q) =>
+                {
+                    Console.WriteLine($"Search request: {q}");
+
+                    if (q == "killing your enemy in 1995")
+                    {
+                        var files = System.IO.Directory.GetFiles(SharedDirectory)
+                            .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0));
+
+                        return Task.FromResult(new SearchResponse(Username, t, files.Count(), 0, 0, 0, files));
+                    }
+
+                    return Task.FromResult<SearchResponse>(null);
                 });
 
             Client = new SoulseekClient(options: options);
