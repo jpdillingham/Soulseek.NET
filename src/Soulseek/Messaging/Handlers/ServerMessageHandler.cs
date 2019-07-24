@@ -29,23 +29,12 @@ namespace Soulseek.Messaging.Handlers
         ///     Initializes a new instance of the <see cref="ServerMessageHandler"/> class.
         /// </summary>
         /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
-        /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
-        /// <param name="waiter">The IWaiter instance to use.</param>
-        /// <param name="downloads">The collection of download transfers.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public ServerMessageHandler(
             SoulseekClient soulseekClient,
-            //IPeerConnectionManager peerConnectionManager,
-            //IDistributedConnectionManager distributedConnectionManager,
-            //IWaiter waiter,
-            //ConcurrentDictionary<int, Transfer> downloads,
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
-            //PeerConnectionManager = peerConnectionManager;
-            //DistributedConnectionManager = distributedConnectionManager;
-            //Waiter = waiter;
-            //Downloads = downloads;
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
@@ -66,11 +55,8 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         private IDiagnosticFactory Diagnostic { get; }
-        //private ConcurrentDictionary<int, Transfer> Downloads { get; }
-        //private IPeerConnectionManager PeerConnectionManager { get; }
-        //private IDistributedConnectionManager DistributedConnectionManager { get; }
+
         private SoulseekClient SoulseekClient { get; }
-        //private IWaiter Waiter { get; }
 
         /// <summary>
         ///     Handles incoming messages.
