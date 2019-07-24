@@ -64,7 +64,6 @@ namespace Soulseek
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
-        /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
         /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
         /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
         /// <param name="distributedMessageHandler">The IDistributedMessageHandler instance to use.</param>
@@ -78,10 +77,8 @@ namespace Soulseek
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
-            //IDistributedConnectionManager distributedConnectionManager = null,
             IServerMessageHandler serverMessageHandler = null,
             IPeerMessageHandler peerMessageHandler = null,
-            IDistributedMessageHandler distributedMessageHandler = null,
             IListener listener = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
@@ -196,7 +193,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public ClientOptions Options { get; }
+        public virtual ClientOptions Options { get; }
 
         /// <summary>
         ///     Gets server port.
@@ -206,27 +203,26 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        public SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
+        public virtual SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
         public string Username { get; private set; }
 
-        internal IDistributedMessageHandler DistributedMessageHandler { get; }
-        //internal IDistributedConnectionManager DistributedConnectionManager { get; }
-        internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
-        internal IListener Listener { get; }
-        internal IPeerConnectionManager PeerConnectionManager { get; }
-        internal IPeerMessageHandler PeerMessageHandler { get; }
-        internal ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+        internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
+        internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual IListener Listener { get; }
+        internal virtual IPeerConnectionManager PeerConnectionManager { get; }
+        internal virtual IPeerMessageHandler PeerMessageHandler { get; }
+        internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
 
         /// <summary>
         ///     Gets the server message connection.
         /// </summary>
-        internal IMessageConnection ServerConnection { get; }
-        internal IServerMessageHandler ServerMessageHandler { get; }
-        internal IWaiter Waiter { get; }
+        internal virtual IMessageConnection ServerConnection { get; }
+        internal virtual IServerMessageHandler ServerMessageHandler { get; }
+        internal virtual IWaiter Waiter { get; }
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
