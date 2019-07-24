@@ -40,7 +40,7 @@ namespace Soulseek.Network
             IConnectionFactory connectionFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = soulseekClient;
+            SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
 
             ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
                 ?? new ClientOptions().ConcurrentPeerMessageConnectionLimit;
