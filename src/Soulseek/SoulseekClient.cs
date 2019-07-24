@@ -135,7 +135,7 @@ namespace Soulseek
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, DistributedMessageHandler, Waiter);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, Waiter, Downloads);
+            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -241,7 +241,7 @@ namespace Soulseek
         /// <returns>A Task representing the operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
+        public virtual async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
