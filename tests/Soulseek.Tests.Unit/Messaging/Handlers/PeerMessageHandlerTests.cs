@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, message);
+            handler.HandleMessage(mocks.ServerConnection.Object, message);
 
             Assert.Contains(messages, m => m.IndexOf("peer message received", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString("foo")
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, message);
+            handler.HandleMessage(mocks.ServerConnection.Object, message);
 
             Assert.Contains(messages, m => m.IndexOf("peer message received", StringComparison.InvariantCultureIgnoreCase) > -1);
             Assert.Contains(messages, m => m.IndexOf("upload", StringComparison.InvariantCultureIgnoreCase) > -1 && m.IndexOf("failed", StringComparison.InvariantCultureIgnoreCase) > -1);
@@ -86,7 +86,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Peer.TransferResponse)
                 .Build(); // malformed message
 
-            handler.HandleMessage(mocks.Connection.Object, message);
+            handler.HandleMessage(mocks.ServerConnection.Object, message);
 
             Assert.Contains(messages, m => m.IndexOf("error handling peer message", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
@@ -99,7 +99,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var msg = new TransferResponse(token, fileSize).ToByteArray();
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
+            handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferResponse, username, token), It.Is<TransferResponse>(r => r.Token == token)), Times.Once);
         }
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(hasFreeSlot ? 1 : 0))
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
+            handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.InfoResponse, username), It.IsAny<UserInfoResponse>()), Times.Once);
         }
@@ -138,7 +138,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(placeInQueue)
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
+            handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
             mocks.Waiter.Verify(
                 m => m.Complete(
@@ -160,7 +160,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Compress()
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
+            handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.BrowseResponse, username), It.Is<BrowseResponse>(r => r.Directories.First().Directoryname == directoryName)), Times.Once);
         }
@@ -175,7 +175,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Peer.BrowseResponse)
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
+            handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
             mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.BrowseResponse, username), It.IsAny<MessageReadException>()), Times.Once);
         }
@@ -205,7 +205,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Compress()
                 .Build();
 
-            var ex = Record.Exception(() => handler.HandleMessage(mocks.Connection.Object, msg));
+            var ex = Record.Exception(() => handler.HandleMessage(mocks.ServerConnection.Object, msg));
 
             Assert.Null(ex);
         }
@@ -222,7 +222,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(message)
                 .Build();
 
-            handler.HandleMessage(mocks.Connection.Object, msg);
+            handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
             mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<Exception>()), Times.Once);
         }
@@ -259,7 +259,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             {
                 mocks.Searches.TryAdd(token, search);
 
-                handler.HandleMessage(mocks.Connection.Object, msg);
+                handler.HandleMessage(mocks.ServerConnection.Object, msg);
 
                 Assert.Single(search.Responses);
                 Assert.Contains(search.Responses, r => r.Username == username && r.Token == token);
@@ -270,18 +270,15 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var mocks = new Mocks();
 
-            mocks.Connection.Setup(m => m.Username)
+            mocks.ServerConnection.Setup(m => m.Username)
                 .Returns(username ?? "username");
-            mocks.Connection.Setup(m => m.IPAddress)
+            mocks.ServerConnection.Setup(m => m.IPAddress)
                 .Returns(ip ?? IPAddress.Parse("0.0.0.0"));
-            mocks.Connection.Setup(m => m.Port)
+            mocks.ServerConnection.Setup(m => m.Port)
                 .Returns(port);
 
             var handler = new PeerMessageHandler(
                 mocks.Client.Object,
-                mocks.Downloads,
-                mocks.Searches,
-                mocks.Waiter.Object,
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);
@@ -289,12 +286,23 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         private class Mocks
         {
-            public Mock<ISoulseekClient> Client { get; } = new Mock<ISoulseekClient>();
+            public Mocks(ClientOptions clientOptions = null)
+            {
+                Client = new Mock<SoulseekClient>(clientOptions);
+                Client.CallBase = true;
+
+                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
+                Client.Setup(m => m.Downloads).Returns(Downloads);
+                Client.Setup(m => m.Searches).Returns(Searches);
+                Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
+            }
+
+            public Mock<SoulseekClient> Client { get; }
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
             public ConcurrentDictionary<int, Search> Searches { get; } = new ConcurrentDictionary<int, Search>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
-            public Mock<IMessageConnection> Connection { get; } = new Mock<IMessageConnection>();
+            public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
         }
     }
 }
