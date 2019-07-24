@@ -128,7 +128,7 @@ namespace Soulseek
             DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, DistributedMessageHandler, Waiter);
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
