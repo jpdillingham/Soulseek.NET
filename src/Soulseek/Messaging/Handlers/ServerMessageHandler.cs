@@ -13,7 +13,6 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading;
     using Soulseek.Exceptions;

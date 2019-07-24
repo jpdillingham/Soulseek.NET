@@ -34,7 +34,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Fact(DisplayName = "Creates diagnostic on message")]
         public void Creates_Diagnostic_On_Message()
         {
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Creates_Unhandled_Diagnostic_On_Unhandled_Message()
         {
             string msg = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
                 .Callback<string>(m => msg = m);
@@ -72,7 +72,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Handles_ServerGetPeerAddress(string username, IPAddress ip, int port)
         {
             GetPeerAddressResponse result = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetPeerAddressResponse>()))
                 .Callback<WaitKey, GetPeerAddressResponse>((key, response) => result = response);
@@ -99,7 +99,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
             var options = new ClientOptions(autoAcknowledgePrivateMessages: false);
-            var (handler, client, mocks) = GetFixture(options);
+            var (handler, mocks) = GetFixture(options);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
@@ -131,9 +131,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
             var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
-            var (handler, client, mocks) = GetFixture(options);
-
-            var cm = new Mock<SoulseekClient>();
+            var (handler, mocks) = GetFixture(options);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateMessage)
@@ -146,8 +144,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessage(null, msg);
 
-            mocks.ServerConnection.Verify(m =>
-                m.WriteAsync(It.Is<byte[]>(b => new MessageReader<MessageCode.Server>(b).ReadCode() == MessageCode.Server.AcknowledgePrivateMessage), It.IsAny<CancellationToken>()));
+            mocks.Client.Verify(m =>
+                m.AcknowledgePrivateMessageAsync(id, It.IsAny<CancellationToken>()));
         }
 
         [Trait("Category", "Message")]
@@ -160,7 +158,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             int value = new Random().Next();
             int? result = null;
 
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<int>()))
                 .Callback<WaitKey, int>((key, response) => result = response);
@@ -181,7 +179,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             LoginResponse result = null;
 
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<LoginResponse>()))
                 .Callback<WaitKey, LoginResponse>((key, response) => result = response);
@@ -209,7 +207,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             IReadOnlyCollection<(string Name, int UserCount)> result = null;
 
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<(string Name, int UserCount)>>()))
                 .Callback<WaitKey, IReadOnlyCollection<(string Name, int UserCount)>>((key, response) => result = response);
@@ -235,7 +233,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Handles_ServerPrivilegedUsers(string[] names)
         {
             IReadOnlyCollection<string> result = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
                 .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
@@ -264,7 +262,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Creates_Connection_On_ConnectToPeerResponse_P(string username, int token, IPAddress ip, int port)
         {
             ConnectToPeerResponse response = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.PeerConnectionManager
                 .Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
@@ -296,7 +294,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Ignores ConnectToPeerResponse 'F' on unexpected connection"), AutoData]
         public void Ignores_ConnectToPeerResponse_F_On_Unexpected_Connection(string username, int token, IPAddress ip, int port)
         {
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -318,122 +316,115 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Empty(mocks.Downloads);
         }
 
-        //[Trait("Category", "Message")]
-        //[Theory(DisplayName = "Raises DiagnosticGenerated on ignored ConnectToPeerResponse 'F'"), AutoData]
-        //public void Raises_DiagnosticGenerated_On_Ignored_ConnectToPeerResponse_F(string username, int token, IPAddress ip, int port)
-        //{
-        //    var mocks = new Mocks();
-        //    var handler = new ServerMessageHandler(
-        //        mocks.Client.Object,
-        //        mocks.PeerConnectionManager.Object,
-        //        //mocks.DistributedConnectionManager.Object,
-        //        mocks.Waiter.Object,
-        //        mocks.Downloads);
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on ignored ConnectToPeerResponse 'F'"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Ignored_ConnectToPeerResponse_F(string username, int token, IPAddress ip, int port)
+        {
+            var mocks = new Mocks();
+            var handler = new ServerMessageHandler(
+                mocks.Client.Object);
 
-        //    mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
-        //    var ipBytes = ip.GetAddressBytes();
-        //    Array.Reverse(ipBytes);
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
 
-        //    var msg = new MessageBuilder()
-        //        .WriteCode(MessageCode.Server.ConnectToPeer)
-        //        .WriteString(username)
-        //        .WriteString("F")
-        //        .WriteBytes(ipBytes)
-        //        .WriteInteger(port)
-        //        .WriteInteger(token)
-        //        .Build();
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
 
-        //    var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
 
-        //    handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
-        //    handler.HandleMessage(null, msg);
+            handler.HandleMessage(null, msg);
 
-        //    diagnostics = diagnostics
-        //        .Where(d => d.Level == DiagnosticLevel.Warning)
-        //        .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
-        //        .ToList();
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
 
-        //    Assert.Single(diagnostics);
-        //}
+            Assert.Single(diagnostics);
+        }
 
-        //[Trait("Category", "Message")]
-        //[Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
-        //public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
-        //{
-        //    var active = new ConcurrentDictionary<int, Transfer>();
-        //    active.TryAdd(token, new Transfer(TransferDirection.Download, username, filename, token));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
+        public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
+        {
+            var active = new ConcurrentDictionary<int, Transfer>();
+            active.TryAdd(token, new Transfer(TransferDirection.Download, username, filename, token));
 
-        //    var mocks = new Mocks();
-        //    var handler = new ServerMessageHandler(
-        //        mocks.Client.Object,
-        //        mocks.PeerConnectionManager.Object,
-        //        //mocks.DistributedConnectionManager.Object,
-        //        mocks.Waiter.Object,
-        //        active);
+            var mocks = new Mocks();
+            var handler = new ServerMessageHandler(
+                mocks.Client.Object);
 
-        //    var ipBytes = ip.GetAddressBytes();
-        //    Array.Reverse(ipBytes);
+            var transfer = new Transfer(TransferDirection.Download, username, "foo", token);
+            transfer.RemoteToken = token;
 
-        //    var msg = new MessageBuilder()
-        //        .WriteCode(MessageCode.Server.ConnectToPeer)
-        //        .WriteString(username)
-        //        .WriteString("F")
-        //        .WriteBytes(ipBytes)
-        //        .WriteInteger(port)
-        //        .WriteInteger(token)
-        //        .Build();
+            mocks.Downloads.TryAdd(token, transfer);
 
-        //    var conn = new Mock<IConnection>();
-        //    conn.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
-        //        .Returns(Task.FromResult(new byte[] { 0, 0, 0, 0 }));
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
 
-        //    mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
-        //        .Returns(Task.FromResult((conn.Object, port)));
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
 
-        //    handler.HandleMessage(null, msg);
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new byte[] { 0, 0, 0, 0 }));
 
-        //    mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()), Times.Once);
-        //}
+            mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
+                .Returns(Task.FromResult((conn.Object, token)));
 
-        //[Trait("Category", "Message")]
-        //[Fact(DisplayName = "Raises DiagnosticGenerated on Exception")]
-        //public void Raises_DiagnosticGenerated_On_Exception()
-        //{
-        //    var mocks = new Mocks();
-        //    var handler = new ServerMessageHandler(
-        //        mocks.Client.Object,
-        //        mocks.PeerConnectionManager.Object,
-        //        //mocks.DistributedConnectionManager.Object,
-        //        mocks.Waiter.Object,
-        //        mocks.Downloads);
+            handler.HandleMessage(null, msg);
 
-        //    mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+            mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()), Times.Once);
+        }
 
-        //    var msg = new MessageBuilder()
-        //        .WriteCode(MessageCode.Server.ConnectToPeer)
-        //        .Build();
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated on Exception")]
+        public void Raises_DiagnosticGenerated_On_Exception()
+        {
+            var mocks = new Mocks();
+            var handler = new ServerMessageHandler(
+                mocks.Client.Object);
 
-        //    var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
-        //    handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-        //    handler.HandleMessage(null, msg);
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .Build();
 
-        //    diagnostics = diagnostics
-        //        .Where(d => d.Level == DiagnosticLevel.Warning)
-        //        .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
-        //        .ToList();
+            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
 
-        //    Assert.Single(diagnostics);
-        //}
+            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            handler.HandleMessage(null, msg);
+
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
+
+            Assert.Single(diagnostics);
+        }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerAddUser"), AutoData]
         public void Handles_ServerAddUser(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
         {
             AddUserResponse result = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<AddUserResponse>()))
                 .Callback<WaitKey, AddUserResponse>((key, response) => result = response);
@@ -467,7 +458,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Handles_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
             GetStatusResponse result = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
                 .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
@@ -491,7 +482,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
             GetStatusResponse result = null;
-            var (handler, client, mocks) = GetFixture();
+            var (handler, mocks) = GetFixture();
 
             mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
                 .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
@@ -514,32 +505,33 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(privileged, eventArgs.Privileged);
         }
 
-        private (ServerMessageHandler Handler, SoulseekClient Client, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
+        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
         {
-            var mocks = new Mocks();
-
-            mocks.ServerConnection.Setup(m => m.State).Returns(ConnectionState.Connected);
-
-            var client = new SoulseekClient(
-                "127.0.0.1",
-                0,
-                clientOptions ?? new ClientOptions(),
-                serverConnection: mocks.ServerConnection.Object,
-                peerConnectionManager: mocks.PeerConnectionManager.Object,
-                waiter: mocks.Waiter.Object);
-
-            client.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-            client.SetProperty("Downloads", mocks.Downloads);
+            var mocks = new Mocks(clientOptions);
 
             var handler = new ServerMessageHandler(
-                client,
+                mocks.Client.Object,
                 mocks.Diagnostic.Object);
 
-            return (handler, client, mocks);
+            return (handler, mocks);
         }
 
         private class Mocks
         {
+            public Mocks(ClientOptions clientOptions = null)
+            {
+                Client = new Mock<SoulseekClient>(clientOptions);
+                Client.CallBase = true;
+
+                Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
+                Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
+                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
+                Client.Setup(m => m.Downloads).Returns(Downloads);
+                Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
+            }
+
+            public Mock<SoulseekClient> Client { get; }
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
