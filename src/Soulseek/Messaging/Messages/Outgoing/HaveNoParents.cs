@@ -20,14 +20,14 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="HaveNoParents"/> class.
         /// </summary>
-        /// <param name="haveParents">A value indicating whether distributed parent connections have been established.</param>
+        /// <param name="haveParents">A value indicating whether a distributed parent connections is needed.</param>
         public HaveNoParents(bool haveParents)
         {
             HaveParents = haveParents;
         }
 
         /// <summary>
-        ///     Gets a value indicating whether distributed parent connections have been established.
+        ///     Gets a value indicating whether a distributed parent connections is needed.
         /// </summary>
         public bool HaveParents { get; }
 
