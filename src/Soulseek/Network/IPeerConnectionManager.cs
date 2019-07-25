@@ -82,7 +82,9 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new connection.</returns>
         Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken);
 
-        Task AddDistributedConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
+        Task SetDistributedBranchLevel(int level);
+        Task SetDistributedBranchRoot(string username);
+        Task SetDistributedParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
 
         /// <summary>
         ///     Removes and disposes all active and queued connections.

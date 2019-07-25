@@ -77,14 +77,12 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
-                        Diagnostic.Debug($"Distributed branch level: {branchLevel.Level}");
-                        await SoulseekClient.ServerConnection.WriteAsync(new BranchLevel(branchLevel.Level).ToByteArray()).ConfigureAwait(false);
+                        await SoulseekClient.PeerConnectionManager.SetDistributedBranchLevel(branchLevel.Level).ConfigureAwait(false);
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
-                        Diagnostic.Debug($"Distributed branch root: {branchRoot.Username}");
-                        await SoulseekClient.ServerConnection.WriteAsync(new BranchRoot(branchRoot.Username).ToByteArray()).ConfigureAwait(false);
+                        await SoulseekClient.PeerConnectionManager.SetDistributedBranchRoot(branchRoot.Username).ConfigureAwait(false);
                         break;
 
                     default:
