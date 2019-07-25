@@ -90,6 +90,9 @@ namespace Soulseek.Network
         private IMessageConnection DistributedParentConnection { get; set; }
         private string DistributedBranchRoot { get; set; }
         private int DistributedBranchLevel { get; set; }
+        public IReadOnlyCollection<IMessageConnection> DistributedChildConnections => DistributedChildConnectionList.AsReadOnly();
+        private List<IMessageConnection> DistributedChildConnectionList { get; } = new List<IMessageConnection>();
+
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
