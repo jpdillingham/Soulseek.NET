@@ -99,6 +99,11 @@ namespace Soulseek.Network
 
         public async Task AddDistributedConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
+            if (ParentConnection != null && ParentConnection.State == ConnectionState.Connected)
+            {
+                return;
+            }
+
             var cts = new CancellationTokenSource();
             var options = SoulseekClient.Options.DistributedConnectionOptions;
 
@@ -108,7 +113,23 @@ namespace Soulseek.Network
                 .ToList();
 
             // bind the message handler
-            connections.ForEach(c => c.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage);
+            connections.ForEach(c =>
+            {
+                c.Disconnected += (sender, args) =>
+                {
+                    var connection = (IMessageConnection)sender;
+
+                    Diagnostic.Debug($"Distributed parent candidate {connection.Username} disconnected");
+
+                    if (connection == ParentConnection)
+                    {
+                        Diagnostic.Debug($"Distributed parent {connection.Username} disconnected, notifying server.");
+                        SoulseekClient.ServerConnection.WriteAsync(new HaveNoParents(false).ToByteArray());
+                    }
+                };
+
+                c.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
+            });
 
             // create a list of tasks to connect each connection
             var pendingConnectTasks = connections.Select(async c =>
