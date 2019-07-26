@@ -19,7 +19,6 @@ namespace Soulseek.Network
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
@@ -37,26 +36,18 @@ namespace Soulseek.Network
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         internal PeerConnectionManager(
-            ISoulseekClient soulseekClient,
-            IMessageConnection serverConnection,
-            IListener listener,
-            IPeerMessageHandler peerMessageHandler,
-            IWaiter waiter,
+            SoulseekClient soulseekClient,
             IConnectionFactory connectionFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = soulseekClient;
-            ServerConnection = serverConnection;
-            Waiter = waiter;
-            PeerMessageHandler = peerMessageHandler;
+            SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
+
             ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
                 ?? new ClientOptions().ConcurrentPeerMessageConnectionLimit;
 
-            Listener = listener;
-
-            if (Listener != null)
+            if (SoulseekClient.Listener != null)
             {
-                Listener.Accepted += Listener_Accepted;
+                SoulseekClient.Listener.Accepted += Listener_Accepted;
             }
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
@@ -67,11 +58,6 @@ namespace Soulseek.Network
             MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
             MessageConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
         }
-
-        private IMessageConnection ServerConnection { get; }
-        private IWaiter Waiter { get; }
-        private IListener Listener { get; }
-        private IPeerMessageHandler PeerMessageHandler { get; }
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
@@ -99,7 +85,12 @@ namespace Soulseek.Network
         private ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnections { get; set; }
         private SemaphoreSlim MessageSemaphore { get; }
         private ConcurrentDictionary<int, string> PendingSolicitations { get; set; } = new ConcurrentDictionary<int, string>();
-        private ISoulseekClient SoulseekClient { get; }
+        private SoulseekClient SoulseekClient { get; }
+
+        private IMessageConnection DistributedParentConnection { get; set; }
+        private string DistributedBranchRoot { get; set; }
+        private int DistributedBranchLevel { get; set; }
+        private List<IMessageConnection> DistributedChildConnections { get; } = new List<IMessageConnection>();
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
@@ -108,6 +99,110 @@ namespace Soulseek.Network
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        public async Task SetDistributedBranchRoot(string username)
+        {
+            DistributedBranchRoot = username;
+            await SoulseekClient.ServerConnection.WriteAsync(new DistributedBranchRoot(DistributedBranchRoot).ToByteArray()).ConfigureAwait(false);
+            // todo: send to children
+        }
+
+        public async Task SetDistributedBranchLevel(int level)
+        {
+            DistributedBranchLevel = level;
+            await SoulseekClient.ServerConnection.WriteAsync(new DistributedBranchLevel(DistributedBranchLevel).ToByteArray()).ConfigureAwait(false);
+            // todo: send to children
+        }
+
+        public async Task WriteDistributedChildrenAsync(byte[] bytes)
+        {
+            var tasks = DistributedChildConnections.Select(async c =>
+            {
+                try
+                {
+                    await c.WriteAsync(bytes).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    c.Dispose();
+                }
+            });
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        public async Task SetDistributedParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
+        {
+            if (DistributedParentConnection != null && DistributedParentConnection.State == ConnectionState.Connected)
+            {
+                return;
+            }
+
+            var cts = new CancellationTokenSource();
+            var options = SoulseekClient.Options.DistributedConnectionOptions;
+            var server = SoulseekClient.ServerConnection;
+
+            var pendingConnections = parentCandidates
+                .Select(p => ConnectionFactory.GetMessageConnection(p.Username, p.IPAddress, p.Port, options))
+                .ToList();
+
+            pendingConnections.ForEach(c =>
+            {
+                c.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
+                c.Disconnected += (sender, args) =>
+                {
+                    var connection = (IMessageConnection)sender;
+
+                    Diagnostic.Debug($"Discarded distributed parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port})");
+
+                    if (connection == DistributedParentConnection)
+                    {
+                        Diagnostic.Debug($"Distributed parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected, notifying server.");
+                        server.WriteAsync(new HaveNoParents(true).ToByteArray());
+                        // todo: disallow children
+                    }
+                };
+            });
+
+            var pendingConnectTasks = pendingConnections.Select(async c =>
+            {
+                await c.ConnectAsync(cts.Token).ConfigureAwait(false);
+                await c.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cts.Token).ConfigureAwait(false);
+                Diagnostic.Debug($"Distributed connection to {c.Username} established.");
+                return c;
+            }).ToList();
+
+            Task<IMessageConnection> parentTask;
+
+            do
+            {
+                parentTask = await Task.WhenAny(pendingConnectTasks).ConfigureAwait(false);
+                pendingConnectTasks.Remove(parentTask);
+            }
+            while (parentTask.IsFaulted && pendingConnectTasks.Count > 0);
+
+            if (parentTask.IsFaulted)
+            {
+                Diagnostic.Debug($"Failed to connect to any of the distributed parent candidates; notifying server.");
+                await server.WriteAsync(new HaveNoParents(true).ToByteArray()).ConfigureAwait(false);
+                // todo: disallow children
+                throw new ConnectionException($"Failed to connect to any of the parent candidates.");
+            }
+
+            DistributedParentConnection = await parentTask.ConfigureAwait(false);
+            Diagnostic.Debug($"Adopted distributed parent {DistributedParentConnection.Username} ({DistributedParentConnection.IPAddress}:{DistributedParentConnection.Port})");
+
+            cts.Cancel();
+            pendingConnections.Remove(DistributedParentConnection);
+
+            foreach (var connection in pendingConnections)
+            {
+                connection.Dispose();
+            }
+
+            await server.WriteAsync(new HaveNoParents(false).ToByteArray()).ConfigureAwait(false);
+            await server.WriteAsync(new ParentsIP(DistributedParentConnection.IPAddress).ToByteArray()).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -153,7 +248,7 @@ namespace Soulseek.Network
                         connectToPeerResponse.Port,
                         SoulseekClient.Options.PeerConnectionOptions);
 
-                    connection.MessageRead += PeerMessageHandler.HandleMessage;
+                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
                     connection.Disconnected += MessageConnection_Disconnected;
 
                     await connection.ConnectAsync().ConfigureAwait(false);
@@ -359,7 +454,7 @@ namespace Soulseek.Network
                 SoulseekClient.Options.PeerConnectionOptions,
                 tcpClient);
 
-            connection.MessageRead += PeerMessageHandler.HandleMessage;
+            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
             connection.Disconnected += MessageConnection_Disconnected;
 
             connection.StartReadingContinuously();
@@ -389,7 +484,7 @@ namespace Soulseek.Network
 
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Inbound transfer connection for token {token} (remote: {remoteToken}) ({ipAddress}:{port}) disconnected.");
 
-            Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
+            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
 
             return connection;
         }
@@ -430,7 +525,7 @@ namespace Soulseek.Network
                 port,
                 SoulseekClient.Options.PeerConnectionOptions);
 
-            connection.MessageRead += PeerMessageHandler.HandleMessage;
+            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
             connection.Disconnected += MessageConnection_Disconnected;
 
             await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
@@ -446,11 +541,11 @@ namespace Soulseek.Network
             {
                 PendingSolicitations.TryAdd(token, username);
 
-                await ServerConnection
+                await SoulseekClient.ServerConnection
                     .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
-                var incomingConnection = await Waiter
+                var incomingConnection = await SoulseekClient.Waiter
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, token), null, cancellationToken)
                     .ConfigureAwait(false);
 
@@ -461,7 +556,7 @@ namespace Soulseek.Network
                     SoulseekClient.Options.PeerConnectionOptions,
                     incomingConnection.HandoffTcpClient());
 
-                connection.MessageRead += PeerMessageHandler.HandleMessage;
+                connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
                 connection.Disconnected += MessageConnection_Disconnected;
 
                 connection.StartReadingContinuously();
@@ -514,11 +609,11 @@ namespace Soulseek.Network
             {
                 PendingSolicitations.TryAdd(solicitationToken, username);
 
-                await ServerConnection
+                await SoulseekClient.ServerConnection
                     .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
-                var incomingConnection = await Waiter
+                var incomingConnection = await SoulseekClient.Waiter
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken)
                     .ConfigureAwait(false);
 
@@ -540,7 +635,7 @@ namespace Soulseek.Network
 
         private async void Listener_Accepted(object sender, IConnection connection)
         {
-            Diagnostic.Info($"Accepted incoming connection from {connection.IPAddress}:{Listener.Port}");
+            Diagnostic.Info($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
 
             try
             {
@@ -554,14 +649,14 @@ namespace Soulseek.Network
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for transfer type {peerInit.TransferType} received from {peerInit.Username} ({connection.IPAddress}:{Listener.Port})");
+                    Diagnostic.Debug($"PeerInit for transfer type {peerInit.TransferType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
 
                     if (peerInit.TransferType == Constants.ConnectionType.Peer)
                     {
                         await AddInboundMessageConnectionAsync(
                             peerInit.Username,
                             connection.IPAddress,
-                            Listener.Port,
+                            SoulseekClient.Listener.Port,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
                     else if (peerInit.TransferType == Constants.ConnectionType.Tranfer)
@@ -569,7 +664,7 @@ namespace Soulseek.Network
                         await AddInboundTransferConnectionAsync(
                             peerInit.Username,
                             connection.IPAddress,
-                            Listener.Port,
+                            SoulseekClient.Listener.Port,
                             peerInit.Token,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
@@ -581,8 +676,8 @@ namespace Soulseek.Network
                     // determine the username of the remote user.
                     if (PendingSolicitations.TryGetValue(pierceFirewall.Token, out var username))
                     {
-                        Diagnostic.Debug($"PierceFirewall with token {pierceFirewall.Token} received from {username} ({connection.IPAddress}:{Listener.Port})");
-                        Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedConnection, username, pierceFirewall.Token), connection);
+                        Diagnostic.Debug($"PierceFirewall with token {pierceFirewall.Token} received from {username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedConnection, username, pierceFirewall.Token), connection);
                     }
                     else
                     {

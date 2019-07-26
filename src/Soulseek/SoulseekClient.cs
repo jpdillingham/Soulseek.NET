@@ -64,10 +64,8 @@ namespace Soulseek
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
-        /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
         /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
         /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
-        /// <param name="distributedMessageHandler">The IDistributedMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
@@ -78,10 +76,8 @@ namespace Soulseek
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
-            IDistributedConnectionManager distributedConnectionManager = null,
             IServerMessageHandler serverMessageHandler = null,
             IPeerMessageHandler peerMessageHandler = null,
-            IDistributedMessageHandler distributedMessageHandler = null,
             IListener listener = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
@@ -126,19 +122,16 @@ namespace Soulseek
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
             }
 
-            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this, Waiter);
-            DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
-            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this, Waiter, DistributedMessageHandler);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
-
-            PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this, Downloads, Searches, Waiter);
+            PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this, ServerConnection, Listener, PeerMessageHandler, Waiter);
+            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this);
+            DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this, PeerConnectionManager, DistributedConnectionManager, Waiter, Downloads);
+            ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -199,7 +192,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public ClientOptions Options { get; }
+        public virtual ClientOptions Options { get; }
 
         /// <summary>
         ///     Gets server port.
@@ -209,27 +202,26 @@ namespace Soulseek
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
         /// </summary>
-        public SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
+        public virtual SoulseekClientStates State { get; private set; } = SoulseekClientStates.Disconnected;
 
         /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
         public string Username { get; private set; }
 
-        internal IDistributedMessageHandler DistributedMessageHandler { get; }
-        internal IDistributedConnectionManager DistributedConnectionManager { get; }
-        internal ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
-        internal IListener Listener { get; }
-        internal IPeerConnectionManager PeerConnectionManager { get; }
-        internal IPeerMessageHandler PeerMessageHandler { get; }
-        internal ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+        internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
+        internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual IListener Listener { get; }
+        internal virtual IPeerConnectionManager PeerConnectionManager { get; }
+        internal virtual IPeerMessageHandler PeerMessageHandler { get; }
+        internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
 
         /// <summary>
         ///     Gets the server message connection.
         /// </summary>
-        internal IMessageConnection ServerConnection { get; }
-        internal IServerMessageHandler ServerMessageHandler { get; }
-        internal IWaiter Waiter { get; }
+        internal virtual IMessageConnection ServerConnection { get; }
+        internal virtual IServerMessageHandler ServerMessageHandler { get; }
+        internal virtual IWaiter Waiter { get; }
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
@@ -244,7 +236,7 @@ namespace Soulseek
         /// <returns>A Task representing the operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
+        public virtual async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -1174,7 +1166,7 @@ namespace Soulseek
                         await ServerConnection.WriteAsync(new SetListenPortRequest(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
-                    await ServerConnection.WriteAsync(new HaveNoParentsRequest(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new HaveNoParents(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {

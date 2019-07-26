@@ -98,11 +98,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateMessageReceived event on ServerPrivateMessage"), AutoData]
         public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
-            var (handler, mocks) = GetFixture();
-
             var options = new ClientOptions(autoAcknowledgePrivateMessages: false);
-
-            mocks.Client.Setup(m => m.Options).Returns(options);
+            var (handler, mocks) = GetFixture(options);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
             var timestamp = epoch.AddSeconds(timeOffset).ToLocalTime();
@@ -133,13 +130,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
         public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
-            var (handler, mocks) = GetFixture();
-
             var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
-
-            mocks.Client.Setup(m => m.Options).Returns(options);
-
-            mocks.Client.Setup(m => m.AcknowledgePrivateMessageAsync(id, It.IsAny<CancellationToken>()));
+            var (handler, mocks) = GetFixture(options);
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.PrivateMessage)
@@ -152,7 +144,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessage(null, msg);
 
-            mocks.Client.Verify(m => m.AcknowledgePrivateMessageAsync(id, It.IsAny<CancellationToken>()));
+            mocks.Client.Verify(m =>
+                m.AcknowledgePrivateMessageAsync(id, It.IsAny<CancellationToken>()));
         }
 
         [Trait("Category", "Message")]
@@ -329,11 +322,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
-                mocks.Client.Object,
-                mocks.PeerConnectionManager.Object,
-                mocks.DistributedConnectionManager.Object,
-                mocks.Waiter.Object,
-                mocks.Downloads);
+                mocks.Client.Object);
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -372,11 +361,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
-                mocks.Client.Object,
-                mocks.PeerConnectionManager.Object,
-                mocks.DistributedConnectionManager.Object,
-                mocks.Waiter.Object,
-                active);
+                mocks.Client.Object);
+
+            var transfer = new Transfer(TransferDirection.Download, username, "foo", token);
+            transfer.RemoteToken = token;
+
+            mocks.Downloads.TryAdd(token, transfer);
 
             var ipBytes = ip.GetAddressBytes();
             Array.Reverse(ipBytes);
@@ -395,7 +385,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Returns(Task.FromResult(new byte[] { 0, 0, 0, 0 }));
 
             mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
-                .Returns(Task.FromResult((conn.Object, port)));
+                .Returns(Task.FromResult((conn.Object, token)));
 
             handler.HandleMessage(null, msg);
 
@@ -408,11 +398,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
-                mocks.Client.Object,
-                mocks.PeerConnectionManager.Object,
-                mocks.DistributedConnectionManager.Object,
-                mocks.Waiter.Object,
-                mocks.Downloads);
+                mocks.Client.Object);
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -519,15 +505,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(privileged, eventArgs.Privileged);
         }
 
-        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture()
+        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
         {
-            var mocks = new Mocks();
+            var mocks = new Mocks(clientOptions);
+
             var handler = new ServerMessageHandler(
                 mocks.Client.Object,
-                mocks.PeerConnectionManager.Object,
-                mocks.DistributedConnectionManager.Object,
-                mocks.Waiter.Object,
-                mocks.Downloads,
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);
@@ -535,9 +518,24 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         private class Mocks
         {
-            public Mock<ISoulseekClient> Client { get; } = new Mock<ISoulseekClient>();
+            public Mocks(ClientOptions clientOptions = null)
+            {
+                Client = new Mock<SoulseekClient>(clientOptions)
+                {
+                    CallBase = true,
+                };
+
+                Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
+                Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
+                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
+                Client.Setup(m => m.Downloads).Returns(Downloads);
+                Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
+            }
+
+            public Mock<SoulseekClient> Client { get; }
+            public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
-            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();

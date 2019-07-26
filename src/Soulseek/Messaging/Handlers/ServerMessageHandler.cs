@@ -13,7 +13,6 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
-    using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading;
     using Soulseek.Exceptions;
@@ -30,23 +29,12 @@ namespace Soulseek.Messaging.Handlers
         ///     Initializes a new instance of the <see cref="ServerMessageHandler"/> class.
         /// </summary>
         /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
-        /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
-        /// <param name="waiter">The IWaiter instance to use.</param>
-        /// <param name="downloads">The collection of download transfers.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public ServerMessageHandler(
-            ISoulseekClient soulseekClient,
-            IPeerConnectionManager peerConnectionManager,
-            IDistributedConnectionManager distributedConnectionManager,
-            IWaiter waiter,
-            ConcurrentDictionary<int, Transfer> downloads,
+            SoulseekClient soulseekClient,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = soulseekClient;
-            PeerConnectionManager = peerConnectionManager;
-            DistributedConnectionManager = distributedConnectionManager;
-            Waiter = waiter;
-            Downloads = downloads;
+            SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
@@ -67,11 +55,8 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         private IDiagnosticFactory Diagnostic { get; }
-        private ConcurrentDictionary<int, Transfer> Downloads { get; }
-        private IPeerConnectionManager PeerConnectionManager { get; }
-        private IDistributedConnectionManager DistributedConnectionManager { get; }
-        private ISoulseekClient SoulseekClient { get; }
-        private IWaiter Waiter { get; }
+
+        private SoulseekClient SoulseekClient { get; }
 
         /// <summary>
         ///     Handles incoming messages.
@@ -90,28 +75,24 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.ParentMinSpeed:
                     case MessageCode.Server.ParentSpeedRatio:
                     case MessageCode.Server.WishlistInterval:
-                        Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
                         break;
 
                     case MessageCode.Server.Login:
-                        Waiter.Complete(new WaitKey(code), LoginResponse.FromByteArray(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.RoomList:
-                        Waiter.Complete(new WaitKey(code), RoomList.FromByteArray(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
-                        Waiter.Complete(new WaitKey(code), PrivilegedUserList.FromByteArray(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.FromByteArray(message);
-
-                        if (!DistributedConnectionManager.HasParent)
-                        {
-                            await DistributedConnectionManager.ConnectParentAsync(netInfo.Parents).ConfigureAwait(false);
-                        }
+                        await SoulseekClient.PeerConnectionManager.SetDistributedParentConnectionAsync(netInfo.Parents).ConfigureAwait(false);
 
                         break;
 
@@ -122,14 +103,14 @@ namespace Soulseek.Messaging.Handlers
                         {
                             // ensure that we are expecting at least one file from this user before we connect. the response
                             // doesn't contain any other identifying information about the file.
-                            if (!Downloads.IsEmpty && Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
+                            if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
                             {
-                                var (connection, remoteToken) = await PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
-                                var download = Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
+                                var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                                var download = SoulseekClient.Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
 
                                 if (download != default(Transfer))
                                 {
-                                    Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
+                                    SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
                                 }
                             }
                             else
@@ -139,19 +120,19 @@ namespace Soulseek.Messaging.Handlers
                         }
                         else
                         {
-                            await PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                            await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                         }
 
                         break;
 
                     case MessageCode.Server.AddUser:
                         var addUserResponse = AddUserResponse.FromByteArray(message);
-                        Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, addUserResponse.Username), addUserResponse);
                         break;
 
                     case MessageCode.Server.GetStatus:
                         var statsResponse = GetStatusResponse.FromByteArray(message);
-                        Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
 
@@ -168,7 +149,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.GetPeerAddress:
                         var peerAddressResponse = GetPeerAddressResponse.FromByteArray(message);
-                        Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 
                     default:

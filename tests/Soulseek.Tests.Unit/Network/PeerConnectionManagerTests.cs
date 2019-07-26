@@ -358,12 +358,15 @@ namespace Soulseek.Tests.Unit.Network
         {
             var mocks = new Mocks();
 
+            mocks.ServerConnection.Setup(m => m.Username)
+                .Returns(username ?? "username");
+            mocks.ServerConnection.Setup(m => m.IPAddress)
+                .Returns(ip ?? IPAddress.Parse("0.0.0.0"));
+            mocks.ServerConnection.Setup(m => m.Port)
+                .Returns(port);
+
             var handler = new PeerConnectionManager(
                 mocks.Client.Object,
-                mocks.ServerConnection.Object,
-                mocks.Listener.Object,
-                mocks.PeerMessageHandler.Object,
-                mocks.Waiter.Object,
                 mocks.ConnectionFactory.Object,
                 mocks.Diagnostic.Object);
 
@@ -372,11 +375,26 @@ namespace Soulseek.Tests.Unit.Network
 
         private class Mocks
         {
-            public Mock<ISoulseekClient> Client { get; } = new Mock<ISoulseekClient>();
+            public Mocks(ClientOptions clientOptions = null)
+            {
+                Client = new Mock<SoulseekClient>(clientOptions)
+                {
+                    CallBase = true,
+                };
+
+                Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
+                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
+                Client.Setup(m => m.Listener).Returns(Listener.Object);
+                Client.Setup(m => m.PeerMessageHandler).Returns(PeerMessageHandler.Object);
+                Client.Setup(m => m.DistributedMessageHandler).Returns(DistributedMessageHandler.Object);
+            }
+
+            public Mock<SoulseekClient> Client { get; }
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
             public Mock<IPeerMessageHandler> PeerMessageHandler { get; } = new Mock<IPeerMessageHandler>();
+            public Mock<IDistributedMessageHandler> DistributedMessageHandler { get; } = new Mock<IDistributedMessageHandler>();
             public Mock<IConnectionFactory> ConnectionFactory { get; } = new Mock<IConnectionFactory>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
         }

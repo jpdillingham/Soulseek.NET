@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Threading;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -20,21 +21,18 @@ namespace Soulseek.Messaging.Handlers
     internal sealed class DistributedMessageHandler : IDistributedMessageHandler
     {
         public DistributedMessageHandler(
-            ISoulseekClient soulseekClient,
-            IWaiter waiter,
+            SoulseekClient soulseekClient,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            SoulseekClient = soulseekClient;
-            Waiter = waiter;
+            SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
-        private IWaiter Waiter { get; }
         private IDiagnosticFactory Diagnostic { get; }
-        private ISoulseekClient SoulseekClient { get; }
+        private SoulseekClient SoulseekClient { get; }
 
         public async void HandleMessage(object sender, byte[] message)
         {
@@ -49,13 +47,44 @@ namespace Soulseek.Messaging.Handlers
                 {
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
+                        SearchResponse searchResponse;
 
-                        if (searchRequest.Query == "killing your enemy in 1995")
+                        SoulseekClient.PeerConnectionManager.WriteDistributedChildrenAsync(message).Forget();
+
+                        try
                         {
-                            Diagnostic.Debug($"Distributed Search Request from {searchRequest.Username}: '{searchRequest.Query}'");
-                            // todo: get results, send to peer
+                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+
+                            if (searchResponse != null && searchResponse.FileCount > 0)
+                            {
+                                var (ip, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ip, port, CancellationToken.None).ConfigureAwait(false);
+                                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
                         }
 
+                        break;
+
+                    case MessageCode.Distributed.Ping:
+                        Diagnostic.Debug($"PING?");
+                        var pingResponse = new PingResponse(SoulseekClient.GetNextToken());
+                        await connection.WriteAsync(pingResponse.ToByteArray()).ConfigureAwait(false);
+                        Diagnostic.Debug($"PONG!");
+                        break;
+
+                    case MessageCode.Distributed.BranchLevel:
+                        var branchLevel = DistributedBranchLevel.FromByteArray(message);
+                        await SoulseekClient.PeerConnectionManager.SetDistributedBranchLevel(branchLevel.Level).ConfigureAwait(false);
+                        break;
+
+                    case MessageCode.Distributed.BranchRoot:
+                        var branchRoot = DistributedBranchRoot.FromByteArray(message);
+                        await SoulseekClient.PeerConnectionManager.SetDistributedBranchRoot(branchRoot.Username).ConfigureAwait(false);
                         break;
 
                     default:

@@ -1,4 +1,4 @@
-﻿// <copyright file="HaveNoParentsRequest.cs" company="JP Dillingham">
+﻿// <copyright file="ParentsIP.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,24 +12,23 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using System;
+    using System.Net;
+
     /// <summary>
-    ///     Adds a peer to the server-side watch list.
+    ///     Logs in to the server.
     /// </summary>
-    internal sealed class HaveNoParentsRequest
+    internal sealed class ParentsIP
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="HaveNoParentsRequest"/> class.
+        ///     Initializes a new instance of the <see cref="ParentsIP"/> class.
         /// </summary>
-        /// <param name="haveNoParents">A value indicating whether distributed parent connections have been established.</param>
-        public HaveNoParentsRequest(bool haveNoParents)
+        public ParentsIP(IPAddress ipAddress)
         {
-            HaveNoParents = haveNoParents;
+            IPAddress = ipAddress;
         }
 
-        /// <summary>
-        ///     Gets a value indicating whether distributed parent connections have been established.
-        /// </summary>
-        public bool HaveNoParents { get; }
+        public IPAddress IPAddress { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -37,9 +36,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
+            var ipBytes = IPAddress.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.HaveNoParents)
-                .WriteByte((byte)(HaveNoParents ? 1 : 0))
+                .WriteCode(MessageCode.Server.ParentsIP)
+                .WriteBytes(ipBytes)
                 .Build();
         }
     }

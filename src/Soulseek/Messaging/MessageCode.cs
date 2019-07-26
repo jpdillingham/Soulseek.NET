@@ -32,7 +32,7 @@ namespace Soulseek.Messaging
             /// <summary>
             ///     4
             /// </summary>
-            BanchLevel = 4,
+            BranchLevel = 4,
 
             /// <summary>
             ///     5
