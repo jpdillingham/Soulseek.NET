@@ -83,7 +83,7 @@
                     return Task.CompletedTask;
                 }, searchResponseResolver: (u, t, q) =>
                 {
-                    Console.WriteLine($"Search request: {q}");
+                    //Console.WriteLine($"Search request: {q}");
 
                     if (q == "killing your enemy in 1995")
                     {
