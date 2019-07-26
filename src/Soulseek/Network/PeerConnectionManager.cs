@@ -90,9 +90,7 @@ namespace Soulseek.Network
         private IMessageConnection DistributedParentConnection { get; set; }
         private string DistributedBranchRoot { get; set; }
         private int DistributedBranchLevel { get; set; }
-        public IReadOnlyCollection<IMessageConnection> DistributedChildConnections => DistributedChildConnectionList.AsReadOnly();
-        private List<IMessageConnection> DistributedChildConnectionList { get; } = new List<IMessageConnection>();
-
+        private List<IMessageConnection> DistributedChildConnections { get; } = new List<IMessageConnection>();
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
@@ -115,6 +113,23 @@ namespace Soulseek.Network
             DistributedBranchLevel = level;
             await SoulseekClient.ServerConnection.WriteAsync(new DistributedBranchLevel(DistributedBranchLevel).ToByteArray()).ConfigureAwait(false);
             // todo: send to children
+        }
+
+        public async Task WriteDistributedChildrenAsync(byte[] bytes)
+        {
+            var tasks = DistributedChildConnections.Select(async c =>
+            {
+                try
+                {
+                    await c.WriteAsync(bytes).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    c.Dispose();
+                }
+            });
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
         }
 
         public async Task SetDistributedParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)

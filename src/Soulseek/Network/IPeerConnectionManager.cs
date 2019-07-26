@@ -40,8 +40,6 @@ namespace Soulseek.Network
         /// </summary>
         int WaitingMessageConnections { get; }
 
-        IReadOnlyCollection<IMessageConnection> DistributedChildConnections { get; }
-
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
@@ -87,6 +85,7 @@ namespace Soulseek.Network
         Task SetDistributedBranchLevel(int level);
         Task SetDistributedBranchRoot(string username);
         Task SetDistributedParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
+        Task WriteDistributedChildrenAsync(byte[] bytes);
 
         /// <summary>
         ///     Removes and disposes all active and queued connections.

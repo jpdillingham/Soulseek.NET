@@ -49,6 +49,8 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
 
+                        SoulseekClient.PeerConnectionManager.WriteDistributedChildrenAsync(message).Forget();
+
                         try
                         {
                             searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
