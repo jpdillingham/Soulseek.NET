@@ -46,11 +46,6 @@ namespace Soulseek.Network
             ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
                 ?? new ClientOptions().ConcurrentPeerMessageConnectionLimit;
 
-            //if (SoulseekClient.Listener != null)
-            //{
-            //    SoulseekClient.Listener.Accepted += Listener_Accepted;
-            //}
-
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
@@ -90,11 +85,6 @@ namespace Soulseek.Network
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
 
-        private IMessageConnection DistributedParentConnection { get; set; }
-        private string DistributedBranchRoot { get; set; }
-        private int DistributedBranchLevel { get; set; }
-        private List<IMessageConnection> DistributedChildConnections { get; } = new List<IMessageConnection>();
-
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
         /// </summary>
@@ -102,110 +92,6 @@ namespace Soulseek.Network
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-        }
-
-        public async Task SetDistributedBranchRoot(string username)
-        {
-            DistributedBranchRoot = username;
-            await SoulseekClient.ServerConnection.WriteAsync(new DistributedBranchRoot(DistributedBranchRoot).ToByteArray()).ConfigureAwait(false);
-            // todo: send to children
-        }
-
-        public async Task SetDistributedBranchLevel(int level)
-        {
-            DistributedBranchLevel = level;
-            await SoulseekClient.ServerConnection.WriteAsync(new DistributedBranchLevel(DistributedBranchLevel).ToByteArray()).ConfigureAwait(false);
-            // todo: send to children
-        }
-
-        public async Task WriteDistributedChildrenAsync(byte[] bytes)
-        {
-            var tasks = DistributedChildConnections.Select(async c =>
-            {
-                try
-                {
-                    await c.WriteAsync(bytes).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    c.Dispose();
-                }
-            });
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-        }
-
-        public async Task SetDistributedParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
-        {
-            if (DistributedParentConnection != null && DistributedParentConnection.State == ConnectionState.Connected)
-            {
-                return;
-            }
-
-            var cts = new CancellationTokenSource();
-            var options = SoulseekClient.Options.DistributedConnectionOptions;
-            var server = SoulseekClient.ServerConnection;
-
-            var pendingConnections = parentCandidates
-                .Select(p => ConnectionFactory.GetMessageConnection(p.Username, p.IPAddress, p.Port, options))
-                .ToList();
-
-            pendingConnections.ForEach(c =>
-            {
-                c.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
-                c.Disconnected += (sender, args) =>
-                {
-                    var connection = (IMessageConnection)sender;
-
-                    Diagnostic.Debug($"Discarded distributed parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port})");
-
-                    if (connection == DistributedParentConnection)
-                    {
-                        Diagnostic.Debug($"Distributed parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected, notifying server.");
-                        server.WriteAsync(new HaveNoParents(true).ToByteArray());
-                        // todo: disallow children
-                    }
-                };
-            });
-
-            var pendingConnectTasks = pendingConnections.Select(async c =>
-            {
-                await c.ConnectAsync(cts.Token).ConfigureAwait(false);
-                await c.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cts.Token).ConfigureAwait(false);
-                Diagnostic.Debug($"Distributed connection to {c.Username} established.");
-                return c;
-            }).ToList();
-
-            Task<IMessageConnection> parentTask;
-
-            do
-            {
-                parentTask = await Task.WhenAny(pendingConnectTasks).ConfigureAwait(false);
-                pendingConnectTasks.Remove(parentTask);
-            }
-            while (parentTask.IsFaulted && pendingConnectTasks.Count > 0);
-
-            if (parentTask.IsFaulted)
-            {
-                Diagnostic.Debug($"Failed to connect to any of the distributed parent candidates; notifying server.");
-                await server.WriteAsync(new HaveNoParents(true).ToByteArray()).ConfigureAwait(false);
-                // todo: disallow children
-                throw new ConnectionException($"Failed to connect to any of the parent candidates.");
-            }
-
-            DistributedParentConnection = await parentTask.ConfigureAwait(false);
-            Diagnostic.Debug($"Adopted distributed parent {DistributedParentConnection.Username} ({DistributedParentConnection.IPAddress}:{DistributedParentConnection.Port})");
-
-            cts.Cancel();
-            pendingConnections.Remove(DistributedParentConnection);
-
-            foreach (var connection in pendingConnections)
-            {
-                connection.Dispose();
-            }
-
-            await server.WriteAsync(new HaveNoParents(false).ToByteArray()).ConfigureAwait(false);
-            await server.WriteAsync(new ParentsIP(DistributedParentConnection.IPAddress).ToByteArray()).ConfigureAwait(false);
         }
 
         /// <summary>
@@ -645,66 +531,6 @@ namespace Soulseek.Network
             finally
             {
                 PendingSolicitationDictionary.TryRemove(token, out var _);
-            }
-        }
-
-        private async void Listener_Accepted(object sender, IConnection connection)
-        {
-            Diagnostic.Info($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
-
-            try
-            {
-                var lengthBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-                var length = BitConverter.ToInt32(lengthBytes, 0);
-
-                var bodyBytes = await connection.ReadAsync(length).ConfigureAwait(false);
-                byte[] message = lengthBytes.Concat(bodyBytes).ToArray();
-
-                if (PeerInitResponse.TryFromByteArray(message, out var peerInit))
-                {
-                    // this connection is the result of an unsolicited connection from the remote peer, either to request info or
-                    // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for transfer type {peerInit.TransferType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
-
-                    if (peerInit.TransferType == Constants.ConnectionType.Peer)
-                    {
-                        await AddMessageConnectionAsync(
-                            peerInit.Username,
-                            connection.HandoffTcpClient()).ConfigureAwait(false);
-                    }
-                    else if (peerInit.TransferType == Constants.ConnectionType.Tranfer)
-                    {
-                        await AddTransferConnectionAsync(
-                            peerInit.Username,
-                            peerInit.Token,
-                            connection.HandoffTcpClient()).ConfigureAwait(false);
-                    }
-                }
-                else if (PierceFirewallResponse.TryFromByteArray(message, out var pierceFirewall))
-                {
-                    // this connection is the result of a ConnectToPeer request sent to the user, and the incoming message will
-                    // contain the token that was provided in the request. Ensure this token is among those expected, and use it to
-                    // determine the username of the remote user.
-                    if (PendingSolicitationDictionary.TryGetValue(pierceFirewall.Token, out var username))
-                    {
-                        Diagnostic.Debug($"PierceFirewall with token {pierceFirewall.Token} received from {username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedConnection, username, pierceFirewall.Token), connection);
-                    }
-                    else
-                    {
-                        throw new ConnectionException($"Unknown PierceFirewall attempt with token {pierceFirewall.Token} from {connection.IPAddress}:{connection.Port}");
-                    }
-                }
-                else
-                {
-                    throw new ConnectionException($"Unknown direct connection type from {connection.IPAddress}:{connection.Port}");
-                }
-            }
-            catch (Exception ex)
-            {
-                Diagnostic.Warning($"Failed to initialize direct connection from {connection.IPAddress}:{connection.Port}: {ex.Message}");
-                connection.Disconnect(ex.Message);
-                connection.Dispose();
             }
         }
 

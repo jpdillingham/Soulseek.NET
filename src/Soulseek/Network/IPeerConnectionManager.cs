@@ -87,11 +87,6 @@ namespace Soulseek.Network
 
         Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
 
-        Task SetDistributedBranchLevel(int level);
-        Task SetDistributedBranchRoot(string username);
-        Task SetDistributedParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
-        Task WriteDistributedChildrenAsync(byte[] bytes);
-
         /// <summary>
         ///     Removes and disposes all active and queued connections.
         /// </summary>
