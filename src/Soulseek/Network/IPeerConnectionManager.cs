@@ -36,11 +36,31 @@ namespace Soulseek.Network
         int ConcurrentMessageConnectionLimit { get; }
 
         /// <summary>
+        ///     Gets a dictionary containing the pending connection solicitations.
+        /// </summary>
+        IReadOnlyDictionary<int, string> PendingSolicitations { get; }
+
+        /// <summary>
         ///     Gets the number of waiting peer message connections.
         /// </summary>
         int WaitingMessageConnections { get; }
 
-        IReadOnlyDictionary<int, string> PendingSolicitations { get; }
+        /// <summary>
+        ///     Adds a new message connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <returns>The operation context, including the added connection.</returns>
+        Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient);
+
+        /// <summary>
+        ///     Adds a new transfer connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="token">The token with which the firewall was pierced.</param>
+        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <returns>The operation context, including the added connection.</returns>
+        Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
 
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
@@ -63,7 +83,6 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
-        Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient);
 
         /// <summary>
         ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>, pierces
@@ -84,8 +103,6 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
         Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken);
-
-        Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
 
         /// <summary>
         ///     Removes and disposes all active and queued connections.

@@ -71,11 +71,14 @@ namespace Soulseek.Network
         public int ConcurrentMessageConnectionLimit { get; }
 
         /// <summary>
+        ///     Gets a dictionary containing the pending connection solicitations.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
+
+        /// <summary>
         ///     Gets the number of waiting peer message connections.
         /// </summary>
         public int WaitingMessageConnections => waitingMessageConnections;
-
-        public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -84,6 +87,75 @@ namespace Soulseek.Network
         private SemaphoreSlim MessageSemaphore { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
+
+        /// <summary>
+        ///     Adds a new message connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <returns>The operation context, including the added connection.</returns>
+        public async Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient)
+        {
+            var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+
+            var connection = ConnectionFactory.GetMessageConnection(
+                username,
+                endpoint.Address,
+                endpoint.Port,
+                SoulseekClient.Options.PeerConnectionOptions,
+                tcpClient);
+
+            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
+            connection.Disconnected += MessageConnection_Disconnected;
+
+            connection.StartReadingContinuously();
+
+            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
+            await semaphore.WaitAsync().ConfigureAwait(false);
+
+            try
+            {
+                AddOrUpdateMessageConnectionRecord(username, connection);
+                Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPAddress}:{connection.Port}) established.");
+            }
+            finally
+            {
+                semaphore.Release();
+            }
+
+            return connection;
+        }
+
+        /// <summary>
+        ///     Adds a new transfer connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="token">The token with which the firewall was pierced.</param>
+        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <returns>The operation context, including the added connection.</returns>
+        public async Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient)
+        {
+            var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+
+            var connection = ConnectionFactory.GetConnection(
+                endpoint.Address,
+                endpoint.Port,
+                SoulseekClient.Options.TransferConnectionOptions,
+                tcpClient);
+
+            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+
+            connection.Disconnected += (sender, e) =>
+            {
+                Diagnostic.Debug($"Inbound transfer connection for token {token} (remote: {remoteToken}) ({endpoint.Address}:{endpoint.Port}) disconnected.");
+                ((IConnection)sender).Dispose();
+            };
+
+            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
+
+            return connection;
+        }
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
@@ -186,49 +258,49 @@ namespace Soulseek.Network
                 }
                 else
                 {
-                    var directCts = new CancellationTokenSource();
-                    var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
-
-                    var indirectCts = new CancellationTokenSource();
-                    var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
-
-                    var direct = GetMessageConnectionOutboundDirectAsync(username, ipAddress, port, directLinkedCts.Token);
-                    var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
-
-                    Diagnostic.Debug($"Attempting direct and indirect message connections to {username} ({ipAddress}:{port})");
-
-                    List<Task<IMessageConnection>> tasks = new List<Task<IMessageConnection>>() { direct, indirect };
-                    Task<IMessageConnection> task;
-                    do
+                    using (var directCts = new CancellationTokenSource())
+                    using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
+                    using (var indirectCts = new CancellationTokenSource())
+                    using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
                     {
-                        task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
-                        tasks.Remove(task);
+                        var direct = GetMessageConnectionOutboundDirectAsync(username, ipAddress, port, directLinkedCts.Token);
+                        var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
+
+                        Diagnostic.Debug($"Attempting direct and indirect message connections to {username} ({ipAddress}:{port})");
+
+                        List<Task<IMessageConnection>> tasks = new List<Task<IMessageConnection>>() { direct, indirect };
+                        Task<IMessageConnection> task;
+                        do
+                        {
+                            task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                            tasks.Remove(task);
+                        }
+                        while (task.IsFaulted && tasks.Count > 0);
+
+                        if (task.IsFaulted)
+                        {
+                            throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
+                        }
+
+                        connection = await task.ConfigureAwait(false);
+                        var isDirect = task == direct;
+
+                        Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
+                        (isDirect ? indirectCts : directCts).Cancel();
+
+                        if (isDirect)
+                        {
+                            // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled
+                            // in the listener code to determine the connection type, so we don't need to handle it here.
+                            var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
+                            await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                        }
+
+                        (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
+
+                        Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} message connection to {username} ({ipAddress}:{port}) established.");
+                        return connection;
                     }
-                    while (task.IsFaulted && tasks.Count > 0);
-
-                    if (task.IsFaulted)
-                    {
-                        throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
-                    }
-
-                    connection = await task.ConfigureAwait(false);
-                    var isDirect = task == direct;
-
-                    Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
-                    (isDirect ? indirectCts : directCts).Cancel();
-
-                    if (isDirect)
-                    {
-                        // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled
-                        // in the listener code to determine the connection type, so we don't need to handle it here.
-                        var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
-                        await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
-                    }
-
-                    (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
-
-                    Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} message connection to {username} ({ipAddress}:{port}) established.");
-                    return connection;
                 }
             }
             finally
@@ -275,48 +347,48 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new connection.</returns>
         public async Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken)
         {
-            var directCts = new CancellationTokenSource();
-            var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token);
-
-            var indirectCts = new CancellationTokenSource();
-            var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token);
-
-            var direct = GetTransferConnectionOutboundDirectAsync(ipAddress, port, token, directLinkedCts.Token);
-            var indirect = GetTransferConnectionOutboundIndirectAsync(username, token, indirectLinkedCts.Token);
-
-            Diagnostic.Debug($"Attempting direct and indirect transfer connections to {username} ({ipAddress}:{port})");
-
-            List<Task<IConnection>> tasks = new List<Task<IConnection>>() { direct, indirect };
-            Task<IConnection> task;
-            do
+            using (var directCts = new CancellationTokenSource())
+            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
+            using (var indirectCts = new CancellationTokenSource())
+            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
             {
-                task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
-                tasks.Remove(task);
+                var direct = GetTransferConnectionOutboundDirectAsync(ipAddress, port, token, directLinkedCts.Token);
+                var indirect = GetTransferConnectionOutboundIndirectAsync(username, token, indirectLinkedCts.Token);
+
+                Diagnostic.Debug($"Attempting direct and indirect transfer connections to {username} ({ipAddress}:{port})");
+
+                List<Task<IConnection>> tasks = new List<Task<IConnection>>() { direct, indirect };
+                Task<IConnection> task;
+                do
+                {
+                    task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                    tasks.Remove(task);
+                }
+                while (task.IsFaulted && tasks.Count > 0);
+
+                if (task.IsFaulted)
+                {
+                    throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
+                }
+
+                var connection = await task.ConfigureAwait(false);
+                var isDirect = task == direct;
+
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
+                (isDirect ? indirectCts : directCts).Cancel();
+
+                if (isDirect)
+                {
+                    // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled in the
+                    // listener code to determine the connection type, so we don't need to handle it here.
+                    var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToByteArray();
+                    await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                }
+
+                // send our token (the remote token from the other side's perspective)
+                await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
+                return connection;
             }
-            while (task.IsFaulted && tasks.Count > 0);
-
-            if (task.IsFaulted)
-            {
-                throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
-            }
-
-            var connection = await task.ConfigureAwait(false);
-            var isDirect = task == direct;
-
-            Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
-            (isDirect ? indirectCts : directCts).Cancel();
-
-            if (isDirect)
-            {
-                // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled in the
-                // listener code to determine the connection type, so we don't need to handle it here.
-                var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToByteArray();
-                await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
-            }
-
-            // send our token (the remote token from the other side's perspective)
-            await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
-            return connection;
         }
 
         /// <summary>
@@ -332,62 +404,6 @@ namespace Soulseek.Network
                     value.Connection?.Dispose();
                 }
             }
-        }
-
-        public async Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient)
-        {
-            var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-
-            var connection = ConnectionFactory.GetMessageConnection(
-                username,
-                endpoint.Address,
-                endpoint.Port,
-                SoulseekClient.Options.PeerConnectionOptions,
-                tcpClient);
-
-            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
-            connection.Disconnected += MessageConnection_Disconnected;
-
-            connection.StartReadingContinuously();
-
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
-            await semaphore.WaitAsync().ConfigureAwait(false);
-
-            try
-            {
-                AddOrUpdateMessageConnectionRecord(username, connection);
-                Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPAddress}:{connection.Port}) established.");
-            }
-            finally
-            {
-                semaphore.Release();
-            }
-
-            return connection;
-        }
-
-        public async Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient)
-        {
-            var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
-
-            var connection = ConnectionFactory.GetConnection(
-                endpoint.Address,
-                endpoint.Port,
-                SoulseekClient.Options.TransferConnectionOptions,
-                tcpClient);
-
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
-
-            connection.Disconnected += (sender, e) =>
-            {
-                Diagnostic.Debug($"Inbound transfer connection for token {token} (remote: {remoteToken}) ({endpoint.Address}:{endpoint.Port}) disconnected.");
-                ((IConnection)sender).Dispose();
-            };
-
-            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
-
-            return connection;
         }
 
         private (SemaphoreSlim Semaphore, IMessageConnection Connection) AddOrUpdateMessageConnectionRecord(string username, IMessageConnection connection)
