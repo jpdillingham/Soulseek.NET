@@ -118,9 +118,17 @@ namespace Soulseek.Messaging.Handlers
                                 throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
                             }
                         }
-                        else
+                        else if (connectToPeerResponse.Type == Constants.ConnectionType.Peer)
                         {
                             await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                        }
+                        else if (connectToPeerResponse.Type == Constants.ConnectionType.Distributed)
+                        {
+                            await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            throw new MessageException($"Unknown Connect To Peer connection type '{connectToPeerResponse.Type}'.");
                         }
 
                         break;
