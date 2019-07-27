@@ -34,7 +34,7 @@ namespace Soulseek.Messaging.Handlers
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
-        public async void HandleMessage(object sender, byte[] message)
+        public async void HandleParentMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
@@ -49,7 +49,7 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
 
-                        SoulseekClient.DistributedConnectionManager.WriteDistributedChildrenAsync(message).Forget();
+                        SoulseekClient.DistributedConnectionManager.BroadcastAsync(message).Forget();
 
                         try
                         {
@@ -85,6 +85,41 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
                         await SoulseekClient.DistributedConnectionManager.SetDistributedBranchRoot(branchRoot.Username).ConfigureAwait(false);
+                        break;
+
+                    default:
+                        Diagnostic.Debug($"Unhandled distributed message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Length} bytes");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error handling distributed message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
+            }
+        }
+
+        public async void HandleChildMessage(object sender, byte[] message)
+        {
+            var connection = (IMessageConnection)sender;
+            var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
+
+            Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
+
+            try
+            {
+                switch (code)
+                {
+                    case MessageCode.Distributed.ChildDepth:
+                        var childDepth = DistributedChildDepth.FromByteArray(message);
+                        // not sure what to do with this.
+                        Diagnostic.Debug($"Distributed child depth from {connection.Username}: {childDepth.Depth}");
+                        break;
+
+                    case MessageCode.Distributed.Ping:
+                        Diagnostic.Debug($"PING?");
+                        var pingResponse = new PingResponse(SoulseekClient.GetNextToken());
+                        await connection.WriteAsync(pingResponse.ToByteArray()).ConfigureAwait(false);
+                        Diagnostic.Debug($"PONG!");
                         break;
 
                     default:

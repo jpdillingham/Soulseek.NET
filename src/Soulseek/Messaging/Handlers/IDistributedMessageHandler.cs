@@ -12,7 +12,22 @@
 
 namespace Soulseek.Messaging.Handlers
 {
-    internal interface IDistributedMessageHandler : IMessageHandler
+    using Soulseek.Network;
+
+    internal interface IDistributedMessageHandler : IDiagnosticGenerator
     {
+        /// <summary>
+        ///     Handles incoming messages from our parent connection.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="message">The message.</param>
+        void HandleParentMessage(object sender, byte[] message);
+
+        /// <summary>
+        ///     Handles incoming messages from child connections.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="message">The message.</param>
+        void HandleChildMessage(object sender, byte[] message);
     }
 }
