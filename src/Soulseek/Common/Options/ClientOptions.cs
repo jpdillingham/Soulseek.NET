@@ -37,7 +37,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="ClientOptions"/> class.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
-        /// <param name="concurrentDistributedChildrenLimit">The number of allowed distributed children, if <paramref name="listenPort"/> is specified, do not accept children otherwise.</param>
+        /// <param name="concurrentDistributedChildrenLimit">The number of allowed distributed children.</param>
         /// <param name="concurrentPeerMessageConnectionLimit">The number of allowed concurrent outgoing peer message connections.</param>
         /// <param name="messageTimeout">The message timeout, in seconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
@@ -65,7 +65,7 @@ namespace Soulseek
         /// </param>
         public ClientOptions(
             int? listenPort = null,
-            int? concurrentDistributedChildrenLimit = null,
+            int concurrentDistributedChildrenLimit = 100,
             int concurrentPeerMessageConnectionLimit = 500,
             int messageTimeout = 5,
             bool autoAcknowledgePrivateMessages = true,
@@ -83,7 +83,7 @@ namespace Soulseek
             Func<string, IPAddress, int, string, Task<int>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
-            ConcurrentDistributedChildrenLimit = listenPort != null ? concurrentDistributedChildrenLimit : null;
+            ConcurrentDistributedChildrenLimit = concurrentDistributedChildrenLimit;
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
             MessageTimeout = messageTimeout;
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
@@ -115,9 +115,9 @@ namespace Soulseek
         public Func<string, IPAddress, int, Task<BrowseResponse>> BrowseResponseResolver { get; }
 
         /// <summary>
-        ///     Gets the number of allowed distributed children, if <see cref="ListenPort"/> is specified, do not accept children otherwise. (Default = null; do not accept children).
+        ///     Gets the number of allowed distributed children. (Default = 100).
         /// </summary>
-        public int? ConcurrentDistributedChildrenLimit { get; }
+        public int ConcurrentDistributedChildrenLimit { get; }
 
         /// <summary>
         ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
