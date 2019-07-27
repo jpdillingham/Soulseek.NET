@@ -67,6 +67,12 @@ namespace Soulseek.Network
                             peerInit.Token,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
+                    else if (peerInit.TransferType == Constants.ConnectionType.Distributed)
+                    {
+                        await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(
+                            peerInit.Username,
+                            connection.HandoffTcpClient()).ConfigureAwait(false);
+                    }
                 }
                 else if (PierceFirewallResponse.TryFromByteArray(message, out var pierceFirewall))
                 {
