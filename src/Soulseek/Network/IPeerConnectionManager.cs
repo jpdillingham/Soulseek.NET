@@ -50,8 +50,8 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
-        /// <returns>The operation context, including the added connection.</returns>
-        Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient);
+        /// <returns>The operation context.</returns>
+        Task AddMessageConnectionAsync(string username, ITcpClient tcpClient);
 
         /// <summary>
         ///     Adds a new transfer connection from an incoming connection.
@@ -59,8 +59,8 @@ namespace Soulseek.Network
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
         /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
-        /// <returns>The operation context, including the added connection.</returns>
-        Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
+        /// <returns>The operation context.</returns>
+        Task AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
 
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified

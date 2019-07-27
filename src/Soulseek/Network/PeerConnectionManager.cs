@@ -93,8 +93,8 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
-        /// <returns>The operation context, including the added connection.</returns>
-        public async Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient)
+        /// <returns>The operation context.</returns>
+        public async Task AddMessageConnectionAsync(string username, ITcpClient tcpClient)
         {
             var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
 
@@ -122,8 +122,6 @@ namespace Soulseek.Network
             {
                 semaphore.Release();
             }
-
-            return connection;
         }
 
         /// <summary>
@@ -132,8 +130,8 @@ namespace Soulseek.Network
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
         /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
-        /// <returns>The operation context, including the added connection.</returns>
-        public async Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient)
+        /// <returns>The operation context.</returns>
+        public async Task AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient)
         {
             var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
 
@@ -153,8 +151,6 @@ namespace Soulseek.Network
             };
 
             SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
-
-            return connection;
         }
 
         /// <summary>
