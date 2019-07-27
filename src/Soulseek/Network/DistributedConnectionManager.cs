@@ -20,20 +20,8 @@ namespace Soulseek.Network
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
-
-    internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
-    {
-        bool HasParent { get; }
-        Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
-        Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
-        Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-        Task SetDistributedBranchLevel(int level);
-        Task SetDistributedBranchRoot(string username);
-        Task BroadcastAsync(byte[] bytes);
-    }
 
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
@@ -54,56 +42,16 @@ namespace Soulseek.Network
         /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
-        public bool HasParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
-
-        private IDistributedMessageHandler DistributedMessageHandler { get; }
-        private IWaiter Waiter { get; }
-        private SoulseekClient SoulseekClient { get; }
+        private int BranchLevel { get; set; }
+        private string BranchRoot { get; set; }
+        private bool CanAcceptChildren => ChildConnections.Count < SoulseekClient.Options.ConcurrentDistributedChildrenLimit;
         private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; } = new ConcurrentDictionary<string, IMessageConnection>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
-
+        private bool HaveParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
         private IMessageConnection ParentConnection { get; set; }
-        private string BranchRoot { get; set; }
-        private int BranchLevel { get; set; }
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        ///     Removes and disposes all active and queued connections.
-        /// </summary>
-        public void RemoveAndDisposeAll()
-        {
-            ParentConnection?.Dispose();
-
-            while (!ChildConnections.IsEmpty)
-            {
-                if (ChildConnections.TryRemove(ChildConnections.Keys.First(), out var value))
-                {
-                    value?.Dispose();
-                }
-            }
-        }
-
-        public async Task SetDistributedBranchRoot(string username)
-        {
-            BranchRoot = username;
-            await WriteStatusAsync().ConfigureAwait(false);
-        }
-
-        public async Task SetDistributedBranchLevel(int level)
-        {
-            BranchLevel = level;
-            await WriteStatusAsync().ConfigureAwait(false);
-        }
+        private SoulseekClient SoulseekClient { get; }
 
         public async Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
@@ -186,53 +134,6 @@ namespace Soulseek.Network
             await WriteStatusAsync().ConfigureAwait(false);
         }
 
-        public async Task BroadcastAsync(byte[] bytes)
-        {
-            var tasks = ChildConnections.Values.Select(async c =>
-            {
-                try
-                {
-                    await c.WriteAsync(bytes).ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    c.Dispose();
-                }
-            });
-
-            await Task.WhenAll(tasks).ConfigureAwait(false);
-        }
-
-        private async Task WriteStatusAsync()
-        {
-            // special thanks to @misterhat and livelook (https://github.com/misterhat/livelook) for guidance
-            var server = SoulseekClient.ServerConnection;
-
-            await server.WriteAsync(new HaveNoParents(!HaveParent).ToByteArray()).ConfigureAwait(false);
-            await server.WriteAsync(new ParentsIP(ParentConnection?.IPAddress ?? IPAddress.None).ToByteArray()).ConfigureAwait(false);
-            await server.WriteAsync(new BranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
-            await server.WriteAsync(new BranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
-            await server.WriteAsync(new ChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
-            await server.WriteAsync(new AcceptChildren(CanAcceptChildren).ToByteArray()).ConfigureAwait(false);
-
-            await BroadcastAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
-            await BroadcastAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
-
-            if (HaveParent)
-            {
-                await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
-            }
-
-            var sb = new StringBuilder("Updated distributed status; ");
-            sb
-                .Append($"HaveParent: {HaveParent}, ")
-                .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
-                .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot ?? string.Empty}, ")
-                .Append($"ChildDepth: {ChildConnections.Count}, CanAcceptChildren: {CanAcceptChildren}");
-
-            Diagnostic.Debug(sb.ToString());
-        }
-
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
             if (HaveParent)
@@ -305,20 +206,58 @@ namespace Soulseek.Network
             }
         }
 
-        private bool HaveParent
+        public async Task BroadcastAsync(byte[] bytes)
         {
-            get
+            var tasks = ChildConnections.Values.Select(async c =>
             {
-                return ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
+                try
+                {
+                    await c.WriteAsync(bytes).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    c.Dispose();
+                }
+            });
+
+            await Task.WhenAll(tasks).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
+        /// </summary>
+        public void Dispose()
+        {
+            Dispose(true);
+            GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Removes and disposes all active and queued connections.
+        /// </summary>
+        public void RemoveAndDisposeAll()
+        {
+            ParentConnection?.Dispose();
+
+            while (!ChildConnections.IsEmpty)
+            {
+                if (ChildConnections.TryRemove(ChildConnections.Keys.First(), out var value))
+                {
+                    value?.Dispose();
+                }
             }
         }
 
-        private bool CanAcceptChildren
+        public async Task SetBranchLevel(int level)
         {
-            get
-            {
-                return ChildConnections.Count < SoulseekClient.Options.ConcurrentDistributedChildrenLimit;
-            }
+            BranchLevel = level;
+            await WriteStatusAsync().ConfigureAwait(false);
+        }
+
+        public async Task SetBranchRoot(string username)
+        {
+            BranchRoot = username;
+            await WriteStatusAsync().ConfigureAwait(false);
         }
 
         private void Dispose(bool disposing)
@@ -332,6 +271,36 @@ namespace Soulseek.Network
 
                 Disposed = true;
             }
+        }
+
+        private async Task WriteStatusAsync()
+        {
+            // special thanks to @misterhat and livelook (https://github.com/misterhat/livelook) for guidance
+            var server = SoulseekClient.ServerConnection;
+
+            await server.WriteAsync(new HaveNoParents(!HaveParent).ToByteArray()).ConfigureAwait(false);
+            await server.WriteAsync(new ParentsIP(ParentConnection?.IPAddress ?? IPAddress.None).ToByteArray()).ConfigureAwait(false);
+            await server.WriteAsync(new BranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
+            await server.WriteAsync(new BranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
+            await server.WriteAsync(new ChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
+            await server.WriteAsync(new AcceptChildren(CanAcceptChildren).ToByteArray()).ConfigureAwait(false);
+
+            await BroadcastAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
+            await BroadcastAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
+
+            if (HaveParent)
+            {
+                await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
+            }
+
+            var sb = new StringBuilder("Updated distributed status; ");
+            sb
+                .Append($"HaveParent: {HaveParent}, ")
+                .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
+                .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot ?? string.Empty}, ")
+                .Append($"ChildDepth: {ChildConnections.Count}, CanAcceptChildren: {CanAcceptChildren}");
+
+            Diagnostic.Debug(sb.ToString());
         }
     }
 }
