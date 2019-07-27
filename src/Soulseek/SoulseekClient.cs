@@ -120,6 +120,7 @@ namespace Soulseek
             if (Listener == null && Options.ListenPort.HasValue)
             {
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
+                Listener.Accepted += new ListenerHandler(this).HandleConnection;
             }
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);

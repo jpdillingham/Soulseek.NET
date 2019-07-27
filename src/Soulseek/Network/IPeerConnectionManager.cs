@@ -40,6 +40,8 @@ namespace Soulseek.Network
         /// </summary>
         int WaitingMessageConnections { get; }
 
+        IReadOnlyDictionary<int, string> PendingSolicitations { get; }
+
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
@@ -61,6 +63,7 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
+        Task<IMessageConnection> AddMessageConnectionAsync(string username, ITcpClient tcpClient);
 
         /// <summary>
         ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>, pierces
@@ -81,6 +84,8 @@ namespace Soulseek.Network
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
         Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken);
+
+        Task<IConnection> AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
 
         Task SetDistributedBranchLevel(int level);
         Task SetDistributedBranchRoot(string username);
