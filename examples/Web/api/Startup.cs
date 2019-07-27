@@ -47,6 +47,7 @@
 
             var options = new ClientOptions(
                 listenPort: ListenPort,
+                concurrentDistributedChildrenLimit: 10,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 concurrentPeerMessageConnectionLimit: 1000000,
                 serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
