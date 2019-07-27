@@ -32,7 +32,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
-        internal ConnectionDataEventArgs(int currentLength, long totalLength)
+        public ConnectionDataEventArgs(int currentLength, long totalLength)
         {
             CurrentLength = currentLength;
             TotalLength = totalLength;
@@ -65,7 +65,7 @@ namespace Soulseek
         /// <param name="previousState">The state from which the connection changed.</param>
         /// <param name="currentState">The state to which the connection changed.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>
-        internal ConnectionStateChangedEventArgs(ConnectionState previousState, ConnectionState currentState, string message = null)
+        public ConnectionStateChangedEventArgs(ConnectionState previousState, ConnectionState currentState, string message = null)
         {
             PreviousState = previousState;
             CurrentState = currentState;

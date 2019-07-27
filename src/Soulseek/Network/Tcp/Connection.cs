@@ -33,7 +33,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="port">The remote port of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        public Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             IPAddress = ipAddress;
             Port = port;

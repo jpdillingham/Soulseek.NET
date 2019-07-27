@@ -49,7 +49,7 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
 
-                        SoulseekClient.PeerConnectionManager.WriteDistributedChildrenAsync(message).Forget();
+                        SoulseekClient.DistributedConnectionManager.WriteDistributedChildrenAsync(message).Forget();
 
                         try
                         {
@@ -79,12 +79,12 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
-                        await SoulseekClient.PeerConnectionManager.SetDistributedBranchLevel(branchLevel.Level).ConfigureAwait(false);
+                        await SoulseekClient.DistributedConnectionManager.SetDistributedBranchLevel(branchLevel.Level).ConfigureAwait(false);
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
-                        await SoulseekClient.PeerConnectionManager.SetDistributedBranchRoot(branchRoot.Username).ConfigureAwait(false);
+                        await SoulseekClient.DistributedConnectionManager.SetDistributedBranchRoot(branchRoot.Username).ConfigureAwait(false);
                         break;
 
                     default:

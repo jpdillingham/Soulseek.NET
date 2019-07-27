@@ -28,7 +28,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="Waiter"/> class with the default timeout.
         /// </summary>
-        internal Waiter()
+        public Waiter()
             : this(DefaultTimeoutValue)
         {
         }
@@ -37,7 +37,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="Waiter"/> class with the specified <paramref name="defaultTimeout"/>.
         /// </summary>
         /// <param name="defaultTimeout">The default timeout duration for message waits.</param>
-        internal Waiter(int defaultTimeout)
+        public Waiter(int defaultTimeout)
         {
             DefaultTimeout = defaultTimeout;
 
