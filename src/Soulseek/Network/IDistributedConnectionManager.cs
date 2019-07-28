@@ -28,6 +28,8 @@ namespace Soulseek.Network
         Task SetBranchRoot(string username);
         Task BroadcastAsync(byte[] bytes);
 
+        IReadOnlyDictionary<int, string> PendingSolicitations { get; }
+
         /// <summary>
         ///     Removes and disposes the parent and all child connections.
         /// </summary>
