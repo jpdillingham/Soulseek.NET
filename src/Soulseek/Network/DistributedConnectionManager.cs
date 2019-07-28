@@ -162,6 +162,7 @@ namespace Soulseek.Network
                         if (connection == ParentConnection)
                         {
                             Diagnostic.Debug($"Distributed parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected, notifying server.");
+                            ParentConnection = null;
                             await WriteStatusAsync().ConfigureAwait(false);
                         }
                     };
@@ -295,10 +296,10 @@ namespace Soulseek.Network
 
             var sb = new StringBuilder("Updated distributed status; ");
             sb
-                .Append($"HaveParent: {HaveParent}, ")
+                .Append($"HaveNoParents: {!HaveParent}, ")
                 .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
                 .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot ?? string.Empty}, ")
-                .Append($"ChildDepth: {ChildConnections.Count}, CanAcceptChildren: {CanAcceptChildren}");
+                .Append($"ChildDepth: {ChildConnections.Count}, AcceptChildren: {CanAcceptChildren}");
 
             Diagnostic.Debug(sb.ToString());
         }
