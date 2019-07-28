@@ -15,6 +15,7 @@ namespace Soulseek.Network
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Collections.ObjectModel;
     using System.Linq;
     using System.Net;
     using System.Text;
@@ -41,6 +42,13 @@ namespace Soulseek.Network
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+
+        /// <summary>
+        ///     Gets a dictionary containing the pending connection solicitations.
+        /// </summary>
+        public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
+        private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
+
 
         private int BranchLevel { get; set; }
         private string BranchRoot { get; set; }
@@ -134,6 +142,107 @@ namespace Soulseek.Network
             await WriteStatusAsync().ConfigureAwait(false);
         }
 
+        private async Task<IMessageConnection> GetParentConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
+        {
+            using (var directCts = new CancellationTokenSource())
+            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
+            using (var indirectCts = new CancellationTokenSource())
+            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
+            {
+                var direct = GetParentConnectionDirectAsync(username, ipAddress, port, directLinkedCts.Token);
+                var indirect = GetParentConnectionIndirectAsync(username, indirectLinkedCts.Token);
+
+                var tasks = new[] { direct, indirect }.ToList();
+                Task<IMessageConnection> task;
+                do
+                {
+                    task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                    tasks.Remove(task);
+                }
+                while (task.IsFaulted && tasks.Count > 0);
+
+                var connection = await task.ConfigureAwait(false);
+                var isDirect = task == direct;
+
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} distributed connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
+                (isDirect ? indirectCts : directCts).Cancel();
+
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleParentMessage;
+
+                if (!isDirect)
+                {
+                    connection.StartReadingContinuously();
+                }
+
+                return connection;
+            }
+        }
+
+        private async Task<IMessageConnection> GetParentConnectionDirectAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
+        {
+            var connection = ConnectionFactory.GetMessageConnection(username, ipAddress, port, SoulseekClient.Options.DistributedConnectionOptions);
+
+            connection.Disconnected += async (sender, args) =>
+            {
+                Diagnostic.Debug($"Discarded distributed parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port})");
+
+                if (connection == ParentConnection)
+                {
+                    Diagnostic.Debug($"Distributed parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected, notifying server.");
+                    ParentConnection = null;
+                    await WriteStatusAsync().ConfigureAwait(false);
+                }
+            };
+
+            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            await connection.WriteAsync(new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            Diagnostic.Debug($"Distributed connection to {connection.Username} established.");
+            return connection;
+        }
+
+        private async Task<IMessageConnection> GetParentConnectionIndirectAsync(string username, CancellationToken cancellationToken)
+        {
+            var token = SoulseekClient.GetNextToken();
+
+            try
+            {
+                PendingSolicitationDictionary.TryAdd(token, username);
+
+                await SoulseekClient.ServerConnection
+                    .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
+                    .ConfigureAwait(false);
+
+                var incomingConnection = await SoulseekClient.Waiter
+                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, token), null, cancellationToken)
+                    .ConfigureAwait(false);
+
+                var connection = ConnectionFactory.GetMessageConnection(
+                    username,
+                    incomingConnection.IPAddress,
+                    incomingConnection.Port,
+                    SoulseekClient.Options.PeerConnectionOptions,
+                    incomingConnection.HandoffTcpClient());
+
+                connection.Disconnected += async (sender, args) =>
+                {
+                    Diagnostic.Debug($"Discarded distributed parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port})");
+
+                    if (connection == ParentConnection)
+                    {
+                        Diagnostic.Debug($"Distributed parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected, notifying server.");
+                        ParentConnection = null;
+                        await WriteStatusAsync().ConfigureAwait(false);
+                    }
+                };
+
+                return connection;
+            }
+            finally
+            {
+                PendingSolicitationDictionary.TryRemove(token, out var _);
+            }
+        }
+
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
             if (HaveParent)
@@ -163,6 +272,8 @@ namespace Soulseek.Network
                         {
                             Diagnostic.Debug($"Distributed parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected, notifying server.");
                             ParentConnection = null;
+                            BranchRoot = null;
+                            BranchLevel = 0;
                             await WriteStatusAsync().ConfigureAwait(false);
                         }
                     };
@@ -176,6 +287,7 @@ namespace Soulseek.Network
                     return c;
                 }).ToList();
 
+                //var pendingConnectTasks = parentCandidates.Select(p => GetParentConnectionAsync(p.Username, p.IPAddress, p.Port, cts.Token)).ToList();
                 Task<IMessageConnection> parentTask;
 
                 do
