@@ -208,7 +208,15 @@ namespace Soulseek.Network
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
                     connection.Disconnected += MessageConnection_Disconnected;
 
-                    await connection.ConnectAsync().ConfigureAwait(false);
+                    try
+                    {
+                        await connection.ConnectAsync().ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        connection.Dispose();
+                        throw;
+                    }
 
                     var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToByteArray();
                     await connection.WriteAsync(request).ConfigureAwait(false);
@@ -320,7 +328,15 @@ namespace Soulseek.Network
 
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
 
-            await connection.ConnectAsync().ConfigureAwait(false);
+            try
+            {
+                await connection.ConnectAsync().ConfigureAwait(false);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
 
             var request = new PierceFirewallRequest(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
@@ -441,7 +457,15 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
             connection.Disconnected += MessageConnection_Disconnected;
 
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
 
             return connection;
         }
@@ -458,23 +482,24 @@ namespace Soulseek.Network
                     .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
-                var incomingConnection = await SoulseekClient.Waiter
+                using (var incomingConnection = await SoulseekClient.Waiter
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, token), null, cancellationToken)
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(false))
+                {
+                    var connection = ConnectionFactory.GetMessageConnection(
+                        username,
+                        incomingConnection.IPAddress,
+                        incomingConnection.Port,
+                        SoulseekClient.Options.PeerConnectionOptions,
+                        incomingConnection.HandoffTcpClient());
 
-                var connection = ConnectionFactory.GetMessageConnection(
-                    username,
-                    incomingConnection.IPAddress,
-                    incomingConnection.Port,
-                    SoulseekClient.Options.PeerConnectionOptions,
-                    incomingConnection.HandoffTcpClient());
+                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
+                    connection.Disconnected += MessageConnection_Disconnected;
 
-                connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
-                connection.Disconnected += MessageConnection_Disconnected;
+                    connection.StartReadingContinuously();
 
-                connection.StartReadingContinuously();
-
-                return connection;
+                    return connection;
+                }
             }
             finally
             {
@@ -509,7 +534,15 @@ namespace Soulseek.Network
 
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound direct transfer connection for token {token} ({ipAddress}:{port}) disconnected.");
 
-            await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            try
+            {
+                await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
 
             return connection;
         }
@@ -526,19 +559,20 @@ namespace Soulseek.Network
                     .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
-                var incomingConnection = await SoulseekClient.Waiter
+                using (var incomingConnection = await SoulseekClient.Waiter
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), null, cancellationToken)
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(false))
+                {
+                    var connection = ConnectionFactory.GetConnection(
+                        incomingConnection.IPAddress,
+                        incomingConnection.Port,
+                        SoulseekClient.Options.TransferConnectionOptions,
+                        incomingConnection.HandoffTcpClient());
 
-                var connection = ConnectionFactory.GetConnection(
-                    incomingConnection.IPAddress,
-                    incomingConnection.Port,
-                    SoulseekClient.Options.TransferConnectionOptions,
-                    incomingConnection.HandoffTcpClient());
+                    connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound indirect transfer connection for token {token} ({incomingConnection.IPAddress}:{incomingConnection.Port}) disconnected.");
 
-                connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound indirect transfer connection for token {token} ({incomingConnection.IPAddress}:{incomingConnection.Port}) disconnected.");
-
-                return connection;
+                    return connection;
+                }
             }
             finally
             {
