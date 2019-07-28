@@ -14,7 +14,7 @@ namespace Soulseek.Network
 {
     using Soulseek.Network.Tcp;
 
-    internal interface IListenerHandler
+    internal interface IListenerHandler : IDiagnosticGenerator
     {
         void HandleConnection(object sender, IConnection connection);
     }
