@@ -19,7 +19,8 @@ namespace Soulseek
             public const string Transfer = "Transfer";
             public const string DirectTransfer = "DirectTransfer";
             public const string IndirectTransfer = "IndirectTransfer";
-            public const string SolicitedConnection = "SolicitedConnection";
+            public const string SolicitedPeerConnection = "SolicitedPeerConnection";
+            public const string SolicitedDistributedConnection = "SolicitedDistributedConnection";
         }
 
         internal static class ConnectionType

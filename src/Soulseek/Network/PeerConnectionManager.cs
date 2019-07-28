@@ -459,7 +459,7 @@ namespace Soulseek.Network
                     .ConfigureAwait(false);
 
                 var incomingConnection = await SoulseekClient.Waiter
-                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, token), null, cancellationToken)
+                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, token), null, cancellationToken)
                     .ConfigureAwait(false);
 
                 var connection = ConnectionFactory.GetMessageConnection(
@@ -527,7 +527,7 @@ namespace Soulseek.Network
                     .ConfigureAwait(false);
 
                 var incomingConnection = await SoulseekClient.Waiter
-                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedConnection, username, solicitationToken), null, cancellationToken)
+                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), null, cancellationToken)
                     .ConfigureAwait(false);
 
                 var connection = ConnectionFactory.GetConnection(

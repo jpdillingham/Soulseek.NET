@@ -79,10 +79,15 @@ namespace Soulseek.Network
                     // this connection is the result of a ConnectToPeer request sent to the user, and the incoming message will
                     // contain the token that was provided in the request. Ensure this token is among those expected, and use it to
                     // determine the username of the remote user.
-                    if (SoulseekClient.PeerConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var username))
+                    if (SoulseekClient.PeerConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var peerUsername))
                     {
-                        Diagnostic.Debug($"PierceFirewall with token {pierceFirewall.Token} received from {username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedConnection, username, pierceFirewall.Token), connection);
+                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, peerUsername, pierceFirewall.Token), connection);
+                    }
+                    else if (SoulseekClient.DistributedConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var distributedUsername))
+                    {
+                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, distributedUsername, pierceFirewall.Token), connection);
                     }
                     else
                     {
