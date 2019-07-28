@@ -426,6 +426,7 @@ namespace Soulseek.Network
                 if (v.Connection != null)
                 {
                     v.Connection.Disconnected -= MessageConnection_Disconnected;
+                    v.Connection.Dispose();
                 }
 
                 return (v.Semaphore, connection);
