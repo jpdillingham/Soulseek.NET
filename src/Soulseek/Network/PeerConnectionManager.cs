@@ -264,7 +264,7 @@ namespace Soulseek.Network
 
                         Diagnostic.Debug($"Attempting direct and indirect message connections to {username} ({ipAddress}:{port})");
 
-                        List<Task<IMessageConnection>> tasks = new List<Task<IMessageConnection>>() { direct, indirect };
+                        var tasks = new[] { direct, indirect }.ToList();
                         Task<IMessageConnection> task;
                         do
                         {
@@ -353,7 +353,7 @@ namespace Soulseek.Network
 
                 Diagnostic.Debug($"Attempting direct and indirect transfer connections to {username} ({ipAddress}:{port})");
 
-                List<Task<IConnection>> tasks = new List<Task<IConnection>>() { direct, indirect };
+                var tasks = new[] { direct, indirect }.ToList();
                 Task<IConnection> task;
                 do
                 {
