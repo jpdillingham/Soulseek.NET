@@ -80,6 +80,7 @@ namespace Soulseek
             IServerMessageHandler serverMessageHandler = null,
             IPeerMessageHandler peerMessageHandler = null,
             IListener listener = null,
+            IListenerHandler listenerHandler = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
@@ -116,12 +117,19 @@ namespace Soulseek
             ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
             ServerConnection.Disconnected += ServerConnection_Disconnected;
 
+            ListenerHandler = listenerHandler ?? new ListenerHandler(this);
+            ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
             Listener = listener;
 
             if (Listener == null && Options.ListenPort.HasValue)
             {
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
-                Listener.Accepted += new ListenerHandler(this).HandleConnection;
+            }
+
+            if (Listener != null)
+            {
+                Listener.Accepted += ListenerHandler.HandleConnection;
             }
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
@@ -218,6 +226,7 @@ namespace Soulseek
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
+        internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
