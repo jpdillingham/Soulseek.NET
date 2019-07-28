@@ -49,8 +49,6 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
         private ConcurrentDictionary<string, IMessageConnection> PendingParentConnections { get; set; } = new ConcurrentDictionary<string, IMessageConnection>();
-
-
         private int BranchLevel { get; set; }
         private string BranchRoot { get; set; }
         private bool CanAcceptChildren => ChildConnections.Count < SoulseekClient.Options.ConcurrentDistributedChildrenLimit;
@@ -73,45 +71,46 @@ namespace Soulseek.Network
                 return;
             }
 
-            IMessageConnection connection = default;
+            var connection = ConnectionFactory.GetMessageConnection(
+                r.Username,
+                r.IPAddress,
+                r.Port,
+                SoulseekClient.Options.DistributedConnectionOptions);
+
+            connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessage;
+            connection.Disconnected += ChildConnection_Disconnected;
 
             try
             {
-                connection = ConnectionFactory.GetMessageConnection(
-                    r.Username,
-                    r.IPAddress,
-                    r.Port,
-                    SoulseekClient.Options.DistributedConnectionOptions);
-
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessage;
-                connection.Disconnected += async (sender, args) =>
-                {
-                    ChildConnections.TryRemove(connection.Username, out _);
-                    Diagnostic.Debug($"Distributed child {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected.  Total children: {ChildConnections.Count}");
-                    await WriteStatusAsync().ConfigureAwait(false);
-                };
-
                 await connection.ConnectAsync().ConfigureAwait(false);
-
-                var request = new PierceFirewallRequest(r.Token);
-                await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
-
-                ChildConnections.AddOrUpdate(connection.Username, connection, (k, v) =>
-                {
-                    v.Dispose();
-                    return connection;
-                });
-
-                Diagnostic.Debug($"Added distributed child {connection.Username} ({connection.IPAddress}:{connection.Port}).  Total children: {ChildConnections.Count}");
-
             }
-            catch (Exception)
+            catch
             {
-                connection?.Dispose();
+                connection.Dispose();
                 throw;
             }
 
+            var request = new PierceFirewallRequest(r.Token);
+            await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+
+            AddOrUpdateChildConnectionRecord(connection);
+
+            Diagnostic.Debug($"Added distributed child {connection.Username} ({connection.IPAddress}:{connection.Port}).  Total children: {ChildConnections.Count}");
+
             await WriteStatusAsync().ConfigureAwait(false);
+        }
+
+        private void AddOrUpdateChildConnectionRecord(IMessageConnection connection)
+        {
+            ChildConnections.AddOrUpdate(connection.Username, connection, (k, v) =>
+            {
+                // suppress deletion from dictionary and server child count update by removing this
+                v.Disconnected -= ChildConnection_Disconnected;
+                v.Dispose();
+
+                Diagnostic.Debug($"Replaced existing distributed child connection for {connection.Username} ({connection.IPAddress}:{connection.Port}).");
+                return connection;
+            });
         }
 
         public async Task AddChildConnectionAsync(string username, ITcpClient tcpClient)
@@ -126,43 +125,33 @@ namespace Soulseek.Network
                 return;
             }
 
-            IMessageConnection connection = default;
+            var connection = ConnectionFactory.GetMessageConnection(
+                username,
+                endpoint.Address,
+                endpoint.Port,
+                SoulseekClient.Options.DistributedConnectionOptions,
+                tcpClient);
 
-            try
-            {
-                connection = ConnectionFactory.GetMessageConnection(
-                    username,
-                    endpoint.Address,
-                    endpoint.Port,
-                    SoulseekClient.Options.DistributedConnectionOptions,
-                    tcpClient);
+            connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessage;
+            connection.Disconnected += ChildConnection_Disconnected;
 
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessage;
-                connection.Disconnected += async (sender, args) =>
-                {
-                    ChildConnections.TryRemove(username, out _);
-                    Diagnostic.Debug($"Distributed child {username} ({connection.IPAddress}:{connection.Port}) disconnected.  Total children: {ChildConnections.Count}");
-                    await WriteStatusAsync().ConfigureAwait(false);
-                };
+            connection.StartReadingContinuously();
 
-                ChildConnections.AddOrUpdate(username, connection, (k, v) =>
-                {
-                    v.Dispose();
-                    return connection;
-                });
+            AddOrUpdateChildConnectionRecord(connection);
 
-                connection.StartReadingContinuously();
-
-                Diagnostic.Debug($"Added distributed child {username} ({connection.IPAddress}:{connection.Port}).  Total children: {ChildConnections.Count}");
-
-            }
-            catch (Exception)
-            {
-                connection?.Dispose();
-                throw;
-            }
+            Diagnostic.Debug($"Added distributed child {username} ({connection.IPAddress}:{connection.Port}).  Total children: {ChildConnections.Count}");
 
             await WriteStatusAsync().ConfigureAwait(false);
+        }
+
+        private void ChildConnection_Disconnected(object sender, string message)
+        {
+            var connection = (IMessageConnection)sender;
+            ChildConnections.TryRemove(connection.Username, out _);
+            Diagnostic.Debug($"Distributed child {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected: {message}.  Total children: {ChildConnections.Count}");
+            connection.Dispose();
+
+            WriteStatusAsync().ConfigureAwait(false);
         }
 
         private async Task<IMessageConnection> GetParentConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
