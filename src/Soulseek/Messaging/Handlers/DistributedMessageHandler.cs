@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
 
-                        SoulseekClient.DistributedConnectionManager.BroadcastAsync(message).Forget();
+                        SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
 
                         try
                         {
@@ -92,9 +92,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.ChildDepth:
                         var childDepth = DistributedChildDepth.FromByteArray(message);
-
-                        // not sure what to do with this.
-                        Diagnostic.Debug($"Distributed child depth from {connection.Username}: {childDepth.Depth}");
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), childDepth);
                         break;
 
                     default:
