@@ -21,14 +21,19 @@ namespace Soulseek.Network
 
     internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
     {
-        Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
-        Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
-        Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-        Task AddOrUpdateBranchLevel(string username, int level);
-        Task AddOrUpdateBranchRoot(string username, string root);
-        Task BroadcastAsync(byte[] bytes);
-
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
+
+        Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
+
+        Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
+
+        void AddOrUpdateBranchLevel(string username, int level);
+
+        void AddOrUpdateBranchRoot(string username, string root);
+
+        Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
+
+        Task BroadcastAsync(byte[] bytes);
 
         /// <summary>
         ///     Removes and disposes the parent and all child connections.
