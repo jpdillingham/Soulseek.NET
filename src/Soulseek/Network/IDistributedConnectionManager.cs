@@ -24,8 +24,8 @@ namespace Soulseek.Network
         Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
         Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
         Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
-        Task SetBranchLevel(int level);
-        Task SetBranchRoot(string username);
+        Task AddOrUpdateBranchLevel(string username, int level);
+        Task AddOrUpdateBranchRoot(string username, string root);
         Task BroadcastAsync(byte[] bytes);
 
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
