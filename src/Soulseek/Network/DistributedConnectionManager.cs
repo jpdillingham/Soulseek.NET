@@ -48,6 +48,15 @@ namespace Soulseek.Network
             {
                 await UpdateStatusAsync();
             };
+
+            ParentWatchdogTimer = new SystemTimer()
+            {
+                Enabled = false,
+                AutoReset = false,
+                Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout * 1000,
+            };
+
+            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} seconds was reached; no broadcastable messages recieved.");
         }
 
         /// <summary>
@@ -75,6 +84,7 @@ namespace Soulseek.Network
         private string StatusHash { get; set; }
         private object StatusSyncRoot { get; } = new object();
         private SystemTimer StatusTimer { get; }
+        private SystemTimer ParentWatchdogTimer { get; }
 
         public async Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
@@ -106,8 +116,20 @@ namespace Soulseek.Network
                 throw;
             }
 
+            var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
+
             var request = new PierceFirewallRequest(r.Token);
             await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+
+            try
+            {
+                await childDepthWait.ConfigureAwait(false);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
 
             AddOrUpdateChildConnectionRecord(connection);
 
@@ -136,7 +158,19 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
             connection.Disconnected += ChildConnection_Disconnected;
 
+            var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
+
             connection.StartReadingContinuously();
+
+            try
+            {
+                await childDepthWait.ConfigureAwait(false);
+            }
+            catch
+            {
+                connection.Dispose();
+                throw;
+            }
 
             AddOrUpdateChildConnectionRecord(connection);
 
@@ -212,8 +246,10 @@ namespace Soulseek.Network
             }
         }
 
-        public async Task BroadcastAsync(byte[] bytes)
+        public async Task BroadcastMessageAsync(byte[] bytes)
         {
+            ParentWatchdogTimer?.Reset();
+
             var tasks = ChildConnections.Values.Select(async c =>
             {
                 try
@@ -303,8 +339,6 @@ namespace Soulseek.Network
 
         private async Task<IMessageConnection> GetParentConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
-            const string waitKey = "FirstSearchRequest";
-
             void HandleFirstSearchRequest(object sender, byte[] message)
             {
                 try
@@ -312,7 +346,7 @@ namespace Soulseek.Network
                     var connection = (IMessageConnection)sender;
                     DistributedSearchRequest.FromByteArray(message);
 
-                    SoulseekClient.Waiter.Complete(new WaitKey(waitKey, connection.Context, connection.Key));
+                    SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                 }
                 catch
                 {
@@ -350,7 +384,7 @@ namespace Soulseek.Network
                     connection.StartReadingContinuously();
                 }
 
-                await SoulseekClient.Waiter.Wait(new WaitKey(waitKey, connection.Context, connection.Key)).ConfigureAwait(false);
+                await SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key)).ConfigureAwait(false);
 
                 connection.MessageRead -= HandleFirstSearchRequest;
 
@@ -475,8 +509,8 @@ namespace Soulseek.Network
             var server = SoulseekClient.ServerConnection;
             await server.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-            await BroadcastAsync(new DistributedBranchLevel(branchInfo.BranchLevel).ToByteArray()).ConfigureAwait(false);
-            await BroadcastAsync(new DistributedBranchRoot(branchInfo.BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
+            await BroadcastMessageAsync(new DistributedBranchLevel(branchInfo.BranchLevel).ToByteArray()).ConfigureAwait(false);
+            await BroadcastMessageAsync(new DistributedBranchRoot(branchInfo.BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
 
             if (HaveParent)
             {

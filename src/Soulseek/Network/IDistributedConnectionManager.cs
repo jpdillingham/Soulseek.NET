@@ -33,7 +33,7 @@ namespace Soulseek.Network
 
         Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
 
-        Task BroadcastAsync(byte[] bytes);
+        Task BroadcastMessageAsync(byte[] bytes);
 
         /// <summary>
         ///     Removes and disposes the parent and all child connections.
