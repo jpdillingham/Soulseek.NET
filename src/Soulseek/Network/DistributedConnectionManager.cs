@@ -25,6 +25,9 @@ namespace Soulseek.Network
     using Soulseek.Network.Tcp;
     using SystemTimer = System.Timers.Timer;
 
+    /// <summary>
+    ///     Manages distributed <see cref="IMessageConnection"/> instances for the application.
+    /// </summary>
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
         public DistributedConnectionManager(
@@ -33,6 +36,10 @@ namespace Soulseek.Network
             IDiagnosticFactory diagnosticFactory = null)
         {
             SoulseekClient = soulseekClient;
+
+            ConcurrentChildrenConnectionLimit = SoulseekClient?.Options?.ConcurrentDistributedChildrenLimit
+                ?? new ClientOptions().ConcurrentDistributedChildrenLimit;
+
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
@@ -65,12 +72,17 @@ namespace Soulseek.Network
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Gets the number of allowed concurrent child connections.
+        /// </summary>
+        public int ConcurrentChildrenConnectionLimit { get; }
+
+        /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private ConcurrentDictionary<string, (string BranchRoot, int BranchLevel)> BranchInfo { get; } = new ConcurrentDictionary<string, (string BranchRoot, int BranchLevel)>();
-        private bool CanAcceptChildren => ChildConnections.Count < SoulseekClient.Options.ConcurrentDistributedChildrenLimit;
+        private bool CanAcceptChildren => ChildConnections.Count < ConcurrentChildrenConnectionLimit;
         private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; } = new ConcurrentDictionary<string, IMessageConnection>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -79,12 +91,12 @@ namespace Soulseek.Network
         private List<IMessageConnection> ParentCandidateConnections { get; } = new List<IMessageConnection>();
         private object ParentCandidateSyncRoot { get; } = new object();
         private IMessageConnection ParentConnection { get; set; }
+        private SystemTimer ParentWatchdogTimer { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
         private object StatusSyncRoot { get; } = new object();
         private SystemTimer StatusTimer { get; }
-        private SystemTimer ParentWatchdogTimer { get; }
 
         public async Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
@@ -92,7 +104,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) rejected: limit of {SoulseekClient.Options.ConcurrentDistributedChildrenLimit} reached");
+                Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) rejected: limit of {ConcurrentChildrenConnectionLimit} reached");
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -139,7 +151,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Child connection to {username} ({endpoint.Address}:{endpoint.Port}) rejected: limit of {SoulseekClient.Options.ConcurrentDistributedChildrenLimit} reached");
+                Diagnostic.Debug($"Child connection to {username} ({endpoint.Address}:{endpoint.Port}) rejected: limit of {ConcurrentChildrenConnectionLimit} reached");
                 tcpClient.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;

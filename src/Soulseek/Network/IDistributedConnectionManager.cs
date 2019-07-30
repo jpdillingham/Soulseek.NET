@@ -19,8 +19,19 @@ namespace Soulseek.Network
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
+    /// <summary>
+    ///     Manages distributed <see cref="IMessageConnection"/> instances for the application.
+    /// </summary>
     internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
     {
+        /// <summary>
+        ///     Gets the number of allowed concurrent child connections.
+        /// </summary>
+        int ConcurrentChildrenConnectionLimit { get; }
+
+        /// <summary>
+        ///     Gets a dictionary containing the pending connection solicitations.
+        /// </summary>
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
 
         Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
