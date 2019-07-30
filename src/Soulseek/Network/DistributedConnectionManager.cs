@@ -116,28 +116,41 @@ namespace Soulseek.Network
                 SoulseekClient.Options.DistributedConnectionOptions);
 
             connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
-            connection.Disconnected += ChildConnection_Disconnected;
 
-            Diagnostic.Debug($"Attempting child connection to {r.Username} ({r.IPAddress}:{r.Port})");
-
-            try
+            using (var cts = new CancellationTokenSource())
             {
-                await connection.ConnectAsync().ConfigureAwait(false);
+                void CancelWait(object sender, string message)
+                {
+                    cts.Cancel();
+                }
 
-                var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
+                Diagnostic.Debug($"Attempting child connection to {r.Username} ({r.IPAddress}:{r.Port})");
 
-                var request = new PierceFirewallRequest(r.Token);
-                await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                try
+                {
+                    await connection.ConnectAsync().ConfigureAwait(false);
 
-                await childDepthWait.ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                connection.Disconnected -= ChildConnection_Disconnected;
-                Diagnostic.Debug($"Discarded child connection to {r.Username} ({r.IPAddress}:{r.Port}): {ex.Message}");
-                connection.Dispose();
-                BranchInfo.TryRemove(r.Username, out _);
-                throw;
+                    Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) established.  Waiting for ChildDepth message.");
+
+                    var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), null, cts.Token);
+
+                    var request = new PierceFirewallRequest(r.Token);
+                    await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+
+                    connection.Disconnected += CancelWait;
+
+                    await childDepthWait.ConfigureAwait(false);
+
+                    connection.Disconnected += ChildConnection_Disconnected;
+                    connection.Disconnected -= CancelWait;
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Discarded child connection to {r.Username} ({r.IPAddress}:{r.Port}): {ex.Message}");
+                    connection.Dispose();
+                    BranchInfo.TryRemove(r.Username, out _);
+                    throw;
+                }
             }
 
             AddOrUpdateChildConnectionRecord(connection);
@@ -165,25 +178,36 @@ namespace Soulseek.Network
                 tcpClient);
 
             connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
-            connection.Disconnected += ChildConnection_Disconnected;
 
-            Diagnostic.Debug($"Accepted child connection to {username} ({endpoint.Address}:{endpoint.Port})");
-
-            var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
-
-            connection.StartReadingContinuously();
-
-            try
+            using (var cts = new CancellationTokenSource())
             {
-                await childDepthWait.ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                connection.Disconnected -= ChildConnection_Disconnected;
-                Diagnostic.Debug($"Discarded child connection to {username} ({connection.IPAddress}:{connection.Port}): {ex.Message}");
-                connection.Dispose();
-                BranchInfo.TryRemove(username, out _);
-                throw;
+                void CancelWait(object sender, string message)
+                {
+                    cts.Cancel();
+                }
+
+                Diagnostic.Debug($"Accepted child connection to {username} ({endpoint.Address}:{endpoint.Port})");
+
+                var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
+
+                connection.StartReadingContinuously();
+
+                try
+                {
+                    connection.Disconnected += CancelWait;
+
+                    await childDepthWait.ConfigureAwait(false);
+
+                    connection.Disconnected += ChildConnection_Disconnected;
+                    connection.Disconnected -= CancelWait;
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Discarded child connection to {username} ({connection.IPAddress}:{connection.Port}): {ex.Message}");
+                    connection.Dispose();
+                    BranchInfo.TryRemove(username, out _);
+                    throw;
+                }
             }
 
             AddOrUpdateChildConnectionRecord(connection);

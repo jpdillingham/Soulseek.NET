@@ -409,7 +409,7 @@ namespace Soulseek.Network.Tcp
 
                     if (bytesRead == 0)
                     {
-                        throw new ConnectionException($"Remote connection closed.");
+                        throw new ConnectionException($"Remote connection closed");
                     }
 
                     totalBytesRead += bytesRead;
