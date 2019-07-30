@@ -37,7 +37,7 @@ namespace Soulseek.Network
         {
             SoulseekClient = soulseekClient;
 
-            ConcurrentChildrenConnectionLimit = SoulseekClient?.Options?.ConcurrentDistributedChildrenLimit
+            ConcurrentChildLimit = SoulseekClient?.Options?.ConcurrentDistributedChildrenLimit
                 ?? new ClientOptions().ConcurrentDistributedChildrenLimit;
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
@@ -72,9 +72,29 @@ namespace Soulseek.Network
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Gets the current distributed branch level.
+        /// </summary>
+        public int BranchLevel => GetBranchInfo().BranchLevel;
+
+        /// <summary>
+        ///     Gets the current distributed branch root.
+        /// </summary>
+        public string BranchRoot => GetBranchInfo().BranchRoot;
+
+        /// <summary>
+        ///     Gets a value indicating whether child connections can be accepted.
+        /// </summary>
+        public bool CanAcceptChildren => ChildConnections.Count < ConcurrentChildLimit;
+
+        public IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Children => ChildConnections.Values.Select(c => (c.Username, c.IPAddress, c.Port)).ToList().AsReadOnly();
+
+        /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
-        public int ConcurrentChildrenConnectionLimit { get; }
+        public int ConcurrentChildLimit { get; }
+
+        public bool HasParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
+        public (string Username, IPAddress IPAddress, int Port) Parent => (ParentConnection.Username, ParentConnection.IPAddress, ParentConnection.Port);
 
         /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
@@ -82,12 +102,10 @@ namespace Soulseek.Network
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
         private ConcurrentDictionary<string, (string BranchRoot, int BranchLevel)> BranchInfo { get; } = new ConcurrentDictionary<string, (string BranchRoot, int BranchLevel)>();
-        private bool CanAcceptChildren => ChildConnections.Count < ConcurrentChildrenConnectionLimit;
         private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; } = new ConcurrentDictionary<string, IMessageConnection>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
-        private bool HaveParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
         private List<IMessageConnection> ParentCandidateConnections { get; } = new List<IMessageConnection>();
         private object ParentCandidateSyncRoot { get; } = new object();
         private IMessageConnection ParentConnection { get; set; }
@@ -104,7 +122,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) rejected: limit of {ConcurrentChildrenConnectionLimit} reached");
+                Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) rejected: limit of {ConcurrentChildLimit} reached");
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -164,7 +182,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Child connection to {username} ({endpoint.Address}:{endpoint.Port}) rejected: limit of {ConcurrentChildrenConnectionLimit} reached");
+                Diagnostic.Debug($"Child connection to {username} ({endpoint.Address}:{endpoint.Port}) rejected: limit of {ConcurrentChildLimit} reached");
                 tcpClient.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
@@ -234,7 +252,7 @@ namespace Soulseek.Network
 
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
-            if (HaveParent)
+            if (HasParent)
             {
                 return;
             }
@@ -367,7 +385,7 @@ namespace Soulseek.Network
 
         private (string BranchRoot, int BranchLevel) GetBranchInfo()
         {
-            if (HaveParent && BranchInfo.TryGetValue(ParentConnection.Username, out var info))
+            if (HasParent && BranchInfo.TryGetValue(ParentConnection.Username, out var info))
             {
                 return (info.BranchRoot, info.BranchLevel);
             }
@@ -525,7 +543,7 @@ namespace Soulseek.Network
             var branchInfo = GetBranchInfo();
             var payload = new List<byte>();
 
-            payload.AddRange(new HaveNoParents(!HaveParent).ToByteArray());
+            payload.AddRange(new HaveNoParents(!HasParent).ToByteArray());
             payload.AddRange(new ParentsIP(ParentConnection?.IPAddress ?? IPAddress.None).ToByteArray());
             payload.AddRange(new BranchLevel(branchInfo.BranchLevel).ToByteArray());
             payload.AddRange(new BranchRoot(branchInfo.BranchRoot ?? string.Empty).ToByteArray());
@@ -536,7 +554,7 @@ namespace Soulseek.Network
 
             lock (StatusSyncRoot)
             {
-                if (statusHash == StatusHash && HaveParent)
+                if (statusHash == StatusHash && HasParent)
                 {
                     return;
                 }
@@ -550,14 +568,14 @@ namespace Soulseek.Network
             await BroadcastMessageAsync(new DistributedBranchLevel(branchInfo.BranchLevel).ToByteArray()).ConfigureAwait(false);
             await BroadcastMessageAsync(new DistributedBranchRoot(branchInfo.BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
 
-            if (HaveParent)
+            if (HasParent)
             {
                 await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
             }
 
             var sb = new StringBuilder("Updated distributed status; ");
             sb
-                .Append($"HaveNoParents: {!HaveParent}, ")
+                .Append($"HaveNoParents: {!HasParent}, ")
                 .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
                 .Append($"BranchLevel: {branchInfo.BranchLevel}, BranchRoot: {branchInfo.BranchRoot ?? string.Empty}, ")
                 .Append($"ChildDepth: {ChildConnections.Count}, AcceptChildren: {CanAcceptChildren}");

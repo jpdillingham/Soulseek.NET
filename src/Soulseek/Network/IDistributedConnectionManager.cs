@@ -25,9 +25,39 @@ namespace Soulseek.Network
     internal interface IDistributedConnectionManager : IDisposable, IDiagnosticGenerator
     {
         /// <summary>
+        ///     Gets the current distributed branch level.
+        /// </summary>
+        int BranchLevel { get; }
+
+        /// <summary>
+        ///     Gets the current distributed branch root.
+        /// </summary>
+        string BranchRoot { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether child connections can be accepted.
+        /// </summary>
+        bool CanAcceptChildren { get; }
+
+        /// <summary>
+        ///     Gets the current list of child connections.
+        /// </summary>
+        IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Children { get; }
+
+        /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
-        int ConcurrentChildrenConnectionLimit { get; }
+        int ConcurrentChildLimit { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether a parent connection is established.
+        /// </summary>
+        bool HasParent { get; }
+
+        /// <summary>
+        ///     Gets the current parent connection.
+        /// </summary>
+        (string Username, IPAddress IPAddress, int Port) Parent { get; }
 
         /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
