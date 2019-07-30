@@ -56,7 +56,7 @@ namespace Soulseek.Network
                 Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout * 1000,
             };
 
-            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} seconds was reached; no broadcastable messages recieved.");
+            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} seconds was reached; no broadcastable messages recieved");
         }
 
         /// <summary>
@@ -92,7 +92,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Distributed child {r.Username} ({r.IPAddress}:{r.Port}) rejected; limit reached.");
+                Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) rejected: limit of {SoulseekClient.Options.ConcurrentDistributedChildrenLimit} reached");
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -106,34 +106,31 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
             connection.Disconnected += ChildConnection_Disconnected;
 
+            Diagnostic.Debug($"Attempting child connection to {r.Username} ({r.IPAddress}:{r.Port})");
+
             try
             {
                 await connection.ConnectAsync().ConfigureAwait(false);
-            }
-            catch
-            {
-                connection.Dispose();
-                throw;
-            }
 
-            var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
+                var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
 
-            var request = new PierceFirewallRequest(r.Token);
-            await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+                var request = new PierceFirewallRequest(r.Token);
+                await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
-            try
-            {
                 await childDepthWait.ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                connection.Disconnected -= ChildConnection_Disconnected;
+                Diagnostic.Debug($"Discarded child connection to {r.Username} ({r.IPAddress}:{r.Port}): {ex.Message}");
                 connection.Dispose();
+                BranchInfo.TryRemove(r.Username, out _);
                 throw;
             }
 
             AddOrUpdateChildConnectionRecord(connection);
 
-            Diagnostic.Debug($"Added distributed child {connection.Username} ({connection.IPAddress}:{connection.Port}) via indirect connection.  Total children: {ChildConnections.Count}");
+            Diagnostic.Info($"Added child {connection.Username} ({connection.IPAddress}:{connection.Port})");
         }
 
         public async Task AddChildConnectionAsync(string username, ITcpClient tcpClient)
@@ -142,7 +139,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Distributed child {username} ({endpoint.Address}:{endpoint.Port}) rejected; limit reached.");
+                Diagnostic.Debug($"Child connection to {username} ({endpoint.Address}:{endpoint.Port}) rejected: limit of {SoulseekClient.Options.ConcurrentDistributedChildrenLimit} reached");
                 tcpClient.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
@@ -158,6 +155,8 @@ namespace Soulseek.Network
             connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
             connection.Disconnected += ChildConnection_Disconnected;
 
+            Diagnostic.Debug($"Accepted child connection to {username} ({endpoint.Address}:{endpoint.Port})");
+
             var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
 
             connection.StartReadingContinuously();
@@ -166,15 +165,18 @@ namespace Soulseek.Network
             {
                 await childDepthWait.ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                connection.Disconnected -= ChildConnection_Disconnected;
+                Diagnostic.Debug($"Discarded child connection to {username} ({connection.IPAddress}:{connection.Port}): {ex.Message}");
                 connection.Dispose();
+                BranchInfo.TryRemove(username, out _);
                 throw;
             }
 
             AddOrUpdateChildConnectionRecord(connection);
 
-            Diagnostic.Debug($"Added distributed child {username} ({connection.IPAddress}:{connection.Port}) via direct connection.  Total children: {ChildConnections.Count}");
+            Diagnostic.Info($"Added child {username} ({connection.IPAddress}:{connection.Port})");
         }
 
         public void AddOrUpdateBranchLevel(string username, int level)
@@ -215,7 +217,7 @@ namespace Soulseek.Network
 
                 if (parentTask.IsFaulted)
                 {
-                    Diagnostic.Debug($"Failed to connect to any of the distributed parent candidates; notifying server.");
+                    Diagnostic.Warning($"Failed to connect to any of the distributed parent candidates");
                     await UpdateStatusAsync().ConfigureAwait(false);
                 }
 
@@ -224,7 +226,7 @@ namespace Soulseek.Network
                 ParentConnection.Disconnected += ParentConnection_Disconnected;
                 ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
 
-                Diagnostic.Debug($"Adopted distributed parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port})");
+                Diagnostic.Info($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port})");
 
                 cts.Cancel();
                 PendingSolicitationDictionary.Clear();
@@ -296,10 +298,10 @@ namespace Soulseek.Network
             {
                 // suppress deletion from dictionary and server child count update by removing this
                 v.Disconnected -= ChildConnection_Disconnected;
-                v.Disconnect("Replaced with a newer connection.");
+                v.Disconnect("Replaced with a newer connection");
                 v.Dispose();
 
-                Diagnostic.Debug($"Replaced existing distributed child connection for {connection.Username} ({connection.IPAddress}:{connection.Port}).");
+                Diagnostic.Debug($"Replaced existing child connection for {connection.Username} ({connection.IPAddress}:{connection.Port})");
                 return connection;
             });
         }
@@ -308,7 +310,7 @@ namespace Soulseek.Network
         {
             var connection = (IMessageConnection)sender;
             ChildConnections.TryRemove(connection.Username, out _);
-            Diagnostic.Debug($"Distributed child {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected: {message}.  Total children: {ChildConnections.Count}");
+            Diagnostic.Debug($"Child {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected: {message}");
             connection.Dispose();
 
             UpdateStatusAsync().ConfigureAwait(false);
@@ -465,7 +467,7 @@ namespace Soulseek.Network
         {
             var connection = (IMessageConnection)sender;
 
-            Diagnostic.Debug($"{connection.Context} connection to parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(message == null ? "." : $": {message}.")}");
+            Diagnostic.Debug($"Parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected: {message}");
             connection.Dispose();
         }
 
