@@ -52,7 +52,6 @@ namespace Soulseek.Network
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
             MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
-            MessageConnections = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
         }
 
         /// <summary>
@@ -61,9 +60,10 @@ namespace Soulseek.Network
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Gets the number of active peer message connections.
+        ///     Gets current list of peer message connections.
         /// </summary>
-        public int ActiveMessageConnections => MessageConnections.Count;
+        public IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> MessageConnections =>
+            MessageConnectionDictionary.Values.Select(r => (r.Connection.Username, r.Connection.IPAddress, r.Connection.Port)).ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the number of allowed concurrent peer message connections.
@@ -83,7 +83,8 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
-        private ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnections { get; set; }
+        private ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnectionDictionary { get; set; } =
+            new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
         private SemaphoreSlim MessageSemaphore { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
@@ -410,9 +411,9 @@ namespace Soulseek.Network
         {
             PendingSolicitationDictionary.Clear();
 
-            while (!MessageConnections.IsEmpty)
+            while (!MessageConnectionDictionary.IsEmpty)
             {
-                if (MessageConnections.TryRemove(MessageConnections.Keys.First(), out var value))
+                if (MessageConnectionDictionary.TryRemove(MessageConnectionDictionary.Keys.First(), out var value))
                 {
                     value.Semaphore?.Dispose();
                     value.Connection?.Dispose();
@@ -422,7 +423,7 @@ namespace Soulseek.Network
 
         private (SemaphoreSlim Semaphore, IMessageConnection Connection) AddOrUpdateMessageConnectionRecord(string username, IMessageConnection connection)
         {
-            return MessageConnections.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
+            return MessageConnectionDictionary.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
             {
                 // unassign the handler from the connection we are discarding to prevent it from removing a live connection.
                 if (v.Connection != null)
@@ -512,7 +513,7 @@ namespace Soulseek.Network
 
         private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username)
         {
-            if (MessageConnections.TryGetValue(username, out var record))
+            if (MessageConnectionDictionary.TryGetValue(username, out var record))
             {
                 return record;
             }
@@ -521,7 +522,7 @@ namespace Soulseek.Network
             await MessageSemaphore.WaitAsync().ConfigureAwait(false);
             Interlocked.Decrement(ref waitingMessageConnections);
 
-            record = MessageConnections.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
+            record = MessageConnectionDictionary.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
 
             if (record.Connection == null)
             {
@@ -592,7 +593,7 @@ namespace Soulseek.Network
 
         private void RemoveMessageConnectionRecord(IMessageConnection connection)
         {
-            if (MessageConnections.TryRemove(connection.Key.Username, out _))
+            if (MessageConnectionDictionary.TryRemove(connection.Key.Username, out _))
             {
                 Diagnostic.Debug($"Removing message connection to {connection.Key.Username} ({connection.IPAddress}:{connection.Port})");
 

@@ -26,14 +26,14 @@ namespace Soulseek.Network
     internal interface IPeerConnectionManager : IDisposable, IDiagnosticGenerator
     {
         /// <summary>
-        ///     Gets the number of active peer connections.
-        /// </summary>
-        int ActiveMessageConnections { get; }
-
-        /// <summary>
         ///     Gets the concurrent message connection limit.
         /// </summary>
         int ConcurrentMessageConnectionLimit { get; }
+
+        /// <summary>
+        ///     Gets current list of peer message connections.
+        /// </summary>
+        IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> MessageConnections { get; }
 
         /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
