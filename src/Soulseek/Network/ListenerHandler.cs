@@ -91,17 +91,17 @@ namespace Soulseek.Network
                     }
                     else
                     {
-                        //throw new ConnectionException($"Unknown PierceFirewall attempt with token {pierceFirewall.Token} from {connection.IPAddress}:{connection.Port}");
+                        throw new ConnectionException($"Unknown PierceFirewall attempt with token {pierceFirewall.Token} from {connection.IPAddress}:{connection.Port}");
                     }
                 }
                 else
                 {
-                    //throw new ConnectionException($"Unknown direct connection type from {connection.IPAddress}:{connection.Port}");
+                    throw new ConnectionException($"Unknown direct connection type from {connection.IPAddress}:{connection.Port}");
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Failed to initialize direct connection from {connection.IPAddress}:{connection.Port}: {ex.Message}");
+                Diagnostic.Debug($"Failed to initialize direct connection from {connection.IPAddress}:{connection.Port}: {ex.Message}");
                 connection.Disconnect(ex.Message);
                 connection.Dispose();
             }
