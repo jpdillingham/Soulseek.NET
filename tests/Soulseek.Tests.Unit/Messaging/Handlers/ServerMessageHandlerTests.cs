@@ -345,7 +345,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessage(null, msg);
 
             diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Level == DiagnosticLevel.Debug)
                 .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
                 .ToList();
 
