@@ -15,6 +15,7 @@ namespace Soulseek.Network
     using System;
     using System.Collections.Generic;
     using System.Net;
+    using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
@@ -64,17 +65,50 @@ namespace Soulseek.Network
         /// </summary>
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
 
-        Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
-
+        /// <summary>
+        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces
+        ///     the remote peer's firewall.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context.</returns>
         Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse);
 
-        void AddOrUpdateBranchLevel(string username, int level);
+        /// <summary>
+        ///     Adds a new child connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <returns>The operation context.</returns>
+        Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
 
-        void AddOrUpdateBranchRoot(string username, string root);
+        /// <summary>
+        ///     Add or update the distributed <paramref name="branchLevel"/> for the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user to update.</param>
+        /// <param name="branchLevel">The distributed branch level.</param>
+        void AddOrUpdateBranchLevel(string username, int branchLevel);
 
+        /// <summary>
+        ///     Add or update the distributed <paramref name="branchRoot"/> for the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user to update.</param>
+        /// <param name="branchRoot">The distributed branch root.</param>
+        void AddOrUpdateBranchRoot(string username, string branchRoot);
+
+        /// <summary>
+        ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.
+        /// </summary>
+        /// <param name="parentCandidates">The list of parent connection candidates provided by the server.</param>
+        /// <returns>The operation context.</returns>
         Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
 
-        Task BroadcastMessageAsync(byte[] bytes);
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to each of the connected child connections.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Removes and disposes the parent and all child connections.

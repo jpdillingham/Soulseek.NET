@@ -30,6 +30,12 @@ namespace Soulseek.Network
     /// </summary>
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DistributedConnectionManager"/> class.
+        /// </summary>
+        /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
+        /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public DistributedConnectionManager(
             SoulseekClient soulseekClient,
             IConnectionFactory connectionFactory = null,
@@ -86,6 +92,9 @@ namespace Soulseek.Network
         /// </summary>
         public bool CanAcceptChildren => ChildConnections.Count < ConcurrentChildLimit;
 
+        /// <summary>
+        ///     Gets the current list of child connections.
+        /// </summary>
         public IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Children => ChildConnections.Values.Select(c => (c.Username, c.IPAddress, c.Port)).ToList().AsReadOnly();
 
         /// <summary>
@@ -93,7 +102,14 @@ namespace Soulseek.Network
         /// </summary>
         public int ConcurrentChildLimit { get; }
 
+        /// <summary>
+        ///     Gets a value indicating whether a parent connection is established.
+        /// </summary>
         public bool HasParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
+
+        /// <summary>
+        ///     Gets the current parent connection.
+        /// </summary>
         public (string Username, IPAddress IPAddress, int Port) Parent => (ParentConnection.Username, ParentConnection.IPAddress, ParentConnection.Port);
 
         /// <summary>
@@ -116,6 +132,12 @@ namespace Soulseek.Network
         private object StatusSyncRoot { get; } = new object();
         private SystemTimer StatusTimer { get; }
 
+        /// <summary>
+        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces
+        ///     the remote peer's firewall.
+        /// </summary>
+        /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
+        /// <returns>The operation context.</returns>
         public async Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
             var r = connectToPeerResponse;
@@ -176,6 +198,12 @@ namespace Soulseek.Network
             Diagnostic.Info($"Added child {connection.Username} ({connection.IPAddress}:{connection.Port})");
         }
 
+        /// <summary>
+        ///     Adds a new child connection from an incoming connection.
+        /// </summary>
+        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <returns>The operation context.</returns>
         public async Task AddChildConnectionAsync(string username, ITcpClient tcpClient)
         {
             var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
@@ -233,23 +261,38 @@ namespace Soulseek.Network
             Diagnostic.Info($"Added child {username} ({connection.IPAddress}:{connection.Port})");
         }
 
-        public void AddOrUpdateBranchLevel(string username, int level)
+        /// <summary>
+        ///     Add or update the distributed <paramref name="branchLevel"/> for the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user to update.</param>
+        /// <param name="branchLevel">The distributed branch level.</param>
+        public void AddOrUpdateBranchLevel(string username, int branchLevel)
         {
             // it seems like maybe we should add one to this before sending it to our children?
-            BranchInfo.AddOrUpdate(username, (null, level), (k, v) =>
+            BranchInfo.AddOrUpdate(username, (null, branchLevel), (k, v) =>
             {
-                return (v.BranchRoot, level);
+                return (v.BranchRoot, branchLevel);
             });
         }
 
-        public void AddOrUpdateBranchRoot(string username, string root)
+        /// <summary>
+        ///     Add or update the distributed <paramref name="branchRoot"/> for the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user to update.</param>
+        /// <param name="branchRoot">The distributed branch root.</param>
+        public void AddOrUpdateBranchRoot(string username, string branchRoot)
         {
-            BranchInfo.AddOrUpdate(username, (root, 0), (k, v) =>
+            BranchInfo.AddOrUpdate(username, (branchRoot, 0), (k, v) =>
             {
-                return (root, v.BranchLevel);
+                return (branchRoot, v.BranchLevel);
             });
         }
 
+        /// <summary>
+        ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.
+        /// </summary>
+        /// <param name="parentCandidates">The list of parent connection candidates provided by the server.</param>
+        /// <returns>The operation context.</returns>
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
             if (HasParent)
@@ -302,7 +345,13 @@ namespace Soulseek.Network
             }
         }
 
-        public async Task BroadcastMessageAsync(byte[] bytes)
+        /// <summary>
+        ///     Asynchronously writes the specified bytes to each of the connected child connections.
+        /// </summary>
+        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
             ParentWatchdogTimer?.Reset();
 
@@ -310,7 +359,7 @@ namespace Soulseek.Network
             {
                 try
                 {
-                    await c.WriteAsync(bytes).ConfigureAwait(false);
+                    await c.WriteAsync(bytes, cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -335,6 +384,7 @@ namespace Soulseek.Network
         /// </summary>
         public void RemoveAndDisposeAll()
         {
+            PendingSolicitationDictionary.Clear();
             ParentConnection?.Dispose();
 
             while (!ChildConnections.IsEmpty)
@@ -397,15 +447,16 @@ namespace Soulseek.Network
         {
             void HandleFirstSearchRequest(object sender, byte[] message)
             {
+                var connection = (IMessageConnection)sender;
+
                 try
                 {
-                    var connection = (IMessageConnection)sender;
                     DistributedSearchRequest.FromByteArray(message);
-
                     SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                 }
-                catch
+                catch (Exception ex)
                 {
+                    SoulseekClient.Waiter.Throw(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key), ex);
                 }
             }
 

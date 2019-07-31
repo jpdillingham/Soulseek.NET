@@ -408,6 +408,8 @@ namespace Soulseek.Network
         /// </summary>
         public void RemoveAndDisposeAll()
         {
+            PendingSolicitationDictionary.Clear();
+
             while (!MessageConnections.IsEmpty)
             {
                 if (MessageConnections.TryRemove(MessageConnections.Keys.First(), out var value))
