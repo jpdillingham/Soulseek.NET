@@ -142,7 +142,7 @@ namespace Soulseek
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated.Invoke(sender, e);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
@@ -360,6 +360,7 @@ namespace Soulseek
             Listener?.Stop();
 
             PeerConnectionManager?.RemoveAndDisposeAll();
+            DistributedConnectionManager?.RemoveAndDisposeAll();
 
             Searches?.RemoveAndDisposeAll();
             Downloads?.RemoveAll();
@@ -766,6 +767,7 @@ namespace Soulseek
                 if (disposing)
                 {
                     PeerConnectionManager?.Dispose();
+                    DistributedConnectionManager?.Dispose();
                     Waiter?.Dispose();
                     ServerConnection?.Dispose();
                 }
