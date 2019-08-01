@@ -21,6 +21,7 @@ namespace Soulseek.Network
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
     using SystemTimer = System.Timers.Timer;
@@ -445,21 +446,6 @@ namespace Soulseek.Network
 
         private async Task<IMessageConnection> GetParentConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
-            void HandleFirstSearchRequest(object sender, byte[] message)
-            {
-                var connection = (IMessageConnection)sender;
-
-                try
-                {
-                    DistributedSearchRequest.FromByteArray(message);
-                    SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
-                }
-                catch (Exception ex)
-                {
-                    SoulseekClient.Waiter.Throw(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key), ex);
-                }
-            }
-
             using (var directCts = new CancellationTokenSource())
             using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
             using (var indirectCts = new CancellationTokenSource())
@@ -472,7 +458,7 @@ namespace Soulseek.Network
                 Task<IMessageConnection> task;
                 do
                 {
-                    task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
                     tasks.Remove(task);
                 }
                 while (task.IsFaulted && tasks.Count > 0);
@@ -484,15 +470,30 @@ namespace Soulseek.Network
                 (isDirect ? indirectCts : directCts).Cancel();
 
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
-                connection.MessageRead += HandleFirstSearchRequest;
 
                 if (!isDirect)
                 {
                     connection.StartReadingContinuously();
                 }
 
-                await SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key)).ConfigureAwait(false);
-                connection.MessageRead -= HandleFirstSearchRequest;
+                try
+                {
+                    var waits = new[]
+                    {
+                        SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key)),
+                        SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key)),
+                        SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key)),
+                    }.ToList();
+
+                    await Task.WhenAll(waits).ConfigureAwait(false);
+
+                    Diagnostic.Warning($"[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CODE] FROM {connection.Username}");
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"FAILED to get search request from {username}");
+                    throw;
+                }
 
                 return connection;
             }
