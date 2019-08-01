@@ -52,6 +52,7 @@ namespace Soulseek.Messaging.Handlers
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
 
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
 
                         try
@@ -82,11 +83,13 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.AddOrUpdateBranchLevel(connection.Username, branchLevel.Level);
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.AddOrUpdateBranchRoot(connection.Username, branchRoot.Username);
                         break;
 
