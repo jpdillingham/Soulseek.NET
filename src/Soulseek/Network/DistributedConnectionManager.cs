@@ -558,6 +558,11 @@ namespace Soulseek.Network
 
         private async Task UpdateStatusAsync()
         {
+            if (!SoulseekClient.State.HasFlag(SoulseekClientStates.Connected) || (!SoulseekClient.State.HasFlag(SoulseekClientStates.LoggedIn)))
+            {
+                return;
+            }
+
             // special thanks to @misterhat and livelook (https://github.com/misterhat/livelook) for guidance
             var payload = new List<byte>();
 
@@ -580,24 +585,31 @@ namespace Soulseek.Network
                 StatusHash = statusHash;
             }
 
-            await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
-
-            await BroadcastMessageAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
-            await BroadcastMessageAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
-
-            if (HasParent)
+            try
             {
-                await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
+                await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
+
+                await BroadcastMessageAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
+                await BroadcastMessageAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
+
+                if (HasParent)
+                {
+                    await ParentConnection.WriteAsync(new DistributedChildDepth(ChildConnections.Count).ToByteArray()).ConfigureAwait(false);
+                }
+
+                var sb = new StringBuilder("Updated distributed status; ");
+                sb
+                    .Append($"HaveNoParents: {!HasParent}, ")
+                    .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
+                    .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot ?? string.Empty}, ")
+                    .Append($"ChildDepth: {ChildConnections.Count}, AcceptChildren: {CanAcceptChildren}");
+
+                Diagnostic.Debug(sb.ToString());
             }
-
-            var sb = new StringBuilder("Updated distributed status; ");
-            sb
-                .Append($"HaveNoParents: {!HasParent}, ")
-                .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
-                .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot ?? string.Empty}, ")
-                .Append($"ChildDepth: {ChildConnections.Count}, AcceptChildren: {CanAcceptChildren}");
-
-            Diagnostic.Debug(sb.ToString());
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Failed to update distributed status: {ex.Message}");
+            }
         }
     }
 }
