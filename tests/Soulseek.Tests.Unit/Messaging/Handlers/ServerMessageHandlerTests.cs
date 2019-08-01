@@ -321,10 +321,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_DiagnosticGenerated_On_Ignored_ConnectToPeerResponse_F(string username, int token, IPAddress ip, int port)
         {
             var mocks = new Mocks();
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new ClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug));
+
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
-
-            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
             var ipBytes = ip.GetAddressBytes();
             Array.Reverse(ipBytes);
@@ -345,7 +346,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessage(null, msg);
 
             diagnostics = diagnostics
-                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Level == DiagnosticLevel.Debug)
                 .Where(d => d.Message.IndexOf("ignored", StringComparison.InvariantCultureIgnoreCase) > -1)
                 .ToList();
 

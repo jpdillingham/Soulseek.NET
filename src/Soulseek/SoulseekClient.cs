@@ -76,9 +76,11 @@ namespace Soulseek
             ClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
+            IDistributedConnectionManager distributedConnectionManager = null,
             IServerMessageHandler serverMessageHandler = null,
             IPeerMessageHandler peerMessageHandler = null,
             IListener listener = null,
+            IListenerHandler listenerHandler = null,
             IWaiter waiter = null,
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
@@ -115,11 +117,19 @@ namespace Soulseek
             ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
             ServerConnection.Disconnected += ServerConnection_Disconnected;
 
+            ListenerHandler = listenerHandler ?? new ListenerHandler(this);
+            ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
             Listener = listener;
 
             if (Listener == null && Options.ListenPort.HasValue)
             {
                 Listener = new Listener(Options.ListenPort.Value, connectionOptions: Options.IncomingConnectionOptions);
+            }
+
+            if (Listener != null)
+            {
+                Listener.Accepted += ListenerHandler.HandleConnection;
             }
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
@@ -130,6 +140,9 @@ namespace Soulseek
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
@@ -209,16 +222,14 @@ namespace Soulseek
         /// </summary>
         public string Username { get; private set; }
 
+        internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
+        internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
-
-        /// <summary>
-        ///     Gets the server message connection.
-        /// </summary>
         internal virtual IMessageConnection ServerConnection { get; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual IWaiter Waiter { get; }
@@ -349,6 +360,7 @@ namespace Soulseek
             Listener?.Stop();
 
             PeerConnectionManager?.RemoveAndDisposeAll();
+            DistributedConnectionManager?.RemoveAndDisposeAll();
 
             Searches?.RemoveAndDisposeAll();
             Downloads?.RemoveAll();
@@ -755,6 +767,7 @@ namespace Soulseek
                 if (disposing)
                 {
                     PeerConnectionManager?.Dispose();
+                    DistributedConnectionManager?.Dispose();
                     Waiter?.Dispose();
                     ServerConnection?.Dispose();
                 }

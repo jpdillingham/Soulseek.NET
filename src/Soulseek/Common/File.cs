@@ -44,7 +44,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of file <see cref="FileAttribute"/> s.
         /// </summary>
-        public int AttributeCount { get; internal set; }
+        public int AttributeCount { get; }
 
         /// <summary>
         ///     Gets the file attributes.

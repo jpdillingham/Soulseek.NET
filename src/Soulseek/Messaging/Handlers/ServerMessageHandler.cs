@@ -92,35 +92,52 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.FromByteArray(message);
-                        await SoulseekClient.PeerConnectionManager.SetDistributedParentConnectionAsync(netInfo.Parents).ConfigureAwait(false);
+                        await SoulseekClient.DistributedConnectionManager.AddParentConnectionAsync(netInfo.Parents).ConfigureAwait(false);
 
                         break;
 
                     case MessageCode.Server.ConnectToPeer:
-                        var connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
+                        ConnectToPeerResponse connectToPeerResponse = default;
 
-                        if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
+                        try
                         {
-                            // ensure that we are expecting at least one file from this user before we connect. the response
-                            // doesn't contain any other identifying information about the file.
-                            if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
-                            {
-                                var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
-                                var download = SoulseekClient.Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
+                            connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
 
-                                if (download != default(Transfer))
+                            if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
+                            {
+                                // ensure that we are expecting at least one file from this user before we connect. the response
+                                // doesn't contain any other identifying information about the file.
+                                if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
                                 {
-                                    SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
+                                    var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                                    var download = SoulseekClient.Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
+
+                                    if (download != default(Transfer))
+                                    {
+                                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
+                                    }
                                 }
+                                else
+                                {
+                                    throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored");
+                                }
+                            }
+                            else if (connectToPeerResponse.Type == Constants.ConnectionType.Peer)
+                            {
+                                await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                            }
+                            else if (connectToPeerResponse.Type == Constants.ConnectionType.Distributed)
+                            {
+                                await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                             }
                             else
                             {
-                                throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored.");
+                                throw new MessageException($"Unknown Connect To Peer connection type '{connectToPeerResponse.Type}'");
                             }
                         }
-                        else
+                        catch (Exception ex)
                         {
-                            await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
+                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse?.Username} ({connectToPeerResponse?.IPAddress}:{connectToPeerResponse.Port}): {ex.Message}");
                         }
 
                         break;

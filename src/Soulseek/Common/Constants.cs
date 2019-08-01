@@ -19,7 +19,12 @@ namespace Soulseek
             public const string Transfer = "Transfer";
             public const string DirectTransfer = "DirectTransfer";
             public const string IndirectTransfer = "IndirectTransfer";
-            public const string SolicitedConnection = "SolicitedConnection";
+            public const string SolicitedPeerConnection = "SolicitedPeerConnection";
+            public const string SolicitedDistributedConnection = "SolicitedDistributedConnection";
+            public const string SearchRequestMessage = "SearchRequestMessage";
+            public const string ChildDepthMessage = "ChildDepthMessage";
+            public const string BranchRootMessage = "BranchRootMessage";
+            public const string BranchLevelMessage = "BranchLevelMessage";
         }
 
         internal static class ConnectionType
@@ -27,6 +32,12 @@ namespace Soulseek
             public const string Peer = "P";
             public const string Tranfer = "F";
             public const string Distributed = "D";
+        }
+
+        internal static class ConnectionMethod
+        {
+            public const string Direct = "Direct";
+            public const string Indirect = "Indirect";
         }
     }
 }
