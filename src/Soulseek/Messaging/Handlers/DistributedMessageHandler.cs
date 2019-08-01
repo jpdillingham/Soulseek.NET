@@ -83,14 +83,26 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key));
-                        SoulseekClient.DistributedConnectionManager.AddOrUpdateBranchLevel(connection.Username, branchLevel.Level);
+
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key), branchLevel.Level);
+
+                        if ((connection.Username, connection.IPAddress, connection.Port) == SoulseekClient.DistributedConnectionManager.Parent)
+                        {
+                            SoulseekClient.DistributedConnectionManager.SetBranchLevel(branchLevel.Level);
+                        }
+
                         break;
 
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key));
-                        SoulseekClient.DistributedConnectionManager.AddOrUpdateBranchRoot(connection.Username, branchRoot.Username);
+
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key), branchRoot.Username);
+
+                        if ((connection.Username, connection.IPAddress, connection.Port) == SoulseekClient.DistributedConnectionManager.Parent)
+                        {
+                            SoulseekClient.DistributedConnectionManager.SetBranchRoot(branchRoot.Username);
+                        }
+
                         break;
 
                     case MessageCode.Distributed.ChildDepth:
