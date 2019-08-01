@@ -82,20 +82,6 @@ namespace Soulseek.Network
         Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
 
         /// <summary>
-        ///     Add or update the distributed <paramref name="branchLevel"/> for the specified <paramref name="username"/>.
-        /// </summary>
-        /// <param name="username">The username of the user to update.</param>
-        /// <param name="branchLevel">The distributed branch level.</param>
-        void AddOrUpdateBranchLevel(string username, int branchLevel);
-
-        /// <summary>
-        ///     Add or update the distributed <paramref name="branchRoot"/> for the specified <paramref name="username"/>.
-        /// </summary>
-        /// <param name="username">The username of the user to update.</param>
-        /// <param name="branchRoot">The distributed branch root.</param>
-        void AddOrUpdateBranchRoot(string username, string branchRoot);
-
-        /// <summary>
         ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.
         /// </summary>
         /// <param name="parentCandidates">The list of parent connection candidates provided by the server.</param>
@@ -114,5 +100,17 @@ namespace Soulseek.Network
         ///     Removes and disposes the parent and all child connections.
         /// </summary>
         void RemoveAndDisposeAll();
+
+        /// <summary>
+        ///     Sets the distributed <paramref name="branchLevel"/>.
+        /// </summary>
+        /// <param name="branchLevel">The distributed branch level.</param>
+        void SetBranchLevel(int branchLevel);
+
+        /// <summary>
+        ///     Sets the distributed <paramref name="branchRoot"/>.
+        /// </summary>
+        /// <param name="branchRoot">The distributed branch root.</param>
+        void SetBranchRoot(string branchRoot);
     }
 }

@@ -21,7 +21,6 @@ namespace Soulseek.Network
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
     using SystemTimer = System.Timers.Timer;
@@ -81,12 +80,12 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the current distributed branch level.
         /// </summary>
-        public int BranchLevel => GetBranchInfo().BranchLevel;
+        public int BranchLevel { get; private set; } = 0;
 
         /// <summary>
         ///     Gets the current distributed branch root.
         /// </summary>
-        public string BranchRoot => GetBranchInfo().BranchRoot;
+        public string BranchRoot { get; private set; } = string.Empty;
 
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
@@ -106,19 +105,19 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether a parent connection is established.
         /// </summary>
-        public bool HasParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
+        public bool HasParent => ParentConnection != null && ParentConnection?.State == ConnectionState.Connected;
 
         /// <summary>
         ///     Gets the current parent connection.
         /// </summary>
-        public (string Username, IPAddress IPAddress, int Port) Parent => (ParentConnection.Username, ParentConnection.IPAddress, ParentConnection.Port);
+        public (string Username, IPAddress IPAddress, int Port) Parent => 
+            ParentConnection == null ? (string.Empty, IPAddress.None, 0) : (ParentConnection.Username, ParentConnection.IPAddress, ParentConnection.Port);
 
         /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
-        private ConcurrentDictionary<string, (string BranchRoot, int BranchLevel)> BranchInfo { get; } = new ConcurrentDictionary<string, (string BranchRoot, int BranchLevel)>();
         private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; } = new ConcurrentDictionary<string, IMessageConnection>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -189,7 +188,6 @@ namespace Soulseek.Network
                 {
                     Diagnostic.Debug($"Discarded child connection to {r.Username} ({r.IPAddress}:{r.Port}): {ex.Message}");
                     connection.Dispose();
-                    BranchInfo.TryRemove(r.Username, out _);
                     throw;
                 }
             }
@@ -252,7 +250,6 @@ namespace Soulseek.Network
                 {
                     Diagnostic.Debug($"Discarded child connection to {username} ({connection.IPAddress}:{connection.Port}): {ex.Message}");
                     connection.Dispose();
-                    BranchInfo.TryRemove(username, out _);
                     throw;
                 }
             }
@@ -263,30 +260,12 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Add or update the distributed <paramref name="branchLevel"/> for the specified <paramref name="username"/>.
+        ///     Sets the distributed <paramref name="branchRoot"/>.
         /// </summary>
-        /// <param name="username">The username of the user to update.</param>
-        /// <param name="branchLevel">The distributed branch level.</param>
-        public void AddOrUpdateBranchLevel(string username, int branchLevel)
-        {
-            // it seems like maybe we should add one to this before sending it to our children?
-            BranchInfo.AddOrUpdate(username, (null, branchLevel), (k, v) =>
-            {
-                return (v.BranchRoot, branchLevel);
-            });
-        }
-
-        /// <summary>
-        ///     Add or update the distributed <paramref name="branchRoot"/> for the specified <paramref name="username"/>.
-        /// </summary>
-        /// <param name="username">The username of the user to update.</param>
         /// <param name="branchRoot">The distributed branch root.</param>
-        public void AddOrUpdateBranchRoot(string username, string branchRoot)
+        public void SetBranchRoot(string branchRoot)
         {
-            BranchInfo.AddOrUpdate(username, (branchRoot, 0), (k, v) =>
-            {
-                return (branchRoot, v.BranchLevel);
-            });
+            BranchRoot = branchRoot;
         }
 
         /// <summary>
@@ -304,7 +283,7 @@ namespace Soulseek.Network
             using (var cts = new CancellationTokenSource())
             {
                 var pendingConnectTasks = parentCandidates.Select(p => GetParentConnectionAsync(p.Username, p.IPAddress, p.Port, cts.Token)).ToList();
-                Task<IMessageConnection> parentTask;
+                Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> parentTask;
 
                 do
                 {
@@ -319,7 +298,7 @@ namespace Soulseek.Network
                     await UpdateStatusAsync().ConfigureAwait(false);
                 }
 
-                ParentConnection = await parentTask.ConfigureAwait(false);
+                (ParentConnection, BranchLevel, BranchRoot) = await parentTask.ConfigureAwait(false);
 
                 ParentConnection.Disconnected += ParentConnection_Disconnected;
                 ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
@@ -335,7 +314,6 @@ namespace Soulseek.Network
 
                     foreach (var connection in ParentCandidateConnections)
                     {
-                        BranchInfo.TryRemove(connection.Username, out _);
                         connection.Dispose();
                     }
 
@@ -397,6 +375,15 @@ namespace Soulseek.Network
             }
         }
 
+        /// <summary>
+        ///     Sets the distributed <paramref name="branchLevel"/>.
+        /// </summary>
+        /// <param name="branchLevel">The distributed branch level.</param>
+        public void SetBranchLevel(int branchLevel)
+        {
+            BranchLevel = branchLevel;
+        }
+
         private void AddOrUpdateChildConnectionRecord(IMessageConnection connection)
         {
             ChildConnections.AddOrUpdate(connection.Username, connection, (k, v) =>
@@ -434,17 +421,7 @@ namespace Soulseek.Network
             }
         }
 
-        private (string BranchRoot, int BranchLevel) GetBranchInfo()
-        {
-            if (HasParent && BranchInfo.TryGetValue(ParentConnection.Username, out var info))
-            {
-                return (info.BranchRoot, info.BranchLevel);
-            }
-
-            return (null, 0);
-        }
-
-        private async Task<IMessageConnection> GetParentConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
+        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken)
         {
             using (var directCts = new CancellationTokenSource())
             using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
@@ -476,15 +453,13 @@ namespace Soulseek.Network
                     connection.StartReadingContinuously();
                 }
 
+                var branchLevelWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key));
+                var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key));
+                var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
+
                 try
                 {
-                    var waits = new[]
-                    {
-                        SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key)),
-                        SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key)),
-                        SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key)),
-                    }.ToList();
-
+                    var waits = new[] { branchLevelWait, branchRootWait, searchWait }.ToList();
                     await Task.WhenAll(waits).ConfigureAwait(false);
 
                     Diagnostic.Warning($"[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CODE] FROM {connection.Username}");
@@ -495,7 +470,12 @@ namespace Soulseek.Network
                     throw;
                 }
 
-                return connection;
+                var branchLevel = await branchLevelWait.ConfigureAwait(false);
+                var branchRoot = await branchRootWait.ConfigureAwait(false);
+
+                Diagnostic.Warning($"^^^^^^^^^^^^^^^^^ GOT level {branchLevel} root {branchRoot} from {username}");
+
+                return (connection, branchLevel, branchRoot);
             }
         }
 
@@ -581,7 +561,8 @@ namespace Soulseek.Network
             var connection = (IMessageConnection)sender;
             Diagnostic.Info($"Parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(message == null ? "." : $": {message}")}");
             ParentConnection = null;
-            BranchInfo.Clear();
+            BranchLevel = 0;
+            BranchRoot = string.Empty;
 
             connection.Dispose();
 
@@ -591,13 +572,12 @@ namespace Soulseek.Network
         private async Task UpdateStatusAsync()
         {
             // special thanks to @misterhat and livelook (https://github.com/misterhat/livelook) for guidance
-            var branchInfo = GetBranchInfo();
             var payload = new List<byte>();
 
             payload.AddRange(new HaveNoParents(!HasParent).ToByteArray());
             payload.AddRange(new ParentsIP(ParentConnection?.IPAddress ?? IPAddress.None).ToByteArray());
-            payload.AddRange(new BranchLevel(branchInfo.BranchLevel).ToByteArray());
-            payload.AddRange(new BranchRoot(branchInfo.BranchRoot ?? string.Empty).ToByteArray());
+            payload.AddRange(new BranchLevel(ParentConnection == null ? 0 : BranchLevel).ToByteArray());
+            payload.AddRange(new BranchRoot(ParentConnection == null ? string.Empty : BranchRoot).ToByteArray());
             payload.AddRange(new ChildDepth(ChildConnections.Count).ToByteArray());
             payload.AddRange(new AcceptChildren(CanAcceptChildren).ToByteArray());
 
@@ -616,8 +596,8 @@ namespace Soulseek.Network
             var server = SoulseekClient.ServerConnection;
             await server.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-            await BroadcastMessageAsync(new DistributedBranchLevel(branchInfo.BranchLevel).ToByteArray()).ConfigureAwait(false);
-            await BroadcastMessageAsync(new DistributedBranchRoot(branchInfo.BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
+            await BroadcastMessageAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
+            await BroadcastMessageAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
 
             if (HasParent)
             {
@@ -628,7 +608,7 @@ namespace Soulseek.Network
             sb
                 .Append($"HaveNoParents: {!HasParent}, ")
                 .Append($"ParentsIP: {ParentConnection?.IPAddress ?? IPAddress.None}, ")
-                .Append($"BranchLevel: {branchInfo.BranchLevel}, BranchRoot: {branchInfo.BranchRoot ?? string.Empty}, ")
+                .Append($"BranchLevel: {BranchLevel}, BranchRoot: {BranchRoot ?? string.Empty}, ")
                 .Append($"ChildDepth: {ChildConnections.Count}, AcceptChildren: {CanAcceptChildren}");
 
             Diagnostic.Debug(sb.ToString());
