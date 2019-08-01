@@ -110,7 +110,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the current parent connection.
         /// </summary>
-        public (string Username, IPAddress IPAddress, int Port) Parent => 
+        public (string Username, IPAddress IPAddress, int Port) Parent =>
             ParentConnection == null ? (string.Empty, IPAddress.None, 0) : (ParentConnection.Username, ParentConnection.IPAddress, ParentConnection.Port);
 
         /// <summary>
@@ -159,16 +159,14 @@ namespace Soulseek.Network
 
             using (var cts = new CancellationTokenSource())
             {
-                void CancelWait(object sender, string message)
-                {
-                    cts.Cancel();
-                }
+                void CancelWait(object sender, string message) => cts.Cancel();
 
                 Diagnostic.Debug($"Attempting child connection to {r.Username} ({r.IPAddress}:{r.Port})");
 
                 try
                 {
                     await connection.ConnectAsync().ConfigureAwait(false);
+                    connection.Disconnected += CancelWait;
 
                     Diagnostic.Debug($"Child connection to {r.Username} ({r.IPAddress}:{r.Port}) established.  Waiting for ChildDepth message");
 
@@ -176,8 +174,6 @@ namespace Soulseek.Network
 
                     var request = new PierceFirewallRequest(r.Token);
                     await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
-
-                    connection.Disconnected += CancelWait;
 
                     await childDepthWait.ConfigureAwait(false);
 
@@ -231,6 +227,8 @@ namespace Soulseek.Network
                     cts.Cancel();
                 }
 
+                connection.Disconnected += CancelWait;
+
                 Diagnostic.Debug($"Accepted child connection to {username} ({endpoint.Address}:{endpoint.Port}).");
 
                 var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
@@ -239,7 +237,6 @@ namespace Soulseek.Network
 
                 try
                 {
-                    connection.Disconnected += CancelWait;
 
                     await childDepthWait.ConfigureAwait(false);
 
@@ -583,8 +580,7 @@ namespace Soulseek.Network
                 StatusHash = statusHash;
             }
 
-            var server = SoulseekClient.ServerConnection;
-            await server.WriteAsync(payload.ToArray()).ConfigureAwait(false);
+            await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
             await BroadcastMessageAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
             await BroadcastMessageAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
