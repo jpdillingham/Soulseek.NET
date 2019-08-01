@@ -31,6 +31,7 @@
         private static string SharedDirectory { get; set; }
 
         private SoulseekClient Client { get; }
+        private object ConsoleSyncRoot { get; } = new object();
 
         public Startup(IConfiguration configuration)
         {
@@ -100,11 +101,14 @@
             Client = new SoulseekClient(options: options);
             Client.DiagnosticGenerated += (e, args) =>
             {
-                if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
-                if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
+                lock (ConsoleSyncRoot)
+                {
+                    if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
+                    if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
 
-                Console.WriteLine($"[DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
-                Console.ResetColor();
+                    Console.WriteLine($"[DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+                    Console.ResetColor();
+                }
             };
 
             Client.TransferStateChanged += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
