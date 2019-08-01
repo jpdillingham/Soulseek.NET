@@ -443,7 +443,7 @@ namespace Soulseek.Network
                 var connection = await task.ConfigureAwait(false);
                 var isDirect = task == direct;
 
-                Diagnostic.Debug($"Parent connection to {username} ({ipAddress}:{port}) established.  Waiting for first SearchRequest message");
+                Diagnostic.Debug($"Parent connection to {username} ({ipAddress}:{port}) established.  Waiting for branch information and first SearchRequest message");
                 (isDirect ? indirectCts : directCts).Cancel();
 
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
@@ -457,23 +457,13 @@ namespace Soulseek.Network
                 var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key));
                 var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
 
-                try
-                {
-                    var waits = new[] { branchLevelWait, branchRootWait, searchWait }.ToList();
-                    await Task.WhenAll(waits).ConfigureAwait(false);
-
-                    Diagnostic.Warning($"[!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!CODE] FROM {connection.Username}");
-                }
-                catch (Exception ex)
-                {
-                    Diagnostic.Debug($"FAILED to get search request from {username}");
-                    throw;
-                }
+                var waits = new[] { branchLevelWait, branchRootWait, searchWait }.ToList();
+                await Task.WhenAll(waits).ConfigureAwait(false);
 
                 var branchLevel = await branchLevelWait.ConfigureAwait(false);
                 var branchRoot = await branchRootWait.ConfigureAwait(false);
 
-                Diagnostic.Warning($"^^^^^^^^^^^^^^^^^ GOT level {branchLevel} root {branchRoot} from {username}");
+                Diagnostic.Debug($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({ipAddress}:{port})");
 
                 return (connection, branchLevel, branchRoot);
             }
