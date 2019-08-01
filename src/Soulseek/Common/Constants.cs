@@ -23,6 +23,8 @@ namespace Soulseek
             public const string SolicitedDistributedConnection = "SolicitedDistributedConnection";
             public const string SearchRequestMessage = "SearchRequestMessage";
             public const string ChildDepthMessage = "ChildDepthMessage";
+            public const string BranchRootMessage = "BranchRootMessage";
+            public const string BranchLevelMessage = "BranchLevelMessage";
         }
 
         internal static class ConnectionType
