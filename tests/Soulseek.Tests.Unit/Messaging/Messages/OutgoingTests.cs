@@ -143,41 +143,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerInitRequest")]
-        [Fact(DisplayName = "PeerInitRequest instantiates properly")]
-        public void PeerInitRequest_Instantiates_Properly()
-        {
-            var name = Guid.NewGuid().ToString();
-            var token = new Random().Next();
-            var a = new PeerInit(name, "P", token);
-
-            Assert.Equal(name, a.Username);
-            Assert.Equal("P", a.TransferType);
-            Assert.Equal(token, a.Token);
-        }
-
-        [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PeerInitRequest")]
-        [Fact(DisplayName = "PeerInitRequest constructs the correct Message")]
-        public void PeerInitRequest_Constructs_The_Correct_Message()
-        {
-            var name = Guid.NewGuid().ToString();
-            var token = new Random().Next();
-            var a = new PeerInit(name, "P", token);
-            var msg = a.ToByteArray();
-
-            var reader = new MessageReader<MessageCode.Initialization>(msg);
-            var code = reader.ReadCode();
-
-            Assert.Equal(MessageCode.Initialization.PeerInit, code);
-            Assert.Equal(4 + 1 + 4 + name.Length + "P".Length + 8, msg.Length);
-
-            Assert.Equal(name, reader.ReadString());
-            Assert.Equal("P", reader.ReadString());
-            Assert.Equal(token, reader.ReadInteger());
-        }
-
-        [Trait("Category", "Instantiation")]
         [Trait("Request", "PeerSearchRequest")]
         [Theory(DisplayName = "PeerSearchRequest instantiates properly"), AutoData]
         public void PeerSearchRequest_Instantiates_Properly(string text, int token)
@@ -204,35 +169,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(text, reader.ReadString());
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Trait("Request", "PierceFirewallRequest")]
-        [Fact(DisplayName = "PierceFirewallRequest instantiates properly")]
-        public void PierceFirewallRequest_Instantiates_Properly()
-        {
-            var token = new Random().Next();
-            var a = new PierceFirewall(token);
-
-            Assert.Equal(token, a.Token);
-        }
-
-        [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PierceFirewallRequest")]
-        [Fact(DisplayName = "PierceFirewallRequest constructs the correct Message")]
-        public void PierceFirewallRequest_Constructs_The_Correct_Message()
-        {
-            var token = new Random().Next();
-            var a = new PierceFirewall(token);
-            var msg = a.ToByteArray();
-
-            var reader = new MessageReader<MessageCode.Initialization>(msg);
-            var code = reader.ReadCode();
-
-            Assert.Equal(MessageCode.Initialization.PierceFirewall, code);
-            Assert.Equal(4 + 1 + 4, msg.Length);
-
-            Assert.Equal(token, reader.ReadInteger());
         }
 
         [Trait("Category", "Instantiation")]

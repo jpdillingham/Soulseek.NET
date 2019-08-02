@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInitResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PeerInitTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -21,7 +21,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerInitResponseTests
+    public class PeerInitTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
@@ -94,6 +94,41 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(username, result.Username);
             Assert.Equal(type.ToString(CultureInfo.InvariantCulture), result.TransferType);
             Assert.Equal(token, result.Token);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PeerInitRequest")]
+        [Fact(DisplayName = "PeerInitRequest instantiates properly")]
+        public void PeerInitRequest_Instantiates_Properly()
+        {
+            var name = Guid.NewGuid().ToString();
+            var token = new Random().Next();
+            var a = new PeerInit(name, "P", token);
+
+            Assert.Equal(name, a.Username);
+            Assert.Equal("P", a.TransferType);
+            Assert.Equal(token, a.Token);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PeerInitRequest")]
+        [Fact(DisplayName = "PeerInitRequest constructs the correct Message")]
+        public void PeerInitRequest_Constructs_The_Correct_Message()
+        {
+            var name = Guid.NewGuid().ToString();
+            var token = new Random().Next();
+            var a = new PeerInit(name, "P", token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Initialization>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Initialization.PeerInit, code);
+            Assert.Equal(4 + 1 + 4 + name.Length + "P".Length + 8, msg.Length);
+
+            Assert.Equal(name, reader.ReadString());
+            Assert.Equal("P", reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
         }
     }
 }
