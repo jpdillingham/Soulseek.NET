@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var name = Guid.NewGuid().ToString();
             var token = new Random().Next();
-            var a = new PeerInitRequest(name, "P", token);
+            var a = new PeerInit(name, "P", token);
 
             Assert.Equal(name, a.Username);
             Assert.Equal("P", a.TransferType);
@@ -163,7 +163,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         {
             var name = Guid.NewGuid().ToString();
             var token = new Random().Next();
-            var a = new PeerInitRequest(name, "P", token);
+            var a = new PeerInit(name, "P", token);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Initialization>(msg);

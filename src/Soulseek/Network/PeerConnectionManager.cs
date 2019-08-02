@@ -297,7 +297,7 @@ namespace Soulseek.Network
                         {
                             // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled
                             // in the listener code to determine the connection type, so we don't need to handle it here.
-                            var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
+                            var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
                             await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                         }
 
@@ -394,7 +394,7 @@ namespace Soulseek.Network
                 {
                     // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled in the
                     // listener code to determine the connection type, so we don't need to handle it here.
-                    var request = new PeerInitRequest(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToByteArray();
+                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToByteArray();
                     await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                 }
 

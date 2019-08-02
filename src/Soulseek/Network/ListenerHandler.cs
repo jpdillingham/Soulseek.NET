@@ -48,7 +48,7 @@ namespace Soulseek.Network
                 var bodyBytes = await connection.ReadAsync(length).ConfigureAwait(false);
                 byte[] message = lengthBytes.Concat(bodyBytes).ToArray();
 
-                if (PeerInitResponse.TryFromByteArray(message, out var peerInit))
+                if (PeerInit.TryFromByteArray(message, out var peerInit))
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.

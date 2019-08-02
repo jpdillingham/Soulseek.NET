@@ -27,7 +27,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string username, string transferType, int token)
         {
-            var r = new PeerInitResponse(username, transferType, token);
+            var r = new PeerInit(username, transferType, token);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(transferType, r.TransferType);
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
             msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
-            var r = PeerInitResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PeerInit.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(Encoding.ASCII.GetBytes(type.ToString(CultureInfo.InvariantCulture))); // type
 
             // omit token
-            var r = PeerInitResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PeerInit.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -86,7 +86,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(token));
 
             // omit token
-            var r = PeerInitResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PeerInit.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.True(r);
             Assert.NotNull(result);
