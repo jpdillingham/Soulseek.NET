@@ -21,23 +21,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     public class OutgoingTests
     {
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "AcknowledgePrivateMessageRequest")]
-        [Fact(DisplayName = "AcknowledgePrivateMessageRequest instantiates properly")]
-        public void AcknowledgePrivateMessageRequest_Instantiates_Properly()
+        [Trait("Request", "AcknowledgePrivateMessage")]
+        [Fact(DisplayName = "AcknowledgePrivateMessage instantiates properly")]
+        public void AcknowledgePrivateMessage_Instantiates_Properly()
         {
             var num = new Random().Next();
-            var a = new AcknowledgePrivateMessageRequest(num);
+            var a = new AcknowledgePrivateMessage(num);
 
             Assert.Equal(num, a.Id);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "AcknowledgePrivateMessageRequest")]
-        [Fact(DisplayName = "AcknowledgePrivateMessageRequest constructs the correct Message")]
-        public void AcknowledgePrivateMessageRequest_Constructs_The_Correct_Message()
+        [Trait("Request", "AcknowledgePrivateMessage")]
+        [Fact(DisplayName = "AcknowledgePrivateMessage constructs the correct Message")]
+        public void AcknowledgePrivateMessage_Constructs_The_Correct_Message()
         {
             var num = new Random().Next();
-            var msg = new AcknowledgePrivateMessageRequest(num).ToByteArray();
+            var msg = new AcknowledgePrivateMessage(num).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
