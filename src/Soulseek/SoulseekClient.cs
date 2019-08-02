@@ -709,7 +709,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
             }
 
-            return ServerConnection.WriteAsync(new SetSharedCountsRequest(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
+            return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -720,14 +720,14 @@ namespace Soulseek
         /// <returns>The operation context.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        public Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set online status (currently: {State})");
             }
 
-            return ServerConnection.WriteAsync(new SetStatusRequest(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+            return ServerConnection.WriteAsync(new SetOnlineStatus(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1176,7 +1176,7 @@ namespace Soulseek
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPortRequest(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new SetListenPort(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
                     await ServerConnection.WriteAsync(new HaveNoParents(true).ToByteArray(), cancellationToken).ConfigureAwait(false);

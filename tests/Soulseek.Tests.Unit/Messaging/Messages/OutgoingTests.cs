@@ -290,21 +290,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "SetListenPortRequest")]
-        [Theory(DisplayName = "SetListenPortRequest instantiates properly"), AutoData]
-        public void SetListenPortRequest_Instantiates_Properly(int port)
+        [Trait("Request", "SetListenPort")]
+        [Theory(DisplayName = "SetListenPort instantiates properly"), AutoData]
+        public void SetListenPort_Instantiates_Properly(int port)
         {
-            var a = new SetListenPortRequest(port);
+            var a = new SetListenPort(port);
 
             Assert.Equal(port, a.Port);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "SetListenPortRequest")]
-        [Theory(DisplayName = "SetListenPortRequest constructs the correct message"), AutoData]
-        public void SetListenPortRequest_Constructs_The_Correct_Message(int port)
+        [Trait("Request", "SetListenPort")]
+        [Theory(DisplayName = "SetListenPort constructs the correct message"), AutoData]
+        public void SetListenPort_Constructs_The_Correct_Message(int port)
         {
-            var a = new SetListenPortRequest(port);
+            var a = new SetListenPort(port);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -344,22 +344,22 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "SetSharedCountsRequest")]
-        [Theory(DisplayName = "SetSharedCountsRequest instantiates properly"), AutoData]
-        public void SetSharedCountsRequest_Instantiates_Properly(int dirs, int files)
+        [Trait("Request", "SetSharedCounts")]
+        [Theory(DisplayName = "SetSharedCounts instantiates properly"), AutoData]
+        public void SetSharedCounts_Instantiates_Properly(int dirs, int files)
         {
-            var a = new SetSharedCountsRequest(dirs, files);
+            var a = new SetSharedCounts(dirs, files);
 
             Assert.Equal(dirs, a.DirectoryCount);
             Assert.Equal(files, a.FileCount);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "SetSharedCountsRequest")]
-        [Theory(DisplayName = "SetSharedCountsRequest constructs the correct message"), AutoData]
-        public void SetSharedCountsRequest_Constructs_The_Correct_Message(int dirs, int files)
+        [Trait("Request", "SetSharedCounts")]
+        [Theory(DisplayName = "SetSharedCounts constructs the correct message"), AutoData]
+        public void SetSharedCounts_Constructs_The_Correct_Message(int dirs, int files)
         {
-            var a = new SetSharedCountsRequest(dirs, files);
+            var a = new SetSharedCounts(dirs, files);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -371,21 +371,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "SetStatusRequest")]
-        [Theory(DisplayName = "SetStatusRequest instantiates properly"), AutoData]
-        public void SetStatusRequest_Instantiates_Properly(UserStatus status)
+        [Trait("Request", "SetOnlineStatus")]
+        [Theory(DisplayName = "SetOnlineStatus instantiates properly"), AutoData]
+        public void SetOnlineStatus_Instantiates_Properly(UserStatus status)
         {
-            var a = new SetStatusRequest(status);
+            var a = new SetOnlineStatus(status);
 
             Assert.Equal(status, a.Status);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "SetStatusRequest")]
-        [Theory(DisplayName = "SetStatusRequest constructs the correct message"), AutoData]
-        public void SetStatusRequest_Constructs_The_Correct_Message(UserStatus status)
+        [Trait("Request", "SetOnlineStatus")]
+        [Theory(DisplayName = "SetOnlineStatus constructs the correct message"), AutoData]
+        public void SetOnlineStatus_Constructs_The_Correct_Message(UserStatus status)
         {
-            var a = new SetStatusRequest(status);
+            var a = new SetOnlineStatus(status);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);

@@ -1,4 +1,4 @@
-﻿// <copyright file="SetSharedCountsRequest.cs" company="JP Dillingham">
+﻿// <copyright file="SetSharedCounts.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,14 +15,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Informs the server of the current number of shared directories and files.
     /// </summary>
-    internal sealed class SetSharedCountsRequest
+    internal sealed class SetSharedCounts
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetSharedCountsRequest"/> class.
+        ///     Initializes a new instance of the <see cref="SetSharedCounts"/> class.
         /// </summary>
         /// <param name="directoryCount">The number of shared directories.</param>
         /// <param name="fileCount">The number of shared files.</param>
-        public SetSharedCountsRequest(int directoryCount, int fileCount)
+        public SetSharedCounts(int directoryCount, int fileCount)
         {
             DirectoryCount = directoryCount;
             FileCount = fileCount;

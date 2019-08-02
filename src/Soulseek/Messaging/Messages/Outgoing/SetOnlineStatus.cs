@@ -1,4 +1,4 @@
-﻿// <copyright file="SetListenPortRequest.cs" company="JP Dillingham">
+﻿// <copyright file="SetOnlineStatus.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Logs in to the server.
+    ///     Informs the server of the current user status.
     /// </summary>
-    internal sealed class SetListenPortRequest
+    internal sealed class SetOnlineStatus
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetListenPortRequest"/> class.
+        ///     Initializes a new instance of the <see cref="SetOnlineStatus"/> class.
         /// </summary>
-        /// <param name="port">The port on which to listen.</param>
-        public SetListenPortRequest(int port)
+        /// <param name="status">The current status.</param>
+        public SetOnlineStatus(UserStatus status)
         {
-            Port = port;
+            Status = status;
         }
 
         /// <summary>
-        ///     Gets the port on which to listen.
+        ///     Gets the current status.
         /// </summary>
-        public int Port { get; }
+        public UserStatus Status { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SetListenPort)
-                .WriteInteger(Port)
+                .WriteCode(MessageCode.Server.SetOnlineStatus)
+                .WriteInteger((int)Status)
                 .Build();
         }
     }
