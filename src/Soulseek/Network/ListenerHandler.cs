@@ -74,7 +74,7 @@ namespace Soulseek.Network
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
                 }
-                else if (PierceFirewallResponse.TryFromByteArray(message, out var pierceFirewall))
+                else if (PierceFirewall.TryFromByteArray(message, out var pierceFirewall))
                 {
                     // this connection is the result of a ConnectToPeer request sent to the user, and the incoming message will
                     // contain the token that was provided in the request. Ensure this token is among those expected, and use it to

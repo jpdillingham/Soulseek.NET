@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(int token)
         {
-            var r = new PierceFirewallResponse(token);
+            var r = new PierceFirewall(token);
 
             Assert.Equal(token, r.Token);
         }
@@ -39,7 +39,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
             msg.Add((byte)MessageCode.Initialization.PeerInit);
 
-            var r = PierceFirewallResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PierceFirewall.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -55,7 +55,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
             // omit token
-            var r = PierceFirewallResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PierceFirewall.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -73,7 +73,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(token));
 
             // omit token
-            var r = PierceFirewallResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PierceFirewall.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.True(r);
             Assert.NotNull(result);

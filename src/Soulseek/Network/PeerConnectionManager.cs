@@ -219,7 +219,7 @@ namespace Soulseek.Network
                         throw;
                     }
 
-                    var request = new PierceFirewallRequest(connectToPeerResponse.Token).ToByteArray();
+                    var request = new PierceFirewall(connectToPeerResponse.Token).ToByteArray();
                     await connection.WriteAsync(request).ConfigureAwait(false);
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(connectToPeerResponse.Username, connection);
@@ -339,7 +339,7 @@ namespace Soulseek.Network
                 throw;
             }
 
-            var request = new PierceFirewallRequest(connectToPeerResponse.Token);
+            var request = new PierceFirewall(connectToPeerResponse.Token);
             await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
             var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);

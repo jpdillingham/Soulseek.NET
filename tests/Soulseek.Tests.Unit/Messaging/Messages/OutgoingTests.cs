@@ -212,7 +212,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PierceFirewallRequest_Instantiates_Properly()
         {
             var token = new Random().Next();
-            var a = new PierceFirewallRequest(token);
+            var a = new PierceFirewall(token);
 
             Assert.Equal(token, a.Token);
         }
@@ -223,7 +223,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void PierceFirewallRequest_Constructs_The_Correct_Message()
         {
             var token = new Random().Next();
-            var a = new PierceFirewallRequest(token);
+            var a = new PierceFirewall(token);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Initialization>(msg);

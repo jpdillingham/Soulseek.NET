@@ -172,7 +172,7 @@ namespace Soulseek.Network
 
                     var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), null, cts.Token);
 
-                    var request = new PierceFirewallRequest(r.Token);
+                    var request = new PierceFirewall(r.Token);
                     await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
                     await childDepthWait.ConfigureAwait(false);
