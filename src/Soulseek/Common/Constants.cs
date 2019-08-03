@@ -33,11 +33,5 @@ namespace Soulseek
             public const string Tranfer = "F";
             public const string Distributed = "D";
         }
-
-        internal static class ConnectionMethod
-        {
-            public const string Direct = "Direct";
-            public const string Indirect = "Indirect";
-        }
     }
 }

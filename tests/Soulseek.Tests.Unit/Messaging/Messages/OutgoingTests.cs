@@ -215,21 +215,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerPlaceInQueueRequest")]
-        [Theory(DisplayName = "PeerPlaceInQueueRequest instantiates properly"), AutoData]
-        public void PeerPlaceInQueueRequest_Instantiates_Properly(string filename)
+        [Trait("Request", "PlaceInQueueRequest")]
+        [Theory(DisplayName = "PlaceInQueueRequest instantiates properly"), AutoData]
+        public void PlaceInQueueRequest_Instantiates_Properly(string filename)
         {
-            var a = new PeerPlaceInQueueRequest(filename);
+            var a = new PlaceInQueueRequest(filename);
 
             Assert.Equal(filename, a.Filename);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PeerPlaceInQueueRequest")]
-        [Theory(DisplayName = "PeerPlaceInQueueRequest constructs the correct Message"), AutoData]
-        public void PeerPlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
+        [Trait("Request", "PlaceInQueueRequest")]
+        [Theory(DisplayName = "PlaceInQueueRequest constructs the correct Message"), AutoData]
+        public void PlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
         {
-            var a = new PeerPlaceInQueueRequest(filename);
+            var a = new PlaceInQueueRequest(filename);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);

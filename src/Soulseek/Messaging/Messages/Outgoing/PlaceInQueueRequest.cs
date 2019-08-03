@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerPlaceInQueueRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PlaceInQueueRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,13 +15,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the place of a file in a remote queue.
     /// </summary>
-    internal sealed class PeerPlaceInQueueRequest
+    internal sealed class PlaceInQueueRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerPlaceInQueueRequest"/> class.
+        ///     Initializes a new instance of the <see cref="PlaceInQueueRequest"/> class.
         /// </summary>
         /// <param name="filename">The filename to check.</param>
-        public PeerPlaceInQueueRequest(string filename)
+        public PlaceInQueueRequest(string filename)
         {
             Filename = filename;
         }

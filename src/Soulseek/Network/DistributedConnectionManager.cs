@@ -450,9 +450,9 @@ namespace Soulseek.Network
                     connection.StartReadingContinuously();
                 }
 
-                var branchLevelWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key));
-                var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key));
-                var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
+                var branchLevelWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Key));
+                var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Key));
+                var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Key));
 
                 var waits = new[] { branchLevelWait, branchRootWait, searchWait }.ToList();
                 await Task.WhenAll(waits).ConfigureAwait(false);
@@ -470,7 +470,6 @@ namespace Soulseek.Network
         {
             var connection = ConnectionFactory.GetMessageConnection(username, ipAddress, port, SoulseekClient.Options.DistributedConnectionOptions);
             connection.Disconnected += ParentCandidateConnection_Disconnected;
-            connection.Context = Constants.ConnectionMethod.Direct;
 
             try
             {
@@ -517,7 +516,6 @@ namespace Soulseek.Network
                         incomingConnection.HandoffTcpClient());
 
                     connection.Disconnected += ParentCandidateConnection_Disconnected;
-                    connection.Context = Constants.ConnectionMethod.Indirect;
 
                     lock (ParentCandidateSyncRoot)
                     {

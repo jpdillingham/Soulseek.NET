@@ -1075,7 +1075,7 @@ namespace Soulseek
                     Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.WriteAsync(new PeerPlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new PlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await responseWait.ConfigureAwait(false);
 
