@@ -74,5 +74,17 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(file, response.Filename);
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
+        public void ToByteArray_Returns_Expected_Data(string filename)
+        {
+            var m = new UploadFailed(filename).ToByteArray();
+
+            var r = new MessageReader<MessageCode.Peer>(m);
+
+            Assert.Equal(MessageCode.Peer.UploadFailed, r.ReadCode());
+            Assert.Equal(filename, r.ReadString());
+        }
     }
 }

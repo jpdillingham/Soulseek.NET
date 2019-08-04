@@ -15,6 +15,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using System;
     using System.Collections.Generic;
     using System.Linq;
+    using AutoFixture.Xunit2;
     using Soulseek.Compression;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
@@ -263,6 +264,57 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                     }
                 }
             }
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Fact(DisplayName = "ToByteArray returns the expected data")]
+        public void ToByteArray_Returns_Expected_Data()
+        {
+            var list = new List<File>()
+            {
+                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+            };
+
+            var dirs = new List<Directory>()
+            {
+                new Directory("dir1", 2, list),
+                new Directory("dir2", 2, list),
+            };
+
+            var r = new BrowseResponse(2, dirs);
+
+            var bytes = r.ToByteArray();
+
+            var m = new MessageReader<MessageCode.Peer>(bytes);
+            m.Decompress();
+
+            Assert.Equal(MessageCode.Peer.BrowseResponse, m.ReadCode());
+            Assert.Equal(2, m.ReadInteger());
+
+            // dir 1
+            Assert.Equal("dir1", m.ReadString());
+            Assert.Equal(2, m.ReadInteger());
+
+            // file 1
+            Assert.Equal(1, m.ReadByte()); // code
+            Assert.Equal("1", m.ReadString()); // name
+            Assert.Equal(1, m.ReadLong()); // length
+            Assert.Equal(".1", m.ReadString()); // ext
+            Assert.Equal(1, m.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitDepth, (FileAttributeType)m.ReadInteger());
+            Assert.Equal(1, m.ReadInteger());
+
+            // file 2
+            Assert.Equal(2, m.ReadByte()); // code
+            Assert.Equal("2", m.ReadString()); // name
+            Assert.Equal(2, m.ReadLong()); // length
+            Assert.Equal(".2", m.ReadString()); // ext
+            Assert.Equal(1, m.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitRate, (FileAttributeType)m.ReadInteger());
+            Assert.Equal(2, m.ReadInteger());
         }
 
         private MessageBuilder BuildDirectory(MessageBuilder builder, Directory dir)
