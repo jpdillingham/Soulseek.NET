@@ -96,23 +96,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, result.Token);
         }
 
-        [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerInitRequest")]
-        [Fact(DisplayName = "PeerInitRequest instantiates properly")]
-        public void PeerInitRequest_Instantiates_Properly()
-        {
-            var name = Guid.NewGuid().ToString();
-            var token = new Random().Next();
-            var a = new PeerInit(name, "P", token);
-
-            Assert.Equal(name, a.Username);
-            Assert.Equal("P", a.TransferType);
-            Assert.Equal(token, a.Token);
-        }
-
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PeerInitRequest")]
-        [Fact(DisplayName = "PeerInitRequest constructs the correct Message")]
+        [Fact(DisplayName = "PeerInit constructs the correct Message")]
         public void PeerInitRequest_Constructs_The_Correct_Message()
         {
             var name = Guid.NewGuid().ToString();

@@ -15,7 +15,7 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     The response received when an attempt to queue a file for downloading has failed.
+    ///     The sent or received when an attempt to queue a file for downloading has failed.
     /// </summary>
     internal sealed class UploadFailed
     {
