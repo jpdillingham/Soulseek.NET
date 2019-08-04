@@ -1295,12 +1295,14 @@ namespace Soulseek
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
+            (IPAddress IPAddress, int Port) address = default;
+
             try
             {
                 // in case the Upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
-                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+                address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
                     .ConfigureAwait(false);
@@ -1426,6 +1428,19 @@ namespace Soulseek
 
                 upload.State = TransferStates.Completed | upload.State;
                 UpdateState(upload.State);
+
+                if (!upload.State.HasFlag(TransferStates.Succeeded))
+                {
+                    // if the upload failed, fire and forget a message to the user informing them.
+                    Task.Run(async () =>
+                    {
+                        var messageConnection = await PeerConnectionManager
+                            .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+                            .ConfigureAwait(false);
+
+                        await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);
+                    }).Forget();
+                }
             }
         }
     }
