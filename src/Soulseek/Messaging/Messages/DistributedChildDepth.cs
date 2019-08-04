@@ -14,13 +14,23 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     Informs distributed parents of a child's child depth.
+    /// </summary>
     internal sealed class DistributedChildDepth
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DistributedChildDepth"/> class.
+        /// </summary>
+        /// <param name="depth">The current depth of the child.</param>
         public DistributedChildDepth(int depth)
         {
             Depth = depth;
         }
 
+        /// <summary>
+        ///     Gets the current depth of the child.
+        /// </summary>
         public int Depth { get; }
 
         /// <summary>
