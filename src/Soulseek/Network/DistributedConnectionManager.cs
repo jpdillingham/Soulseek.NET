@@ -566,8 +566,8 @@ namespace Soulseek.Network
 
             payload.AddRange(new HaveNoParents(!HasParent).ToByteArray());
             payload.AddRange(new ParentsIP(ParentConnection?.IPAddress ?? IPAddress.None).ToByteArray());
-            payload.AddRange(new BranchLevel(ParentConnection == null ? 0 : BranchLevel).ToByteArray());
-            payload.AddRange(new BranchRoot(ParentConnection == null ? string.Empty : BranchRoot).ToByteArray());
+            payload.AddRange(new BranchLevel(!HasParent ? 0 : BranchLevel).ToByteArray());
+            payload.AddRange(new BranchRoot(!HasParent ? string.Empty : BranchRoot).ToByteArray());
             payload.AddRange(new ChildDepth(ChildConnections.Count).ToByteArray());
             payload.AddRange(new AcceptChildren(CanAcceptChildren).ToByteArray());
 
