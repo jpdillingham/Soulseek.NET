@@ -1,4 +1,4 @@
-﻿// <copyright file="UploadFailedResponse.cs" company="JP Dillingham">
+﻿// <copyright file="UploadFailed.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,13 +17,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response received when an attempt to queue a file for downloading has failed.
     /// </summary>
-    internal sealed class UploadFailedResponse
+    internal sealed class UploadFailed
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UploadFailedResponse"/> class.
+        ///     Initializes a new instance of the <see cref="UploadFailed"/> class.
         /// </summary>
         /// <param name="filename">The filename which failed to be queued.</param>
-        public UploadFailedResponse(string filename)
+        public UploadFailed(string filename)
         {
             Filename = filename;
         }
@@ -34,11 +34,11 @@ namespace Soulseek.Messaging.Messages
         public string Filename { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="UploadFailedResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UploadFailed"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static UploadFailedResponse FromByteArray(byte[] bytes)
+        public static UploadFailed FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
@@ -50,7 +50,19 @@ namespace Soulseek.Messaging.Messages
 
             var filename = reader.ReadString();
 
-            return new UploadFailedResponse(filename);
+            return new UploadFailed(filename);
+        }
+
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Peer.UploadFailed)
+                .WriteString(Filename)
+                .Build();
         }
     }
 }

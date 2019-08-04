@@ -163,7 +163,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.UploadFailed:
-                        var uploadFailedResponse = UploadFailedResponse.FromByteArray(message);
+                        var uploadFailedResponse = UploadFailed.FromByteArray(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);

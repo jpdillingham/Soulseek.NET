@@ -1,4 +1,4 @@
-﻿// <copyright file="UploadFailedResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="UploadFailedTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,15 +18,15 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class UploadFailedResponseTests
+    public class UploadFailedTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string file)
         {
-            UploadFailedResponse response = null;
+            UploadFailed response = null;
 
-            var ex = Record.Exception(() => response = new UploadFailedResponse(file));
+            var ex = Record.Exception(() => response = new UploadFailed(file));
 
             Assert.Null(ex);
 
@@ -41,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => UploadFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UploadFailed.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -55,7 +55,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.UploadFailed)
                 .Build();
 
-            var ex = Record.Exception(() => UploadFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UploadFailed.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(file)
                 .Build();
 
-            var response = UploadFailedResponse.FromByteArray(msg);
+            var response = UploadFailed.FromByteArray(msg);
 
             Assert.Equal(file, response.Filename);
         }
