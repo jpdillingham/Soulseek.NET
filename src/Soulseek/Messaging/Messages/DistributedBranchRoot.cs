@@ -14,13 +14,23 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     Informs distributed children of the current branch root.
+    /// </summary>
     internal sealed class DistributedBranchRoot
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DistributedBranchRoot"/> class.
+        /// </summary>
+        /// <param name="username">The username of the current branch root.</param>
         public DistributedBranchRoot(string username)
         {
             Username = username;
         }
 
+        /// <summary>
+        ///     Gets the username of the current branch root.
+        /// </summary>
         public string Username { get; }
 
         /// <summary>
