@@ -280,17 +280,17 @@ namespace Soulseek.Network
                             task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
                             tasks.Remove(task);
                         }
-                        while (task.IsFaulted && tasks.Count > 0);
+                        while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
 
-                        if (task.IsFaulted)
+                        if (task.Status != TaskStatus.RanToCompletion)
                         {
-                            throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
+                            throw new ConnectionException($"Failed to establish a message connection to {username} ({ipAddress}:{port})");
                         }
 
                         connection = await task.ConfigureAwait(false);
                         var isDirect = task == direct;
 
-                        Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
+                        Diagnostic.Debug($"{connection.Context} message connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
                         (isDirect ? indirectCts : directCts).Cancel();
 
                         if (isDirect)
@@ -303,7 +303,7 @@ namespace Soulseek.Network
 
                         (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
 
-                        Diagnostic.Debug($"Unsolicited {(isDirect ? "direct" : "indirect")} message connection to {username} ({ipAddress}:{port}) established.");
+                        Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipAddress}:{port}) established.");
                         return connection;
                     }
                 }
@@ -327,7 +327,8 @@ namespace Soulseek.Network
                 connectToPeerResponse.Port,
                 SoulseekClient.Options.TransferConnectionOptions);
 
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
+            connection.Context = Constants.ConnectionMethod.Direct;
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited direct transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
 
             try
             {
@@ -377,9 +378,9 @@ namespace Soulseek.Network
                     task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
                     tasks.Remove(task);
                 }
-                while (task.IsFaulted && tasks.Count > 0);
+                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
 
-                if (task.IsFaulted)
+                if (task.Status != TaskStatus.RanToCompletion)
                 {
                     throw new ConnectionException($"Failed to establish a transfer connection to {username} ({ipAddress}:{port})");
                 }
@@ -387,7 +388,7 @@ namespace Soulseek.Network
                 var connection = await task.ConfigureAwait(false);
                 var isDirect = task == direct;
 
-                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
+                Diagnostic.Debug($"{connection.Context} transfer connection to {username} ({ipAddress}:{port}) established; cancelling {(isDirect ? "indirect" : "direct")} connection.");
                 (isDirect ? indirectCts : directCts).Cancel();
 
                 if (isDirect)
@@ -400,6 +401,8 @@ namespace Soulseek.Network
 
                 // send our token (the remote token from the other side's perspective)
                 await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
+
+                Diagnostic.Debug($"Unsolicited {connection.Context} transfer connection to {username} ({ipAddress}:{port}) established.");
                 return connection;
             }
         }
@@ -458,6 +461,7 @@ namespace Soulseek.Network
                 port,
                 SoulseekClient.Options.PeerConnectionOptions);
 
+            connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
             connection.Disconnected += MessageConnection_Disconnected;
 
@@ -497,6 +501,7 @@ namespace Soulseek.Network
                         SoulseekClient.Options.PeerConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
+                    connection.Context = Constants.ConnectionMethod.Indirect;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
                     connection.Disconnected += MessageConnection_Disconnected;
 
@@ -536,6 +541,7 @@ namespace Soulseek.Network
         {
             var connection = ConnectionFactory.GetConnection(ipAddress, port, SoulseekClient.Options.TransferConnectionOptions);
 
+            connection.Context = Constants.ConnectionMethod.Direct;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound direct transfer connection for token {token} ({ipAddress}:{port}) disconnected.");
 
             try
@@ -573,6 +579,7 @@ namespace Soulseek.Network
                         SoulseekClient.Options.TransferConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
+                    connection.Context = Constants.ConnectionMethod.Indirect;
                     connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound indirect transfer connection for token {token} ({incomingConnection.IPAddress}:{incomingConnection.Port}) disconnected.");
 
                     return connection;
