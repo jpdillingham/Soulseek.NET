@@ -1,4 +1,4 @@
-﻿// <copyright file="QueueDownloadRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PingRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,6 +14,9 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     A distributed ping request.
+    /// </summary>
     internal sealed class PingRequest
     {
         /// <summary>
