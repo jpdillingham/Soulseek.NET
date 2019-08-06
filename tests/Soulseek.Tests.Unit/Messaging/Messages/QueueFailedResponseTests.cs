@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
+    using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -82,6 +83,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(file, response.Filename);
             Assert.Equal(reason, response.Message);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
+        public void ToByteArray_Returns_Expected_Data(string filename, string message)
+        {
+            var m = new QueueFailedResponse(filename, message).ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(m);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.QueueFailed, code);
+            Assert.Equal(4 + 4 + 4 + filename.Length + 4 + message.Length, m.Length);
+            Assert.Equal(filename, reader.ReadString());
+            Assert.Equal(message, reader.ReadString());
         }
     }
 }

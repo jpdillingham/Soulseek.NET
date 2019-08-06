@@ -101,6 +101,44 @@ namespace Soulseek.Messaging.Messages
         private IEnumerable<File> FileList { get; }
 
         /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchResponse)
+                .WriteString(Username)
+                .WriteInteger(Token)
+                .WriteInteger(FileCount);
+
+            foreach (var file in Files)
+            {
+                builder
+                    .WriteByte((byte)file.Code)
+                    .WriteString(file.Filename)
+                    .WriteLong(file.Size)
+                    .WriteString(file.Extension)
+                    .WriteInteger(file.AttributeCount);
+
+                foreach (var attribute in file.Attributes)
+                {
+                    builder
+                        .WriteInteger((int)attribute.Type)
+                        .WriteInteger(attribute.Value);
+                }
+            }
+
+            builder
+                .WriteByte((byte)FreeUploadSlots)
+                .WriteInteger(UploadSpeed)
+                .WriteLong(QueueLength);
+
+            builder.Compress();
+            return builder.Build();
+        }
+
+        /// <summary>
         ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
@@ -155,44 +193,6 @@ namespace Soulseek.Messaging.Messages
             }
 
             return files.AsReadOnly();
-        }
-
-        /// <summary>
-        ///     Constructs a <see cref="byte"/> array from this message.
-        /// </summary>
-        /// <returns>The constructed byte array.</returns>
-        public byte[] ToByteArray()
-        {
-            var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.SearchResponse)
-                .WriteString(Username)
-                .WriteInteger(Token)
-                .WriteInteger(FileCount);
-
-            foreach (var file in Files)
-            {
-                builder
-                    .WriteByte((byte)file.Code)
-                    .WriteString(file.Filename)
-                    .WriteLong(file.Size)
-                    .WriteString(file.Extension)
-                    .WriteInteger(file.AttributeCount);
-
-                foreach (var attribute in file.Attributes)
-                {
-                    builder
-                        .WriteInteger((int)attribute.Type)
-                        .WriteInteger(attribute.Value);
-                }
-            }
-
-            builder
-                .WriteByte((byte)FreeUploadSlots)
-                .WriteInteger(UploadSpeed)
-                .WriteLong(QueueLength);
-
-            builder.Compress();
-            return builder.Build();
         }
     }
 }
