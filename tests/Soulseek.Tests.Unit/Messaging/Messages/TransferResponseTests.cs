@@ -101,6 +101,22 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
+        [Theory(DisplayName = "Parse returns expected data when upload allowed"), AutoData]
+        public void Parse_Returns_Expected_Data_When_Upload_Allowed(int token)
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.TransferResponse)
+                .WriteInteger(token)
+                .WriteByte(0x1)
+                .Build();
+
+            var response = TransferResponse.FromByteArray(msg);
+
+            Assert.Equal(token, response.Token);
+            Assert.True(response.Allowed);
+        }
+
+        [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data when disallowed"), AutoData]
         public void Parse_Returns_Expected_Data_When_Disallowed(int token, string message)
         {
@@ -156,6 +172,26 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(0, reader.ReadByte());
             Assert.Equal(message, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray constructs the correct Message"), AutoData]
+        public void ToByteArray_Constructs_The_Correct_Message(int token)
+        {
+            var a = new TransferResponse(token);
+            var msg = a.ToByteArray();
+
+            var code = new MessageReader<MessageCode.Peer>(msg).ReadCode();
+
+            Assert.Equal(MessageCode.Peer.TransferResponse, code);
+
+            // length + code + token + allowed + message len + message
+            Assert.Equal(4 + 4 + 4 + 1 + 8, msg.Length);
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(1, reader.ReadByte());
         }
     }
 }
