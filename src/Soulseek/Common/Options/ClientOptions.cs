@@ -31,7 +31,7 @@ namespace Soulseek
             (u, i, p, f) => { return Task.CompletedTask; };
 
         private readonly Func<string, IPAddress, int, Task<UserInfoResponse>> defaultUserInfoResponse =
-            (u, i, p) => Task.FromResult(new UserInfoResponse(string.Empty, false, null, 0, 0, false));
+            (u, i, p) => Task.FromResult(new UserInfoResponse(string.Empty, null, 0, 0, false));
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="ClientOptions"/> class.

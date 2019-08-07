@@ -22,16 +22,16 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        public void Instantiates_With_The_Given_Data(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
             UserInfoResponse response = null;
 
-            var ex = Record.Exception(() => response = new UserInfoResponse(description, hasPicture, picture, uploadSlots, queueLength, hasFreeSlot));
+            var ex = Record.Exception(() => response = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeSlot));
 
             Assert.Null(ex);
 
             Assert.Equal(description, response.Description);
-            Assert.Equal(hasPicture, response.HasPicture);
+            Assert.True(response.HasPicture);
             Assert.Equal(picture, response.Picture);
             Assert.Equal(uploadSlots, response.UploadSlots);
             Assert.Equal(queueLength, response.QueueLength);
@@ -112,6 +112,59 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(uploadSlots, response.UploadSlots);
             Assert.Equal(queueLength, response.QueueLength);
             Assert.Equal(hasFreeSlot, response.HasFreeUploadSlot);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data with picture"), AutoData]
+        public void ToByteArray_Returns_Expected_Data_With_Picture(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
+        {
+            var r = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeSlot).ToByteArray();
+
+            var m = new MessageReader<MessageCode.Peer>(r);
+            var code = m.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.InfoResponse, code);
+            Assert.Equal(description, m.ReadString());
+            Assert.True(m.ReadByte() == 1);
+            Assert.Equal(picture.Length, m.ReadInteger());
+            Assert.Equal(picture, m.ReadBytes(picture.Length));
+            Assert.Equal(uploadSlots, m.ReadInteger());
+            Assert.Equal(queueLength, m.ReadInteger());
+            Assert.Equal(hasFreeSlot, m.ReadByte() == 1);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data with no picture"), AutoData]
+        public void ToByteArray_Returns_Expected_Data_With_No_Picture(string description, int uploadSlots, int queueLength, bool hasFreeSlot)
+        {
+            var r = new UserInfoResponse(description, uploadSlots, queueLength, hasFreeSlot).ToByteArray();
+
+            var m = new MessageReader<MessageCode.Peer>(r);
+            var code = m.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.InfoResponse, code);
+            Assert.Equal(description, m.ReadString());
+            Assert.False(m.ReadByte() == 1); // no picture
+            Assert.Equal(uploadSlots, m.ReadInteger());
+            Assert.Equal(queueLength, m.ReadInteger());
+            Assert.Equal(hasFreeSlot, m.ReadByte() == 1);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data with no free slot"), AutoData]
+        public void ToByteArray_Returns_Expected_Data_With_No_Free_Slot(string description, int uploadSlots, int queueLength)
+        {
+            var r = new UserInfoResponse(description, uploadSlots, queueLength, false).ToByteArray();
+
+            var m = new MessageReader<MessageCode.Peer>(r);
+            var code = m.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.InfoResponse, code);
+            Assert.Equal(description, m.ReadString());
+            Assert.False(m.ReadByte() == 1); // no picture
+            Assert.Equal(uploadSlots, m.ReadInteger());
+            Assert.Equal(queueLength, m.ReadInteger());
+            Assert.False(m.ReadByte() == 1);
         }
     }
 }

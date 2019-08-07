@@ -67,7 +67,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync returns expected info"), AutoData]
         public async Task GetUserInfoAsync_Returns_Expected_Info(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new UserInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeSlot);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -106,7 +106,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserInfoAsync throws PeerInfoException on throw"), AutoData]
         public async Task GetUserInfoAsync_Throws_PeerInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var result = new UserInfoResponse(description, true, picture, uploadSlots, queueLength, hasFreeSlot);
+            var result = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeSlot);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserInfoResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
