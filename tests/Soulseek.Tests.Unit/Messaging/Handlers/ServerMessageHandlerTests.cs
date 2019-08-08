@@ -479,6 +479,39 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles NetInfo"), AutoData]
+        public void Handles_NetInfo(List<(string Username, IPAddress IPAddress, int Port)> parents)
+        {
+            IEnumerable<(string Username, IPAddress IPAddress, int Port)> result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.DistributedConnectionManager
+                .Setup(m => m.AddParentConnectionAsync(It.IsAny<IEnumerable<(string Username, IPAddress IPAddress, int Port)>>()))
+                .Callback<IEnumerable<(string Username, IPAddress IPAddress, int Port)>>(list => result = list);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NetInfo)
+                .WriteInteger(parents.Count);
+
+            foreach (var parent in parents)
+            {
+                builder.WriteString(parent.Username);
+
+                var ipBytes = parent.IPAddress.GetAddressBytes();
+                Array.Reverse(ipBytes);
+
+                builder.WriteBytes(ipBytes);
+                builder.WriteInteger(parent.Port);
+            }
+
+            var message = builder.Build();
+
+            handler.HandleMessage(null, message);
+
+            Assert.Equal(parents, result);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
@@ -528,6 +561,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
                 Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
                 Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
+                Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
                 Client.Setup(m => m.Downloads).Returns(Downloads);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -537,6 +571,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             public Mock<SoulseekClient> Client { get; }
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
+            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
