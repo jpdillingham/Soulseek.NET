@@ -354,6 +354,43 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on unknown ConnectToPeerResponse 'X'"), AutoData]
+        public void Raises_DiagnosticGenerated_On_Ignored_ConnectToPeerResponse_X(string username, int token, IPAddress ip, int port)
+        {
+            var mocks = new Mocks();
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new ClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug));
+
+            var handler = new ServerMessageHandler(
+                mocks.Client.Object);
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteString(username)
+                .WriteString("X")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+
+            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+
+            handler.HandleMessage(null, msg);
+
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Debug)
+                .Where(d => d.Message.IndexOf("unknown", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
+
+            Assert.Single(diagnostics);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
         public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
         {
@@ -391,6 +428,37 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessage(null, msg);
 
             mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Adds child connection on ConnectToPeerResponse 'D'"), AutoData]
+        public void Adds_Child_Connection_On_ConnectToPeerResponse_D(string username, int token, IPAddress ip, int port)
+        {
+            ConnectToPeerResponse result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.DistributedConnectionManager
+                .Setup(m => m.AddChildConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
+                .Callback<ConnectToPeerResponse>(r => result = r);
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteString(username)
+                .WriteString("D")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            handler.HandleMessage(null, msg);
+
+            Assert.Equal(username, result.Username);
+            Assert.Equal(token, result.Token);
+            Assert.Equal(port, result.Port);
+            Assert.Equal(ip, result.IPAddress);
         }
 
         [Trait("Category", "Message")]
