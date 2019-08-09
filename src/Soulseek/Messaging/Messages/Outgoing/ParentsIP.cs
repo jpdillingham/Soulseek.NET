@@ -16,18 +16,22 @@ namespace Soulseek.Messaging.Messages
     using System.Net;
 
     /// <summary>
-    ///     Logs in to the server.
+    ///     Informs the server of the IP address of the current distributed parent.
     /// </summary>
     internal sealed class ParentsIP
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ParentsIP"/> class.
         /// </summary>
+        /// <param name="ipAddress">The IP address of the current distributed parent.</param>
         public ParentsIP(IPAddress ipAddress)
         {
             IPAddress = ipAddress;
         }
 
+        /// <summary>
+        ///     Gets the IP address of the current distributed parent.
+        /// </summary>
         public IPAddress IPAddress { get; }
 
         /// <summary>

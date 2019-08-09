@@ -237,7 +237,6 @@ namespace Soulseek.Network
 
                 try
                 {
-
                     await childDepthWait.ConfigureAwait(false);
 
                     connection.Disconnected += ChildConnection_Disconnected;

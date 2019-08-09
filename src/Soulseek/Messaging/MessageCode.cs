@@ -64,7 +64,9 @@ namespace Soulseek.Messaging
         /// <summary>
         ///     Server message codes.
         /// </summary>
+#pragma warning disable CA1724 // The type name Server conflicts in whole or in part with the namespace 'Microsoft.SqlServer.Server'
         public enum Server
+#pragma warning restore CA1724 // The type name Server conflicts in whole or in part with the namespace 'Microsoft.SqlServer.Server'
         {
             /// <summary>
             ///     0/Unknown

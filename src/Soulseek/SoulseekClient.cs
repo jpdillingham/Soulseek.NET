@@ -64,9 +64,11 @@ namespace Soulseek
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
+        /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
         /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
         /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
+        /// <param name="listenerHandler">The IListenerHandler instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>

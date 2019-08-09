@@ -148,8 +148,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseResponse)
                 .WriteInteger(1) // directory count
                 .WriteString(name) // first directory name
-                // missing count
-                .Compress()
+                .Compress() // count is missing
                 .Build();
 
             BrowseResponse r = default(BrowseResponse);
