@@ -39,12 +39,6 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
 
-            // some crappy client is sending search results with code 93; it's probably a bad actor.
-            if ((int)code == 93)
-            {
-                return;
-            }
-
             if (code != MessageCode.Distributed.SearchRequest)
             {
                 Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
@@ -54,6 +48,8 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
+                    // some clients erroneously send code 93, which is a server code, in place of 3.
+                    case MessageCode.Distributed.ServerSearchRequest:
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
