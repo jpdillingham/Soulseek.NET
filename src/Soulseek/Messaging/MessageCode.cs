@@ -40,6 +40,11 @@ namespace Soulseek.Messaging
             BranchRoot = 5,
 
             /// <summary>
+            ///     6
+            /// </summary>
+            Unknown = 6,
+
+            /// <summary>
             ///     7
             /// </summary>
             ChildDepth = 7,
