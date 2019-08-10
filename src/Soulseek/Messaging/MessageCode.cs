@@ -48,6 +48,11 @@ namespace Soulseek.Messaging
             ///     7
             /// </summary>
             ChildDepth = 7,
+
+            /// <summary>
+            ///     Server code 93
+            /// </summary>
+            ServerSearchRequest = 93,
         }
 
         /// <summary>
