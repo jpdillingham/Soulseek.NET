@@ -69,7 +69,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains("Unhandled", msg, StringComparison.InvariantCultureIgnoreCase);
         }
 
-        [Trait("Category", "Message")]
+        [Trait("Category", "Diagnostic")]
         [Fact(DisplayName = "Raises DiagnosticGenerated on Exception")]
         public void Raises_DiagnosticGenerated_On_Exception()
         {
@@ -94,6 +94,59 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .ToList();
 
             Assert.Single(diagnostics);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles BranchLevel"), AutoData]
+        public void Handles_BranchLevel(IPAddress ip, int port, int level)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.IPAddress).Returns(ip);
+            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.Username).Returns("foo");
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+
+            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchLevel)
+                .WriteInteger(level)
+                .Build();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Sets BranchLevel on message from parent"), AutoData]
+        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPAddress ip, int port, int level)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.IPAddress).Returns(ip);
+            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.Username).Returns(parent);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+
+            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+
+            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ip, port));
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchLevel)
+                .WriteInteger(level)
+                .Build();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
         }
 
         private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
