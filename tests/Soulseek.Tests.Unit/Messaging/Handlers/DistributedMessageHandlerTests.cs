@@ -149,6 +149,59 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles BranchRoot"), AutoData]
+        public void Handles_BranchRoot(IPAddress ip, int port, string root)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.IPAddress).Returns(ip);
+            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.Username).Returns("foo");
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+
+            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchRoot)
+                .WriteString(root)
+                .Build();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Sets BranchRoot on message from parent"), AutoData]
+        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPAddress ip, int port, string root)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.IPAddress).Returns(ip);
+            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.Username).Returns(parent);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+
+            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+
+            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ip, port));
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchRoot)
+                .WriteString(root)
+                .Build();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
+        }
+
         private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
