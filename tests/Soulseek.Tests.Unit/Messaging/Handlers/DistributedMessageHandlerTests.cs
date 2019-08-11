@@ -233,8 +233,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Handles Ping"), AutoData]
-        public void Handles_Ping(IPAddress ip, int port)
+        [Fact(DisplayName = "Handles Ping")]
+        public void Handles_Ping()
         {
             var (handler, mocks) = GetFixture();
 
