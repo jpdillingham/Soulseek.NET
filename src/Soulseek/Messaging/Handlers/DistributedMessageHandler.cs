@@ -109,7 +109,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.ChildDepth:
                         var childDepth = DistributedChildDepth.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), childDepth);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), childDepth.Depth);
                         break;
 
                     default:

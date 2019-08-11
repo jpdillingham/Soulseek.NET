@@ -74,23 +74,27 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_DiagnosticGenerated_On_Exception()
         {
             var mocks = new Mocks();
-            var handler = new ServerMessageHandler(
+            var handler = new DistributedMessageHandler(
                 mocks.Client.Object);
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteCode(MessageCode.Distributed.Ping)
                 .Build();
 
             var diagnostics = new List<DiagnosticGeneratedEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-            handler.HandleMessage(null, msg);
+            handler.HandleMessage(conn.Object, msg);
 
             diagnostics = diagnostics
                 .Where(d => d.Level == DiagnosticLevel.Warning)
-                .Where(d => d.Message.IndexOf("Error handling server message", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .Where(d => d.Message.IndexOf("Error handling distributed message", StringComparison.InvariantCultureIgnoreCase) > -1)
                 .ToList();
 
             Assert.Single(diagnostics);
@@ -200,6 +204,61 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
             mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ChildDepth"), AutoData]
+        public void Handles_ChildDepth(IPAddress ip, int port, int depth)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.IPAddress).Returns(ip);
+            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.Username).Returns("foo");
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+
+            var key = new WaitKey(Constants.WaitKey.ChildDepthMessage, conn.Object.Key);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ChildDepth)
+                .WriteInteger(depth)
+                .Build();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete<int>(key, depth), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles Ping"), AutoData]
+        public void Handles_Ping(IPAddress ip, int port)
+        {
+            var (handler, mocks) = GetFixture();
+
+            byte[] msg = null;
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.IPAddress).Returns(ip);
+            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.Username).Returns("foo");
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Callback<byte[], CancellationToken?>((b, c) => msg = b);
+
+            var key = new WaitKey(Constants.WaitKey.ChildDepthMessage, conn.Object.Context, conn.Object.Key);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.Ping)
+                .Build();
+
+            handler.HandleMessage(conn.Object, message);
+
+            var reader = new MessageReader<MessageCode.Distributed>(msg);
+
+            Assert.Equal(MessageCode.Distributed.Ping, reader.ReadCode());
         }
 
         private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
