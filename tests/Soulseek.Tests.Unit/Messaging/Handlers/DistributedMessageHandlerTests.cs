@@ -17,6 +17,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -240,15 +241,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             byte[] msg = null;
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPAddress).Returns(ip);
-            conn.Setup(m => m.Port).Returns(port);
-            conn.Setup(m => m.Username).Returns("foo");
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Callback<byte[], CancellationToken?>((b, c) => msg = b);
-
-            var key = new WaitKey(Constants.WaitKey.ChildDepthMessage, conn.Object.Context, conn.Object.Key);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Distributed.Ping)
@@ -259,6 +253,150 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var reader = new MessageReader<MessageCode.Distributed>(msg);
 
             Assert.Equal(MessageCode.Distributed.Ping, reader.ReadCode());
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes SearchRequest wait"), AutoData]
+        public void Completes_SearchRequest_Wait(string username, int token, string query, IPAddress ip, int port)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+
+            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Broadcasts SearchRequest"), AutoData]
+        public void Broadcasts_SearchRequest(string username, int token, string query)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
+        public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
+        {
+            var mocks = new Mocks();
+            var handler = new DistributedMessageHandler(
+                mocks.Client.Object);
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+
+            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            handler.HandleMessage(conn.Object, message);
+
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("Error resolving search response", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
+
+            Assert.Single(diagnostics);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
+        public void Responds_To_SearchRequest(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new ClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((IPAddress.None, 0)));
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Once);
+
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
+        {
+            var options = new ClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((IPAddress.None, 0)));
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if result contains no files"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var options = new ClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((IPAddress.None, 0)));
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessage(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
         private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
