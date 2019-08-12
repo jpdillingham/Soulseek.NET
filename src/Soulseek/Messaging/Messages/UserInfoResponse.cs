@@ -40,7 +40,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="queueLength">The current queue length.</param>
         /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
         public UserInfoResponse(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
-            : this(description, true, picture, uploadSlots, queueLength, hasFreeUploadSlot)
+            : this(description, picture != null, picture, uploadSlots, queueLength, hasFreeUploadSlot)
         {
         }
 
