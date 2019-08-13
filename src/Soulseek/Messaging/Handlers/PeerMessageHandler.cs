@@ -127,7 +127,6 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.TransferResponse:
                         var transferResponse = TransferResponse.FromByteArray(message);
-                        Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
 
