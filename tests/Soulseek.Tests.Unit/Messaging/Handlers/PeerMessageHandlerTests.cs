@@ -374,6 +374,54 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains(messages, m => m.IndexOf("Failed to resolve UserInfoResponse", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Sends resolved BrowseResponse")]
+        public void Sends_Resolved_BrowseResponse()
+        {
+            var files = new List<File>()
+            {
+                new File(1, "1", 1, "1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, "2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+            };
+
+            var dirs = new List<Directory>()
+            {
+                new Directory("1", 2, files),
+                new Directory("2", 2, files),
+            };
+
+            var response = new BrowseResponse(2, dirs);
+            var options = new ClientOptions(browseResponseResolver: (u, i, p) => Task.FromResult(response));
+
+            var (handler, mocks) = GetFixture(options: options);
+
+            var msg = new BrowseRequest().ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, msg);
+
+            mocks.PeerConnection.Verify(
+                m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on failed BrowseResponse resolution"), AutoData]
+        public void Creates_Diagnostic_On_Failed_BrowseResponse_Resolution(string username, IPAddress ip, int port)
+        {
+            var options = new ClientOptions(browseResponseResolver: (u, i, p) => throw new Exception());
+            List<string> messages = new List<string>();
+
+            var (handler, mocks) = GetFixture(username, ip, port, options);
+
+            mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => messages.Add(msg));
+
+            var message = new BrowseRequest().ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            Assert.Contains(messages, m => m.IndexOf("Failed to resolve BrowseResponse", StringComparison.InvariantCultureIgnoreCase) > -1);
+        }
+
         private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
