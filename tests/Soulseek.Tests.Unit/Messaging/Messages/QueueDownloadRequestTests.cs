@@ -74,5 +74,22 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(filename, response.Filename);
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
+        public void ToByteArray_Returns_Expected_Data(string filename)
+        {
+            var a = new QueueDownloadRequest(filename);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.QueueDownload, code);
+
+            // length + code + filename len + filename
+            Assert.Equal(4 + 4 + 4 + filename.Length, msg.Length);
+            Assert.Equal(filename, reader.ReadString());
+        }
     }
 }
