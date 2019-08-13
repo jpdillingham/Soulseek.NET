@@ -104,6 +104,22 @@ namespace Soulseek.Messaging.Handlers
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
                         break;
 
+                    case MessageCode.Peer.BrowseRequest:
+                        var browseResponse = await new ClientOptions()
+                            .BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+
+                        try
+                        {
+                            browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to resolve BrowseResponse: {ex.Message}", ex);
+                        }
+
+                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+                        break;
+
                     case MessageCode.Peer.InfoResponse:
                         var incomingInfo = UserInfoResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), incomingInfo);
@@ -174,11 +190,6 @@ namespace Soulseek.Messaging.Handlers
                         }
 
                         Diagnostic.Debug(msg);
-                        break;
-
-                    case MessageCode.Peer.BrowseRequest:
-                        var browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
-                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
                         break;
 
                     default:
