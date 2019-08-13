@@ -74,6 +74,57 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Throws TransferRequest wait on PeerUploadFailed message"), AutoData]
+        public void Throws_TransferRequest_Wait_On_PeerUploadFailed_Message(string username, IPAddress ip, int port, string filename)
+        {
+            var (handler, mocks) = GetFixture(username, ip, port);
+
+            var dict = new ConcurrentDictionary<int, Transfer>();
+            dict.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+
+            mocks.Client.Setup(m => m.Downloads)
+                .Returns(dict);
+
+            mocks.PeerConnection.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.UploadFailed)
+                .WriteString(filename)
+                .Build();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            mocks.Waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.IsAny<TransferException>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Throws download wait on PeerUploadFailed message"), AutoData]
+        public void Throws_Download_Wait_On_PeerUploadFailed_Message(string username, IPAddress ip, int port, string filename)
+        {
+            var (handler, mocks) = GetFixture(username, ip, port);
+
+            var dict = new ConcurrentDictionary<int, Transfer>();
+            var download = new Transfer(TransferDirection.Download, username, filename, 0);
+            dict.TryAdd(0, download);
+
+            mocks.Client.Setup(m => m.Downloads)
+                .Returns(dict);
+
+            mocks.PeerConnection.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.UploadFailed)
+                .WriteString(filename)
+                .Build();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            mocks.Waiter.Verify(m => m.Throw(download.WaitKey, It.IsAny<TransferException>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates diagnostic on Exception"), AutoData]
         public void Creates_Diagnostic_On_Exception(string username, IPAddress ip, int port)
         {
