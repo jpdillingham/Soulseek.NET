@@ -422,6 +422,44 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains(messages, m => m.IndexOf("Failed to resolve BrowseResponse", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on failed QueueDownload invocation via QueueDownload"), AutoData]
+        public void Creates_Diagnostic_On_Failed_QueueDownload_Invocation_Via_QueueDownload(string username, IPAddress ip, int port, string filename)
+        {
+            var options = new ClientOptions(queueDownloadAction: (u, f, i, p) => throw new Exception());
+            List<string> messages = new List<string>();
+
+            var (handler, mocks) = GetFixture(username, ip, port, options);
+
+            mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => messages.Add(msg));
+
+            var message = new QueueDownloadRequest(filename).ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            Assert.Contains(messages, m => m.IndexOf("Failed to invoke QueueDownload action", StringComparison.InvariantCultureIgnoreCase) > -1);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on failed QueueDownload invocation via TransferRequest"), AutoData]
+        public void Creates_Diagnostic_On_Failed_QueueDownload_Invocation_Via_TransferRequest(string username, IPAddress ip, int port, int token, string filename)
+        {
+            var options = new ClientOptions(queueDownloadAction: (u, f, i, p) => throw new Exception());
+            List<string> messages = new List<string>();
+
+            var (handler, mocks) = GetFixture(username, ip, port, options);
+
+            mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => messages.Add(msg));
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            Assert.Contains(messages, m => m.IndexOf("Failed to invoke QueueDownload action", StringComparison.InvariantCultureIgnoreCase) > -1);
+        }
+
         private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
