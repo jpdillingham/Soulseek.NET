@@ -51,5 +51,17 @@ namespace Soulseek.Messaging.Messages
             var filename = reader.ReadString();
             return new QueueDownloadRequest(filename);
         }
+
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Peer.QueueDownload)
+                .WriteString(Filename)
+                .Build();
+        }
     }
 }
