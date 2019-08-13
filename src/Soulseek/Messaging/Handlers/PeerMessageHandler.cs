@@ -218,8 +218,10 @@ namespace Soulseek.Messaging.Handlers
                 rejected = true;
                 rejectionMessage = ex.Message;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Diagnostic.Warning($"Failed to invoke QueueDownload action: {ex.Message}", ex);
+
                 // if any other exception is thrown, return a generic message. do this to avoid exposing potentially sensitive
                 // information that may be contained in the Exception message (filesystem details, etc.)
                 rejected = true;
