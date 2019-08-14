@@ -460,6 +460,69 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains(messages, m => m.IndexOf("Failed to invoke QueueDownload action", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Writes TransferResponse on successful QueueDownload invocation"), AutoData]
+        public void Writes_TransferResponse_On_Successful_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename)
+        {
+            var options = new ClientOptions(queueDownloadAction: (u, f, i, p) => Task.CompletedTask);
+            var (handler, mocks) = GetFixture(username, ip, port, options);
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+            var expected = new TransferResponse(token, "Queued.").ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expected)), null), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on failed QueueDownload invocation"), AutoData]
+        public void Writes_TransferResponse_And_QueueFailedResponse_On_Failed_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename)
+        {
+            var options = new ClientOptions(queueDownloadAction: (u, f, i, p) => throw new Exception());
+            var (handler, mocks) = GetFixture(username, ip, port, options);
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+            var expectedTransferResponse = new TransferResponse(token, "Enqueue failed due to internal error.").ToByteArray();
+            var expectedQueueFailedResponse = new QueueFailedResponse(filename, "Enqueue failed due to internal error.").ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expectedTransferResponse)), null), Times.Once);
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expectedQueueFailedResponse)), null), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on rejected QueueDownload invocation"), AutoData]
+        public void Writes_TransferResponse_And_QueueFailedResponse_On_Rejected_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename, string rejectMessage)
+        {
+            var options = new ClientOptions(queueDownloadAction: (u, f, i, p) => throw new QueueDownloadException(rejectMessage));
+            var (handler, mocks) = GetFixture(username, ip, port, options);
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+            var expectedTransferResponse = new TransferResponse(token, rejectMessage).ToByteArray();
+            var expectedQueueFailedResponse = new QueueFailedResponse(filename, rejectMessage).ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expectedTransferResponse)), null), Times.Once);
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expectedQueueFailedResponse)), null), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Completes TransferRequest wait on upload request"), AutoData]
+        public void Completes_TransferRequest_Wait_On_Upload_Request(string username, IPAddress ip, int port, int token, string filename)
+        {
+            var (handler, mocks) = GetFixture(username, ip, port);
+
+            var request = new TransferRequest(TransferDirection.Upload, token, filename);
+            var message = request.ToByteArray();
+
+            handler.HandleMessage(mocks.PeerConnection.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.Is<TransferRequest>(t => t.Direction == request.Direction && t.Token == request.Token && t.Filename == request.Filename)), Times.Once);
+        }
+
         private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
