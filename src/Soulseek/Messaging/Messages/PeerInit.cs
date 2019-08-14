@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInitResponse.cs" company="JP Dillingham">
+﻿// <copyright file="PeerInit.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,15 +15,15 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Initiates a peer connection.
     /// </summary>
-    internal sealed class PeerInitResponse
+    internal sealed class PeerInit
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerInitResponse"/> class.
+        ///     Initializes a new instance of the <see cref="PeerInit"/> class.
         /// </summary>
         /// <param name="username">The username of the peer.</param>
         /// <param name="transferType">The transfer type (P or F).</param>
         /// <param name="token">The unique token for the connection.</param>
-        public PeerInitResponse(string username, string transferType, int token)
+        public PeerInit(string username, string transferType, int token)
         {
             Username = username;
             TransferType = transferType;
@@ -31,9 +31,9 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Gets tue username of the peer.
+        ///     Gets the unique token for the connection.
         /// </summary>
-        public string Username { get; }
+        public int Token { get; }
 
         /// <summary>
         ///     Gets the transfer type (P or F).
@@ -41,17 +41,17 @@ namespace Soulseek.Messaging.Messages
         public string TransferType { get; }
 
         /// <summary>
-        ///     Gets the unique token for the connection.
+        ///     Gets tue username of the peer.
         /// </summary>
-        public int Token { get; }
+        public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PeerInitResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PeerInit"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <param name="response">The parsed instance.</param>
         /// <returns>A value indicating whether the message was successfully parsed.</returns>
-        public static bool TryFromByteArray(byte[] bytes, out PeerInitResponse response)
+        public static bool TryFromByteArray(byte[] bytes, out PeerInit response)
         {
             response = null;
 
@@ -68,13 +68,27 @@ namespace Soulseek.Messaging.Messages
                 var transferType = reader.ReadString();
                 var token = reader.ReadInteger();
 
-                response = new PeerInitResponse(username, transferType, token);
+                response = new PeerInit(username, transferType, token);
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Initialization.PeerInit)
+                .WriteString(Username)
+                .WriteString(TransferType)
+                .WriteInteger(Token)
+                .Build();
         }
     }
 }

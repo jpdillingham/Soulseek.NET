@@ -64,9 +64,11 @@ namespace Soulseek
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
+        /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
         /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
         /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
+        /// <param name="listenerHandler">The IListenerHandler instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
@@ -256,7 +258,7 @@ namespace Soulseek
 
             try
             {
-                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageRequest(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessage(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -500,7 +502,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
+        public virtual Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -709,7 +711,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
             }
 
-            return ServerConnection.WriteAsync(new SetSharedCountsRequest(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
+            return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -720,14 +722,14 @@ namespace Soulseek
         /// <returns>The operation context.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        public Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to set status (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set online status (currently: {State})");
             }
 
-            return ServerConnection.WriteAsync(new SetStatusRequest(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+            return ServerConnection.WriteAsync(new SetOnlineStatus(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1075,7 +1077,7 @@ namespace Soulseek
                     Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
                 };
 
-                await connection.WriteAsync(new PeerPlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new PlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await responseWait.ConfigureAwait(false);
 
@@ -1176,7 +1178,7 @@ namespace Soulseek
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPortRequest(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new SetListenPort(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
                     await ServerConnection.WriteAsync(new HaveNoParents(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
@@ -1295,12 +1297,14 @@ namespace Soulseek
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
+            (IPAddress IPAddress, int Port) address = default;
+
             try
             {
                 // in case the Upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
-                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+                address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
                     .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
                     .ConfigureAwait(false);
@@ -1426,6 +1430,19 @@ namespace Soulseek
 
                 upload.State = TransferStates.Completed | upload.State;
                 UpdateState(upload.State);
+
+                if (!upload.State.HasFlag(TransferStates.Succeeded))
+                {
+                    // if the upload failed, fire and forget a message to the user informing them.
+                    Task.Run(async () =>
+                    {
+                        var messageConnection = await PeerConnectionManager
+                            .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+                            .ConfigureAwait(false);
+
+                        await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);
+                    }).Forget();
+                }
             }
         }
     }

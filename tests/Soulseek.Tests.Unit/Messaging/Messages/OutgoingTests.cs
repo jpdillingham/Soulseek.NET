@@ -21,23 +21,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     public class OutgoingTests
     {
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "AcknowledgePrivateMessageRequest")]
-        [Fact(DisplayName = "AcknowledgePrivateMessageRequest instantiates properly")]
-        public void AcknowledgePrivateMessageRequest_Instantiates_Properly()
+        [Trait("Request", "AcknowledgePrivateMessage")]
+        [Fact(DisplayName = "AcknowledgePrivateMessage instantiates properly")]
+        public void AcknowledgePrivateMessage_Instantiates_Properly()
         {
             var num = new Random().Next();
-            var a = new AcknowledgePrivateMessageRequest(num);
+            var a = new AcknowledgePrivateMessage(num);
 
             Assert.Equal(num, a.Id);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "AcknowledgePrivateMessageRequest")]
-        [Fact(DisplayName = "AcknowledgePrivateMessageRequest constructs the correct Message")]
-        public void AcknowledgePrivateMessageRequest_Constructs_The_Correct_Message()
+        [Trait("Request", "AcknowledgePrivateMessage")]
+        [Fact(DisplayName = "AcknowledgePrivateMessage constructs the correct Message")]
+        public void AcknowledgePrivateMessage_Constructs_The_Correct_Message()
         {
             var num = new Random().Next();
-            var msg = new AcknowledgePrivateMessageRequest(num).ToByteArray();
+            var msg = new AcknowledgePrivateMessage(num).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
@@ -143,41 +143,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerInitRequest")]
-        [Fact(DisplayName = "PeerInitRequest instantiates properly")]
-        public void PeerInitRequest_Instantiates_Properly()
-        {
-            var name = Guid.NewGuid().ToString();
-            var token = new Random().Next();
-            var a = new PeerInitRequest(name, "P", token);
-
-            Assert.Equal(name, a.Username);
-            Assert.Equal("P", a.TransferType);
-            Assert.Equal(token, a.Token);
-        }
-
-        [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PeerInitRequest")]
-        [Fact(DisplayName = "PeerInitRequest constructs the correct Message")]
-        public void PeerInitRequest_Constructs_The_Correct_Message()
-        {
-            var name = Guid.NewGuid().ToString();
-            var token = new Random().Next();
-            var a = new PeerInitRequest(name, "P", token);
-            var msg = a.ToByteArray();
-
-            var reader = new MessageReader<MessageCode.Initialization>(msg);
-            var code = reader.ReadCode();
-
-            Assert.Equal(MessageCode.Initialization.PeerInit, code);
-            Assert.Equal(4 + 1 + 4 + name.Length + "P".Length + 8, msg.Length);
-
-            Assert.Equal(name, reader.ReadString());
-            Assert.Equal("P", reader.ReadString());
-            Assert.Equal(token, reader.ReadInteger());
-        }
-
-        [Trait("Category", "Instantiation")]
         [Trait("Request", "PeerSearchRequest")]
         [Theory(DisplayName = "PeerSearchRequest instantiates properly"), AutoData]
         public void PeerSearchRequest_Instantiates_Properly(string text, int token)
@@ -204,35 +169,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(text, reader.ReadString());
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Trait("Request", "PierceFirewallRequest")]
-        [Fact(DisplayName = "PierceFirewallRequest instantiates properly")]
-        public void PierceFirewallRequest_Instantiates_Properly()
-        {
-            var token = new Random().Next();
-            var a = new PierceFirewallRequest(token);
-
-            Assert.Equal(token, a.Token);
-        }
-
-        [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PierceFirewallRequest")]
-        [Fact(DisplayName = "PierceFirewallRequest constructs the correct Message")]
-        public void PierceFirewallRequest_Constructs_The_Correct_Message()
-        {
-            var token = new Random().Next();
-            var a = new PierceFirewallRequest(token);
-            var msg = a.ToByteArray();
-
-            var reader = new MessageReader<MessageCode.Initialization>(msg);
-            var code = reader.ReadCode();
-
-            Assert.Equal(MessageCode.Initialization.PierceFirewall, code);
-            Assert.Equal(4 + 1 + 4, msg.Length);
-
-            Assert.Equal(token, reader.ReadInteger());
         }
 
         [Trait("Category", "Instantiation")]
@@ -279,21 +215,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PeerPlaceInQueueRequest")]
-        [Theory(DisplayName = "PeerPlaceInQueueRequest instantiates properly"), AutoData]
-        public void PeerPlaceInQueueRequest_Instantiates_Properly(string filename)
+        [Trait("Request", "PlaceInQueueRequest")]
+        [Theory(DisplayName = "PlaceInQueueRequest instantiates properly"), AutoData]
+        public void PlaceInQueueRequest_Instantiates_Properly(string filename)
         {
-            var a = new PeerPlaceInQueueRequest(filename);
+            var a = new PlaceInQueueRequest(filename);
 
             Assert.Equal(filename, a.Filename);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PeerPlaceInQueueRequest")]
-        [Theory(DisplayName = "PeerPlaceInQueueRequest constructs the correct Message"), AutoData]
-        public void PeerPlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
+        [Trait("Request", "PlaceInQueueRequest")]
+        [Theory(DisplayName = "PlaceInQueueRequest constructs the correct Message"), AutoData]
+        public void PlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
         {
-            var a = new PeerPlaceInQueueRequest(filename);
+            var a = new PlaceInQueueRequest(filename);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
@@ -354,21 +290,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "SetListenPortRequest")]
-        [Theory(DisplayName = "SetListenPortRequest instantiates properly"), AutoData]
-        public void SetListenPortRequest_Instantiates_Properly(int port)
+        [Trait("Request", "SetListenPort")]
+        [Theory(DisplayName = "SetListenPort instantiates properly"), AutoData]
+        public void SetListenPort_Instantiates_Properly(int port)
         {
-            var a = new SetListenPortRequest(port);
+            var a = new SetListenPort(port);
 
             Assert.Equal(port, a.Port);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "SetListenPortRequest")]
-        [Theory(DisplayName = "SetListenPortRequest constructs the correct message"), AutoData]
-        public void SetListenPortRequest_Constructs_The_Correct_Message(int port)
+        [Trait("Request", "SetListenPort")]
+        [Theory(DisplayName = "SetListenPort constructs the correct message"), AutoData]
+        public void SetListenPort_Constructs_The_Correct_Message(int port)
         {
-            var a = new SetListenPortRequest(port);
+            var a = new SetListenPort(port);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -408,22 +344,22 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "SetSharedCountsRequest")]
-        [Theory(DisplayName = "SetSharedCountsRequest instantiates properly"), AutoData]
-        public void SetSharedCountsRequest_Instantiates_Properly(int dirs, int files)
+        [Trait("Request", "SetSharedCounts")]
+        [Theory(DisplayName = "SetSharedCounts instantiates properly"), AutoData]
+        public void SetSharedCounts_Instantiates_Properly(int dirs, int files)
         {
-            var a = new SetSharedCountsRequest(dirs, files);
+            var a = new SetSharedCounts(dirs, files);
 
             Assert.Equal(dirs, a.DirectoryCount);
             Assert.Equal(files, a.FileCount);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "SetSharedCountsRequest")]
-        [Theory(DisplayName = "SetSharedCountsRequest constructs the correct message"), AutoData]
-        public void SetSharedCountsRequest_Constructs_The_Correct_Message(int dirs, int files)
+        [Trait("Request", "SetSharedCounts")]
+        [Theory(DisplayName = "SetSharedCounts constructs the correct message"), AutoData]
+        public void SetSharedCounts_Constructs_The_Correct_Message(int dirs, int files)
         {
-            var a = new SetSharedCountsRequest(dirs, files);
+            var a = new SetSharedCounts(dirs, files);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -435,21 +371,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "SetStatusRequest")]
-        [Theory(DisplayName = "SetStatusRequest instantiates properly"), AutoData]
-        public void SetStatusRequest_Instantiates_Properly(UserStatus status)
+        [Trait("Request", "SetOnlineStatus")]
+        [Theory(DisplayName = "SetOnlineStatus instantiates properly"), AutoData]
+        public void SetOnlineStatus_Instantiates_Properly(UserStatus status)
         {
-            var a = new SetStatusRequest(status);
+            var a = new SetOnlineStatus(status);
 
             Assert.Equal(status, a.Status);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "SetStatusRequest")]
-        [Theory(DisplayName = "SetStatusRequest constructs the correct message"), AutoData]
-        public void SetStatusRequest_Constructs_The_Correct_Message(UserStatus status)
+        [Trait("Request", "SetOnlineStatus")]
+        [Theory(DisplayName = "SetOnlineStatus constructs the correct message"), AutoData]
+        public void SetOnlineStatus_Constructs_The_Correct_Message(UserStatus status)
         {
-            var a = new SetStatusRequest(status);
+            var a = new SetOnlineStatus(status);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);

@@ -1,4 +1,4 @@
-﻿// <copyright file="UploadFailedResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="QueueDownloadRequestTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,19 +18,19 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class UploadFailedResponseTests
+    public class QueueDownloadRequestTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string file)
+        public void Instantiates_With_The_Given_Data(string filename)
         {
-            UploadFailedResponse response = null;
+            QueueDownloadRequest response = null;
 
-            var ex = Record.Exception(() => response = new UploadFailedResponse(file));
+            var ex = Record.Exception(() => response = new QueueDownloadRequest(filename));
 
             Assert.Null(ex);
 
-            Assert.Equal(file, response.Filename);
+            Assert.Equal(filename, response.Filename);
         }
 
         [Trait("Category", "Parse")]
@@ -41,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => UploadFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => QueueDownloadRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -52,10 +52,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadFailed)
+                .WriteCode(MessageCode.Peer.QueueDownload)
                 .Build();
 
-            var ex = Record.Exception(() => UploadFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => QueueDownloadRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -63,16 +63,33 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string file)
+        public void Parse_Returns_Expected_Data(string filename)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.UploadFailed)
-                .WriteString(file)
+                .WriteCode(MessageCode.Peer.QueueDownload)
+                .WriteString(filename)
                 .Build();
 
-            var response = UploadFailedResponse.FromByteArray(msg);
+            var response = QueueDownloadRequest.FromByteArray(msg);
 
-            Assert.Equal(file, response.Filename);
+            Assert.Equal(filename, response.Filename);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
+        public void ToByteArray_Returns_Expected_Data(string filename)
+        {
+            var a = new QueueDownloadRequest(filename);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.QueueDownload, code);
+
+            // length + code + filename len + filename
+            Assert.Equal(4 + 4 + 4 + filename.Length, msg.Length);
+            Assert.Equal(filename, reader.ReadString());
         }
     }
 }

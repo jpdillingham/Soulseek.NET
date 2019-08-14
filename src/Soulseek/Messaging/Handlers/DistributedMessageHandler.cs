@@ -18,8 +18,16 @@ namespace Soulseek.Messaging.Handlers
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
 
+    /// <summary>
+    ///     Handles incoming messages from distributed connections.
+    /// </summary>
     internal sealed class DistributedMessageHandler : IDistributedMessageHandler
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DistributedMessageHandler"/> class.
+        /// </summary>
+        /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public DistributedMessageHandler(
             SoulseekClient soulseekClient,
             IDiagnosticFactory diagnosticFactory = null)
@@ -29,11 +37,19 @@ namespace Soulseek.Messaging.Handlers
                 new DiagnosticFactory(this, SoulseekClient.Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
+        /// <summary>
+        ///     Occurs when an internal diagnostic message is generated.
+        /// </summary>
         public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
 
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
+        /// <summary>
+        ///     Handles incoming messages.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="message">The message.</param>
         public async void HandleMessage(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
@@ -48,6 +64,8 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
+                    // some clients erroneously send code 93, which is a server code, in place of 3.
+                    case MessageCode.Distributed.ServerSearchRequest:
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
                         SearchResponse searchResponse;
@@ -107,7 +125,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Distributed.ChildDepth:
                         var childDepth = DistributedChildDepth.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), childDepth);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), childDepth.Depth);
                         break;
 
                     default:

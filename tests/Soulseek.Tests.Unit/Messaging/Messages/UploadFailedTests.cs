@@ -1,4 +1,4 @@
-﻿// <copyright file="QueueFailedResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="UploadFailedTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,30 +12,25 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
-    using System;
     using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class QueueFailedResponseTests
+    public class UploadFailedTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with the given data")]
-        public void Instantiates_With_The_Given_Data()
+        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
+        public void Instantiates_With_The_Given_Data(string file)
         {
-            var file = Guid.NewGuid().ToString();
-            var reason = Guid.NewGuid().ToString();
+            UploadFailed response = null;
 
-            QueueFailedResponse response = null;
-
-            var ex = Record.Exception(() => response = new QueueFailedResponse(file, reason));
+            var ex = Record.Exception(() => response = new UploadFailed(file));
 
             Assert.Null(ex);
 
             Assert.Equal(file, response.Filename);
-            Assert.Equal(reason, response.Message);
         }
 
         [Trait("Category", "Parse")]
@@ -46,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => QueueFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UploadFailed.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -57,47 +52,39 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.QueueFailed)
+                .WriteCode(MessageCode.Peer.UploadFailed)
                 .Build();
 
-            var ex = Record.Exception(() => QueueFailedResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UploadFailed.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data")]
-        public void Parse_Returns_Expected_Data()
+        [Theory(DisplayName = "Parse returns expected data"), AutoData]
+        public void Parse_Returns_Expected_Data(string file)
         {
-            var file = Guid.NewGuid().ToString();
-            var reason = Guid.NewGuid().ToString();
-
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.QueueFailed)
+                .WriteCode(MessageCode.Peer.UploadFailed)
                 .WriteString(file)
-                .WriteString(reason)
                 .Build();
 
-            var response = QueueFailedResponse.FromByteArray(msg);
+            var response = UploadFailed.FromByteArray(msg);
 
             Assert.Equal(file, response.Filename);
-            Assert.Equal(reason, response.Message);
         }
 
         [Trait("Category", "ToByteArray")]
         [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
-        public void ToByteArray_Returns_Expected_Data(string filename, string message)
+        public void ToByteArray_Returns_Expected_Data(string filename)
         {
-            var m = new QueueFailedResponse(filename, message).ToByteArray();
+            var m = new UploadFailed(filename).ToByteArray();
 
-            var reader = new MessageReader<MessageCode.Peer>(m);
-            var code = reader.ReadCode();
+            var r = new MessageReader<MessageCode.Peer>(m);
 
-            Assert.Equal(MessageCode.Peer.QueueFailed, code);
-            Assert.Equal(4 + 4 + 4 + filename.Length + 4 + message.Length, m.Length);
-            Assert.Equal(filename, reader.ReadString());
-            Assert.Equal(message, reader.ReadString());
+            Assert.Equal(MessageCode.Peer.UploadFailed, r.ReadCode());
+            Assert.Equal(filename, r.ReadString());
         }
     }
 }

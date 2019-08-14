@@ -1,4 +1,4 @@
-﻿// <copyright file="SetListenPortRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PlaceInQueueRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Logs in to the server.
+    ///     Requests the place of a file in a remote queue.
     /// </summary>
-    internal sealed class SetListenPortRequest
+    internal sealed class PlaceInQueueRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetListenPortRequest"/> class.
+        ///     Initializes a new instance of the <see cref="PlaceInQueueRequest"/> class.
         /// </summary>
-        /// <param name="port">The port on which to listen.</param>
-        public SetListenPortRequest(int port)
+        /// <param name="filename">The filename to check.</param>
+        public PlaceInQueueRequest(string filename)
         {
-            Port = port;
+            Filename = filename;
         }
 
         /// <summary>
-        ///     Gets the port on which to listen.
+        ///     Gets the filename to check.
         /// </summary>
-        public int Port { get; }
+        public string Filename { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SetListenPort)
-                .WriteInteger(Port)
+                .WriteCode(MessageCode.Peer.PlaceInQueueRequest)
+                .WriteString(Filename)
                 .Build();
         }
     }

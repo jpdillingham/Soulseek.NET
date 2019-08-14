@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerInitResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PeerInitTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -21,13 +21,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PeerInitResponseTests
+    public class PeerInitTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string username, string transferType, int token)
         {
-            var r = new PeerInitResponse(username, transferType, token);
+            var r = new PeerInit(username, transferType, token);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(transferType, r.TransferType);
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
             msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
-            var r = PeerInitResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PeerInit.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(Encoding.ASCII.GetBytes(type.ToString(CultureInfo.InvariantCulture))); // type
 
             // omit token
-            var r = PeerInitResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PeerInit.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -86,7 +86,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(token));
 
             // omit token
-            var r = PeerInitResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PeerInit.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.True(r);
             Assert.NotNull(result);
@@ -94,6 +94,26 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(username, result.Username);
             Assert.Equal(type.ToString(CultureInfo.InvariantCulture), result.TransferType);
             Assert.Equal(token, result.Token);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Fact(DisplayName = "PeerInit constructs the correct Message")]
+        public void PeerInitRequest_Constructs_The_Correct_Message()
+        {
+            var name = Guid.NewGuid().ToString();
+            var token = new Random().Next();
+            var a = new PeerInit(name, "P", token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Initialization>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Initialization.PeerInit, code);
+            Assert.Equal(4 + 1 + 4 + name.Length + "P".Length + 8, msg.Length);
+
+            Assert.Equal(name, reader.ReadString());
+            Assert.Equal("P", reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
         }
     }
 }

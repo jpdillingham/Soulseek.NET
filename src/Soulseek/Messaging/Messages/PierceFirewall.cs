@@ -1,4 +1,4 @@
-﻿// <copyright file="PierceFirewallResponse.cs" company="JP Dillingham">
+﻿// <copyright file="PierceFirewall.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,13 +15,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Pierces the local firewall to initiate a connection.
     /// </summary>
-    internal sealed class PierceFirewallResponse
+    internal sealed class PierceFirewall
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PierceFirewallResponse"/> class.
+        ///     Initializes a new instance of the <see cref="PierceFirewall"/> class.
         /// </summary>
         /// <param name="token">The unique token for the connection.</param>
-        public PierceFirewallResponse(int token)
+        public PierceFirewall(int token)
         {
             Token = token;
         }
@@ -32,12 +32,12 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PierceFirewallResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PierceFirewall"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <param name="response">The parsed instance.</param>
         /// <returns>A value indicating whether the message was successfully parsed.</returns>
-        public static bool TryFromByteArray(byte[] bytes, out PierceFirewallResponse response)
+        public static bool TryFromByteArray(byte[] bytes, out PierceFirewall response)
         {
             response = null;
 
@@ -52,13 +52,25 @@ namespace Soulseek.Messaging.Messages
 
                 var token = reader.ReadInteger();
 
-                response = new PierceFirewallResponse(token);
+                response = new PierceFirewall(token);
                 return true;
             }
             catch
             {
                 return false;
             }
+        }
+
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Initialization.PierceFirewall)
+                .WriteInteger(Token)
+                .Build();
         }
     }
 }

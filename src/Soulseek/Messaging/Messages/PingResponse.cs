@@ -14,16 +14,23 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     A distributed ping response.
+    /// </summary>
     internal sealed class PingResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PingResponse"/> class.
         /// </summary>
+        /// <param name="token">The unique token for the response.</param>
         public PingResponse(int token)
         {
             Token = token;
         }
 
+        /// <summary>
+        ///     Gets the unique token for the response.
+        /// </summary>
         public int Token { get; }
 
         /// <summary>

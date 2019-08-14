@@ -331,5 +331,49 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(FileAttributeType.BitRate, file.Attributes.ToList()[1].Type);
             Assert.Equal(5, file.Attributes.ToList()[1].Value);
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
+        public void ToByteArray_Returns_Expected_Data(string username, int token, byte freeUploadSlots, int uploadSpeed, long queueLength)
+        {
+            var list = new List<File>()
+            {
+                new File(1, "1", 1, ".1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, ".2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+            };
+
+            var s = new SearchResponse(username, token, 2, freeUploadSlots, uploadSpeed, queueLength, list);
+            var m = s.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(m);
+            reader.Decompress();
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.SearchResponse, code);
+
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(2, reader.ReadInteger());
+
+            // file 1
+            Assert.Equal(1, reader.ReadByte()); // code
+            Assert.Equal("1", reader.ReadString()); // name
+            Assert.Equal(1, reader.ReadLong()); // length
+            Assert.Equal(".1", reader.ReadString()); // ext
+            Assert.Equal(1, reader.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitDepth, (FileAttributeType)reader.ReadInteger());
+            Assert.Equal(1, reader.ReadInteger());
+
+            // file 2
+            Assert.Equal(2, reader.ReadByte()); // code
+            Assert.Equal("2", reader.ReadString()); // name
+            Assert.Equal(2, reader.ReadLong()); // length
+            Assert.Equal(".2", reader.ReadString()); // ext
+            Assert.Equal(1, reader.ReadInteger()); // attribute count
+
+            Assert.Equal(FileAttributeType.BitRate, (FileAttributeType)reader.ReadInteger());
+            Assert.Equal(2, reader.ReadInteger());
+        }
     }
 }

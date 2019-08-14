@@ -14,13 +14,23 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     Informs distributed children of the current branch level.
+    /// </summary>
     internal sealed class DistributedBranchLevel
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DistributedBranchLevel"/> class.
+        /// </summary>
+        /// <param name="level">The current branch level.</param>
         public DistributedBranchLevel(int level)
         {
             Level = level;
         }
 
+        /// <summary>
+        ///     Gets the current branch level.
+        /// </summary>
         public int Level { get; }
 
         /// <summary>

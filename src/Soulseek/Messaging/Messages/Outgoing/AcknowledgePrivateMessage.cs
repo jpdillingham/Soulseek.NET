@@ -1,4 +1,4 @@
-﻿// <copyright file="SetStatusRequest.cs" company="JP Dillingham">
+﻿// <copyright file="AcknowledgePrivateMessage.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current user status.
+    ///     Acknowledges the reciept of a private message.
     /// </summary>
-    internal sealed class SetStatusRequest
+    internal sealed class AcknowledgePrivateMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetStatusRequest"/> class.
+        ///     Initializes a new instance of the <see cref="AcknowledgePrivateMessage"/> class.
         /// </summary>
-        /// <param name="status">The current status.</param>
-        public SetStatusRequest(UserStatus status)
+        /// <param name="id">The id of the private message to acknowledge.</param>
+        public AcknowledgePrivateMessage(int id)
         {
-            Status = status;
+            Id = id;
         }
 
         /// <summary>
-        ///     Gets the current status.
+        ///     Gets the id of the private message to acknowledge.
         /// </summary>
-        public UserStatus Status { get; }
+        public int Id { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SetOnlineStatus)
-                .WriteInteger((int)Status)
+                .WriteCode(MessageCode.Server.AcknowledgePrivateMessage)
+                .WriteInteger(Id)
                 .Build();
         }
     }

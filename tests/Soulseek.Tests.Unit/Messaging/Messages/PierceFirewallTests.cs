@@ -1,4 +1,4 @@
-﻿// <copyright file="PierceFirewallResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PierceFirewallTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -19,13 +19,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PierceFirewallResponseTests
+    public class PierceFirewallTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(int token)
         {
-            var r = new PierceFirewallResponse(token);
+            var r = new PierceFirewall(token);
 
             Assert.Equal(token, r.Token);
         }
@@ -39,7 +39,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(0)); // overall length, ignored for this test.
             msg.Add((byte)MessageCode.Initialization.PeerInit);
 
-            var r = PierceFirewallResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PierceFirewall.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -55,7 +55,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.Add((byte)MessageCode.Initialization.PierceFirewall);
 
             // omit token
-            var r = PierceFirewallResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PierceFirewall.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.False(r);
             Assert.Null(result);
@@ -73,12 +73,41 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             msg.AddRange(BitConverter.GetBytes(token));
 
             // omit token
-            var r = PierceFirewallResponse.TryFromByteArray(msg.ToArray(), out var result);
+            var r = PierceFirewall.TryFromByteArray(msg.ToArray(), out var result);
 
             Assert.True(r);
             Assert.NotNull(result);
 
             Assert.Equal(token, result.Token);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "PierceFirewallRequest")]
+        [Fact(DisplayName = "PierceFirewallRequest instantiates properly")]
+        public void PierceFirewallRequest_Instantiates_Properly()
+        {
+            var token = new Random().Next();
+            var a = new PierceFirewall(token);
+
+            Assert.Equal(token, a.Token);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "PierceFirewallRequest")]
+        [Fact(DisplayName = "PierceFirewallRequest constructs the correct Message")]
+        public void PierceFirewallRequest_Constructs_The_Correct_Message()
+        {
+            var token = new Random().Next();
+            var a = new PierceFirewall(token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Initialization>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Initialization.PierceFirewall, code);
+            Assert.Equal(4 + 1 + 4, msg.Length);
+
+            Assert.Equal(token, reader.ReadInteger());
         }
     }
 }

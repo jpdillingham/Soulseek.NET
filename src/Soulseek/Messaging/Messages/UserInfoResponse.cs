@@ -23,12 +23,37 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="UserInfoResponse"/> class.
         /// </summary>
         /// <param name="description">The peer's description.</param>
+        /// <param name="uploadSlots">The number of configured upload slots.</param>
+        /// <param name="queueLength">The current queue length.</param>
+        /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
+        public UserInfoResponse(string description, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
+            : this(description, false, null, uploadSlots, queueLength, hasFreeUploadSlot)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserInfoResponse"/> class.
+        /// </summary>
+        /// <param name="description">The peer's description.</param>
+        /// <param name="picture">If configured, the picture data.</param>
+        /// <param name="uploadSlots">The number of configured upload slots.</param>
+        /// <param name="queueLength">The current queue length.</param>
+        /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
+        public UserInfoResponse(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
+            : this(description, picture != null, picture, uploadSlots, queueLength, hasFreeUploadSlot)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserInfoResponse"/> class.
+        /// </summary>
+        /// <param name="description">The peer's description.</param>
         /// <param name="hasPicture">A value indicating whether a picture has been configured.</param>
         /// <param name="picture">If configured, the picture data.</param>
         /// <param name="uploadSlots">The number of configured upload slots.</param>
         /// <param name="queueLength">The current queue length.</param>
         /// <param name="hasFreeUploadSlot">A value indicating whether an upload slot is free.</param>
-        public UserInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
+        private UserInfoResponse(string description, bool hasPicture, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
             Description = description;
             HasPicture = hasPicture;
@@ -44,6 +69,11 @@ namespace Soulseek.Messaging.Messages
         public string Description { get; }
 
         /// <summary>
+        ///     Gets a value indicating whether an upload slot is free.
+        /// </summary>
+        public bool HasFreeUploadSlot { get; }
+
+        /// <summary>
         ///     Gets a value indicating whether a picture has been configured.
         /// </summary>
         public bool HasPicture { get; }
@@ -54,19 +84,14 @@ namespace Soulseek.Messaging.Messages
         public byte[] Picture { get; }
 
         /// <summary>
-        ///     Gets the number of configured upload slots.
-        /// </summary>
-        public int UploadSlots { get; }
-
-        /// <summary>
         ///     Gets the current queue length.
         /// </summary>
         public int QueueLength { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether an upload slot is free.
+        ///     Gets the number of configured upload slots.
         /// </summary>
-        public bool HasFreeUploadSlot { get; }
+        public int UploadSlots { get; }
 
         /// <summary>
         ///     Creates a new instance of <see cref="UserInfoResponse"/> from the specified <paramref name="bytes"/>.

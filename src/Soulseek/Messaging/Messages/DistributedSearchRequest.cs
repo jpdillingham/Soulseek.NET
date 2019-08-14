@@ -14,8 +14,17 @@ namespace Soulseek.Messaging.Messages
 {
     using Soulseek.Exceptions;
 
+    /// <summary>
+    ///     A distributed file search request.
+    /// </summary>
     internal sealed class DistributedSearchRequest
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="DistributedSearchRequest"/> class.
+        /// </summary>
+        /// <param name="username">The username of the requesting user.</param>
+        /// <param name="token">The unique token for the request.</param>
+        /// <param name="query">The search query.</param>
         public DistributedSearchRequest(string username, int token, string query)
         {
             Username = username;
@@ -23,8 +32,19 @@ namespace Soulseek.Messaging.Messages
             Query = query;
         }
 
+        /// <summary>
+        ///     Gets the username of the requesting user.
+        /// </summary>
         public string Username { get; }
+
+        /// <summary>
+        ///     Gets the unique token for the request.
+        /// </summary>
         public int Token { get; }
+
+        /// <summary>
+        ///     Gets the search query.
+        /// </summary>
         public string Query { get; }
 
         /// <summary>

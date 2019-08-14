@@ -58,7 +58,6 @@
                 {
                     var info = new UserInfoResponse(
                         description: $"i'm a test! also, your username is {u}, IP address is {i}, and the port on which you connected to me is {p}", 
-                        hasPicture: true, 
                         picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"), 
                         uploadSlots: 0, 
                         queueLength: 0, 

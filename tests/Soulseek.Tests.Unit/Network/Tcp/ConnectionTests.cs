@@ -51,6 +51,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             Assert.Equal(port, c.Port);
             Assert.Equal(new ConnectionKey(ip, port), c.Key);
             Assert.Equal(ConnectionState.Pending, c.State);
+            Assert.Null(c.Context);
         }
 
         [Trait("Category", "Instantiation")]

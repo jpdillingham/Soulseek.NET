@@ -104,6 +104,22 @@ namespace Soulseek.Messaging.Handlers
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
                         break;
 
+                    case MessageCode.Peer.BrowseRequest:
+                        var browseResponse = await new ClientOptions()
+                            .BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+
+                        try
+                        {
+                            browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to resolve BrowseResponse: {ex.Message}", ex);
+                        }
+
+                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+                        break;
+
                     case MessageCode.Peer.InfoResponse:
                         var incomingInfo = UserInfoResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.InfoResponse, connection.Username), incomingInfo);
@@ -111,7 +127,6 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.TransferResponse:
                         var transferResponse = TransferResponse.FromByteArray(message);
-                        Console.WriteLine($"Got response from {connection.Username}: {transferResponse.Token}");
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferResponse, connection.Username, transferResponse.Token), transferResponse);
                         break;
 
@@ -163,7 +178,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.UploadFailed:
-                        var uploadFailedResponse = UploadFailedResponse.FromByteArray(message);
+                        var uploadFailedResponse = UploadFailed.FromByteArray(message);
                         var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
@@ -174,11 +189,6 @@ namespace Soulseek.Messaging.Handlers
                         }
 
                         Diagnostic.Debug(msg);
-                        break;
-
-                    case MessageCode.Peer.BrowseRequest:
-                        var browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
-                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
                         break;
 
                     default:
@@ -208,8 +218,10 @@ namespace Soulseek.Messaging.Handlers
                 rejected = true;
                 rejectionMessage = ex.Message;
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                Diagnostic.Warning($"Failed to invoke QueueDownload action: {ex.Message}", ex);
+
                 // if any other exception is thrown, return a generic message. do this to avoid exposing potentially sensitive
                 // information that may be contained in the Exception message (filesystem details, etc.)
                 rejected = true;

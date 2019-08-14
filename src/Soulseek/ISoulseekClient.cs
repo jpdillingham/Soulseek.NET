@@ -288,7 +288,7 @@ namespace Soulseek
         /// <returns>The operation context.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+        Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified

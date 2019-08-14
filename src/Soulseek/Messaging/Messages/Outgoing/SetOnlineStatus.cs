@@ -1,4 +1,4 @@
-﻿// <copyright file="PierceFirewallRequest.cs" company="JP Dillingham">
+﻿// <copyright file="SetOnlineStatus.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Pierces a peer's firewall to initate a connection.
+    ///     Informs the server of the current user status.
     /// </summary>
-    internal sealed class PierceFirewallRequest
+    internal sealed class SetOnlineStatus
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PierceFirewallRequest"/> class.
+        ///     Initializes a new instance of the <see cref="SetOnlineStatus"/> class.
         /// </summary>
-        /// <param name="token">The unique token for the connection.</param>
-        public PierceFirewallRequest(int token)
+        /// <param name="status">The current status.</param>
+        public SetOnlineStatus(UserStatus status)
         {
-            Token = token;
+            Status = status;
         }
 
         /// <summary>
-        ///     Gets the unique token for the connection.
+        ///     Gets the current status.
         /// </summary>
-        public int Token { get; }
+        public UserStatus Status { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Initialization.PierceFirewall)
-                .WriteInteger(Token)
+                .WriteCode(MessageCode.Server.SetOnlineStatus)
+                .WriteInteger((int)Status)
                 .Build();
         }
     }
