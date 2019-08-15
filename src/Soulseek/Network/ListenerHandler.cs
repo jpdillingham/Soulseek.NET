@@ -17,8 +17,16 @@ namespace Soulseek.Network
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
+    /// <summary>
+    ///     Handles incoming connections established by the <see cref="IListener"/>.
+    /// </summary>
     internal sealed class ListenerHandler : IListenerHandler
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ListenerHandler"/> class.
+        /// </summary>
+        /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public ListenerHandler(
             SoulseekClient soulseekClient,
             IDiagnosticFactory diagnosticFactory = null)
@@ -36,6 +44,11 @@ namespace Soulseek.Network
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
+        /// <summary>
+        ///     Handle <see cref="IListener.Accepted"/> events.
+        /// </summary>
+        /// <param name="sender">The originating <see cref="IListener"/> instance.</param>
+        /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
             Diagnostic.Info($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
