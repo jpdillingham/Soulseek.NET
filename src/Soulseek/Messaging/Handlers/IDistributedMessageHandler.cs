@@ -12,6 +12,9 @@
 
 namespace Soulseek.Messaging.Handlers
 {
+    /// <summary>
+    ///     Handles incoming messages from distributed connections.
+    /// </summary>
     internal interface IDistributedMessageHandler : IMessageHandler
     {
     }
