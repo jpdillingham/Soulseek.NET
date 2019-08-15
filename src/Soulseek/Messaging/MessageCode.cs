@@ -12,6 +12,9 @@
 
 namespace Soulseek.Messaging
 {
+    /// <summary>
+    ///     Message codes.
+    /// </summary>
     public static class MessageCode
     {
         /// <summary>
