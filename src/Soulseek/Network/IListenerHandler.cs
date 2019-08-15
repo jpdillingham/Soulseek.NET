@@ -14,8 +14,16 @@ namespace Soulseek.Network
 {
     using Soulseek.Network.Tcp;
 
+    /// <summary>
+    ///     Handles incoming connections established by the <see cref="IListener"/>.
+    /// </summary>
     internal interface IListenerHandler : IDiagnosticGenerator
     {
+        /// <summary>
+        ///     Handle <see cref="IListener.Accepted"/> events.
+        /// </summary>
+        /// <param name="sender">The originating <see cref="IListener"/> instance.</param>
+        /// <param name="connection">The accepted connection.</param>
         void HandleConnection(object sender, IConnection connection);
     }
 }
