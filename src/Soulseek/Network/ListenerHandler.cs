@@ -51,7 +51,7 @@ namespace Soulseek.Network
         /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
-            Diagnostic.Info($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
+            Diagnostic.Debug($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
 
             try
             {
@@ -109,7 +109,7 @@ namespace Soulseek.Network
                 }
                 else
                 {
-                    throw new ConnectionException($"Unknown direct connection type from {connection.IPAddress}:{connection.Port}");
+                    throw new ConnectionException($"Unknown connection from {connection.IPAddress}:{connection.Port}");
                 }
             }
             catch (Exception ex)
