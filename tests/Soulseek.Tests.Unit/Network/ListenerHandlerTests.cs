@@ -62,6 +62,23 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("failed to initialize", compare) && s.Contains("Unknown connection", compare))), Times.Once);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic if connection read throws"), AutoData]
+        public void Creates_Diagnostic_If_Connection_Read_Throws(IPAddress ip)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var compare = StringComparison.InvariantCultureIgnoreCase;
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("failed to initialize", compare))), Times.Once);
+        }
+
         private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, ClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
