@@ -39,8 +39,9 @@ namespace Soulseek.Tests.Unit.Network
 
             handler.HandleConnection(null, mocks.Connection.Object);
 
-            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.Contains("Accepted incoming connection"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.Contains("Accepted incoming connection", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
+
         private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, ClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
@@ -63,10 +64,13 @@ namespace Soulseek.Tests.Unit.Network
                     CallBase = true,
                 };
 
+                Listener.Setup(m => m.Port).Returns(clientOptions?.ListenPort ?? new ClientOptions().ListenPort ?? 0);
+
                 Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
                 Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
+                Client.Setup(m => m.Listener).Returns(Listener.Object);
             }
 
             public Mock<SoulseekClient> Client { get; }
@@ -74,6 +78,7 @@ namespace Soulseek.Tests.Unit.Network
             public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
             public Mock<IConnection> Connection { get; } = new Mock<IConnection>();
+            public Mock<IListener> Listener { get; } = new Mock<IListener>();
         }
     }
 }
