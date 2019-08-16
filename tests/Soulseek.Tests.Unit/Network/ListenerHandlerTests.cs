@@ -30,8 +30,8 @@ namespace Soulseek.Tests.Unit.Network
     public class ListenerHandlerTests
     {
         [Trait("Category", "Diagnostic")]
-        [Theory(DisplayName = "Creates diagnostic on message"), AutoData]
-        public void Creates_Diagnostic_On_Message(IPAddress ip)
+        [Theory(DisplayName = "Creates diagnostic on connection"), AutoData]
+        public void Creates_Diagnostic_On_Connection(IPAddress ip)
         {
             var (handler, mocks) = GetFixture(ip);
 
@@ -39,7 +39,27 @@ namespace Soulseek.Tests.Unit.Network
 
             handler.HandleConnection(null, mocks.Connection.Object);
 
-            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.Contains("Accepted incoming connection", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("Accepted incoming connection", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on unknown connection"), AutoData]
+        public void Creates_Diagnostic_On_Unknown_Connection(IPAddress ip)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(5)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(1, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(1)));
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var compare = StringComparison.InvariantCultureIgnoreCase;
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("failed to initialize", compare) && s.Contains("Unknown connection", compare))), Times.Once);
         }
 
         private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, ClientOptions clientOptions = null)
