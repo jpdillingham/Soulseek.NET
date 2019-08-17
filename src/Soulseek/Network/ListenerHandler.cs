@@ -65,22 +65,22 @@ namespace Soulseek.Network
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for transfer type {peerInit.TransferType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
+                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
 
-                    if (peerInit.TransferType == Constants.ConnectionType.Peer)
+                    if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
                         await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(
                             peerInit.Username,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
-                    else if (peerInit.TransferType == Constants.ConnectionType.Tranfer)
+                    else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
                         await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
-                    else if (peerInit.TransferType == Constants.ConnectionType.Distributed)
+                    else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
                         await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(
                             peerInit.Username,
@@ -109,7 +109,7 @@ namespace Soulseek.Network
                 }
                 else
                 {
-                    throw new ConnectionException($"Unknown connection from {connection.IPAddress}:{connection.Port}");
+                    throw new ConnectionException($"Unrecognized initialization message: {BitConverter.ToString(message)} ({message.Length} bytes)");
                 }
             }
             catch (Exception ex)
