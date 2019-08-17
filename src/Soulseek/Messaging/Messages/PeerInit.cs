@@ -21,12 +21,12 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="PeerInit"/> class.
         /// </summary>
         /// <param name="username">The username of the peer.</param>
-        /// <param name="transferType">The transfer type (P or F).</param>
+        /// <param name="connectionType">The connection type (P or F).</param>
         /// <param name="token">The unique token for the connection.</param>
-        public PeerInit(string username, string transferType, int token)
+        public PeerInit(string username, string connectionType, int token)
         {
             Username = username;
-            TransferType = transferType;
+            ConnectionType = connectionType;
             Token = token;
         }
 
@@ -36,9 +36,9 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Gets the transfer type (P or F).
+        ///     Gets the connection type (P or F).
         /// </summary>
-        public string TransferType { get; }
+        public string ConnectionType { get; }
 
         /// <summary>
         ///     Gets tue username of the peer.
@@ -86,7 +86,7 @@ namespace Soulseek.Messaging.Messages
             return new MessageBuilder()
                 .WriteCode(MessageCode.Initialization.PeerInit)
                 .WriteString(Username)
-                .WriteString(TransferType)
+                .WriteString(ConnectionType)
                 .WriteInteger(Token)
                 .Build();
         }
