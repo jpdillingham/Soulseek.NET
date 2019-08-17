@@ -103,7 +103,7 @@ namespace Soulseek.Messaging.Handlers
                         {
                             connectToPeerResponse = ConnectToPeerResponse.FromByteArray(message);
 
-                            if (connectToPeerResponse.Type == Constants.ConnectionType.Tranfer)
+                            if (connectToPeerResponse.Type == Constants.ConnectionType.Transfer)
                             {
                                 // ensure that we are expecting at least one file from this user before we connect. the response
                                 // doesn't contain any other identifying information about the file.
