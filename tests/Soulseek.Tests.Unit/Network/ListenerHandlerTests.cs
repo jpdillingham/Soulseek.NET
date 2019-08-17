@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Network
             handler.HandleConnection(null, mocks.Connection.Object);
 
             var compare = StringComparison.InvariantCultureIgnoreCase;
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("failed to initialize", compare) && s.Contains("Unknown connection", compare))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("failed to initialize", compare) && s.Contains("Unrecognized initialization message", compare))), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]
@@ -77,6 +77,115 @@ namespace Soulseek.Tests.Unit.Network
 
             var compare = StringComparison.InvariantCultureIgnoreCase;
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("failed to initialize", compare))), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on PeerInit"), AutoData]
+        public void Creates_Diagnostic_On_PeerInit(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var message = new PeerInit(username, Constants.ConnectionType.Peer, token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var compare = StringComparison.InvariantCultureIgnoreCase;
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("PeerInit for connection type", compare))), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on unknown PierceFirewall"), AutoData]
+        public void Creates_Diagnostic_On_PierceFirewall(IPAddress ip, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var compare = StringComparison.InvariantCultureIgnoreCase;
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("Unknown PierceFirewall", compare))), Times.Once);
+        }
+
+        [Trait("Category", "PeerInit")]
+        [Theory(DisplayName = "Adds peer connection on peer PeerInit"), AutoData]
+        public void Adds_Peer_Connection_On_Peer_PeerInit(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PeerInit(username, Constants.ConnectionType.Peer, token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            mocks.PeerConnectionManager.Verify(m => m.AddMessageConnectionAsync(username, It.IsAny<ITcpClient>()));
+        }
+
+        [Trait("Category", "PeerInit")]
+        [Theory(DisplayName = "Adds transfer connection on transfer PeerInit"), AutoData]
+        public void Adds_Transfer_Connection_On_Transfer_PeerInit(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            mocks.PeerConnectionManager.Verify(m => m.AddTransferConnectionAsync(username, token, It.IsAny<ITcpClient>()));
+        }
+
+        [Trait("Category", "PeerInit")]
+        [Theory(DisplayName = "Adds distributed connection on distributed PeerInit"), AutoData]
+        public void Adds_Distributed_Connection_On_Distributed_PeerInit(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PeerInit(username, Constants.ConnectionType.Distributed, token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            mocks.DistributedConnectionManager.Verify(m => m.AddChildConnectionAsync(username, It.IsAny<ITcpClient>()));
         }
 
         private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, ClientOptions clientOptions = null)
@@ -102,6 +211,10 @@ namespace Soulseek.Tests.Unit.Network
                 };
 
                 Listener.Setup(m => m.Port).Returns(clientOptions?.ListenPort ?? new ClientOptions().ListenPort ?? 0);
+                PeerConnectionManager.Setup(m => m.PendingSolicitations)
+                    .Returns(new Dictionary<int, string>());
+                DistributedConnectionManager.Setup(m => m.PendingSolicitations)
+                    .Returns(new Dictionary<int, string>());
 
                 Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
                 Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
