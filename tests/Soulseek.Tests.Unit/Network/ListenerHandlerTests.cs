@@ -128,6 +128,58 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("Unknown PierceFirewall", compare))), Times.Once);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on peer PierceFirewall"), AutoData]
+        public void Creates_Diagnostic_On_Peer_PierceFirewall(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            var dict = new ConcurrentDictionary<int, string>();
+            dict.TryAdd(token, username);
+
+            mocks.PeerConnectionManager.Setup(m => m.PendingSolicitations)
+                .Returns(dict);
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var compare = StringComparison.InvariantCultureIgnoreCase;
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("Peer PierceFirewall", compare))), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on distributed PierceFirewall"), AutoData]
+        public void Creates_Diagnostic_On_Distributed_PierceFirewall(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            var dict = new ConcurrentDictionary<int, string>();
+            dict.TryAdd(token, username);
+
+            mocks.DistributedConnectionManager.Setup(m => m.PendingSolicitations)
+                .Returns(dict);
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var compare = StringComparison.InvariantCultureIgnoreCase;
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("Distributed PierceFirewall", compare))), Times.Once);
+        }
+
         [Trait("Category", "PeerInit")]
         [Theory(DisplayName = "Adds peer connection on peer PeerInit"), AutoData]
         public void Adds_Peer_Connection_On_Peer_PeerInit(IPAddress ip, string username, int token)
@@ -188,6 +240,58 @@ namespace Soulseek.Tests.Unit.Network
             mocks.DistributedConnectionManager.Verify(m => m.AddChildConnectionAsync(username, It.IsAny<ITcpClient>()));
         }
 
+        [Trait("Category", "PierceFirewall")]
+        [Theory(DisplayName = "Completes solicited peer connection on peer PierceFirewall"), AutoData]
+        public void Completes_Solicited_Peer_Connection_On_Peer_PierceFirewall(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            var dict = new ConcurrentDictionary<int, string>();
+            dict.TryAdd(token, username);
+
+            mocks.PeerConnectionManager.Setup(m => m.PendingSolicitations)
+                .Returns(dict);
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var expectedKey = new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, token);
+            mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
+        }
+
+        [Trait("Category", "PierceFirewall")]
+        [Theory(DisplayName = "Completes solicited distributed connection on distributed PierceFirewall"), AutoData]
+        public void Completes_Solicited_Distributed_Connection_On_Distributed_PierceFirewall(IPAddress ip, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(ip);
+
+            var message = new PierceFirewall(token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            var dict = new ConcurrentDictionary<int, string>();
+            dict.TryAdd(token, username);
+
+            mocks.DistributedConnectionManager.Setup(m => m.PendingSolicitations)
+                .Returns(dict);
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var expectedKey = new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, username, token);
+            mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
+        }
+
         private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, ClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
@@ -221,6 +325,7 @@ namespace Soulseek.Tests.Unit.Network
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
                 Client.Setup(m => m.Listener).Returns(Listener.Object);
+                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
             }
 
             public Mock<SoulseekClient> Client { get; }
@@ -229,6 +334,7 @@ namespace Soulseek.Tests.Unit.Network
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
             public Mock<IConnection> Connection { get; } = new Mock<IConnection>();
             public Mock<IListener> Listener { get; } = new Mock<IListener>();
+            public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
         }
     }
 }
