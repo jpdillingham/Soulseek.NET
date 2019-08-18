@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using AutoFixture.Xunit2;
+    using System;
     using Xunit;
 
     public class ClientOptionsTests
@@ -68,6 +69,28 @@ namespace Soulseek.Tests.Unit
             Assert.NotNull(o.ServerConnectionOptions);
             Assert.NotNull(o.PeerConnectionOptions);
             Assert.NotNull(o.TransferConnectionOptions);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if concurrent peer limit is less than one")]
+        public void Throws_If_Concurrent_Peer_Limit_Is_Less_Than_One()
+        {
+            ClientOptions x;
+            var ex = Record.Exception(() => x = new ClientOptions(concurrentPeerMessageConnectionLimit: 0));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws if distributed child limit is less than zero")]
+        public void Throws_If_Distributed_Child_Limit_Is_Less_Than_Zero()
+        {
+            ClientOptions x;
+            var ex = Record.Exception(() => x = new ClientOptions(concurrentDistributedChildrenLimit: -1));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
     }
 }
