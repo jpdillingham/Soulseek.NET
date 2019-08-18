@@ -44,18 +44,6 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(new ClientOptions().ConcurrentPeerMessageConnectionLimit, c.ConcurrentMessageConnectionLimit);
         }
 
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Throws ArgumentOutOfRangeException when ConcurrentPeerConnections is less than 1.")]
-        public void Throws_ArgumentOutOfRangeException_When_ConcurrentPeerConnections_Is_Less_than_1()
-        {
-            PeerConnectionManager c = null;
-
-            var ex = Record.Exception(() => GetFixture(options: new ClientOptions(concurrentPeerMessageConnectionLimit: -1)));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(ex);
-        }
-
         [Trait("Category", "Dispose")]
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
