@@ -47,6 +47,9 @@ namespace Soulseek
             Options = options ?? new TransferOptions();
         }
 
+        /// <summary>
+        ///     Gets the transfer direction.
+        /// </summary>
         public TransferDirection Direction { get; }
 
         /// <summary>
@@ -107,7 +110,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
         /// </summary>
-        public TimeSpan? RemainingTime => AverageSpeed == 0 ? default(TimeSpan) : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
+        public TimeSpan? RemainingTime => AverageSpeed == 0 ? default : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
 
         /// <summary>
         ///     Gets the remote unique token for the transfer.

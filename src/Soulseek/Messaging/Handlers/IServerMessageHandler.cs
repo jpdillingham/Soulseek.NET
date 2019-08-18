@@ -13,9 +13,11 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
 
+    /// <summary>
+    ///     Handles incoming messages from the server connection.
+    /// </summary>
     internal interface IServerMessageHandler : IDiagnosticGenerator
     {
         /// <summary>
@@ -28,6 +30,11 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         event EventHandler<PrivateMessage> PrivateMessageReceived;
 
+        /// <summary>
+        ///     Handles incoming messages.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="message">The message.</param>
         void HandleMessage(object sender, byte[] message);
     }
 }

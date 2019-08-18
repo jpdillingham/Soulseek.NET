@@ -17,8 +17,16 @@ namespace Soulseek.Network
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
 
+    /// <summary>
+    ///     Handles incoming connections established by the <see cref="IListener"/>.
+    /// </summary>
     internal sealed class ListenerHandler : IListenerHandler
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ListenerHandler"/> class.
+        /// </summary>
+        /// <param name="soulseekClient">The ISoulseekClient instance to use.</param>
+        /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         public ListenerHandler(
             SoulseekClient soulseekClient,
             IDiagnosticFactory diagnosticFactory = null)
@@ -36,9 +44,14 @@ namespace Soulseek.Network
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
+        /// <summary>
+        ///     Handle <see cref="IListener.Accepted"/> events.
+        /// </summary>
+        /// <param name="sender">The originating <see cref="IListener"/> instance.</param>
+        /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
-            Diagnostic.Info($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
+            Diagnostic.Debug($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port}");
 
             try
             {
@@ -52,22 +65,22 @@ namespace Soulseek.Network
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for transfer type {peerInit.TransferType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
+                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");
 
-                    if (peerInit.TransferType == Constants.ConnectionType.Peer)
+                    if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
                         await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(
                             peerInit.Username,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
-                    else if (peerInit.TransferType == Constants.ConnectionType.Tranfer)
+                    else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
                         await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
-                    else if (peerInit.TransferType == Constants.ConnectionType.Distributed)
+                    else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
                         await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(
                             peerInit.Username,
@@ -96,7 +109,7 @@ namespace Soulseek.Network
                 }
                 else
                 {
-                    throw new ConnectionException($"Unknown direct connection type from {connection.IPAddress}:{connection.Port}");
+                    throw new ConnectionException($"Unrecognized initialization message: {BitConverter.ToString(message)} ({message.Length} bytes)");
                 }
             }
             catch (Exception ex)

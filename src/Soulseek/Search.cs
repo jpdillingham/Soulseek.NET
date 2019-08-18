@@ -178,7 +178,7 @@ namespace Soulseek
                 if (disposing)
                 {
                     SearchTimeoutTimer.Dispose();
-                    ResponseBag = default(ConcurrentBag<SearchResponse>);
+                    ResponseBag = default;
                 }
 
                 Disposed = true;

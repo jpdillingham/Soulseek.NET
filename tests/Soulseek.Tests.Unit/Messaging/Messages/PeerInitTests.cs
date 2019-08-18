@@ -30,7 +30,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var r = new PeerInit(username, transferType, token);
 
             Assert.Equal(username, r.Username);
-            Assert.Equal(transferType, r.TransferType);
+            Assert.Equal(transferType, r.ConnectionType);
             Assert.Equal(token, r.Token);
         }
 
@@ -92,7 +92,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.NotNull(result);
 
             Assert.Equal(username, result.Username);
-            Assert.Equal(type.ToString(CultureInfo.InvariantCulture), result.TransferType);
+            Assert.Equal(type.ToString(CultureInfo.InvariantCulture), result.ConnectionType);
             Assert.Equal(token, result.Token);
         }
 

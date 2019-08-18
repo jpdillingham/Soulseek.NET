@@ -12,6 +12,9 @@
 
 namespace Soulseek.Messaging.Handlers
 {
+    /// <summary>
+    ///     Handles incoming messages from peer connections.
+    /// </summary>
     internal interface IPeerMessageHandler : IMessageHandler
     {
     }

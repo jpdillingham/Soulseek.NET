@@ -30,7 +30,7 @@ namespace Soulseek
         internal static class ConnectionType
         {
             public const string Peer = "P";
-            public const string Tranfer = "F";
+            public const string Transfer = "F";
             public const string Distributed = "D";
         }
 

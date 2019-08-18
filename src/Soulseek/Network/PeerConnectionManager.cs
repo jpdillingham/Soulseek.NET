@@ -395,7 +395,7 @@ namespace Soulseek.Network
                 {
                     // if connecting directly, init the connection. for indirect connections the incoming peerinit is handled in the
                     // listener code to determine the connection type, so we don't need to handle it here.
-                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Tranfer, token).ToByteArray();
+                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Transfer, token).ToByteArray();
                     await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                 }
 
@@ -566,7 +566,7 @@ namespace Soulseek.Network
                 PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Tranfer).ToByteArray(), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Transfer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
                 using (var incomingConnection = await SoulseekClient.Waiter
