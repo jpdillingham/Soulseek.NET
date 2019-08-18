@@ -44,28 +44,31 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(new ClientOptions().ConcurrentPeerMessageConnectionLimit, c.ConcurrentMessageConnectionLimit);
         }
 
-        //        [Trait("Category", "Instantiation")]
-        //        [Fact(DisplayName = "Throws ArgumentOutOfRangeException when ConcurrentPeerConnections is less than 1.")]
-        //        public void Throws_ArgumentOutOfRangeException_When_ConcurrentPeerConnections_Is_Less_than_1()
-        //        {
-        //            ConnectionManager c = null;
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws ArgumentOutOfRangeException when ConcurrentPeerConnections is less than 1.")]
+        public void Throws_ArgumentOutOfRangeException_When_ConcurrentPeerConnections_Is_Less_than_1()
+        {
+            PeerConnectionManager c = null;
 
-        //            var ex = Record.Exception(() => c = new ConnectionManager(0));
+            var ex = Record.Exception(() => GetFixture(options: new ClientOptions(concurrentPeerMessageConnectionLimit: -1)));
 
-        //            Assert.NotNull(ex);
-        //            Assert.IsType<ArgumentOutOfRangeException>(ex);
-        //        }
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+        }
 
-        //        [Trait("Category", "Dispose")]
-        //        [Fact(DisplayName = "Disposes without throwing")]
-        //        public void Disposes_Without_Throwing()
-        //        {
-        //            var c = new ConnectionManager(1);
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Disposes without throwing")]
+        public void Disposes_Without_Throwing()
+        {
+            var (manager, mocks) = GetFixture();
 
-        //            var ex = Record.Exception(() => c.Dispose());
+            using (var c = new PeerConnectionManager(mocks.Client.Object))
+            {
+                var ex = Record.Exception(() => c.Dispose());
 
-        //            Assert.Null(ex);
-        //        }
+                Assert.Null(ex);
+            }
+        }
 
         //        [Trait("Category", "RemoveAndDisposeAll")]
         //        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
@@ -354,9 +357,9 @@ namespace Soulseek.Tests.Unit.Network
         //            Assert.Equal(0, c.WaitingPeerConnections);
         //        }
 
-        private (PeerConnectionManager manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0)
+        private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
-            var mocks = new Mocks();
+            var mocks = new Mocks(options);
 
             mocks.ServerConnection.Setup(m => m.Username)
                 .Returns(username ?? "username");

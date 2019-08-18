@@ -46,6 +46,11 @@ namespace Soulseek.Network
             ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
                 ?? new ClientOptions().ConcurrentPeerMessageConnectionLimit;
 
+            if (ConcurrentMessageConnectionLimit < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(soulseekClient), "The concurrent peer message connection limit option must be greater than zero.");
+            }
+
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
