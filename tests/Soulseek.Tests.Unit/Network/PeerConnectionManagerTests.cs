@@ -16,6 +16,7 @@ namespace Soulseek.Tests.Unit.Network
     using System.Collections.Concurrent;
     using System.Linq;
     using System.Net;
+    using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -75,52 +76,47 @@ namespace Soulseek.Tests.Unit.Network
                 solicitations.TryAdd(1, "bar");
 
                 manager.SetProperty("PendingSolicitationDictionary", solicitations);
+                manager.SetField("waitingMessageConnections", 1);
 
                 manager.RemoveAndDisposeAll();
 
                 Assert.Empty(manager.MessageConnections);
                 Assert.Empty(manager.PendingSolicitations);
+                Assert.Equal(0, manager.WaitingMessageConnections);
             }
         }
 
-        //        [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
-        //        [Theory(DisplayName = "AddUnsolicitedTransferConnectionAsync connects and sends PeerInit"), AutoData]
-        //        internal async Task AddUnsolicitedTransferConnectionAsync_Connects_And_Sends_PeerInit(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-        //        {
-        //            var key = new ConnectionKey(ipAddress, port);
-        //            var expectedBytes = new PeerInitRequest(username, "F", token).ToByteArray().ToByteArray();
-        //            byte[] actualBytes = Array.Empty<byte>();
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync reads token and completes wait"), AutoData]
+        internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var key = new ConnectionKey(ipAddress, port);
 
-        //            var conn = new Mock<IConnection>();
-        //            conn.Setup(m => m.IPAddress)
-        //                .Returns(ipAddress);
-        //            conn.Setup(m => m.Port)
-        //                .Returns(port);
-        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask)
-        //                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-        //                .Returns(conn.Object);
+            var (manager, mocks) = GetFixture();
 
-        //            IConnection newConn = null;
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
 
-        //            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
-        //            {
-        //                newConn = await c.AddUnsolicitedTransferConnectionAsync(key, token, username, options, CancellationToken.None);
-        //            }
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(IPAddress.None, 0));
 
-        //            Assert.Equal(ipAddress, newConn.IPAddress);
-        //            Assert.Equal(port, newConn.Port);
+            using (manager)
+            {
+                await manager.AddTransferConnectionAsync(username, token, mocks.TcpClient.Object);
+            }
 
-        //            Assert.Equal(expectedBytes, actualBytes);
-
-        //            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-        //        }
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, token), conn.Object));
+        }
 
         //        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
         //        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
@@ -385,6 +381,7 @@ namespace Soulseek.Tests.Unit.Network
             public Mock<IDistributedMessageHandler> DistributedMessageHandler { get; } = new Mock<IDistributedMessageHandler>();
             public Mock<IConnectionFactory> ConnectionFactory { get; } = new Mock<IConnectionFactory>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
+            public Mock<ITcpClient> TcpClient { get; } = new Mock<ITcpClient>();
         }
     }
 }
