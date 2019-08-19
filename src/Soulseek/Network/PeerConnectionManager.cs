@@ -137,7 +137,7 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient)
         {
-            var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+            var endpoint = tcpClient.RemoteEndPoint;
 
             var connection = ConnectionFactory.GetConnection(
                 endpoint.Address,
