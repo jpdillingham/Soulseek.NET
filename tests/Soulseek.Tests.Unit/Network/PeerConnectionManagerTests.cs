@@ -51,6 +51,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
+            using (manager)
             using (var c = new PeerConnectionManager(mocks.Client.Object))
             {
                 var ex = Record.Exception(() => c.Dispose());
@@ -65,6 +66,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
+            using (manager)
             using (var semaphore = new SemaphoreSlim(1))
             {
                 var peer = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
@@ -90,8 +92,6 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddTransferConnectionAsync reads token and completes wait"), AutoData]
         internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
         {
-            var key = new ConnectionKey(ipAddress, port);
-
             var conn = new Mock<IConnection>();
             conn.Setup(m => m.IPAddress)
                 .Returns(ipAddress);
