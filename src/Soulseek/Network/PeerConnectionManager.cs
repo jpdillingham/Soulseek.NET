@@ -416,6 +416,7 @@ namespace Soulseek.Network
         public void RemoveAndDisposeAll()
         {
             MessageSemaphoreCancellationTokenSource.Cancel();
+
             PendingSolicitationDictionary.Clear();
 
             while (!MessageConnectionDictionary.IsEmpty)

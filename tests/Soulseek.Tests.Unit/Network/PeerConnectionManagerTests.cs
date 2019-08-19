@@ -58,33 +58,30 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        //        [Trait("Category", "RemoveAndDisposeAll")]
-        //        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
-        //        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
-        //        {
-        //            var c = new ConnectionManager(1);
+        [Trait("Category", "RemoveAndDisposeAll")]
+        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
+        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture();
 
-        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-        //            peer.GetOrAdd(new ConnectionKey(ip, port), (new SemaphoreSlim(1), new Mock<IMessageConnection>().Object));
+            using (var semaphore = new SemaphoreSlim(1))
+            {
+                var peer = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+                peer.GetOrAdd("foo", (semaphore, new Mock<IMessageConnection>().Object));
 
-        //            c.SetProperty("PeerConnections", peer);
+                manager.SetProperty("MessageConnectionDictionary", peer);
 
-        //            var transfer = new ConcurrentDictionary<(ConnectionKey, int), IConnection>();
-        //            transfer.GetOrAdd((new ConnectionKey(ip, port), port), new Mock<IConnection>().Object);
+                var solicitations = new ConcurrentDictionary<int, string>();
+                solicitations.TryAdd(1, "bar");
 
-        //            c.SetProperty("TransferConnections", transfer);
+                manager.SetProperty("PendingSolicitationDictionary", solicitations);
 
-        //            var activePeerBefore = c.ActivePeerConnections;
-        //            var activeTransferBefore = c.ActiveTransferConnections;
+                manager.RemoveAndDisposeAll();
 
-        //            c.RemoveAndDisposeAll();
-
-        //            Assert.Equal(1, activePeerBefore);
-        //            Assert.Equal(1, activeTransferBefore);
-
-        //            Assert.Empty(c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections"));
-        //            Assert.Empty(c.GetProperty<ConcurrentDictionary<(ConnectionKey, int), IConnection>>("TransferConnections"));
-        //        }
+                Assert.Empty(manager.MessageConnections);
+                Assert.Empty(manager.PendingSolicitations);
+            }
+        }
 
         //        [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
         //        [Theory(DisplayName = "AddUnsolicitedTransferConnectionAsync connects and sends PeerInit"), AutoData]
