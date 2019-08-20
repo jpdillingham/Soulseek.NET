@@ -181,6 +181,66 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync replaces duplicate connection and disposes old"), AutoData]
+        internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Disposes_Old(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var conn1 = new Mock<IMessageConnection>();
+            conn1.Setup(m => m.Username)
+                .Returns(username);
+            conn1.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn1.Setup(m => m.Port)
+                .Returns(port);
+            conn1.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn1.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var conn2 = new Mock<IMessageConnection>();
+            conn2.Setup(m => m.Username)
+                .Returns(username);
+            conn2.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn2.Setup(m => m.Port)
+                .Returns(port);
+            conn2.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn2.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn1.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+
+                Assert.Single(manager.MessageConnections);
+                Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPAddress == ipAddress && c.Port == port);
+
+                // swap in the second connection
+                mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                    .Returns(conn2.Object);
+
+                // call this again to force the first connection out and second in its place
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+
+                // make sure we still have just the one
+                Assert.Single(manager.MessageConnections);
+                Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPAddress == ipAddress && c.Port == port);
+
+                // verify that the first connection was disposed
+                conn1.Verify(m => m.Dispose());
+            }
+        }
+
+
         //        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
         //        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
