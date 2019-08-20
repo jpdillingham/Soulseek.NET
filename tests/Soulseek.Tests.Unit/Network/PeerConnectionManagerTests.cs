@@ -104,11 +104,11 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(new IPEndPoint(IPAddress.None, 0));
+                .Returns(new IPEndPoint(ipAddress, port));
 
             using (manager)
             {
@@ -116,6 +116,69 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, token), conn.Object));
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync starts reading"), AutoData]
+        internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+            }
+
+            conn.Verify(m => m.StartReadingContinuously());
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync adds connection"), AutoData]
+        internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Username)
+                .Returns(username);
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+
+                Assert.Single(manager.MessageConnections);
+                Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPAddress == ipAddress && c.Port == port);
+            }
         }
 
         //        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
