@@ -111,6 +111,7 @@ namespace Soulseek.Network
 
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
             connection.Disconnected += MessageConnection_Disconnected;
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Unsolicited inbound message connection to {username} ({endpoint.Address}:{endpoint.Port}) disconnected.");
 
             connection.StartReadingContinuously();
 
@@ -120,12 +121,13 @@ namespace Soulseek.Network
             try
             {
                 AddOrUpdateMessageConnectionRecord(username, connection);
-                Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPAddress}:{connection.Port}) established.");
             }
             finally
             {
                 semaphore.Release();
             }
+
+            Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPAddress}:{connection.Port}) established.");
         }
 
         /// <summary>
@@ -145,15 +147,26 @@ namespace Soulseek.Network
                 SoulseekClient.Options.TransferConnectionOptions,
                 tcpClient);
 
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+            int remoteToken;
+
+            try
+            {
+                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
+            }
+            catch (Exception)
+            {
+                connection.Dispose();
+                throw;
+            }
 
             connection.Disconnected += (sender, e) =>
             {
-                Diagnostic.Debug($"Inbound transfer connection for token {token} (remote: {remoteToken}) ({endpoint.Address}:{endpoint.Port}) disconnected.");
+                Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint.Address}:{endpoint.Port}) for token {token} (remote: {remoteToken}) disconnected.");
                 ((IConnection)sender).Dispose();
             };
 
+            Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint.Address}:{endpoint.Port}) for token {token} (remote: {remoteToken}) established.");
             SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
         }
 
@@ -331,7 +344,7 @@ namespace Soulseek.Network
                 SoulseekClient.Options.TransferConnectionOptions);
 
             connection.Context = Constants.ConnectionMethod.Direct;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited direct transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited direct transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) for token {connectToPeerResponse.Token} disconnected.");
 
             int remoteToken;
 
@@ -351,6 +364,7 @@ namespace Soulseek.Network
                 throw;
             }
 
+            Diagnostic.Debug($"Solicited direct transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) for token {connectToPeerResponse.Token} established.");
             return (connection, remoteToken);
         }
 
