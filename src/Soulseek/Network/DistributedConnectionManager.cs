@@ -31,6 +31,7 @@ namespace Soulseek.Network
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
         private readonly object parentCandidateSyncRoot = new object();
+        private readonly object statusSyncRoot = new object();
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedConnectionManager"/> class.
@@ -130,7 +131,6 @@ namespace Soulseek.Network
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
-        private object StatusSyncRoot { get; } = new object();
         private SystemTimer StatusTimer { get; }
 
         /// <summary>
@@ -596,7 +596,7 @@ namespace Soulseek.Network
 
             var statusHash = Convert.ToBase64String(payload.ToArray());
 
-            lock (StatusSyncRoot)
+            lock (statusSyncRoot)
             {
                 if (statusHash == StatusHash && HasParent)
                 {
