@@ -333,21 +333,23 @@ namespace Soulseek.Network
             connection.Context = Constants.ConnectionMethod.Direct;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited direct transfer connection for token {connectToPeerResponse.Token} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}) disconnected.");
 
+            int remoteToken;
+
             try
             {
                 await connection.ConnectAsync().ConfigureAwait(false);
+
+                var request = new PierceFirewall(connectToPeerResponse.Token);
+                await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
+
+                var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
+                remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
             }
             catch
             {
                 connection.Dispose();
                 throw;
             }
-
-            var request = new PierceFirewall(connectToPeerResponse.Token);
-            await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
-
-            var remoteTokenBytes = await connection.ReadAsync(4).ConfigureAwait(false);
-            var remoteToken = BitConverter.ToInt32(remoteTokenBytes, 0);
 
             return (connection, remoteToken);
         }
