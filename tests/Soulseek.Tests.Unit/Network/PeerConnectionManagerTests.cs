@@ -240,45 +240,79 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync connects and pierces firewall"), AutoData]
+        internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
+            var expectedBytes = new PierceFirewall(token).ToByteArray();
+            byte[] actualBytes = Array.Empty<byte>();
 
-        //        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
-        //        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
-        //        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-        //        {
-        //            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
-        //            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
-        //            byte[] actualBytes = Array.Empty<byte>();
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask)
+                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
-        //            var conn = new Mock<IConnection>();
-        //            conn.Setup(m => m.IPAddress)
-        //                .Returns(ipAddress);
-        //            conn.Setup(m => m.Port)
-        //                .Returns(port);
-        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask)
-        //                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+            var (manager, mocks) = GetFixture();
 
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-        //                .Returns(conn.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
 
-        //            IConnection newConn = null;
+            (IConnection Connection, int RemoteToken) newConn = default;
 
-        //            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
-        //            {
-        //                newConn = await c.AddSolicitedTransferConnectionAsync(ctpr, options, CancellationToken.None);
-        //            }
+            using (manager)
+            {
+                newConn = await manager.GetTransferConnectionAsync(ctpr);
+            }
 
-        //            Assert.Equal(ipAddress, newConn.IPAddress);
-        //            Assert.Equal(port, newConn.Port);
+            Assert.Equal(ipAddress, newConn.Connection.IPAddress);
+            Assert.Equal(port, newConn.Connection.Port);
+            Assert.Equal(token, newConn.RemoteToken);
 
-        //            Assert.Equal(expectedBytes, actualBytes);
+            Assert.Equal(expectedBytes, actualBytes);
 
-        //            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-        //        }
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync disposes connection if connect fails"), AutoData]
+        internal async Task GetTransferConnectionAsync_Disposes_Connection_If_Connect_Fails(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
+            var expectedException = new Exception("foo");
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
