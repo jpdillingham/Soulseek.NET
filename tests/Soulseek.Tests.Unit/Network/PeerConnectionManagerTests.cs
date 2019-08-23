@@ -61,10 +61,10 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "RemoveAndDisposeAll")]
-        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
-        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
+        [Fact(DisplayName = "RemoveAndDisposeAll removes and disposes all")]
+        public void RemoveAndDisposeAll_Removes_And_Disposes_All()
         {
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
             using (var semaphore = new SemaphoreSlim(1))
@@ -90,7 +90,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddTransferConnectionAsync")]
         [Theory(DisplayName = "AddTransferConnectionAsync reads token and completes wait"), AutoData]
-        internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPAddress ipAddress, int port, int token)
         {
             var conn = new Mock<IConnection>();
             conn.Setup(m => m.IPAddress)
@@ -120,7 +120,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddTransferConnectionAsync")]
         [Theory(DisplayName = "AddTransferConnectionAsync disposes connection on exception"), AutoData]
-        internal async Task AddTransferConnectionAsync_Disposes_Connection_On_Exception(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task AddTransferConnectionAsync_Disposes_Connection_On_Exception(string username, IPAddress ipAddress, int port, int token)
         {
             var expectedEx = new Exception("foo");
 
@@ -155,7 +155,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync starts reading"), AutoData]
-        internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPAddress ipAddress, int port, int token)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.IPAddress)
@@ -185,7 +185,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync adds connection"), AutoData]
-        internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPAddress ipAddress, int port, int token)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)
@@ -218,7 +218,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync replaces duplicate connection and disposes old"), AutoData]
-        internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Disposes_Old(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Disposes_Old(string username, IPAddress ipAddress, int port, int token)
         {
             var conn1 = new Mock<IMessageConnection>();
             conn1.Setup(m => m.Username)
@@ -277,7 +277,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync connects and pierces firewall"), AutoData]
-        internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
             var expectedBytes = new PierceFirewall(token).ToByteArray();
@@ -320,7 +320,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync disposes connection if connect fails"), AutoData]
-        internal async Task GetTransferConnectionAsync_Disposes_Connection_If_Connect_Fails(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
+        internal async Task GetTransferConnectionAsync_Disposes_Connection_If_Connect_Fails(string username, IPAddress ipAddress, int port, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
             var expectedException = new Exception("foo");
@@ -347,6 +347,90 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync disposes connection if connect fails"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Disposes_Connection_If_Connect_Fails(IPAddress ipAddress, int port, int token)
+        {
+            var expectedException = new Exception("foo");
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", ipAddress, port, token, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync returns connection if connect succeeds"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Returns_Connection_If_Connect_Succeeds(IPAddress ipAddress, int port, int token)
+        {
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", ipAddress, port, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync sets connection context to Direct"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Sets_Connection_Context_To_Direct(IPAddress ipAddress, int port, int token)
+        {
+            object context = null;
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            conn.Setup(m => m.Port)
+                .Returns(port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.SetupSet(m => m.Context = It.IsAny<string>())
+                .Callback<object>(o => context = o);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", ipAddress, port, token, CancellationToken.None))
+            {
+                Assert.Equal(Constants.ConnectionMethod.Direct, context);
+            }
+
+            conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Direct);
         }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
