@@ -399,6 +399,7 @@ namespace Soulseek.Network
 
                 var tasks = new[] { direct, indirect }.ToList();
                 Task<IConnection> task;
+
                 do
                 {
                     task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
