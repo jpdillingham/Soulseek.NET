@@ -618,7 +618,7 @@ namespace Soulseek.Network
             }
             finally
             {
-                PendingSolicitationDictionary.TryRemove(token, out var _);
+                PendingSolicitationDictionary.TryRemove(solicitationToken, out var _);
             }
         }
 
