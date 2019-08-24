@@ -93,11 +93,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddTransferConnectionAsync reads token and completes wait"), AutoData]
         internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPAddress ipAddress, int port, int token)
         {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.ReadAsync(4, null))
@@ -125,11 +121,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var expectedEx = new Exception("foo");
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.ReadAsync(4, null))
@@ -158,11 +150,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddMessageConnectionAsync starts reading"), AutoData]
         internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPAddress ipAddress, int port, int token)
         {
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.ReadAsync(4, null))
@@ -188,13 +176,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddMessageConnectionAsync adds connection"), AutoData]
         internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPAddress ipAddress, int port, int token)
         {
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Username)
-                .Returns(username);
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.ReadAsync(4, null))
@@ -221,25 +203,13 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddMessageConnectionAsync replaces duplicate connection and disposes old"), AutoData]
         internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Disposes_Old(string username, IPAddress ipAddress, int port, int token)
         {
-            var conn1 = new Mock<IMessageConnection>();
-            conn1.Setup(m => m.Username)
-                .Returns(username);
-            conn1.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn1.Setup(m => m.Port)
-                .Returns(port);
+            var conn1 = GetMessageConnectionMock(username, ipAddress, port);
             conn1.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn1.Setup(m => m.ReadAsync(4, null))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)));
 
-            var conn2 = new Mock<IMessageConnection>();
-            conn2.Setup(m => m.Username)
-                .Returns(username);
-            conn2.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn2.Setup(m => m.Port)
-                .Returns(port);
+            var conn2 = GetMessageConnectionMock(username, ipAddress, port);
             conn2.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn2.Setup(m => m.ReadAsync(4, null))
@@ -284,11 +254,7 @@ namespace Soulseek.Tests.Unit.Network
             var expectedBytes = new PierceFirewall(token).ToByteArray();
             byte[] actualBytes = Array.Empty<byte>();
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
@@ -326,11 +292,7 @@ namespace Soulseek.Tests.Unit.Network
             var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
             var expectedException = new Exception("foo");
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Throws(expectedException);
 
@@ -356,11 +318,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var expectedException = new Exception("foo");
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Throws(expectedException);
 
@@ -384,11 +342,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync returns connection if connect succeeds"), AutoData]
         internal async Task GetTransferConnectionOutboundDirectAsync_Returns_Connection_If_Connect_Succeeds(IPAddress ipAddress, int port, int token)
         {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
@@ -410,11 +364,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             object context = null;
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
             conn.SetupSet(m => m.Context = It.IsAny<string>())
@@ -438,11 +388,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync sends ConnectToPeerRequest"), AutoData]
         internal async Task GetTransferConnectionOutboundIndirectAsync_Sends_ConnectToPeerRequest(IPAddress ipAddress, int port, string username, int token)
         {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
@@ -469,11 +415,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var expectedException = new Exception("foo");
 
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
@@ -498,11 +440,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync hands off ITcpConnection"), AutoData]
         internal async Task GetTransferConnectionOutboundIndirectAsync_Hands_Off_ITcpConnection(IPAddress ipAddress, int port, string username, int token)
         {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
@@ -527,11 +465,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync sets connection context to Indirect"), AutoData]
         internal async Task GetTransferConnectionOutboundIndirectAsync_Sets_Connection_Context_To_Indirect(IPAddress ipAddress, int port, string username, int token)
         {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
@@ -556,11 +490,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync adds and removes from PendingSolicitationDictionary"), AutoData]
         internal async Task GetTransferConnectionOutboundIndirectAsync_Adds_And_Removes_From_PendingSolicitationDictionary(IPAddress ipAddress, int port, string username, int token)
         {
-            var conn = new Mock<IConnection>();
-            conn.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            conn.Setup(m => m.Port)
-                .Returns(port);
+            var conn = GetConnectionMock(ipAddress, port);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
@@ -788,6 +718,27 @@ namespace Soulseek.Tests.Unit.Network
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);
+        }
+
+        private Mock<IMessageConnection> GetMessageConnectionMock(string username, IPAddress ip, int port)
+        {
+            var mock = new Mock<IMessageConnection>();
+            mock.Setup(m => m.Username).Returns(username);
+            mock.Setup(m => m.IPAddress).Returns(ip);
+            mock.Setup(m => m.Port).Returns(port);
+
+            return mock;
+        }
+
+        private Mock<IConnection> GetConnectionMock(IPAddress ip, int port)
+        {
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.IPAddress)
+                .Returns(ip);
+            mock.Setup(m => m.Port)
+                .Returns(port);
+
+            return mock;
         }
 
         private class Mocks
