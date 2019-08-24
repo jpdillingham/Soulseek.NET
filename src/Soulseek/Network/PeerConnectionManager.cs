@@ -402,7 +402,7 @@ namespace Soulseek.Network
 
                 do
                 {
-                    task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
                     tasks.Remove(task);
                 }
                 while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
