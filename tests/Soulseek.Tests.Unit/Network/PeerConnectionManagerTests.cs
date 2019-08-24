@@ -624,6 +624,41 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync generates diagnostic on connection attempt"), AutoData]
+        internal async Task GetTransferConnectionAsync_Generates_Diagnostic_On_Connection_Attempt(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync generates diagnostic when cancelling unselected connection"), AutoData]
+        internal async Task GetTransferConnectionAsync_Generates_Diagnostic_When_Cancelling_Unselected_Connection(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync generates diagnostic on connection established"), AutoData]
+        internal async Task GetTransferConnectionAsync_Generates_Diagnostic_On_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync sends PeerInit on direct connection established"), AutoData]
+        internal async Task GetTransferConnectionAsync_Sends_PeerInit_On_Direct_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync writes token on connection established"), AutoData]
+        internal async Task GetTransferConnectionAsync_Writes_Token_On_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            Assert.True(false);
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
