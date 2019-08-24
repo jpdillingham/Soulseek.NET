@@ -222,7 +222,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the name of the currently signed in user.
         /// </summary>
-        public string Username { get; private set; }
+        public virtual string Username { get; private set; }
 
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
