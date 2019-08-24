@@ -520,6 +520,110 @@ namespace Soulseek.Tests.Unit.Network
             conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
         }
 
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync returns direct connection when direct connects first"), AutoData]
+        internal async Task GetTransferConnectionAsync_Returns_Direct_Connection_When_Direct_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync returns indirect connection when indirect connects first"), AutoData]
+        internal async Task GetTransferConnectionAsync_Returns_Indirect_Connection_When_Indirect_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(indirect.Object));
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Equal(indirect.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Indirect, newConn.Context);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync throws ConnectionException when direct and indirect connections fail"), AutoData]
+        internal async Task GetTransferConnectionAsync_Throws_ConnectionException_When_Direct_And_Indirect_Connections_Fail(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+            }
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
