@@ -18,6 +18,7 @@ namespace Soulseek.Tests.Unit.Network
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -649,14 +650,74 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionAsync sends PeerInit on direct connection established"), AutoData]
         internal async Task GetTransferConnectionAsync_Sends_PeerInit_On_Direct_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
         {
-            Assert.True(false);
+            var peerInit = new PeerInit(localUsername, Constants.ConnectionType.Transfer, token).ToByteArray();
+
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync writes token on connection established"), AutoData]
         internal async Task GetTransferConnectionAsync_Writes_Token_On_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
         {
-            Assert.True(false);
+            {
+                var direct = GetConnectionMock(ipAddress, directPort);
+                direct.Setup(m => m.Context)
+                    .Returns(Constants.ConnectionMethod.Direct);
+
+                var indirect = GetConnectionMock(ipAddress, indirectPort);
+                indirect.Setup(m => m.Context)
+                    .Returns(Constants.ConnectionMethod.Indirect);
+
+                var (manager, mocks) = GetFixture();
+
+                mocks.Client.Setup(m => m.Username)
+                    .Returns(localUsername);
+
+                mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                    .Returns(direct.Object);
+                mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                    .Returns(indirect.Object);
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Throws(new Exception());
+
+                using (manager)
+                using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+                {
+                    Assert.Equal(direct.Object, newConn);
+                    Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+
+                    direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(BitConverter.GetBytes(token))), It.IsAny<CancellationToken?>()), Times.Once);
+                }
+            }
         }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
