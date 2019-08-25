@@ -1,4 +1,4 @@
-﻿// <copyright file="Extensions.cs" company="JP Dillingham">
+﻿// <copyright file="TestExtensions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,13 +12,13 @@
 
 namespace Soulseek.Tests.Unit
 {
-    using System.Text;
+    using System;
 
-    public static class Extensions
+    public static class TestExtensions
     {
-        public static bool Matches(this byte[] arr1, byte[] arr2)
+        public static bool Matches(this byte[] a1, byte[] a2)
         {
-            return Encoding.UTF8.GetString(arr1) == Encoding.UTF8.GetString(arr2);
+            return a1.AsSpan().SequenceEqual(a2);
         }
     }
 }
