@@ -626,24 +626,46 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
-        [Theory(DisplayName = "GetTransferConnectionAsync generates diagnostic on connection attempt"), AutoData]
-        internal async Task GetTransferConnectionAsync_Generates_Diagnostic_On_Connection_Attempt(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        [Theory(DisplayName = "GetTransferConnectionAsync generates expected diagnostics on successful connection"), AutoData]
+        internal async Task GetTransferConnectionAsync_Generates_Expected_Diagnostics(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
         {
-            Assert.True(false);
-        }
+            var peerInit = new PeerInit(localUsername, Constants.ConnectionType.Transfer, token).ToByteArray();
 
-        [Trait("Category", "GetTransferConnectionAsync")]
-        [Theory(DisplayName = "GetTransferConnectionAsync generates diagnostic when cancelling unselected connection"), AutoData]
-        internal async Task GetTransferConnectionAsync_Generates_Diagnostic_When_Cancelling_Unselected_Connection(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
-        {
-            Assert.True(false);
-        }
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
 
-        [Trait("Category", "GetTransferConnectionAsync")]
-        [Theory(DisplayName = "GetTransferConnectionAsync generates diagnostic on connection established"), AutoData]
-        internal async Task GetTransferConnectionAsync_Generates_Diagnostic_On_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
-        {
-            Assert.True(false);
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            List<string> diagnostics = new List<string>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(s => diagnostics.Add(s));
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Contains(diagnostics, s => s.Contains("Attempting direct and indirect transfer connections", StringComparison.InvariantCultureIgnoreCase));
+                Assert.Contains(diagnostics, s => s.Contains($"established; cancelling", StringComparison.InvariantCultureIgnoreCase));
+                Assert.Contains(
+                    diagnostics,
+                    s => s.Contains("transfer connection to", StringComparison.InvariantCultureIgnoreCase) && s.Contains("established.", StringComparison.InvariantCultureIgnoreCase));
+            }
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
