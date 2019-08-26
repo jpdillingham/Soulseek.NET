@@ -879,6 +879,25 @@ namespace Soulseek.Tests.Unit.Network
             conn.Verify(m => m.Dispose(), Times.Once);
         }
 
+        [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync connects and returns connection"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Connects_And_Returns_Connection(string username, IPAddress ipAddress, int port)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, ipAddress, port, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actualConn);
+            }
+
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
