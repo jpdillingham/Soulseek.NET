@@ -742,6 +742,143 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected removes and disposes connection"), AutoData]
+        internal void MessageConnection_Disconnected_Removes_And_Disposes_Connection(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            using (var semaphore = new SemaphoreSlim(1))
+            {
+                dict.TryAdd(username, (semaphore, conn.Object));
+
+                var (manager, mocks) = GetFixture();
+
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (manager)
+                {
+                    var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                    ms.WaitAsync();
+
+                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                    Assert.Empty(dict);
+                }
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected generates diagnostic on removal"), AutoData]
+        internal void MessageConnection_Disconnected_Generates_Diagnostic_On_Removal(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            using (var semaphore = new SemaphoreSlim(1))
+            {
+                dict.TryAdd(username, (semaphore, conn.Object));
+
+                var (manager, mocks) = GetFixture();
+
+                List<string> diagnostics = new List<string>();
+
+                mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                    .Callback<string>(s => diagnostics.Add(s));
+
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (manager)
+                {
+                    var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                    ms.WaitAsync();
+
+                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                    Assert.Single(diagnostics);
+                    Assert.Contains(diagnostics, m => m.Contains($"Removing message connection to {username}", StringComparison.InvariantCultureIgnoreCase));
+                }
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected does not throw if connection isn't tracked"), AutoData]
+        internal void MessageConnection_Disconnected_Does_Not_Throw_If_Connection_Isnt_Tracked(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, mocks) = GetFixture();
+
+            manager.SetProperty("MessageConnectionDictionary", dict);
+
+            using (manager)
+            {
+                var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                ms.WaitAsync();
+
+                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                Assert.Empty(dict);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected does not generate diagnostic if connection isn't tracked"), AutoData]
+        internal void MessageConnection_Disconnected_Does_Generate_Diagnostic_If_Connection_Isnt_Tracked(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, mocks) = GetFixture();
+
+            List<string> diagnostics = new List<string>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(s => diagnostics.Add(s));
+
+            manager.SetProperty("MessageConnectionDictionary", dict);
+
+            using (manager)
+            {
+                var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                ms.WaitAsync();
+
+                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                Assert.Empty(diagnostics);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
