@@ -880,8 +880,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
-        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync connects and returns connection"), AutoData]
-        internal async Task GetMessageConnectionOutboundDirectAsync_Connects_And_Returns_Connection(string username, IPAddress ipAddress, int port)
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync connects and returns connection if connect succeeds"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Connects_And_Returns_Connection_If_Connect_Succeeds(string username, IPAddress ipAddress, int port)
         {
             var conn = GetMessageConnectionMock(username, ipAddress, port);
             var (manager, mocks) = GetFixture();
@@ -896,6 +896,32 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync disposes connection if connect fails"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Disposes_Connection_If_Connect_Fails(string username, IPAddress ipAddress, int port)
+        {
+            var expectedEx = new Exception("foo");
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, ipAddress, port, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
         }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
