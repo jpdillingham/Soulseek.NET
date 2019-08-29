@@ -943,6 +943,188 @@ namespace Soulseek.Tests.Unit.Network
             conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Direct);
         }
 
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync sends ConnectToPeerRequest"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Sends_ConnectToPeerRequest(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+            {
+                Assert.Equal(msgConn.Object, newConn);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => true), CancellationToken.None));
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync throws if wait throws"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Throws_If_Wait_Throws(IPAddress ipAddress, int port, string username)
+        {
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync hands off ITcpConnection"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Hands_Off_ITcpConnection(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+            {
+                Assert.Equal(msgConn.Object, newConn);
+            }
+
+            conn.Verify(m => m.HandoffTcpClient(), Times.Once);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync sets connection context to Indirect"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Sets_Connection_Context_To_Indirect(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+            {
+                Assert.Equal(msgConn.Object, newConn);
+            }
+
+            msgConn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync adds and removes from PendingSolicitationDictionary"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Adds_And_Removes_From_PendingSolicitationDictionary(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            using (manager)
+            {
+                List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                    .Returns(Task.FromResult(conn.Object));
+
+                using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+                {
+                    Assert.Equal(msgConn.Object, newConn);
+
+                    Assert.Single(pending);
+                    Assert.Equal(username, pending[0].Value);
+                    Assert.Empty(manager.PendingSolicitations);
+                }
+            }
+
+            msgConn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync calls StartReadingContinuously"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Calls_StartReadingContinuously(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            using (manager)
+            {
+                List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                    .Returns(Task.FromResult(conn.Object));
+
+                using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+                {
+                    Assert.Equal(msgConn.Object, newConn);
+
+                    Assert.Single(pending);
+                    Assert.Equal(username, pending[0].Value);
+                    Assert.Empty(manager.PendingSolicitations);
+                }
+            }
+
+            msgConn.Verify(m => m.StartReadingContinuously(), Times.Once);
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
