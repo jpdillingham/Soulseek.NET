@@ -511,18 +511,18 @@ namespace Soulseek.Network
 
         private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, CancellationToken cancellationToken)
         {
-            var token = SoulseekClient.GetNextToken();
+            var solicitationToken = SoulseekClient.GetNextToken();
 
             try
             {
-                PendingSolicitationDictionary.TryAdd(token, username);
+                PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Peer).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
                 using (var incomingConnection = await SoulseekClient.Waiter
-                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, token), null, cancellationToken)
+                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), null, cancellationToken)
                     .ConfigureAwait(false))
                 {
                     var connection = ConnectionFactory.GetMessageConnection(
@@ -543,7 +543,7 @@ namespace Soulseek.Network
             }
             finally
             {
-                PendingSolicitationDictionary.TryRemove(token, out var _);
+                PendingSolicitationDictionary.TryRemove(solicitationToken, out var _);
             }
         }
 
