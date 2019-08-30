@@ -1231,6 +1231,20 @@ namespace Soulseek.Tests.Unit.Network
             conn.Verify(m => m.Dispose());
         }
 
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync pierces firewall with correct token"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Pierces_Firewall_With_Correct_Token(string username, IPAddress ipAddress, int port, int token)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync generates expected diagnostic on successful connection"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Generates_Expected_Diagnostic_On_Successful_Connection(string username, IPAddress ipAddress, int port, int token)
+        {
+            Assert.True(false);
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
