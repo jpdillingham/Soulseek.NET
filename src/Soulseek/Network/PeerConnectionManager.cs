@@ -235,15 +235,15 @@ namespace Soulseek.Network
                     try
                     {
                         await connection.ConnectAsync().ConfigureAwait(false);
+
+                        var request = new PierceFirewall(connectToPeerResponse.Token).ToByteArray();
+                        await connection.WriteAsync(request).ConfigureAwait(false);
                     }
                     catch
                     {
                         connection.Dispose();
                         throw;
                     }
-
-                    var request = new PierceFirewall(connectToPeerResponse.Token).ToByteArray();
-                    await connection.WriteAsync(request).ConfigureAwait(false);
 
                     (_, connection) = AddOrUpdateMessageConnectionRecord(connectToPeerResponse.Username, connection);
 
