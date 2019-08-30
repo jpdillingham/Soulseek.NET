@@ -1125,6 +1125,29 @@ namespace Soulseek.Tests.Unit.Network
             msgConn.Verify(m => m.StartReadingContinuously(), Times.Once);
         }
 
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns existing connection if exists"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Returns_Existing_Connection_If_Exists(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+            dict.TryAdd(username, (new SemaphoreSlim(1, 1), conn.Object));
+
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (var existingConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
+                {
+                    Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
         //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
         //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
