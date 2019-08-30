@@ -1133,17 +1133,44 @@ namespace Soulseek.Tests.Unit.Network
 
             var conn = GetMessageConnectionMock(username, ipAddress, port);
             var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-            dict.TryAdd(username, (new SemaphoreSlim(1, 1), conn.Object));
 
-            var (manager, mocks) = GetFixture();
+            var (manager, _) = GetFixture();
 
             using (manager)
+            using (var sem = new SemaphoreSlim(1,1))
             {
+                dict.TryAdd(username, (sem, conn.Object));
                 manager.SetProperty("MessageConnectionDictionary", dict);
 
                 using (var existingConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
                 {
                     Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync connects and returns new if not existing"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Connects_And_Returns_New_If_Not_Existing(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                using (var newConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
+                {
+                    Assert.Equal(conn.Object, newConn);
                 }
             }
         }
