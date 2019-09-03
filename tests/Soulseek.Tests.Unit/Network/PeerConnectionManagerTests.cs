@@ -1235,14 +1235,51 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync pierces firewall with correct token"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_Pierces_Firewall_With_Correct_Token(string username, IPAddress ipAddress, int port, int token)
         {
-            Assert.True(false);
+            var expectedMessage = new PierceFirewall(token).ToByteArray();
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
+            }
+
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedMessage)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync generates expected diagnostic on successful connection"), AutoData]
         internal async Task GetOrAddMessageConnectionAsync_Generates_Expected_Diagnostic_On_Successful_Connection(string username, IPAddress ipAddress, int port, int token)
         {
-            Assert.True(false);
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Solicited direct connection"))), Times.Once);
         }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
