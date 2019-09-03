@@ -660,11 +660,11 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
             {
-                Assert.Contains(diagnostics, s => s.Contains("Attempting direct and indirect transfer connections", StringComparison.InvariantCultureIgnoreCase));
-                Assert.Contains(diagnostics, s => s.Contains($"established; cancelling", StringComparison.InvariantCultureIgnoreCase));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting direct and indirect transfer connections"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established; cancelling"));
                 Assert.Contains(
                     diagnostics,
-                    s => s.Contains("transfer connection to", StringComparison.InvariantCultureIgnoreCase) && s.Contains("established.", StringComparison.InvariantCultureIgnoreCase));
+                    s => s.ContainsInsensitive("transfer connection to") && s.ContainsInsensitive("established."));
             }
         }
 
@@ -809,7 +809,7 @@ namespace Soulseek.Tests.Unit.Network
                     manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
 
                     Assert.Single(diagnostics);
-                    Assert.Contains(diagnostics, m => m.Contains($"Removing message connection to {username}", StringComparison.InvariantCultureIgnoreCase));
+                    Assert.Contains(diagnostics, m => m.ContainsInsensitive($"Removing message connection to {username}"));
                 }
             }
 
@@ -1279,7 +1279,7 @@ namespace Soulseek.Tests.Unit.Network
                 (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
             }
 
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Solicited direct connection"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Solicited direct connection") && s.ContainsInsensitive("established"))), Times.Once);
         }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
