@@ -1127,7 +1127,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
         [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns existing connection if exists"), AutoData]
-        internal async Task GetOrAddMessageConnectionAsync_Returns_Existing_Connection_If_Exists(string username, IPAddress ipAddress, int port, int token)
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Returns_Existing_Connection_If_Exists(string username, IPAddress ipAddress, int port, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
 
@@ -1280,6 +1280,61 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Solicited direct connection") && s.ContainsInsensitive("established"))), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns existing connection if exists"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Returns_Existing_Connection_If_Exists(string username, IPAddress ipAddress, int port, int token)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            using (var sem = new SemaphoreSlim(1, 1))
+            {
+                dict.TryAdd(username, (sem, conn.Object));
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (var existingConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, port, CancellationToken.None))
+                {
+                    Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns direct connection when direct connects first"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Returns_Direct_Connection_When_Direct_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+            }
         }
 
         //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
