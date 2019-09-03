@@ -20,5 +20,10 @@ namespace Soulseek.Tests.Unit
         {
             return a1.AsSpan().SequenceEqual(a2);
         }
+
+        public static bool ContainsInsensitive(this string str, string match)
+        {
+            return str.Contains(match, StringComparison.InvariantCultureIgnoreCase);
+        }
     }
 }
