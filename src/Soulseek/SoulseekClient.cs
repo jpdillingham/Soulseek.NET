@@ -487,7 +487,7 @@ namespace Soulseek
         /// </remarks>
         /// <returns>The next token.</returns>
         /// <threadsafety instance="true"/>
-        public int GetNextToken() => TokenFactory.NextToken();
+        public virtual int GetNextToken() => TokenFactory.NextToken();
 
         /// <summary>
         ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
