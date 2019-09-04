@@ -298,9 +298,10 @@ namespace Soulseek.Network
 
                         var tasks = new[] { direct, indirect }.ToList();
                         Task<IMessageConnection> task;
+
                         do
                         {
-                            task = await Task.WhenAny(direct, indirect).ConfigureAwait(false);
+                            task = await Task.WhenAny(tasks).ConfigureAwait(false);
                             tasks.Remove(task);
                         }
                         while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
