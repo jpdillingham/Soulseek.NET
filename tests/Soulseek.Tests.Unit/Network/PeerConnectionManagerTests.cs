@@ -1401,10 +1401,90 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync generates expected diagnostics on successful connection"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Generates_Expected_Diagnostics(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            List<string> diagnostics = new List<string>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(s => diagnostics.Add(s));
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting direct and indirect message connections"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established; cancelling"));
+                Assert.Contains(
+                    diagnostics,
+                    s => s.ContainsInsensitive("message connection to") && s.ContainsInsensitive("established."));
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync sends PeerInit on direct connection established"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Sends_PeerInit_On_Direct_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var peerInit = new PeerInit(localUsername, Constants.ConnectionType.Peer, token).ToByteArray();
+
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
             }
         }
 
