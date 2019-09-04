@@ -278,6 +278,41 @@ namespace Soulseek.Tests.Unit.Network
                     Assert.False(c.ReadingContinuously);
                 }
             }
+
+            streamMock.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "ReadingContinuously")]
+        [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
+        public async Task ReadingContinuously_Returns_If_Already_Reading(string username, IPAddress ipAddress, int port)
+        {
+            bool b = false;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+                {
+                    b = true;
+                })
+                .Throws(new Exception());
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                {
+                    c.SetProperty("ReadingContinuously", true);
+
+                    await c.InvokeMethod<Task>("ReadContinuouslyAsync");
+                }
+            }
+
+            streamMock.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
         }
     }
 }
