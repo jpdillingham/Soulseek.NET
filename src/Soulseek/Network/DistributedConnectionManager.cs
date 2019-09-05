@@ -338,7 +338,7 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="IDistributedConnectionManager"/>.
         /// </summary>
         public void Dispose()
         {
