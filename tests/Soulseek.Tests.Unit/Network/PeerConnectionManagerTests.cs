@@ -147,6 +147,39 @@ namespace Soulseek.Tests.Unit.Network
             conn.Verify(m => m.Dispose(), Times.Once);
         }
 
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync produces diagnostic on disconnect"), AutoData]
+        internal async Task AddTransferConnectionAsync_Produces_Diagnostic_On_Disconnect(string username, IPAddress ipAddress, int port, int token)
+        {
+            var expectedEx = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Callback<long, CancellationToken?>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, "foo"))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, mocks.TcpClient.Object));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("disconnected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+        }
+
         [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync starts reading"), AutoData]
         internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPAddress ipAddress, int port, int token)
