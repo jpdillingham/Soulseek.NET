@@ -34,6 +34,11 @@ namespace Soulseek.Network.Tcp
         bool Connected { get; }
 
         /// <summary>
+        ///     Gets the client remote endpoint.
+        /// </summary>
+        IPEndPoint RemoteEndPoint { get; }
+
+        /// <summary>
         ///     Disposes this <see cref="ITcpClient"/> and requests that the underlying TCP connection be closed.
         /// </summary>
         void Close();

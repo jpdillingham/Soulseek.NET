@@ -63,6 +63,8 @@ namespace Soulseek
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value supplied for <paramref name="concurrentDistributedChildrenLimit"/> is less than zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value supplied for <paramref name="concurrentPeerMessageConnectionLimit"/> is less than one.</exception>
         public ClientOptions(
             int? listenPort = null,
             int concurrentDistributedChildrenLimit = 100,
@@ -83,8 +85,21 @@ namespace Soulseek
             Func<string, IPAddress, int, string, Task<int>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
+
             ConcurrentDistributedChildrenLimit = concurrentDistributedChildrenLimit;
+
+            if (ConcurrentDistributedChildrenLimit < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(concurrentDistributedChildrenLimit), "Must be greater than or equal to zero.");
+            }
+
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
+
+            if (ConcurrentPeerMessageConnectionLimit < 1)
+            {
+                throw new ArgumentOutOfRangeException(nameof(concurrentPeerMessageConnectionLimit), "Must be greater than zero.");
+            }
+
             MessageTimeout = messageTimeout;
             AutoAcknowledgePrivateMessages = autoAcknowledgePrivateMessages;
             MinimumDiagnosticLevel = minimumDiagnosticLevel;

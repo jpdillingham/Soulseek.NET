@@ -30,6 +30,9 @@ namespace Soulseek.Network
     /// </summary>
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
+        private readonly object parentCandidateSyncRoot = new object();
+        private readonly object statusSyncRoot = new object();
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="DistributedConnectionManager"/> class.
         /// </summary>
@@ -123,13 +126,11 @@ namespace Soulseek.Network
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
         private List<IMessageConnection> ParentCandidateConnections { get; } = new List<IMessageConnection>();
-        private object ParentCandidateSyncRoot { get; } = new object();
         private IMessageConnection ParentConnection { get; set; }
         private SystemTimer ParentWatchdogTimer { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
-        private object StatusSyncRoot { get; } = new object();
         private SystemTimer StatusTimer { get; }
 
         /// <summary>
@@ -256,15 +257,6 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Sets the distributed <paramref name="branchRoot"/>.
-        /// </summary>
-        /// <param name="branchRoot">The distributed branch root.</param>
-        public void SetBranchRoot(string branchRoot)
-        {
-            BranchRoot = branchRoot;
-        }
-
-        /// <summary>
         ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.
         /// </summary>
         /// <param name="parentCandidates">The list of parent connection candidates provided by the server.</param>
@@ -304,7 +296,7 @@ namespace Soulseek.Network
                 cts.Cancel();
                 PendingSolicitationDictionary.Clear();
 
-                lock (ParentCandidateSyncRoot)
+                lock (parentCandidateSyncRoot)
                 {
                     ParentCandidateConnections.Remove(ParentConnection);
 
@@ -378,6 +370,15 @@ namespace Soulseek.Network
         public void SetBranchLevel(int branchLevel)
         {
             BranchLevel = branchLevel;
+        }
+
+        /// <summary>
+        ///     Sets the distributed <paramref name="branchRoot"/>.
+        /// </summary>
+        /// <param name="branchRoot">The distributed branch root.</param>
+        public void SetBranchRoot(string branchRoot)
+        {
+            BranchRoot = branchRoot;
         }
 
         private void AddOrUpdateChildConnectionRecord(IMessageConnection connection)
@@ -499,7 +500,7 @@ namespace Soulseek.Network
 
             await connection.WriteAsync(new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-            lock (ParentCandidateSyncRoot)
+            lock (parentCandidateSyncRoot)
             {
                 ParentCandidateConnections.Add(connection);
             }
@@ -534,7 +535,7 @@ namespace Soulseek.Network
                     connection.Context = Constants.ConnectionMethod.Indirect;
                     connection.Disconnected += ParentCandidateConnection_Disconnected;
 
-                    lock (ParentCandidateSyncRoot)
+                    lock (parentCandidateSyncRoot)
                     {
                         ParentCandidateConnections.Add(connection);
                     }
@@ -595,7 +596,7 @@ namespace Soulseek.Network
 
             var statusHash = Convert.ToBase64String(payload.ToArray());
 
-            lock (StatusSyncRoot)
+            lock (statusSyncRoot)
             {
                 if (statusHash == StatusHash && HasParent)
                 {

@@ -47,6 +47,11 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         public bool Connected => TcpClient.Connected;
 
+        /// <summary>
+        ///     Gets the client remote endpoint.
+        /// </summary>
+        public IPEndPoint RemoteEndPoint => (IPEndPoint)TcpClient.Client.RemoteEndPoint;
+
         private bool Disposed { get; set; }
         private TcpClient TcpClient { get; set; }
 

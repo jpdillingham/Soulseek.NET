@@ -14,8 +14,11 @@ namespace Soulseek.Tests.Unit.Network
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
+    using System.Net.Sockets;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -44,319 +47,1483 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(new ClientOptions().ConcurrentPeerMessageConnectionLimit, c.ConcurrentMessageConnectionLimit);
         }
 
-        //        [Trait("Category", "Instantiation")]
-        //        [Fact(DisplayName = "Throws ArgumentOutOfRangeException when ConcurrentPeerConnections is less than 1.")]
-        //        public void Throws_ArgumentOutOfRangeException_When_ConcurrentPeerConnections_Is_Less_than_1()
-        //        {
-        //            ConnectionManager c = null;
-
-        //            var ex = Record.Exception(() => c = new ConnectionManager(0));
-
-        //            Assert.NotNull(ex);
-        //            Assert.IsType<ArgumentOutOfRangeException>(ex);
-        //        }
-
-        //        [Trait("Category", "Dispose")]
-        //        [Fact(DisplayName = "Disposes without throwing")]
-        //        public void Disposes_Without_Throwing()
-        //        {
-        //            var c = new ConnectionManager(1);
-
-        //            var ex = Record.Exception(() => c.Dispose());
-
-        //            Assert.Null(ex);
-        //        }
-
-        //        [Trait("Category", "RemoveAndDisposeAll")]
-        //        [Theory(DisplayName = "RemoveAndDisposeAll removes and disposes all"), AutoData]
-        //        public void RemoveAndDisposeAll_Removes_And_Disposes_All(IPAddress ip, int port)
-        //        {
-        //            var c = new ConnectionManager(1);
-
-        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-        //            peer.GetOrAdd(new ConnectionKey(ip, port), (new SemaphoreSlim(1), new Mock<IMessageConnection>().Object));
-
-        //            c.SetProperty("PeerConnections", peer);
-
-        //            var transfer = new ConcurrentDictionary<(ConnectionKey, int), IConnection>();
-        //            transfer.GetOrAdd((new ConnectionKey(ip, port), port), new Mock<IConnection>().Object);
-
-        //            c.SetProperty("TransferConnections", transfer);
-
-        //            var activePeerBefore = c.ActivePeerConnections;
-        //            var activeTransferBefore = c.ActiveTransferConnections;
-
-        //            c.RemoveAndDisposeAll();
-
-        //            Assert.Equal(1, activePeerBefore);
-        //            Assert.Equal(1, activeTransferBefore);
-
-        //            Assert.Empty(c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections"));
-        //            Assert.Empty(c.GetProperty<ConcurrentDictionary<(ConnectionKey, int), IConnection>>("TransferConnections"));
-        //        }
-
-        //        [Trait("Category", "AddUnsolicitedTransferConnectionAsync")]
-        //        [Theory(DisplayName = "AddUnsolicitedTransferConnectionAsync connects and sends PeerInit"), AutoData]
-        //        internal async Task AddUnsolicitedTransferConnectionAsync_Connects_And_Sends_PeerInit(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-        //        {
-        //            var key = new ConnectionKey(ipAddress, port);
-        //            var expectedBytes = new PeerInitRequest(username, "F", token).ToByteArray().ToByteArray();
-        //            byte[] actualBytes = Array.Empty<byte>();
-
-        //            var conn = new Mock<IConnection>();
-        //            conn.Setup(m => m.IPAddress)
-        //                .Returns(ipAddress);
-        //            conn.Setup(m => m.Port)
-        //                .Returns(port);
-        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask)
-        //                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
-
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-        //                .Returns(conn.Object);
-
-        //            IConnection newConn = null;
-
-        //            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
-        //            {
-        //                newConn = await c.AddUnsolicitedTransferConnectionAsync(key, token, username, options, CancellationToken.None);
-        //            }
-
-        //            Assert.Equal(ipAddress, newConn.IPAddress);
-        //            Assert.Equal(port, newConn.Port);
-
-        //            Assert.Equal(expectedBytes, actualBytes);
-
-        //            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-        //        }
-
-        //        [Trait("Category", "AddSolicitedTransferConnectionAsync")]
-        //        [Theory(DisplayName = "AddSolicitedTransferConnectionAsync connects and pierces firewall"), AutoData]
-        //        internal async Task AddSolicitedTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token, ConnectionOptions options)
-        //        {
-        //            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
-        //            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
-        //            byte[] actualBytes = Array.Empty<byte>();
-
-        //            var conn = new Mock<IConnection>();
-        //            conn.Setup(m => m.IPAddress)
-        //                .Returns(ipAddress);
-        //            conn.Setup(m => m.Port)
-        //                .Returns(port);
-        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask)
-        //                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
-
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>()))
-        //                .Returns(conn.Object);
-
-        //            IConnection newConn = null;
-
-        //            using (var c = new ConnectionManager(1, connectionFactory: connFactory.Object))
-        //            {
-        //                newConn = await c.AddSolicitedTransferConnectionAsync(ctpr, options, CancellationToken.None);
-        //            }
-
-        //            Assert.Equal(ipAddress, newConn.IPAddress);
-        //            Assert.Equal(port, newConn.Port);
-
-        //            Assert.Equal(expectedBytes, actualBytes);
-
-        //            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
-        //            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()), Times.Once);
-        //        }
-
-        //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
-        //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync connects and pierces firewall"), AutoData]
-        //        internal async Task GetOrAddSolicitedConnectionAsync_Connects_And_Pierces_Firewall(
-        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-        //        {
-        //            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
-
-        //            var expectedBytes = new PierceFirewallRequest(token).ToByteArray().ToByteArray();
-        //            byte[] actualBytes = Array.Empty<byte>();
-
-        //            var tokenFactory = new Mock<ITokenFactory>();
-        //            tokenFactory.Setup(m => m.NextToken())
-        //                .Returns(token);
-
-        //            var conn = new Mock<IMessageConnection>();
-        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask)
-        //                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
-
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
-        //                .Returns(conn.Object);
-
-        //            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
-
-        //            IMessageConnection connection = null;
-
-        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
-
-        //            Assert.Null(ex);
-
-        //            Assert.Equal(conn.Object, connection);
-
-        //            Assert.Equal(expectedBytes, actualBytes);
-        //        }
-
-        //        [Trait("Category", "GetOrAddSolicitedConnectionAsync")]
-        //        [Theory(DisplayName = "GetOrAddSolicitedConnectionAsync returns existing connection"), AutoData]
-        //        internal async Task GetOrAddSolicitedConnectionAsync_Returns_Existing_Connection(
-        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-        //        {
-        //            var ctpr = new ConnectToPeerResponse(username, "P", ipAddress, port, token);
-
-        //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-        //            var conn = new Mock<IMessageConnection>();
-
-        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-        //            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
-
-        //            var c = new ConnectionManager(10);
-        //            c.SetProperty("PeerConnections", peer);
-
-        //            IMessageConnection connection = null;
-
-        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddSolicitedPeerConnectionAsync(ctpr, messageHandler, options, CancellationToken.None));
-
-        //            Assert.Null(ex);
-
-        //            Assert.Equal(conn.Object, connection);
-        //        }
-
-        //        [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
-        //        [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync connects and sends PeerInit"), AutoData]
-        //        internal async Task GetOrAddUnsolicitedConnectionAsync_Connects_And_Sends_PeerInit(
-        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-        //        {
-        //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-
-        //            var expectedBytes = new PeerInitRequest(username, "P", token).ToByteArray().ToByteArray();
-        //            byte[] actualBytes = Array.Empty<byte>();
-
-        //            var tokenFactory = new Mock<ITokenFactory>();
-        //            tokenFactory.Setup(m => m.NextToken())
-        //                .Returns(token);
-
-        //            var conn = new Mock<IMessageConnection>();
-        //            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(Task.CompletedTask)
-        //                .Callback<byte[], CancellationToken>((b, ct) => actualBytes = b);
-
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
-        //                .Returns(conn.Object);
-
-        //            var c = new ConnectionManager(10, tokenFactory.Object, connFactory.Object);
-
-        //            IMessageConnection connection = null;
-
-        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
-
-        //            Assert.Null(ex);
-
-        //            Assert.Equal(conn.Object, connection);
-
-        //            Assert.Equal(expectedBytes, actualBytes);
-        //        }
-
-        //        [Trait("Category", "GetOrAddUnsolicitedConnectionAsync")]
-        //        [Theory(DisplayName = "GetOrAddUnsolicitedConnectionAsync returns existing connection"), AutoData]
-        //        internal async Task GetOrAddUnsolicitedConnectionAsync_Returns_Existing_Connection(
-        //            string username, IPAddress ipAddress, int port, EventHandler<Message> messageHandler, ConnectionOptions options)
-        //        {
-        //            var key = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-        //            var conn = new Mock<IMessageConnection>();
-
-        //            var peer = new ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
-        //            peer.GetOrAdd(key, (new SemaphoreSlim(1), conn.Object));
-
-        //            var c = new ConnectionManager(10);
-        //            c.SetProperty("PeerConnections", peer);
-
-        //            IMessageConnection connection = null;
-
-        //            var ex = await Record.ExceptionAsync(async () => connection = await c.GetOrAddUnsolicitedPeerConnectionAsync(key, username, messageHandler, options, CancellationToken.None));
-
-        //            Assert.Null(ex);
-
-        //            Assert.Equal(conn.Object, connection);
-        //        }
-
-        //        [Trait("Category", "Semaphore")]
-        //        [Theory(DisplayName = "GetOrAdd queues connections"), AutoData]
-        //        internal void GetOrAdd_Queues_Connections(
-        //            string username, IPAddress ipAddress, int port, string username2, IPAddress ipAddress2, int port2, EventHandler<Message> messageHandler, ConnectionOptions options, int token)
-        //        {
-        //            var key1 = new ConnectionKey(username, ipAddress, port, MessageConnectionType.Peer);
-        //            var key2 = new ConnectionKey(username2, ipAddress2, port2, MessageConnectionType.Peer);
-
-        //            var tokenFactory = new Mock<ITokenFactory>();
-        //            tokenFactory.Setup(m => m.NextToken())
-        //                .Returns(token);
-
-        //            var conn = new Mock<IMessageConnection>();
-        //            conn.Setup(m => m.Key)
-        //                .Returns(key1);
-        //            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(() => Task.CompletedTask);
-
-        //            var conn2 = new Mock<IMessageConnection>();
-        //            conn2.Setup(m => m.Key)
-        //                .Returns(key2);
-        //            conn2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-        //                .Returns(() => Task.CompletedTask);
-
-        //            var connFactory = new Mock<IConnectionFactory>();
-        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username, ipAddress, port, options))
-        //                .Returns(conn.Object);
-        //            connFactory.Setup(m => m.GetMessageConnection(MessageConnectionType.Peer, username2, ipAddress2, port2, options))
-        //                .Returns(conn2.Object);
-
-        //            var c = new ConnectionManager(1, tokenFactory.Object, connFactory.Object);
-
-        //#pragma warning disable CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-        //            c.GetOrAddUnsolicitedPeerConnectionAsync(key1, username, messageHandler, options, CancellationToken.None);
-        //            c.GetOrAddUnsolicitedPeerConnectionAsync(key2, username, messageHandler, options, CancellationToken.None);
-        //#pragma warning restore CS4014 // Because this call is not awaited, execution of the current method continues before the call is completed
-
-        //            Assert.Equal(1, c.ActivePeerConnections);
-        //            Assert.Equal(1, c.WaitingPeerConnections);
-
-        //            var firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
-        //            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
-
-        //            Thread.Sleep(500);
-
-        //            Assert.Equal(1, c.ActivePeerConnections);
-        //            Assert.Equal(0, c.WaitingPeerConnections);
-
-        //            firstConn = c.GetProperty<ConcurrentDictionary<ConnectionKey, (SemaphoreSlim Semaphore, IMessageConnection Connection)>>("PeerConnections").First();
-        //            c.InvokeMethod("RemoveMessageConnection", firstConn.Value.Connection);
-
-        //            Thread.Sleep(500);
-
-        //            Assert.Equal(0, c.ActivePeerConnections);
-        //            Assert.Equal(0, c.WaitingPeerConnections);
-        //        }
-
-        private (PeerConnectionManager manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0)
+        [Trait("Category", "Dispose")]
+        [Fact(DisplayName = "Disposes without throwing")]
+        public void Disposes_Without_Throwing()
         {
-            var mocks = new Mocks();
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            using (var c = new PeerConnectionManager(mocks.Client.Object))
+            {
+                var ex = Record.Exception(() => c.Dispose());
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "RemoveAndDisposeAll")]
+        [Fact(DisplayName = "RemoveAndDisposeAll removes and disposes all")]
+        public void RemoveAndDisposeAll_Removes_And_Disposes_All()
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            using (var semaphore = new SemaphoreSlim(1))
+            {
+                var peer = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+                peer.GetOrAdd("foo", (semaphore, new Mock<IMessageConnection>().Object));
+
+                manager.SetProperty("MessageConnectionDictionary", peer);
+
+                var solicitations = new ConcurrentDictionary<int, string>();
+                solicitations.TryAdd(1, "bar");
+
+                manager.SetProperty("PendingSolicitationDictionary", solicitations);
+                manager.SetField("waitingMessageConnections", 1);
+
+                manager.RemoveAndDisposeAll();
+
+                Assert.Empty(manager.MessageConnections);
+                Assert.Empty(manager.PendingSolicitations);
+                Assert.Equal(0, manager.WaitingMessageConnections);
+            }
+        }
+
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync reads token and completes wait"), AutoData]
+        internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPAddress ipAddress, int port, int token)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddTransferConnectionAsync(username, token, mocks.TcpClient.Object);
+            }
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, token), conn.Object));
+        }
+
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync disposes connection on exception"), AutoData]
+        internal async Task AddTransferConnectionAsync_Disposes_Connection_On_Exception(string username, IPAddress ipAddress, int port, int token)
+        {
+            var expectedEx = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, mocks.TcpClient.Object));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync produces diagnostic on disconnect"), AutoData]
+        internal async Task AddTransferConnectionAsync_Produces_Diagnostic_On_Disconnect(string username, IPAddress ipAddress, int port, int token)
+        {
+            var expectedEx = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Callback<long, CancellationToken?>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, "foo"))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, mocks.TcpClient.Object));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("disconnected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync starts reading"), AutoData]
+        internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPAddress ipAddress, int port, int token)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+            }
+
+            conn.Verify(m => m.StartReadingContinuously());
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync adds connection"), AutoData]
+        internal async Task AddMessageConnectionAsync_Adds_Connection(string username, IPAddress ipAddress, int port, int token)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+
+                Assert.Single(manager.MessageConnections);
+                Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPAddress == ipAddress && c.Port == port);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync replaces duplicate connection and disposes old"), AutoData]
+        internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Disposes_Old(string username, IPAddress ipAddress, int port, int token)
+        {
+            var conn1 = GetMessageConnectionMock(username, ipAddress, port);
+            conn1.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn1.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var conn2 = GetMessageConnectionMock(username, ipAddress, port);
+            conn2.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn2.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn1.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ipAddress, port));
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+
+                Assert.Single(manager.MessageConnections);
+                Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPAddress == ipAddress && c.Port == port);
+
+                // swap in the second connection
+                mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                    .Returns(conn2.Object);
+
+                // call this again to force the first connection out and second in its place
+                await manager.AddMessageConnectionAsync(username, mocks.TcpClient.Object);
+
+                // make sure we still have just the one
+                Assert.Single(manager.MessageConnections);
+                Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPAddress == ipAddress && c.Port == port);
+
+                // verify that the first connection was disposed
+                conn1.Verify(m => m.Dispose());
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync connects and pierces firewall"), AutoData]
+        internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
+            var expectedBytes = new PierceFirewall(token).ToByteArray();
+            byte[] actualBytes = Array.Empty<byte>();
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask)
+                .Callback<byte[], CancellationToken>((b, c) => actualBytes = b);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            (IConnection Connection, int RemoteToken) newConn = default;
+
+            using (manager)
+            {
+                newConn = await manager.GetTransferConnectionAsync(ctpr);
+            }
+
+            Assert.Equal(ipAddress, newConn.Connection.IPAddress);
+            Assert.Equal(port, newConn.Connection.Port);
+            Assert.Equal(token, newConn.RemoteToken);
+
+            Assert.Equal(expectedBytes, actualBytes);
+
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync disposes connection if connect fails"), AutoData]
+        internal async Task GetTransferConnectionAsync_Disposes_Connection_If_Connect_Fails(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", ipAddress, port, token);
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync disposes connection if connect fails"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Disposes_Connection_If_Connect_Fails(IPAddress ipAddress, int port, int token)
+        {
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", ipAddress, port, token, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync returns connection if connect succeeds"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Returns_Connection_If_Connect_Succeeds(IPAddress ipAddress, int port, int token)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", ipAddress, port, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+        }
+
+        [Trait("Category", "GetTransferOutboundDirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync sets connection context to Direct"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Sets_Connection_Context_To_Direct(IPAddress ipAddress, int port, int token)
+        {
+            object context = null;
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.SetupSet(m => m.Context = It.IsAny<string>())
+                .Callback<object>(o => context = o);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", ipAddress, port, token, CancellationToken.None))
+            {
+                Assert.Equal(Constants.ConnectionMethod.Direct, context);
+            }
+
+            conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Direct);
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync sends ConnectToPeerRequest"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Sends_ConnectToPeerRequest(IPAddress ipAddress, int port, string username, int token)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => true), CancellationToken.None));
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync throws if wait throws"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Throws_If_Wait_Throws(IPAddress ipAddress, int port, string username, int token)
+        {
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync hands off ITcpConnection"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Hands_Off_ITcpConnection(IPAddress ipAddress, int port, string username, int token)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            conn.Verify(m => m.HandoffTcpClient(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync sets connection context to Indirect"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Sets_Connection_Context_To_Indirect(IPAddress ipAddress, int port, string username, int token)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, newConn);
+            }
+
+            conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
+        }
+
+        [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetTransferConnectionOutboundIndirectAsync adds and removes from PendingSolicitationDictionary"), AutoData]
+        internal async Task GetTransferConnectionOutboundIndirectAsync_Adds_And_Removes_From_PendingSolicitationDictionary(IPAddress ipAddress, int port, string username, int token)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                    .Returns(Task.FromResult(conn.Object));
+
+                using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundIndirectAsync", username, token, CancellationToken.None))
+                {
+                    Assert.Equal(conn.Object, newConn);
+
+                    Assert.Single(pending);
+                    Assert.Equal(username, pending[0].Value);
+                    Assert.Empty(manager.PendingSolicitations);
+                }
+            }
+
+            conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync returns direct connection when direct connects first"), AutoData]
+        internal async Task GetTransferConnectionAsync_Returns_Direct_Connection_When_Direct_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync returns indirect connection when indirect connects first"), AutoData]
+        internal async Task GetTransferConnectionAsync_Returns_Indirect_Connection_When_Indirect_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(indirect.Object));
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Equal(indirect.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Indirect, newConn.Context);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync throws ConnectionException when direct and indirect connections fail"), AutoData]
+        internal async Task GetTransferConnectionAsync_Throws_ConnectionException_When_Direct_And_Indirect_Connections_Fail(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync generates expected diagnostics on successful connection"), AutoData]
+        internal async Task GetTransferConnectionAsync_Generates_Expected_Diagnostics(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            List<string> diagnostics = new List<string>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(s => diagnostics.Add(s));
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting direct and indirect transfer connections"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established; cancelling"));
+                Assert.Contains(
+                    diagnostics,
+                    s => s.ContainsInsensitive("transfer connection to") && s.ContainsInsensitive("established."));
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync sends PeerInit on direct connection established"), AutoData]
+        internal async Task GetTransferConnectionAsync_Sends_PeerInit_On_Direct_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var peerInit = new PeerInit(localUsername, Constants.ConnectionType.Transfer, token).ToByteArray();
+
+            var direct = GetConnectionMock(ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetConnectionMock(ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync writes token on connection established"), AutoData]
+        internal async Task GetTransferConnectionAsync_Writes_Token_On_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            {
+                var direct = GetConnectionMock(ipAddress, directPort);
+                direct.Setup(m => m.Context)
+                    .Returns(Constants.ConnectionMethod.Direct);
+
+                var indirect = GetConnectionMock(ipAddress, indirectPort);
+                indirect.Setup(m => m.Context)
+                    .Returns(Constants.ConnectionMethod.Indirect);
+
+                var (manager, mocks) = GetFixture();
+
+                mocks.Client.Setup(m => m.Username)
+                    .Returns(localUsername);
+
+                mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), directPort, It.IsAny<ConnectionOptions>(), null))
+                    .Returns(direct.Object);
+                mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPAddress>(), indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                    .Returns(indirect.Object);
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Throws(new Exception());
+
+                using (manager)
+                using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
+                {
+                    Assert.Equal(direct.Object, newConn);
+                    Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+
+                    direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(BitConverter.GetBytes(token))), It.IsAny<CancellationToken?>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected removes and disposes connection"), AutoData]
+        internal void MessageConnection_Disconnected_Removes_And_Disposes_Connection(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            using (var semaphore = new SemaphoreSlim(1))
+            {
+                dict.TryAdd(username, (semaphore, conn.Object));
+
+                var (manager, mocks) = GetFixture();
+
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (manager)
+                {
+                    var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                    ms.WaitAsync();
+
+                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                    Assert.Empty(dict);
+                }
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected generates diagnostic on removal"), AutoData]
+        internal void MessageConnection_Disconnected_Generates_Diagnostic_On_Removal(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            using (var semaphore = new SemaphoreSlim(1))
+            {
+                dict.TryAdd(username, (semaphore, conn.Object));
+
+                var (manager, mocks) = GetFixture();
+
+                List<string> diagnostics = new List<string>();
+
+                mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                    .Callback<string>(s => diagnostics.Add(s));
+
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (manager)
+                {
+                    var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                    ms.WaitAsync();
+
+                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                    Assert.Single(diagnostics);
+                    Assert.Contains(diagnostics, m => m.ContainsInsensitive($"Removing message connection to {username}"));
+                }
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected does not throw if connection isn't tracked"), AutoData]
+        internal void MessageConnection_Disconnected_Does_Not_Throw_If_Connection_Isnt_Tracked(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, mocks) = GetFixture();
+
+            manager.SetProperty("MessageConnectionDictionary", dict);
+
+            using (manager)
+            {
+                var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                ms.WaitAsync();
+
+                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                Assert.Empty(dict);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "MessageConnection_Disconnected")]
+        [Theory(DisplayName = "MessageConnection_Disconnected does not generate diagnostic if connection isn't tracked"), AutoData]
+        internal void MessageConnection_Disconnected_Does_Generate_Diagnostic_If_Connection_Isnt_Tracked(string username, string message)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Key)
+                .Returns(new ConnectionKey(username, IPAddress.None, 0));
+            conn.Setup(m => m.Username)
+                .Returns(username);
+
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, mocks) = GetFixture();
+
+            List<string> diagnostics = new List<string>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(s => diagnostics.Add(s));
+
+            manager.SetProperty("MessageConnectionDictionary", dict);
+
+            using (manager)
+            {
+                var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
+                ms.WaitAsync();
+
+                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+
+                Assert.Empty(diagnostics);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync connects and returns connection if connect succeeds"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Connects_And_Returns_Connection_If_Connect_Succeeds(string username, IPAddress ipAddress, int port)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, ipAddress, port, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actualConn);
+            }
+
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()), Times.Once);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync disposes connection if connect fails"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Disposes_Connection_If_Connect_Fails(string username, IPAddress ipAddress, int port)
+        {
+            var expectedEx = new Exception("foo");
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, ipAddress, port, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync sets context to Direct"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Sets_Context_To_Direct(string username, IPAddress ipAddress, int port)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, ipAddress, port, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actualConn);
+            }
+
+            conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Direct);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync sends ConnectToPeerRequest"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Sends_ConnectToPeerRequest(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+            {
+                Assert.Equal(msgConn.Object, newConn);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => true), CancellationToken.None));
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync throws if wait throws"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Throws_If_Wait_Throws(IPAddress ipAddress, int port, string username)
+        {
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedException, ex);
+            }
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync hands off ITcpConnection"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Hands_Off_ITcpConnection(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+            {
+                Assert.Equal(msgConn.Object, newConn);
+            }
+
+            conn.Verify(m => m.HandoffTcpClient(), Times.Once);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync sets connection context to Indirect"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Sets_Connection_Context_To_Indirect(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+            {
+                Assert.Equal(msgConn.Object, newConn);
+            }
+
+            msgConn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync adds and removes from PendingSolicitationDictionary"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Adds_And_Removes_From_PendingSolicitationDictionary(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            using (manager)
+            {
+                List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                    .Returns(Task.FromResult(conn.Object));
+
+                using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+                {
+                    Assert.Equal(msgConn.Object, newConn);
+
+                    Assert.Single(pending);
+                    Assert.Equal(username, pending[0].Value);
+                    Assert.Empty(manager.PendingSolicitations);
+                }
+            }
+
+            msgConn.VerifySet(m => m.Context = Constants.ConnectionMethod.Indirect);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync calls StartReadingContinuously"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Calls_StartReadingContinuously(IPAddress ipAddress, int port, string username)
+        {
+            var conn = GetConnectionMock(ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, ipAddress, port);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            using (manager)
+            {
+                List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
+
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                    .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
+                    .Returns(Task.FromResult(conn.Object));
+
+                using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
+                {
+                    Assert.Equal(msgConn.Object, newConn);
+
+                    Assert.Single(pending);
+                    Assert.Equal(username, pending[0].Value);
+                    Assert.Empty(manager.PendingSolicitations);
+                }
+            }
+
+            msgConn.Verify(m => m.StartReadingContinuously(), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns existing connection if exists"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsyncCTPR_Returns_Existing_Connection_If_Exists(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            using (var sem = new SemaphoreSlim(1, 1))
+            {
+                dict.TryAdd(username, (sem, conn.Object));
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (var existingConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
+                {
+                    Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync connects and returns new if not existing"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Connects_And_Returns_New_If_Not_Existing(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                using (var newConn = await manager.GetOrAddMessageConnectionAsync(ctpr))
+                {
+                    Assert.Equal(conn.Object, newConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync disposes connection and throws on connect failure"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Disposes_Connection_And_Throws_On_Connect_Failure(string username, IPAddress ipAddress, int port, int token)
+        {
+            var expectedEx = new Exception();
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose());
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync disposes connection and throws on write failure"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Disposes_Connection_And_Throws_On_Write_Failure(string username, IPAddress ipAddress, int port, int token)
+        {
+            var expectedEx = new Exception();
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose());
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync pierces firewall with correct token"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Pierces_Firewall_With_Correct_Token(string username, IPAddress ipAddress, int port, int token)
+        {
+            var expectedMessage = new PierceFirewall(token).ToByteArray();
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
+            }
+
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedMessage)), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync generates expected diagnostic on successful connection"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Generates_Expected_Diagnostic_On_Successful_Connection(string username, IPAddress ipAddress, int port, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, Constants.ConnectionType.Peer, ipAddress, port, token);
+
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, port, It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Solicited direct connection") && s.ContainsInsensitive("established"))), Times.Once);
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns existing connection if exists"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Returns_Existing_Connection_If_Exists(string username, IPAddress ipAddress, int port)
+        {
+            var conn = GetMessageConnectionMock(username, ipAddress, port);
+            var dict = new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            using (var sem = new SemaphoreSlim(1, 1))
+            {
+                dict.TryAdd(username, (sem, conn.Object));
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                using (var existingConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, port, CancellationToken.None))
+                {
+                    Assert.Equal(conn.Object, existingConn);
+                }
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns direct connection when direct connects first"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Returns_Direct_Connection_When_Direct_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort)
+        {
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync returns indirect connection when indirect connects first"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Returns_Indirect_Connection_When_Indirect_Connects_First(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort)
+        {
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var incomingIndirect = GetConnectionMock(ipAddress, indirectPort);
+            incomingIndirect.Setup(m => m.IPAddress)
+                .Returns(ipAddress);
+            incomingIndirect.Setup(m => m.Port)
+                .Returns(indirectPort);
+            incomingIndirect.Setup(m => m.HandoffTcpClient())
+                .Returns(new Mock<ITcpClient>().Object);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(incomingIndirect.Object));
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Equal(indirect.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Indirect, newConn.Context);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync throws ConnectionException when direct and indirect connections fail"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Throws_ConnectionException_When_Direct_And_Indirect_Connections_Fail(string localUsername, string username, IPAddress ipAddress, int directPort)
+        {
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync generates expected diagnostics on successful connection"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Generates_Expected_Diagnostics(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort)
+        {
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            List<string> diagnostics = new List<string>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(s => diagnostics.Add(s));
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting direct and indirect message connections"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established; cancelling"));
+                Assert.Contains(
+                    diagnostics,
+                    s => s.ContainsInsensitive("message connection to") && s.ContainsInsensitive("established."));
+            }
+        }
+
+        [Trait("Category", "GetOrAddMessageConnectionAsync")]
+        [Theory(DisplayName = "GetOrAddMessageConnectionAsync sends PeerInit on direct connection established"), AutoData]
+        internal async Task GetOrAddMessageConnectionAsync_Sends_PeerInit_On_Direct_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var peerInit = new PeerInit(localUsername, Constants.ConnectionType.Peer, token).ToByteArray();
+
+            var direct = GetMessageConnectionMock(username, ipAddress, directPort);
+            direct.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            var indirect = GetMessageConnectionMock(username, ipAddress, indirectPort);
+            indirect.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, directPort, It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ipAddress, indirectPort, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
+            {
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(Constants.ConnectionMethod.Direct, newConn.Context);
+
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
+        }
+
+        private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
+        {
+            var mocks = new Mocks(options);
 
             mocks.ServerConnection.Setup(m => m.Username)
                 .Returns(username ?? "username");
@@ -371,6 +1538,27 @@ namespace Soulseek.Tests.Unit.Network
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);
+        }
+
+        private Mock<IMessageConnection> GetMessageConnectionMock(string username, IPAddress ip, int port)
+        {
+            var mock = new Mock<IMessageConnection>();
+            mock.Setup(m => m.Username).Returns(username);
+            mock.Setup(m => m.IPAddress).Returns(ip);
+            mock.Setup(m => m.Port).Returns(port);
+
+            return mock;
+        }
+
+        private Mock<IConnection> GetConnectionMock(IPAddress ip, int port)
+        {
+            var mock = new Mock<IConnection>();
+            mock.Setup(m => m.IPAddress)
+                .Returns(ip);
+            mock.Setup(m => m.Port)
+                .Returns(port);
+
+            return mock;
         }
 
         private class Mocks
@@ -397,6 +1585,7 @@ namespace Soulseek.Tests.Unit.Network
             public Mock<IDistributedMessageHandler> DistributedMessageHandler { get; } = new Mock<IDistributedMessageHandler>();
             public Mock<IConnectionFactory> ConnectionFactory { get; } = new Mock<IConnectionFactory>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
+            public Mock<ITcpClient> TcpClient { get; } = new Mock<ITcpClient>();
         }
     }
 }
