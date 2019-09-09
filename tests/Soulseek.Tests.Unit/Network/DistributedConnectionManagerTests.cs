@@ -1,4 +1,4 @@
-﻿// <copyright file="PeerConnectionManagerTests.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedConnectionManagerTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -36,7 +36,21 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Instantiates properly")]
         public void Instantiates_Properly()
         {
-            Assert.False(true);
+            DistributedConnectionManager c = null;
+
+            var ex = Record.Exception(() => (c, _) = GetFixture());
+
+            Assert.Null(ex);
+            Assert.NotNull(c);
+
+            Assert.Equal(0, c.BranchLevel);
+            Assert.Equal(string.Empty, c.BranchRoot);
+            Assert.True(c.CanAcceptChildren);
+            Assert.Empty(c.Children);
+            Assert.Equal(new ClientOptions().ConcurrentDistributedChildrenLimit, c.ConcurrentChildLimit);
+            Assert.False(c.HasParent);
+            Assert.Equal((string.Empty, IPAddress.None, 0), c.Parent);
+            Assert.Empty(c.PendingSolicitations);
         }
 
         [Trait("Category", "Dispose")]
@@ -44,6 +58,25 @@ namespace Soulseek.Tests.Unit.Network
         public void Disposes_Without_Throwing()
         {
             Assert.False(true);
+        }
+
+        private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
+        {
+            var mocks = new Mocks(options);
+
+            mocks.ServerConnection.Setup(m => m.Username)
+                .Returns(username ?? "username");
+            mocks.ServerConnection.Setup(m => m.IPAddress)
+                .Returns(ip ?? IPAddress.Parse("0.0.0.0"));
+            mocks.ServerConnection.Setup(m => m.Port)
+                .Returns(port);
+
+            var handler = new DistributedConnectionManager(
+                mocks.Client.Object,
+                mocks.ConnectionFactory.Object,
+                mocks.Diagnostic.Object);
+
+            return (handler, mocks);
         }
 
         private class Mocks
