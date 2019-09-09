@@ -57,7 +57,15 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
         {
-            Assert.False(true);
+            var (manager, mocks) = GetFixture();
+
+            using (manager)
+            using (var c = new DistributedConnectionManager(mocks.Client.Object))
+            {
+                var ex = Record.Exception(() => c.Dispose());
+
+                Assert.Null(ex);
+            }
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
