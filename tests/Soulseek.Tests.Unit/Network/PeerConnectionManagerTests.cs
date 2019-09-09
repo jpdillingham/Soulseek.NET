@@ -17,13 +17,10 @@ namespace Soulseek.Tests.Unit.Network
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
