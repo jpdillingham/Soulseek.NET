@@ -68,6 +68,34 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "SetBranchLevel")]
+        [Theory(DisplayName = "SetBranchLevel sets branch level"), AutoData]
+        public void SetBranchLevel_Sets_Branch_Level(int branchLevel)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetBranchLevel(branchLevel);
+
+                Assert.Equal(branchLevel, manager.BranchLevel);
+            }
+        }
+
+        [Trait("Category", "SetBranchRoot")]
+        [Theory(DisplayName = "SetBranchRoot sets branch root"), AutoData]
+        public void SetBranchRoot_Sets_Branch_Root(string branchRoot)
+        {
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetBranchRoot(branchRoot);
+
+                Assert.Equal(branchRoot, manager.BranchRoot);
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
