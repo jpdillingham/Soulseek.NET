@@ -98,13 +98,12 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "BroadcastMessageAsync")]
         [Theory(DisplayName = "BroadcastMessageAsync resets watchdog timer"), AutoData]
-        public async Task BroadcastMessageAsync(byte[] bytes)
+        public async Task BroadcastMessageAsync_Resets_Watchdog_Timer(byte[] bytes)
         {
-            var timer = new System.Timers.Timer();
-            timer.Stop();
-
             var (manager, _) = GetFixture();
-            manager.SetProperty("ParentWatchdogTimer", timer);
+
+            var timer = manager.GetProperty<System.Timers.Timer>("ParentWatchdogTimer");
+            timer.Stop();
 
             using (timer)
             using (manager)
@@ -113,6 +112,28 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.True(timer.Enabled);
             }
+        }
+
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync broadcasts message"), AutoData]
+        public async Task BroadcastMessageAsync_Broadcasts_Message(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+            var c2 = new Mock<IMessageConnection>();
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, IMessageConnection>>("ChildConnections");
+            dict.TryAdd("c1", c1.Object);
+            dict.TryAdd("c2", c2.Object);
+
+            using (manager)
+            {
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+            }
+
+            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
+            c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
