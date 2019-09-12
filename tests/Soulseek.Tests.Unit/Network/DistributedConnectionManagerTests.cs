@@ -96,6 +96,25 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync resets watchdog timer"), AutoData]
+        public async Task BroadcastMessageAsync(byte[] bytes)
+        {
+            var timer = new System.Timers.Timer();
+            timer.Stop();
+
+            var (manager, _) = GetFixture();
+            manager.SetProperty("ParentWatchdogTimer", timer);
+
+            using (timer)
+            using (manager)
+            {
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+
+                Assert.True(timer.Enabled);
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
