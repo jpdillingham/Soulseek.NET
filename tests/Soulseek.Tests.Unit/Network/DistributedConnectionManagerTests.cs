@@ -136,6 +136,32 @@ namespace Soulseek.Tests.Unit.Network
             c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
         }
 
+        [Trait("Category", "BroadcastMessageAsync")]
+        [Theory(DisplayName = "BroadcastMessageAsync disposes on throw"), AutoData]
+        public async Task BroadcastMessageAsync_Disposes_On_Throw(byte[] bytes)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var c1 = new Mock<IMessageConnection>();
+            var c2 = new Mock<IMessageConnection>();
+            c2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new Exception("foo"));
+
+            var dict = manager.GetProperty<ConcurrentDictionary<string, IMessageConnection>>("ChildConnections");
+            dict.TryAdd("c1", c1.Object);
+            dict.TryAdd("c2", c2.Object);
+
+            using (manager)
+            {
+                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
+            }
+
+            c1.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
+
+            c2.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes)), It.IsAny<CancellationToken?>()));
+            c2.Verify(m => m.Dispose(), Times.AtLeastOnce);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
