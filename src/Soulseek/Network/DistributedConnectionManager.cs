@@ -127,7 +127,7 @@ namespace Soulseek.Network
         private bool Disposed { get; set; }
         private List<IMessageConnection> ParentCandidateConnections { get; } = new List<IMessageConnection>();
         private IMessageConnection ParentConnection { get; set; }
-        private SystemTimer ParentWatchdogTimer { get; set; }
+        private SystemTimer ParentWatchdogTimer { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
