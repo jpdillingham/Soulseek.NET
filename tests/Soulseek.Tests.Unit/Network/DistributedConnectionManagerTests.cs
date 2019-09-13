@@ -162,6 +162,28 @@ namespace Soulseek.Tests.Unit.Network
             c2.Verify(m => m.Dispose(), Times.AtLeastOnce);
         }
 
+        [Trait("Category", "ParentConnection_Disconnected")]
+        [Theory(DisplayName = "ParentConnection_Disconnected_Cleans_Up"), AutoData]
+        public void ParentConnection_Disconnected_Cleans_Up(string username, IPAddress ip, int port, string message)
+        {
+            var c = GetMessageConnectionMock(username, ip, port);
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", new Mock<IMessageConnection>().Object);
+                manager.SetProperty("BranchLevel", 1);
+                manager.SetProperty("BranchRoot", "foo");
+
+                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, message);
+
+                Assert.Null(manager.GetProperty<IMessageConnection>("ParentConnection"));
+                Assert.Equal(0, manager.BranchLevel);
+                Assert.Equal(string.Empty, manager.BranchRoot);
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
@@ -179,6 +201,16 @@ namespace Soulseek.Tests.Unit.Network
                 mocks.Diagnostic.Object);
 
             return (handler, mocks);
+        }
+
+        private Mock<IMessageConnection> GetMessageConnectionMock(string username, IPAddress ip, int port)
+        {
+            var mock = new Mock<IMessageConnection>();
+            mock.Setup(m => m.Username).Returns(username);
+            mock.Setup(m => m.IPAddress).Returns(ip);
+            mock.Setup(m => m.Port).Returns(port);
+
+            return mock;
         }
 
         private class Mocks
