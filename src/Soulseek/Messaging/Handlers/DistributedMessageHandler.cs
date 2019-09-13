@@ -73,6 +73,11 @@ namespace Soulseek.Messaging.Handlers
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
 
+                        if (SoulseekClient.Options.SearchResponseResolver == default)
+                        {
+                            break;
+                        }
+
                         try
                         {
                             searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
