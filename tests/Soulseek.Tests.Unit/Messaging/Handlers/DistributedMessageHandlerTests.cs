@@ -297,6 +297,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new DistributedMessageHandler(
                 mocks.Client.Object);
 
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new ClientOptions(searchResponseResolver: (a, b, c) => throw new Exception()));
+
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
             var conn = new Mock<IMessageConnection>();
