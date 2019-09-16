@@ -186,7 +186,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
-        private async Task AddChildConnectionAsyn_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
 
@@ -200,7 +200,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
-        private async Task AddChildConnectionAsyn_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
 
@@ -213,6 +213,63 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync adds child on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Adds_Child_On_Successful_Connection(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPAddress, ctpr.Port);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPAddress, ctpr.Port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                await manager.AddChildConnectionAsync(ctpr);
+
+                var child = manager.Children.FirstOrDefault();
+
+                Assert.Single(manager.Children);
+                Assert.NotEqual(default((string, IPAddress, int)), child);
+                Assert.Equal(ctpr.Username, child.Username);
+                Assert.Equal(ctpr.IPAddress, child.IPAddress);
+                Assert.Equal(ctpr.Port, child.Port);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync disposes connection on throw"), AutoData]
+        internal async Task AddChildConnectionAsync_Disposes_Connection_On_Throw(ConnectToPeerResponse ctpr)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPAddress, ctpr.Port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPAddress, ctpr.Port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(async () => await manager.AddChildConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
