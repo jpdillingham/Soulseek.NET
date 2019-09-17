@@ -382,6 +382,62 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync adds child on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Adds_Child_On_Successful_Connection(string username, IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ip, port));
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+
+                var child = manager.Children.FirstOrDefault();
+
+                Assert.Single(manager.Children);
+                Assert.NotEqual(default((string, IPAddress, int)), child);
+                Assert.Equal(username, child.Username);
+                Assert.Equal(ip, child.IPAddress);
+                Assert.Equal(port, child.Port);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync invokes StartReadingContinuously on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Invokes_StartReadingContinuously_On_Successful_Connection(string username, IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ip, port));
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+            }
+
+            conn.Verify(m => m.StartReadingContinuously(), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
