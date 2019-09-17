@@ -186,7 +186,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
-        internal async Task AddChildConnectionAsync_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Ctpr_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
 
@@ -200,7 +200,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
-        internal async Task AddChildConnectionAsync_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Ctpr_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
 
@@ -217,7 +217,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync adds child on successful connection"), AutoData]
-        internal async Task AddChildConnectionAsync_Adds_Child_On_Successful_Connection(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Ctpr_Adds_Child_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture();
 
@@ -245,7 +245,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync disposes connection on throw"), AutoData]
-        internal async Task AddChildConnectionAsync_Disposes_Connection_On_Throw(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Ctpr_Disposes_Connection_On_Throw(ConnectToPeerResponse ctpr)
         {
             var expectedEx = new Exception("foo");
 
@@ -274,7 +274,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync generates expected diagnostics on successful connection"), AutoData]
-        internal async Task AddChildConnectionAsync_Generates_Expected_Diagnostics_On_Successful_Connection(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostics_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture();
 
@@ -301,7 +301,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync generates expected diagnostic on error"), AutoData]
-        internal async Task AddChildConnectionAsync_Generates_Expected_Diagnostic_On_Error(ConnectToPeerResponse ctpr)
+        internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostic_On_Error(ConnectToPeerResponse ctpr)
         {
             var expectedEx = new Exception("foo");
 
@@ -324,6 +324,62 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.Diagnostic
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Discarded child connection to {ctpr.Username}"))), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
+        internal async Task AddChildConnectionAsync_Rejects_If_Over_Child_Limit(string username, IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ip, port));
+
+            using (manager)
+            {
+                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+        }
+
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync disposes TcpClient on rejection"), AutoData]
+        internal async Task AddChildConnectionAsync_Disposes_TcpClient_On_Rejection(string username, IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ip, port));
+
+            using (manager)
+            {
+                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
+            mocks.TcpClient.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
+        internal async Task AddChildConnectionAsync_Updates_Status_On_Rejection(string username, IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ip, port));
+
+            using (manager)
+            {
+                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
