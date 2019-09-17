@@ -234,10 +234,10 @@ namespace Soulseek.Network
 
                 var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
 
-                connection.StartReadingContinuously();
-
                 try
                 {
+                    connection.StartReadingContinuously();
+
                     await childDepthWait.ConfigureAwait(false);
 
                     connection.Disconnected += ChildConnection_Disconnected;
