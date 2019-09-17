@@ -202,7 +202,7 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddChildConnectionAsync(string username, ITcpClient tcpClient)
         {
-            var endpoint = (IPEndPoint)tcpClient.Client.RemoteEndPoint;
+            var endpoint = tcpClient.RemoteEndPoint;
 
             if (!CanAcceptChildren)
             {
