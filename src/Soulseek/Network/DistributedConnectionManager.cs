@@ -223,10 +223,7 @@ namespace Soulseek.Network
 
             using (var cts = new CancellationTokenSource())
             {
-                void CancelWait(object sender, string message)
-                {
-                    cts.Cancel();
-                }
+                void CancelWait(object sender, string message) => cts.Cancel();
 
                 connection.Disconnected += CancelWait;
 
