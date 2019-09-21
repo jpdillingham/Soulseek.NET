@@ -530,6 +530,47 @@ namespace Soulseek.Tests.Unit.Network
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Discarded child connection to {username}"))), Times.Once);
         }
 
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync skips update client isn't connected")]
+        internal async Task UpdateStatusAsync_Skips_Update_If_Client_Not_Connected()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Disconnected);
+
+            using (manager)
+            {
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync skips update if no change and parent connected")]
+        internal async Task UpdateStatusAsync_Skips_Update_If_No_Change_And_Parent_Connected()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                // bit of a hack here, but this is the expected hash on an uninitialized instance
+                manager.SetProperty("StatusHash", "BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
