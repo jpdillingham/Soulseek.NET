@@ -363,6 +363,38 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync disposes connection on throw"), AutoData]
+        internal async Task AddChildConnectionAsync_Disposes_Connection_On_Throw(string username, IPAddress ip, int port)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
+                .Returns(new IPEndPoint(ip, port));
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<int>(expectedEx));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, mocks.TcpClient.Object));
+
+                Assert.NotNull(ex);
+                Assert.Equal(expectedEx, ex);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Updates_Status_On_Rejection(string username, IPAddress ip, int port)
         {
