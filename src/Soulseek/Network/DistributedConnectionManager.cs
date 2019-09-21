@@ -184,6 +184,7 @@ namespace Soulseek.Network
                 catch (Exception ex)
                 {
                     Diagnostic.Debug($"Discarded child connection to {r.Username} ({r.IPAddress}:{r.Port}): {ex.Message}");
+                    CancelWait(this, ex.Message);
                     connection.Dispose();
                     throw;
                 }
@@ -229,7 +230,7 @@ namespace Soulseek.Network
 
                 Diagnostic.Debug($"Accepted child connection to {username} ({endpoint.Address}:{endpoint.Port}).");
 
-                var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key));
+                var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), null, cts.Token);
 
                 try
                 {
@@ -243,6 +244,7 @@ namespace Soulseek.Network
                 catch (Exception ex)
                 {
                     Diagnostic.Debug($"Discarded child connection to {username} ({connection.IPAddress}:{connection.Port}): {ex.Message}");
+                    CancelWait(this, ex.Message);
                     connection.Dispose();
                     throw;
                 }
