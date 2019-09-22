@@ -121,7 +121,7 @@ namespace Soulseek.Network
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
-        private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; } = new ConcurrentDictionary<string, IMessageConnection>();
+        private ConcurrentDictionary<string, IMessageConnection> ChildConnections { get; set; } = new ConcurrentDictionary<string, IMessageConnection>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
@@ -630,7 +630,7 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Failed to update distributed status: {ex.Message}");
+                Diagnostic.Warning($"Failed to update distributed status: {ex.Message}", ex);
             }
         }
     }
