@@ -571,6 +571,134 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
         }
 
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync writes payload to server")]
+        internal async Task UpdateStatusAsync_Writes_Payload_To_Server()
+        {
+            var expectedPayload = Convert.FromBase64String("BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedPayload)), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync broadcasts branch level and root to children")]
+        internal async Task UpdateStatusAsync_Broadcasts_Branc_Level_And_Root_To_Children()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var child = GetMessageConnectionMock("child", IPAddress.None, 1);
+
+            var children = new ConcurrentDictionary<string, IMessageConnection>();
+            children.TryAdd("child", child.Object);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                manager.SetProperty("ChildConnections", children);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            var expectedBranchLevelBytes = new DistributedBranchLevel(manager.BranchLevel).ToByteArray();
+            var expectedBranchRootBytes = new DistributedBranchRoot(manager.BranchRoot ?? string.Empty).ToByteArray();
+
+            child.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBranchLevelBytes)), It.IsAny<CancellationToken?>()), Times.Once);
+            child.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBranchRootBytes)), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync updates child depth if HasParent")]
+        internal async Task UpdateStatusAsync_Updates_Child_Depth_If_HasParent()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            var expectedBytes = new DistributedChildDepth(0).ToByteArray();
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync produces status diagnostic on success")]
+        internal async Task UpdateStatusAsync_Produces_Status_Diagnostic_On_Success()
+        {
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Updated distributed status"))), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync produces diagnostic warning on failure")]
+        internal async Task UpdateStatusAsync_Produces_Diagnostic_Warning_On_Failure()
+        {
+            var expectedEx = new Exception("");
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException(expectedEx));
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to update distributed status")), It.Is<Exception>(e => e == expectedEx)), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
