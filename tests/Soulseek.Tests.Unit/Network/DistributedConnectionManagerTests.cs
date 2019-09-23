@@ -699,6 +699,69 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to update distributed status")), It.Is<Exception>(e => e == expectedEx)), Times.Once);
         }
 
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Theory(DisplayName = "ChildConnection_Disconnected removes child"), AutoData]
+        internal void ChildConnection_Disconnected_Removes_Child(string message)
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+
+            var children = new ConcurrentDictionary<string, IMessageConnection>();
+            children.TryAdd("foo", conn.Object);
+
+            using (manager)
+            {
+                manager.SetProperty("ChildConnections", children);
+
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, message);
+
+                Assert.Empty(children);
+            }
+        }
+
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Theory(DisplayName = "ChildConnection_Disconnected disposes connection"), AutoData]
+        internal void ChildConnection_Disconnected_Disposes_Connection(string message)
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+
+            var children = new ConcurrentDictionary<string, IMessageConnection>();
+            children.TryAdd("foo", conn.Object);
+
+            using (manager)
+            {
+                manager.SetProperty("ChildConnections", children);
+
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, message);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "ChildConnection_Disconnected")]
+        [Theory(DisplayName = "ChildConnection_Disconnected produces expected diagnostic"), AutoData]
+        internal void ChildConnection_Disconnected_Produces_Expected_Diagnostic(string message)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+
+            var children = new ConcurrentDictionary<string, IMessageConnection>();
+            children.TryAdd("foo", conn.Object);
+
+            using (manager)
+            {
+                manager.SetProperty("ChildConnections", children);
+
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, message);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Child foo") && s.ContainsInsensitive("disconnected"))), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
