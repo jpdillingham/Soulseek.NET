@@ -676,7 +676,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "UpdateStatusAsync produces diagnostic warning on failure")]
         internal async Task UpdateStatusAsync_Produces_Diagnostic_Warning_On_Failure()
         {
-            var expectedEx = new Exception("");
+            var expectedEx = new Exception(string.Empty);
 
             var (manager, mocks) = GetFixture();
 
