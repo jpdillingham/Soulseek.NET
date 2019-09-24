@@ -762,6 +762,38 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Child foo") && s.ContainsInsensitive("disconnected"))), Times.Once);
         }
 
+        [Trait("Category", "ParentCandidateConnection_Disconnected")]
+        [Theory(DisplayName = "ChildConnection_Disconnected disposes connection"), AutoData]
+        internal void ParentCandidateConnection_Disconnected_Disposes_Connection(string message)
+        {
+            var (manager, _) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+
+            using (manager)
+            {
+                manager.InvokeMethod("ParentCandidateConnection_Disconnected", conn.Object, message);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "ParentCandidateConnection_Disconnected")]
+        [Theory(DisplayName = "ParentCandidateConnection_Disconnected produces expected diagnostic"), AutoData]
+        internal void ParentCandidateConnection_Disconnected_Produces_Expected_Diagnostic(string message)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+
+            using (manager)
+            {
+                manager.InvokeMethod("ParentCandidateConnection_Disconnected", conn.Object, message);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Parent candidate") && s.ContainsInsensitive("disconnected"))), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
