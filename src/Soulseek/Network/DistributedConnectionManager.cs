@@ -541,7 +541,7 @@ namespace Soulseek.Network
                         ParentCandidateConnections.Add(connection);
                     }
 
-                    Diagnostic.Debug($"Indirect parent candidate connection to {connection.Username} ({connection.IPAddress}:{connection.Port}) connected.");
+                    Diagnostic.Debug($"Indirect parent candidate connection to {connection.Username} ({connection.IPAddress}:{connection.Port}) connected");
 
                     return connection;
                 }
@@ -556,7 +556,7 @@ namespace Soulseek.Network
         {
             var connection = (IMessageConnection)sender;
 
-            Diagnostic.Debug($"{connection.Context} Parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(message == null ? "." : $": {message}")}");
+            Diagnostic.Debug($"{connection.Context} Parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(message == null ? string.Empty : $": {message}")}");
             connection.Dispose();
         }
 
