@@ -885,6 +885,27 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "GetParentConnectionDirectAsync")]
+        [Theory(DisplayName = "GetParentConnectionDirectAsync disposes connection on throw"), AutoData]
+        internal async Task GetParentConnectionDirectAsync_Disposes_Connection_On_Throw(string localUser, string username, IPAddress ip, int port)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetParentConnectionDirectAsync")]
+        [Theory(DisplayName = "GetParentConnectionDirectAsync connects and writes PeerInit"), AutoData]
+        internal async Task GetParentConnectionDirectAsync_Connects_And_Writes_PeerInit(string localUser, string username, IPAddress ip, int port)
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "GetParentConnectionDirectAsync")]
+        [Theory(DisplayName = "GetParentConnectionDirectAsync produces expected diagnostic"), AutoData]
+        internal async Task GetParentConnectionDirectAsync_Produces_Expected_Diagnostic(string localUser, string username, IPAddress ip, int port)
+        {
+            Assert.True(false);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
