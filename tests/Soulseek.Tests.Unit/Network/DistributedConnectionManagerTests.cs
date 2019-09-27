@@ -864,6 +864,27 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "GetParentConnectionDirectAsync")]
+        [Theory(DisplayName = "GetParentConnectionDirectAsync returns expected connection"), AutoData]
+        internal async Task GetParentConnectionDirectAsync_Returns_Expected_Connection(string localUser, string username, IPAddress ip, int port)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentConnectionDirectAsync", username, ip, port, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actualConn);
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
