@@ -911,9 +911,30 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionDirectAsync")]
         [Theory(DisplayName = "GetParentConnectionDirectAsync connects and writes PeerInit"), AutoData]
-        internal async Task GetParentConnectionDirectAsync_Connects_And_Writes_PeerInit(string localUser, string username, IPAddress ip, int port)
+        internal async Task GetParentConnectionDirectAsync_Connects_And_Writes_PeerInit(string localUser, string username, IPAddress ip, int port, int token)
         {
-            Assert.True(false);
+            var expectedMessage = new PeerInit(localUser, Constants.ConnectionType.Distributed, token);
+
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            using (var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentConnectionDirectAsync", username, ip, port, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actualConn);
+            }
+
+            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken?>()), Times.Once);
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedMessage.ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "GetParentConnectionDirectAsync")]
