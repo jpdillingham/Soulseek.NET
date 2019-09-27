@@ -857,7 +857,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
-            using (var _ = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentConnectionIndirectAsync", username, CancellationToken.None))
+            using (var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentConnectionIndirectAsync", username, CancellationToken.None))
             {
                 mocks.Diagnostic.Verify(m =>
                     m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Indirect parent candidate connection to {username}"))));
@@ -889,7 +889,24 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionDirectAsync disposes connection on throw"), AutoData]
         internal async Task GetParentConnectionDirectAsync_Disposes_Connection_On_Throw(string localUser, string username, IPAddress ip, int port)
         {
-            Assert.True(false);
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new Exception()));
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(() => manager.InvokeMethod<Task<IMessageConnection>>("GetParentConnectionDirectAsync", username, ip, port, CancellationToken.None));
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
         }
 
         [Trait("Category", "GetParentConnectionDirectAsync")]
