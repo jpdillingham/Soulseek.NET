@@ -343,7 +343,6 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
-
         [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync disposes TcpClient on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Disposes_TcpClient_On_Rejection(string username, IPAddress ip, int port)
@@ -796,7 +795,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionIndirectAsync")]
         [Theory(DisplayName = "GetParentConnectionIndirectAsync removes solicitation on throw"), AutoData]
-        internal async Task GetParentConnectionIndirectAsync_Removes_Solicitation_On_Throw(string username, IPAddress ip, int port)
+        internal async Task GetParentConnectionIndirectAsync_Removes_Solicitation_On_Throw(string username)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions());
 
