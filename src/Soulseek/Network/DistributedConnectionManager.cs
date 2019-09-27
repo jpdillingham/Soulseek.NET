@@ -492,14 +492,13 @@ namespace Soulseek.Network
             try
             {
                 await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch
             {
                 connection.Dispose();
                 throw;
             }
-
-            await connection.WriteAsync(new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
             lock (parentCandidateSyncRoot)
             {
