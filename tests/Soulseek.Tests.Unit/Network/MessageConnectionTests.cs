@@ -24,17 +24,9 @@ namespace Soulseek.Tests.Unit.Network
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
-    using Xunit.Abstractions;
 
     public class MessageConnectionTests
     {
-        public MessageConnectionTests(ITestOutputHelper output)
-        {
-            Output = output;
-        }
-
-        private ITestOutputHelper Output { get; }
-
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
         public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPAddress ipAddress, int port, ConnectionOptions options)
@@ -286,14 +278,8 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
         public async Task ReadingContinuously_Returns_If_Already_Reading(string username, IPAddress ipAddress, int port)
         {
-            bool b = false;
-
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
-                {
-                    b = true;
-                })
                 .Throws(new Exception());
 
             var tcpMock = new Mock<ITcpClient>();
