@@ -445,10 +445,9 @@ namespace Soulseek.Network
                 }
 
                 var connection = await task.ConfigureAwait(false);
+                var isDirect = connection.Context.ToString() == Constants.ConnectionMethod.Direct;
 
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
-
-                var isDirect = task == direct;
 
                 Diagnostic.Debug($"{connection.Context} Parent candidate connection to {username} ({ipAddress}:{port}) established.  Waiting for branch information and first SearchRequest message");
                 (isDirect ? indirectCts : directCts).Cancel();
