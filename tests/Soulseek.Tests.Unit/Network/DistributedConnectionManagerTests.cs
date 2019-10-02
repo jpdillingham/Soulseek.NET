@@ -1052,6 +1052,41 @@ namespace Soulseek.Tests.Unit.Network
             conn.Verify(m => m.StartReadingContinuously(), Times.Once);
         }
 
+        [Trait("Category", "GetParentConnectionAsync")]
+        [Theory(DisplayName = "GetParentConnectionAsync throws when neither direct nor indirect connects"), AutoData]
+        internal async Task GetParentConnectionAsync_Throws_When_Neither_Direct_Nor_Indirect_Connects(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var initConn = GetConnectionMock(ip, port);
+            initConn.Setup(m => m.HandoffTcpClient())
+                .Returns(mocks.TcpClient.Object);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Indirect);
+
+            // direct fetch fails
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), null))
+                .Throws(new Exception());
+
+            // indirect fails
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, ip, port, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a distributed parent connection to {username}"));
+            }
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
