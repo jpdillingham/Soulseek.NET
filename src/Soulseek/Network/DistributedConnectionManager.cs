@@ -463,12 +463,16 @@ namespace Soulseek.Network
 
                 var waits = new[] { branchLevelWait, branchRootWait, searchWait }.ToList();
                 var waitsTask = Task.WhenAll(waits);
-                await waitsTask.ConfigureAwait(false);
 
-                if (waitsTask.Status != TaskStatus.RanToCompletion)
+                try
+                {
+                    await waitsTask.ConfigureAwait(false);
+                }
+                catch (Exception)
                 {
                     connection.Disconnect($"One or more required messages was not received.");
                     connection.Dispose();
+
                     throw new ConnectionException($"Failed to initialize parent connection to {username} ({ipAddress}:{port}); one or more required messages was not received.");
                 }
 
