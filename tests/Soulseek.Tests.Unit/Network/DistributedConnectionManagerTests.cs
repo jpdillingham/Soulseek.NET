@@ -1045,8 +1045,6 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.Equal(conn.Object, actual.Connection);
                 Assert.Equal(Constants.ConnectionMethod.Indirect, actual.Connection.Context);
-                Assert.Equal(branchLevel, actual.BranchLevel);
-                Assert.Equal(branchRoot, actual.BranchRoot);
             }
 
             conn.Verify(m => m.StartReadingContinuously(), Times.Once);
@@ -1054,7 +1052,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync throws when neither direct nor indirect connects"), AutoData]
-        internal async Task GetParentConnectionAsync_Throws_When_Neither_Direct_Nor_Indirect_Connects(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Throws_When_Neither_Direct_Nor_Indirect_Connects(string localUser, string username, IPAddress ip, int port)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions());
 
@@ -1084,6 +1082,165 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
                 Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a distributed parent connection to {username}"));
+            }
+        }
+
+        [Trait("Category", "GetParentConnectionAsync")]
+        [Theory(DisplayName = "GetParentConnectionAsync returns expected branch info"), AutoData]
+        internal async Task GetParentConnectionAsync_Returns_Expected_Branch_Info(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            // indirect wait fails
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(branchLevel));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(branchRoot));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (manager)
+            {
+                var actual = await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, ip, port, CancellationToken.None);
+
+                Assert.Equal(branchLevel, actual.BranchLevel);
+                Assert.Equal(branchRoot, actual.BranchRoot);
+            }
+        }
+
+        [Trait("Category", "GetParentConnectionAsync")]
+        [Theory(DisplayName = "GetParentConnectionAsync throws when branch level not received"), AutoData]
+        internal async Task GetParentConnectionAsync_Throws_When_Branch_Level_Not_Received(string localUser, string username, IPAddress ip, int port, string branchRoot)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            // indirect wait fails
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<int>(new Exception()));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(branchRoot));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, ip, port, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to initialize parent connection to {username}"));
+            }
+        }
+
+        [Trait("Category", "GetParentConnectionAsync")]
+        [Theory(DisplayName = "GetParentConnectionAsync throws when branch root not received"), AutoData]
+        internal async Task GetParentConnectionAsync_Throws_When_Branch_Root_Not_Received(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            // indirect wait fails
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(branchLevel));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<string>(new Exception()));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, ip, port, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to initialize parent connection to {username}"));
+            }
+        }
+
+        [Trait("Category", "GetParentConnectionAsync")]
+        [Theory(DisplayName = "GetParentConnectionAsync throws when initial search request not received"), AutoData]
+        internal async Task GetParentConnectionAsync_Throws_When_Initial_Search_Request_Not_Received(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
+        {
+            var (manager, mocks) = GetFixture(options: new ClientOptions());
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            var conn = GetMessageConnectionMock(username, ip, port);
+            conn.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, ip, port, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            // indirect wait fails
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(branchLevel));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(branchRoot));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException(new Exception()));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, ip, port, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to initialize parent connection to {username}"));
             }
         }
 
