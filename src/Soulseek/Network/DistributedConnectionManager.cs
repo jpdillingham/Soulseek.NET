@@ -470,7 +470,7 @@ namespace Soulseek.Network
                 }
                 catch (Exception)
                 {
-                    connection.Disconnect($"One or more required messages was not received.");
+                    connection.Disconnect("One or more required messages was not received.");
                     connection.Dispose();
 
                     throw new ConnectionException($"Failed to initialize parent connection to {username} ({ipAddress}:{port}); one or more required messages was not received.");
