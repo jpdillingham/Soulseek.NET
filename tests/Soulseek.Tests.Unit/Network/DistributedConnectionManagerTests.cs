@@ -1166,7 +1166,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync throws when branch root not received"), AutoData]
-        internal async Task GetParentConnectionAsync_Throws_When_Branch_Root_Not_Received(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Throws_When_Branch_Root_Not_Received(string localUser, string username, IPAddress ip, int port, int branchLevel)
         {
             var (manager, mocks) = GetFixture(options: new ClientOptions());
 
