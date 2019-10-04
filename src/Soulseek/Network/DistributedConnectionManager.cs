@@ -262,7 +262,7 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates)
         {
-            if (HasParent)
+            if (HasParent || !parentCandidates.Any())
             {
                 return;
             }
@@ -281,8 +281,10 @@ namespace Soulseek.Network
 
                 if (parentTask.Status != TaskStatus.RanToCompletion)
                 {
-                    Diagnostic.Warning($"Failed to connect to any of the distributed parent candidates.");
+                    var msg = "Failed to connect to any of the distributed parent candidates.";
+                    Diagnostic.Warning(msg);
                     await UpdateStatusAsync().ConfigureAwait(false);
+                    throw new ConnectionException(msg);
                 }
 
                 (ParentConnection, BranchLevel, BranchRoot) = await parentTask.ConfigureAwait(false);
