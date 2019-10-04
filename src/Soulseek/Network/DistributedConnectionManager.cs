@@ -267,6 +267,8 @@ namespace Soulseek.Network
                 return;
             }
 
+            Diagnostic.Info($"Attempting to select a new parent connection from {parentCandidates.Count()} candidates.");
+
             using (var cts = new CancellationTokenSource())
             {
                 var pendingConnectTasks = parentCandidates.Select(p => GetParentConnectionAsync(p.Username, p.IPAddress, p.Port, cts.Token)).ToList();
