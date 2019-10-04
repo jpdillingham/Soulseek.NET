@@ -1334,6 +1334,65 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({ip}:{port})"), Times.Once);
         }
 
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Fact(DisplayName = "AddParentConnectionAsync returns if HasParent")]
+        internal async Task AddParentConnectionAsync_Returns_If_HasParent()
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
+            candidates.Add(("foo", IPAddress.None, 1));
+
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", parent.Object);
+                await manager.AddParentConnectionAsync(candidates);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Fact(DisplayName = "AddParentConnectionAsync returns if ParentCandidates is empty")]
+        internal async Task AddParentConnectionAsync_Returns_If_ParentCandidates_Is_Empty()
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
+
+            using (manager)
+            {
+                await manager.AddParentConnectionAsync(candidates);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Fact(DisplayName = "AddParentConnectionAsync produces warning diagnostic and updates status if no candidates connect")]
+        internal async Task AddParentConnectionAsync_Produces_Warning_Diagnostic_And_Updates_Status_If_No_Candidates_Connect()
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
+            candidates.Add(("foo", IPAddress.None, 1));
+            candidates.Add(("bar", IPAddress.None, 2));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddParentConnectionAsync(candidates));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Warning("Failed to connect to any of the distributed parent candidates.", It.IsAny<Exception>()), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
