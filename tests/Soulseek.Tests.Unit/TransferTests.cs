@@ -1,4 +1,4 @@
-﻿// <copyright file="DownloadTests.cs" company="JP Dillingham">
+﻿// <copyright file="TransferTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -16,11 +16,10 @@ namespace Soulseek.Tests.Unit
     using System.Net;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    public class DownloadTests
+    public class TransferTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
