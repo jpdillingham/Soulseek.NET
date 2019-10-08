@@ -1393,6 +1393,183 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Warning("Failed to connect to any of the distributed parent candidates.", It.IsAny<Exception>()), Times.Once);
         }
 
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Theory(DisplayName = "AddParentConnectionAsync sets Parent to successful connection"), AutoData]
+        internal async Task AddParentConnectionAsync_Sets_Parent_To_Successful_Connection(string localUser, string username1, IPAddress ip1, int port1, string username2, IPAddress ip2, int port2)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
+            candidates.Add((username1, ip1, port1));
+            candidates.Add((username2, ip2, port2));
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            // mocks for connection #1
+            var conn1 = GetMessageConnectionMock(username1, ip1, port1);
+            conn1.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, ip1, port1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn1.Object);
+
+            // mocks for connection #2
+            var conn2 = GetMessageConnectionMock(username2, ip2, port2);
+            conn2.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, ip2, port2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn2.Object);
+
+            // message mocks, to allow either connection to be established fully
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Context, conn1.Object.Key);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Context, conn1.Object.Key);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Context, conn1.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Context, conn2.Object.Key);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Context, conn2.Object.Key);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Context, conn2.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.Delay(5000)); // ensure conn1 completes first
+
+            using (manager)
+            {
+                await manager.AddParentConnectionAsync(candidates);
+
+                Assert.Equal(conn1.Object.Username, manager.Parent.Username);
+                Assert.Equal(conn1.Object.IPAddress, manager.Parent.IPAddress);
+                Assert.Equal(conn1.Object.Port, manager.Parent.Port);
+            }
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Theory(DisplayName = "AddParentConnectionAsync disposes unselected candidates"), AutoData]
+        internal async Task AddParentConnectionAsync_Disposes_Unselected_Candidates(string localUser, string username1, IPAddress ip1, int port1, string username2, IPAddress ip2, int port2)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
+            candidates.Add((username1, ip1, port1));
+            candidates.Add((username2, ip2, port2));
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            // mocks for connection #1
+            var conn1 = GetMessageConnectionMock(username1, ip1, port1);
+            conn1.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, ip1, port1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn1.Object);
+
+            // mocks for connection #2
+            var conn2 = GetMessageConnectionMock(username2, ip2, port2);
+            conn2.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, ip2, port2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn2.Object);
+
+            // message mocks, to allow either connection to be established fully
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Context, conn1.Object.Key);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Context, conn1.Object.Key);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Context, conn1.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Context, conn2.Object.Key);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Context, conn2.Object.Key);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Context, conn2.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.Delay(5000)); // ensure conn1 completes first
+
+            using (manager)
+            {
+                await manager.AddParentConnectionAsync(candidates);
+            }
+
+            conn2.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddParentConnectionAsync")]
+        [Theory(DisplayName = "AddParentConnectionAsync produces expected diagnostics on connect"), AutoData]
+        internal async Task AddParentConnectionAsync_Produces_Expected_Diagnostic_On_Connect(string localUser, string username1, IPAddress ip1, int port1, string username2, IPAddress ip2, int port2)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
+            candidates.Add((username1, ip1, port1));
+            candidates.Add((username2, ip2, port2));
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUser);
+
+            // mocks for connection #1
+            var conn1 = GetMessageConnectionMock(username1, ip1, port1);
+            conn1.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, ip1, port1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn1.Object);
+
+            // mocks for connection #2
+            var conn2 = GetMessageConnectionMock(username2, ip2, port2);
+            conn2.Setup(m => m.Context)
+                .Returns(Constants.ConnectionMethod.Direct);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, ip2, port2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn2.Object);
+
+            // message mocks, to allow either connection to be established fully
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Context, conn1.Object.Key);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Context, conn1.Object.Key);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Context, conn1.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Context, conn2.Object.Key);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Context, conn2.Object.Key);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Context, conn2.Object.Key);
+            mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(0));
+            mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult("foo"));
+            mocks.Waiter.Setup(m => m.Wait(searchWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.Delay(5000)); // ensure conn1 completes first
+
+            using (manager)
+            {
+                await manager.AddParentConnectionAsync(candidates);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s == $"Attempting to select a new parent connection from {candidates.Count} candidates")), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s == $"Adopted parent {conn1.Object.Username} ({conn1.Object.IPAddress}:{conn1.Object.Port})")), Times.Once);
+        }
+
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
         {
             var mocks = new Mocks(options);
