@@ -267,7 +267,7 @@ namespace Soulseek.Network
                 return;
             }
 
-            Diagnostic.Info($"Attempting to select a new parent connection from {parentCandidates.Count()} candidates.");
+            Diagnostic.Info($"Attempting to select a new parent connection from {parentCandidates.Count()} candidates");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -294,7 +294,7 @@ namespace Soulseek.Network
                 ParentConnection.Disconnected += ParentConnection_Disconnected;
                 ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
 
-                Diagnostic.Info($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port}).");
+                Diagnostic.Info($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPAddress}:{ParentConnection.Port})");
 
                 cts.Cancel();
                 PendingSolicitationDictionary.Clear();
