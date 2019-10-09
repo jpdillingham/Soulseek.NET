@@ -674,22 +674,17 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(message))
             {
-                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace.", nameof(message));
+                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to browse.");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to send a private message (currently: {State})");
             }
 
             return SendPrivateMessageInternalAsync(username, message, cancellationToken ?? CancellationToken.None);
