@@ -92,7 +92,15 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfo.FromByteArray(message);
-                        await SoulseekClient.DistributedConnectionManager.AddParentConnectionAsync(netInfo.Parents).ConfigureAwait(false);
+
+                        try
+                        {
+                            await SoulseekClient.DistributedConnectionManager.AddParentConnectionAsync(netInfo.Parents).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Debug($"Error handling NetInfo message: {ex.Message}");
+                        }
 
                         break;
 

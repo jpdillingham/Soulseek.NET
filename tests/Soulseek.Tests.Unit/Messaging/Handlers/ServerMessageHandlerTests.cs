@@ -580,6 +580,39 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Produces diagnostic on NetInfo Exception"), AutoData]
+        public void Produces_Diagnostic_On_NetInfo_Exception(List<(string Username, IPAddress IPAddress, int Port)> parents)
+        {
+            IEnumerable<(string Username, IPAddress IPAddress, int Port)> result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.DistributedConnectionManager
+                .Setup(m => m.AddParentConnectionAsync(It.IsAny<IEnumerable<(string Username, IPAddress IPAddress, int Port)>>()))
+                .Throws(new Exception("foo"));
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NetInfo)
+                .WriteInteger(parents.Count);
+
+            foreach (var parent in parents)
+            {
+                builder.WriteString(parent.Username);
+
+                var ipBytes = parent.IPAddress.GetAddressBytes();
+                Array.Reverse(ipBytes);
+
+                builder.WriteBytes(ipBytes);
+                builder.WriteInteger(parent.Port);
+            }
+
+            var message = builder.Build();
+
+            handler.HandleMessage(null, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug("Error handling NetInfo message: foo"));
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
