@@ -99,7 +99,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Debug($"Error handling NetInfo response: {ex.Message}");
+                            Diagnostic.Debug($"Error handling NetInfo message: {ex.Message}");
                         }
 
                         break;
