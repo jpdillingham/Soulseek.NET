@@ -281,7 +281,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -308,17 +308,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to browse.");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to browse (currently: {State})");
             }
 
             return BrowseInternalAsync(username, cancellationToken ?? CancellationToken.None);
@@ -335,7 +330,7 @@ namespace Soulseek
         {
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"Failed to connect; the client is already connected.");
+                throw new InvalidOperationException($"Failed to connect; the client is already connected");
             }
 
             try
@@ -357,7 +352,7 @@ namespace Soulseek
         public void Disconnect(string message = null)
         {
             ServerConnection.Disconnected -= ServerConnection_Disconnected;
-            ServerConnection?.Disconnect(message ?? "Client disconnected.");
+            ServerConnection?.Disconnect(message ?? "Client disconnected");
 
             Listener?.Stop();
 
@@ -405,34 +400,29 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace.", nameof(filename));
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to browse (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to browse.");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
             }
 
             token = token ?? TokenFactory.NextToken();
 
             if (Downloads.ContainsKey((int)token))
             {
-                throw new ArgumentException($"An active or queued download with token {token} is already in progress.", nameof(token));
+                throw new ArgumentException($"An active or queued download with token {token} is already in progress", nameof(token));
             }
 
             if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
             {
-                throw new ArgumentException($"An active of queued download of {filename} from {username} is already in progress.");
+                throw new ArgumentException($"An active of queued download of {filename} from {username} is already in progress");
             }
 
             options = options ?? new TransferOptions();
@@ -457,12 +447,12 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             if (string.IsNullOrWhiteSpace(filename))
             {
-                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace.", nameof(filename));
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -472,7 +462,7 @@ namespace Soulseek
 
             if (!Downloads.Any(d => d.Value.Username == username && d.Value.Filename == filename))
             {
-                throw new DownloadNotFoundException($"A download of {filename} from user {username} is not active.");
+                throw new DownloadNotFoundException($"A download of {filename} from user {username} is not active");
             }
 
             return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
@@ -506,7 +496,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -534,7 +524,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -560,7 +550,7 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -589,22 +579,22 @@ namespace Soulseek
         {
             if (string.IsNullOrEmpty(username))
             {
-                throw new ArgumentException("Username may not be null or an empty string.", nameof(username));
+                throw new ArgumentException("Username may not be null or an empty string", nameof(username));
             }
 
             if (string.IsNullOrEmpty(password))
             {
-                throw new ArgumentException("Password may not be null or an empty string.", nameof(password));
+                throw new ArgumentException("Password may not be null or an empty string", nameof(password));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"The client must be connected to log in.");
+                throw new InvalidOperationException($"The client must be connected to log in");
             }
 
             if (State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again.");
+                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again");
             }
 
             return LoginInternalAsync(username, password, cancellationToken ?? CancellationToken.None);
@@ -633,24 +623,19 @@ namespace Soulseek
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace.", nameof(searchText));
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(searchText));
             }
 
             token = token ?? TokenFactory.NextToken();
 
             if (Searches.ContainsKey((int)token))
             {
-                throw new ArgumentException($"An active search with token {token} is already in progress.", nameof(token));
+                throw new ArgumentException($"An active search with token {token} is already in progress", nameof(token));
             }
 
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be Connected to search (currently: {State})");
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"A user must be logged in to search.");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
             }
 
             options = options ?? new SearchOptions();
@@ -759,7 +744,7 @@ namespace Soulseek
         {
             if (!Disposed)
             {
-                Disconnect("Client is being disposed.");
+                Disconnect("Client is being disposed");
 
                 if (disposing)
                 {
@@ -816,7 +801,7 @@ namespace Soulseek
                 var response = await browseWait.ConfigureAwait(false);
 
                 sw.Stop();
-                Diagnostic.Debug($"Browse of {username} completed in {sw.ElapsedMilliseconds}ms.  {response.DirectoryCount} directories fetched.");
+                Diagnostic.Debug($"Browse of {username} completed in {sw.ElapsedMilliseconds}ms.  {response.DirectoryCount} directories fetched");
 
                 return response;
             }
