@@ -113,6 +113,27 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync throws ArgumentException when an existing download matches the username and filename"), AutoData]
+        public async Task DownloadAsync_Throws_ArgumentException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, Transfer>();
+                queued.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+                Assert.Contains($"An active of queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync throws TimeoutException on peer message connection timeout"), AutoData]
         public async Task DownloadAsync_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPAddress ip, int port)
         {
