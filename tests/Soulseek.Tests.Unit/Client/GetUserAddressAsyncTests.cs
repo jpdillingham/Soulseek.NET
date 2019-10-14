@@ -62,5 +62,109 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
+
+        [Trait("Category", "GetUserAddressAsync")]
+        [Theory(DisplayName = "GetUserAddressAsync throws OperationCanceledException when canceled"), AutoData]
+        public async Task GetUserAddressAsync_Throws_OperationCanceledException_When_Canceled(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserAddressAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetUserAddressAsync")]
+        [Theory(DisplayName = "GetUserAddressAsync throws TimeoutException when timed out"), AutoData]
+        public async Task GetUserAddressAsync_Throws_TimeoutException_When_Timed_Out(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserAddressAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetUserAddressAsync")]
+        [Theory(DisplayName = "GetUserAddressAsync throws UserAddressException on error other than cancel or timeout"), AutoData]
+        public async Task GetUserAddressAsync_Throws_UserAddressException_On_Error_Other_Than_Cancel_Or_Timeout(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new Exception());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserAddressAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserAddressException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetUserAddressAsync")]
+        [Theory(DisplayName = "GetUserAddressAsync throws PeerOfflineException when peer is offline"), AutoData]
+        public async Task GetUserAddressAsync_Throws_PeerOfflineException_When_Peer_Is_Offline(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("0.0.0.0"), 0)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetUserAddressAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserAddressException>(ex);
+                Assert.IsType<PeerOfflineException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "GetUserAddressAsync")]
+        [Theory(DisplayName = "GetUserAddressAsync returns expected values"), AutoData]
+        public async Task GetUserAddressAsync_Returns_Expected_Values(string username, IPAddress ip, int port)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var addr = await s.GetUserAddressAsync(username);
+
+                Assert.Equal(ip, addr.IPAddress);
+                Assert.Equal(port, addr.Port);
+            }
+        }
     }
 }
