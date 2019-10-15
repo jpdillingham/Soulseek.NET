@@ -51,7 +51,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Soulseek.Compression
 {
     [ExcludeFromCodeCoverage]
-    sealed class InfBlocks
+    internal sealed class InfBlocks
 	{
 		private const int MANY = 1440;
 		

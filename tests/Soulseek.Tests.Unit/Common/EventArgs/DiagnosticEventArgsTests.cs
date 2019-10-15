@@ -21,7 +21,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "DiagnosticEventArgs Instantiates with the given data"), AutoFixture.Xunit2.AutoData]
         public void Instantiates_With_The_Given_Data(DiagnosticLevel level, string message, Exception exception)
         {
-            var e = new DiagnosticGeneratedEventArgs(level, message, exception);
+            var e = new DiagnosticEventArgs(level, message, exception);
 
             Assert.Equal(level, e.Level);
             Assert.Equal(message, e.Message);
@@ -34,7 +34,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "DiagnosticEventArgs Instantiates with null Exception given null"), AutoFixture.Xunit2.AutoData]
         public void Instantiates_With_Null_Exception_Given_Null(DiagnosticLevel level, string message)
         {
-            var e = new DiagnosticGeneratedEventArgs(level, message);
+            var e = new DiagnosticEventArgs(level, message);
 
             Assert.Equal(level, e.Level);
             Assert.Equal(message, e.Message);
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "DiagnosticEventArgs IncludesException returns false given null Exception"), AutoFixture.Xunit2.AutoData]
         public void IncludesException_Returns_False_Given_Null_Exception(DiagnosticLevel level, string message)
         {
-            var e = new DiagnosticGeneratedEventArgs(level, message);
+            var e = new DiagnosticEventArgs(level, message);
 
             Assert.False(e.IncludesException);
         }

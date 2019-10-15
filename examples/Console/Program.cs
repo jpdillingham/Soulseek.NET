@@ -182,7 +182,7 @@
             }
         }
 
-        private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticGeneratedEventArgs e)
+        private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticEventArgs e)
         {
             Console.WriteLine($"[DIAGNOSTICS] [{e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] [{e.Level}]: {e.Message}");
         }

@@ -157,7 +157,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+        public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
         ///     Occurs when a private message is received.

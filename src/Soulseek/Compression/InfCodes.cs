@@ -51,7 +51,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Soulseek.Compression
 {
     [ExcludeFromCodeCoverage]
-    sealed class InfCodes
+    internal sealed class InfCodes
 	{
 				
 		private static readonly int[] inflate_mask = new int[]{0x00000000, 0x00000001, 0x00000003, 0x00000007, 0x0000000f, 0x0000001f, 0x0000003f, 0x0000007f, 0x000000ff, 0x000001ff, 0x000003ff, 0x000007ff, 0x00000fff, 0x00001fff, 0x00003fff, 0x00007fff, 0x0000ffff};

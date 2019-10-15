@@ -15,24 +15,17 @@ namespace Soulseek
     using System;
 
     /// <summary>
-    ///     Generic event arguments for diagnostic events.
-    /// </summary>
-    public class DiagnosticEventArgs : EventArgs
-    {
-    }
-
-    /// <summary>
     ///     Event arguments for events raised by diagnostic messages.
     /// </summary>
-    public class DiagnosticGeneratedEventArgs : DiagnosticEventArgs
+    public class DiagnosticEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DiagnosticGeneratedEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="DiagnosticEventArgs"/> class.
         /// </summary>
         /// <param name="level">The digagnostic level of the event.</param>
         /// <param name="message">The event message.</param>
         /// <param name="exception">The Exception associated with the event, if applicable.</param>
-        public DiagnosticGeneratedEventArgs(DiagnosticLevel level, string message, Exception exception = null)
+        public DiagnosticEventArgs(DiagnosticLevel level, string message, Exception exception = null)
         {
             Level = level;
             Message = message;

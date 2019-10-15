@@ -339,7 +339,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
@@ -376,7 +376,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
@@ -475,7 +475,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Server.ConnectToPeer)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
             handler.HandleMessage(null, msg);

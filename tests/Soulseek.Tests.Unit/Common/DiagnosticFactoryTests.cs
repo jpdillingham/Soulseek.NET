@@ -20,20 +20,20 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(object source, DiagnosticLevel level, Action<DiagnosticGeneratedEventArgs> handler)
+        public void Instantiates_With_The_Given_Data(object source, DiagnosticLevel level, Action<DiagnosticEventArgs> handler)
         {
             var d = new DiagnosticFactory(source, level, handler);
 
             Assert.Equal(source, d.GetProperty<object>("Source"));
             Assert.Equal(level, d.GetProperty<DiagnosticLevel>("MinimumLevel"));
-            Assert.Equal(handler, d.GetProperty<Action<DiagnosticGeneratedEventArgs>>("EventHandler"));
+            Assert.Equal(handler, d.GetProperty<Action<DiagnosticEventArgs>>("EventHandler"));
         }
 
         [Trait("Category", "Debug")]
         [Theory(DisplayName = "Raises event on debug"), AutoData]
         public void Raises_Event_On_Debug(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.Debug, (args) =>
             {
@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Does not raise event on debug when level is > Debug"), AutoData]
         public void Does_Not_Raise_Event_On_Debug_When_Level_Is_Gt_Debug(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.Info, (args) =>
             {
@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Raises event on info"), AutoData]
         public void Raises_Event_On_Info(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.Info, (args) =>
             {
@@ -87,7 +87,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Does not raise event on info when level is > Info"), AutoData]
         public void Does_Not_Raise_Event_On_Info_When_Level_Is_Gt_Info(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.Warning, (args) =>
             {
@@ -103,7 +103,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Raises event on warning"), AutoData]
         public void Raises_Event_On_Warning(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.Warning, (args) =>
             {
@@ -122,7 +122,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Does not raise event on warning when level is > Warning"), AutoData]
         public void Does_Not_Raise_Event_On_Warning_When_Level_Is_Gt_Warning(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.None, (args) =>
             {
@@ -138,7 +138,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Does not raise event when level is None"), AutoData]
         public void Does_Not_Raise_Event_When_Level_Is_None(string message)
         {
-            DiagnosticGeneratedEventArgs e = null;
+            DiagnosticEventArgs e = null;
 
             var d = new DiagnosticFactory(this, DiagnosticLevel.None, (args) =>
             {

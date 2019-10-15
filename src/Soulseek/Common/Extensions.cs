@@ -26,7 +26,7 @@ namespace Soulseek
     /// <summary>
     ///     Extension methods.
     /// </summary>
-    public static class Extensions
+    internal static class Extensions
     {
         /// <summary>
         ///     Dequeues and disposes of all instances within the specified <see cref="ConcurrentQueue{T}"/>.

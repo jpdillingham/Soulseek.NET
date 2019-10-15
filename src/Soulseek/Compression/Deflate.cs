@@ -51,7 +51,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Soulseek.Compression
 {
     [ExcludeFromCodeCoverage]
-    public sealed class Deflate
+    internal sealed class Deflate
 	{
 		
 		private const int MAX_MEM_LEVEL = 9;

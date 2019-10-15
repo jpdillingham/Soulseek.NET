@@ -21,6 +21,7 @@ namespace Soulseek.Network
     using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
     using SystemTimer = System.Timers.Timer;
@@ -78,7 +79,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+        public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
         ///     Gets the current distributed branch level.

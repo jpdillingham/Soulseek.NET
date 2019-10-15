@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Distributed.Ping)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
             handler.HandleMessage(conn.Object, msg);
@@ -306,7 +306,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
             handler.HandleMessage(conn.Object, message);
