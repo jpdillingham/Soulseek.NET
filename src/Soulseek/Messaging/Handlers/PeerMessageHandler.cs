@@ -20,6 +20,7 @@ namespace Soulseek.Messaging.Handlers
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Handles incoming messages from peer connections.

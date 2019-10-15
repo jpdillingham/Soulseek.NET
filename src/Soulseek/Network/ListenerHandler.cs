@@ -17,6 +17,7 @@ namespace Soulseek.Network
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Handles incoming connections established by the <see cref="IListener"/>.

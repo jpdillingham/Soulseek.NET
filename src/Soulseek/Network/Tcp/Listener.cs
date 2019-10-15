@@ -12,6 +12,7 @@
 
 namespace Soulseek.Network.Tcp
 {
+    using Soulseek.Options;
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Net;

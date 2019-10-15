@@ -12,7 +12,6 @@
 
 namespace Soulseek.Network.Tcp
 {
-    using Soulseek.Exceptions;
     using System;
     using System.Collections.Generic;
     using System.Linq;
@@ -20,6 +19,8 @@ namespace Soulseek.Network.Tcp
     using System.Net.Sockets;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Exceptions;
+    using Soulseek.Options;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>

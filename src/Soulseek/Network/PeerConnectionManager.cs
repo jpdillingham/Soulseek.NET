@@ -23,6 +23,7 @@ namespace Soulseek.Network
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Manages peer <see cref="IConnection"/> instances for the application.

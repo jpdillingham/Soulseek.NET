@@ -19,6 +19,7 @@ namespace Soulseek
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
+    using Soulseek.Options;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.

@@ -27,6 +27,7 @@ namespace Soulseek
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.

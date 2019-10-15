@@ -19,6 +19,7 @@ namespace Soulseek
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
+    using Soulseek.Options;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
