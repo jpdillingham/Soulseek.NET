@@ -527,11 +527,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerGetStatus"), AutoData]
         public void Handles_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
-            GetStatusResponse result = null;
+            UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
-                .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatusResponse>()))
+                .Callback<WaitKey, UserStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)
@@ -617,11 +617,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
-            GetStatusResponse result = null;
+            UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
-                .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatusResponse>()))
+                .Callback<WaitKey, UserStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)

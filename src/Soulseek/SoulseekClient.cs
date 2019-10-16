@@ -547,7 +547,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<GetStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1123,11 +1123,11 @@ namespace Soulseek
             }
         }
 
-        private async Task<GetStatusResponse> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserStatusResponse> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
-                var getStatusWait = Waiter.Wait<GetStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
+                var getStatusWait = Waiter.Wait<UserStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new GetStatusRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await getStatusWait.ConfigureAwait(false);

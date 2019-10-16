@@ -1,4 +1,4 @@
-﻿// <copyright file="GetStatusResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatusResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,13 +18,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class GetStatusResponseTests
+    public class UserStatusResponseTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string username, UserStatus status, bool privileged)
         {
-            var r = new GetStatusResponse(username, status, privileged);
+            var r = new UserStatusResponse(username, status, privileged);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(status, r.Status);
@@ -39,7 +39,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => GetStatusResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UserStatusResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.GetStatus)
                 .Build();
 
-            var ex = Record.Exception(() => GetStatusResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UserStatusResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte((byte)(privileged ? 1 : 0))
                 .Build();
 
-            var r = GetStatusResponse.FromByteArray(msg);
+            var r = UserStatusResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(status, r.Status);

@@ -222,7 +222,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task<GetStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.

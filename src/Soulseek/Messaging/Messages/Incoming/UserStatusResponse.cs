@@ -1,4 +1,4 @@
-﻿// <copyright file="GetStatusResponse.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatusResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,15 +17,15 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a peer info request.
     /// </summary>
-    public sealed class GetStatusResponse
+    public sealed class UserStatusResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GetStatusResponse"/> class.
+        ///     Initializes a new instance of the <see cref="UserStatusResponse"/> class.
         /// </summary>
         /// <param name="username">The username of the peer.</param>
         /// <param name="status">The status of the peer.</param>
         /// <param name="privileged">A value indicating whether the peer is privileged.</param>
-        internal GetStatusResponse(string username, UserStatus status, bool privileged)
+        internal UserStatusResponse(string username, UserStatus status, bool privileged)
         {
             Username = username;
             Status = status;
@@ -48,11 +48,11 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="GetStatusResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UserStatusResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        internal static GetStatusResponse FromByteArray(byte[] bytes)
+        internal static UserStatusResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -66,7 +66,7 @@ namespace Soulseek.Messaging.Messages
             var status = (UserStatus)reader.ReadInteger();
             var privileged = reader.ReadByte() > 0;
 
-            return new GetStatusResponse(username, status, privileged);
+            return new UserStatusResponse(username, status, privileged);
         }
     }
 }

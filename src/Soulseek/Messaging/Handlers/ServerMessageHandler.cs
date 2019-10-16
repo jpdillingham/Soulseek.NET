@@ -157,7 +157,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetStatus:
-                        var statsResponse = GetStatusResponse.FromByteArray(message);
+                        var statsResponse = UserStatusResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
