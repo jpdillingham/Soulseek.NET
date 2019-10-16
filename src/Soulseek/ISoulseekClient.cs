@@ -194,7 +194,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserAddressResponse> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.

@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.None, 0)));
 
             var peerConn = new Mock<IMessageConnection>();
             mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
@@ -356,7 +356,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.None, 0)));
 
             var peerConn = new Mock<IMessageConnection>();
             mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
@@ -384,7 +384,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.None, 0)));
 
             var peerConn = new Mock<IMessageConnection>();
             mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))

@@ -493,7 +493,7 @@ namespace Soulseek
         ///     Thrown when the client is not connected to the server, or no user is logged in.
         /// </exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
+        public virtual Task<UserAddressResponse> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1070,23 +1070,23 @@ namespace Soulseek
             }
         }
 
-        private async Task<(IPAddress IPAddress, int Port)> GetUserAddressInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserAddressResponse> GetUserAddressInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
                 var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
                 var addressWait = Waiter.Wait<UserAddressResponse>(waitKey, cancellationToken: cancellationToken);
 
-                await ServerConnection.WriteAsync(new GetPeerAddressRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new UserAddressRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                var address = await addressWait.ConfigureAwait(false);
+                var response = await addressWait.ConfigureAwait(false);
 
-                if (address.IPAddress.Equals(IPAddress.Parse("0.0.0.0")))
+                if (response.IPAddress.Equals(IPAddress.Parse("0.0.0.0")))
                 {
                     throw new PeerOfflineException($"User {username} appears to be offline.");
                 }
 
-                return (address.IPAddress, address.Port);
+                return response;
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1278,7 +1278,7 @@ namespace Soulseek
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync().ConfigureAwait(false);
 
-            (IPAddress IPAddress, int Port) address = default;
+            UserAddressResponse address = default;
 
             try
             {

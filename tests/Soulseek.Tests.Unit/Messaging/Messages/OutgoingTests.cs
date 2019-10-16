@@ -50,23 +50,23 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "GetPeerAddressRequest")]
-        [Fact(DisplayName = "GetPeerAddressRequest instantiates properly")]
-        public void GetPeerAddressRequest_Instantiates_Properly()
+        [Trait("Request", "UserAddressRequest")]
+        [Fact(DisplayName = "UserAddressRequest instantiates properly")]
+        public void UserAddressRequest_Instantiates_Properly()
         {
             var name = Guid.NewGuid().ToString();
-            var a = new GetPeerAddressRequest(name);
+            var a = new UserAddressRequest(name);
 
             Assert.Equal(name, a.Username);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "GetPeerAddressRequest")]
-        [Fact(DisplayName = "GetPeerAddressRequest constructs the correct Message")]
-        public void GetPeerAddressRequest_Constructs_The_Correct_Message()
+        [Trait("Request", "UserAddressRequest")]
+        [Fact(DisplayName = "UserAddressRequest constructs the correct Message")]
+        public void UserAddressRequest_Constructs_The_Correct_Message()
         {
             var name = Guid.NewGuid().ToString();
-            var msg = new GetPeerAddressRequest(name).ToByteArray();
+            var msg = new UserAddressRequest(name).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
