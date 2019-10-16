@@ -72,11 +72,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerGetPeerAddress"), AutoData]
         public void Handles_ServerGetPeerAddress(string username, IPAddress ip, int port)
         {
-            GetPeerAddressResponse result = null;
+            UserAddressResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetPeerAddressResponse>()))
-                .Callback<WaitKey, GetPeerAddressResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserAddressResponse>()))
+                .Callback<WaitKey, UserAddressResponse>((key, response) => result = response);
 
             var ipBytes = ip.GetAddressBytes();
             Array.Reverse(ipBytes);

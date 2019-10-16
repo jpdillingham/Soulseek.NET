@@ -1,4 +1,4 @@
-﻿// <copyright file="GetPeerAddressResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="UserAddressResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -19,7 +19,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class GetPeerAddressResponseTests
+    public class UserAddressResponseTests
     {
         private string RandomGuid => Guid.NewGuid().ToString();
         private Random Random { get; } = new Random();
@@ -32,9 +32,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var ip = new IPAddress(Random.Next(1024));
             var port = Random.Next();
 
-            GetPeerAddressResponse response = null;
+            UserAddressResponse response = null;
 
-            var ex = Record.Exception(() => response = new GetPeerAddressResponse(un, ip, port));
+            var ex = Record.Exception(() => response = new UserAddressResponse(un, ip, port));
 
             Assert.Null(ex);
 
@@ -51,7 +51,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => GetPeerAddressResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UserAddressResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -66,7 +66,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("foo")
                 .Build();
 
-            var ex = Record.Exception(() => GetPeerAddressResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => UserAddressResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -91,7 +91,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(port)
                 .Build();
 
-            var response = GetPeerAddressResponse.FromByteArray(msg);
+            var response = UserAddressResponse.FromByteArray(msg);
 
             Assert.Equal(un, response.Username);
             Assert.Equal(ip, response.IPAddress);

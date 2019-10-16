@@ -174,7 +174,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetPeerAddress:
-                        var peerAddressResponse = GetPeerAddressResponse.FromByteArray(message);
+                        var peerAddressResponse = UserAddressResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 

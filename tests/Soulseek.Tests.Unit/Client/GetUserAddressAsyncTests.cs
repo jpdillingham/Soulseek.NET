@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetUserAddressAsync_Throws_OperationCanceledException_When_Canceled(string username)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
@@ -87,7 +87,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetUserAddressAsync_Throws_TimeoutException_When_Timed_Out(string username)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
@@ -106,7 +106,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetUserAddressAsync_Throws_UserAddressException_On_Error_Other_Than_Cancel_Or_Timeout(string username)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object))
@@ -125,8 +125,8 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetUserAddressAsync_Throws_PeerOfflineException_When_Peer_Is_Offline(string username)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, IPAddress.Parse("0.0.0.0"), 0)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("0.0.0.0"), 0)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
@@ -149,8 +149,8 @@ namespace Soulseek.Tests.Unit.Client
         public async Task GetUserAddressAsync_Returns_Expected_Values(string username, IPAddress ip, int port)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))

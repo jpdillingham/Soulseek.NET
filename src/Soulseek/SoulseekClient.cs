@@ -1075,7 +1075,7 @@ namespace Soulseek
             try
             {
                 var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
-                var addressWait = Waiter.Wait<GetPeerAddressResponse>(waitKey, cancellationToken: cancellationToken);
+                var addressWait = Waiter.Wait<UserAddressResponse>(waitKey, cancellationToken: cancellationToken);
 
                 await ServerConnection.WriteAsync(new GetPeerAddressRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
