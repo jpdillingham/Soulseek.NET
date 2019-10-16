@@ -26,6 +26,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Options;
     using Xunit;
 
     public class PeerMessageHandlerTests

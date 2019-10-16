@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using AutoFixture.Xunit2;
+    using Soulseek.Options;
     using Xunit;
 
     public class ConnectionOptionsTests

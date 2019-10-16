@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Integration
 {
     using System.Threading.Tasks;
+    using Soulseek.Options;
     using Xunit;
 
     public class SoulseekClientTests

@@ -26,6 +26,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class ServerMessageHandlerTests
@@ -128,7 +129,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
-        public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
+        internal void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
             var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
             var (handler, mocks) = GetFixture(options);
@@ -153,7 +154,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [InlineData(MessageCode.Server.ParentMinSpeed)]
         [InlineData(MessageCode.Server.ParentSpeedRatio)]
         [InlineData(MessageCode.Server.WishlistInterval)]
-        public void Handles_IntegerResponse_Messages(MessageCode.Server code)
+        internal void Handles_IntegerResponse_Messages(MessageCode.Server code)
         {
             int value = new Random().Next();
             int? result = null;

@@ -169,7 +169,7 @@ namespace Soulseek.Tests.Unit
         [InlineData(MessageCode.Server.Login, "token", null)]
         [InlineData(MessageCode.Server.Login, null, 13)]
         [InlineData(MessageCode.Server.Login, "token", 13)]
-        public void Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
+        internal void Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
         {
             var key = new WaitKey(code, token);
 
@@ -205,7 +205,7 @@ namespace Soulseek.Tests.Unit
         [InlineData(MessageCode.Server.Login, "token", null)]
         [InlineData(MessageCode.Server.Login, null, 13)]
         [InlineData(MessageCode.Server.Login, "token", 13)]
-        public void Non_Generic_Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
+        internal void Non_Generic_Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
         {
             var key = new WaitKey(code, token);
 

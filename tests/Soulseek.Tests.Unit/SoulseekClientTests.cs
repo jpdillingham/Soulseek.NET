@@ -21,6 +21,7 @@ namespace Soulseek.Tests.Unit
     using Soulseek.Exceptions;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class SoulseekClientTests

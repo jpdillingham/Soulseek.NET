@@ -25,6 +25,7 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class DownloadAsyncTests

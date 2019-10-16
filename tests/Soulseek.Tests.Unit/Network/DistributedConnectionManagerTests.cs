@@ -29,6 +29,7 @@ namespace Soulseek.Tests.Unit.Network
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class DistributedConnectionManagerTests

@@ -22,6 +22,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
     using Moq;
     using Soulseek.Exceptions;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
     using Xunit.Abstractions;
 
