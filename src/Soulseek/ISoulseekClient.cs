@@ -59,6 +59,9 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
+        /// <remarks>
+        ///     Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.
+        /// </remarks>
         event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         /// <summary>
@@ -97,11 +100,16 @@ namespace Soulseek
         /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
         Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list.
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
+        /// <remarks>
+        ///     Once a user is added, the server will begin sending status updates for that user, which will generate <see cref="UserStatusChanged"/> events.
+        /// </remarks>
         /// <param name="username">The username of the user to add.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the server response.</returns>
@@ -119,13 +127,18 @@ namespace Soulseek
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <returns>The operation context.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="ConnectionException">
         ///     Thrown when the client is already connected, or is transitioning between states.
@@ -271,6 +284,16 @@ namespace Soulseek
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
+        /// </summary>
+        /// <param name="status">The current status.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
+        Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
@@ -280,16 +303,6 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
         Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
-
-        /// <summary>
-        ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
-        /// </summary>
-        /// <param name="status">The current status.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The operation context.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified

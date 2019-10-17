@@ -193,6 +193,9 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
+        /// <remarks>
+        ///     Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.
+        /// </remarks>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         /// <summary>
@@ -268,8 +271,11 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list.
+        ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
+        /// <remarks>
+        ///     Once a user is added, the server will begin sending status updates for that user, which will generate <see cref="UserStatusChanged"/> events.
+        /// </remarks>
         /// <param name="username">The username of the user to add.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the server response.</returns>
@@ -298,8 +304,8 @@ namespace Soulseek
         ///     specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to browse.</param>
-        /// <param name="cancellationToken">A cancellation token.</param>
-        /// <returns>The operation response.</returns>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the fetched list of files.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
