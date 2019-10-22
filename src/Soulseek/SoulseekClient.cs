@@ -314,6 +314,7 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -833,7 +834,7 @@ namespace Soulseek
 
                 return response;
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
