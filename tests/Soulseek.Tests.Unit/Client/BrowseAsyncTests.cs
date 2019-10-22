@@ -108,8 +108,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseInternalAsync")]
-        [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on cancellation"), AutoData]
-        public async Task BrowseInternalAsync_Throws_BrowseException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
+        [Theory(DisplayName = "BrowseInternalAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task BrowseInternalAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
@@ -136,8 +136,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<BrowseException>(ex);
-                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
