@@ -193,9 +193,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
-        /// <remarks>
-        ///     Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.
-        /// </remarks>
+        /// <remarks>Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.</remarks>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         /// <summary>
@@ -251,30 +249,32 @@ namespace Soulseek
         /// <param name="privateMessageId">The unique id of the private message to acknowledge.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="privateMessageId"/> is less than zero.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual async Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
+        public virtual Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null)
         {
+            if (privateMessageId < 0)
+            {
+                throw new ArgumentException($"The private message ID must be greater than zero.", nameof(privateMessageId));
+            }
+
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge private messages (currently: {State})");
             }
 
-            try
-            {
-                await ServerConnection.WriteAsync(new AcknowledgePrivateMessage(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex)
-            {
-                throw new PrivateMessageException($"Failed to acknowledge private message with ID {privateMessageId}: {ex.Message}", ex);
-            }
+            return AcknowledgePrivateMessageInternalAsync(privateMessageId, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
         /// <remarks>
-        ///     Once a user is added, the server will begin sending status updates for that user, which will generate <see cref="UserStatusChanged"/> events.
+        ///     Once a user is added the server will begin sending status updates for that user, which will generate
+        ///     <see cref="UserStatusChanged"/> events.
         /// </remarks>
         /// <param name="username">The username of the user to add.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -303,6 +303,10 @@ namespace Soulseek
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
         ///     specified <paramref name="cancellationToken"/>.
         /// </summary>
+        /// <remarks>
+        ///     By default, this operation will not time out locally, but rather will wait until the remote connection is broken.
+        ///     If a local timeout is desired, specify an appropriate <see cref="CancellationToken"/>.
+        /// </remarks>
         /// <param name="username">The user to browse.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the fetched list of files.</returns>
@@ -337,7 +341,7 @@ namespace Soulseek
         {
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
-                throw new InvalidOperationException($"Failed to connect; the client is already connected");
+                throw new InvalidOperationException($"The client is already connected");
             }
 
             try
@@ -346,7 +350,7 @@ namespace Soulseek
 
                 await ServerConnection.ConnectAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new ConnectionException($"Failed to connect: {ex.Message}.", ex);
             }
@@ -402,6 +406,11 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -424,12 +433,12 @@ namespace Soulseek
 
             if (Downloads.ContainsKey((int)token))
             {
-                throw new ArgumentException($"An active or queued download with token {token} is already in progress", nameof(token));
+                throw new DuplicateTokenException($"An active or queued download with token {token} is already in progress");
             }
 
             if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
             {
-                throw new ArgumentException($"An active of queued download of {filename} from {username} is already in progress");
+                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
             }
 
             options = options ?? new TransferOptions();
@@ -683,6 +692,24 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
+        /// </summary>
+        /// <param name="status">The current status.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set online status (currently: {State})");
+            }
+
+            return ServerConnection.WriteAsync(new SetOnlineStatus(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
@@ -699,24 +726,6 @@ namespace Soulseek
             }
 
             return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
-        }
-
-        /// <summary>
-        ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
-        /// </summary>
-        /// <param name="status">The current status.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The operation context.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetOnlineStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
-        {
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to set online status (currently: {State})");
-            }
-
-            return ServerConnection.WriteAsync(new SetOnlineStatus(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -762,6 +771,18 @@ namespace Soulseek
                 }
 
                 Disposed = true;
+            }
+        }
+
+        private async Task AcknowledgePrivateMessageInternalAsync(int privateMessageId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessage(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivateMessageException($"Failed to acknowledge private message with ID {privateMessageId}: {ex.Message}", ex);
             }
         }
 
@@ -812,7 +833,7 @@ namespace Soulseek
 
                 return response;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
