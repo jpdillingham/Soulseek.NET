@@ -66,10 +66,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetPeerInfoAsync returns expected info"), AutoData]
         public async Task GetUserStatusAsync_Returns_Expected_Info(string username, UserStatus status, bool privileged)
         {
-            var result = new GetStatusResponse(username, status, privileged);
+            var result = new UserStatusResponse(username, status, privileged);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -92,10 +92,10 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetUserStatusAsync throws UserStatusException on throw"), AutoData]
         public async Task GetUserStatusAsync_Throws_UserStatusException_On_Throw(string username, UserStatus status, bool privileged)
         {
-            var result = new GetStatusResponse(username, status, privileged);
+            var result = new UserStatusResponse(username, status, privileged);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(result));
 
             var serverConn = new Mock<IMessageConnection>();
@@ -106,7 +106,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                GetStatusResponse r = null;
+                UserStatusResponse r = null;
                 var ex = await Record.ExceptionAsync(async () => r = await s.GetUserStatusAsync(username));
 
                 Assert.NotNull(ex);

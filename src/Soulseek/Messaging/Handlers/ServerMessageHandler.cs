@@ -19,6 +19,7 @@ namespace Soulseek.Messaging.Handlers
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Handles incoming messages from the server connection.
@@ -42,7 +43,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+        public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
         ///     Occurs when a private message is received.
@@ -156,7 +157,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetStatus:
-                        var statsResponse = GetStatusResponse.FromByteArray(message);
+                        var statsResponse = UserStatusResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, statsResponse.Username), statsResponse);
                         UserStatusChanged?.Invoke(this, new UserStatusChangedEventArgs(statsResponse));
                         break;
@@ -173,7 +174,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.GetPeerAddress:
-                        var peerAddressResponse = GetPeerAddressResponse.FromByteArray(message);
+                        var peerAddressResponse = UserAddressResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 

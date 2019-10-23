@@ -51,7 +51,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace Soulseek.Compression
 {
     [ExcludeFromCodeCoverage]
-    sealed public class ZStream
+    internal sealed class ZStream
 	{
 		
 		private const int MAX_WBITS = 15; // 32K LZ77 window		

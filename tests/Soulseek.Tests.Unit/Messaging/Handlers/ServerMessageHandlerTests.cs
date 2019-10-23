@@ -26,6 +26,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class ServerMessageHandlerTests
@@ -71,11 +72,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerGetPeerAddress"), AutoData]
         public void Handles_ServerGetPeerAddress(string username, IPAddress ip, int port)
         {
-            GetPeerAddressResponse result = null;
+            UserAddressResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetPeerAddressResponse>()))
-                .Callback<WaitKey, GetPeerAddressResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserAddressResponse>()))
+                .Callback<WaitKey, UserAddressResponse>((key, response) => result = response);
 
             var ipBytes = ip.GetAddressBytes();
             Array.Reverse(ipBytes);
@@ -128,7 +129,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
-        public void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
+        internal void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
             var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
             var (handler, mocks) = GetFixture(options);
@@ -153,7 +154,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [InlineData(MessageCode.Server.ParentMinSpeed)]
         [InlineData(MessageCode.Server.ParentSpeedRatio)]
         [InlineData(MessageCode.Server.WishlistInterval)]
-        public void Handles_IntegerResponse_Messages(MessageCode.Server code)
+        internal void Handles_IntegerResponse_Messages(MessageCode.Server code)
         {
             int value = new Random().Next();
             int? result = null;
@@ -339,7 +340,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
@@ -376,7 +377,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
@@ -475,7 +476,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Server.ConnectToPeer)
                 .Build();
 
-            var diagnostics = new List<DiagnosticGeneratedEventArgs>();
+            var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
             handler.HandleMessage(null, msg);
@@ -526,11 +527,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerGetStatus"), AutoData]
         public void Handles_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
-            GetStatusResponse result = null;
+            UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
-                .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatusResponse>()))
+                .Callback<WaitKey, UserStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)
@@ -616,11 +617,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
         public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
         {
-            GetStatusResponse result = null;
+            UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<GetStatusResponse>()))
-                .Callback<WaitKey, GetStatusResponse>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<UserStatusResponse>()))
+                .Callback<WaitKey, UserStatusResponse>((key, response) => result = response);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)

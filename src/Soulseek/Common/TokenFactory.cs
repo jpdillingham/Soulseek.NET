@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     Generates unique tokens for network operations.
     /// </summary>
-    public class TokenFactory : ITokenFactory
+    internal class TokenFactory : ITokenFactory
     {
         private readonly object syncRoot = new object();
         private int current;

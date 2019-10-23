@@ -542,7 +542,7 @@ namespace Soulseek.Tests.Unit.Messaging
 
         [Trait("Category", "ReadCode")]
         [Theory(DisplayName = "ReadCode returns expected data"), AutoData]
-        public void ReadCode_Returns_Expected_Data(MessageCode.Peer code)
+        internal void ReadCode_Returns_Expected_Data(MessageCode.Peer code)
         {
             var msg = new MessageBuilder()
                 .WriteCode(code)

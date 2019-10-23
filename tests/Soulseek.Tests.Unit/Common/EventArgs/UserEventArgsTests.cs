@@ -22,7 +22,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "UserStatusChangedEventArgs Instantiates with the given data"), AutoData]
         public void UserStatusChangedEventArgs_Instantiates_With_The_Given_Data(string username, UserStatus status, bool privileged)
         {
-            var e = new UserStatusChangedEventArgs(new GetStatusResponse(username, status, privileged));
+            var e = new UserStatusChangedEventArgs(new UserStatusResponse(username, status, privileged));
 
             Assert.Equal(username, e.Username);
             Assert.Equal(status, e.Status);

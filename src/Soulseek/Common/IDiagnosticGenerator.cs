@@ -22,6 +22,6 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+        event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
     }
 }

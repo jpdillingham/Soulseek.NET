@@ -52,7 +52,7 @@ namespace Soulseek.Compression
 {
 
     [ExcludeFromCodeCoverage]
-    public class ZStreamException:System.IO.IOException
+    internal class ZStreamException:System.IO.IOException
 	{
 		public ZStreamException():base()
 		{

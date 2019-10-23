@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     Generates unique tokens for network operations.
     /// </summary>
-    public interface ITokenFactory
+    internal interface ITokenFactory
     {
         /// <summary>
         ///     Gets the next token.

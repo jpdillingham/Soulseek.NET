@@ -15,7 +15,7 @@ namespace Soulseek.Tests.Unit
     using System.Net;
     using AutoFixture.Xunit2;
     using Soulseek.Network;
-    using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class ConnectionFactoryTests

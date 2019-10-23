@@ -14,6 +14,7 @@ namespace Soulseek
 {
     using System;
     using System.Net;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Generic event arguments for transfer events.

@@ -15,7 +15,7 @@ namespace Soulseek.Network.Tcp
     /// <summary>
     ///     Connection state.
     /// </summary>
-    public enum ConnectionState
+    internal enum ConnectionState
     {
         /// <summary>
         ///     Pending.

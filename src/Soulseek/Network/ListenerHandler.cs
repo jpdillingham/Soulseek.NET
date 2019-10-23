@@ -14,8 +14,10 @@ namespace Soulseek.Network
 {
     using System;
     using System.Linq;
+    using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Handles incoming connections established by the <see cref="IListener"/>.
@@ -39,7 +41,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+        public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }

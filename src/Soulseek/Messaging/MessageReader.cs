@@ -24,7 +24,7 @@ namespace Soulseek.Messaging
     /// </summary>
     /// <typeparam name="T">The Type of the message code.</typeparam>
     /// <remarks>Only to be used for messages with a code length of 4 bytes.</remarks>
-    public class MessageReader<T>
+    internal class MessageReader<T>
         where T : Enum
     {
         /// <summary>

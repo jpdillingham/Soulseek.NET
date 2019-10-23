@@ -15,6 +15,7 @@ namespace Soulseek.Tests.Unit
     using System;
     using AutoFixture.Xunit2;
     using Soulseek.Messaging.Messages;
+    using Soulseek.Options;
     using Xunit;
 
     public class SearchOptionsTests

@@ -19,9 +19,9 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class SoulseekClientTests

@@ -19,6 +19,7 @@
     using Soulseek;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup

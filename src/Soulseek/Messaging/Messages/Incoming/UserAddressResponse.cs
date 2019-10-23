@@ -1,4 +1,4 @@
-﻿// <copyright file="GetPeerAddressResponse.cs" company="JP Dillingham">
+﻿// <copyright file="UserAddressResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -19,15 +19,15 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a request for a peer's address.
     /// </summary>
-    internal sealed class GetPeerAddressResponse
+    public sealed class UserAddressResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GetPeerAddressResponse"/> class.
+        ///     Initializes a new instance of the <see cref="UserAddressResponse"/> class.
         /// </summary>
         /// <param name="username">The requested peer username.</param>
         /// <param name="ipAddress">The IP address of the peer.</param>
         /// <param name="port">The port on which the peer is listening.</param>
-        public GetPeerAddressResponse(string username, IPAddress ipAddress, int port)
+        internal UserAddressResponse(string username, IPAddress ipAddress, int port)
         {
             Username = username;
             IPAddress = ipAddress;
@@ -50,11 +50,11 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="GetPeerAddressResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="UserAddressResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static GetPeerAddressResponse FromByteArray(byte[] bytes)
+        internal static UserAddressResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -72,7 +72,7 @@ namespace Soulseek.Messaging.Messages
 
             var port = reader.ReadInteger();
 
-            return new GetPeerAddressResponse(username, ipAddress, port);
+            return new UserAddressResponse(username, ipAddress, port);
         }
     }
 }

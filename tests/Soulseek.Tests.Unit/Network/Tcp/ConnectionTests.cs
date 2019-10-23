@@ -20,7 +20,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Exceptions;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
     using Xunit.Abstractions;
 

@@ -25,6 +25,7 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
+    using Soulseek.Options;
     using Xunit;
 
     public class DownloadAsyncTests
@@ -92,8 +93,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws ArgumentException when token used")]
-        public async Task DownloadAsync_Throws_ArgumentException_When_Token_Used()
+        [Fact(DisplayName = "DownloadAsync throws DuplicateTokenException when token used")]
+        public async Task DownloadAsync_Throws_DuplicateTokenException_When_Token_Used()
         {
             using (var s = new SoulseekClient())
             {
@@ -107,8 +108,29 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 1));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
+                Assert.IsType<DuplicateTokenException>(ex);
                 Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync throws DuplicateTransferException when an existing download matches the username and filename"), AutoData]
+        public async Task DownloadAsync_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, Transfer>();
+                queued.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+                Assert.Contains($"An active or queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 
@@ -123,8 +145,8 @@ namespace Soulseek.Tests.Unit.Client
             var options = new ClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse("username", ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse("username", ip, port)));
 
             var manager = new Mock<IPeerConnectionManager>();
             manager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), ip, port, It.IsAny<CancellationToken>()))
@@ -148,8 +170,8 @@ namespace Soulseek.Tests.Unit.Client
             var options = new ClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None))
@@ -184,8 +206,8 @@ namespace Soulseek.Tests.Unit.Client
             var options = new ClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
             waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
@@ -219,8 +241,8 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(waitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<TransferResponse>(new OperationCanceledException()));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -255,8 +277,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<TransferRequest>(new OperationCanceledException()));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
 
@@ -301,8 +323,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -343,8 +365,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<object>(new TimeoutException()));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new TimeoutException()));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -393,8 +415,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -444,8 +466,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -497,8 +519,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -551,8 +573,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -621,8 +643,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -694,8 +716,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -752,8 +774,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -815,8 +837,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -868,8 +890,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<byte[]>(new MessageReadException()));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -931,8 +953,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -970,7 +992,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task DownloadInternalAsync_Raises_Expected_Final_Event_On_Cancellation(string username, string filename, int token)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException("Wait cancelled."));
 
             var conn = new Mock<IMessageConnection>();
@@ -1027,8 +1049,8 @@ namespace Soulseek.Tests.Unit.Client
 
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -1083,8 +1105,8 @@ namespace Soulseek.Tests.Unit.Client
 
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -1135,8 +1157,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromResult<byte[]>(data));
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
-            waiter.Setup(m => m.Wait<GetPeerAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new GetPeerAddressResponse(username, ip, port)));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)

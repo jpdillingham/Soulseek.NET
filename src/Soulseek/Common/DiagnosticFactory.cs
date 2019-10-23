@@ -25,14 +25,14 @@ namespace Soulseek
         /// <param name="source">The source object which originates diagnostic messages.</param>
         /// <param name="minimumLevel">The minimum level of messages to generate.</param>
         /// <param name="eventHandler">The event handler used to raise diagnostics events.</param>
-        public DiagnosticFactory(object source, DiagnosticLevel minimumLevel, Action<DiagnosticGeneratedEventArgs> eventHandler)
+        public DiagnosticFactory(object source, DiagnosticLevel minimumLevel, Action<DiagnosticEventArgs> eventHandler)
         {
             Source = source;
             MinimumLevel = minimumLevel;
             EventHandler = eventHandler;
         }
 
-        private Action<DiagnosticGeneratedEventArgs> EventHandler { get; }
+        private Action<DiagnosticEventArgs> EventHandler { get; }
         private DiagnosticLevel MinimumLevel { get; }
         private object Source { get; }
 
@@ -68,7 +68,7 @@ namespace Soulseek
         {
             if (level <= MinimumLevel)
             {
-                var e = new DiagnosticGeneratedEventArgs(level, message, exception);
+                var e = new DiagnosticEventArgs(level, message, exception);
                 EventHandler(e);
             }
         }

@@ -40,7 +40,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
-        public event EventHandler<DiagnosticGeneratedEventArgs> DiagnosticGenerated;
+        public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
@@ -84,9 +84,9 @@ namespace Soulseek.Messaging.Handlers
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {
-                                var (ip, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+                                var address = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
 
-                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ip, port, CancellationToken.None).ConfigureAwait(false);
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, address.IPAddress, address.Port, CancellationToken.None).ConfigureAwait(false);
                                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
                             }
                         }

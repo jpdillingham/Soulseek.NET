@@ -1,4 +1,4 @@
-﻿// <copyright file="GetPeerAddressRequest.cs" company="JP Dillingham">
+﻿// <copyright file="UserAddressRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,13 +15,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Requests the address of a peer.
     /// </summary>
-    internal sealed class GetPeerAddressRequest
+    internal sealed class UserAddressRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GetPeerAddressRequest"/> class.
+        ///     Initializes a new instance of the <see cref="UserAddressRequest"/> class.
         /// </summary>
         /// <param name="username">The username of the requested peer.</param>
-        public GetPeerAddressRequest(string username)
+        public UserAddressRequest(string username)
         {
             Username = username;
         }

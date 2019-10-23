@@ -49,7 +49,7 @@ namespace Soulseek.Tests.Unit.Messaging
 
         [Trait("Category", "Code")]
         [Theory(DisplayName = "Distributed Code sets code bytes"), AutoData]
-        public void Distributed_Code_Sets_Code_Bytes(MessageCode.Distributed code)
+        internal void Distributed_Code_Sets_Code_Bytes(MessageCode.Distributed code)
         {
             var builder = new MessageBuilder();
 
@@ -62,7 +62,7 @@ namespace Soulseek.Tests.Unit.Messaging
 
         [Trait("Category", "Code")]
         [Theory(DisplayName = "Initialization Code sets code bytes"), AutoData]
-        public void Initialization_Code_Sets_Code_Bytes(MessageCode.Initialization code)
+        internal void Initialization_Code_Sets_Code_Bytes(MessageCode.Initialization code)
         {
             var builder = new MessageBuilder();
 

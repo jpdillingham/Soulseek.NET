@@ -15,7 +15,7 @@ namespace Soulseek.Messaging
     /// <summary>
     ///     Message codes.
     /// </summary>
-    public static class MessageCode
+    internal static class MessageCode
     {
         /// <summary>
         ///     Distributed message codes.
