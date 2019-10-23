@@ -93,8 +93,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Fact(DisplayName = "DownloadAsync throws ArgumentException when token used")]
-        public async Task DownloadAsync_Throws_ArgumentException_When_Token_Used()
+        [Fact(DisplayName = "DownloadAsync throws DuplicateTokenException when token used")]
+        public async Task DownloadAsync_Throws_DuplicateTokenException_When_Token_Used()
         {
             using (var s = new SoulseekClient())
             {
@@ -108,14 +108,14 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", 1));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
+                Assert.IsType<DuplicateTokenException>(ex);
                 Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Theory(DisplayName = "DownloadAsync throws ArgumentException when an existing download matches the username and filename"), AutoData]
-        public async Task DownloadAsync_Throws_ArgumentException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
+        [Theory(DisplayName = "DownloadAsync throws DuplicateTransferException when an existing download matches the username and filename"), AutoData]
+        public async Task DownloadAsync_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
         {
             using (var s = new SoulseekClient())
             {
@@ -129,7 +129,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, 1));
 
                 Assert.NotNull(ex);
-                Assert.IsType<ArgumentException>(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
                 Assert.Contains($"An active of queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
             }
         }
