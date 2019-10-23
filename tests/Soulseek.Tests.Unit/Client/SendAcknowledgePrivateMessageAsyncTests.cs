@@ -1,4 +1,4 @@
-﻿// <copyright file="SendPrivateMessageAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="SendAcknowledgePrivateMessageAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,12 +17,11 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using Moq;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    public class SendPrivateMessageAsyncTests
+    public class SendAcknowledgePrivateMessageAsyncTests
     {
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws InvalidOperationException when not connected")]
@@ -87,6 +86,44 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<PrivateMessageException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivateMessageAsync")]
+        [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws TimeoutException when write times out")]
+        public async Task AcknowledgePrivateMessageAsync_Throws_TimeoutException_When_Write_Times_Out()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivateMessageAsync")]
+        [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws OperationCanceledException when write is canceled")]
+        public async Task AcknowledgePrivateMessageAsync_Throws_OperationCanceledException_When_Write_Is_Canceled()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(1, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
