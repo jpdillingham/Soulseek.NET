@@ -119,6 +119,8 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
         Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
