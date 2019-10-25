@@ -836,7 +836,7 @@ namespace Soulseek
 
                 return response;
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
