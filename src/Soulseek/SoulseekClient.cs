@@ -416,6 +416,8 @@ namespace Soulseek
         ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
         ///     is already in progress.
         /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
