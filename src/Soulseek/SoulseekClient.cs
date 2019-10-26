@@ -454,7 +454,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously gets the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user whose queue to check.</param>
         /// <param name="filename">The file to check.</param>
@@ -464,7 +464,9 @@ namespace Soulseek
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="DownloadNotFoundException">Thrown when a corresponding download is not active.</exception>
+        /// <exception cref="TransferNotFoundException">Thrown when a corresponding download is not active.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
         public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
@@ -485,7 +487,7 @@ namespace Soulseek
 
             if (!Downloads.Any(d => d.Value.Username == username && d.Value.Filename == filename))
             {
-                throw new DownloadNotFoundException($"A download of {filename} from user {username} is not active");
+                throw new TransferNotFoundException($"A download of {filename} from user {username} is not active");
             }
 
             return GetDownloadPlaceInQueueInternalAsync(username, filename, cancellationToken ?? CancellationToken.None);
@@ -1098,7 +1100,7 @@ namespace Soulseek
 
                 return response.PlaceInQueue;
             }
-            catch (Exception ex)
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
             }
