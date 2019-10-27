@@ -114,5 +114,57 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }
+
+        [Trait("Category", "GetUserStatusAsync")]
+        [Theory(DisplayName = "GetUserStatusAsync throws TimeoutException on timeout"), AutoData]
+        public async Task GetUserStatusAsync_Throws_TimeoutException_On_Timeout(string username, UserStatus status, bool privileged)
+        {
+            var result = new UserStatusResponse(username, status, privileged);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                UserStatusResponse r = null;
+                var ex = await Record.ExceptionAsync(async () => r = await s.GetUserStatusAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetUserStatusAsync")]
+        [Theory(DisplayName = "GetUserStatusAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task GetUserStatusAsync_Throws_OperationCanceledException_On_Cancellation(string username, UserStatus status, bool privileged)
+        {
+            var result = new UserStatusResponse(username, status, privileged);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                UserStatusResponse r = null;
+                var ex = await Record.ExceptionAsync(async () => r = await s.GetUserStatusAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
     }
 }
