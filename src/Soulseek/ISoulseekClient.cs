@@ -195,8 +195,8 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TransferNotFoundException">Thrown when a corresponding download is not active.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
@@ -222,9 +222,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
         Task<UserAddressResponse> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
 
@@ -237,9 +237,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
         Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
@@ -281,9 +279,7 @@ namespace Soulseek
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
