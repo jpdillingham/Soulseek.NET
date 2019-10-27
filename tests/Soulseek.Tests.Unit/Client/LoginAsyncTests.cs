@@ -112,7 +112,7 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
-        [Theory(DisplayName = "LoginAsync disconnects and throws LoginException on failure"), AutoData]
+        [Theory(DisplayName = "LoginAsync disconnects and throws LoginRejectedException on failure"), AutoData]
         public async Task LoginAsync_Disconnects_And_Throws_LoginException_On_Failure(string user, string password)
         {
             var waiter = new Mock<IWaiter>();
@@ -128,15 +128,15 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
-                Assert.IsType<LoginException>(ex);
+                Assert.IsType<LoginRejectedException>(ex);
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
                 Assert.Null(s.Username);
             }
         }
 
         [Trait("Category", "LoginAsync")]
-        [Theory(DisplayName = "LoginAsync throws LoginException on wait timeout"), AutoData]
-        public async Task LoginAsync_Throws_LoginException_On_Wait_Timeout(string user, string password)
+        [Theory(DisplayName = "LoginAsync throws TimeoutException on timeout"), AutoData]
+        public async Task LoginAsync_Throws_TimeoutException_On_Timeout(string user, string password)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -151,8 +151,28 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
 
                 Assert.NotNull(ex);
-                Assert.IsType<LoginException>(ex);
-                Assert.IsType<TimeoutException>(ex.InnerException);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task LoginAsync_Throws_OperationCanceledException_On_Cancellation(string user, string password)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<LoginResponse>(new OperationCanceledException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.LoginAsync(user, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
 
