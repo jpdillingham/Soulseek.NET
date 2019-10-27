@@ -268,10 +268,12 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="LoginException">
-        ///     Thrown when the login fails, or when an exception is encountered during the operation.
-        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when a user is already logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
+        /// <exception cref="LoginException">Thrown when an exception is encountered during the operation.</exception>
         Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
