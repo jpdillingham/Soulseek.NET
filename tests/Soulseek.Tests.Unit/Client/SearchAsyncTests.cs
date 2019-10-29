@@ -80,8 +80,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
-        [Theory(DisplayName = "SearchAsync throws ArgumentException given a token in use"), AutoData]
-        public async Task SearchAsync_Throws_ArgumentException_Given_A_Token_In_Use(string text, int token)
+        [Theory(DisplayName = "SearchAsync throws DuplicateTokenException given a token in use"), AutoData]
+        public async Task SearchAsync_Throws_DuplicateTokenException_Given_A_Token_In_Use(string text, int token)
         {
             using (var search = new Search(text, token, new SearchOptions()))
             {
@@ -96,8 +96,7 @@ namespace Soulseek.Tests.Unit.Client
                     var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, token));
 
                     Assert.NotNull(ex);
-                    Assert.IsType<ArgumentException>(ex);
-                    Assert.Equal("token", ((ArgumentException)ex).ParamName);
+                    Assert.IsType<DuplicateTokenException>(ex);
                 }
             }
         }
@@ -231,8 +230,28 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, ct));
 
                 Assert.NotNull(ex);
-                Assert.IsType<SearchException>(ex);
-                Assert.IsType<OperationCanceledException>(ex.InnerException);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync throws TimeoutException on timeout"), AutoData]
+        public async Task SearchInternalAsync_Throws_TimeoutException_On_Timeout(string searchText, int token)
+        {
+            var options = new SearchOptions();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
             }
         }
 
