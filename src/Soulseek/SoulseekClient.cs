@@ -638,15 +638,13 @@ namespace Soulseek
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the search results.</returns>
-        /// <exception cref="InvalidOperationException">
-        ///     Thrown when the client is not connected to the server, or no user is logged in.
-        /// </exception>
         /// <exception cref="ArgumentException">
         ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when a search with the specified <paramref name="token"/> is already in progress.
-        /// </exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
         public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -655,21 +653,21 @@ namespace Soulseek
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(searchText));
             }
 
-            token = token ?? TokenFactory.NextToken();
-
-            if (Searches.ContainsKey((int)token))
-            {
-                throw new ArgumentException($"An active search with token {token} is already in progress", nameof(token));
-            }
-
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
             }
 
+            token = token ?? TokenFactory.NextToken();
+
+            if (Searches.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
+            }
+
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, (int)token, options, cancellationToken ?? CancellationToken.None);
+            return SearchInternalAsync(searchText, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1248,10 +1246,15 @@ namespace Soulseek
                 var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
                 return responses.ToList().AsReadOnly();
             }
-            catch (OperationCanceledException ex)
+            catch (OperationCanceledException)
             {
                 search.Complete(SearchStates.Cancelled);
-                throw new SearchException($"Search for {searchText} ({token}) was cancelled.", ex);
+                throw;
+            }
+            catch (TimeoutException)
+            {
+                search.Complete(SearchStates.Errored);
+                throw;
             }
             catch (Exception ex)
             {
