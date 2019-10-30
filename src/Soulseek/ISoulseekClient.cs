@@ -302,6 +302,13 @@ namespace Soulseek
         /// <param name="message">The message to send.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>

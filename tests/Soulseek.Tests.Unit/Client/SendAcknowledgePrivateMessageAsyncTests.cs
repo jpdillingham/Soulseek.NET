@@ -213,5 +213,43 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync throws TimeoutException on timeout")]
+        public async Task SendPrivateMessageAsync_Throws_TimeoutException_On_Timeout()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "SendPrivateMessageAsync")]
+        [Fact(DisplayName = "SendPrivateMessageAsync throws OperationCanceledException on cancellation")]
+        public async Task SendPrivateMessageAsync_Throws_OperationCanceledException_On_Cancellation()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.SendPrivateMessageAsync("foo", "bar"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
     }
 }
