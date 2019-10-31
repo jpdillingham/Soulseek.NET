@@ -938,8 +938,6 @@ namespace Soulseek
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
-                    var tfa = transferRequestAcknowledgement;
-
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
                     UpdateState(TransferStates.Initializing);

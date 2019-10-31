@@ -584,7 +584,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Produces diagnostic on NetInfo Exception"), AutoData]
         public void Produces_Diagnostic_On_NetInfo_Exception(List<(string Username, IPAddress IPAddress, int Port)> parents)
         {
-            IEnumerable<(string Username, IPAddress IPAddress, int Port)> result = null;
             var (handler, mocks) = GetFixture();
 
             mocks.DistributedConnectionManager
