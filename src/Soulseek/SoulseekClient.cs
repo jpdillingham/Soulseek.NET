@@ -933,15 +933,11 @@ namespace Soulseek
                 await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
-                Console.WriteLine($"Waiting for ACK {download.Username} {download.Token}");
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
-
-                Console.WriteLine($"Transfer request ACKed");
 
                 if (transferRequestAcknowledgement.Allowed)
                 {
                     var tfa = transferRequestAcknowledgement;
-                    Console.WriteLine($"Transfer allowed {tfa.Token} {tfa.FileSize}");
 
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
@@ -963,16 +959,11 @@ namespace Soulseek
                 }
                 else
                 {
-                    Console.WriteLine($"Transfer disallowed");
-
                     // the download is remotely queued, so put it in the local queue.
                     UpdateState(TransferStates.Queued);
 
                     // wait for the peer to respond that they are ready to start the transfer
                     var transferStartRequest = await transferStartRequested.ConfigureAwait(false);
-
-                    var tsr = transferStartRequest;
-                    Console.WriteLine($"Start request: token {tsr.Token} filename {tsr.Filename} size: {tsr.FileSize}");
 
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
@@ -992,15 +983,11 @@ namespace Soulseek
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
 
-                    Console.WriteLine($"Transfer start recieved.  Trying to connect.");
-
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
                     peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
-                    Console.WriteLine($"Sending transfer response.");
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
-                    Console.WriteLine($"Response sent.  Waiting for connection...");
 
                     try
                     {
@@ -1034,8 +1021,6 @@ namespace Soulseek
 
                 try
                 {
-                    Console.WriteLine($"Download connection established.  Sending magic bytes...");
-
                     // this needs to be 16? bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
                     // was identified via WireShark.
                     await download.Connection.WriteAsync(new byte[8], cancellationToken).ConfigureAwait(false);
