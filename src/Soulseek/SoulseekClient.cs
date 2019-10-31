@@ -226,6 +226,7 @@ namespace Soulseek
         /// </summary>
         public virtual string Username { get; private set; }
 
+#pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
@@ -237,6 +238,7 @@ namespace Soulseek
         internal virtual IMessageConnection ServerConnection { get; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual IWaiter Waiter { get; }
+#pragma warning restore SA1600 // Elements should be documented
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
