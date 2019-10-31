@@ -122,7 +122,7 @@ namespace Soulseek.Exceptions
     public class DuplicateTransferException : TransferException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref=DuplicateTransferException"/> class.
+        ///     Initializes a new instance of the <see cref="DuplicateTransferException"/> class.
         /// </summary>
         public DuplicateTransferException()
             : base()

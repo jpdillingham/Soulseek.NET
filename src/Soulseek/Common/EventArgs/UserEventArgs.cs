@@ -30,12 +30,12 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserStatusChangedEventArgs"/> class.
         /// </summary>
-        /// <param name="UserStatusResponse">The status response which generated the event.</param>
-        public UserStatusChangedEventArgs(UserStatusResponse UserStatusResponse)
+        /// <param name="userStatusResponse">The status response which generated the event.</param>
+        public UserStatusChangedEventArgs(UserStatusResponse userStatusResponse)
         {
-            Username = UserStatusResponse.Username;
-            Status = UserStatusResponse.Status;
-            Privileged = UserStatusResponse.Privileged;
+            Username = userStatusResponse.Username;
+            Status = userStatusResponse.Status;
+            Privileged = userStatusResponse.Privileged;
         }
 
         /// <summary>
