@@ -14,6 +14,7 @@ namespace Soulseek.Messaging.Handlers
 {
     using System;
     using Soulseek.Messaging.Messages;
+    using Soulseek.Network;
 
     /// <summary>
     ///     Handles incoming messages from the server connection.

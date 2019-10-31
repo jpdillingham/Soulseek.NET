@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using Soulseek.Options;
 
     /// <summary>
     ///     Search state.

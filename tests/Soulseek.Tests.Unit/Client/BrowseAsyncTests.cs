@@ -141,6 +141,39 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseInternalAsync")]
+        [Theory(DisplayName = "BrowseInternalAsync throws TimeoutException on timeout"), AutoData]
+        public async Task BrowseInternalAsync_Throws_TimeoutException_On_Timeout(string username, IPAddress ip, int port, string localUsername)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<BrowseResponse>(new TimeoutException()));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                BrowseResponse result = null;
+                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "BrowseInternalAsync")]
         [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on write exception"), AutoData]
         public async Task BrowseInternalAsync_Throws_BrowseException_On_Write_Exception(string username, IPAddress ip, int port, string localUsername)
         {

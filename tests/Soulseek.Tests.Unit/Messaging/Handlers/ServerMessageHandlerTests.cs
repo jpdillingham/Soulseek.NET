@@ -223,9 +223,9 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessage(null, builder.Build());
 
-            foreach (var room in rooms)
+            foreach (var (name, userCount) in rooms)
             {
-                Assert.Contains(result, r => r.Name == room.Name);
+                Assert.Contains(result, r => r.Name == name);
             }
         }
 
@@ -402,8 +402,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
 
-            var transfer = new Transfer(TransferDirection.Download, username, "foo", token);
-            transfer.RemoteToken = token;
+            var transfer = new Transfer(TransferDirection.Download, username, "foo", token)
+            {
+                RemoteToken = token,
+            };
 
             mocks.Downloads.TryAdd(token, transfer);
 
@@ -584,7 +586,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Produces diagnostic on NetInfo Exception"), AutoData]
         public void Produces_Diagnostic_On_NetInfo_Exception(List<(string Username, IPAddress IPAddress, int Port)> parents)
         {
-            IEnumerable<(string Username, IPAddress IPAddress, int Port)> result = null;
             var (handler, mocks) = GetFixture();
 
             mocks.DistributedConnectionManager

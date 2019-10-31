@@ -114,6 +114,38 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws TimeoutException when connection times out")]
+        public async Task Connect_Throws_TimeoutException_When_Connection_Times_Out()
+        {
+            var c = new Mock<IMessageConnection>();
+            c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Fact(DisplayName = "Connect throws OperationCanceledException when canceled")]
+        public async Task Connect_Throws_OperationCanceledException_When_Canceled()
+        {
+            var c = new Mock<IMessageConnection>();
+            c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new OperationCanceledException());
+
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect succeeds when TcpConnection succeeds")]
         public async Task Connect_Succeeds_When_TcpConnection_Succeeds()
         {

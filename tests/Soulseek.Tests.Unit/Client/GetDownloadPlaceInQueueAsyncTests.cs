@@ -84,8 +84,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
-        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws DownloadNotFoundException when download not found"), AutoData]
-        public async Task GetDownloadPlaceInQueueAsync_Throws_DownloadNotFoundException_When_Download_Not_Found(string username, string filename)
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws TransferNotFoundException when download not found"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Throws_TransferNotFoundException_When_Download_Not_Found(string username, string filename)
         {
             using (var s = new SoulseekClient())
             {
@@ -94,7 +94,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
 
                 Assert.NotNull(ex);
-                Assert.IsType<DownloadNotFoundException>(ex);
+                Assert.IsType<TransferNotFoundException>(ex);
             }
         }
 
@@ -172,6 +172,82 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<DownloadPlaceInQueueException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetDownloadPlaceInQueueAsync")]
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws TimeoutException on timeout"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Throws_TimeoutException_On_Timeout(string username, string filename)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dict = new ConcurrentDictionary<int, Transfer>();
+                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", dict);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetDownloadPlaceInQueueAsync")]
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Throws_OperationCanceledException_On_Cancellation(string username, string filename)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<PlaceInQueueResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dict = new ConcurrentDictionary<int, Transfer>();
+                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", dict);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
             }
         }
     }

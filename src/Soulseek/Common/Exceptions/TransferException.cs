@@ -70,7 +70,7 @@ namespace Soulseek.Exceptions
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class TransferRejectedException : SoulseekClientException
+    public class TransferRejectedException : TransferException
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferRejectedException"/> class.
@@ -115,31 +115,31 @@ namespace Soulseek.Exceptions
     }
 
     /// <summary>
-    ///     Represents errors that occur when an operation is attempted against a download which is not active.
+    ///     Represents errors that occur when a transfer operation would be duplicated.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class DownloadNotFoundException : SoulseekClientException
+    public class DuplicateTransferException : TransferException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadNotFoundException"/> class.
+        ///     Initializes a new instance of the <see cref="DuplicateTransferException"/> class.
         /// </summary>
-        public DownloadNotFoundException()
+        public DuplicateTransferException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadNotFoundException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="DuplicateTransferException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public DownloadNotFoundException(string message)
+        public DuplicateTransferException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadNotFoundException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="DuplicateTransferException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -147,48 +147,48 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
         ///     exception is specified.
         /// </param>
-        public DownloadNotFoundException(string message, Exception innerException)
+        public DuplicateTransferException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadNotFoundException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="DuplicateTransferException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected DownloadNotFoundException(SerializationInfo info, StreamingContext context)
+        protected DuplicateTransferException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
     }
 
     /// <summary>
-    ///     Represents errors that occur when attempting to fetch the place of a download in a remote queue.
+    ///     Represents errors that occur when an operation is attempted against a transfer which is not active.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class DownloadPlaceInQueueException : SoulseekClientException
+    public class TransferNotFoundException : TransferException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadPlaceInQueueException"/> class.
+        ///     Initializes a new instance of the <see cref="TransferNotFoundException"/> class.
         /// </summary>
-        public DownloadPlaceInQueueException()
+        public TransferNotFoundException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadPlaceInQueueException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="TransferNotFoundException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public DownloadPlaceInQueueException(string message)
+        public TransferNotFoundException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadPlaceInQueueException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="TransferNotFoundException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -196,17 +196,17 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
         ///     exception is specified.
         /// </param>
-        public DownloadPlaceInQueueException(string message, Exception innerException)
+        public TransferNotFoundException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="DownloadPlaceInQueueException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="TransferNotFoundException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected DownloadPlaceInQueueException(SerializationInfo info, StreamingContext context)
+        protected TransferNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
