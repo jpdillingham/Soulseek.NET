@@ -705,6 +705,47 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
+        /// </summary>
+        /// <param name="directories">The number of shared directories.</param>
+        /// <param name="files">The number of shared files.</param>
+        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
+        /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the value of <paramref name="directories"/> or <paramref name="files"/> is less than zero.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SharedCountsException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
+        {
+            if (directories < 0)
+            {
+                throw new ArgumentException($"The directory count must be equal to or greater than zero", nameof(directories));
+            }
+
+            if (files < 0)
+            {
+                throw new ArgumentException($"The file count must be equal to or greater than zero", nameof(files));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
+            }
+
+            try
+            {
+                return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SharedCountsException($"Failed to set shared counts to {directories} directories and {files} files: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
         /// </summary>
         /// <param name="status">The current status.</param>
@@ -729,25 +770,6 @@ namespace Soulseek
             {
                 throw new UserStatusException($"Failed to set user status to {status}: {ex.Message}", ex);
             }
-        }
-
-        /// <summary>
-        ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
-        /// </summary>
-        /// <param name="directories">The number of shared directories.</param>
-        /// <param name="files">The number of shared files.</param>
-        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
-        /// <returns>The operation context.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null)
-        {
-            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to set shared counts (currently: {State})");
-            }
-
-            return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>

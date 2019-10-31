@@ -312,6 +312,22 @@ namespace Soulseek
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
+        /// </summary>
+        /// <param name="directories">The number of shared directories.</param>
+        /// <param name="files">The number of shared files.</param>
+        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
+        /// <returns>A Task representing the operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the value of <paramref name="directories"/> or <paramref name="files"/> is less than zero.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SharedCountsException">Thrown when an exception is encountered during the operation.</exception>
+        Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously informs the server of the current online <paramref name="status"/> of the client.
         /// </summary>
         /// <param name="status">The current status.</param>
@@ -322,17 +338,6 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
         Task SetUserStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
-
-        /// <summary>
-        ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
-        /// </summary>
-        /// <param name="directories">The number of shared directories.</param>
-        /// <param name="files">The number of shared files.</param>
-        /// <param name="cancellationToken">The token to monitor for cancelation requests.</param>
-        /// <returns>The operation context.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
-        /// <exception cref="ConnectionWriteException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetSharedCountsAsync(int directories, int files, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified
