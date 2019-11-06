@@ -230,6 +230,7 @@ namespace Soulseek
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual ConcurrentDictionary<int, Transfer> Uploads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
@@ -243,7 +244,7 @@ namespace Soulseek
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ITokenFactory TokenFactory { get; }
-        private ConcurrentDictionary<string, SemaphoreSlim> Uploads { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -379,7 +380,11 @@ namespace Soulseek
             DistributedConnectionManager?.RemoveAndDisposeAll();
 
             Searches?.RemoveAndDisposeAll();
+
             Downloads?.RemoveAll();
+
+            UploadSemaphores?.RemoveAndDisposeAll();
+            Uploads?.RemoveAll();
 
             Waiter?.CancelAll();
 
@@ -439,7 +444,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
             }
 
-            token = token ?? TokenFactory.NextToken();
+            token = token ?? GetNextToken();
 
             if (Downloads.ContainsKey((int)token))
             {
@@ -776,7 +781,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified
+        ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the specified
         ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
@@ -785,18 +790,45 @@ namespace Soulseek
         /// <param name="token">The unique upload token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The operation context.</returns>
+        /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is of zero length.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to upload files (currently: {State})");
+            }
+
             token = token ?? GetNextToken();
+
+            if (Uploads.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"An active or queued upload with token {token} is already in progress");
+            }
+
+            if (Uploads.Values.Any(d => d.Username == username && d.Filename == filename))
+            {
+                throw new DuplicateTransferException($"An active or queued upload of {filename} from {username} is already in progress");
+            }
+
             options = options ?? new TransferOptions();
 
-            return UploadInternalAsync(username, filename, data, (int)token, options, cancellationToken ?? CancellationToken.None);
+            return UploadInternalAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -896,6 +928,8 @@ namespace Soulseek
         private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new Transfer(TransferDirection.Download, username, filename, token, options);
+            Downloads.TryAdd(download.Token, download);
+
             Task<byte[]> downloadCompleted = null;
             var lastState = TransferStates.None;
 
@@ -921,8 +955,6 @@ namespace Soulseek
             {
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-
-                Downloads.TryAdd(download.Token, download);
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
                 // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
@@ -1086,7 +1118,6 @@ namespace Soulseek
             {
                 // clean up the wait in case the code threw before it was awaited.
                 Waiter.Complete<byte[]>(download.WaitKey, null);
-                Downloads.TryRemove(download.Token, out var _);
 
                 download.Connection?.Dispose();
 
@@ -1095,6 +1126,8 @@ namespace Soulseek
                 download.State = TransferStates.Completed | download.State;
                 UpdateProgress(download.Data?.Length ?? 0);
                 UpdateState(download.State);
+
+                Downloads.TryRemove(download.Token, out _);
             }
         }
 
@@ -1313,6 +1346,8 @@ namespace Soulseek
                 Size = data.Length,
             };
 
+            Uploads.TryAdd(upload.Token, upload);
+
             var lastState = TransferStates.None;
 
             void UpdateState(TransferStates state)
@@ -1335,7 +1370,7 @@ namespace Soulseek
 
             // fetch (or create) the semaphore for this user. the official client can't handle concurrent downloads, so we need to
             // enforce this regardless of what downstream implementations do.
-            var semaphore = Uploads.GetOrAdd(username, new SemaphoreSlim(1, 1));
+            var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
 
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync().ConfigureAwait(false);
@@ -1345,7 +1380,7 @@ namespace Soulseek
             try
             {
                 // in case the Upload record was removed via cleanup while we were waiting, add it back.
-                semaphore = Uploads.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+                semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
                 address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
@@ -1465,9 +1500,9 @@ namespace Soulseek
                 Waiter.Complete(upload.WaitKey);
 
                 // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained if
-                // there are other threads waiting on it, and it is added back after the await above.
+                // there are other threads waiting on it, and it is added back after it is awaited above.
                 semaphore.Release();
-                Uploads.TryRemove(username, out var _);
+                UploadSemaphores.TryRemove(username, out var _);
 
                 upload.Connection?.Dispose();
 
@@ -1486,6 +1521,8 @@ namespace Soulseek
                         await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);
                     }).Forget();
                 }
+
+                Uploads.TryRemove(upload.Token, out _);
             }
         }
     }
