@@ -377,14 +377,13 @@ namespace Soulseek
 
             Listener?.Stop();
 
+            UploadSemaphores?.RemoveAndDisposeAll();
+
             PeerConnectionManager?.RemoveAndDisposeAll();
             DistributedConnectionManager?.RemoveAndDisposeAll();
 
             Searches?.RemoveAndDisposeAll();
-
             Downloads?.RemoveAll();
-
-            UploadSemaphores?.RemoveAndDisposeAll();
             Uploads?.RemoveAll();
 
             Waiter?.CancelAll();
