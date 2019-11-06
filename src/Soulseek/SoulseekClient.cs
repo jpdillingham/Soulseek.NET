@@ -446,9 +446,9 @@ namespace Soulseek
 
             token = token ?? GetNextToken();
 
-            if (Downloads.ContainsKey(token.Value))
+            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
             {
-                throw new DuplicateTokenException($"An active or queued download with token {token} is already in progress");
+                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
             if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
@@ -795,8 +795,15 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is of zero length.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is null or of zero length.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -810,6 +817,11 @@ namespace Soulseek
                 throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
             }
 
+            if (data == null || data.Length == 0)
+            {
+                throw new ArgumentException($"The data must not be a null or zero length array.", nameof(data));
+            }
+
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to upload files (currently: {State})");
@@ -817,14 +829,14 @@ namespace Soulseek
 
             token = token ?? GetNextToken();
 
-            if (Uploads.ContainsKey(token.Value))
+            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
             {
-                throw new DuplicateTokenException($"An active or queued upload with token {token} is already in progress");
+                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
             }
 
             if (Uploads.Values.Any(d => d.Username == username && d.Filename == filename))
             {
-                throw new DuplicateTransferException($"An active or queued upload of {filename} from {username} is already in progress");
+                throw new DuplicateTransferException($"An active or queued upload of {filename} to {username} is already in progress");
             }
 
             options = options ?? new TransferOptions();
