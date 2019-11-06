@@ -446,7 +446,7 @@ namespace Soulseek
 
             token = token ?? GetNextToken();
 
-            if (Downloads.ContainsKey((int)token))
+            if (Downloads.ContainsKey(token.Value))
             {
                 throw new DuplicateTokenException($"An active or queued download with token {token} is already in progress");
             }
@@ -458,7 +458,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return DownloadInternalAsync(username, filename, (int)token, options, cancellationToken ?? CancellationToken.None);
+            return DownloadInternalAsync(username, filename, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
