@@ -186,7 +186,8 @@ namespace Soulseek
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the
+        ///     specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user whose queue to check.</param>
         /// <param name="filename">The file to check.</param>

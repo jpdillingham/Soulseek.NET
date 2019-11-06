@@ -228,9 +228,9 @@ namespace Soulseek
 
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
+
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
-        internal virtual ConcurrentDictionary<int, Transfer> Uploads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
@@ -238,6 +238,7 @@ namespace Soulseek
         internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         internal virtual IMessageConnection ServerConnection { get; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
+        internal virtual ConcurrentDictionary<int, Transfer> Uploads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
@@ -462,7 +463,8 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the
+        ///     specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user whose queue to check.</param>
         /// <param name="filename">The file to check.</param>
@@ -781,8 +783,8 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the specified
-        ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the
+        ///     specified <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="filename">The filename of the file to upload.</param>
@@ -956,9 +958,9 @@ namespace Soulseek
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
                 var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
 
-                // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for the
-                // eventual transfer request sent when the peer is ready to send the file. the response message should be returned
-                // immediately, while the request will be sent only when we've reached the front of the remote queue.
+                // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for
+                // the eventual transfer request sent when the peer is ready to send the file. the response message should be
+                // returned immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
                     new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), null, cancellationToken);
                 var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
