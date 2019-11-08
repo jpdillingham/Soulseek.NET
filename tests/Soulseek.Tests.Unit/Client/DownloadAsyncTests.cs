@@ -346,8 +346,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadInternalAsync")]
-        [Theory(DisplayName = "DownloadInternalAsync throws TransferException on download start timeout"), AutoData]
-        public async Task DownloadInternalAsync_Throws_TransferException_On_Download_Start_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
+        [Theory(DisplayName = "DownloadInternalAsync throws TimeoutException on download start timeout"), AutoData]
+        public async Task DownloadInternalAsync_Throws_TimeoutException_On_Download_Start_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
@@ -1234,6 +1234,68 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
                 Assert.IsType<TransferRejectedException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "DownloadInternalAsync")]
+        [Theory(DisplayName = "DownloadInternalAsync throws ConnectionException when transfer connection fails"), AutoData]
+        public async Task DownloadInternalAsync_Throws_ConnectionException_When_Transfer_Connection_Fails(string username, IPAddress ip, int port, string filename, int token, int size)
+        {
+            var options = new ClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, string.Empty);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Download, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult<byte[]>(data));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+
+            // mock a failing indirect connection
+            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
+            waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            // mock a failing direct connection
+            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+            waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                byte[] downloadedData = null;
+                var ex = await Record.ExceptionAsync(async () => downloadedData = await s.InvokeMethod<Task<byte[]>>("DownloadInternalAsync", username, filename, token, new TransferOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TransferException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.IsType<AggregateException>(ex.InnerException.InnerException);
+                Assert.True(ex.InnerException.Message.ContainsInsensitive("Failed to establish a direct or indirect connection."));
             }
         }
     }
