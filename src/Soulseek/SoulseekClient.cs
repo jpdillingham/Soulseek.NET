@@ -1015,12 +1015,14 @@ namespace Soulseek
                     download.RemoteToken = transferStartRequest.Token;
                     UpdateState(TransferStates.Initializing);
 
-                    // wait for both direct and indirect connections, since the official client attempts both types immediately
+                    // set up a wait for an indirect connection.  this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
                     var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
                         timeout: Options.PeerConnectionOptions.ConnectTimeout,
                         cancellationToken: cancellationToken);
 
+                    // set up a wait for a direct connection.  this wait is completed in PeerConnectionManager.AddTransferConnectionAsync when handling
+                    // the incoming connection within ListenerHandler.
                     var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
                         timeout: Options.PeerConnectionOptions.ConnectTimeout,
@@ -1042,9 +1044,7 @@ namespace Soulseek
                     }
                     catch (AggregateException ex)
                     {
-                        // todo: write some tests to make sure this surfaces realistic exceptions for different scenarios. bubbling
-                        // an AggregateException here leaks too many implementation details.
-                        ExceptionDispatchInfo.Capture(ex.InnerException).Throw();
+                        throw new ConnectionException("Failed to establish a direct or indirect connection.", ex);
                     }
                 }
 
