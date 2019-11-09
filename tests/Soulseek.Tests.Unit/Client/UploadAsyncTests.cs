@@ -191,7 +191,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -223,7 +223,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -256,7 +256,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -290,7 +290,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -338,7 +338,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -346,19 +346,18 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadInternalAsync")]
-        [Theory(DisplayName = "UploadInternalAsync throws TimeoutException on Upload start timeout"), AutoData]
-        public async Task UploadInternalAsync_Throws_TimeoutException_On_Upload_Start_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
+        [Theory(DisplayName = "UploadInternalAsync throws TimeoutException on transfer response timeout"), AutoData]
+        public async Task UploadInternalAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
-            var response = new TransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(response));
+                .Returns(Task.FromException<TransferResponse>(new TimeoutException()));
             waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -380,7 +379,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -430,11 +429,9 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] UploadedData = null;
-                var ex = await Record.ExceptionAsync(async () => UploadedData = await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.Null(ex);
-                Assert.Equal(data, UploadedData);
             }
         }
 
@@ -483,11 +480,9 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] UploadedData = null;
-                var ex = await Record.ExceptionAsync(async () => UploadedData = await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.Null(ex);
-                Assert.Equal(data, UploadedData);
             }
         }
 
@@ -536,8 +531,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] UploadedData = null;
-                var ex = await Record.ExceptionAsync(async () => UploadedData = await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -597,7 +591,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null);
 
                 Assert.Equal(4, events.Count);
 
@@ -667,7 +661,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null);
 
                 Assert.Equal(5, events.Count);
 
@@ -735,7 +729,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var fired = false;
 
-                await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(stateChanged: (e) => fired = true), null);
+                await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(stateChanged: (e) => fired = true), null);
 
                 Assert.True(fired);
             }
@@ -795,7 +789,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 s.TransferProgressUpdated += (d, e) => events.Add(e);
 
-                await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null);
+                await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null);
 
                 Assert.Equal(2, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].State);
@@ -856,7 +850,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var fired = false;
 
-                await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(progressUpdated: (e) => fired = true), null);
+                await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(progressUpdated: (e) => fired = true), null);
 
                 Assert.True(fired);
             }
@@ -914,7 +908,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -977,7 +971,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1010,7 +1004,7 @@ namespace Soulseek.Tests.Unit.Client
                     events.Add(e);
                 };
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -1066,7 +1060,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -1077,7 +1071,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadInternalAsync")]
         [Theory(DisplayName = "UploadInternalAsync throws TimeoutException on transfer timeout"), AutoData]
-        public async Task UploadInternalAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task UploadInternalAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
@@ -1089,7 +1083,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
 
             var waiter = new Mock<IWaiter>();
@@ -1100,8 +1094,8 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<byte[]>(new TimeoutException()));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException(new TimeoutException()));
 
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
@@ -1122,7 +1116,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1154,7 +1148,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
 
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -1230,8 +1224,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] UploadedData = null;
-                var ex = await Record.ExceptionAsync(async () => UploadedData = await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
@@ -1290,8 +1283,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                byte[] UploadedData = null;
-                var ex = await Record.ExceptionAsync(async () => UploadedData = await s.InvokeMethod<Task<byte[]>>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
