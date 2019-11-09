@@ -346,8 +346,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadInternalAsync")]
-        [Theory(DisplayName = "DownloadInternalAsync throws TimeoutException on download start timeout"), AutoData]
-        public async Task DownloadInternalAsync_Throws_TimeoutException_On_Download_Start_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
+        [Theory(DisplayName = "DownloadInternalAsync throws TimeoutException on transfer response timeout"), AutoData]
+        public async Task DownloadInternalAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPAddress ip, int port, string filename, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
@@ -358,7 +358,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(response));
+                .Returns(Task.FromException<TransferResponse>(new TimeoutException()));
             waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(request));
             waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
