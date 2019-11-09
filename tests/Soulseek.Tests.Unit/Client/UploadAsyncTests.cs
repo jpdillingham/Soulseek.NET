@@ -1143,7 +1143,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
 
             var waiter = new Mock<IWaiter>();
@@ -1181,6 +1181,8 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
             }
+
+            transferConn.Verify(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()));
         }
 
         [Trait("Category", "UploadInternalAsync")]
