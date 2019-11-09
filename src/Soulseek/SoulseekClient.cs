@@ -1386,13 +1386,13 @@ namespace Soulseek
             var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
 
             UpdateState(TransferStates.Queued);
-            await semaphore.WaitAsync().ConfigureAwait(false);
+            await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
             UserAddressResponse address = default;
 
             try
             {
-                // in case the Upload record was removed via cleanup while we were waiting, add it back.
+                // in case the upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
                 address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1402,7 +1402,7 @@ namespace Soulseek
 
                 // prepare a wait for the transfer response
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
-                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token));
+                    new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), null, cancellationToken);
 
                 // request to start the upload
                 var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);
@@ -1444,11 +1444,11 @@ namespace Soulseek
                 try
                 {
                     // read the 8 magic bytes. not sure why.
-                    await upload.Connection.ReadAsync(8).ConfigureAwait(false);
+                    await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
 
                     UpdateState(TransferStates.InProgress);
 
-                    await upload.Connection.WriteAsync(data).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(data, cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 
@@ -1489,7 +1489,8 @@ namespace Soulseek
                 upload.State = TransferStates.Cancelled;
                 upload.Connection?.Disconnect("Transfer cancelled.");
 
-                throw new TransferException($"Upload of file {filename} to user {username} was cancelled.", ex);
+                Diagnostic.Debug(ex.ToString());
+                throw;
             }
             catch (TimeoutException ex)
             {
@@ -1497,7 +1498,7 @@ namespace Soulseek
                 upload.Connection?.Disconnect("Transfer timed out.");
 
                 Diagnostic.Debug(ex.ToString());
-                throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
+                throw;
             }
             catch (Exception ex)
             {
