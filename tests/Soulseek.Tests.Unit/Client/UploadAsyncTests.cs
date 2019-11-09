@@ -1215,5 +1215,19 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.True(ex.InnerException.Message.ContainsInsensitive("Failed to establish a direct or indirect connection."));
             }
         }
+
+        [Trait("Category", "UploadInternalAsync")]
+        [Theory(DisplayName = "UploadInternalAsync updates remote user on failure")]
+        public async Task UploadInternalAsync_Updates_Remote_User_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Trait("Category", "UploadInternalAsync")]
+        [Theory(DisplayName = "UploadInternalAsync swallows final read exception")]
+        public async Task UploadInternalAsync_Swallows_Final_Read_Exception()
+        {
+            Assert.True(false);
+        }
     }
 }
