@@ -165,37 +165,43 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadInternalAsync")]
         [Theory(DisplayName = "UploadInternalAsync throws TransferException when WriteAsync throws"), AutoData]
-        public async Task UploadInternalAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPAddress ip, int port, string filename, int token)
+        public async Task UploadInternalAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
-            var options = new ClientOptions(messageTimeout: 1);
+            var options = new ClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, 0); // accept
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new ConnectionException()));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None))
-                .Throws(new ConnectionWriteException());
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new ConnectionException()));
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
-                Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
 
@@ -298,47 +304,43 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadInternalAsync")]
-        [Theory(DisplayName = "UploadInternalAsync throws TransferException on Upload cancellation"), AutoData]
-        public async Task UploadInternalAsync_Throws_TransferException_On_Upload_Cancellation(string username, IPAddress ip, int port, string filename, int token, int size)
+        [Theory(DisplayName = "UploadInternalAsync throws TransferException on request write cancellation"), AutoData]
+        public async Task UploadInternalAsync_Throws_TransferException_On_Request_Write_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
-            var response = new TransferResponse(token, string.Empty);
+            var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
-
-            var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
-
-            var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), CancellationToken.None))
-                .Returns(Task.CompletedTask);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
-            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(request));
-            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
-            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new OperationCanceledException()));
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -1112,38 +1114,28 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadInternalAsync")]
         [Theory(DisplayName = "UploadInternalAsync throws TransferException on transfer rejection"), AutoData]
-        public async Task UploadInternalAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task UploadInternalAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
-            var response = new TransferResponse(token, size);
+            var response = new TransferResponse(token, string.Empty); // reject
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
-
-            var transferConn = new Mock<IConnection>();
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
-
-            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Throws(new TransferRejectedException("foo"));
-
-            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            waiter.Setup(m => m.WaitIndefinitely<byte[]>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult<byte[]>(data));
-            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
@@ -1155,7 +1147,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, token, new TransferOptions(), null));
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadInternalAsync", username, filename, data, token, new TransferOptions(), null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
