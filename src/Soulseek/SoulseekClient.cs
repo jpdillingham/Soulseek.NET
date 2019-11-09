@@ -1059,6 +1059,10 @@ namespace Soulseek
                     {
                         Waiter.Throw(download.WaitKey, new TimeoutException(message));
                     }
+                    else if (download.State.HasFlag(TransferStates.Cancelled))
+                    {
+                        Waiter.Throw(download.WaitKey, new OperationCanceledException(message));
+                    }
                     else
                     {
                         Waiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
@@ -1085,6 +1089,11 @@ namespace Soulseek
                 {
                     download.State = TransferStates.TimedOut;
                     download.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
+                }
+                catch (OperationCanceledException)
+                {
+                    download.State = TransferStates.Cancelled;
+                    download.Connection.Disconnect($"Transfer cancelled.");
                 }
                 catch (Exception ex)
                 {
@@ -1435,6 +1444,10 @@ namespace Soulseek
                     {
                         Waiter.Throw(upload.WaitKey, new TimeoutException(message));
                     }
+                    else if (upload.State.HasFlag(TransferStates.Cancelled))
+                    {
+                        Waiter.Throw(upload.WaitKey, new OperationCanceledException(message));
+                    }
                     else
                     {
                         Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {message}"));
@@ -1469,6 +1482,11 @@ namespace Soulseek
                 {
                     upload.State = TransferStates.TimedOut;
                     upload.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
+                }
+                catch (OperationCanceledException)
+                {
+                    upload.State = TransferStates.Cancelled;
+                    upload.Connection.Disconnect($"Transfer cancelled.");
                 }
                 catch (Exception ex)
                 {
