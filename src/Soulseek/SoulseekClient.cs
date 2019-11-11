@@ -18,7 +18,6 @@ namespace Soulseek
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
-    using System.Runtime.ExceptionServices;
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
@@ -1366,6 +1365,7 @@ namespace Soulseek
             var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
             {
                 Size = data.Length,
+                Data = data,
             };
 
             Uploads.TryAdd(upload.Token, upload);
@@ -1461,7 +1461,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await upload.Connection.WriteAsync(data, cancellationToken).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(upload.Data, cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 
@@ -1539,7 +1539,7 @@ namespace Soulseek
                 upload.Connection?.Dispose();
 
                 upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress(upload.Data?.Length ?? 0);
+                UpdateProgress(upload?.Data.Length ?? 0);
                 UpdateState(upload.State);
 
                 if (!upload.State.HasFlag(TransferStates.Succeeded))
