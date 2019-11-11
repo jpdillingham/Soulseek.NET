@@ -186,7 +186,8 @@ namespace Soulseek
         Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the
+        ///     specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user whose queue to check.</param>
         /// <param name="filename">The file to check.</param>
@@ -340,8 +341,8 @@ namespace Soulseek
         Task SetUserStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously uploads the specified <paramref name="filename"/> and <paramref name="data"/> to the the specified
-        ///     <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
+        ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the
+        ///     specified <paramref name="username"/> using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="filename">The filename of the file to upload.</param>
@@ -353,7 +354,15 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is null or of zero length.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
     }
