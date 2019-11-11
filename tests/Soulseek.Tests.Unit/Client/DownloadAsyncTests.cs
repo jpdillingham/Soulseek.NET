@@ -351,7 +351,6 @@ namespace Soulseek.Tests.Unit.Client
         {
             var options = new ClientOptions(messageTimeout: 5);
 
-            var response = new TransferResponse(token, string.Empty);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
             var request = new TransferRequest(TransferDirection.Download, token, filename, size);
@@ -403,8 +402,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
-
-            var data = new byte[] { 0x0, 0x1, 0x2, 0x3 };
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -873,7 +870,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
 
@@ -1086,7 +1083,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new NullReferenceException()));
 
             var waiter = new Mock<IWaiter>();
@@ -1142,7 +1139,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
 
             var waiter = new Mock<IWaiter>();
@@ -1196,7 +1193,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
 
             var waiter = new Mock<IWaiter>();

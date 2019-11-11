@@ -1552,7 +1552,6 @@ namespace Soulseek
                             .ConfigureAwait(false);
 
                         await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);
-
                     }
                     catch
                     {
