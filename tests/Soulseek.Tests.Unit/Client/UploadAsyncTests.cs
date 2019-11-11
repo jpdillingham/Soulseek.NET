@@ -63,6 +63,21 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadAsync")]
+        [Theory(DisplayName = "UploadAsync throws ArgumentException given bad filename")]
+        [InlineData(null)]
+        [InlineData(new byte[] { })]
+        public async Task UploadAsync_Throws_ArgumentException_Given_Null_Or_Empty_Byte_Array(byte[] data)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.UploadAsync("username", "filename", data));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "UploadAsync")]
         [Fact(DisplayName = "UploadAsync throws InvalidOperationException when not connected")]
         public async Task UploadAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
@@ -397,7 +412,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadInternalAsync")]
         [Theory(DisplayName = "UploadInternalAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
-        public async Task UploadInternalAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadInternalAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
@@ -932,7 +947,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadInternalAsync")]
         [Theory(DisplayName = "UploadInternalAsync throws TransferException on transfer rejection"), AutoData]
-        public async Task UploadInternalAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadInternalAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
             var options = new ClientOptions(messageTimeout: 5);
 
@@ -1014,7 +1029,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadInternalAsync")]
         [Theory(DisplayName = "UploadInternalAsync updates remote user on failure"), AutoData]
-        public async Task UploadInternalAsync_Updates_Remote_User_On_Failure(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public void UploadInternalAsync_Updates_Remote_User_On_Failure(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
             var options = new ClientOptions(messageTimeout: 5);
 

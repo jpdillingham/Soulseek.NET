@@ -24,6 +24,19 @@ namespace Soulseek.Tests.Unit.Client
     public class SendAcknowledgePrivateMessageAsyncTests
     {
         [Trait("Category", "AcknowledgePrivateMessageAsync")]
+        [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws ArgumentException when ID is less than 0")]
+        public async Task AcknowledgePrivateMessageAsync_Throws_ArgumentException_When_ID_Is_Less_Than_0()
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivateMessageAsync(-1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivateMessageAsync")]
         [Fact(DisplayName = "AcknowledgePrivateMessageAsync throws InvalidOperationException when not connected")]
         public async Task AcknowledgePrivateMessageAsync_Throws_InvalidOperationException_When_Not_Connected()
         {

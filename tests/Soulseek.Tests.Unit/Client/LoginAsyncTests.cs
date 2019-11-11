@@ -20,6 +20,7 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
+    using Soulseek.Options;
     using Xunit;
 
     public class LoginAsyncTests
@@ -109,6 +110,30 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
                 Assert.Equal(user, s.Username);
             }
+        }
+
+        [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync sets listen port on success if set"), AutoData]
+        public async Task LoginAsync_Sets_Listen_Port_On_Success_If_Set(string user, string password, int port)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new ClientOptions(listenPort: port)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                await s.LoginAsync(user, password);
+
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
+                Assert.Equal(user, s.Username);
+            }
+
+            var expectedBytes = new SetListenPort(port).ToByteArray();
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "LoginAsync")]
