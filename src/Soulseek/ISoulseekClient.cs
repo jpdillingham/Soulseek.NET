@@ -260,6 +260,17 @@ namespace Soulseek
         Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously fetches the list of chat rooms on the server.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the list of server rooms.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
+        Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
         /// <param name="username">The username with which to log in.</param>

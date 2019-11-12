@@ -513,6 +513,37 @@ namespace Soulseek
         public virtual int GetNextToken() => TokenFactory.NextToken();
 
         /// <summary>
+        ///     Asynchronously fetches the list of chat rooms from the server.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the list of server rooms.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch the list of chat rooms (currently: {State})");
+            }
+
+            try
+            {
+                var roomListWait = Waiter.Wait<IReadOnlyCollection<Room>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new RoomListCommand().ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+
+                var response = await roomListWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new SharedCountsException($"Failed to fetch the list of chat rooms from the server: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
@@ -794,12 +825,14 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is null or of zero length.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="data"/> is null or of zero length.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/> is
+        ///     already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -1014,14 +1047,14 @@ namespace Soulseek
                     download.RemoteToken = transferStartRequest.Token;
                     UpdateState(TransferStates.Initializing);
 
-                    // set up a wait for an indirect connection.  this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
+                    // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
                     var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
                         timeout: Options.PeerConnectionOptions.ConnectTimeout,
                         cancellationToken: cancellationToken);
 
-                    // set up a wait for a direct connection.  this wait is completed in PeerConnectionManager.AddTransferConnectionAsync when handling
-                    // the incoming connection within ListenerHandler.
+                    // set up a wait for a direct connection. this wait is completed in
+                    // PeerConnectionManager.AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
                     var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
                         timeout: Options.PeerConnectionOptions.ConnectTimeout,
