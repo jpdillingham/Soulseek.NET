@@ -1239,7 +1239,7 @@ namespace Soulseek
             try
             {
                 var getStatusWait = Waiter.Wait<UserStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new GetStatusRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new UserStatusRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await getStatusWait.ConfigureAwait(false);
 
@@ -1347,7 +1347,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new PrivateMessageRequest(username, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateMessageCommand(username, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {

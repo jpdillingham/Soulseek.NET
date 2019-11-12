@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateMessageRequest.cs" company="JP Dillingham">
+﻿// <copyright file="UserStatusRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,28 +13,21 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Sends a private message.
+    ///     Requests the status of a peer.
     /// </summary>
-    internal sealed class PrivateMessageRequest
+    internal sealed class UserStatusRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessageRequest"/> class.
+        ///     Initializes a new instance of the <see cref="UserStatusRequest"/> class.
         /// </summary>
-        /// <param name="username">The user to which the message is to be sent.</param>
-        /// <param name="message">The message to send.</param>
-        public PrivateMessageRequest(string username, string message)
+        /// <param name="username">The username of the peer for which to retreive status information.</param>
+        public UserStatusRequest(string username)
         {
             Username = username;
-            Message = message;
         }
 
         /// <summary>
-        ///     Gets the message to send.
-        /// </summary>
-        public string Message { get; }
-
-        /// <summary>
-        ///     Gets the user to which the message is to be sent.
+        ///     Gets the username of the peer for which to retreive status information.
         /// </summary>
         public string Username { get; }
 
@@ -45,9 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivateMessage)
+                .WriteCode(MessageCode.Server.GetStatus)
                 .WriteString(Username)
-                .WriteString(Message)
                 .Build();
         }
     }

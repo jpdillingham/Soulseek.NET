@@ -265,21 +265,21 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "GetStatusRequest")]
-        [Theory(DisplayName = "GetStatusRequest instantiates properly"), AutoData]
-        public void GetStatusRequest_Instantiates_Properly(string username)
+        [Trait("Request", "UserStatusRequest")]
+        [Theory(DisplayName = "UserStatusRequest instantiates properly"), AutoData]
+        public void UserStatusRequest_Instantiates_Properly(string username)
         {
-            var a = new GetStatusRequest(username);
+            var a = new UserStatusRequest(username);
 
             Assert.Equal(username, a.Username);
         }
 
         [Trait("Category", "ToByteArray")]
-        [Trait("Request", "GetStatusRequest")]
-        [Theory(DisplayName = "GetStatusRequest constructs the correct message"), AutoData]
-        public void GetStatusRequest_Constructs_The_Correct_Message(string username)
+        [Trait("Request", "UserStatusRequest")]
+        [Theory(DisplayName = "UserStatusRequest constructs the correct message"), AutoData]
+        public void UserStatusRequest_Constructs_The_Correct_Message(string username)
         {
-            var a = new GetStatusRequest(username);
+            var a = new UserStatusRequest(username);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);

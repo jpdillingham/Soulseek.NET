@@ -1,4 +1,4 @@
-﻿// <copyright file="GetStatusRequest.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateMessageCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,21 +13,28 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Requests the status of a peer.
+    ///     Sends a private message.
     /// </summary>
-    internal sealed class GetStatusRequest
+    internal sealed class PrivateMessageCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GetStatusRequest"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateMessageCommand"/> class.
         /// </summary>
-        /// <param name="username">The username of the peer for which to retreive status information.</param>
-        public GetStatusRequest(string username)
+        /// <param name="username">The user to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
+        public PrivateMessageCommand(string username, string message)
         {
             Username = username;
+            Message = message;
         }
 
         /// <summary>
-        ///     Gets the username of the peer for which to retreive status information.
+        ///     Gets the message to send.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        ///     Gets the user to which the message is to be sent.
         /// </summary>
         public string Username { get; }
 
@@ -38,8 +45,9 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.GetStatus)
+                .WriteCode(MessageCode.Server.PrivateMessage)
                 .WriteString(Username)
+                .WriteString(Message)
                 .Build();
         }
     }
