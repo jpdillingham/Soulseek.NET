@@ -64,9 +64,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsync")]
         [Theory(DisplayName = "AddUserAsync returns expected info"), AutoData]
-        public async Task AddUserAsync_Returns_Expected_Info(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
+        public async Task AddUserAsync_Returns_Expected_Info(string username, bool exists, User user)
         {
-            var result = new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
+            var result = new AddUserResponse(username, exists, user);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -84,20 +84,15 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(result.Username, add.Username);
                 Assert.Equal(result.Exists, add.Exists);
-                Assert.Equal(result.Status, add.Status);
-                Assert.Equal(result.AverageSpeed, add.AverageSpeed);
-                Assert.Equal(result.DownloadCount, add.DownloadCount);
-                Assert.Equal(result.FileCount, add.FileCount);
-                Assert.Equal(result.DirectoryCount, add.DirectoryCount);
-                Assert.Equal(result.CountryCode, add.CountryCode);
+                Assert.Equal(result.User, add.User);
             }
         }
 
         [Trait("Category", "AddUserAsyncAsync")]
         [Theory(DisplayName = "AddUserAsyncAsync throws UserStatusException on throw"), AutoData]
-        public async Task AddUserAsyncAsync_Throws_UserStatusException_On_Throw(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
+        public async Task AddUserAsyncAsync_Throws_UserStatusException_On_Throw(string username, bool exists, User user)
         {
-            var result = new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
+            var result = new AddUserResponse(username, exists, user);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -122,9 +117,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsyncAsync")]
         [Theory(DisplayName = "AddUserAsync throws TimeoutException on timeout"), AutoData]
-        public async Task AddUserAsyncAsync_Throws_TimeoutException_On_Timeout(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
+        public async Task AddUserAsyncAsync_Throws_TimeoutException_On_Timeout(string username, bool exists, User user)
         {
-            var result = new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
+            var result = new AddUserResponse(username, exists, user);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -148,9 +143,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsync")]
         [Theory(DisplayName = "AddUserAsync throws OperationCanceledException on cancel"), AutoData]
-        public async Task AddUserAsync_Throws_OperationCanceledException_On_Cancel(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
+        public async Task AddUserAsync_Throws_OperationCanceledException_On_Cancel(string username, bool exists, User user)
         {
-            var result = new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
+            var result = new AddUserResponse(username, exists, user);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))

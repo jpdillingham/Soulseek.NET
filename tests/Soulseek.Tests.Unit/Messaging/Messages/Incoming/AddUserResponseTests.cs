@@ -22,17 +22,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string username, bool exists, UserStatus? status, int? averageSpeed, long? downloadCount, int? fileCount, int? directoryCount, string countryCode)
+        public void Instantiates_With_The_Given_Data(string username, bool exists, User user)
         {
-            var r = new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
+            var r = new AddUserResponse(username, exists, user);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(exists, r.Exists);
-            Assert.Equal(averageSpeed, r.AverageSpeed);
-            Assert.Equal(downloadCount, r.DownloadCount);
-            Assert.Equal(fileCount, r.FileCount);
-            Assert.Equal(directoryCount, r.DirectoryCount);
-            Assert.Equal(countryCode, r.CountryCode);
+            Assert.Equal(user, r.User);
         }
 
         [Trait("Category", "Parse")]
@@ -65,30 +61,30 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data when user exists"), AutoData]
-        public void Parse_Returns_Expected_Data_When_User_Exists(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, string countryCode)
+        public void Parse_Returns_Expected_Data_When_User_Exists(string username, User user)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
-                .WriteInteger((int)status)
-                .WriteInteger(averageSpeed)
-                .WriteLong(downloadCount)
-                .WriteInteger(fileCount)
-                .WriteInteger(directoryCount)
-                .WriteString(countryCode)
+                .WriteInteger((int)user.Status)
+                .WriteInteger(user.AverageSpeed)
+                .WriteLong(user.DownloadCount)
+                .WriteInteger(user.FileCount)
+                .WriteInteger(user.DirectoryCount)
+                .WriteString(user.CountryCode)
                 .Build();
 
             var r = AddUserResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.True(r.Exists);
-            Assert.Equal(status, r.Status);
-            Assert.Equal(averageSpeed, r.AverageSpeed);
-            Assert.Equal(downloadCount, r.DownloadCount);
-            Assert.Equal(fileCount, r.FileCount);
-            Assert.Equal(directoryCount, r.DirectoryCount);
-            Assert.Equal(countryCode, r.CountryCode);
+            Assert.Equal(user.Status, r.User.Status);
+            Assert.Equal(user.AverageSpeed, r.User.AverageSpeed);
+            Assert.Equal(user.DownloadCount, r.User.DownloadCount);
+            Assert.Equal(user.FileCount, r.User.FileCount);
+            Assert.Equal(user.DirectoryCount, r.User.DirectoryCount);
+            Assert.Equal(user.CountryCode, r.User.CountryCode);
         }
 
         [Trait("Category", "Parse")]
@@ -105,39 +101,34 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.False(r.Exists);
-            Assert.Null(r.Status);
-            Assert.Null(r.AverageSpeed);
-            Assert.Null(r.DownloadCount);
-            Assert.Null(r.FileCount);
-            Assert.Null(r.DirectoryCount);
-            Assert.Null(r.CountryCode);
+            Assert.Null(r.User);
         }
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse does not throw if CountryCode is missing"), AutoData]
-        public void Parse_Does_Not_Throw_If_CountryCode_Is_Missing(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount)
+        public void Parse_Does_Not_Throw_If_CountryCode_Is_Missing(string username, User user)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
-                .WriteInteger((int)status)
-                .WriteInteger(averageSpeed)
-                .WriteLong(downloadCount)
-                .WriteInteger(fileCount)
-                .WriteInteger(directoryCount)
+                .WriteInteger((int)user.Status)
+                .WriteInteger(user.AverageSpeed)
+                .WriteLong(user.DownloadCount)
+                .WriteInteger(user.FileCount)
+                .WriteInteger(user.DirectoryCount)
                 .Build();
 
             var r = AddUserResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.True(r.Exists);
-            Assert.Equal(status, r.Status);
-            Assert.Equal(averageSpeed, r.AverageSpeed);
-            Assert.Equal(downloadCount, r.DownloadCount);
-            Assert.Equal(fileCount, r.FileCount);
-            Assert.Equal(directoryCount, r.DirectoryCount);
-            Assert.Null(r.CountryCode);
+            Assert.Equal(user.Status, r.User.Status);
+            Assert.Equal(user.AverageSpeed, r.User.AverageSpeed);
+            Assert.Equal(user.DownloadCount, r.User.DownloadCount);
+            Assert.Equal(user.FileCount, r.User.FileCount);
+            Assert.Equal(user.DirectoryCount, r.User.DirectoryCount);
+            Assert.Null(r.User.CountryCode);
         }
     }
 }

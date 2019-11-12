@@ -206,12 +206,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Handles ServerRoomList"), AutoData]
         public void Handles_ServerRoomList(List<(string Name, int UserCount)> rooms)
         {
-            IReadOnlyCollection<(string Name, int UserCount)> result = null;
+            IReadOnlyCollection<Room> result = null;
 
             var (handler, mocks) = GetFixture();
 
-            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<(string Name, int UserCount)>>()))
-                .Callback<WaitKey, IReadOnlyCollection<(string Name, int UserCount)>>((key, response) => result = response);
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
+                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.RoomList)
@@ -493,7 +493,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerAddUser"), AutoData]
-        public void Handles_ServerAddUser(string username, bool exists, UserStatus status, int averageSpeed, int downloadCount, int fileCount, int directoryCount, string countryCode)
+        public void Handles_ServerAddUser(string username, bool exists, User user)
         {
             AddUserResponse result = null;
             var (handler, mocks) = GetFixture();
@@ -505,24 +505,24 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
-                .WriteInteger((int)status)
-                .WriteInteger(averageSpeed)
-                .WriteLong(downloadCount)
-                .WriteInteger(fileCount)
-                .WriteInteger(directoryCount)
-                .WriteString(countryCode)
+                .WriteInteger((int)user.Status)
+                .WriteInteger(user.AverageSpeed)
+                .WriteLong(user.DownloadCount)
+                .WriteInteger(user.FileCount)
+                .WriteInteger(user.DirectoryCount)
+                .WriteString(user.CountryCode)
                 .Build();
 
             handler.HandleMessage(null, message);
 
             Assert.Equal(username, result.Username);
             Assert.Equal(exists, result.Exists);
-            Assert.Equal(status, result.Status);
-            Assert.Equal(averageSpeed, result.AverageSpeed);
-            Assert.Equal(downloadCount, result.DownloadCount);
-            Assert.Equal(fileCount, result.FileCount);
-            Assert.Equal(directoryCount, result.DirectoryCount);
-            Assert.Equal(countryCode, result.CountryCode);
+            Assert.Equal(user.Status, result.User.Status);
+            Assert.Equal(user.AverageSpeed, result.User.AverageSpeed);
+            Assert.Equal(user.DownloadCount, result.User.DownloadCount);
+            Assert.Equal(user.FileCount, result.User.FileCount);
+            Assert.Equal(user.DirectoryCount, result.User.DirectoryCount);
+            Assert.Equal(user.CountryCode, result.User.CountryCode);
         }
 
         [Trait("Category", "Message")]
