@@ -61,6 +61,9 @@
         [EnvironmentVariable("SLSK_USERNAME")]
         private static string Username { get; set; } = "foo";
 
+        [Argument('r', "room-list")]
+        private static bool RoomList { get; set; }
+
         private static async Task ConnectAndLogin(SoulseekClient client)
         {
             Console.Write("\nConnecting...");
@@ -89,6 +92,16 @@
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
 
+                if (RoomList)
+                {
+                    await ConnectAndLogin(client);
+                    var rooms = await client.GetRoomListAsync();
+                    
+                    foreach (var room in rooms)
+                    {
+                        Console.WriteLine($"{room.Name} [{room.UserCount}]");
+                    }
+                }
                 if (!string.IsNullOrEmpty(GetUserStatus))
                 {
                     await ConnectAndLogin(client);
