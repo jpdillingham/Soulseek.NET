@@ -1,4 +1,4 @@
-﻿// <copyright file="JoinRoomRequest.cs" company="JP Dillingham">
+﻿// <copyright file="LeaveRoomRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,21 +13,21 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Joins a chat room.
+    ///     Leaves a chat room.
     /// </summary>
-    internal sealed class JoinRoomRequest
+    internal sealed class LeaveRoomRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JoinRoomRequest"/> class.
+        ///     Initializes a new instance of the <see cref="LeaveRoomRequest"/> class.
         /// </summary>
-        /// <param name="roomName">The name of the room to join.</param>
-        public JoinRoomRequest(string roomName)
+        /// <param name="roomName">The name of the room to leave.</param>
+        public LeaveRoomRequest(string roomName)
         {
             RoomName = roomName;
         }
 
         /// <summary>
-        ///     Gets the name of the room to join.
+        ///     Gets the name of the room to leave.
         /// </summary>
         public string RoomName { get; }
 
@@ -38,7 +38,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.JoinRoom)
+                .WriteCode(MessageCode.Server.LeaveRoom)
                 .WriteString(RoomName)
                 .Build();
         }
