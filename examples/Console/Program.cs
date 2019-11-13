@@ -64,6 +64,9 @@
         [Argument('r', "room-list")]
         private static bool RoomList { get; set; }
 
+        [Argument('j', "join-room")]
+        private static string RoomToJoin { get; set; }
+
         private static async Task ConnectAndLogin(SoulseekClient client)
         {
             Console.Write("\nConnecting...");
@@ -91,6 +94,15 @@
                 client.StateChanged += Client_ServerStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
+
+                if (!string.IsNullOrEmpty(RoomToJoin))
+                {
+                    await ConnectAndLogin(client);
+
+                    var joinResponse = await client.JoinRoomAsync(RoomToJoin);
+
+                    Console.WriteLine(JsonConvert.SerializeObject(joinResponse));
+                }
 
                 if (RoomList)
                 {
