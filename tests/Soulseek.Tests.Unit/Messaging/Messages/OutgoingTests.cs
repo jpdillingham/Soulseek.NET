@@ -26,7 +26,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void AcknowledgePrivateMessage_Instantiates_Properly()
         {
             var num = new Random().Next();
-            var a = new AcknowledgePrivateMessage(num);
+            var a = new AcknowledgePrivateMessageCommand(num);
 
             Assert.Equal(num, a.Id);
         }
@@ -37,7 +37,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void AcknowledgePrivateMessage_Constructs_The_Correct_Message()
         {
             var num = new Random().Next();
-            var msg = new AcknowledgePrivateMessage(num).ToByteArray();
+            var msg = new AcknowledgePrivateMessageCommand(num).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();

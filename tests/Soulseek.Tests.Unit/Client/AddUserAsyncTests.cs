@@ -64,9 +64,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsync")]
         [Theory(DisplayName = "AddUserAsync returns expected info"), AutoData]
-        public async Task AddUserAsync_Returns_Expected_Info(string username, bool exists, User user)
+        public async Task AddUserAsync_Returns_Expected_Info(string username, bool exists, UserData userData)
         {
-            var result = new AddUserResponse(username, exists, user);
+            var result = new AddUserResponse(username, exists, userData);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -84,15 +84,15 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(result.Username, add.Username);
                 Assert.Equal(result.Exists, add.Exists);
-                Assert.Equal(result.User, add.User);
+                Assert.Equal(result.Data, add.Data);
             }
         }
 
         [Trait("Category", "AddUserAsyncAsync")]
         [Theory(DisplayName = "AddUserAsyncAsync throws UserStatusException on throw"), AutoData]
-        public async Task AddUserAsyncAsync_Throws_UserStatusException_On_Throw(string username, bool exists, User user)
+        public async Task AddUserAsyncAsync_Throws_UserStatusException_On_Throw(string username, bool exists, UserData userData)
         {
-            var result = new AddUserResponse(username, exists, user);
+            var result = new AddUserResponse(username, exists, userData);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -117,9 +117,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsyncAsync")]
         [Theory(DisplayName = "AddUserAsync throws TimeoutException on timeout"), AutoData]
-        public async Task AddUserAsyncAsync_Throws_TimeoutException_On_Timeout(string username, bool exists, User user)
+        public async Task AddUserAsyncAsync_Throws_TimeoutException_On_Timeout(string username, bool exists, UserData userData)
         {
-            var result = new AddUserResponse(username, exists, user);
+            var result = new AddUserResponse(username, exists, userData);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -143,9 +143,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsync")]
         [Theory(DisplayName = "AddUserAsync throws OperationCanceledException on cancel"), AutoData]
-        public async Task AddUserAsync_Throws_OperationCanceledException_On_Cancel(string username, bool exists, User user)
+        public async Task AddUserAsync_Throws_OperationCanceledException_On_Cancel(string username, bool exists, UserData userData)
         {
-            var result = new AddUserResponse(username, exists, user);
+            var result = new AddUserResponse(username, exists, userData);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))

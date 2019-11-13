@@ -493,7 +493,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerAddUser"), AutoData]
-        public void Handles_ServerAddUser(string username, bool exists, User user)
+        public void Handles_ServerAddUser(string username, bool exists, UserData userData)
         {
             AddUserResponse result = null;
             var (handler, mocks) = GetFixture();
@@ -505,24 +505,24 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Server.AddUser)
                 .WriteString(username)
                 .WriteByte(1) // exists = true
-                .WriteInteger((int)user.Status)
-                .WriteInteger(user.AverageSpeed)
-                .WriteLong(user.DownloadCount)
-                .WriteInteger(user.FileCount)
-                .WriteInteger(user.DirectoryCount)
-                .WriteString(user.CountryCode)
+                .WriteInteger((int)userData.Status)
+                .WriteInteger(userData.AverageSpeed)
+                .WriteLong(userData.DownloadCount)
+                .WriteInteger(userData.FileCount)
+                .WriteInteger(userData.DirectoryCount)
+                .WriteString(userData.CountryCode)
                 .Build();
 
             handler.HandleMessage(null, message);
 
             Assert.Equal(username, result.Username);
             Assert.Equal(exists, result.Exists);
-            Assert.Equal(user.Status, result.User.Status);
-            Assert.Equal(user.AverageSpeed, result.User.AverageSpeed);
-            Assert.Equal(user.DownloadCount, result.User.DownloadCount);
-            Assert.Equal(user.FileCount, result.User.FileCount);
-            Assert.Equal(user.DirectoryCount, result.User.DirectoryCount);
-            Assert.Equal(user.CountryCode, result.User.CountryCode);
+            Assert.Equal(userData.Status, result.Data.Status);
+            Assert.Equal(userData.AverageSpeed, result.Data.AverageSpeed);
+            Assert.Equal(userData.DownloadCount, result.Data.DownloadCount);
+            Assert.Equal(userData.FileCount, result.Data.FileCount);
+            Assert.Equal(userData.DirectoryCount, result.Data.DirectoryCount);
+            Assert.Equal(userData.CountryCode, result.Data.CountryCode);
         }
 
         [Trait("Category", "Message")]
