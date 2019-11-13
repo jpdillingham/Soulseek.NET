@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The username of the added peer.</param>
         /// <param name="exists">A value indicating whether the username exists on the network.</param>
         /// <param name="userData">If <see cref="Exists"/>, the user's data.</param>
-        internal AddUserResponse(string username, bool exists, UserData userData)
+        internal AddUserResponse(string username, bool exists, UserData userData = null)
         {
             Username = username;
             Exists = exists;
