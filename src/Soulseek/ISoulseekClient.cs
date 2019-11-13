@@ -376,5 +376,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+
+        Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
     }
 }

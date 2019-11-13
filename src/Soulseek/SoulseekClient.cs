@@ -876,6 +876,15 @@ namespace Soulseek
             return UploadInternalAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
+        public async Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
+            await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+
+            var response = await joinRoomWait.ConfigureAwait(false);
+            return response;
+        }
+
         /// <summary>
         ///     Disposes this instance.
         /// </summary>
@@ -902,7 +911,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new AcknowledgePrivateMessage(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageCommand(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
