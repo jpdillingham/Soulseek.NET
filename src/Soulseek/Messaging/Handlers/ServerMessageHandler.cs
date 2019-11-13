@@ -178,6 +178,11 @@ namespace Soulseek.Messaging.Handlers
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
                         break;
 
+                    case MessageCode.Server.JoinRoom:
+                        var joinRoomResponse = JoinRoomResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, joinRoomResponse.RoomName), joinRoomResponse);
+                        break;
+
                     default:
                         Diagnostic.Debug($"Unhandled server message: {code}; {message.Length} bytes");
                         break;
