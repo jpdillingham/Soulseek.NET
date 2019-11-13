@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivateMessage.cs" company="JP Dillingham">
+﻿// <copyright file="RoomMessage.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,50 +12,35 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     An incoming private message.
+    ///     An incoming chat room message.
     /// </summary>
-    public sealed class PrivateMessage
+    public sealed class RoomMessage
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessage"/> class.
+        ///     Initializes a new instance of the <see cref="RoomMessage"/> class.
         /// </summary>
-        /// <param name="id">The unique id of the message.</param>
-        /// <param name="timestamp">The timestamp at which the message was sent.</param>
+        /// <param name="roomName">The name of the room in which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
-        internal PrivateMessage(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
+        internal RoomMessage(string roomName, string username, string message)
         {
-            Id = id;
-            Timestamp = timestamp;
+            RoomName = roomName;
             Username = username;
             Message = message;
-            IsAdmin = isAdmin;
         }
 
         /// <summary>
-        ///     Gets the unique id of the message.
+        ///     Gets the name of the room in which the message was sent.
         /// </summary>
-        public int Id { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether the message was sent by an administrator.
-        /// </summary>
-        public bool IsAdmin { get; }
+        public string RoomName { get; }
 
         /// <summary>
         ///     Gets the message content.
         /// </summary>
         public string Message { get; }
-
-        /// <summary>
-        ///     Gets the timestamp at which the message was sent.
-        /// </summary>
-        public DateTime Timestamp { get; }
 
         /// <summary>
         ///     Gets the username of the user which sent the message.
@@ -67,28 +52,21 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static PrivateMessage FromByteArray(byte[] bytes)
+        internal static RoomMessage FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.PrivateMessage)
+            if (code != MessageCode.Server.SayInChatRoom)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessage)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(RoomMessage)} (expected: {(int)MessageCode.Server.SayInChatRoom}, received: {(int)code}.");
             }
 
-            var id = reader.ReadInteger();
-
-            var timestampSeconds = reader.ReadInteger();
-
-            var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            var timestamp = epoch.AddSeconds(timestampSeconds).ToLocalTime();
-
+            var roomName = reader.ReadString();
             var username = reader.ReadString();
             var msg = reader.ReadString();
-            var isAdmin = reader.ReadByte() == 1;
 
-            return new PrivateMessage(id, timestamp, username, msg, isAdmin);
+            return new RoomMessage(roomName, username, msg);
         }
     }
 }
