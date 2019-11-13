@@ -1,8 +1,8 @@
 ﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -149,6 +149,7 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
@@ -163,6 +164,11 @@ namespace Soulseek
         ///     Occurs when a private message is received.
         /// </summary>
         public event EventHandler<PrivateMessage> PrivateMessageReceived;
+
+        /// <summary>
+        ///     Occurs when a chat room message is received.
+        /// </summary>
+        public event EventHandler<RoomMessage> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -227,7 +233,6 @@ namespace Soulseek
 
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
-
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
@@ -627,6 +632,23 @@ namespace Soulseek
             return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
+        public async Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
+            await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+
+            var response = await joinRoomWait.ConfigureAwait(false);
+            return response;
+        }
+
+        public async Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            var leaveRoomWait = Waiter.Wait(new WaitKey(MessageCode.Server.LeaveRoom, roomName), cancellationToken: cancellationToken);
+            await ServerConnection.WriteAsync(new LeaveRoomRequest(roomName).ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+
+            await leaveRoomWait.ConfigureAwait(false);
+        }
+
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
@@ -874,15 +896,6 @@ namespace Soulseek
             options = options ?? new TransferOptions();
 
             return UploadInternalAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
-        }
-
-        public async Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
-        {
-            var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
-            await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-
-            var response = await joinRoomWait.ConfigureAwait(false);
-            return response;
         }
 
         /// <summary>
