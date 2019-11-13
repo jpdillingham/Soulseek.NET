@@ -1,4 +1,4 @@
-﻿// <copyright file="AcknowledgePrivateMessage.cs" company="JP Dillingham">
+﻿// <copyright file="AcknowledgePrivateMessageCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -15,13 +15,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Acknowledges the reciept of a private message.
     /// </summary>
-    internal sealed class AcknowledgePrivateMessage
+    internal sealed class AcknowledgePrivateMessageCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AcknowledgePrivateMessage"/> class.
+        ///     Initializes a new instance of the <see cref="AcknowledgePrivateMessageCommand"/> class.
         /// </summary>
         /// <param name="id">The id of the private message to acknowledge.</param>
-        public AcknowledgePrivateMessage(int id)
+        public AcknowledgePrivateMessageCommand(int id)
         {
             Id = id;
         }
