@@ -32,6 +32,11 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<PrivateMessage> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a chat room message is received.
+        /// </summary>
+        event EventHandler<RoomMessage> RoomMessageReceived;
+
+        /// <summary>
         ///     Handles incoming messages.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
