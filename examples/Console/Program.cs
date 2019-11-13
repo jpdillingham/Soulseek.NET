@@ -94,6 +94,7 @@
                 client.StateChanged += Client_ServerStateChanged;
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
+                client.RoomMessageReceived += Client_RoomMessageReceived;
 
                 if (!string.IsNullOrEmpty(RoomToJoin))
                 {
@@ -102,6 +103,7 @@
                     var joinResponse = await client.JoinRoomAsync(RoomToJoin);
 
                     Console.WriteLine(JsonConvert.SerializeObject(joinResponse));
+                    Console.ReadKey();
                 }
 
                 if (RoomList)
@@ -205,6 +207,11 @@
                 client.DiagnosticGenerated -= Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived -= Client_PrivateMessageReceived;
             }
+        }
+
+        private static void Client_RoomMessageReceived(object sender, RoomMessage e)
+        {
+            Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] [{e.Username}]: {e.Message}");
         }
 
         private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticEventArgs e)
@@ -336,32 +343,37 @@
             var totalFiles = 0;
             var state = SearchStates.None;
 
-            var timer = new Timer(100);
-            timer.Elapsed += (e, a) => updateStatus();
+            IEnumerable<SearchResponse> responses = Enumerable.Empty<SearchResponse>();
 
-            void updateStatus()
+            using (var timer = new Timer(100))
             {
-                Console.Write($"\r{spinner}  {(complete ? "Search complete." : $"Searching for '{searchText}':")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
+
+                timer.Elapsed += (e, a) => updateStatus();
+
+                void updateStatus()
+                {
+                    Console.Write($"\r{spinner}  {(complete ? "Search complete." : $"Searching for '{searchText}':")} found {totalFiles} files from {totalResponses} users".PadRight(Console.WindowWidth - 1) + (complete ? "\n" : string.Empty));
+                }
+
+                timer.Start();
+
+                responses = await client.SearchAsync(searchText,
+                    options: new SearchOptions(
+                        filterResponses: true,
+                        minimumResponseFileCount: minimumFileCount,
+                        searchTimeout: 5,
+                        stateChanged: (e) => state = e.State,
+                        responseReceived: (e) =>
+                        {
+                            totalResponses++;
+                            totalFiles += e.Response.FileCount;
+                        }, 
+                        fileFilter: (file) => Path.GetExtension(file.Filename) == ".mp3"));
+
+                timer.Stop();
+                complete = true;
+                updateStatus();
             }
-
-            timer.Start();
-
-            IEnumerable<SearchResponse> responses = await client.SearchAsync(searchText,
-                options: new SearchOptions(
-                    filterResponses: true,
-                    minimumResponseFileCount: minimumFileCount,
-                    searchTimeout: 5,
-                    stateChanged: (e) => state = e.State,
-                    responseReceived: (e) =>
-                    {
-                        totalResponses++;
-                        totalFiles += e.Response.FileCount;
-                    }, 
-                    fileFilter: (file) => Path.GetExtension(file.Filename) == ".mp3"));
-
-            timer.Stop();
-            complete = true;
-            updateStatus();
 
             return responses;
         }
