@@ -13,64 +13,29 @@
 namespace Soulseek
 {
     /// <summary>
-    ///     A file attribute.
+    ///     A user.
     /// </summary>
     public sealed class User
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="User"/> class.
         /// </summary>
-        /// <param name="status">The status of the user.</param>
-        /// <param name="averageSpeed">The average upload speed of the user.</param>
-        /// <param name="downloadCount">The number of active user downloads.</param>
-        /// <param name="fileCount">The number of files shared by the user.</param>
-        /// <param name="directoryCount">The number of directories shared by the user.</param>
-        /// <param name="slotsFree">The number of the user's free download slots, if provided.</param>
-        /// <param name="countryCode">The user's country code, if provided.</param>
-        public User(UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, bool? slotsFree = null, string countryCode = null)
+        /// <param name="userName">The username of the user.</param>
+        /// <param name="data">The data associated with the user.</param>
+        public User(string userName, UserData data)
         {
-            Status = status;
-            AverageSpeed = averageSpeed;
-            DownloadCount = downloadCount;
-            FileCount = fileCount;
-            DirectoryCount = directoryCount;
-            SlotsFree = slotsFree;
-            CountryCode = countryCode;
+            UserName = userName;
+            Data = data;
         }
 
         /// <summary>
-        ///     Gets the status of the user (0 = offline, 1 = away, 2 = online).
+        ///     Gets the username of the user.
         /// </summary>
-        public UserStatus Status { get; }
+        public string UserName { get; }
 
         /// <summary>
-        ///     Gets the average upload speed of the user.
+        ///     Gets the data associated with the user.
         /// </summary>
-        public int AverageSpeed { get; }
-
-        /// <summary>
-        ///     Gets the number of active user downloads.
-        /// </summary>
-        public long DownloadCount { get; }
-
-        /// <summary>
-        ///     Gets the number of files shared by the user.
-        /// </summary>
-        public int FileCount { get; }
-
-        /// <summary>
-        ///     Gets the number of directories shared by the user.
-        /// </summary>
-        public int DirectoryCount { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether the user has download slots available.
-        /// </summary>
-        public bool? SlotsFree { get; }
-
-        /// <summary>
-        ///     Gets the user's country code, if provided.
-        /// </summary>
-        public string CountryCode { get; }
+        public UserData Data { get; }
     }
 }
