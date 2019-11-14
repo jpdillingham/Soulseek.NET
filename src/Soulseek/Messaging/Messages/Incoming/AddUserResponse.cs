@@ -29,7 +29,7 @@ namespace Soulseek.Messaging.Messages
         {
             Username = username;
             Exists = exists;
-            Data = userData;
+            UserData = userData;
         }
 
         /// <summary>
@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the user's data, if the user <see cref="Exists"/>.
         /// </summary>
-        public UserData Data { get; }
+        public UserData UserData { get; }
 
         /// <summary>
         ///     Creates a new instance of <see cref="AddUserResponse"/> from the specified <paramref name="bytes"/>.
