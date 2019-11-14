@@ -95,6 +95,8 @@
                 client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived += Client_PrivateMessageReceived;
                 client.RoomMessageReceived += Client_RoomMessageReceived;
+                client.RoomJoined += Client_RoomJoined;
+                client.RoomLeft += Client_RoomLeft;
 
                 if (!string.IsNullOrEmpty(RoomToJoin))
                 {
@@ -207,6 +209,16 @@
                 client.DiagnosticGenerated -= Client_DiagnosticMessageGenerated;
                 client.PrivateMessageReceived -= Client_PrivateMessageReceived;
             }
+        }
+
+        private static void Client_RoomLeft(object sender, RoomLeftNotification e)
+        {
+            Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} left room.");
+        }
+
+        private static void Client_RoomJoined(object sender, RoomJoinedNotification e)
+        {
+            Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} joined room.");
         }
 
         private static void Client_RoomMessageReceived(object sender, RoomMessage e)

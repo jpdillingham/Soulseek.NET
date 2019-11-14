@@ -1,8 +1,8 @@
 ﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
-//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
+//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -150,6 +150,8 @@ namespace Soulseek
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
+            ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
@@ -200,6 +202,16 @@ namespace Soulseek
         /// </summary>
         /// <remarks>Add a user to the server watch list with <see cref="AddUserAsync(string, CancellationToken?)"/>.</remarks>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
+
+        /// <summary>
+        ///     Occurs when a user leaves a chat room.
+        /// </summary>
+        public event EventHandler<RoomLeftNotification> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when a user joins a chat room.
+        /// </summary>
+        public event EventHandler<RoomJoinedNotification> RoomJoined;
 
         /// <summary>
         ///     Gets the unresolved server address.

@@ -68,6 +68,16 @@ namespace Soulseek
         event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         /// <summary>
+        ///     Occurs when a user leaves a chat room.
+        /// </summary>
+        event EventHandler<RoomLeftNotification> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when a user joins a chat room.
+        /// </summary>
+        event EventHandler<RoomJoinedNotification> RoomJoined;
+
+        /// <summary>
         ///     Gets the unresolved server address.
         /// </summary>
         string Address { get; }
