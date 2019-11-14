@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(result.Username, add.Username);
                 Assert.Equal(result.Exists, add.Exists);
-                Assert.Equal(result.Data, add.Data);
+                Assert.Equal(result.UserData, add.UserData);
             }
         }
 

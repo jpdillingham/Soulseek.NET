@@ -517,12 +517,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             Assert.Equal(username, result.Username);
             Assert.Equal(exists, result.Exists);
-            Assert.Equal(userData.Status, result.Data.Status);
-            Assert.Equal(userData.AverageSpeed, result.Data.AverageSpeed);
-            Assert.Equal(userData.DownloadCount, result.Data.DownloadCount);
-            Assert.Equal(userData.FileCount, result.Data.FileCount);
-            Assert.Equal(userData.DirectoryCount, result.Data.DirectoryCount);
-            Assert.Equal(userData.CountryCode, result.Data.CountryCode);
+            Assert.Equal(userData.Status, result.UserData.Status);
+            Assert.Equal(userData.AverageSpeed, result.UserData.AverageSpeed);
+            Assert.Equal(userData.DownloadCount, result.UserData.DownloadCount);
+            Assert.Equal(userData.FileCount, result.UserData.FileCount);
+            Assert.Equal(userData.DirectoryCount, result.UserData.DirectoryCount);
+            Assert.Equal(userData.CountryCode, result.UserData.CountryCode);
         }
 
         [Trait("Category", "Message")]

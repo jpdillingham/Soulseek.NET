@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.Equal(exists, r.Exists);
-            Assert.Equal(userData, r.Data);
+            Assert.Equal(userData, r.UserData);
         }
 
         [Trait("Category", "Parse")]
@@ -79,12 +79,12 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.True(r.Exists);
-            Assert.Equal(userData.Status, r.Data.Status);
-            Assert.Equal(userData.AverageSpeed, r.Data.AverageSpeed);
-            Assert.Equal(userData.DownloadCount, r.Data.DownloadCount);
-            Assert.Equal(userData.FileCount, r.Data.FileCount);
-            Assert.Equal(userData.DirectoryCount, r.Data.DirectoryCount);
-            Assert.Equal(userData.CountryCode, r.Data.CountryCode);
+            Assert.Equal(userData.Status, r.UserData.Status);
+            Assert.Equal(userData.AverageSpeed, r.UserData.AverageSpeed);
+            Assert.Equal(userData.DownloadCount, r.UserData.DownloadCount);
+            Assert.Equal(userData.FileCount, r.UserData.FileCount);
+            Assert.Equal(userData.DirectoryCount, r.UserData.DirectoryCount);
+            Assert.Equal(userData.CountryCode, r.UserData.CountryCode);
         }
 
         [Trait("Category", "Parse")]
@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.False(r.Exists);
-            Assert.Null(r.Data);
+            Assert.Null(r.UserData);
         }
 
         [Trait("Category", "Parse")]
@@ -123,12 +123,12 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.True(r.Exists);
-            Assert.Equal(userData.Status, r.Data.Status);
-            Assert.Equal(userData.AverageSpeed, r.Data.AverageSpeed);
-            Assert.Equal(userData.DownloadCount, r.Data.DownloadCount);
-            Assert.Equal(userData.FileCount, r.Data.FileCount);
-            Assert.Equal(userData.DirectoryCount, r.Data.DirectoryCount);
-            Assert.Null(r.Data.CountryCode);
+            Assert.Equal(userData.Status, r.UserData.Status);
+            Assert.Equal(userData.AverageSpeed, r.UserData.AverageSpeed);
+            Assert.Equal(userData.DownloadCount, r.UserData.DownloadCount);
+            Assert.Equal(userData.FileCount, r.UserData.FileCount);
+            Assert.Equal(userData.DirectoryCount, r.UserData.DirectoryCount);
+            Assert.Null(r.UserData.CountryCode);
         }
     }
 }
