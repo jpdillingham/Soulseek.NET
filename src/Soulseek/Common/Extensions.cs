@@ -1,8 +1,8 @@
 ﻿// <copyright file="Extensions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -46,6 +46,15 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Continue a task and swallow any Exceptions.
+        /// </summary>
+        /// <param name="task">The task to continue.</param>
+        public static void Forget(this Task task)
+        {
+            task.ContinueWith(t => { });
+        }
+
+        /// <summary>
         ///     Continue a task and report an Exception if one is raised.
         /// </summary>
         /// <typeparam name="T">The type of Exception to throw.</typeparam>
@@ -54,15 +63,6 @@ namespace Soulseek
             where T : Exception
         {
             task.ContinueWith(t => { throw (T)Activator.CreateInstance(typeof(T), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
-        }
-
-        /// <summary>
-        ///     Continue a task and swallow any Exceptions.
-        /// </summary>
-        /// <param name="task">The task to continue.</param>
-        public static void Forget(this Task task)
-        {
-            task.ContinueWith(t => { });
         }
 
         /// <summary>

@@ -1,8 +1,8 @@
 ﻿// <copyright file="ITcpClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -28,8 +28,8 @@ namespace Soulseek.Network.Tcp
         Socket Client { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether the underlying <see cref="Socket"/> for an <see cref="ITcpClient"/> is connected to
-        ///     a remote host.
+        ///     Gets a value indicating whether the underlying <see cref="Socket"/> for an <see cref="ITcpClient"/> is connected
+        ///     to a remote host.
         /// </summary>
         bool Connected { get; }
 

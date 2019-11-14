@@ -1,8 +1,8 @@
 ﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -168,6 +168,16 @@ namespace Soulseek
         public event EventHandler<PrivateMessage> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a user joins a chat room.
+        /// </summary>
+        public event EventHandler<RoomJoinedNotification> RoomJoined;
+
+        /// <summary>
+        ///     Occurs when a user leaves a chat room.
+        /// </summary>
+        public event EventHandler<RoomLeftNotification> RoomLeft;
+
+        /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
         public event EventHandler<RoomMessage> RoomMessageReceived;
@@ -204,16 +214,6 @@ namespace Soulseek
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         /// <summary>
-        ///     Occurs when a user leaves a chat room.
-        /// </summary>
-        public event EventHandler<RoomLeftNotification> RoomLeft;
-
-        /// <summary>
-        ///     Occurs when a user joins a chat room.
-        /// </summary>
-        public event EventHandler<RoomJoinedNotification> RoomJoined;
-
-        /// <summary>
         ///     Gets the unresolved server address.
         /// </summary>
         public string Address { get; }
@@ -245,6 +245,7 @@ namespace Soulseek
 
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
+
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
@@ -256,7 +257,7 @@ namespace Soulseek
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Uploads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IWaiter Waiter { get; }
-#pragma warning restore SA1600 // Elements should be documented
+ #pragma warning restore SA1600 // Elements should be documented
 
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;

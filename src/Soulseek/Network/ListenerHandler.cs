@@ -1,8 +1,8 @@
 ﻿// <copyright file="ListenerHandler.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -92,8 +92,8 @@ namespace Soulseek.Network
                 else if (PierceFirewall.TryFromByteArray(message, out var pierceFirewall))
                 {
                     // this connection is the result of a ConnectToPeer request sent to the user, and the incoming message will
-                    // contain the token that was provided in the request. Ensure this token is among those expected, and use it to
-                    // determine the username of the remote user.
+                    // contain the token that was provided in the request. Ensure this token is among those expected, and use it
+                    // to determine the username of the remote user.
                     if (SoulseekClient.PeerConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var peerUsername))
                     {
                         Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPAddress}:{SoulseekClient.Listener.Port})");

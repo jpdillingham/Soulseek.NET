@@ -1,8 +1,8 @@
 ﻿// <copyright file="JoinRoomResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -35,16 +35,15 @@ namespace Soulseek.Messaging.Messages
             OperatorList = operatorList;
         }
 
+        public bool IsPrivateRoom { get; }
+        public int? OperatorCount { get; }
+        public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
+        public string Owner { get; }
         public string RoomName { get; }
         public int UserCount { get; }
         public IReadOnlyCollection<(string Username, UserData Data)> Users => UserList?.ToList().AsReadOnly();
-        public bool IsPrivateRoom { get; }
-        public string Owner { get; }
-        public int? OperatorCount { get; }
-        public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
-
-        private IEnumerable<(string Username, UserData Data)> UserList { get; }
         private IEnumerable<string> OperatorList { get; }
+        private IEnumerable<(string Username, UserData Data)> UserList { get; }
 
         /// <summary>
         ///     Creates a new instance of <see cref="JoinRoomResponse"/> from the specified <paramref name="bytes"/>.

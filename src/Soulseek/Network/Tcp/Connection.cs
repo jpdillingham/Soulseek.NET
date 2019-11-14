@@ -1,8 +1,8 @@
 ﻿// <copyright file="Connection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -347,8 +347,8 @@ namespace Soulseek.Network.Tcp
         }
 
         /// <summary>
-        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the optionally
-        ///     specified <paramref name="message"/>.
+        ///     Changes the state of the connection to the specified <paramref name="state"/> and raises events with the
+        ///     optionally specified <paramref name="message"/>.
         /// </summary>
         /// <param name="state">The state to which to change.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>

@@ -1,8 +1,8 @@
 ﻿// <copyright file="TransferEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -48,17 +48,10 @@ namespace Soulseek
             Options = transfer.Options;
         }
 
-        public TransferDirection Direction { get; }
-
         /// <summary>
         ///     Gets the current average transfer speed.
         /// </summary>
         public double AverageSpeed { get; }
-
-        /// <summary>
-        ///     Gets the total number of bytes transferred.
-        /// </summary>
-        public long BytesTransferred { get; }
 
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
@@ -66,9 +59,16 @@ namespace Soulseek
         public long BytesRemaining { get; }
 
         /// <summary>
+        ///     Gets the total number of bytes transferred.
+        /// </summary>
+        public long BytesTransferred { get; }
+
+        /// <summary>
         ///     Gets the data transferred.
         /// </summary>
         public byte[] Data { get; }
+
+        public TransferDirection Direction { get; }
 
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.

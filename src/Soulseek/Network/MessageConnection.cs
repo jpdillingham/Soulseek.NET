@@ -1,8 +1,8 @@
 ﻿// <copyright file="MessageConnection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -55,10 +55,11 @@ namespace Soulseek.Network
         internal MessageConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
             : base(ipAddress, port, options, tcpClient)
         {
-            // bind the connected event to begin reading upon connection.  if we received a connected client, this will never fire and the read loop must be started via ReadContinuouslyAsync().
+            // bind the connected event to begin reading upon connection. if we received a connected client, this will never fire
+            // and the read loop must be started via ReadContinuouslyAsync().
             Connected += (sender, e) =>
             {
-                // if Username is empty, this is a server connection.  begin reading continuously, and throw on exception.
+                // if Username is empty, this is a server connection. begin reading continuously, and throw on exception.
                 if (string.IsNullOrEmpty(Username))
                 {
                     Task.Run(() => ReadContinuouslyAsync()).ForgetButThrowWhenFaulted<ConnectionException>();

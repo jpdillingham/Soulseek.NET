@@ -1,8 +1,8 @@
 ﻿// <copyright file="IMessageConnection.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -42,9 +42,9 @@ namespace Soulseek.Network
         ///     This functionality should be used only when an incoming connection has already been established in an IConnection
         ///     instance and with a Connected ITcpClient, and when that IConnection is upgraded to an IMessageConnection, handing
         ///     off the ITcpClient instance without disconnecting it. Normally reading begins when the Connected event is fired,
-        ///     but since the connection is already Connected the event will not be fired again. It is important to delay the start
-        ///     of the read loop until after the calling code has had the chance to connect an event handler to the MessageRead
-        ///     event, which is impossible if we simply start the loop immediately upon instantiation.
+        ///     but since the connection is already Connected the event will not be fired again. It is important to delay the
+        ///     start of the read loop until after the calling code has had the chance to connect an event handler to the
+        ///     MessageRead event, which is impossible if we simply start the loop immediately upon instantiation.
         /// </remarks>
         void StartReadingContinuously();
     }

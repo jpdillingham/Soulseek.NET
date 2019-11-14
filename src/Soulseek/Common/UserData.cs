@@ -1,8 +1,8 @@
 ﻿// <copyright file="UserData.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -39,14 +39,19 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the status of the user (0 = offline, 1 = away, 2 = online).
-        /// </summary>
-        public UserStatus Status { get; }
-
-        /// <summary>
         ///     Gets the average upload speed of the user.
         /// </summary>
         public int AverageSpeed { get; }
+
+        /// <summary>
+        ///     Gets the user's country code, if provided.
+        /// </summary>
+        public string CountryCode { get; }
+
+        /// <summary>
+        ///     Gets the number of directories shared by the user.
+        /// </summary>
+        public int DirectoryCount { get; }
 
         /// <summary>
         ///     Gets the number of active user downloads.
@@ -59,18 +64,13 @@ namespace Soulseek
         public int FileCount { get; }
 
         /// <summary>
-        ///     Gets the number of directories shared by the user.
-        /// </summary>
-        public int DirectoryCount { get; }
-
-        /// <summary>
         ///     Gets the number of the user's free download slots, if provided.
         /// </summary>
         public int? SlotsFree { get; }
 
         /// <summary>
-        ///     Gets the user's country code, if provided.
+        ///     Gets the status of the user (0 = offline, 1 = away, 2 = online).
         /// </summary>
-        public string CountryCode { get; }
+        public UserStatus Status { get; }
     }
 }

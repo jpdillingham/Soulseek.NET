@@ -1,8 +1,8 @@
 ﻿// <copyright file="ClientOptions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -63,8 +63,12 @@ namespace Soulseek.Options
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value supplied for <paramref name="concurrentDistributedChildrenLimit"/> is less than zero.</exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the value supplied for <paramref name="concurrentPeerMessageConnectionLimit"/> is less than one.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value supplied for <paramref name="concurrentDistributedChildrenLimit"/> is less than zero.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the value supplied for <paramref name="concurrentPeerMessageConnectionLimit"/> is less than one.
+        /// </exception>
         public ClientOptions(
             int? listenPort = null,
             int concurrentDistributedChildrenLimit = 100,
