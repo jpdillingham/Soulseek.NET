@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="JoinRoomResponse"/> class.
         /// </summary>
-        internal JoinRoomResponse(string roomName, int userCount, IEnumerable<User> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
+        internal JoinRoomResponse(string roomName, int userCount, IEnumerable<(string Username, UserData Data)> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
         {
             RoomName = roomName;
             UserCount = userCount;
@@ -37,13 +37,13 @@ namespace Soulseek.Messaging.Messages
 
         public string RoomName { get; }
         public int UserCount { get; }
-        public IReadOnlyCollection<User> Users => UserList?.ToList().AsReadOnly();
+        public IReadOnlyCollection<(string Username, UserData Data)> Users => UserList?.ToList().AsReadOnly();
         public bool IsPrivateRoom { get; }
         public string Owner { get; }
         public int? OperatorCount { get; }
         public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
 
-        private IEnumerable<User> UserList { get; }
+        private IEnumerable<(string Username, UserData Data)> UserList { get; }
         private IEnumerable<string> OperatorList { get; }
 
         /// <summary>
@@ -108,7 +108,7 @@ namespace Soulseek.Messaging.Messages
                 countries.Add(reader.ReadString());
             }
 
-            var users = new List<User>();
+            var users = new List<(string Username, UserData Data)>();
 
             for (int i = 0; i < userCount; i++)
             {
@@ -118,7 +118,7 @@ namespace Soulseek.Messaging.Messages
                 var slot = slots[i];
                 var country = countries[i];
 
-                users.Add(new User(name, new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, slot, country)));
+                users.Add((name, new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, slot, country)));
             }
 
             string owner = null;
