@@ -1,4 +1,4 @@
-﻿// <copyright file="UserJoinedRoom.cs" company="JP Dillingham">
+﻿// <copyright file="RoomJoinNotification.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,12 +17,12 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification that a user has joined a chat room.
     /// </summary>
-    public sealed class UserJoinedRoom
+    public sealed class RoomJoinedNotification
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserJoinedRoom"/> class.
+        ///     Initializes a new instance of the <see cref="RoomJoinedNotification"/> class.
         /// </summary>
-        internal UserJoinedRoom(string roomName, string username, UserData userData)
+        internal RoomJoinedNotification(string roomName, string username, UserData userData)
         {
             RoomName = roomName;
             Username = username;
@@ -34,18 +34,18 @@ namespace Soulseek.Messaging.Messages
         public UserData UserData { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="UserLeftRoom"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="RoomJoinedNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static UserJoinedRoom FromByteArray(byte[] bytes)
+        public static RoomJoinedNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.UserJoinedRoom)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(UserJoinedRoom)} (expected: {(int)MessageCode.Server.UserJoinedRoom}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(RoomJoinedNotification)} (expected: {(int)MessageCode.Server.UserJoinedRoom}, received: {(int)code}");
             }
 
             var roomName = reader.ReadString();
@@ -65,7 +65,7 @@ namespace Soulseek.Messaging.Messages
 
             var userData = new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
 
-            return new UserJoinedRoom(roomName, username, userData);
+            return new RoomJoinedNotification(roomName, username, userData);
         }
     }
 }

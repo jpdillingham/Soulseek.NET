@@ -1,4 +1,4 @@
-﻿// <copyright file="UserLeftRoom.cs" company="JP Dillingham">
+﻿// <copyright file="RoomLeaveNotification.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,12 +17,12 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification that a user has left a chat room.
     /// </summary>
-    public sealed class UserLeftRoom
+    public sealed class RoomLeftNotification
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserLeftRoom"/> class.
+        ///     Initializes a new instance of the <see cref="RoomLeftNotification"/> class.
         /// </summary>
-        internal UserLeftRoom(string roomName, string username)
+        internal RoomLeftNotification(string roomName, string username)
         {
             RoomName = roomName;
             Username = username;
@@ -32,24 +32,24 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="UserLeftRoom"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="RoomLeftNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static UserLeftRoom FromByteArray(byte[] bytes)
+        public static RoomLeftNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.UserLeftRoom)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(UserLeftRoom)} (expected: {(int)MessageCode.Server.UserLeftRoom}, received: {(int)code}");
+                throw new MessageException($"Message Code mismatch creating {nameof(RoomLeftNotification)} (expected: {(int)MessageCode.Server.UserLeftRoom}, received: {(int)code}");
             }
 
             var roomName = reader.ReadString();
             var username = reader.ReadString();
 
-            return new UserLeftRoom(roomName, username);
+            return new RoomLeftNotification(roomName, username);
         }
     }
 }
