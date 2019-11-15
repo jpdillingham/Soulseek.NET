@@ -22,6 +22,9 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomJoinedNotification"/> class.
         /// </summary>
+        /// <param name="roomName">The name of the room which the user joined.</param>
+        /// <param name="username">The username of the user that joined.</param>
+        /// <param name="userData">The user's data.</param>
         internal RoomJoinedNotification(string roomName, string username, UserData userData)
         {
             RoomName = roomName;
@@ -29,8 +32,19 @@ namespace Soulseek.Messaging.Messages
             UserData = userData;
         }
 
+        /// <summary>
+        ///     Gets the name of the room which the user joined.
+        /// </summary>
         public string RoomName { get; }
+
+        /// <summary>
+        ///     Gets the user's data.
+        /// </summary>
         public UserData UserData { get; }
+
+        /// <summary>
+        ///     Gets the name of the user that joined.
+        /// </summary>
         public string Username { get; }
 
         /// <summary>

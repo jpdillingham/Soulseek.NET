@@ -24,6 +24,13 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="JoinRoomResponse"/> class.
         /// </summary>
+        /// <param name="roomName">The name of the room that was joined.</param>
+        /// <param name="userCount">The number of users in the room.</param>
+        /// <param name="userList">The users in the room.</param>
+        /// <param name="isPrivateRoom">A value indicating whether the room is private.</param>
+        /// <param name="owner">The owner of the room, if private.</param>
+        /// <param name="operatorCount">The number of operators in the room, if private.</param>
+        /// <param name="operatorList">The operators in the room, if private.</param>
         internal JoinRoomResponse(string roomName, int userCount, IEnumerable<(string Username, UserData Data)> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
         {
             RoomName = roomName;
@@ -35,13 +42,41 @@ namespace Soulseek.Messaging.Messages
             OperatorList = operatorList;
         }
 
+        /// <summary>
+        ///     Gets a value indicating whether the room is private.
+        /// </summary>
         public bool IsPrivateRoom { get; }
+
+        /// <summary>
+        ///     Gets the number of operators in the room, if private.
+        /// </summary>
         public int? OperatorCount { get; }
+
+        /// <summary>
+        ///     Gets the operators in the room, if private.
+        /// </summary>
         public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
+
+        /// <summary>
+        ///     Gets the owner of the room, if private.
+        /// </summary>
         public string Owner { get; }
+
+        /// <summary>
+        ///     Gets the name of the room that was joined.
+        /// </summary>
         public string RoomName { get; }
+
+        /// <summary>
+        ///     Gets the number of users in the room.
+        /// </summary>
         public int UserCount { get; }
+
+        /// <summary>
+        ///     Gets the users in the room.
+        /// </summary>
         public IReadOnlyCollection<(string Username, UserData Data)> Users => UserList?.ToList().AsReadOnly();
+
         private IEnumerable<string> OperatorList { get; }
         private IEnumerable<(string Username, UserData Data)> UserList { get; }
 
