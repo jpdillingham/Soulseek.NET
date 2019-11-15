@@ -105,7 +105,22 @@
                     var joinResponse = await client.JoinRoomAsync(RoomToJoin);
 
                     Console.WriteLine(JsonConvert.SerializeObject(joinResponse));
-                    Console.ReadKey();
+
+                    Console.WriteLine($"Type to send messages to {RoomToJoin}, ctrl+c to exit.");
+                    while (true)
+                    {
+                        var msg = Console.ReadLine();
+
+                        if (msg == "/leave")
+                        {
+                            await client.LeaveRoomAsync(RoomToJoin);
+                            break;
+                        }
+                        else 
+                        { 
+                            await client.SendRoomMessageAsync(RoomToJoin, msg);
+                        }
+                    }
                 }
 
                 if (RoomList)
