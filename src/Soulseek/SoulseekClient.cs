@@ -912,6 +912,40 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the room to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting only of whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to send a private message (currently: {State})");
+            }
+
+            return SendRoomMessageInternalAsync(roomName, message, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Disposes this instance.
         /// </summary>
         /// <param name="disposing">A value indicating whether disposal is in progress.</param>
@@ -1420,6 +1454,18 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task SendRoomMessageInternalAsync(string roomName, string message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new RoomMessageCommand(roomName, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new RoomMessageException($"Failed to send message to room {roomName}: {ex.Message}", ex);
             }
         }
 
