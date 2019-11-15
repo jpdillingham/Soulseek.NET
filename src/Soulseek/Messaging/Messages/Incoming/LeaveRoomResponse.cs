@@ -22,11 +22,15 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="LeaveRoomResponse"/> class.
         /// </summary>
+        /// <param name="roomName">The name of the room that was left.</param>
         internal LeaveRoomResponse(string roomName)
         {
             RoomName = roomName;
         }
 
+        /// <summary>
+        ///     Gets the name of the room that was left.
+        /// </summary>
         public string RoomName { get; }
 
         /// <summary>
