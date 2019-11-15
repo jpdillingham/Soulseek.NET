@@ -554,4 +554,102 @@ namespace Soulseek.Exceptions
         {
         }
     }
+
+    /// <summary>
+    ///     Represents errors that occur while handling private messages.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class PrivateMessageException : SoulseekClientException
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class.
+        /// </summary>
+        public PrivateMessageException()
+            : base()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public PrivateMessageException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
+        ///     inner exception is specified.
+        /// </param>
+        public PrivateMessageException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        protected PrivateMessageException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     Represents errors that occur while handling chat room messages.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class RoomMessageException : SoulseekClientException
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageException"/> class.
+        /// </summary>
+        public RoomMessageException()
+            : base()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageException"/> class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public RoomMessageException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
+        ///     inner exception is specified.
+        /// </param>
+        public RoomMessageException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        protected RoomMessageException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
 }
