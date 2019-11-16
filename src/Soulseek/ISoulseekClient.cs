@@ -288,35 +288,33 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
         /// </summary>
-        /// <remarks>
-        ///     When successful, a corresponding <see cref="RoomJoined"/> event will be raised.
-        /// </remarks>
+        /// <remarks>When successful, a corresponding <see cref="RoomJoined"/> event will be raised.</remarks>
         /// <param name="roomName">The name of the chat room to join.</param>
         /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
         Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
-        Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
-
         /// <summary>
-        ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.
+        ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.
         /// </summary>
-        /// <param name="roomName">The name of the room to which the message is to be sent.</param>
-        /// <param name="message">The message to send.</param>
+        /// <param name="roomName">The name of the chat room to leave.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
-        Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null);
+        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
@@ -370,6 +368,22 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="PrivateMessageException">Thrown when an exception is encountered during the operation.</exception>
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the room to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
+        Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
