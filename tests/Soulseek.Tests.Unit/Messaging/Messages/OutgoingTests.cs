@@ -394,5 +394,82 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(MessageCode.Server.SetOnlineStatus, code);
             Assert.Equal((int)status, reader.ReadInteger());
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "RoomMessageCommand")]
+        [Theory(DisplayName = "RoomMessageCommand instantiates properly"), AutoData]
+        public void RoomMessageCommand_Instantiates_Properly(string room, string msg)
+        {
+            var a = new RoomMessageCommand(room, msg);
+
+            Assert.Equal(room, a.RoomName);
+            Assert.Equal(msg, a.Message);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "RoomMessageCommand")]
+        [Theory(DisplayName = "RoomMessageCommand constructs the correct message"), AutoData]
+        public void RoomMessageCommand_Constructs_The_Correct_Message(string room, string m)
+        {
+            var a = new RoomMessageCommand(room, m);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.SayInChatRoom, code);
+            Assert.Equal(room, reader.ReadString());
+            Assert.Equal(m, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "JoinRoomRequest")]
+        [Theory(DisplayName = "JoinRoomRequest instantiates properly"), AutoData]
+        public void JoinRoomRequest_Instantiates_Properly(string room)
+        {
+            var a = new JoinRoomRequest(room);
+
+            Assert.Equal(room, a.RoomName);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "JoinRoomRequest")]
+        [Theory(DisplayName = "JoinRoomRequest constructs the correct message"), AutoData]
+        public void JoinRoomRequest_Constructs_The_Correct_Message(string room)
+        {
+            var a = new JoinRoomRequest(room);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.JoinRoom, code);
+            Assert.Equal(room, reader.ReadString());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Request", "LeaveRoomRequest")]
+        [Theory(DisplayName = "LeaveRoomRequest instantiates properly"), AutoData]
+        public void LeaveRoomRequest_Instantiates_Properly(string room)
+        {
+            var a = new LeaveRoomRequest(room);
+
+            Assert.Equal(room, a.RoomName);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "LeaveRoomRequest")]
+        [Theory(DisplayName = "LeaveRoomRequest constructs the correct message"), AutoData]
+        public void LeaveRoomRequest_Constructs_The_Correct_Message(string room)
+        {
+            var a = new LeaveRoomRequest(room);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.LeaveRoom, code);
+            Assert.Equal(room, reader.ReadString());
+        }
     }
 }
