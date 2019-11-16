@@ -645,13 +645,48 @@ namespace Soulseek
             return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
-        public async Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        /// <summary>
+        ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <remarks>
+        ///     When successful, a corresponding <see cref="RoomJoined"/> event will be raised.
+        /// </remarks>
+        /// <param name="roomName">The name of the chat room to join.</param>
+        /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
         {
-            var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
-            await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
 
-            var response = await joinRoomWait.ConfigureAwait(false);
-            return response;
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user status (currently: {State})");
+            }
+
+            return JoinRoomInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+        }
+
+        private async Task<JoinRoomResponse> JoinRoomInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var response = await joinRoomWait.ConfigureAwait(false);
+                return response;
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new RoomJoinException($"Failed to join chat room {roomName}: {ex.Message}", ex);
+            }
         }
 
         public async Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null)
