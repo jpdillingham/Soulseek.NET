@@ -99,7 +99,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.RoomList:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.FromByteArray(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomListResponse.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
