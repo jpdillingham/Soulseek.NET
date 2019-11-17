@@ -642,6 +642,130 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(privileged, eventArgs.Privileged);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles JoinRoom"), AutoData]
+        public void Handles_JoinRoom(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            JoinRoomResponse response = default;
+
+            var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
+            mocks.Waiter.Setup(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<JoinRoomResponse>()))
+                .Callback<WaitKey, JoinRoomResponse>((k, r) => response = r);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.JoinRoom)
+                .WriteString(roomName)
+                .WriteInteger(0) // user count
+                .WriteInteger(0) // status count
+                .WriteInteger(0) // data count
+                .WriteInteger(0) // slots free count
+                .WriteInteger(0); // country count
+
+            var message = builder.Build();
+
+            handler.HandleMessage(null, message);
+
+            Assert.Equal(roomName, response.RoomName);
+            Assert.Equal(0, response.UserCount);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles LeaveRoom"), AutoData]
+        public void Handles_LeaveRoom(string roomName)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.LeaveRoom)
+                .WriteString(roomName);
+
+            var message = builder.Build();
+
+            handler.HandleMessage(null, message);
+
+            var key = new WaitKey(MessageCode.Server.LeaveRoom, roomName);
+            mocks.Waiter.Verify(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key))), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles SayInChatRoom"), AutoData]
+        public void Handles_SayInChatRoom(string roomName, string username, string msg)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.SayInChatRoom)
+                .WriteString(roomName)
+                .WriteString(username)
+                .WriteString(msg);
+
+            var message = builder.Build();
+
+            RoomMessage actual = default;
+            handler.RoomMessageReceived += (sender, args) => actual = args;
+            handler.HandleMessage(null, message);
+
+            Assert.Equal(roomName, actual.RoomName);
+            Assert.Equal(username, actual.Username);
+            Assert.Equal(msg, actual.Message);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles UserJoinedRoom"), AutoData]
+        public void Handles_UserJoinedRoom(string roomName, string username, UserData data)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.UserJoinedRoom)
+                .WriteString(roomName)
+                .WriteString(username)
+                .WriteInteger((int)data.Status)
+                .WriteInteger(data.AverageSpeed)
+                .WriteLong(data.DownloadCount)
+                .WriteInteger(data.FileCount)
+                .WriteInteger(data.DirectoryCount)
+                .WriteString(data.CountryCode);
+
+            var message = builder.Build();
+
+            RoomJoinedNotification actual = default;
+            handler.RoomJoined += (sender, args) => actual = args;
+            handler.HandleMessage(null, message);
+
+            Assert.Equal(roomName, actual.RoomName);
+            Assert.Equal(username, actual.Username);
+            Assert.Equal(data.Status, actual.UserData.Status);
+            Assert.Equal(data.AverageSpeed, actual.UserData.AverageSpeed);
+            Assert.Equal(data.DownloadCount, actual.UserData.DownloadCount);
+            Assert.Equal(data.FileCount, actual.UserData.FileCount);
+            Assert.Equal(data.DirectoryCount, actual.UserData.DirectoryCount);
+            Assert.Equal(data.CountryCode, actual.UserData.CountryCode);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles UserLeftRoom"), AutoData]
+        public void Handles_UserLeftRoom(string roomName, string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.UserLeftRoom)
+                .WriteString(roomName)
+                .WriteString(username);
+
+            var message = builder.Build();
+
+            RoomLeftNotification actual = default;
+            handler.RoomLeft += (sender, args) => actual = args;
+            handler.HandleMessage(null, message);
+
+            Assert.Equal(roomName, actual.RoomName);
+            Assert.Equal(username, actual.Username);
+        }
+
         private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
