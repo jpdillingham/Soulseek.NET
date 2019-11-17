@@ -1,4 +1,4 @@
-﻿// <copyright file="LeaveRoomResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="RoomLeftNotificationTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,7 +18,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class LeaveRoomResponseTests
+    public class RoomLeftNotificationTests
     {
         [Trait("Category", "Parse")]
         [Fact(DisplayName = "Parse throws MessageExcepton on code mismatch")]
@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.JoinRoom)
                 .Build();
 
-            var ex = Record.Exception(() => LeaveRoomResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => RoomLeftNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -39,11 +39,11 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.LeaveRoom)
+                .WriteCode(MessageCode.Server.UserLeftRoom)
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => LeaveRoomResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => RoomLeftNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -51,15 +51,17 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string roomName)
+        public void Parse_Returns_Expected_Data(string roomName, string username)
         {
             var builder = new MessageBuilder()
-                .WriteCode(MessageCode.Server.LeaveRoom)
-                .WriteString(roomName);
+                .WriteCode(MessageCode.Server.UserLeftRoom)
+                .WriteString(roomName)
+                .WriteString(username);
 
-            var response = LeaveRoomResponse.FromByteArray(builder.Build());
+            var response = RoomLeftNotification.FromByteArray(builder.Build());
 
             Assert.Equal(roomName, response.RoomName);
+            Assert.Equal(username, response.Username);
         }
     }
 }
