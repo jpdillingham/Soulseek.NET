@@ -12,11 +12,11 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
+    using System.Linq;
     using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
-    using System.Linq;
     using Xunit;
 
     public class JoinRoomResponseTests
