@@ -31,7 +31,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="owner">The owner of the room, if private.</param>
         /// <param name="operatorCount">The number of operators in the room, if private.</param>
         /// <param name="operatorList">The operators in the room, if private.</param>
-        internal JoinRoomResponse(string roomName, int userCount, IEnumerable<(string Username, UserData Data)> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
+        public JoinRoomResponse(string roomName, int userCount, IEnumerable<(string Username, UserData Data)> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
         {
             RoomName = roomName;
             UserCount = userCount;

@@ -13,7 +13,7 @@
 namespace Soulseek
 {
     /// <summary>
-    ///     A file attribute.
+    ///     A chat room.
     /// </summary>
     public sealed class Room
     {
