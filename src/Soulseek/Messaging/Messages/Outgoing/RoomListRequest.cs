@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomListCommand.cs" company="JP Dillingham">
+﻿// <copyright file="RoomListRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,14 +13,14 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Sends a private message.
+    ///     Gets the list of chat rooms.
     /// </summary>
-    internal sealed class RoomListCommand
+    internal sealed class RoomListRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomListCommand"/> class.
+        ///     Initializes a new instance of the <see cref="RoomListRequest"/> class.
         /// </summary>
-        public RoomListCommand()
+        public RoomListRequest()
         {
         }
 

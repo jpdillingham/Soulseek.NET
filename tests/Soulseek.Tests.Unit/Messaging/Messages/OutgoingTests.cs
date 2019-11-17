@@ -471,5 +471,19 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(MessageCode.Server.LeaveRoom, code);
             Assert.Equal(room, reader.ReadString());
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "RoomListRequest")]
+        [Fact(DisplayName = "RoomListRequest constructs the correct message")]
+        public void RoomListRequest_Constructs_The_Correct_Message()
+        {
+            var a = new RoomListRequest();
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.RoomList, code);
+        }
     }
 }

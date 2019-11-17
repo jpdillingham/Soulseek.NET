@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomList.cs" company="JP Dillingham">
+﻿// <copyright file="RoomListResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of available chat rooms.
     /// </summary>
-    internal static class RoomList
+    internal static class RoomListResponse
     {
         /// <summary>
         ///     Creates a new list of rooms from the specified <paramref name="bytes"/>.

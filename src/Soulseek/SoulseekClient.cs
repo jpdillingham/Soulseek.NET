@@ -548,7 +548,7 @@ namespace Soulseek
             try
             {
                 var roomListWait = Waiter.Wait<IReadOnlyCollection<Room>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new RoomListCommand().ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new RoomListRequest().ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
 
                 var response = await roomListWait.ConfigureAwait(false);
 
