@@ -176,7 +176,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData("username", null)]
         [InlineData("username", "  ")]
         [InlineData("username", "")]
-        public async Task SendPrivateMessageAsync_Throws_(string username, string message)
+        public async Task SendPrivateMessageAsync_Throws_ArgumentException_Given_Bad_Input(string username, string message)
         {
             using (var s = new SoulseekClient())
             {

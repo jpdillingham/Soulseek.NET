@@ -1,4 +1,4 @@
-﻿// <copyright file="SendRoomMessageAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="JoinLeaveRoomAsyncTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -13,87 +13,96 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    public class SendRoomMessageAsyncTests
+    public class JoinLeaveRoomAsyncTests
     {
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws InvalidOperationException when not connected"), AutoData]
-        public async Task SendRoomMessageAsync_Throws_InvalidOperationException_When_Not_Connected(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws InvalidOperationException when not connected"), AutoData]
+        public async Task JoinRoomAsync_Throws_InvalidOperationException_When_Not_Connected(string roomName)
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
 
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws InvalidOperationException when not logged in"), AutoData]
-        public async Task SendRoomMessageAsync_Throws_InvalidOperationException_When_Not_Logged_In(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws InvalidOperationException when not logged in"), AutoData]
+        public async Task JoinRoomAsync_Throws_InvalidOperationException_When_Not_Logged_In(string roomName)
         {
             using (var s = new SoulseekClient())
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
 
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws ArgumentException given bad input")]
-        [InlineData(null, "message")]
-        [InlineData("  ", "message")]
-        [InlineData("", "message")]
-        [InlineData("username", null)]
-        [InlineData("username", "  ")]
-        [InlineData("username", "")]
-        public async Task SendRoomMessageAsync_Throws_ArgumentException_Given_Bad_Input(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws ArgumentException given bad input")]
+        [InlineData(null)]
+        [InlineData("  ")]
+        [InlineData("")]
+        public async Task JoinRoomAsync_Throws_ArgumentException_Given_Bad_Input(string roomName)
         {
             using (var s = new SoulseekClient())
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
             }
         }
 
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync does not throw when write does not throw"), AutoData]
-        public async Task SendRoomMessageAsync_Does_Not_Throw_When_Write_Does_Not_Throw(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync returns expected response on success"), AutoData]
+        public async Task JoinRoomAsync_Returns_Expected_Response_On_Success(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            using (var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object))
+            var expectedResponse = new JoinRoomResponse(roomName, 0, Enumerable.Empty<(string Username, UserData Data)>(), false, null, null, null);
+
+            var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<JoinRoomResponse>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(expectedResponse));
+
+            using (var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                JoinRoomResponse response = default;
 
-                Assert.Null(ex);
+                response = await s.JoinRoomAsync(roomName);
+
+                Assert.Equal(expectedResponse, response);
             }
         }
 
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws RoomMessageException when write throws"), AutoData]
-        public async Task SendRoomMessageAsync_Throws_RoomMessageException_When_Write_Throws(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws RoomJoinException when write throws"), AutoData]
+        public async Task JoinRoomAsync_Throws_RoomJoinException_When_Write_Throws(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
@@ -103,17 +112,17 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
-                Assert.IsType<RoomMessageException>(ex);
+                Assert.IsType<RoomJoinException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
 
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws TimeoutException on timeout"), AutoData]
-        public async Task SendRoomMessageAsync_Throws_TimeoutException_On_Timeout(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws TimeoutException on timeout"), AutoData]
+        public async Task JoinRoomAsync_Throws_TimeoutException_On_Timeout(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
@@ -123,16 +132,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "SendRoomMessageAsync")]
-        [Theory(DisplayName = "SendRoomMessageAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task SendRoomMessageAsync_Throws_OperationCanceledException_On_Cancellation(string roomName, string message)
+        [Trait("Category", "JoinRoomAsync")]
+        [Theory(DisplayName = "JoinRoomAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task JoinRoomAsync_Throws_OperationCanceledException_On_Cancellation(string roomName)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
@@ -142,7 +151,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SendRoomMessageAsync(roomName, message));
+                var ex = await Record.ExceptionAsync(async () => await s.JoinRoomAsync(roomName));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
