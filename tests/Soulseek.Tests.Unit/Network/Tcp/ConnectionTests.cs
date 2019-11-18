@@ -411,7 +411,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     var start = DateTime.UtcNow;
 
-                    while (!disconnectRaisedByWatchdog)
+                    while (!disconnectRaisedByWatchdog && c.State != ConnectionState.Disconnected)
                     {
                         if ((DateTime.UtcNow - start).TotalMilliseconds > 10000)
                         {
