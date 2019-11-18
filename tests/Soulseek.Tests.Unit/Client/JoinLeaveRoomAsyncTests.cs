@@ -157,5 +157,132 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<OperationCanceledException>(ex);
             }
         }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws InvalidOperationException when not connected"), AutoData]
+        public async Task LeaveRoomAsync_Throws_InvalidOperationException_When_Not_Connected(string roomName)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws InvalidOperationException when not logged in"), AutoData]
+        public async Task LeaveRoomAsync_Throws_InvalidOperationException_When_Not_Logged_In(string roomName)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws ArgumentException given bad input")]
+        [InlineData(null)]
+        [InlineData("  ")]
+        [InlineData("")]
+        public async Task LeaveRoomAsync_Throws_ArgumentException_Given_Bad_Input(string roomName)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync returns expected response on success"), AutoData]
+        public async Task LeaveRoomAsync_Returns_Expected_Response_On_Success(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var key = new WaitKey(MessageCode.Server.LeaveRoom, roomName);
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.LeaveRoomAsync(roomName));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws RoomLeaveException when write throws"), AutoData]
+        public async Task LeaveRoomAsync_Throws_RoomLeaveException_When_Write_Throws(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new ConnectionWriteException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<RoomLeaveException>(ex);
+                Assert.IsType<ConnectionWriteException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws TimeoutException on timeout"), AutoData]
+        public async Task LeaveRoomAsync_Throws_TimeoutException_On_Timeout(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "LeaveRoomAsync")]
+        [Theory(DisplayName = "LeaveRoomAsync throws OperationCanceledException on cancellation"), AutoData]
+        public async Task LeaveRoomAsync_Throws_OperationCanceledException_On_Cancellation(string roomName)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.LeaveRoomAsync(roomName));
+
+                Assert.NotNull(ex);
+                Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
     }
 }
