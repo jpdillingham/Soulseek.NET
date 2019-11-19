@@ -556,7 +556,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new SharedCountsException($"Failed to fetch the list of chat rooms from the server: {ex.Message}", ex);
+                throw new RoomListException($"Failed to fetch the list of chat rooms from the server: {ex.Message}", ex);
             }
         }
 
