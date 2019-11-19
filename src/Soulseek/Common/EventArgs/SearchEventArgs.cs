@@ -101,8 +101,9 @@ namespace Soulseek
         /// <param name="response">The search response which raised the event.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
-            : this(response, search.SearchText, search.Token, search.State, search.Responses, search.Options)
+            : base(search)
         {
+            Response = response;
         }
 
         /// <summary>
@@ -137,7 +138,7 @@ namespace Soulseek
         /// <param name="previousState">The previous state of the search.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchStateChangedEventArgs(SearchStates previousState, Search search)
-            : this(previousState, search.SearchText, search.Token, search.State, search.Responses, search.Options)
+            : base(search)
         {
             PreviousState = previousState;
         }
