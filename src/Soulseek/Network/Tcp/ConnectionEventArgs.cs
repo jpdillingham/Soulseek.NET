@@ -10,10 +10,16 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek
+namespace Soulseek.Network.Tcp
 {
     using System;
-    using Soulseek.Network.Tcp;
+
+    /// <summary>
+    ///     EventArgs for <see cref="Connection"/> events.
+    /// </summary>
+    internal abstract class ConnectionEventArgs : EventArgs
+    {
+    }
 
     /// <summary>
     ///     EventArgs for <see cref="Connection"/> events raised by the exchange of data with a remote host.
@@ -45,13 +51,6 @@ namespace Soulseek
         ///     Gets the total expected length of the data transfer.
         /// </summary>
         public long TotalLength { get; }
-    }
-
-    /// <summary>
-    ///     EventArgs for <see cref="Connection"/> events.
-    /// </summary>
-    internal abstract class ConnectionEventArgs : EventArgs
-    {
     }
 
     /// <summary>

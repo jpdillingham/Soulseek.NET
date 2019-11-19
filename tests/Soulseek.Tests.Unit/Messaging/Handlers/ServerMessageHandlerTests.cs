@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            PrivateMessageNotification response = null;
+            PrivateMessageEventArgs response = null;
             handler.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
 
             handler.HandleMessage(null, msg);
@@ -703,7 +703,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomMessageNotification actual = default;
+            RoomMessageEventArgs actual = default;
             handler.RoomMessageReceived += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 
@@ -731,7 +731,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomJoinedNotification actual = default;
+            RoomJoinedEventArgs actual = default;
             handler.RoomJoined += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 
@@ -758,7 +758,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomLeftNotification actual = default;
+            RoomLeftEventArgs actual = default;
             handler.RoomLeft += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 
