@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            PrivateMessage response = null;
+            PrivateMessageNotification response = null;
             handler.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
 
             handler.HandleMessage(null, msg);

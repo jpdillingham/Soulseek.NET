@@ -18,17 +18,17 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming private message.
     /// </summary>
-    public sealed class PrivateMessage
+    public sealed class PrivateMessageNotification
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessage"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateMessageNotification"/> class.
         /// </summary>
         /// <param name="id">The unique id of the message.</param>
         /// <param name="timestamp">The timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
         /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
-        internal PrivateMessage(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
+        internal PrivateMessageNotification(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
         {
             Id = id;
             Timestamp = timestamp;
@@ -63,18 +63,18 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PrivateMessage"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivateMessageNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static PrivateMessage FromByteArray(byte[] bytes)
+        internal static PrivateMessageNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.PrivateMessage)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessage)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessageNotification)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code}.");
             }
 
             var id = reader.ReadInteger();
@@ -88,7 +88,7 @@ namespace Soulseek.Messaging.Messages
             var msg = reader.ReadString();
             var isAdmin = reader.ReadByte() == 1;
 
-            return new PrivateMessage(id, timestamp, username, msg, isAdmin);
+            return new PrivateMessageNotification(id, timestamp, username, msg, isAdmin);
         }
     }
 }

@@ -246,7 +246,7 @@
             Console.WriteLine($"[DIAGNOSTICS] [{e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] [{e.Level}]: {e.Message}");
         }
 
-        private static void Client_PrivateMessageReceived(object sender, PrivateMessage e)
+        private static void Client_PrivateMessageReceived(object sender, PrivateMessageNotification e)
         {
             Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }

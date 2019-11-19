@@ -24,7 +24,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        event EventHandler<PrivateMessage> PrivateMessageReceived;
+        event EventHandler<PrivateMessageNotification> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
