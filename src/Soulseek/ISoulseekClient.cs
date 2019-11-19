@@ -34,12 +34,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
-        event EventHandler<RoomJoinedNotification> RoomJoined;
+        event EventHandler<RoomJoinedEventArgs> RoomJoined;
 
         /// <summary>
         ///     Occurs when a user leaves a chat room.
         /// </summary>
-        event EventHandler<RoomLeftNotification> RoomLeft;
+        event EventHandler<RoomLeftEventArgs> RoomLeft;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

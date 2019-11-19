@@ -170,12 +170,12 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
-        public event EventHandler<RoomJoinedNotification> RoomJoined;
+        public event EventHandler<RoomJoinedEventArgs> RoomJoined;
 
         /// <summary>
         ///     Occurs when a user leaves a chat room.
         /// </summary>
-        public event EventHandler<RoomLeftNotification> RoomLeft;
+        public event EventHandler<RoomLeftEventArgs> RoomLeft;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

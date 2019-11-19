@@ -53,12 +53,12 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
-        public event EventHandler<RoomJoinedNotification> RoomJoined;
+        public event EventHandler<RoomJoinedEventArgs> RoomJoined;
 
         /// <summary>
         ///     Occurs when a user leaves a chat room.
         /// </summary>
-        public event EventHandler<RoomLeftNotification> RoomLeft;
+        public event EventHandler<RoomLeftEventArgs> RoomLeft;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -210,12 +210,12 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.UserJoinedRoom:
                         var joinNotification = RoomJoinedNotification.FromByteArray(message);
-                        RoomJoined?.Invoke(this, joinNotification);
+                        RoomJoined?.Invoke(this, new RoomJoinedEventArgs(joinNotification));
                         break;
 
                     case MessageCode.Server.UserLeftRoom:
                         var leftNotification = RoomLeftNotification.FromByteArray(message);
-                        RoomLeft?.Invoke(this, leftNotification);
+                        RoomLeft?.Invoke(this, new RoomLeftEventArgs(leftNotification));
                         break;
 
                     default:
