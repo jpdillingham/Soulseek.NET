@@ -1,8 +1,8 @@
 ﻿// <copyright file="DiagnosticEventArgs.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -34,6 +34,16 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Gets the Exception associated with the event, if applicable.
+        /// </summary>
+        public Exception Exception { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether an <see cref="Exception"/> is included with the event.
+        /// </summary>
+        public bool IncludesException => Exception != null;
+
+        /// <summary>
         ///     Gets the diagnostic level of the event.
         /// </summary>
         public DiagnosticLevel Level { get; }
@@ -47,15 +57,5 @@ namespace Soulseek
         ///     Gets the UTC timestamp of the instant at which the event was raised.
         /// </summary>
         public DateTime Timestamp { get; }
-
-        /// <summary>
-        ///     Gets a value indicating whether an <see cref="Exception"/> is included with the event.
-        /// </summary>
-        public bool IncludesException => Exception != null;
-
-        /// <summary>
-        ///     Gets the Exception associated with the event, if applicable.
-        /// </summary>
-        public Exception Exception { get; }
     }
 }

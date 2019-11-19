@@ -1,8 +1,8 @@
-﻿// <copyright file="AcknowledgePrivateMessage.cs" company="JP Dillingham">
+﻿// <copyright file="LeaveRoomRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Acknowledges the reciept of a private message.
+    ///     Leaves a chat room.
     /// </summary>
-    internal sealed class AcknowledgePrivateMessage
+    internal sealed class LeaveRoomRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AcknowledgePrivateMessage"/> class.
+        ///     Initializes a new instance of the <see cref="LeaveRoomRequest"/> class.
         /// </summary>
-        /// <param name="id">The id of the private message to acknowledge.</param>
-        public AcknowledgePrivateMessage(int id)
+        /// <param name="roomName">The name of the room to leave.</param>
+        public LeaveRoomRequest(string roomName)
         {
-            Id = id;
+            RoomName = roomName;
         }
 
         /// <summary>
-        ///     Gets the id of the private message to acknowledge.
+        ///     Gets the name of the room to leave.
         /// </summary>
-        public int Id { get; }
+        public string RoomName { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.AcknowledgePrivateMessage)
-                .WriteInteger(Id)
+                .WriteCode(MessageCode.Server.LeaveRoom)
+                .WriteString(RoomName)
                 .Build();
         }
     }

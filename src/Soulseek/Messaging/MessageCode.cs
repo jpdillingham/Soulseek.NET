@@ -1,8 +1,8 @@
 ﻿// <copyright file="MessageCode.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -72,6 +72,92 @@ namespace Soulseek.Messaging
             ///     Peer init; sent by peers creating a direct connection.
             /// </summary>
             PeerInit = 1,
+        }
+
+        /// <summary>
+        ///     Peer message codes.
+        /// </summary>
+        public enum Peer
+        {
+            /// <summary>
+            ///     4
+            /// </summary>
+            BrowseRequest = 4,
+
+            /// <summary>
+            ///     5
+            /// </summary>
+            BrowseResponse = 5,
+
+            /// <summary>
+            ///     8
+            /// </summary>
+            SearchRequest = 8,
+
+            /// <summary>
+            ///     9
+            /// </summary>
+            SearchResponse = 9,
+
+            /// <summary>
+            ///     15
+            /// </summary>
+            InfoRequest = 15,
+
+            /// <summary>
+            ///     16
+            /// </summary>
+            InfoResponse = 16,
+
+            /// <summary>
+            ///     36
+            /// </summary>
+            FolderContentsRequest = 36,
+
+            /// <summary>
+            ///     37
+            /// </summary>
+            FolderContentsResponse = 37,
+
+            /// <summary>
+            ///     40
+            /// </summary>
+            TransferRequest = 40,
+
+            /// <summary>
+            ///     41
+            /// </summary>
+            TransferResponse = 41,
+
+            /// <summary>
+            ///     42
+            /// </summary>
+            UploadPlacehold = 42,
+
+            /// <summary>
+            ///     43
+            /// </summary>
+            QueueDownload = 43,
+
+            /// <summary>
+            ///     44
+            /// </summary>
+            PlaceInQueueResponse = 44,
+
+            /// <summary>
+            ///     46
+            /// </summary>
+            UploadFailed = 46,
+
+            /// <summary>
+            ///     50
+            /// </summary>
+            QueueFailed = 50,
+
+            /// <summary>
+            ///     51
+            /// </summary>
+            PlaceInQueueRequest = 51,
         }
 
         /// <summary>
@@ -505,89 +591,6 @@ namespace Soulseek.Messaging
             ///     1
             /// </summary>
             CannotConnect = 1001,
-        }
-
-        public enum Peer
-        {
-            /// <summary>
-            ///     4
-            /// </summary>
-            BrowseRequest = 4,
-
-            /// <summary>
-            ///     5
-            /// </summary>
-            BrowseResponse = 5,
-
-            /// <summary>
-            ///     8
-            /// </summary>
-            SearchRequest = 8,
-
-            /// <summary>
-            ///     9
-            /// </summary>
-            SearchResponse = 9,
-
-            /// <summary>
-            ///     15
-            /// </summary>
-            InfoRequest = 15,
-
-            /// <summary>
-            ///     16
-            /// </summary>
-            InfoResponse = 16,
-
-            /// <summary>
-            ///     36
-            /// </summary>
-            FolderContentsRequest = 36,
-
-            /// <summary>
-            ///     37
-            /// </summary>
-            FolderContentsResponse = 37,
-
-            /// <summary>
-            ///     40
-            /// </summary>
-            TransferRequest = 40,
-
-            /// <summary>
-            ///     41
-            /// </summary>
-            TransferResponse = 41,
-
-            /// <summary>
-            ///     42
-            /// </summary>
-            UploadPlacehold = 42,
-
-            /// <summary>
-            ///     43
-            /// </summary>
-            QueueDownload = 43,
-
-            /// <summary>
-            ///     44
-            /// </summary>
-            PlaceInQueueResponse = 44,
-
-            /// <summary>
-            ///     46
-            /// </summary>
-            UploadFailed = 46,
-
-            /// <summary>
-            ///     50
-            /// </summary>
-            QueueFailed = 50,
-
-            /// <summary>
-            ///     51
-            /// </summary>
-            PlaceInQueueRequest = 51,
         }
     }
 }

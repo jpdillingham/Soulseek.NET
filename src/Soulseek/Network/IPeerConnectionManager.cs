@@ -1,8 +1,8 @@
 ﻿// <copyright file="IPeerConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -85,8 +85,8 @@ namespace Soulseek.Network
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
 
         /// <summary>
-        ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>, pierces
-        ///     the remote peer's firewall, and retrieves the remote token.
+        ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>,
+        ///     pierces the remote peer's firewall, and retrieves the remote token.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new connection and the associated remote token.</returns>

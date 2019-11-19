@@ -1,8 +1,8 @@
 ﻿// <copyright file="ConnectionException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -15,7 +15,6 @@ namespace Soulseek.Exceptions
     using System;
     using System.Diagnostics.CodeAnalysis;
     using System.Runtime.Serialization;
-    using Soulseek.Exceptions;
 
     /// <summary>
     ///     Represents errors that occur within a TCP connection.
@@ -47,8 +46,8 @@ namespace Soulseek.Exceptions
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
         /// <param name="innerException">
-        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
-        ///     exception is specified.
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
+        ///     inner exception is specified.
         /// </param>
         public ConnectionException(string message, Exception innerException)
             : base(message, innerException)
@@ -96,8 +95,8 @@ namespace Soulseek.Exceptions
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
         /// <param name="innerException">
-        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
-        ///     exception is specified.
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
+        ///     inner exception is specified.
         /// </param>
         public ConnectionReadException(string message, Exception innerException)
             : base(message, innerException)
@@ -140,13 +139,13 @@ namespace Soulseek.Exceptions
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with a specified error message and a
-        ///     reference to the inner exception that is the cause of this exception.
+        ///     Initializes a new instance of the <see cref="ConnectionWriteException"/> class with a specified error message and
+        ///     a reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
         /// <param name="innerException">
-        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no inner
-        ///     exception is specified.
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
+        ///     inner exception is specified.
         /// </param>
         public ConnectionWriteException(string message, Exception innerException)
             : base(message, innerException)

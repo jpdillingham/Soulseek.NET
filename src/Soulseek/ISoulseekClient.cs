@@ -1,8 +1,8 @@
 ﻿// <copyright file="ISoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -30,6 +30,21 @@ namespace Soulseek
         ///     Occurs when a private message is received.
         /// </summary>
         event EventHandler<PrivateMessage> PrivateMessageReceived;
+
+        /// <summary>
+        ///     Occurs when a user joins a chat room.
+        /// </summary>
+        event EventHandler<RoomJoinedNotification> RoomJoined;
+
+        /// <summary>
+        ///     Occurs when a user leaves a chat room.
+        /// </summary>
+        event EventHandler<RoomLeftNotification> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when a chat room message is received.
+        /// </summary>
+        event EventHandler<RoomMessage> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search response is received.
@@ -215,6 +230,17 @@ namespace Soulseek
         int GetNextToken();
 
         /// <summary>
+        ///     Asynchronously fetches the list of chat rooms on the server.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the list of server rooms.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
+        Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
@@ -258,6 +284,37 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
         Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <remarks>When successful, a corresponding <see cref="RoomJoined"/> event will be raised.</remarks>
+        /// <param name="roomName">The name of the chat room to join.</param>
+        /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the chat room to leave.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
@@ -313,6 +370,22 @@ namespace Soulseek
         Task SendPrivateMessageAsync(string username, string message, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the room to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
+        Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
@@ -354,12 +427,14 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is null or of zero length.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="data"/> is null or of zero length.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/> is
+        ///     already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>

@@ -1,8 +1,8 @@
 ﻿// <copyright file="AddUserResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -24,28 +24,13 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="username">The username of the added peer.</param>
         /// <param name="exists">A value indicating whether the username exists on the network.</param>
-        /// <param name="status">The status of the peer.</param>
-        /// <param name="averageSpeed">The average upload speed of the peer.</param>
-        /// <param name="downloadCount">The number of active peer downloads.</param>
-        /// <param name="fileCount">The number of files shared by the peer.</param>
-        /// <param name="directoryCount">The number of directories shared by the peer.</param>
-        /// <param name="countryCode">The peer's country code.</param>
-        internal AddUserResponse(string username, bool exists, UserStatus? status, int? averageSpeed, long? downloadCount, int? fileCount, int? directoryCount, string countryCode)
+        /// <param name="userData">If <see cref="Exists"/>, the user's data.</param>
+        internal AddUserResponse(string username, bool exists, UserData userData = null)
         {
             Username = username;
             Exists = exists;
-            Status = status;
-            AverageSpeed = averageSpeed;
-            DownloadCount = downloadCount;
-            FileCount = fileCount;
-            DirectoryCount = directoryCount;
-            CountryCode = countryCode;
+            UserData = userData;
         }
-
-        /// <summary>
-        ///     Gets the username of the added peer.
-        /// </summary>
-        public string Username { get; }
 
         /// <summary>
         ///     Gets a value indicating whether the username exists on the network.
@@ -53,34 +38,14 @@ namespace Soulseek.Messaging.Messages
         public bool Exists { get; }
 
         /// <summary>
-        ///     Gets the status of the peer (0 = offline, 1 = away, 2 = online).
+        ///     Gets the user's data, if the user <see cref="Exists"/>.
         /// </summary>
-        public UserStatus? Status { get; }
+        public UserData UserData { get; }
 
         /// <summary>
-        ///     Gets the average upload speed of the peer.
+        ///     Gets the username of the added peer.
         /// </summary>
-        public int? AverageSpeed { get; }
-
-        /// <summary>
-        ///     Gets the number of active peer downloads.
-        /// </summary>
-        public long? DownloadCount { get; }
-
-        /// <summary>
-        ///     Gets the number of files shared by the peer.
-        /// </summary>
-        public int? FileCount { get; }
-
-        /// <summary>
-        ///     Gets the number of directories shared by the peer.
-        /// </summary>
-        public int? DirectoryCount { get; }
-
-        /// <summary>
-        ///     Gets the peer's country code.
-        /// </summary>
-        public string CountryCode { get; }
+        public string Username { get; }
 
         /// <summary>
         ///     Creates a new instance of <see cref="AddUserResponse"/> from the specified <paramref name="bytes"/>.
@@ -101,28 +66,26 @@ namespace Soulseek.Messaging.Messages
             var b = reader.ReadByte();
             var exists = b > 0;
 
-            UserStatus? status = null;
-            int? averageSpeed = null;
-            long? downloadCount = null;
-            int? fileCount = null;
-            int? directoryCount = null;
-            string countryCode = null;
+            UserData user = null;
 
             if (exists)
             {
-                status = (UserStatus)reader.ReadInteger();
-                averageSpeed = reader.ReadInteger();
-                downloadCount = reader.ReadLong();
-                fileCount = reader.ReadInteger();
-                directoryCount = reader.ReadInteger();
+                var status = (UserStatus)reader.ReadInteger();
+                var averageSpeed = reader.ReadInteger();
+                var downloadCount = reader.ReadLong();
+                var fileCount = reader.ReadInteger();
+                var directoryCount = reader.ReadInteger();
+                string countryCode = null;
 
                 if (reader.HasMoreData)
                 {
                     countryCode = reader.ReadString();
                 }
+
+                user = new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
             }
 
-            return new AddUserResponse(username, exists, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode);
+            return new AddUserResponse(username, exists, user);
         }
     }
 }

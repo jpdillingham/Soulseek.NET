@@ -1,8 +1,8 @@
 ﻿// <copyright file="ServerMessageHandler.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -51,6 +51,21 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<PrivateMessage> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when a user joins a chat room.
+        /// </summary>
+        public event EventHandler<RoomJoinedNotification> RoomJoined;
+
+        /// <summary>
+        ///     Occurs when a user leaves a chat room.
+        /// </summary>
+        public event EventHandler<RoomLeftNotification> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when a chat room message is received.
+        /// </summary>
+        public event EventHandler<RoomMessage> RoomMessageReceived;
+
+        /// <summary>
         ///     Occurs when a watched user's status changes.
         /// </summary>
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
@@ -84,7 +99,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.RoomList:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomList.FromByteArray(message));
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomListResponse.FromByteArray(message));
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
@@ -176,6 +191,31 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.GetPeerAddress:
                         var peerAddressResponse = UserAddressResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, peerAddressResponse.Username), peerAddressResponse);
+                        break;
+
+                    case MessageCode.Server.JoinRoom:
+                        var joinRoomResponse = JoinRoomResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, joinRoomResponse.RoomName), joinRoomResponse);
+                        break;
+
+                    case MessageCode.Server.LeaveRoom:
+                        var leaveRoomResponse = LeaveRoomResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, leaveRoomResponse.RoomName));
+                        break;
+
+                    case MessageCode.Server.SayInChatRoom:
+                        var roomMessage = RoomMessage.FromByteArray(message);
+                        RoomMessageReceived?.Invoke(this, roomMessage);
+                        break;
+
+                    case MessageCode.Server.UserJoinedRoom:
+                        var joinNotification = RoomJoinedNotification.FromByteArray(message);
+                        RoomJoined?.Invoke(this, joinNotification);
+                        break;
+
+                    case MessageCode.Server.UserLeftRoom:
+                        var leftNotification = RoomLeftNotification.FromByteArray(message);
+                        RoomLeft?.Invoke(this, leftNotification);
                         break;
 
                     default:

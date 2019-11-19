@@ -1,8 +1,8 @@
 ﻿// <copyright file="IDistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -66,8 +66,8 @@ namespace Soulseek.Network
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
 
         /// <summary>
-        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and pierces
-        ///     the remote peer's firewall.
+        ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
+        ///     pierces the remote peer's firewall.
         /// </summary>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context.</returns>

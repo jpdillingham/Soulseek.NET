@@ -1,8 +1,8 @@
-﻿// <copyright file="PrivateMessageRequest.cs" company="JP Dillingham">
+﻿// <copyright file="RoomMessageCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -13,18 +13,18 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Sends a private message.
+    ///     Sends a message to a chat room.
     /// </summary>
-    internal sealed class PrivateMessageRequest
+    internal sealed class RoomMessageCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessageRequest"/> class.
+        ///     Initializes a new instance of the <see cref="RoomMessageCommand"/> class.
         /// </summary>
-        /// <param name="username">The user to which the message is to be sent.</param>
+        /// <param name="roomName">The name of the room to which the message is to be sent.</param>
         /// <param name="message">The message to send.</param>
-        public PrivateMessageRequest(string username, string message)
+        public RoomMessageCommand(string roomName, string message)
         {
-            Username = username;
+            RoomName = roomName;
             Message = message;
         }
 
@@ -34,9 +34,9 @@ namespace Soulseek.Messaging.Messages
         public string Message { get; }
 
         /// <summary>
-        ///     Gets the user to which the message is to be sent.
+        ///     Gets the name of the room to which the message is to be sent.
         /// </summary>
-        public string Username { get; }
+        public string RoomName { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -45,8 +45,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivateMessage)
-                .WriteString(Username)
+                .WriteCode(MessageCode.Server.SayInChatRoom)
+                .WriteString(RoomName)
                 .WriteString(Message)
                 .Build();
         }

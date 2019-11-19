@@ -1,8 +1,8 @@
-﻿// <copyright file="RoomList.cs" company="JP Dillingham">
+﻿// <copyright file="RoomListResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -18,14 +18,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of available chat rooms.
     /// </summary>
-    internal static class RoomList
+    internal static class RoomListResponse
     {
         /// <summary>
         ///     Creates a new list of rooms from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static IReadOnlyCollection<(string Name, int UserCount)> FromByteArray(byte[] bytes)
+        public static IReadOnlyCollection<Room> FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -44,12 +44,12 @@ namespace Soulseek.Messaging.Messages
             }
 
             var userCountCount = reader.ReadInteger();
-            var rooms = new List<(string Name, int UserCount)>();
+            var rooms = new List<Room>();
 
             for (int i = 0; i < userCountCount; i++)
             {
                 var count = reader.ReadInteger();
-                rooms.Add((roomNames[i], count));
+                rooms.Add(new Room(roomNames[i], count));
             }
 
             return rooms.AsReadOnly();

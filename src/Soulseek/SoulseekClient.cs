@@ -1,8 +1,8 @@
 ﻿// <copyright file="SoulseekClient.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -149,6 +149,9 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
+            ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
@@ -163,6 +166,21 @@ namespace Soulseek
         ///     Occurs when a private message is received.
         /// </summary>
         public event EventHandler<PrivateMessage> PrivateMessageReceived;
+
+        /// <summary>
+        ///     Occurs when a user joins a chat room.
+        /// </summary>
+        public event EventHandler<RoomJoinedNotification> RoomJoined;
+
+        /// <summary>
+        ///     Occurs when a user leaves a chat room.
+        /// </summary>
+        public event EventHandler<RoomLeftNotification> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when a chat room message is received.
+        /// </summary>
+        public event EventHandler<RoomMessage> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.
@@ -227,7 +245,6 @@ namespace Soulseek
 
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
-
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
         internal virtual IListener Listener { get; }
@@ -513,6 +530,37 @@ namespace Soulseek
         public virtual int GetNextToken() => TokenFactory.NextToken();
 
         /// <summary>
+        ///     Asynchronously fetches the list of chat rooms from the server.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the list of server rooms.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomListException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch the list of chat rooms (currently: {State})");
+            }
+
+            try
+            {
+                var roomListWait = Waiter.Wait<IReadOnlyCollection<Room>>(new WaitKey(MessageCode.Server.RoomList), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new RoomListRequest().ToByteArray(), cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
+
+                var response = await roomListWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new RoomListException($"Failed to fetch the list of chat rooms from the server: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
@@ -594,6 +642,63 @@ namespace Soulseek
             }
 
             return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <remarks>When successful, a corresponding <see cref="RoomJoined"/> event will be raised.</remarks>
+        /// <param name="roomName">The name of the chat room to join.</param>
+        /// <param name="cancellationToken">The token to minotor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to join a chat room (currently: {State})");
+            }
+
+            return JoinRoomInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the chat room to leave.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the server response.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        public Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting of only whitespace", nameof(roomName));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to leave a chat room (currently: {State})");
+            }
+
+            return LeaveRoomInternalAsync(roomName, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -713,6 +818,40 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously sends the specified chat room <paramref name="message"/> to the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The name of the room to which the message is to be sent.</param>
+        /// <param name="message">The message to send.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="roomName"/> or <paramref name="message"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="RoomMessageException">Thrown when an exception is encountered during the operation.</exception>
+        public Task SendRoomMessageAsync(string roomName, string message, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(roomName))
+            {
+                throw new ArgumentException($"The room name must not be a null or empty string, or one consisting only of whitespace", nameof(roomName));
+            }
+
+            if (string.IsNullOrWhiteSpace(message))
+            {
+                throw new ArgumentException($"The message must not be a null or empty string, or one consisting only of whitespace", nameof(message));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to send a private message (currently: {State})");
+            }
+
+            return SendRoomMessageInternalAsync(roomName, message, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously informs the server of the number of shared <paramref name="directories"/> and <paramref name="files"/>.
         /// </summary>
         /// <param name="directories">The number of shared directories.</param>
@@ -794,12 +933,14 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="data"/> is null or of zero length.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="data"/> is null or of zero length.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
-        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/>
-        ///     is already in progress.
+        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/> is
+        ///     already in progress.
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -869,7 +1010,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new AcknowledgePrivateMessage(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new AcknowledgePrivateMessageCommand(privateMessageId).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
@@ -1014,14 +1155,14 @@ namespace Soulseek
                     download.RemoteToken = transferStartRequest.Token;
                     UpdateState(TransferStates.Initializing);
 
-                    // set up a wait for an indirect connection.  this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
+                    // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
                     var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
                         timeout: Options.PeerConnectionOptions.ConnectTimeout,
                         cancellationToken: cancellationToken);
 
-                    // set up a wait for a direct connection.  this wait is completed in PeerConnectionManager.AddTransferConnectionAsync when handling
-                    // the incoming connection within ListenerHandler.
+                    // set up a wait for a direct connection. this wait is completed in
+                    // PeerConnectionManager.AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
                     var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
                         timeout: Options.PeerConnectionOptions.ConnectTimeout,
@@ -1239,7 +1380,7 @@ namespace Soulseek
             try
             {
                 var getStatusWait = Waiter.Wait<UserStatusResponse>(new WaitKey(MessageCode.Server.GetStatus, username), cancellationToken: cancellationToken);
-                await ServerConnection.WriteAsync(new GetStatusRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new UserStatusRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await getStatusWait.ConfigureAwait(false);
 
@@ -1248,6 +1389,37 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task<JoinRoomResponse> JoinRoomInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var response = await joinRoomWait.ConfigureAwait(false);
+                return response;
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new RoomJoinException($"Failed to join chat room {roomName}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task LeaveRoomInternalAsync(string roomName, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var leaveRoomWait = Waiter.Wait(new WaitKey(MessageCode.Server.LeaveRoom, roomName), cancellationToken: cancellationToken);
+                await ServerConnection.WriteAsync(new LeaveRoomRequest(roomName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                await leaveRoomWait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new RoomLeaveException($"Failed to leave chat room {roomName}: {ex.Message}", ex);
             }
         }
 
@@ -1347,11 +1519,23 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new PrivateMessageRequest(username, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new PrivateMessageCommand(username, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new PrivateMessageException($"Failed to send private message to user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task SendRoomMessageInternalAsync(string roomName, string message, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new RoomMessageCommand(roomName, message).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new RoomMessageException($"Failed to send message to room {roomName}: {ex.Message}", ex);
             }
         }
 

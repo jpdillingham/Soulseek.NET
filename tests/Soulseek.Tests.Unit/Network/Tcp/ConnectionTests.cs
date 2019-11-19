@@ -420,7 +420,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     }
 
                     Assert.True(disconnectRaisedByWatchdog);
-                    Assert.Equal(ConnectionState.Disconnected, c.State);
 
                     t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
                 }

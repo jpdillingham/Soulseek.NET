@@ -1,8 +1,8 @@
 ﻿// <copyright file="Transfer.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -49,19 +49,9 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the transfer direction.
-        /// </summary>
-        public TransferDirection Direction { get; }
-
-        /// <summary>
         ///     Gets the current average download speed.
         /// </summary>
         public double AverageSpeed { get; private set; }
-
-        /// <summary>
-        ///     Gets the total number of bytes transferred.
-        /// </summary>
-        public long BytesTransferred { get; private set; }
 
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
@@ -69,9 +59,19 @@ namespace Soulseek
         public long BytesRemaining => Size - BytesTransferred;
 
         /// <summary>
+        ///     Gets the total number of bytes transferred.
+        /// </summary>
+        public long BytesTransferred { get; private set; }
+
+        /// <summary>
         ///     Gets the data transferred.
         /// </summary>
         public byte[] Data { get; internal set; }
+
+        /// <summary>
+        ///     Gets the transfer direction.
+        /// </summary>
+        public TransferDirection Direction { get; }
 
         /// <summary>
         ///     Gets the current duration of the transfer, if it has been started.
@@ -165,15 +165,15 @@ namespace Soulseek
         public string Username { get; }
 
         /// <summary>
+        ///     Gets the wait key for the transfer.
+        /// </summary>
+        internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
+
+        /// <summary>
         ///     Gets or sets the connection used for the transfer.
         /// </summary>
         /// <remarks>Ensure that the reference instance is disposed when the transfer is complete.</remarks>
         internal IConnection Connection { get; set; }
-
-        /// <summary>
-        ///     Gets the wait key for the transfer.
-        /// </summary>
-        internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
 
         /// <summary>
         ///     Updates the transfer progress.

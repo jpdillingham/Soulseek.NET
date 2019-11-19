@@ -1,8 +1,8 @@
 ﻿// <copyright file="Waiter.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -57,8 +57,8 @@ namespace Soulseek
         public int DefaultTimeout { get; private set; }
 
         private bool Disposed { get; set; }
-        private SystemTimer MonitorTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ReaderWriterLockSlim> Locks { get; set; } = new ConcurrentDictionary<WaitKey, ReaderWriterLockSlim>();
+        private SystemTimer MonitorTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; set; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
 
         /// <summary>
@@ -214,15 +214,13 @@ namespace Soulseek
             }
         }
 
-        /// <remarks>
-        ///     Not thread safe; ensure this is invoked only by the timer within this class.
-        /// </remarks>
+        /// <remarks>Not thread safe; ensure this is invoked only by the timer within this class.</remarks>
         private void MonitorWaits(object sender, object e)
         {
             foreach (var record in Waits)
             {
-                // a lock should always be available or added prior to a wait; if not we'll take the null ref exception
-                // that would follow. it should be impossible to hit this so a catastrophic failure is appropriate.
+                // a lock should always be available or added prior to a wait; if not we'll take the null ref exception that would
+                // follow. it should be impossible to hit this so a catastrophic failure is appropriate.
                 Locks.TryGetValue(record.Key, out var recordLock);
 
                 // enter a read lock first; TryPeek and TryDequeue are atomic so there's no risky operation until later.
@@ -247,14 +245,14 @@ namespace Soulseek
 
                     if (record.Value.IsEmpty)
                     {
-                        // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits
-                        // before we can delete the dictionary record
+                        // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits before
+                        // we can delete the dictionary record
                         recordLock.EnterWriteLock();
 
                         try
                         {
                             // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
-                            // entered the write lock.  this is guarateed to be safe since we now have exclusive access to the record
+                            // entered the write lock. this is guarateed to be safe since we now have exclusive access to the record
                             if (record.Value.IsEmpty)
                             {
                                 Waits.TryRemove(record.Key, out _);

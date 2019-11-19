@@ -1,8 +1,8 @@
 ﻿// <copyright file="INetworkStream.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -79,7 +79,9 @@ namespace Soulseek.Network.Tcp
         ///     <paramref name="buffer"/> minus the value of the <paramref name="offset"/> parameter.
         /// </exception>
         /// <exception cref="IOException">Thrown when an error occurs while writing to the network.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.</exception>
+        /// <exception cref="ObjectDisposedException">
+        ///     Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.
+        /// </exception>
         Task WriteAsync(byte[] buffer, int offset, int size);
 
         /// <summary>
@@ -97,7 +99,9 @@ namespace Soulseek.Network.Tcp
         ///     <paramref name="buffer"/> minus the value of the <paramref name="offset"/> parameter.
         /// </exception>
         /// <exception cref="IOException">Thrown when an error occurs while writing to the network.</exception>
-        /// <exception cref="ObjectDisposedException">Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.</exception>
+        /// <exception cref="ObjectDisposedException">
+        ///     Thrown when the <see cref="NetworkStream"/> is closed or when there was a failure reading from the network.
+        /// </exception>
         Task WriteAsync(byte[] buffer, int offset, int size, CancellationToken cancellationToken);
     }
 }

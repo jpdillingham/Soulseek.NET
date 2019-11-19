@@ -1,8 +1,8 @@
 ﻿// <copyright file="PrivateMessage.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
-//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
+//     as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 //
 //     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
 //     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="id">The unique id of the message.</param>
         /// <param name="timestamp">The timestamp at which the message was sent.</param>
-        /// <param name="username">The username of the peer which sent the message.</param>
+        /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
         /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
         internal PrivateMessage(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
@@ -58,7 +58,7 @@ namespace Soulseek.Messaging.Messages
         public DateTime Timestamp { get; }
 
         /// <summary>
-        ///     Gets the username of the peer which sent the message.
+        ///     Gets the username of the user which sent the message.
         /// </summary>
         public string Username { get; }
 
@@ -74,7 +74,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.PrivateMessage)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Response (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessage)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code}.");
             }
 
             var id = reader.ReadInteger();
