@@ -25,7 +25,7 @@ namespace Soulseek
     /// <summary>
     ///     A single file search.
     /// </summary>
-    public sealed class Search : IDisposable
+    internal sealed class Search : IDisposable
     {
         private int resultCount = 0;
         private int resultFileCount = 0;
@@ -36,7 +36,7 @@ namespace Soulseek
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        internal Search(string searchText, int token, SearchOptions options = null)
+        public Search(string searchText, int token, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
@@ -70,9 +70,9 @@ namespace Soulseek
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets the state of the search.
+        ///     Gets or sets the state of the search.
         /// </summary>
-        public SearchStates State { get; internal set; } = SearchStates.None;
+        public SearchStates State { get; set; } = SearchStates.None;
 
         /// <summary>
         ///     Gets the unique identifier for the search.
@@ -82,7 +82,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the Action to invoke when a new search response is received.
         /// </summary>
-        internal Action<SearchResponse> ResponseReceived { get; set; }
+        public Action<SearchResponse> ResponseReceived { get; set; }
 
         private bool Disposed { get; set; } = false;
         private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
@@ -102,7 +102,7 @@ namespace Soulseek
         ///     in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void AddResponse(SearchResponseSlim slimResponse)
+        public void AddResponse(SearchResponseSlim slimResponse)
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
@@ -143,7 +143,7 @@ namespace Soulseek
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
-        internal void Complete(SearchStates state)
+        public void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
@@ -155,7 +155,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        public async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
