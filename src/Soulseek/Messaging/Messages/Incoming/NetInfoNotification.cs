@@ -1,4 +1,4 @@
-﻿// <copyright file="NetInfo.cs" company="JP Dillingham">
+﻿// <copyright file="NetInfoNotification.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -20,14 +20,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming list of available distributed parent candidates.
     /// </summary>
-    internal sealed class NetInfo
+    internal sealed class NetInfoNotification
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="NetInfo"/> class.
+        ///     Initializes a new instance of the <see cref="NetInfoNotification"/> class.
         /// </summary>
         /// <param name="parentCount">The number of parent candidates.</param>
         /// <param name="parents">The list of parent candidates.</param>
-        public NetInfo(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
+        public NetInfoNotification(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
         {
             ParentCount = parentCount;
             Parents = parents;
@@ -44,11 +44,11 @@ namespace Soulseek.Messaging.Messages
         public IEnumerable<(string Username, IPAddress IPAddress, int Port)> Parents { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="NetInfo"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="NetInfoNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static NetInfo FromByteArray(byte[] bytes)
+        public static NetInfoNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -74,7 +74,7 @@ namespace Soulseek.Messaging.Messages
                 parents.Add((username, ipAddress, port));
             }
 
-            return new NetInfo(parentCount, parents);
+            return new NetInfoNotification(parentCount, parents);
         }
     }
 }

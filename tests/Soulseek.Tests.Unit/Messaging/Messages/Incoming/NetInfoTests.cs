@@ -27,9 +27,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(List<(string Username, IPAddress IPAddress, int Port)> parents)
         {
-            NetInfo response = null;
+            NetInfoNotification response = null;
 
-            var ex = Record.Exception(() => response = new NetInfo(parents.Count, parents));
+            var ex = Record.Exception(() => response = new NetInfoNotification(parents.Count, parents));
 
             Assert.Null(ex);
 
@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => NetInfo.FromByteArray(msg));
+            var ex = Record.Exception(() => NetInfoNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -59,7 +59,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.NetInfo)
                 .Build();
 
-            var ex = Record.Exception(() => NetInfo.FromByteArray(msg));
+            var ex = Record.Exception(() => NetInfoNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                     .WriteInteger(parent.Port);
             }
 
-            var response = NetInfo.FromByteArray(builder.Build());
+            var response = NetInfoNotification.FromByteArray(builder.Build());
 
             Assert.Equal(parents.Count, response.ParentCount);
             Assert.Equal(parents, response.Parents);

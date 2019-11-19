@@ -107,7 +107,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.NetInfo:
-                        var netInfo = NetInfo.FromByteArray(message);
+                        var netInfo = NetInfoNotification.FromByteArray(message);
 
                         try
                         {
