@@ -39,7 +39,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        event EventHandler<RoomMessage> RoomMessageReceived;
+        event EventHandler<RoomMessageNotification> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.

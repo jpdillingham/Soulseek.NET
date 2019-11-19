@@ -180,7 +180,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessage> RoomMessageReceived;
+        public event EventHandler<RoomMessageNotification> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.

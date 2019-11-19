@@ -44,7 +44,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        event EventHandler<RoomMessage> RoomMessageReceived;
+        event EventHandler<RoomMessageNotification> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search response is received.

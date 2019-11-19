@@ -63,7 +63,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessage> RoomMessageReceived;
+        public event EventHandler<RoomMessageNotification> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -204,7 +204,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.SayInChatRoom:
-                        var roomMessage = RoomMessage.FromByteArray(message);
+                        var roomMessage = RoomMessageNotification.FromByteArray(message);
                         RoomMessageReceived?.Invoke(this, roomMessage);
                         break;
 

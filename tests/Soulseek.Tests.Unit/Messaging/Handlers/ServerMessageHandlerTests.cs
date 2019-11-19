@@ -703,7 +703,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomMessage actual = default;
+            RoomMessageNotification actual = default;
             handler.RoomMessageReceived += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 

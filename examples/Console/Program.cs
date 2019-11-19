@@ -236,7 +236,7 @@
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} joined room.");
         }
 
-        private static void Client_RoomMessageReceived(object sender, RoomMessage e)
+        private static void Client_RoomMessageReceived(object sender, RoomMessageNotification e)
         {
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] [{e.Username}]: {e.Message}");
         }

@@ -17,15 +17,15 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming chat room message.
     /// </summary>
-    public sealed class RoomMessage
+    public sealed class RoomMessageNotification
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="RoomMessage"/> class.
+        ///     Initializes a new instance of the <see cref="RoomMessageNotification"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room in which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        internal RoomMessage(string roomName, string username, string message)
+        internal RoomMessageNotification(string roomName, string username, string message)
         {
             RoomName = roomName;
             Username = username;
@@ -52,21 +52,21 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static RoomMessage FromByteArray(byte[] bytes)
+        internal static RoomMessageNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Server.SayInChatRoom)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(RoomMessage)} (expected: {(int)MessageCode.Server.SayInChatRoom}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(RoomMessageNotification)} (expected: {(int)MessageCode.Server.SayInChatRoom}, received: {(int)code}.");
             }
 
             var roomName = reader.ReadString();
             var username = reader.ReadString();
             var msg = reader.ReadString();
 
-            return new RoomMessage(roomName, username, msg);
+            return new RoomMessageNotification(roomName, username, msg);
         }
     }
 }
