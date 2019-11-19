@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Generic event arguments for message events.
@@ -31,14 +32,14 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the username of the user which sent the message.
-        /// </summary>
-        public string Username { get; }
-
-        /// <summary>
         ///     Gets the message content.
         /// </summary>
         public string Message { get; }
+
+        /// <summary>
+        ///     Gets the username of the user which sent the message.
+        /// </summary>
+        public string Username { get; }
     }
 
     /// <summary>
@@ -60,6 +61,15 @@ namespace Soulseek
             Id = id;
             Timestamp = timestamp;
             IsAdmin = isAdmin;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageEventArgs"/> class.
+        /// </summary>
+        /// <param name="notification">The notification which raised the event.</param>
+        internal PrivateMessageEventArgs(PrivateMessageNotification notification)
+            : this(notification.Id, notification.Timestamp, notification.Username, notification.Message, notification.IsAdmin)
+        {
         }
 
         /// <summary>
@@ -93,6 +103,15 @@ namespace Soulseek
             : base(username, message)
         {
             RoomName = roomName;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageEventArgs"/> class.
+        /// </summary>
+        /// <param name="notification">The notification which raised the event.</param>
+        internal RoomMessageEventArgs(RoomMessageNotification notification)
+            : this(notification.RoomName, notification.Username, notification.Message)
+        {
         }
 
         /// <summary>

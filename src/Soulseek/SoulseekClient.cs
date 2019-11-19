@@ -165,7 +165,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        public event EventHandler<PrivateMessageNotification> PrivateMessageReceived;
+        public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
@@ -180,7 +180,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessageNotification> RoomMessageReceived;
+        public event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.

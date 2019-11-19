@@ -48,7 +48,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        public event EventHandler<PrivateMessageNotification> PrivateMessageReceived;
+        public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
@@ -63,7 +63,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessageNotification> RoomMessageReceived;
+        public event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -179,7 +179,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.PrivateMessage:
                         var pm = PrivateMessageNotification.FromByteArray(message);
-                        PrivateMessageReceived?.Invoke(this, pm);
+                        PrivateMessageReceived?.Invoke(this, new PrivateMessageEventArgs(pm));
 
                         if (SoulseekClient.Options.AutoAcknowledgePrivateMessages)
                         {
@@ -205,7 +205,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.SayInChatRoom:
                         var roomMessage = RoomMessageNotification.FromByteArray(message);
-                        RoomMessageReceived?.Invoke(this, roomMessage);
+                        RoomMessageReceived?.Invoke(this, new RoomMessageEventArgs(roomMessage));
                         break;
 
                     case MessageCode.Server.UserJoinedRoom:
