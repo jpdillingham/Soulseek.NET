@@ -27,21 +27,26 @@ namespace Soulseek
     /// </summary>
     public class UserStatusChangedEventArgs : UserEventArgs
     {
+        public UserStatusChangedEventArgs(string username, UserStatus status, bool isPrivileged = false)
+        {
+            Username = username;
+            Status = status;
+            IsPrivileged = isPrivileged;
+        }
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserStatusChangedEventArgs"/> class.
         /// </summary>
         /// <param name="userStatusResponse">The status response which generated the event.</param>
-        public UserStatusChangedEventArgs(UserStatusResponse userStatusResponse)
+        internal UserStatusChangedEventArgs(UserStatusResponse userStatusResponse)
+            : this(userStatusResponse.Username, userStatusResponse.Status, userStatusResponse.IsPrivileged)
         {
-            Username = userStatusResponse.Username;
-            Status = userStatusResponse.Status;
-            Privileged = userStatusResponse.Privileged;
         }
 
         /// <summary>
         ///     Gets a value indicating whether the peer is privileged.
         /// </summary>
-        public bool Privileged { get; }
+        public bool IsPrivileged { get; }
 
         /// <summary>
         ///     Gets the status of the peer.

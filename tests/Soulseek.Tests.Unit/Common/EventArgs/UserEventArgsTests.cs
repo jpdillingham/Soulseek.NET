@@ -26,7 +26,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(username, e.Username);
             Assert.Equal(status, e.Status);
-            Assert.Equal(privileged, e.Privileged);
+            Assert.Equal(privileged, e.IsPrivileged);
         }
     }
 }

@@ -32,7 +32,7 @@ namespace Soulseek
         /// <param name="previousState">The previous state of the client.</param>
         /// <param name="state">The current state of the client.</param>
         /// <param name="message">The message associated with the change in state, if applicable.</param>
-        internal SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null)
+        public SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null)
         {
             PreviousState = previousState;
             State = state;

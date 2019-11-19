@@ -24,18 +24,18 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="username">The username of the peer.</param>
         /// <param name="status">The status of the peer.</param>
-        /// <param name="privileged">A value indicating whether the peer is privileged.</param>
-        internal UserStatusResponse(string username, UserStatus status, bool privileged)
+        /// <param name="isPrivileged">A value indicating whether the peer is privileged.</param>
+        internal UserStatusResponse(string username, UserStatus status, bool isPrivileged)
         {
             Username = username;
             Status = status;
-            Privileged = privileged;
+            IsPrivileged = isPrivileged;
         }
 
         /// <summary>
         ///     Gets a value indicating whether the peer is privileged.
         /// </summary>
-        public bool Privileged { get; }
+        public bool IsPrivileged { get; }
 
         /// <summary>
         ///     Gets the status of the peer.
