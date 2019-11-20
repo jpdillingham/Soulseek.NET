@@ -48,7 +48,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Soulseek.Compression
+namespace Soulseek.Messaging.Compression
 {
     [ExcludeFromCodeCoverage]
     internal class ZOutputStream:System.IO.Stream

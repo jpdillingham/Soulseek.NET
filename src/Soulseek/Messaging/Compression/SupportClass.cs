@@ -3,7 +3,7 @@
 
 using System.Diagnostics.CodeAnalysis;
 
-namespace Soulseek.Compression
+namespace Soulseek.Messaging.Compression
 {
     [ExcludeFromCodeCoverage]
     internal class SupportClass

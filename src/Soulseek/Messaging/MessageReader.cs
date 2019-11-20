@@ -16,7 +16,7 @@ namespace Soulseek.Messaging
     using System.Globalization;
     using System.IO;
     using System.Text;
-    using Soulseek.Compression;
+    using Soulseek.Messaging.Compression;
     using Soulseek.Exceptions;
 
     /// <summary>

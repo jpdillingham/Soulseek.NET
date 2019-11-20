@@ -13,7 +13,7 @@
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using AutoFixture.Xunit2;
-    using Soulseek.Compression;
+    using Soulseek.Messaging.Compression;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
