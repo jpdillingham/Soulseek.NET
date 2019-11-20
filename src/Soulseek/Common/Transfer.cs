@@ -20,13 +20,14 @@ namespace Soulseek
     /// <summary>
     ///     A single file transfer.
     /// </summary>
-    internal sealed class Transfer
+    public class Transfer
     {
         private readonly int progressUpdateLimit = 100;
         private readonly double speedAlpha = 2f / 10;
         private double lastProgressBytes = 0;
         private DateTime? lastProgressTime = null;
         private bool speedInitialized = false;
+
         private TransferStates state = TransferStates.None;
 
         /// <summary>
@@ -63,9 +64,9 @@ namespace Soulseek
         public long BytesTransferred { get; private set; }
 
         /// <summary>
-        ///     Gets or sets the data transferred.
+        ///     Gets the data transferred.
         /// </summary>
-        public byte[] Data { get; set; }
+        public byte[] Data { get; internal set; }
 
         /// <summary>
         ///     Gets the transfer direction.
@@ -113,14 +114,14 @@ namespace Soulseek
         public TimeSpan? RemainingTime => AverageSpeed == 0 ? default : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
 
         /// <summary>
-        ///     Gets or sets the remote unique token for the transfer.
+        ///     Gets the remote unique token for the transfer.
         /// </summary>
-        public int? RemoteToken { get; set; }
+        public int? RemoteToken { get; internal set; }
 
         /// <summary>
-        ///     Gets or sets the size of the file to be transferred, in bytes.
+        ///     Gets the size of the file to be transferred, in bytes.
         /// </summary>
-        public long Size { get; set; }
+        public long Size { get; internal set; }
 
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
@@ -128,7 +129,7 @@ namespace Soulseek
         public DateTime? StartTime { get; private set; }
 
         /// <summary>
-        ///     Gets or sets the state of the transfer.
+        ///     Gets the state of the transfer.
         /// </summary>
         public TransferStates State
         {
@@ -137,7 +138,7 @@ namespace Soulseek
                 return state;
             }
 
-            set
+            internal set
             {
                 if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
                 {
@@ -166,19 +167,19 @@ namespace Soulseek
         /// <summary>
         ///     Gets the wait key for the transfer.
         /// </summary>
-        public WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
+        internal WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
 
         /// <summary>
         ///     Gets or sets the connection used for the transfer.
         /// </summary>
         /// <remarks>Ensure that the reference instance is disposed when the transfer is complete.</remarks>
-        public IConnection Connection { get; set; }
+        internal IConnection Connection { get; set; }
 
         /// <summary>
         ///     Updates the transfer progress.
         /// </summary>
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
-        public void UpdateProgress(int bytesTransferred)
+        internal void UpdateProgress(int bytesTransferred)
         {
             BytesTransferred = bytesTransferred;
 

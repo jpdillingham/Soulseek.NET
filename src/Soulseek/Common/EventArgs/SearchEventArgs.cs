@@ -26,27 +26,14 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
         /// </summary>
-        /// <param name="searchText">The text for which the search is being conducted.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="state">The current state of the search.</param>
-        /// <param name="responses">The current list of search responses.</param>
-        /// <param name="options">The search options.</param>
-        public SearchEventArgs(string searchText, int token, SearchStates state, IReadOnlyCollection<SearchResponse> responses, SearchOptions options)
-        {
-            SearchText = searchText;
-            Token = token;
-            State = state;
-            Responses = responses.ToList();
-            Options = options;
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
-        /// </summary>
         /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchEventArgs(Search search)
-            : this(search.SearchText, search.Token, search.State, search.Responses, search.Options)
         {
+            Options = search.Options;
+            Responses = search.Responses.ToList();
+            SearchText = search.SearchText;
+            State = search.State;
+            Token = search.Token;
         }
 
         /// <summary>
@@ -83,21 +70,6 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
         /// </summary>
-        /// <param name="response">The received response.</param>
-        /// <param name="searchText">The text for which the search is being conducted.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="state">The current state of the search.</param>
-        /// <param name="responses">The current list of search responses.</param>
-        /// <param name="options">The search options.</param>
-        public SearchResponseReceivedEventArgs(SearchResponse response, string searchText, int token, SearchStates state, IReadOnlyCollection<SearchResponse> responses, SearchOptions options)
-            : base(searchText, token, state, responses, options)
-        {
-            Response = response;
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponseReceivedEventArgs"/> class.
-        /// </summary>
         /// <param name="response">The search response which raised the event.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
@@ -120,22 +92,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.
         /// </summary>
-        /// <param name="previousState">The previous state of the search.</param>
-        /// <param name="searchText">The text for which the search is being conducted.</param>
-        /// <param name="token">The unique search token.</param>
-        /// <param name="state">The current state of the search.</param>
-        /// <param name="responses">The current list of search responses.</param>
-        /// <param name="options">The search options.</param>
-        public SearchStateChangedEventArgs(SearchStates previousState, string searchText, int token, SearchStates state, IReadOnlyCollection<SearchResponse> responses, SearchOptions options)
-            : base(searchText, token, state, responses, options)
-        {
-            PreviousState = previousState;
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchStateChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousState">The previous state of the search.</param>
+        /// <param name="previousState">The previous state of the client.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
         internal SearchStateChangedEventArgs(SearchStates previousState, Search search)
             : base(search)
