@@ -12,31 +12,96 @@
 
 namespace Soulseek
 {
+    /// <summary>
+    ///     Application constants.
+    /// </summary>
     internal static class Constants
     {
+        /// <summary>
+        ///     Connection methods.
+        /// </summary>
         internal static class ConnectionMethod
         {
+            /// <summary>
+            ///     Direct.
+            /// </summary>
             public const string Direct = "Direct";
+
+            /// <summary>
+            ///     Indirect.
+            /// </summary>
             public const string Indirect = "Indirect";
         }
 
+        /// <summary>
+        ///     Connection types.
+        /// </summary>
         internal static class ConnectionType
         {
+            /// <summary>
+            ///     Distributed (D).
+            /// </summary>
             public const string Distributed = "D";
+
+            /// <summary>
+            ///     Peer (P).
+            /// </summary>
             public const string Peer = "P";
+
+            /// <summary>
+            ///     Transfer (F).
+            /// </summary>
             public const string Transfer = "F";
         }
 
+        /// <summary>
+        ///     Wait keys.
+        /// </summary>
         internal static class WaitKey
         {
+            /// <summary>
+            ///     BranchLevelMessage.
+            /// </summary>
             public const string BranchLevelMessage = "BranchLevelMessage";
+
+            /// <summary>
+            ///     BranchRootMessage.
+            /// </summary>
             public const string BranchRootMessage = "BranchRootMessage";
+
+            /// <summary>
+            ///     ChildDepthMessage.
+            /// </summary>
             public const string ChildDepthMessage = "ChildDepthMessage";
+
+            /// <summary>
+            ///     DirectTransfer.
+            /// </summary>
             public const string DirectTransfer = "DirectTransfer";
+
+            /// <summary>
+            ///     IndirectTransfer.
+            /// </summary>
             public const string IndirectTransfer = "IndirectTransfer";
+
+            /// <summary>
+            ///     SearchRequestMessage.
+            /// </summary>
             public const string SearchRequestMessage = "SearchRequestMessage";
+
+            /// <summary>
+            ///     SolicitedDistributedConnection.
+            /// </summary>
             public const string SolicitedDistributedConnection = "SolicitedDistributedConnection";
+
+            /// <summary>
+            ///     SolicitedPeerConnection.
+            /// </summary>
             public const string SolicitedPeerConnection = "SolicitedPeerConnection";
+
+            /// <summary>
+            ///     Transfer.
+            /// </summary>
             public const string Transfer = "Transfer";
         }
     }
