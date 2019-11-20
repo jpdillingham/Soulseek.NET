@@ -18,7 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for user events.
     /// </summary>
-    public class UserEventArgs : EventArgs
+    public abstract class UserEventArgs : EventArgs
     {
     }
 
@@ -27,6 +27,12 @@ namespace Soulseek
     /// </summary>
     public class UserStatusChangedEventArgs : UserEventArgs
     {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserStatusChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="username">The username of the user.</param>
+        /// <param name="status">The status of the user.</param>
+        /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
         public UserStatusChangedEventArgs(string username, UserStatus status, bool isPrivileged = false)
         {
             Username = username;
@@ -44,17 +50,17 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets a value indicating whether the peer is privileged.
+        ///     Gets a value indicating whether the user is privileged.
         /// </summary>
         public bool IsPrivileged { get; }
 
         /// <summary>
-        ///     Gets the status of the peer.
+        ///     Gets the status of the user.
         /// </summary>
         public UserStatus Status { get; }
 
         /// <summary>
-        ///     Gets the username of the peer.
+        ///     Gets the username of the user.
         /// </summary>
         public string Username { get; }
     }

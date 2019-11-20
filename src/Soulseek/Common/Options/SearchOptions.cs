@@ -18,7 +18,7 @@ namespace Soulseek.Options
     /// <summary>
     ///     Options for the search operation.
     /// </summary>
-    public sealed class SearchOptions
+    public class SearchOptions
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchOptions"/> class.

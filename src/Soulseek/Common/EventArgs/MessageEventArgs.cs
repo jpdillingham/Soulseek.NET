@@ -18,14 +18,14 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for message events.
     /// </summary>
-    public class MessageEventArgs : EventArgs
+    public abstract class MessageEventArgs : EventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageEventArgs"/> class.
         /// </summary>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        public MessageEventArgs(string username, string message)
+        protected MessageEventArgs(string username, string message)
         {
             Username = username;
             Message = message;

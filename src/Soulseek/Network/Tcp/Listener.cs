@@ -29,7 +29,7 @@ namespace Soulseek.Network.Tcp
     ///     endpoint, both of which will and SHOULD throw exceptions and die.
     /// </remarks>
     [ExcludeFromCodeCoverage]
-    internal class Listener : IListener
+    internal sealed class Listener : IListener
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Listener"/> class.

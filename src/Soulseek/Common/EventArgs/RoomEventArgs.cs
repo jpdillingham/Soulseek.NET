@@ -18,14 +18,14 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for chat room events.
     /// </summary>
-    public class RoomEventArgs : EventArgs
+    public abstract class RoomEventArgs : EventArgs
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomEventArgs"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room in which the event took place.</param>
         /// <param name="username">The username of the user associated with the event.</param>
-        public RoomEventArgs(string roomName, string username)
+        protected RoomEventArgs(string roomName, string username)
         {
             RoomName = roomName;
             Username = username;

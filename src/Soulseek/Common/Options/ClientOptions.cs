@@ -22,7 +22,7 @@ namespace Soulseek.Options
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>
-    public sealed class ClientOptions
+    public class ClientOptions
     {
         private readonly Func<string, IPAddress, int, Task<BrowseResponse>> defaultBrowseResponse =
             (u, i, p) => Task.FromResult(new BrowseResponse(0, new List<Directory>()));

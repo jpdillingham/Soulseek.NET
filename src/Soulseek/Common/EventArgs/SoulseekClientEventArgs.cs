@@ -17,7 +17,7 @@ namespace Soulseek
     /// <summary>
     ///     Generic event arguments for client events.
     /// </summary>
-    public class SoulseekClientEventArgs : EventArgs
+    public abstract class SoulseekClientEventArgs : EventArgs
     {
     }
 

@@ -18,7 +18,7 @@ namespace Soulseek.Network.Tcp
     /// <summary>
     ///     Uniquely identifies a <see cref="Connection"/> instance.
     /// </summary>
-    internal class ConnectionKey : IEquatable<ConnectionKey>
+    internal sealed class ConnectionKey : IEquatable<ConnectionKey>
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.

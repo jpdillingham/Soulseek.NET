@@ -17,7 +17,7 @@ namespace Soulseek.Options
     /// <summary>
     ///     Options for transfer operations.
     /// </summary>
-    public sealed class TransferOptions
+    public class TransferOptions
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.

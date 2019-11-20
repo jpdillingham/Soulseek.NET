@@ -19,7 +19,7 @@ namespace Soulseek.Network
     /// <summary>
     ///     Creates connections.
     /// </summary>
-    internal class ConnectionFactory : IConnectionFactory
+    internal sealed class ConnectionFactory : IConnectionFactory
     {
         /// <summary>
         ///     Gets a <see cref="IConnection"/> with the specified parameters.
