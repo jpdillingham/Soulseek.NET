@@ -68,7 +68,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.ServerSearchRequest:
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
-                        SearchResponseResponse searchResponse;
+                        SearchResponse searchResponse;
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
@@ -80,7 +80,7 @@ namespace Soulseek.Messaging.Handlers
 
                         try
                         {
-                            searchResponse = (SearchResponseResponse)await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {

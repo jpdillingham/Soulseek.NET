@@ -81,7 +81,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the Action to invoke when a new search response is received.
         /// </summary>
-        internal Action<SearchResponseResponse> ResponseReceived { get; set; }
+        internal Action<SearchResponse> ResponseReceived { get; set; }
 
         private bool Disposed { get; set; } = false;
         private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
@@ -102,17 +102,17 @@ namespace Soulseek
         ///     in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void AddResponse(SearchResponseResponseSlim slimResponse)
+        internal void AddResponse(SearchResponseSlim slimResponse)
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
                 // extract the file list from the response and filter it
-                var fullResponse = new SearchResponseResponse(slimResponse);
+                var fullResponse = SearchResponse.FromSlimResponse(slimResponse);
                 var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
-                fullResponse = new SearchResponseResponse(fullResponse, filteredFiles);
+                fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
 
                 // ensure the filtered file count still meets the response criteria
                 if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
@@ -190,7 +190,7 @@ namespace Soulseek
             }
         }
 
-        private bool SlimResponseMeetsOptionCriteria(SearchResponseResponseSlim response)
+        private bool SlimResponseMeetsOptionCriteria(SearchResponseSlim response)
         {
             if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||

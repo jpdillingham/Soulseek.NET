@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit
 
             using (var search = new Search(searchText, token, new SearchOptions()))
             {
-                var response = new SearchResponseResponse("foo", 1, 1, 1, 1, 1);
+                var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
 
                 var e = new SearchResponseReceivedEventArgs(response, search);
 
