@@ -90,10 +90,10 @@
                         var files = System.IO.Directory.GetFiles(SharedDirectory)
                             .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0));
 
-                        return Task.FromResult(new SearchResponse(Username, t, files.Count(), 0, 0, 0, files));
+                        return Task.FromResult(new SearchResponseResponse(Username, t, files.Count(), 0, 0, 0, files));
                     }
 
-                    return Task.FromResult<SearchResponse>(null);
+                    return Task.FromResult<SearchResponseResponse>(null);
                 });
 
             Client = new SoulseekClient(options: options);

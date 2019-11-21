@@ -61,7 +61,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the collection of responses received from peers.
         /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses => ResponseBag.ToList().AsReadOnly();
+        public IReadOnlyCollection<SearchResponseResponse> Responses => ResponseBag.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the text for which to search.
@@ -81,10 +81,10 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the Action to invoke when a new search response is received.
         /// </summary>
-        internal Action<SearchResponse> ResponseReceived { get; set; }
+        internal Action<SearchResponseResponse> ResponseReceived { get; set; }
 
         private bool Disposed { get; set; } = false;
-        private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
+        private ConcurrentBag<SearchResponseResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponseResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
@@ -109,10 +109,10 @@ namespace Soulseek
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
                 // extract the file list from the response and filter it
-                var fullResponse = new SearchResponse(slimResponse);
+                var fullResponse = new SearchResponseResponse(slimResponse);
                 var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
-                fullResponse = new SearchResponse(fullResponse, filteredFiles);
+                fullResponse = new SearchResponseResponse(fullResponse, filteredFiles);
 
                 // ensure the filtered file count still meets the response criteria
                 if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
@@ -155,7 +155,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        internal async Task<IEnumerable<SearchResponseResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 

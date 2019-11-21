@@ -51,7 +51,7 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <param name="searchResponseResolver">
-        ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
+        ///     The delegate used to resolve the <see cref="SearchResponseResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
@@ -82,7 +82,7 @@ namespace Soulseek
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
-            Func<string, int, string, Task<SearchResponse>> searchResponseResolver = null,
+            Func<string, int, string, Task<SearchResponseResponse>> searchResponseResolver = null,
             Func<string, IPAddress, int, Task<BrowseResponse>> browseResponseResolver = null,
             Func<string, IPAddress, int, Task<UserInfoResponse>> userInfoResponseResolver = null,
             Func<string, IPAddress, int, string, Task> queueDownloadAction = null,
@@ -188,9 +188,9 @@ namespace Soulseek
         public Func<string, IPAddress, int, string, Task> QueueDownloadAction { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
+        ///     Gets the delegate used to resolve the <see cref="SearchResponseResponse"/> for an incoming request. (Default = do not respond).
         /// </summary>
-        public Func<string, int, string, Task<SearchResponse>> SearchResponseResolver { get; }
+        public Func<string, int, string, Task<SearchResponseResponse>> SearchResponseResolver { get; }
 
         /// <summary>
         ///     Gets the options for the server message connection.

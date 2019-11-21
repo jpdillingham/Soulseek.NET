@@ -68,7 +68,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.ServerSearchRequest:
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
-                        SearchResponse searchResponse;
+                        SearchResponseResponse searchResponse;
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();

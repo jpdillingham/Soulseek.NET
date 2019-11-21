@@ -199,7 +199,7 @@
                     var artist = await SelectArtist(Artist);
                     var releaseGroup = await SelectReleaseGroup(artist, Album);
                     var release = await SelectRelease(releaseGroup);
-                    IEnumerable<SearchResponse> responses = null;
+                    IEnumerable<SearchResponseResponse> responses = null;
 
                     await ConnectAndLogin(client);
 
@@ -361,7 +361,7 @@
             }
         }
 
-        private static async Task<IEnumerable<SearchResponse>> SearchAsync(SoulseekClient client, string searchText, int minimumFileCount = 0)
+        private static async Task<IEnumerable<SearchResponseResponse>> SearchAsync(SoulseekClient client, string searchText, int minimumFileCount = 0)
         {
             var complete = false;
             var spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => complete));
@@ -369,7 +369,7 @@
             var totalFiles = 0;
             var state = SearchStates.None;
 
-            IEnumerable<SearchResponse> responses = Enumerable.Empty<SearchResponse>();
+            IEnumerable<SearchResponseResponse> responses = Enumerable.Empty<SearchResponseResponse>();
 
             using (var timer = new Timer(100))
             {
@@ -541,7 +541,7 @@
             } while (true);
         }
 
-        private static (string Username, IEnumerable<Soulseek.File> Files) SelectSearchResponse(IEnumerable<SearchResponse> responses)
+        private static (string Username, IEnumerable<Soulseek.File> Files) SelectSearchResponse(IEnumerable<SearchResponseResponse> responses)
         {
             var index = 0;
 

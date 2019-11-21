@@ -383,7 +383,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "AddResponse invokes response received event"), AutoData]
         public void AddResponse_Invokes_Response_Received_Event_Handler(string username, int token, byte code, string filename, int size, string extension)
         {
-            SearchResponse addResponse = null;
+            SearchResponseResponse addResponse = null;
 
             var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {

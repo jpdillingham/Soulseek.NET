@@ -323,7 +323,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
         public void Responds_To_SearchRequest(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var response = new SearchResponseResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
@@ -351,7 +351,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
         {
-            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponseResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
@@ -378,7 +378,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if result contains no files"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
         {
-            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var response = new SearchResponseResponse("foo", token, 0, 1, 1, 1, new List<File>());
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 

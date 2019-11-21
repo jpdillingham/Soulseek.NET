@@ -43,7 +43,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the collection of responses received from peers.
         /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses { get; }
+        public IReadOnlyCollection<SearchResponseResponse> Responses { get; }
 
         /// <summary>
         ///     Gets the text for which to search.
@@ -71,7 +71,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="response">The search response which raised the event.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
+        internal SearchResponseReceivedEventArgs(SearchResponseResponse response, Search search)
             : base(search)
         {
             Response = response;
@@ -80,7 +80,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the search response which raised the event.
         /// </summary>
-        public SearchResponse Response { get; }
+        public SearchResponseResponse Response { get; }
     }
 
     /// <summary>

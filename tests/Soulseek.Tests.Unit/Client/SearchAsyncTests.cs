@@ -152,14 +152,14 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SearchInternalAsync_Adds_Search_To_ActiveSearches(string searchText, int token)
         {
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponseResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             using (var search = new Search(searchText, token, options)
             {
                 State = SearchStates.InProgress,
             })
             {
-                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
+                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponseResponse>() { response });
 
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
@@ -281,14 +281,14 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1, stateChanged: (e) => fired = true);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponseResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             using (var search = new Search(searchText, token, options)
             {
                 State = SearchStates.InProgress,
             })
             {
-                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
+                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponseResponse>() { response });
 
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
@@ -313,14 +313,14 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponseResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             using (var search = new Search(searchText, token, options)
             {
                 State = SearchStates.InProgress,
             })
             {
-                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
+                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponseResponse>() { response });
 
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
@@ -346,7 +346,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1, responseReceived: (e) => fired = true);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponseResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
@@ -371,7 +371,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
+            var response = new SearchResponseResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))

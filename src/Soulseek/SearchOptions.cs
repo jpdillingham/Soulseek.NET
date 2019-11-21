@@ -49,7 +49,7 @@ namespace Soulseek
             int minimumPeerFreeUploadSlots = 0,
             int maximumPeerQueueLength = 1000000,
             int minimumPeerUploadSpeed = 0,
-            Func<SearchResponse, bool> responseFilter = null,
+            Func<SearchResponseResponse, bool> responseFilter = null,
             int fileLimit = 10000,
             Func<File, bool> fileFilter = null,
             Action<SearchStateChangedEventArgs> stateChanged = null,
@@ -108,7 +108,7 @@ namespace Soulseek
         ///     Gets the function used to evaluate whether a response should be included in the search results (Default = all
         ///     responses included).
         /// </summary>
-        public Func<SearchResponse, bool> ResponseFilter { get; }
+        public Func<SearchResponseResponse, bool> ResponseFilter { get; }
 
         /// <summary>
         ///     Gets the maximum number of search results to accept before the search is considered complete. (Default = 100).

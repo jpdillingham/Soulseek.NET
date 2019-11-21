@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponse.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -19,10 +19,10 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A response to a file search.
     /// </summary>
-    public sealed class SearchResponse
+    public sealed class SearchResponseResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        ///     Initializes a new instance of the <see cref="SearchResponseResponse"/> class.
         /// </summary>
         /// <param name="username">The username of the responding peer.</param>
         /// <param name="token">The unique search token.</param>
@@ -31,7 +31,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="fileList">The optional file list.</param>
-        public SearchResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList = null)
+        public SearchResponseResponse(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList = null)
         {
             Username = username;
             Token = token;
@@ -43,21 +43,21 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        ///     Initializes a new instance of the <see cref="SearchResponseResponse"/> class.
         /// </summary>
         /// <param name="slimResponse">The SearchResponseSlim instance from which to initialize this SearchResponse.</param>
-        internal SearchResponse(SearchResponseSlim slimResponse)
+        internal SearchResponseResponse(SearchResponseSlim slimResponse)
             : this(slimResponse.Username, slimResponse.Token, slimResponse.FileCount, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength)
         {
             FileList = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        ///     Initializes a new instance of the <see cref="SearchResponseResponse"/> class.
         /// </summary>
         /// <param name="response">The SearchResponse instance from which to initialize this SearchResponse.</param>
         /// <param name="fileList">The file list with which to replace the file list in the specified <paramref name="response"/>.</param>
-        internal SearchResponse(SearchResponse response, IEnumerable<File> fileList)
+        internal SearchResponseResponse(SearchResponseResponse response, IEnumerable<File> fileList)
             : this(response.Username, response.Token, fileList.Count(), response.FreeUploadSlots, response.UploadSpeed, response.QueueLength, fileList)
         {
         }
@@ -139,14 +139,14 @@ namespace Soulseek.Messaging.Messages
         }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="SearchResponseResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static SearchResponse FromByteArray(byte[] bytes)
+        internal static SearchResponseResponse FromByteArray(byte[] bytes)
         {
             var slim = SearchResponseSlim.FromByteArray(bytes);
-            return new SearchResponse(slim);
+            return new SearchResponseResponse(slim);
         }
 
         /// <summary>
