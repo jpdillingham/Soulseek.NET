@@ -24,7 +24,6 @@ namespace Soulseek.Network
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
@@ -49,12 +48,12 @@ namespace Soulseek.Network
             SoulseekClient = soulseekClient;
 
             ConcurrentChildLimit = SoulseekClient?.Options?.ConcurrentDistributedChildrenLimit
-                ?? new ClientOptions().ConcurrentDistributedChildrenLimit;
+                ?? new SoulseekClientOptions().ConcurrentDistributedChildrenLimit;
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
             StatusTimer = new SystemTimer()
             {

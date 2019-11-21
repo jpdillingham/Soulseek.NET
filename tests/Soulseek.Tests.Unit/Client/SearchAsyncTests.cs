@@ -25,7 +25,6 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
-    using Soulseek.Options;
     using Xunit;
 
     public class SearchAsyncTests

@@ -98,4 +98,36 @@ namespace Soulseek
         {
         }
     }
+
+    /// <summary>
+    ///     Event arguments for events raised upon receipt of a chat room message.
+    /// </summary>
+    public class RoomMessageEventArgs : RoomEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageEventArgs"/> class.
+        /// </summary>
+        /// <param name="roomName">The name of the room in which the message was sent.</param>
+        /// <param name="username">The username of the user which sent the message.</param>
+        /// <param name="message">The message content.</param>
+        public RoomMessageEventArgs(string roomName, string username, string message)
+            : base(roomName, username)
+        {
+            Message = message;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomMessageEventArgs"/> class.
+        /// </summary>
+        /// <param name="notification">The notification which raised the event.</param>
+        internal RoomMessageEventArgs(RoomMessageNotification notification)
+            : this(notification.RoomName, notification.Username, notification.Message)
+        {
+        }
+
+        /// <summary>
+        ///     Gets the message content.
+        /// </summary>
+        public string Message { get; }
+    }
 }

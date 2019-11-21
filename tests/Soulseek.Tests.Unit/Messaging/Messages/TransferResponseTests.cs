@@ -33,7 +33,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Null(ex);
 
             Assert.Equal(token, response.Token);
-            Assert.False(response.Allowed);
+            Assert.False(response.IsAllowed);
 
             Assert.Equal(msg, response.Message);
         }
@@ -50,7 +50,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Null(ex);
 
             Assert.Equal(token, response.Token);
-            Assert.True(response.Allowed);
+            Assert.True(response.IsAllowed);
             Assert.Equal(size, response.FileSize);
         }
 
@@ -96,7 +96,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var response = TransferResponse.FromByteArray(msg);
 
             Assert.Equal(token, response.Token);
-            Assert.True(response.Allowed);
+            Assert.True(response.IsAllowed);
             Assert.Equal(size, response.FileSize);
         }
 
@@ -113,7 +113,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var response = TransferResponse.FromByteArray(msg);
 
             Assert.Equal(token, response.Token);
-            Assert.True(response.Allowed);
+            Assert.True(response.IsAllowed);
         }
 
         [Trait("Category", "Parse")]
@@ -130,7 +130,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var response = TransferResponse.FromByteArray(msg);
 
             Assert.Equal(token, response.Token);
-            Assert.False(response.Allowed);
+            Assert.False(response.IsAllowed);
             Assert.Equal(message, response.Message);
         }
 

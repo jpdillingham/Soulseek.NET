@@ -27,7 +27,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class DistributedMessageHandlerTests
@@ -299,7 +298,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 mocks.Client.Object);
 
             mocks.Client.Setup(m => m.Options)
-                .Returns(new ClientOptions(searchResponseResolver: (a, b, c) => throw new Exception()));
+                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => throw new Exception()));
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -325,7 +324,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Responds_To_SearchRequest(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
-            var options = new ClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
@@ -352,7 +351,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
         public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
         {
-            var options = new ClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
@@ -380,7 +379,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
         {
             var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
-            var options = new ClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
             mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
@@ -403,7 +402,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
-        private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
+        private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
 
@@ -416,7 +415,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         private class Mocks
         {
-            public Mocks(ClientOptions clientOptions = null)
+            public Mocks(SoulseekClientOptions clientOptions = null)
             {
                 Client = new Mock<SoulseekClient>(clientOptions)
                 {
@@ -429,7 +428,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
                 Client.Setup(m => m.Downloads).Returns(Downloads);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
+                Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
             }
 
             public Mock<SoulseekClient> Client { get; }

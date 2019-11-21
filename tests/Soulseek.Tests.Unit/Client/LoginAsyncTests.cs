@@ -20,7 +20,6 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
-    using Soulseek.Options;
     using Xunit;
 
     public class LoginAsyncTests
@@ -122,7 +121,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new ClientOptions(listenPort: port)))
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 

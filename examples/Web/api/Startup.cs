@@ -18,8 +18,6 @@
     using Newtonsoft.Json.Converters;
     using Soulseek;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Swashbuckle.AspNetCore.Swagger;
 
     public class Startup
@@ -47,7 +45,7 @@
 
             SharedDirectory = @"\\WSE\Music\Processed\Rage Against the Machine\Bootlegs\Killing Your Enemy In 1995";
 
-            var options = new ClientOptions(
+            var options = new SoulseekClientOptions(
                 listenPort: ListenPort,
                 concurrentDistributedChildrenLimit: 10,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,

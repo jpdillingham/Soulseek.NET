@@ -1,4 +1,4 @@
-﻿// <copyright file="ClientOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClientOptionsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -14,10 +14,9 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using AutoFixture.Xunit2;
-    using Soulseek.Options;
     using Xunit;
 
-    public class ClientOptionsTests
+    public class SoulseekClientOptionsTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
@@ -31,7 +30,7 @@ namespace Soulseek.Tests.Unit
             ConnectionOptions peerConnectionOptions,
             ConnectionOptions transferConnectionOptions)
         {
-            var o = new ClientOptions(
+            var o = new SoulseekClientOptions(
                 concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
@@ -60,7 +59,7 @@ namespace Soulseek.Tests.Unit
             DiagnosticLevel minimumDiagnosticLevel,
             int startingToken)
         {
-            var o = new ClientOptions(
+            var o = new SoulseekClientOptions(
                 concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
@@ -76,8 +75,8 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Throws if concurrent peer limit is less than one")]
         public void Throws_If_Concurrent_Peer_Limit_Is_Less_Than_One()
         {
-            ClientOptions x;
-            var ex = Record.Exception(() => x = new ClientOptions(concurrentPeerMessageConnectionLimit: 0));
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(concurrentPeerMessageConnectionLimit: 0));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);
@@ -87,8 +86,8 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Throws if distributed child limit is less than zero")]
         public void Throws_If_Distributed_Child_Limit_Is_Less_Than_Zero()
         {
-            ClientOptions x;
-            var ex = Record.Exception(() => x = new ClientOptions(concurrentDistributedChildrenLimit: -1));
+            SoulseekClientOptions x;
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(concurrentDistributedChildrenLimit: -1));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);

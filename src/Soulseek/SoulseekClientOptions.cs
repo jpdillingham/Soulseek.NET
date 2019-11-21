@@ -1,4 +1,4 @@
-﻿// <copyright file="ClientOptions.cs" company="JP Dillingham">
+﻿// <copyright file="SoulseekClientOptions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -10,7 +10,7 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Options
+namespace Soulseek
 {
     using System;
     using System.Collections.Generic;
@@ -22,7 +22,7 @@ namespace Soulseek.Options
     /// <summary>
     ///     Options for SoulseekClient.
     /// </summary>
-    public class ClientOptions
+    public class SoulseekClientOptions
     {
         private readonly Func<string, IPAddress, int, Task<BrowseResponse>> defaultBrowseResponse =
             (u, i, p) => Task.FromResult(new BrowseResponse(0, new List<Directory>()));
@@ -34,7 +34,7 @@ namespace Soulseek.Options
             (u, i, p) => Task.FromResult(new UserInfoResponse(string.Empty, 0, 0, false));
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ClientOptions"/> class.
+        ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="concurrentDistributedChildrenLimit">The number of allowed distributed children.</param>
@@ -69,7 +69,7 @@ namespace Soulseek.Options
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="concurrentPeerMessageConnectionLimit"/> is less than one.
         /// </exception>
-        public ClientOptions(
+        public SoulseekClientOptions(
             int? listenPort = null,
             int concurrentDistributedChildrenLimit = 100,
             int concurrentPeerMessageConnectionLimit = 500,

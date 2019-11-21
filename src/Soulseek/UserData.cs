@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     User data.
     /// </summary>
-    public sealed class UserData
+    public class UserData
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserData"/> class.

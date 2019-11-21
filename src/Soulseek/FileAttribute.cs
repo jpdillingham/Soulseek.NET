@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     A file attribute.
     /// </summary>
-    public sealed class FileAttribute
+    public class FileAttribute
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="FileAttribute"/> class.

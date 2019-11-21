@@ -20,7 +20,6 @@ namespace Soulseek.Network.Tcp
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
-    using Soulseek.Options;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>

@@ -26,7 +26,6 @@ namespace Soulseek
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -40,7 +39,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
         /// <param name="options">The client options.</param>
-        public SoulseekClient(ClientOptions options)
+        public SoulseekClient(SoulseekClientOptions options)
             : this(DefaultAddress, DefaultPort, options)
         {
         }
@@ -51,7 +50,7 @@ namespace Soulseek
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client options.</param>
-        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, ClientOptions options = null)
+        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
             : this(address, port, options, null)
         {
         }
@@ -75,7 +74,7 @@ namespace Soulseek
         internal SoulseekClient(
             string address,
             int port,
-            ClientOptions options = null,
+            SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IPeerConnectionManager peerConnectionManager = null,
             IDistributedConnectionManager distributedConnectionManager = null,
@@ -90,7 +89,7 @@ namespace Soulseek
             Address = address;
             Port = port;
 
-            Options = options ?? new ClientOptions();
+            Options = options ?? new SoulseekClientOptions();
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
@@ -226,7 +225,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public virtual ClientOptions Options { get; }
+        public virtual SoulseekClientOptions Options { get; }
 
         /// <summary>
         ///     Gets server port.
@@ -1123,7 +1122,7 @@ namespace Soulseek
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
-                if (transferRequestAcknowledgement.Allowed)
+                if (transferRequestAcknowledgement.IsAllowed)
                 {
                     // the peer is ready to initiate the transfer immediately; we are bypassing their queue. note that only the
                     // legacy client operates this way; SoulseekQt always returns Allowed = false regardless of the current queue.
@@ -1604,7 +1603,7 @@ namespace Soulseek
 
                 var transferRequestAcknowledgement = await transferRequestAcknowledged.ConfigureAwait(false);
 
-                if (!transferRequestAcknowledgement.Allowed)
+                if (!transferRequestAcknowledgement.IsAllowed)
                 {
                     throw new TransferRejectedException(transferRequestAcknowledgement.Message);
                 }

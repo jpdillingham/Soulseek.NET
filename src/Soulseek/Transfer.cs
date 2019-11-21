@@ -15,7 +15,6 @@ namespace Soulseek
     using System;
     using System.Net;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
 
     /// <summary>
     ///     A single file transfer.

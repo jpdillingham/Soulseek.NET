@@ -19,7 +19,7 @@ namespace Soulseek
     /// <summary>
     ///     A file directory within a peer's shared files.
     /// </summary>
-    public sealed class Directory
+    public class Directory
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Directory"/> class.

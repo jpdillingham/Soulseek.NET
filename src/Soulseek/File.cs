@@ -19,7 +19,7 @@ namespace Soulseek
     /// <summary>
     ///     A file within search and browse results.
     /// </summary>
-    public sealed class File
+    public class File
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="File"/> class.

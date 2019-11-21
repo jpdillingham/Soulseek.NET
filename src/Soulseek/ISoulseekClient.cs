@@ -19,7 +19,6 @@ namespace Soulseek
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Options;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -90,7 +89,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the client options.
         /// </summary>
-        ClientOptions Options { get; }
+        SoulseekClientOptions Options { get; }
 
         /// <summary>
         ///     Gets the server port.

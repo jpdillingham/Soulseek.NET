@@ -23,7 +23,6 @@ namespace Soulseek.Network
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Manages peer <see cref="IConnection"/> instances for the application.
@@ -46,12 +45,12 @@ namespace Soulseek.Network
             SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
 
             ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
-                ?? new ClientOptions().ConcurrentPeerMessageConnectionLimit;
+                ?? new SoulseekClientOptions().ConcurrentPeerMessageConnectionLimit;
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
             MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
         }

@@ -27,7 +27,7 @@ namespace Soulseek.Messaging.Messages
         public TransferResponse(int token, string message)
         {
             Token = token;
-            Allowed = false;
+            IsAllowed = false;
             Message = message;
         }
 
@@ -39,7 +39,7 @@ namespace Soulseek.Messaging.Messages
         public TransferResponse(int token, long fileSize)
         {
             Token = token;
-            Allowed = true;
+            IsAllowed = true;
             FileSize = fileSize;
         }
 
@@ -50,13 +50,13 @@ namespace Soulseek.Messaging.Messages
         public TransferResponse(int token)
         {
             Token = token;
-            Allowed = true;
+            IsAllowed = true;
         }
 
         /// <summary>
         ///     Gets a value indicating whether the transfer is allowed.
         /// </summary>
-        public bool Allowed { get; }
+        public bool IsAllowed { get; }
 
         /// <summary>
         ///     Gets the size of the file being transferred, if allowed.
@@ -114,9 +114,9 @@ namespace Soulseek.Messaging.Messages
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.TransferResponse)
                 .WriteInteger(Token)
-                .WriteByte((byte)(Allowed ? 1 : 0));
+                .WriteByte((byte)(IsAllowed ? 1 : 0));
 
-            if (Allowed)
+            if (IsAllowed)
             {
                 builder.WriteLong(FileSize);
             }

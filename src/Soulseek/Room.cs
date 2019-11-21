@@ -15,7 +15,7 @@ namespace Soulseek
     /// <summary>
     ///     A chat room.
     /// </summary>
-    public sealed class Room
+    public class Room
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Room"/> class.

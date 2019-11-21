@@ -1,4 +1,4 @@
-﻿// <copyright file="TransferOptionsTests.cs" company="JP Dillingham">
+﻿// <copyright file="ConnectionOptionsTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,25 +12,26 @@
 
 namespace Soulseek.Tests.Unit
 {
-    using System;
     using AutoFixture.Xunit2;
-    using Soulseek.Options;
     using Xunit;
 
-    public class TransferOptionsTests
+    public class ConnectionOptionsTests
     {
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given data"), AutoData]
-        public void Instantiates_With_Defaults(
-            Action<TransferStateChangedEventArgs> stateChanged,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated)
+        [Theory(DisplayName = "Instantiates properly"), AutoData]
+        public void Instantiates_Properly(int read, int write, int timeout, int inactivity)
         {
-            var o = new TransferOptions(
-                stateChanged,
-                progressUpdated);
+            ConnectionOptions o = null;
 
-            Assert.Equal(stateChanged, o.StateChanged);
-            Assert.Equal(progressUpdated, o.ProgressUpdated);
+            var ex = Record.Exception(() => o = new ConnectionOptions(read, write, timeout, inactivity));
+
+            Assert.Null(ex);
+            Assert.NotNull(o);
+
+            Assert.Equal(read, o.ReadBufferSize);
+            Assert.Equal(write, o.WriteBufferSize);
+            Assert.Equal(timeout, o.ConnectTimeout);
+            Assert.Equal(inactivity, o.InactivityTimeout);
         }
     }
 }

@@ -29,7 +29,6 @@ namespace Soulseek.Tests.Unit.Network
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class DistributedConnectionManagerTests
@@ -49,7 +48,7 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(string.Empty, c.BranchRoot);
             Assert.True(c.CanAcceptChildren);
             Assert.Empty(c.Children);
-            Assert.Equal(new ClientOptions().ConcurrentDistributedChildrenLimit, c.ConcurrentChildLimit);
+            Assert.Equal(new SoulseekClientOptions().ConcurrentDistributedChildrenLimit, c.ConcurrentChildLimit);
             Assert.False(c.HasParent);
             Assert.Equal((string.Empty, IPAddress.None, 0), c.Parent);
             Assert.Empty(c.PendingSolicitations);
@@ -190,7 +189,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
             using (manager)
             {
@@ -204,7 +203,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -332,7 +331,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
         internal async Task AddChildConnectionAsync_Rejects_If_Over_Child_Limit(string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
             mocks.TcpClient.Setup(m => m.RemoteEndPoint)
                 .Returns(new IPEndPoint(ip, port));
@@ -349,7 +348,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync disposes TcpClient on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Disposes_TcpClient_On_Rejection(string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
             mocks.TcpClient.Setup(m => m.RemoteEndPoint)
                 .Returns(new IPEndPoint(ip, port));
@@ -399,7 +398,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Updates_Status_On_Rejection(string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -799,7 +798,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionIndirectAsync removes solicitation on throw"), AutoData]
         internal async Task GetParentConnectionIndirectAsync_Removes_Solicitation_On_Throw(string username)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
@@ -816,7 +815,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionIndirectAsync returns expected connection"), AutoData]
         internal async Task GetParentConnectionIndirectAsync_Returns_Expected_Connection(string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             var conn = GetConnectionMock(ip, port);
             conn.Setup(m => m.HandoffTcpClient())
@@ -843,7 +842,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionIndirectAsync produces expected diagnostic"), AutoData]
         internal async Task GetParentConnectionIndirectAsync_Produces_Expected_Diagnostic(string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             var conn = GetConnectionMock(ip, port);
             conn.Setup(m => m.HandoffTcpClient())
@@ -869,7 +868,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionDirectAsync returns expected connection"), AutoData]
         internal async Task GetParentConnectionDirectAsync_Returns_Expected_Connection(string localUser, string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -890,7 +889,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionDirectAsync disposes connection on throw"), AutoData]
         internal async Task GetParentConnectionDirectAsync_Disposes_Connection_On_Throw(string localUser, string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -916,7 +915,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var expectedMessage = new PeerInit(localUser, Constants.ConnectionType.Distributed, token);
 
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -942,7 +941,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionDirectAsync produces expected diagnostic"), AutoData]
         internal async Task GetParentConnectionDirectAsync_Produces_Expected_Diagnostic(string localUser, string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -966,7 +965,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync returns direct when direct connects first"), AutoData]
         internal async Task GetParentConnectionAsync_Returns_Direct_When_Direct_Connects_First(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1007,7 +1006,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync returns indirect when indirect connects first"), AutoData]
         internal async Task GetParentConnectionAsync_Returns_Indirect_When_Inirect_Connects_First(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1056,7 +1055,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync throws when neither direct nor indirect connects"), AutoData]
         internal async Task GetParentConnectionAsync_Throws_When_Neither_Direct_Nor_Indirect_Connects(string localUser, string username, IPAddress ip, int port)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1091,7 +1090,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync returns expected branch info"), AutoData]
         internal async Task GetParentConnectionAsync_Returns_Expected_Branch_Info(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1130,7 +1129,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync throws when branch level not received"), AutoData]
         internal async Task GetParentConnectionAsync_Throws_When_Branch_Level_Not_Received(string localUser, string username, IPAddress ip, int port, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1170,7 +1169,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync throws when branch root not received"), AutoData]
         internal async Task GetParentConnectionAsync_Throws_When_Branch_Root_Not_Received(string localUser, string username, IPAddress ip, int port, int branchLevel)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1210,7 +1209,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync throws when initial search request not received"), AutoData]
         internal async Task GetParentConnectionAsync_Throws_When_Initial_Search_Request_Not_Received(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1250,7 +1249,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync disconnects and disposes connection when init fails"), AutoData]
         internal async Task GetParentConnectionAsync_Disconnects_And_Disposes_Connection_When_Init_Fails(string localUser, string username, IPAddress ip, int port, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1293,7 +1292,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetParentConnectionAsync produces expected diagnostic on success"), AutoData]
         internal async Task GetParentConnectionAsync_Produces_Expected_Diagnostic_On_Success(string localUser, string username, IPAddress ip, int port, int branchLevel, string branchRoot)
         {
-            var (manager, mocks) = GetFixture(options: new ClientOptions());
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1572,7 +1571,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s == $"Adopted parent {conn1.Object.Username} ({conn1.Object.IPAddress}:{conn1.Object.Port})")), Times.Once);
         }
 
-        private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
+        private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
 
@@ -1614,7 +1613,7 @@ namespace Soulseek.Tests.Unit.Network
 
         private class Mocks
         {
-            public Mocks(ClientOptions clientOptions = null)
+            public Mocks(SoulseekClientOptions clientOptions = null)
             {
                 Client = new Mock<SoulseekClient>(clientOptions)
                 {

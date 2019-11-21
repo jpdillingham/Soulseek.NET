@@ -14,7 +14,6 @@ namespace Soulseek.Network
 {
     using System.Net;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Creates connections.
