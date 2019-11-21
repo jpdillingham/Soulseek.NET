@@ -46,6 +46,6 @@
         public string SearchText { get; set; }
         public int Token { get; set; }
         public SearchStates State { get; set; }
-        public List<SearchResponseResponse> Responses { get; set; }
+        public List<SearchResponse> Responses { get; set; }
     }
 }

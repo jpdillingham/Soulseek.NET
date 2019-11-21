@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponseSlim.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseResponseSlim.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -20,10 +20,10 @@ namespace Soulseek.Messaging.Messages
     ///     determine whether the response is to be thrown out.
     /// </summary>
     /// <remarks>Files may be retrieved using the message reader provided by <see cref="MessageReader"/>.</remarks>
-    internal sealed class SearchResponseSlim
+    internal sealed class SearchResponseResponseSlim
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SearchResponseSlim"/> class.
+        ///     Initializes a new instance of the <see cref="SearchResponseResponseSlim"/> class.
         /// </summary>
         /// <param name="username">The username of the responding peer.</param>
         /// <param name="token">The unique search token.</param>
@@ -32,7 +32,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
         /// <param name="queueLength">The length of the peer's upload queue.</param>
         /// <param name="messageReader">The MessageReader instance used to parse the file list.</param>
-        public SearchResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode.Peer> messageReader)
+        public SearchResponseResponseSlim(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength, MessageReader<MessageCode.Peer> messageReader)
         {
             Username = username;
             Token = token;
@@ -79,11 +79,11 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="SearchResponseSlim"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="SearchResponseResponseSlim"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static SearchResponseSlim FromByteArray(byte[] bytes)
+        public static SearchResponseResponseSlim FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
@@ -112,7 +112,7 @@ namespace Soulseek.Messaging.Messages
             reader.Seek(position);
             var messageReader = reader;
 
-            return new SearchResponseSlim(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength, messageReader);
+            return new SearchResponseResponseSlim(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength, messageReader);
         }
     }
 }

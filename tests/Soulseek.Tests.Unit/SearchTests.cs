@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit
         public void Response_Filter_Returns_True_When_FilterResponses_Option_Is_False()
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: false));
-            var response = new SearchResponseSlim("u", 1, 1, 1, 1, 1, null);
+            var response = new SearchResponseResponseSlim("u", 1, 1, 1, 1, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit
         public void Response_Filter_Respects_MinimumResponseFileCount_Option(int actual, int option, bool expected)
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: option));
-            var response = new SearchResponseSlim("u", 1, actual, 1, 1, 1, null);
+            var response = new SearchResponseResponseSlim("u", 1, actual, 1, 1, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
@@ -105,7 +105,7 @@ namespace Soulseek.Tests.Unit
         public void Response_Filter_Respects_MinimumPeerFreeUploadSlots_Option(int actual, int option, bool expected)
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
-            var response = new SearchResponseSlim("u", 1, 1, actual, 1, 1, null);
+            var response = new SearchResponseResponseSlim("u", 1, 1, actual, 1, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
@@ -122,7 +122,7 @@ namespace Soulseek.Tests.Unit
         public void Response_Filter_Respects_MinimumPeerUploadSpeed_Option(int actual, int option, bool expected)
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumPeerUploadSpeed: option));
-            var response = new SearchResponseSlim("u", 1, 1, 1, actual, 1, null);
+            var response = new SearchResponseResponseSlim("u", 1, 1, 1, actual, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
@@ -139,7 +139,7 @@ namespace Soulseek.Tests.Unit
         public void Response_Filter_Respects_MaximumPeerQueueLength_Option(int actual, int option, bool expected)
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: true, maximumPeerQueueLength: option));
-            var response = new SearchResponseSlim("u", 1, 1, 1, 1, actual, null);
+            var response = new SearchResponseResponseSlim("u", 1, 1, 1, 1, actual, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
 
@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.Completed,
             };
 
-            s.AddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
+            s.AddResponse(new SearchResponseResponseSlim("bar", 42, 1, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
 
@@ -173,7 +173,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.InProgress,
             };
 
-            s.AddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
+            s.AddResponse(new SearchResponseResponseSlim("bar", 24, 1, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
 
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.InProgress,
             };
 
-            s.AddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
+            s.AddResponse(new SearchResponseResponseSlim("bar", 42, 0, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
 
@@ -226,7 +226,7 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.AddResponse(new SearchResponseResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.Single(s.Responses);
 
@@ -277,7 +277,7 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.AddResponse(new SearchResponseResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.Empty(s.Responses);
 
@@ -321,7 +321,7 @@ namespace Soulseek.Tests.Unit
 
             var task = s.WaitForCompletion(CancellationToken.None);
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.AddResponse(new SearchResponseResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             await task;
 
@@ -369,7 +369,7 @@ namespace Soulseek.Tests.Unit
 
             var task = s.WaitForCompletion(CancellationToken.None);
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.AddResponse(new SearchResponseResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             await task;
 
@@ -413,7 +413,7 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.AddResponse(new SearchResponseResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.NotNull(addResponse);
             Assert.Equal(filename, addResponse.Files.ToList()[0].Filename);

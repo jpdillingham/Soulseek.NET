@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit
             int minimumPeerFreeUploadSlots,
             int maximumPeerQueueLength,
             int minimumPeerUploadSpeed,
-            Func<SearchResponseResponse, bool> responseFilter,
+            Func<SearchResponse, bool> responseFilter,
             int fileLimit,
             Func<File, bool> fileFilter,
             Action<SearchStateChangedEventArgs> stateChanged,

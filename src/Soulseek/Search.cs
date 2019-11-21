@@ -61,7 +61,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the collection of responses received from peers.
         /// </summary>
-        public IReadOnlyCollection<SearchResponseResponse> Responses => ResponseBag.ToList().AsReadOnly();
+        public IReadOnlyCollection<SearchResponse> Responses => ResponseBag.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the text for which to search.
@@ -84,7 +84,7 @@ namespace Soulseek
         internal Action<SearchResponseResponse> ResponseReceived { get; set; }
 
         private bool Disposed { get; set; } = false;
-        private ConcurrentBag<SearchResponseResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponseResponse>();
+        private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
@@ -102,7 +102,7 @@ namespace Soulseek
         ///     in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void AddResponse(SearchResponseSlim slimResponse)
+        internal void AddResponse(SearchResponseResponseSlim slimResponse)
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
@@ -155,7 +155,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        internal async Task<IEnumerable<SearchResponseResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -190,7 +190,7 @@ namespace Soulseek
             }
         }
 
-        private bool SlimResponseMeetsOptionCriteria(SearchResponseSlim response)
+        private bool SlimResponseMeetsOptionCriteria(SearchResponseResponseSlim response)
         {
             if (Options.FilterResponses && (
                     response.FileCount < Options.MinimumResponseFileCount ||
