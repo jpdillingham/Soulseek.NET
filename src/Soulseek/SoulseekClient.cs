@@ -572,7 +572,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual Task<UserAddressResponse> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
+        public virtual Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -600,7 +600,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -628,7 +628,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -657,7 +657,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
+        public Task<RoomData> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(roomName))
             {
@@ -1326,7 +1326,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<UserAddressResponse> GetUserAddressInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<(IPAddress IPAddress, int Port)> GetUserAddressInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
@@ -1342,7 +1342,7 @@ namespace Soulseek
                     throw new UserOfflineException($"User {username} appears to be offline.");
                 }
 
-                return response;
+                return (response.IPAddress, response.Port);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1350,14 +1350,14 @@ namespace Soulseek
             }
         }
 
-        private async Task<UserInfoResponse> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserInfo> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
 
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.InfoResponse, username);
-                var infoWait = Waiter.Wait<UserInfoResponse>(waitKey, cancellationToken: cancellationToken);
+                var infoWait = Waiter.Wait<UserInfo>(waitKey, cancellationToken: cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
@@ -1379,7 +1379,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<UserStatusResponse> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
@@ -1388,7 +1388,7 @@ namespace Soulseek
 
                 var response = await getStatusWait.ConfigureAwait(false);
 
-                return response;
+                return (response.Status, response.IsPrivileged);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1396,11 +1396,11 @@ namespace Soulseek
             }
         }
 
-        private async Task<JoinRoomResponse> JoinRoomInternalAsync(string roomName, CancellationToken cancellationToken)
+        private async Task<RoomData> JoinRoomInternalAsync(string roomName, CancellationToken cancellationToken)
         {
             try
             {
-                var joinRoomWait = Waiter.Wait<JoinRoomResponse>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
+                var joinRoomWait = Waiter.Wait<RoomData>(new WaitKey(MessageCode.Server.JoinRoom, roomName), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new JoinRoomRequest(roomName).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await joinRoomWait.ConfigureAwait(false);
@@ -1585,7 +1585,7 @@ namespace Soulseek
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            UserAddressResponse address = default;
+            (IPAddress IPAddress, int Port) address = default;
 
             try
             {

@@ -20,6 +20,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserData"/> class.
         /// </summary>
+        /// <param name="username">The username of the user.</param>
         /// <param name="status">The status of the user.</param>
         /// <param name="averageSpeed">The average upload speed of the user.</param>
         /// <param name="downloadCount">The number of active user downloads.</param>
@@ -27,8 +28,9 @@ namespace Soulseek
         /// <param name="directoryCount">The number of directories shared by the user.</param>
         /// <param name="slotsFree">The number of the user's free download slots, if provided.</param>
         /// <param name="countryCode">The user's country code, if provided.</param>
-        public UserData(UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, int? slotsFree = null, string countryCode = null)
+        public UserData(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, int? slotsFree = null, string countryCode = null)
         {
+            Username = username;
             Status = status;
             AverageSpeed = averageSpeed;
             DownloadCount = downloadCount;
@@ -72,5 +74,10 @@ namespace Soulseek
         ///     Gets the status of the user (0 = offline, 1 = away, 2 = online).
         /// </summary>
         public UserStatus Status { get; }
+
+        /// <summary>
+        ///     Gets the username of the user.
+        /// </summary>
+        public string Username { get; }
     }
 }

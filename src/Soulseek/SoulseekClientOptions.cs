@@ -14,6 +14,7 @@ namespace Soulseek
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
     using Soulseek.Exceptions;
@@ -24,14 +25,14 @@ namespace Soulseek
     /// </summary>
     public class SoulseekClientOptions
     {
-        private readonly Func<string, IPAddress, int, Task<BrowseResponse>> defaultBrowseResponse =
-            (u, i, p) => Task.FromResult(new BrowseResponse(0, new List<Directory>()));
+        private readonly Func<string, IPAddress, int, Task<IEnumerable<Directory>>> defaultBrowseResponse =
+            (u, i, p) => Task.FromResult(Enumerable.Empty<Directory>());
 
         private readonly Func<string, IPAddress, int, string, Task> defaultQueueDownloadAction =
             (u, i, p, f) => { return Task.CompletedTask; };
 
-        private readonly Func<string, IPAddress, int, Task<UserInfoResponse>> defaultUserInfoResponse =
-            (u, i, p) => Task.FromResult(new UserInfoResponse(string.Empty, 0, 0, false));
+        private readonly Func<string, IPAddress, int, Task<UserInfo>> defaultUserInfoResponse =
+            (u, i, p) => Task.FromResult(new UserInfo(string.Empty, 0, 0, false));
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
@@ -51,13 +52,13 @@ namespace Soulseek
         /// <param name="incomingConnectionOptions">The options for incoming connections.</param>
         /// <param name="distributedConnectionOptions">The options for distributed message connections.</param>
         /// <param name="searchResponseResolver">
-        ///     The delegate used to resolve the <see cref="SearchResponseResponse"/> for an incoming <see cref="SearchRequest"/>.
+        ///     The delegate used to resolve the <see cref="SearchResponse"/> for an incoming <see cref="SearchRequest"/>.
         /// </param>
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
         /// <param name="userInfoResponseResolver">
-        ///     The delegate used to resolve the <see cref="UserInfoResponse"/> for an incoming <see cref="UserInfoRequest"/>.
+        ///     The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.
         /// </param>
         /// <param name="queueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
         /// <param name="placeInQueueResponseResolver">
@@ -83,8 +84,8 @@ namespace Soulseek
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
             Func<string, int, string, Task<SearchResponse>> searchResponseResolver = null,
-            Func<string, IPAddress, int, Task<BrowseResponse>> browseResponseResolver = null,
-            Func<string, IPAddress, int, Task<UserInfoResponse>> userInfoResponseResolver = null,
+            Func<string, IPAddress, int, Task<IEnumerable<Directory>>> browseResponseResolver = null,
+            Func<string, IPAddress, int, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPAddress, int, string, Task> queueDownloadAction = null,
             Func<string, IPAddress, int, string, Task<int>> placeInQueueResponseResolver = null)
         {
@@ -128,10 +129,10 @@ namespace Soulseek
         public bool AutoAcknowledgePrivateMessages { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the <see cref="BrowseResponse"/> for an incoming request. (Default = a response
+        ///     Gets the delegate used to resolve the response for an incoming request. (Default = a response
         ///     with no files or directories).
         /// </summary>
-        public Func<string, IPAddress, int, Task<BrowseResponse>> BrowseResponseResolver { get; }
+        public Func<string, IPAddress, int, Task<IEnumerable<Directory>>> BrowseResponseResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).
@@ -208,9 +209,9 @@ namespace Soulseek
         public ConnectionOptions TransferConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the <see cref="UserInfoResponse"/> for an incoming request. (Default = a
+        ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a
         ///     blank/zeroed response).
         /// </summary>
-        public Func<string, IPAddress, int, Task<UserInfoResponse>> UserInfoResponseResolver { get; }
+        public Func<string, IPAddress, int, Task<UserInfo>> UserInfoResponseResolver { get; }
     }
 }

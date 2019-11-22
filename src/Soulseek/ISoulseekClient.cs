@@ -252,7 +252,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserAddressResponse> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
+        Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
@@ -267,7 +267,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
@@ -282,7 +282,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+        Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
@@ -298,7 +298,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
-        Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
+        Task<RoomData> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.
