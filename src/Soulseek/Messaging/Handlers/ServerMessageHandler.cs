@@ -193,12 +193,12 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.JoinRoom:
-                        var joinRoomResponse = JoinRoomResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, joinRoomResponse.RoomName), joinRoomResponse);
+                        var roomData = RoomJoinResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, roomData.Name), roomData);
                         break;
 
                     case MessageCode.Server.LeaveRoom:
-                        var leaveRoomResponse = LeaveRoomResponse.FromByteArray(message);
+                        var leaveRoomResponse = RoomLeaveResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, leaveRoomResponse.RoomName));
                         break;
 

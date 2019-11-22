@@ -105,6 +105,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
+                        // make a default response
                         var browseResponse = await new SoulseekClientOptions()
                             .BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
 
@@ -117,7 +118,9 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Failed to resolve BrowseResponse: {ex.Message}", ex);
                         }
 
-                        await connection.WriteAsync(browseResponse.ToByteArray()).ConfigureAwait(false);
+                        var browseResponseMessage = new BrowseResponse(browseResponse.Count(), browseResponse);
+
+                        await connection.WriteAsync(browseResponseMessage.ToByteArray()).ConfigureAwait(false);
                         break;
 
                     case MessageCode.Peer.InfoResponse:
