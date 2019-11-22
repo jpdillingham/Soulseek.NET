@@ -305,7 +305,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1017,7 +1017,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<AddUserResponse> AddUserInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserData> AddUserInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
@@ -1026,7 +1026,12 @@ namespace Soulseek
 
                 var response = await addUserWait.ConfigureAwait(false);
 
-                return response;
+                if (!response.Exists)
+                {
+                    throw new UserNotFoundException($"User {Username} does not exist.");
+                }
+
+                return response.UserData;
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
@@ -1334,7 +1339,7 @@ namespace Soulseek
 
                 if (response.IPAddress.Equals(IPAddress.Parse("0.0.0.0")))
                 {
-                    throw new PeerOfflineException($"User {username} appears to be offline.");
+                    throw new UserOfflineException($"User {username} appears to be offline.");
                 }
 
                 return response;
