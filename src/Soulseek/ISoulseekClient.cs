@@ -156,7 +156,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
-        Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.

@@ -338,7 +338,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1034,7 +1034,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<BrowseResponse> BrowseInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<Directory>> BrowseInternalAsync(string username, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
 
@@ -1062,7 +1062,7 @@ namespace Soulseek
                 sw.Stop();
                 Diagnostic.Debug($"Browse of {username} completed in {sw.ElapsedMilliseconds}ms.  {response.DirectoryCount} directories fetched");
 
-                return response;
+                return response.Directories;
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
