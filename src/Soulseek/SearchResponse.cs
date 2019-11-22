@@ -97,10 +97,15 @@ namespace Soulseek
             return FromSlimResponse(slim);
         }
 
-        internal static SearchResponse FromSlimResponse(SearchResponseSlim slim)
+        /// <summary>
+        ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="slimResponse"/>.
+        /// </summary>
+        /// <param name="slimResponse">The slim response from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
+        internal static SearchResponse FromSlimResponse(SearchResponseSlim slimResponse)
         {
-            var files = ParseFiles(slim.MessageReader, slim.FileCount);
-            return new SearchResponse(slim.Username, slim.Token, files.Count, slim.FreeUploadSlots, slim.UploadSpeed, slim.QueueLength, files);
+            var files = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
+            return new SearchResponse(slimResponse.Username, slimResponse.Token, files.Count, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength, files);
         }
 
         /// <summary>
