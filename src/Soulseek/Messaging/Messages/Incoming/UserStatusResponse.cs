@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a peer info request.
     /// </summary>
-    public sealed class UserStatusResponse
+    internal sealed class UserStatusResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserStatusResponse"/> class.
@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The username of the peer.</param>
         /// <param name="status">The status of the peer.</param>
         /// <param name="isPrivileged">A value indicating whether the peer is privileged.</param>
-        internal UserStatusResponse(string username, UserStatus status, bool isPrivileged)
+        public UserStatusResponse(string username, UserStatus status, bool isPrivileged)
         {
             Username = username;
             Status = status;
@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        internal static UserStatusResponse FromByteArray(byte[] bytes)
+        public static UserStatusResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();

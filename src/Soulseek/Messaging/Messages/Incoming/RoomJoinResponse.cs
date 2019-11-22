@@ -1,4 +1,4 @@
-﻿// <copyright file="JoinRoomResponse.cs" company="JP Dillingham">
+﻿// <copyright file="RoomJoinResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -10,82 +10,23 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Messaging.Messages
+namespace Soulseek
 {
     using System.Collections.Generic;
-    using System.Linq;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging;
 
     /// <summary>
     ///     The response to request to join a chat room.
     /// </summary>
-    public sealed class JoinRoomResponse
+    internal static class RoomJoinResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="JoinRoomResponse"/> class.
-        /// </summary>
-        /// <param name="roomName">The name of the room that was joined.</param>
-        /// <param name="userCount">The number of users in the room.</param>
-        /// <param name="userList">The users in the room.</param>
-        /// <param name="isPrivateRoom">A value indicating whether the room is private.</param>
-        /// <param name="owner">The owner of the room, if private.</param>
-        /// <param name="operatorCount">The number of operators in the room, if private.</param>
-        /// <param name="operatorList">The operators in the room, if private.</param>
-        public JoinRoomResponse(string roomName, int userCount, IEnumerable<(string Username, UserData Data)> userList, bool isPrivateRoom = false, string owner = null, int? operatorCount = null, IEnumerable<string> operatorList = null)
-        {
-            RoomName = roomName;
-            UserCount = userCount;
-            UserList = userList;
-            IsPrivateRoom = isPrivateRoom;
-            Owner = owner;
-            OperatorCount = operatorCount;
-            OperatorList = operatorList;
-        }
-
-        /// <summary>
-        ///     Gets a value indicating whether the room is private.
-        /// </summary>
-        public bool IsPrivateRoom { get; }
-
-        /// <summary>
-        ///     Gets the number of operators in the room, if private.
-        /// </summary>
-        public int? OperatorCount { get; }
-
-        /// <summary>
-        ///     Gets the operators in the room, if private.
-        /// </summary>
-        public IReadOnlyCollection<string> Operators => OperatorList?.ToList().AsReadOnly();
-
-        /// <summary>
-        ///     Gets the owner of the room, if private.
-        /// </summary>
-        public string Owner { get; }
-
-        /// <summary>
-        ///     Gets the name of the room that was joined.
-        /// </summary>
-        public string RoomName { get; }
-
-        /// <summary>
-        ///     Gets the number of users in the room.
-        /// </summary>
-        public int UserCount { get; }
-
-        /// <summary>
-        ///     Gets the users in the room.
-        /// </summary>
-        public IReadOnlyCollection<(string Username, UserData Data)> Users => UserList?.ToList().AsReadOnly();
-
-        private IEnumerable<string> OperatorList { get; }
-        private IEnumerable<(string Username, UserData Data)> UserList { get; }
-
-        /// <summary>
-        ///     Creates a new instance of <see cref="JoinRoomResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="RoomData"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static JoinRoomResponse FromByteArray(byte[] bytes)
+        internal static RoomData FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -142,7 +83,7 @@ namespace Soulseek.Messaging.Messages
                 countries.Add(reader.ReadString());
             }
 
-            var users = new List<(string Username, UserData Data)>();
+            var users = new List<UserData>();
 
             for (int i = 0; i < userCount; i++)
             {
@@ -152,7 +93,7 @@ namespace Soulseek.Messaging.Messages
                 var slot = slots[i];
                 var country = countries[i];
 
-                users.Add((name, new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, slot, country)));
+                users.Add(new UserData(name, status, averageSpeed, downloadCount, fileCount, directoryCount, slot, country));
             }
 
             string owner = null;
@@ -171,7 +112,7 @@ namespace Soulseek.Messaging.Messages
                 }
             }
 
-            return new JoinRoomResponse(roomName, userCount, users, owner != null, owner, operatorCount, operatorList);
+            return new RoomData(roomName, userCount, users, owner != null, owner, operatorCount, operatorList);
         }
     }
 }

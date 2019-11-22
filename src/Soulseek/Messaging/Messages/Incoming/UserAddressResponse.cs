@@ -19,7 +19,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a request for a peer's address.
     /// </summary>
-    public sealed class UserAddressResponse
+    internal sealed class UserAddressResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="UserAddressResponse"/> class.
@@ -27,7 +27,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The requested peer username.</param>
         /// <param name="ipAddress">The IP address of the peer.</param>
         /// <param name="port">The port on which the peer is listening.</param>
-        internal UserAddressResponse(string username, IPAddress ipAddress, int port)
+        public UserAddressResponse(string username, IPAddress ipAddress, int port)
         {
             Username = username;
             IPAddress = ipAddress;
@@ -54,7 +54,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        internal static UserAddressResponse FromByteArray(byte[] bytes)
+        public static UserAddressResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();

@@ -77,7 +77,7 @@ namespace Soulseek.Messaging.Messages
                 countryCode = reader.ReadString();
             }
 
-            var userData = new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
+            var userData = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
 
             return new RoomJoinedNotification(roomName, username, userData);
         }

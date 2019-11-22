@@ -1,4 +1,4 @@
-﻿// <copyright file="LeaveRoomResponse.cs" company="JP Dillingham">
+﻿// <copyright file="RoomLeaveResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -17,13 +17,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a request to leave a chat room.
     /// </summary>
-    internal sealed class LeaveRoomResponse
+    internal sealed class RoomLeaveResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="LeaveRoomResponse"/> class.
+        ///     Initializes a new instance of the <see cref="RoomLeaveResponse"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room that was left.</param>
-        public LeaveRoomResponse(string roomName)
+        public RoomLeaveResponse(string roomName)
         {
             RoomName = roomName;
         }
@@ -34,11 +34,11 @@ namespace Soulseek.Messaging.Messages
         public string RoomName { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="LeaveRoomResponse"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="RoomLeaveResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static LeaveRoomResponse FromByteArray(byte[] bytes)
+        public static RoomLeaveResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -50,7 +50,7 @@ namespace Soulseek.Messaging.Messages
 
             var roomName = reader.ReadString();
 
-            return new LeaveRoomResponse(roomName);
+            return new RoomLeaveResponse(roomName);
         }
     }
 }
