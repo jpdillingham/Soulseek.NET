@@ -647,11 +647,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture();
 
-            JoinRoomResponse response = default;
+            RoomData response = default;
 
             var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
-            mocks.Waiter.Setup(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<JoinRoomResponse>()))
-                .Callback<WaitKey, JoinRoomResponse>((k, r) => response = r);
+            mocks.Waiter.Setup(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<RoomData>()))
+                .Callback<WaitKey, RoomData>((k, r) => response = r);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.JoinRoom)
@@ -666,7 +666,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessage(null, message);
 
-            Assert.Equal(roomName, response.RoomName);
+            Assert.Equal(roomName, response.Name);
             Assert.Equal(0, response.UserCount);
         }
 

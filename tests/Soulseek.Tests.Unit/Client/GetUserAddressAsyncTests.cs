@@ -121,8 +121,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserAddressAsync")]
-        [Theory(DisplayName = "GetUserAddressAsync throws PeerOfflineException when peer is offline"), AutoData]
-        public async Task GetUserAddressAsync_Throws_PeerOfflineException_When_Peer_Is_Offline(string username)
+        [Theory(DisplayName = "GetUserAddressAsync throws UserOfflineException when peer is offline"), AutoData]
+        public async Task GetUserAddressAsync_Throws_UserOfflineException_When_Peer_Is_Offline(string username)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -140,7 +140,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<UserAddressException>(ex);
-                Assert.IsType<PeerOfflineException>(ex.InnerException);
+                Assert.IsType<UserOfflineException>(ex.InnerException);
             }
         }
 

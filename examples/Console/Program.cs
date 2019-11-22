@@ -78,7 +78,7 @@
         public static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-
+            Soulseek.
             EnvironmentVariables.Populate();
             Arguments.Populate(clearExistingValues: false);
 

@@ -176,7 +176,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessage(mocks.PeerConnection.Object, msg);
 
-            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.InfoResponse, username), It.IsAny<UserInfoResponse>()), Times.Once);
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.InfoResponse, username), It.IsAny<UserInfo>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
@@ -342,7 +342,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Sends resolved UserInfoResponse"), AutoData]
         public void Sends_Resolved_UserInfoResponse(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeUploadSlot)
         {
-            var response = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeUploadSlot);
+            var response = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeUploadSlot);
             var options = new SoulseekClientOptions(userInfoResponseResolver: (u, i, p) => Task.FromResult(response));
 
             var (handler, mocks) = GetFixture(options: options);
@@ -384,14 +384,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 new File(2, "2", 2, "2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
             };
 
-            var dirs = new List<Directory>()
+            IEnumerable<Directory> dirs = new List<Directory>()
             {
                 new Directory("1", 2, files),
                 new Directory("2", 2, files),
             };
 
             var response = new BrowseResponse(2, dirs);
-            var options = new SoulseekClientOptions(browseResponseResolver: (u, i, p) => Task.FromResult(response));
+            var options = new SoulseekClientOptions(browseResponseResolver: (u, i, p) => Task.FromResult(dirs));
 
             var (handler, mocks) = GetFixture(options: options);
 

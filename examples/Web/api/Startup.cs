@@ -55,7 +55,7 @@
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
                 userInfoResponseResolver: (u, i, p) =>
                 {
-                    var info = new UserInfoResponse(
+                    var info = new UserInfo(
                         description: $"i'm a test! also, your username is {u}, IP address is {i}, and the port on which you connected to me is {p}", 
                         picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"), 
                         uploadSlots: 0, 
@@ -72,7 +72,8 @@
 
                     var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
 
-                    return Task.FromResult(new BrowseResponse(1, new List<Soulseek.Directory>() { dir }));
+                    IEnumerable<Soulseek.Directory> result = new List<Soulseek.Directory>() { dir };
+                    return Task.FromResult(result);
                 }, queueDownloadAction: (u, i, p, f) =>
                 {
                     Console.WriteLine($"Dispositioning {f}");

@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => SearchResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => SearchResponseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -79,7 +79,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteBytes(new byte[] { 0x0, 0x1, 0x2, 0x3 })
                 .Build();
 
-            var ex = Record.Exception(() => SearchResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => SearchResponseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageCompressionException>(ex);
@@ -96,7 +96,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var ex = Record.Exception(() => SearchResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => SearchResponseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -132,7 +132,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var ex = Record.Exception(() => SearchResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => SearchResponseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -161,7 +161,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var r = SearchResponse.FromByteArray(msg);
+            var r = SearchResponseResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);
@@ -200,7 +200,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var r = SearchResponse.FromByteArray(msg);
+            var r = SearchResponseResponse.FromByteArray(msg);
 
             Assert.Equal(username, r.Username);
             Assert.Equal(token, r.Token);
@@ -242,7 +242,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var r = SearchResponse.FromByteArray(msg);
+            var r = SearchResponseResponse.FromByteArray(msg);
 
             Assert.Equal(2, r.Files.Count);
 
@@ -288,7 +288,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var r = SearchResponse.FromByteArray(msg);
+            var r = SearchResponseResponse.FromByteArray(msg);
 
             Assert.Single(r.Files);
             Assert.Empty(r.Files.ToList()[0].Attributes);
@@ -319,7 +319,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            var r = SearchResponse.FromByteArray(msg);
+            var r = SearchResponseResponse.FromByteArray(msg);
 
             Assert.Single(r.Files);
 

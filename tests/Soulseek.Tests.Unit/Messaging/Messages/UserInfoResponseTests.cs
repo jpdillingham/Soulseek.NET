@@ -24,9 +24,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            UserInfoResponse response = null;
+            UserInfo response = null;
 
-            var ex = Record.Exception(() => response = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeSlot));
+            var ex = Record.Exception(() => response = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot));
 
             Assert.Null(ex);
 
@@ -118,7 +118,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "ToByteArray returns expected data with picture"), AutoData]
         public void ToByteArray_Returns_Expected_Data_With_Picture(string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var r = new UserInfoResponse(description, picture, uploadSlots, queueLength, hasFreeSlot).ToByteArray();
+            var r = new UserInfo(description, picture, uploadSlots, queueLength, hasFreeSlot).ToByteArray();
 
             var m = new MessageReader<MessageCode.Peer>(r);
             var code = m.ReadCode();
@@ -137,7 +137,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "ToByteArray returns expected data with no picture"), AutoData]
         public void ToByteArray_Returns_Expected_Data_With_No_Picture(string description, int uploadSlots, int queueLength, bool hasFreeSlot)
         {
-            var r = new UserInfoResponse(description, uploadSlots, queueLength, hasFreeSlot).ToByteArray();
+            var r = new UserInfo(description, uploadSlots, queueLength, hasFreeSlot).ToByteArray();
 
             var m = new MessageReader<MessageCode.Peer>(r);
             var code = m.ReadCode();
@@ -154,7 +154,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "ToByteArray returns expected data with no free slot"), AutoData]
         public void ToByteArray_Returns_Expected_Data_With_No_Free_Slot(string description, int uploadSlots, int queueLength)
         {
-            var r = new UserInfoResponse(description, uploadSlots, queueLength, false).ToByteArray();
+            var r = new UserInfo(description, uploadSlots, queueLength, false).ToByteArray();
 
             var m = new MessageReader<MessageCode.Peer>(r);
             var code = m.ReadCode();

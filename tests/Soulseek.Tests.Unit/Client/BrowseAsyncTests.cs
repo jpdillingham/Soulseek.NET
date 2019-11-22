@@ -103,7 +103,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var result = await s.BrowseAsync(username);
 
-                Assert.Equal(response, result);
+                Assert.Equal(response.Directories, result);
             }
         }
 
@@ -132,8 +132,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("Username", localUsername);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                BrowseResponse result = null;
-                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -165,8 +164,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("Username", localUsername);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                BrowseResponse result = null;
-                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -194,8 +192,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("Username", localUsername);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                BrowseResponse result = null;
-                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<BrowseException>(ex);
@@ -227,8 +224,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("Username", localUsername);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                BrowseResponse result = null;
-                var ex = await Record.ExceptionAsync(async () => result = await s.BrowseAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<BrowseException>(ex);
