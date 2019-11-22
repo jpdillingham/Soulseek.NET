@@ -213,31 +213,31 @@ namespace Soulseek.Exceptions
     }
 
     /// <summary>
-    ///     Represents an error connecting to a peer due to the peer being offline.
+    ///     Represents an error connecting to a user due to the peer being offline.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class PeerOfflineException : SoulseekClientException
+    public class UserOfflineException : SoulseekClientException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerOfflineException"/> class.
+        ///     Initializes a new instance of the <see cref="UserOfflineException"/> class.
         /// </summary>
-        public PeerOfflineException()
+        public UserOfflineException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerOfflineException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="UserOfflineException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public PeerOfflineException(string message)
+        public UserOfflineException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerOfflineException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="UserOfflineException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -245,17 +245,66 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
         ///     inner exception is specified.
         /// </param>
-        public PeerOfflineException(string message, Exception innerException)
+        public UserOfflineException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PeerOfflineException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="UserOfflineException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected PeerOfflineException(SerializationInfo info, StreamingContext context)
+        protected UserOfflineException(SerializationInfo info, StreamingContext context)
+            : base(info, context)
+        {
+        }
+    }
+
+    /// <summary>
+    ///     Represents an error connecting to a user due to the peer being offline.
+    /// </summary>
+    [ExcludeFromCodeCoverage]
+    [Serializable]
+    public class UserNotFoundException : SoulseekClientException
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserNotFoundException"/> class.
+        /// </summary>
+        public UserNotFoundException()
+            : base()
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserNotFoundException"/> class with a specified error message.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        public UserNotFoundException(string message)
+            : base(message)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserNotFoundException"/> class with a specified error message and a
+        ///     reference to the inner exception that is the cause of this exception.
+        /// </summary>
+        /// <param name="message">The message that describes the error.</param>
+        /// <param name="innerException">
+        ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
+        ///     inner exception is specified.
+        /// </param>
+        public UserNotFoundException(string message, Exception innerException)
+            : base(message, innerException)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserNotFoundException"/> class with serialized data.
+        /// </summary>
+        /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
+        /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
+        protected UserNotFoundException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
