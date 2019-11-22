@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming chat room message.
     /// </summary>
-    public sealed class RoomMessageNotification
+    internal sealed class RoomMessageNotification
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomMessageNotification"/> class.
@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="roomName">The name of the room in which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
-        internal RoomMessageNotification(string roomName, string username, string message)
+        public RoomMessageNotification(string roomName, string username, string message)
         {
             RoomName = roomName;
             Username = username;
@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static RoomMessageNotification FromByteArray(byte[] bytes)
+        public static RoomMessageNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();

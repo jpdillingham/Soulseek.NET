@@ -17,14 +17,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification that a user has left a chat room.
     /// </summary>
-    public sealed class RoomLeftNotification
+    internal sealed class RoomLeftNotification
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomLeftNotification"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room from which the user left.</param>
         /// <param name="username">The username of the user that left.</param>
-        internal RoomLeftNotification(string roomName, string username)
+        public RoomLeftNotification(string roomName, string username)
         {
             RoomName = roomName;
             Username = username;

@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming private message.
     /// </summary>
-    public sealed class PrivateMessageNotification
+    internal sealed class PrivateMessageNotification
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="PrivateMessageNotification"/> class.
@@ -28,7 +28,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
         /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
-        internal PrivateMessageNotification(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
+        public PrivateMessageNotification(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
         {
             Id = id;
             Timestamp = timestamp;
@@ -67,7 +67,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static PrivateMessageNotification FromByteArray(byte[] bytes)
+        public static PrivateMessageNotification FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();

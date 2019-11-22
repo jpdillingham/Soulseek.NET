@@ -17,13 +17,13 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a request to leave a chat room.
     /// </summary>
-    public sealed class LeaveRoomResponse
+    internal sealed class LeaveRoomResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="LeaveRoomResponse"/> class.
         /// </summary>
         /// <param name="roomName">The name of the room that was left.</param>
-        internal LeaveRoomResponse(string roomName)
+        public LeaveRoomResponse(string roomName)
         {
             RoomName = roomName;
         }
