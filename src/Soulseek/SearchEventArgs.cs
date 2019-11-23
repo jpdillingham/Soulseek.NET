@@ -15,7 +15,6 @@ namespace Soulseek
     using System;
     using System.Collections.Generic;
     using System.Linq;
-    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Generic event arguments for search events.

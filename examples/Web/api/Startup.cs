@@ -17,6 +17,7 @@
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
+    using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
     using Swashbuckle.AspNetCore.Swagger;
 

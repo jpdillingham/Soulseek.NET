@@ -67,6 +67,9 @@ namespace Soulseek
         /// </summary>
         public byte[] Data { get; }
 
+        /// <summary>
+        ///     Gets the trasnfer direction.
+        /// </summary>
         public TransferDirection Direction { get; }
 
         /// <summary>

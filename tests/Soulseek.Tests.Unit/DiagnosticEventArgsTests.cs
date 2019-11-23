@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using Soulseek.Diagnostics;
     using Xunit;
 
     public class DiagnosticEventArgsTests

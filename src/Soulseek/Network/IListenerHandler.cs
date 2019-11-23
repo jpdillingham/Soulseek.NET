@@ -12,6 +12,7 @@
 
 namespace Soulseek.Network
 {
+    using Soulseek.Diagnostics;
     using Soulseek.Network.Tcp;
 
     /// <summary>

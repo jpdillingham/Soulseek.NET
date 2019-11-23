@@ -3,6 +3,7 @@
     using global::Utility.CommandLine;
     using Newtonsoft.Json;
     using Soulseek;
+    using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
     using System;
     using System.Collections.Concurrent;

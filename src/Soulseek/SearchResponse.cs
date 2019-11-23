@@ -14,8 +14,6 @@ namespace Soulseek
 {
     using System.Collections.Generic;
     using System.Linq;
-    using Soulseek.Messaging;
-    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     A response to a file search.
@@ -43,6 +41,11 @@ namespace Soulseek
             FileList = fileList ?? Enumerable.Empty<File>();
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        /// </summary>
+        /// <param name="searchResponse">An existing instance from which to copy properties.</param>
+        /// <param name="fileList">The file list with which to replace the existing file list.</param>
         internal SearchResponse(SearchResponse searchResponse, IEnumerable<File> fileList)
             : this(searchResponse.Username, searchResponse.Token, fileList.Count(), searchResponse.FreeUploadSlots, searchResponse.UploadSpeed, searchResponse.QueueLength, fileList)
         {

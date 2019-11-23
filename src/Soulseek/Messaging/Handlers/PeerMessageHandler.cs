@@ -16,6 +16,7 @@ namespace Soulseek.Messaging.Handlers
     using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
+    using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;

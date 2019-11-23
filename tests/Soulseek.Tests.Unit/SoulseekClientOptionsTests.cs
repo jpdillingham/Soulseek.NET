@@ -14,6 +14,7 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using AutoFixture.Xunit2;
+    using Soulseek.Diagnostics;
     using Xunit;
 
     public class SoulseekClientOptionsTests
