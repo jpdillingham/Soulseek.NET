@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.Equal(status, r.Status);
-            Assert.Equal(privileged, r.Privileged);
+            Assert.Equal(privileged, r.IsPrivileged);
         }
 
         [Trait("Category", "Parse")]
@@ -74,7 +74,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(username, r.Username);
             Assert.Equal(status, r.Status);
-            Assert.Equal(privileged, r.Privileged);
+            Assert.Equal(privileged, r.IsPrivileged);
         }
     }
 }

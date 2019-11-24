@@ -64,9 +64,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "AddUserAsync")]
         [Theory(DisplayName = "AddUserAsync returns expected info"), AutoData]
-        public async Task AddUserAsync_Returns_Expected_Info(string username, bool exists, UserData userData)
+        public async Task AddUserAsync_Returns_Expected_Info(string username, UserData userData)
         {
-            var result = new AddUserResponse(username, exists, userData);
+            var result = new AddUserResponse(username, true, userData);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -82,14 +82,38 @@ namespace Soulseek.Tests.Unit.Client
 
                 var add = await s.AddUserAsync(username);
 
-                Assert.Equal(result.Username, add.Username);
-                Assert.Equal(result.Exists, add.Exists);
-                Assert.Equal(result.UserData, add.UserData);
+                Assert.Equal(result.UserData, add);
+            }
+        }
+
+        [Trait("Category", "AddUserAsync")]
+        [Theory(DisplayName = "AddUserAsync throws UserNotFoundException when exists is false"), AutoData]
+        public async Task AddUserAsync_Throws_UserNotFoundException_When_Exists_Is_False(string username, UserData userData)
+        {
+            var result = new AddUserResponse(username, false, userData);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<AddUserResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.AddUserAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<AddUserException>(ex);
+                Assert.IsType<UserNotFoundException>(ex.InnerException);
             }
         }
 
         [Trait("Category", "AddUserAsyncAsync")]
-        [Theory(DisplayName = "AddUserAsyncAsync throws UserStatusException on throw"), AutoData]
+        [Theory(DisplayName = "AddUserAsyncAsync throws AddUserException on throw"), AutoData]
         public async Task AddUserAsyncAsync_Throws_UserStatusException_On_Throw(string username, bool exists, UserData userData)
         {
             var result = new AddUserResponse(username, exists, userData);
@@ -106,8 +130,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                AddUserResponse r = null;
-                var ex = await Record.ExceptionAsync(async () => r = await s.AddUserAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.AddUserAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<AddUserException>(ex);
@@ -133,8 +156,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                AddUserResponse r = null;
-                var ex = await Record.ExceptionAsync(async () => r = await s.AddUserAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.AddUserAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -159,8 +181,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                AddUserResponse r = null;
-                var ex = await Record.ExceptionAsync(async () => r = await s.AddUserAsync(username));
+                var ex = await Record.ExceptionAsync(() => s.AddUserAsync(username));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

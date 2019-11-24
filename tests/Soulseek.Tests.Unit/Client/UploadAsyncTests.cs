@@ -25,7 +25,6 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class UploadAsyncTests
@@ -157,7 +156,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var options = new ClientOptions(messageTimeout: 1);
+            var options = new SoulseekClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -182,7 +181,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TransferException when WriteAsync throws"), AutoData]
         public async Task UploadInternalAsync_Throws_TransferException_When_WriteAsync_Throws(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, 0); // accept
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -224,7 +223,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TimeoutException on TransferResponse timeout"), AutoData]
         public async Task UploadInternalAsync_Throws_TimeoutException_On_TransferResponse_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
-            var options = new ClientOptions(messageTimeout: 1);
+            var options = new SoulseekClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -255,7 +254,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws OperationCanceledException on TransferResponse cancellation"), AutoData]
         public async Task UploadInternalAsync_Throws_OperationCanceledException_On_TransferResponse_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var waitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
@@ -288,7 +287,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws OperationCanceledException on request write cancellation"), AutoData]
         public async Task UploadInternalAsync_Throws_OperationCanceledException_On_Request_Write_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -332,7 +331,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TimeoutException on transfer response timeout"), AutoData]
         public async Task UploadInternalAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
 
@@ -373,7 +372,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync completes without Exception when transfer is allowed"), AutoData]
         public async Task UploadInternalAsync_Completes_Without_Exception_When_Transfer_Is_Allowed(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -414,7 +413,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
         public async Task UploadInternalAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, string.Empty); // reject
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -457,7 +456,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync invokes StateChanged delegate on state change"), AutoData]
         public async Task UploadInternalAsync_Invokes_StateChanged_Delegate_On_State_Change(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -508,7 +507,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync raises UploadProgressUpdated event on data write"), AutoData]
         public async Task UploadInternalAsync_Raises_UploadProgressUpdated_Event_On_Data_Read(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -570,7 +569,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync invokes ProgressUpdated delegate on data read"), AutoData]
         public async Task UploadInternalAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -626,7 +625,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync raises Upload events on failure"), AutoData]
         public async Task UploadInternalAsync_Raises_Upload_Events_On_Failure(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -689,7 +688,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync raises Upload events on timeout"), AutoData]
         public async Task UploadInternalAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -783,7 +782,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TransferException and ConnectionException on transfer exception"), AutoData]
         public async Task UploadInternalAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -839,7 +838,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TimeoutException on transfer timeout"), AutoData]
         public async Task UploadInternalAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -893,7 +892,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws OperationCanceledException on cancellation"), AutoData]
         public async Task UploadInternalAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -949,7 +948,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws TransferException on transfer rejection"), AutoData]
         public async Task UploadInternalAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, byte[] data, int token)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, string.Empty); // reject
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -992,7 +991,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync throws ConnectionException when transfer connection fails"), AutoData]
         public async Task UploadInternalAsync_Throws_ConnectionException_When_Transfer_Connection_Fails(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -1031,7 +1030,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync updates remote user on failure"), AutoData]
         public void UploadInternalAsync_Updates_Remote_User_On_Failure(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
@@ -1087,7 +1086,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "UploadInternalAsync swallows final read exception"), AutoData]
         public async Task UploadInternalAsync_Swallows_Final_Read_Exception(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
         {
-            var options = new ClientOptions(messageTimeout: 5);
+            var options = new SoulseekClientOptions(messageTimeout: 5);
 
             var response = new TransferResponse(token, size);
             var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);

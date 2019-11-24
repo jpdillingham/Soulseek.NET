@@ -12,6 +12,7 @@
 
 namespace Soulseek.Messaging.Handlers
 {
+    using Soulseek.Diagnostics;
     using Soulseek.Network;
 
     /// <summary>

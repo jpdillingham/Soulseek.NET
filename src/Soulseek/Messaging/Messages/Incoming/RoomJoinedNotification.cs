@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification that a user has joined a chat room.
     /// </summary>
-    public sealed class RoomJoinedNotification
+    internal sealed class RoomJoinedNotification
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="RoomJoinedNotification"/> class.
@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="roomName">The name of the room which the user joined.</param>
         /// <param name="username">The username of the user that joined.</param>
         /// <param name="userData">The user's data.</param>
-        internal RoomJoinedNotification(string roomName, string username, UserData userData)
+        public RoomJoinedNotification(string roomName, string username, UserData userData)
         {
             RoomName = roomName;
             Username = username;
@@ -77,7 +77,7 @@ namespace Soulseek.Messaging.Messages
                 countryCode = reader.ReadString();
             }
 
-            var userData = new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
+            var userData = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
 
             return new RoomJoinedNotification(roomName, username, userData);
         }

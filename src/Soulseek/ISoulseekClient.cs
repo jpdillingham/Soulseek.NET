@@ -17,9 +17,8 @@ namespace Soulseek
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
+    using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging.Messages;
-    using Soulseek.Options;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -29,22 +28,22 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        event EventHandler<PrivateMessage> PrivateMessageReceived;
+        event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
-        event EventHandler<RoomJoinedNotification> RoomJoined;
+        event EventHandler<RoomJoinedEventArgs> RoomJoined;
 
         /// <summary>
         ///     Occurs when a user leaves a chat room.
         /// </summary>
-        event EventHandler<RoomLeftNotification> RoomLeft;
+        event EventHandler<RoomLeftEventArgs> RoomLeft;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        event EventHandler<RoomMessage> RoomMessageReceived;
+        event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search response is received.
@@ -90,7 +89,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the client options.
         /// </summary>
-        ClientOptions Options { get; }
+        SoulseekClientOptions Options { get; }
 
         /// <summary>
         ///     Gets the server port.
@@ -137,7 +136,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
-        Task<AddUserResponse> AddUserAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the list of files shared by the specified <paramref name="username"/> with the optionally
@@ -157,7 +156,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
-        Task<BrowseResponse> BrowseAsync(string username, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
@@ -253,7 +252,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserAddressResponse> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
+        Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
@@ -268,7 +267,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserInfoResponse> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
@@ -283,7 +282,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task<UserStatusResponse> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+        Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
@@ -299,7 +298,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
-        Task<JoinRoomResponse> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
+        Task<RoomData> JoinRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously leaves the chat room with the specified <paramref name="roomName"/>.

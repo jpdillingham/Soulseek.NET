@@ -31,10 +31,10 @@
         /// <param name="username">The user to browse.</param>
         /// <returns></returns>
         [HttpGet("{username}")]
-        public async Task<ActionResult<BrowseResponse>> Get([FromRoute, Required]string username)
+        public async Task<ActionResult<List<Directory>>> Get([FromRoute, Required]string username)
         {
             var result = await Client.BrowseAsync(username);
-            return result;
+            return result.ToList();
         }
     }
 }

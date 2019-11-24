@@ -15,19 +15,17 @@ namespace Soulseek.Tests.Unit.Network
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
-    using Soulseek.Messaging;
-    using Soulseek.Messaging.Handlers;
+    using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
+
     public class ListenerHandlerTests
     {
         [Trait("Category", "Diagnostic")]
@@ -293,7 +291,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
         }
 
-        private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, ClientOptions clientOptions = null)
+        private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
 
@@ -308,14 +306,14 @@ namespace Soulseek.Tests.Unit.Network
 
         private class Mocks
         {
-            public Mocks(ClientOptions clientOptions = null)
+            public Mocks(SoulseekClientOptions clientOptions = null)
             {
                 Client = new Mock<SoulseekClient>(clientOptions)
                 {
                     CallBase = true,
                 };
 
-                Listener.Setup(m => m.Port).Returns(clientOptions?.ListenPort ?? new ClientOptions().ListenPort ?? 0);
+                Listener.Setup(m => m.Port).Returns(clientOptions?.ListenPort ?? new SoulseekClientOptions().ListenPort ?? 0);
                 PeerConnectionManager.Setup(m => m.PendingSolicitations)
                     .Returns(new Dictionary<int, string>());
                 DistributedConnectionManager.Setup(m => m.PendingSolicitations)
@@ -324,7 +322,7 @@ namespace Soulseek.Tests.Unit.Network
                 Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
                 Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
+                Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
                 Client.Setup(m => m.Listener).Returns(Listener.Object);
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
             }

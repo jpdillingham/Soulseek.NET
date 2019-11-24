@@ -14,7 +14,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using AutoFixture.Xunit2;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class ListenerTests

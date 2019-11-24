@@ -4,7 +4,6 @@
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Search

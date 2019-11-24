@@ -9,7 +9,6 @@
     using Microsoft.Extensions.Configuration;
     using Newtonsoft.Json;
     using Soulseek;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Search

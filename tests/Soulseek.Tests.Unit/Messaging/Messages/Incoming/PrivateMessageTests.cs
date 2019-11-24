@@ -25,9 +25,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(int id, DateTime timestamp, string username, string message, bool isAdmin)
         {
-            PrivateMessage response = null;
+            PrivateMessageNotification response = null;
 
-            var ex = Record.Exception(() => response = new PrivateMessage(id, timestamp, username, message, isAdmin));
+            var ex = Record.Exception(() => response = new PrivateMessageNotification(id, timestamp, username, message, isAdmin));
 
             Assert.Null(ex);
 
@@ -46,7 +46,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PrivateMessage.FromByteArray(msg));
+            var ex = Record.Exception(() => PrivateMessageNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -60,7 +60,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.PrivateMessage)
                 .Build();
 
-            var ex = Record.Exception(() => PrivateMessage.FromByteArray(msg));
+            var ex = Record.Exception(() => PrivateMessageNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -82,7 +82,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            var response = PrivateMessage.FromByteArray(msg);
+            var response = PrivateMessageNotification.FromByteArray(msg);
 
             Assert.Equal(id, response.Id);
             Assert.Equal(timestamp, response.Timestamp);

@@ -14,12 +14,11 @@ namespace Soulseek.Network
 {
     using System.Net;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Creates connections.
     /// </summary>
-    internal class ConnectionFactory : IConnectionFactory
+    internal sealed class ConnectionFactory : IConnectionFactory
     {
         /// <summary>
         ///     Gets a <see cref="IConnection"/> with the specified parameters.

@@ -3,8 +3,7 @@
     using global::Utility.CommandLine;
     using Newtonsoft.Json;
     using Soulseek;
-    using Soulseek.Messaging.Messages;
-    using Soulseek.Options;
+    using Soulseek.Diagnostics;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -79,11 +78,11 @@
         public static async Task Main(string[] args)
         {
             Console.OutputEncoding = Encoding.UTF8;
-
+            
             EnvironmentVariables.Populate();
             Arguments.Populate(clearExistingValues: false);
 
-            var options = new ClientOptions(
+            var options = new SoulseekClientOptions(
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 15),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 5)
@@ -226,17 +225,17 @@
             }
         }
 
-        private static void Client_RoomLeft(object sender, RoomLeftNotification e)
+        private static void Client_RoomLeft(object sender, RoomLeftEventArgs e)
         {
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} left room.");
         }
 
-        private static void Client_RoomJoined(object sender, RoomJoinedNotification e)
+        private static void Client_RoomJoined(object sender, RoomJoinedEventArgs e)
         {
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} joined room.");
         }
 
-        private static void Client_RoomMessageReceived(object sender, RoomMessage e)
+        private static void Client_RoomMessageReceived(object sender, RoomMessageEventArgs e)
         {
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] [{e.Username}]: {e.Message}");
         }
@@ -246,7 +245,7 @@
             Console.WriteLine($"[DIAGNOSTICS] [{e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] [{e.Level}]: {e.Message}");
         }
 
-        private static void Client_PrivateMessageReceived(object sender, PrivateMessage e)
+        private static void Client_PrivateMessageReceived(object sender, PrivateMessageEventArgs e)
         {
             Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }

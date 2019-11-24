@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.LeaveRoom)
                 .Build();
 
-            var ex = Record.Exception(() => JoinRoomResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => RoomJoinResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => JoinRoomResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => RoomJoinResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -63,9 +63,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(0) // slots free count
                 .WriteInteger(0); // country count
 
-            var response = JoinRoomResponse.FromByteArray(builder.Build());
+            var response = RoomJoinResponse.FromByteArray(builder.Build());
 
-            Assert.Equal(roomName, response.RoomName);
+            Assert.Equal(roomName, response.Name);
             Assert.Equal(0, response.UserCount);
         }
 
@@ -90,19 +90,19 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1) // country count
                 .WriteString("US");
 
-            var res = JoinRoomResponse.FromByteArray(builder.Build());
+            var res = RoomJoinResponse.FromByteArray(builder.Build());
             var users = res.Users.ToList();
 
-            Assert.Equal(roomName, res.RoomName);
+            Assert.Equal(roomName, res.Name);
             Assert.Equal(1, res.UserCount);
             Assert.Equal("1", users[0].Username);
-            Assert.Equal(UserStatus.Online, users[0].Data.Status);
-            Assert.Equal(10, users[0].Data.AverageSpeed);
-            Assert.Equal(11, users[0].Data.DownloadCount);
-            Assert.Equal(12, users[0].Data.FileCount);
-            Assert.Equal(13, users[0].Data.DirectoryCount);
-            Assert.Equal(14, users[0].Data.SlotsFree);
-            Assert.Equal("US", users[0].Data.CountryCode);
+            Assert.Equal(UserStatus.Online, users[0].Status);
+            Assert.Equal(10, users[0].AverageSpeed);
+            Assert.Equal(11, users[0].DownloadCount);
+            Assert.Equal(12, users[0].FileCount);
+            Assert.Equal(13, users[0].DirectoryCount);
+            Assert.Equal(14, users[0].SlotsFree);
+            Assert.Equal("US", users[0].CountryCode);
         }
 
         [Trait("Category", "Parse")]
@@ -134,18 +134,18 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("US")
                 .WriteString("EN");
 
-            var res = JoinRoomResponse.FromByteArray(builder.Build());
+            var res = RoomJoinResponse.FromByteArray(builder.Build());
             var users = res.Users.ToList();
 
-            Assert.Equal(roomName, res.RoomName);
+            Assert.Equal(roomName, res.Name);
             Assert.Equal(2, res.UserCount);
             Assert.Equal("10", users[0].Username);
-            Assert.Equal(11, users[0].Data.AverageSpeed);
-            Assert.Equal(12, users[0].Data.DownloadCount);
-            Assert.Equal(13, users[0].Data.FileCount);
-            Assert.Equal(14, users[0].Data.DirectoryCount);
-            Assert.Equal(15, users[0].Data.SlotsFree);
-            Assert.Equal("US", users[0].Data.CountryCode);
+            Assert.Equal(11, users[0].AverageSpeed);
+            Assert.Equal(12, users[0].DownloadCount);
+            Assert.Equal(13, users[0].FileCount);
+            Assert.Equal(14, users[0].DirectoryCount);
+            Assert.Equal(15, users[0].SlotsFree);
+            Assert.Equal("US", users[0].CountryCode);
         }
 
         [Trait("Category", "Parse")]
@@ -173,19 +173,19 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("op1")
                 .WriteString("op2");
 
-            var res = JoinRoomResponse.FromByteArray(builder.Build());
+            var res = RoomJoinResponse.FromByteArray(builder.Build());
             var users = res.Users.ToList();
 
-            Assert.Equal(roomName, res.RoomName);
+            Assert.Equal(roomName, res.Name);
             Assert.Equal(1, res.UserCount);
             Assert.Equal("1", users[0].Username);
-            Assert.Equal(UserStatus.Online, users[0].Data.Status);
-            Assert.Equal(10, users[0].Data.AverageSpeed);
-            Assert.Equal(11, users[0].Data.DownloadCount);
-            Assert.Equal(12, users[0].Data.FileCount);
-            Assert.Equal(13, users[0].Data.DirectoryCount);
-            Assert.Equal(14, users[0].Data.SlotsFree);
-            Assert.Equal("US", users[0].Data.CountryCode);
+            Assert.Equal(UserStatus.Online, users[0].Status);
+            Assert.Equal(10, users[0].AverageSpeed);
+            Assert.Equal(11, users[0].DownloadCount);
+            Assert.Equal(12, users[0].FileCount);
+            Assert.Equal(13, users[0].DirectoryCount);
+            Assert.Equal(14, users[0].SlotsFree);
+            Assert.Equal("US", users[0].CountryCode);
             Assert.True(res.IsPrivateRoom);
             Assert.Equal("owner", res.Owner);
             Assert.Equal(2, res.OperatorCount);

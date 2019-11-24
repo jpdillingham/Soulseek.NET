@@ -17,7 +17,6 @@ namespace Soulseek.Network.Tcp
     using System.Net;
     using System.Net.Sockets;
     using System.Threading.Tasks;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Listens for client connections for TCP network services.
@@ -29,7 +28,7 @@ namespace Soulseek.Network.Tcp
     ///     endpoint, both of which will and SHOULD throw exceptions and die.
     /// </remarks>
     [ExcludeFromCodeCoverage]
-    internal class Listener : IListener
+    internal sealed class Listener : IListener
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="Listener"/> class.

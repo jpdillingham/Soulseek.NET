@@ -19,13 +19,12 @@ namespace Soulseek
     using System.Threading;
     using System.Threading.Tasks;
     using Soulseek.Messaging.Messages;
-    using Soulseek.Options;
     using SystemTimer = System.Timers.Timer;
 
     /// <summary>
     ///     A single file search.
     /// </summary>
-    public sealed class Search : IDisposable
+    public class Search : IDisposable
     {
         private int resultCount = 0;
         private int resultFileCount = 0;
@@ -36,7 +35,7 @@ namespace Soulseek
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        internal Search(string searchText, int token, SearchOptions options = null)
+        public Search(string searchText, int token, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
@@ -90,11 +89,12 @@ namespace Soulseek
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
         /// <summary>
-        ///     Disposes this instance.
+        ///     Releases the managed and unmanaged resources used by the <see cref="Search"/>.
         /// </summary>
         public void Dispose()
         {
             Dispose(true);
+            GC.SuppressFinalize(this);
         }
 
         /// <summary>
@@ -109,10 +109,10 @@ namespace Soulseek
             if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
                 // extract the file list from the response and filter it
-                var fullResponse = new SearchResponse(slimResponse);
+                var fullResponse = SearchResponseResponse.FromSlimResponse(slimResponse);
                 var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
-                fullResponse = new SearchResponse(fullResponse, filteredFiles);
+                fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
 
                 // ensure the filtered file count still meets the response criteria
                 if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
@@ -172,7 +172,11 @@ namespace Soulseek
             }
         }
 
-        private void Dispose(bool disposing)
+        /// <summary>
+        ///     Releases the managed and unmanaged resources used by the <see cref="Search"/>.
+        /// </summary>
+        /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
+        protected virtual void Dispose(bool disposing)
         {
             if (!Disposed)
             {

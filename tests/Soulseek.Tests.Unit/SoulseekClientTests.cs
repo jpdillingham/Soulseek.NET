@@ -21,14 +21,13 @@ namespace Soulseek.Tests.Unit
     using Soulseek.Exceptions;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class SoulseekClientTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with with given options"), AutoData]
-        public void Instantiates_With_Given_Options(ClientOptions options)
+        public void Instantiates_With_Given_Options(SoulseekClientOptions options)
         {
             using (var s = new SoulseekClient(options))
             {
@@ -184,7 +183,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiation throws on a bad address")]
         public void Instantiation_Throws_On_A_Bad_Address()
         {
-            var ex = Record.Exception(() => new SoulseekClient(address: Guid.NewGuid().ToString(), port: new Random().Next(), options: new ClientOptions()));
+            var ex = Record.Exception(() => new SoulseekClient(address: Guid.NewGuid().ToString(), port: new Random().Next(), options: new SoulseekClientOptions()));
 
             Assert.NotNull(ex);
             Assert.IsType<SoulseekClientException>(ex);

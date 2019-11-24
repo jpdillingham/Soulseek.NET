@@ -81,18 +81,18 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var expectedResponse = new JoinRoomResponse(roomName, 0, Enumerable.Empty<(string Username, UserData Data)>(), false, null, null, null);
+            var expectedResponse = new RoomData(roomName, 0, Enumerable.Empty<UserData>(), false, null, null, null);
 
             var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<JoinRoomResponse>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+            waiter.Setup(m => m.Wait<RoomData>(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(expectedResponse));
 
             using (var s = new SoulseekClient("127.0.0.1", 0, serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                JoinRoomResponse response = default;
+                RoomData response = default;
 
                 response = await s.JoinRoomAsync(roomName);
 

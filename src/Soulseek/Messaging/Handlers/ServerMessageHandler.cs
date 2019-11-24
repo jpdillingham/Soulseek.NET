@@ -15,11 +15,11 @@ namespace Soulseek.Messaging.Handlers
     using System;
     using System.Linq;
     using System.Threading;
+    using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
-    using Soulseek.Options;
 
     /// <summary>
     ///     Handles incoming messages from the server connection.
@@ -37,7 +37,7 @@ namespace Soulseek.Messaging.Handlers
         {
             SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
             Diagnostic = diagnosticFactory ??
-                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new ClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
+                new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
         }
 
         /// <summary>
@@ -48,22 +48,22 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        public event EventHandler<PrivateMessage> PrivateMessageReceived;
+        public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
-        public event EventHandler<RoomJoinedNotification> RoomJoined;
+        public event EventHandler<RoomJoinedEventArgs> RoomJoined;
 
         /// <summary>
         ///     Occurs when a user leaves a chat room.
         /// </summary>
-        public event EventHandler<RoomLeftNotification> RoomLeft;
+        public event EventHandler<RoomLeftEventArgs> RoomLeft;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessage> RoomMessageReceived;
+        public event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -107,7 +107,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.NetInfo:
-                        var netInfo = NetInfo.FromByteArray(message);
+                        var netInfo = NetInfoNotification.FromByteArray(message);
 
                         try
                         {
@@ -178,8 +178,8 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivateMessage:
-                        var pm = PrivateMessage.FromByteArray(message);
-                        PrivateMessageReceived?.Invoke(this, pm);
+                        var pm = PrivateMessageNotification.FromByteArray(message);
+                        PrivateMessageReceived?.Invoke(this, new PrivateMessageEventArgs(pm));
 
                         if (SoulseekClient.Options.AutoAcknowledgePrivateMessages)
                         {
@@ -194,28 +194,28 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.JoinRoom:
-                        var joinRoomResponse = JoinRoomResponse.FromByteArray(message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(code, joinRoomResponse.RoomName), joinRoomResponse);
+                        var roomData = RoomJoinResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, roomData.Name), roomData);
                         break;
 
                     case MessageCode.Server.LeaveRoom:
-                        var leaveRoomResponse = LeaveRoomResponse.FromByteArray(message);
+                        var leaveRoomResponse = RoomLeaveResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code, leaveRoomResponse.RoomName));
                         break;
 
                     case MessageCode.Server.SayInChatRoom:
-                        var roomMessage = RoomMessage.FromByteArray(message);
-                        RoomMessageReceived?.Invoke(this, roomMessage);
+                        var roomMessage = RoomMessageNotification.FromByteArray(message);
+                        RoomMessageReceived?.Invoke(this, new RoomMessageEventArgs(roomMessage));
                         break;
 
                     case MessageCode.Server.UserJoinedRoom:
                         var joinNotification = RoomJoinedNotification.FromByteArray(message);
-                        RoomJoined?.Invoke(this, joinNotification);
+                        RoomJoined?.Invoke(this, new RoomJoinedEventArgs(joinNotification));
                         break;
 
                     case MessageCode.Server.UserLeftRoom:
                         var leftNotification = RoomLeftNotification.FromByteArray(message);
-                        RoomLeft?.Invoke(this, leftNotification);
+                        RoomLeft?.Invoke(this, new RoomLeftEventArgs(leftNotification));
                         break;
 
                     default:

@@ -21,12 +21,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Diagnostics;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class ServerMessageHandlerTests
@@ -99,7 +99,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Raises PrivateMessageReceived event on ServerPrivateMessage"), AutoData]
         public void Raises_PrivateMessageRecieved_Event_On_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
-            var options = new ClientOptions(autoAcknowledgePrivateMessages: false);
+            var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: false);
             var (handler, mocks) = GetFixture(options);
 
             var epoch = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            PrivateMessage response = null;
+            PrivateMessageEventArgs response = null;
             handler.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
 
             handler.HandleMessage(null, msg);
@@ -131,7 +131,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Acknowledges ServerPrivateMessage"), AutoData]
         internal void Acknowledges_ServerPrivateMessage(int id, int timeOffset, string username, string message, bool isAdmin)
         {
-            var options = new ClientOptions(autoAcknowledgePrivateMessages: true);
+            var options = new SoulseekClientOptions(autoAcknowledgePrivateMessages: true);
             var (handler, mocks) = GetFixture(options);
 
             var msg = new MessageBuilder()
@@ -323,7 +323,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var mocks = new Mocks();
             mocks.Client.Setup(m => m.Options)
-                .Returns(new ClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug));
+                .Returns(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug));
 
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
@@ -360,7 +360,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var mocks = new Mocks();
             mocks.Client.Setup(m => m.Options)
-                .Returns(new ClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug));
+                .Returns(new SoulseekClientOptions(minimumDiagnosticLevel: DiagnosticLevel.Debug));
 
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
@@ -546,7 +546,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             Assert.Equal(username, result.Username);
             Assert.Equal(status, result.Status);
-            Assert.Equal(privileged, result.Privileged);
+            Assert.Equal(privileged, result.IsPrivileged);
         }
 
         [Trait("Category", "Message")]
@@ -639,7 +639,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             Assert.Equal(username, eventArgs.Username);
             Assert.Equal(status, eventArgs.Status);
-            Assert.Equal(privileged, eventArgs.Privileged);
+            Assert.Equal(privileged, eventArgs.IsPrivileged);
         }
 
         [Trait("Category", "Message")]
@@ -648,11 +648,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture();
 
-            JoinRoomResponse response = default;
+            RoomData response = default;
 
             var key = new WaitKey(MessageCode.Server.JoinRoom, roomName);
-            mocks.Waiter.Setup(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<JoinRoomResponse>()))
-                .Callback<WaitKey, JoinRoomResponse>((k, r) => response = r);
+            mocks.Waiter.Setup(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key)), It.IsAny<RoomData>()))
+                .Callback<WaitKey, RoomData>((k, r) => response = r);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.JoinRoom)
@@ -667,7 +667,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessage(null, message);
 
-            Assert.Equal(roomName, response.RoomName);
+            Assert.Equal(roomName, response.Name);
             Assert.Equal(0, response.UserCount);
         }
 
@@ -703,7 +703,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomMessage actual = default;
+            RoomMessageEventArgs actual = default;
             handler.RoomMessageReceived += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 
@@ -731,7 +731,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomJoinedNotification actual = default;
+            RoomJoinedEventArgs actual = default;
             handler.RoomJoined += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 
@@ -758,7 +758,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomLeftNotification actual = default;
+            RoomLeftEventArgs actual = default;
             handler.RoomLeft += (sender, args) => actual = args;
             handler.HandleMessage(null, message);
 
@@ -766,7 +766,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(username, actual.Username);
         }
 
-        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(ClientOptions clientOptions = null)
+        private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
 
@@ -779,7 +779,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         private class Mocks
         {
-            public Mocks(ClientOptions clientOptions = null)
+            public Mocks(SoulseekClientOptions clientOptions = null)
             {
                 Client = new Mock<SoulseekClient>(clientOptions)
                 {
@@ -792,7 +792,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
                 Client.Setup(m => m.Downloads).Returns(Downloads);
                 Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-                Client.Setup(m => m.Options).Returns(clientOptions ?? new ClientOptions());
+                Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
             }
 
             public Mock<SoulseekClient> Client { get; }

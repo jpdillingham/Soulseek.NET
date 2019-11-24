@@ -24,9 +24,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string roomName, string username, string message)
         {
-            RoomMessage response = null;
+            RoomMessageNotification response = null;
 
-            var ex = Record.Exception(() => response = new RoomMessage(roomName, username, message));
+            var ex = Record.Exception(() => response = new RoomMessageNotification(roomName, username, message));
 
             Assert.Null(ex);
 
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => RoomMessage.FromByteArray(msg));
+            var ex = Record.Exception(() => RoomMessageNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Server.SayInChatRoom)
                 .Build();
 
-            var ex = Record.Exception(() => RoomMessage.FromByteArray(msg));
+            var ex = Record.Exception(() => RoomMessageNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -74,7 +74,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(message)
                 .Build();
 
-            var response = RoomMessage.FromByteArray(msg);
+            var response = RoomMessageNotification.FromByteArray(msg);
 
             Assert.Equal(roomName, response.RoomName);
             Assert.Equal(username, response.Username);

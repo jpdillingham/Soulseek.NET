@@ -13,7 +13,6 @@
 namespace Soulseek.Tests.Integration
 {
     using System.Threading.Tasks;
-    using Soulseek.Options;
     using Xunit;
 
     public class SoulseekClientTests
@@ -102,7 +101,7 @@ namespace Soulseek.Tests.Integration
         public void GetNextToken_Rolls_Over_At_Int_MaxValue()
         {
             using (var s = new SoulseekClient(
-                new ClientOptions(startingToken: int.MaxValue)))
+                new SoulseekClientOptions(startingToken: int.MaxValue)))
             {
                 var t1 = s.GetNextToken();
                 var t2 = s.GetNextToken();

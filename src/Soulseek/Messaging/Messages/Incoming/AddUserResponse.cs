@@ -17,7 +17,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to an add user request.
     /// </summary>
-    public sealed class AddUserResponse
+    internal sealed class AddUserResponse
     {
         /// <summary>
         ///     Initializes a new instance of the <see cref="AddUserResponse"/> class.
@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The username of the added peer.</param>
         /// <param name="exists">A value indicating whether the username exists on the network.</param>
         /// <param name="userData">If <see cref="Exists"/>, the user's data.</param>
-        internal AddUserResponse(string username, bool exists, UserData userData = null)
+        public AddUserResponse(string username, bool exists, UserData userData = null)
         {
             Username = username;
             Exists = exists;
@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        internal static AddUserResponse FromByteArray(byte[] bytes)
+        public static AddUserResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
@@ -82,7 +82,7 @@ namespace Soulseek.Messaging.Messages
                     countryCode = reader.ReadString();
                 }
 
-                user = new UserData(status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
+                user = new UserData(username, status, averageSpeed, downloadCount, fileCount, directoryCount, countryCode: countryCode);
             }
 
             return new AddUserResponse(username, exists, user);

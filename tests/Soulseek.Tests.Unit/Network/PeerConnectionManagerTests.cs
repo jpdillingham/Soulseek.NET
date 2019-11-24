@@ -21,12 +21,12 @@ namespace Soulseek.Tests.Unit.Network
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
     using Xunit;
 
     public class PeerConnectionManagerTests
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Network
             Assert.NotNull(c);
 
             Assert.Equal(0, c.MessageConnections.Count);
-            Assert.Equal(new ClientOptions().ConcurrentPeerMessageConnectionLimit, c.ConcurrentMessageConnectionLimit);
+            Assert.Equal(new SoulseekClientOptions().ConcurrentPeerMessageConnectionLimit, c.ConcurrentMessageConnectionLimit);
         }
 
         [Trait("Category", "Dispose")]
@@ -1520,7 +1520,7 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, ClientOptions options = null)
+        private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
 
@@ -1562,7 +1562,7 @@ namespace Soulseek.Tests.Unit.Network
 
         private class Mocks
         {
-            public Mocks(ClientOptions clientOptions = null)
+            public Mocks(SoulseekClientOptions clientOptions = null)
             {
                 Client = new Mock<SoulseekClient>(clientOptions)
                 {

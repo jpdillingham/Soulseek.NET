@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
-    using Soulseek.Messaging.Messages;
+    using Soulseek.Diagnostics;
     using Soulseek.Network;
 
     /// <summary>
@@ -24,22 +24,22 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        event EventHandler<PrivateMessage> PrivateMessageReceived;
+        event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
-        event EventHandler<RoomJoinedNotification> RoomJoined;
+        event EventHandler<RoomJoinedEventArgs> RoomJoined;
 
         /// <summary>
         ///     Occurs when a user leaves a chat room.
         /// </summary>
-        event EventHandler<RoomLeftNotification> RoomLeft;
+        event EventHandler<RoomLeftEventArgs> RoomLeft;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        event EventHandler<RoomMessage> RoomMessageReceived;
+        event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.

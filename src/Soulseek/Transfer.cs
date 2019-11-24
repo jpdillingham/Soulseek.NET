@@ -15,12 +15,11 @@ namespace Soulseek
     using System;
     using System.Net;
     using Soulseek.Network.Tcp;
-    using Soulseek.Options;
 
     /// <summary>
     ///     A single file transfer.
     /// </summary>
-    public sealed class Transfer
+    public class Transfer
     {
         private readonly int progressUpdateLimit = 100;
         private readonly double speedAlpha = 2f / 10;
@@ -38,7 +37,7 @@ namespace Soulseek
         /// <param name="filename">The filename of the file to be transferred.</param>
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="options">The options for the transfer.</param>
-        internal Transfer(TransferDirection direction, string username, string filename, int token, TransferOptions options = null)
+        public Transfer(TransferDirection direction, string username, string filename, int token, TransferOptions options = null)
         {
             Direction = direction;
             Username = username;
