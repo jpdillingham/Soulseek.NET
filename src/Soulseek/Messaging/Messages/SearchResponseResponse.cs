@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static SearchResponse FromByteArray(byte[] bytes)
+        public static SearchResponse FromByteArray(byte[] bytes)
         {
             var slim = SearchResponseSlim.FromByteArray(bytes);
             return FromSlimResponse(slim);
@@ -36,7 +36,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="slimResponse">The slim response from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static SearchResponse FromSlimResponse(SearchResponseSlim slimResponse)
+        public static SearchResponse FromSlimResponse(SearchResponseSlim slimResponse)
         {
             var files = ParseFiles(slimResponse.MessageReader, slimResponse.FileCount);
             return new SearchResponse(slimResponse.Username, slimResponse.Token, files.Count, slimResponse.FreeUploadSlots, slimResponse.UploadSpeed, slimResponse.QueueLength, files);
@@ -47,7 +47,7 @@ namespace Soulseek.Messaging.Messages
         /// </summary>
         /// <param name="searchResponse">The instance from which to construct the byte array.</param>
         /// <returns>The constructed byte array.</returns>
-        internal static byte[] ToByteArray(this SearchResponse searchResponse)
+        public static byte[] ToByteArray(this SearchResponse searchResponse)
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.SearchResponse)

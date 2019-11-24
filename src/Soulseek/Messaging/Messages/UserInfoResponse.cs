@@ -25,7 +25,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        internal static UserInfo FromByteArray(byte[] bytes)
+        public static UserInfo FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
@@ -57,7 +57,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="userInfo">The instance from which to construct the byte array.</param>
         /// <returns>The constructed byte array.</returns>
-        internal static byte[] ToByteArray(this UserInfo userInfo)
+        public static byte[] ToByteArray(this UserInfo userInfo)
         {
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.InfoResponse)
