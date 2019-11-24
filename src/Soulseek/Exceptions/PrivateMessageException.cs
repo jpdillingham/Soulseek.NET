@@ -1,4 +1,4 @@
-﻿// <copyright file="MessageException.cs" company="JP Dillingham">
+﻿// <copyright file="PrivateMessageException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -17,31 +17,31 @@ namespace Soulseek.Exceptions
     using System.Runtime.Serialization;
 
     /// <summary>
-    ///     Represents errors that occur while handling network messages.
+    ///     Represents errors that occur while handling private messages.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class MessageException : SoulseekClientException
+    public class PrivateMessageException : SoulseekClientException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageException"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class.
         /// </summary>
-        public MessageException()
+        public PrivateMessageException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public MessageException(string message)
+        public PrivateMessageException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -49,17 +49,17 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
         ///     inner exception is specified.
         /// </param>
-        public MessageException(string message, Exception innerException)
+        public PrivateMessageException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="PrivateMessageException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected MessageException(SerializationInfo info, StreamingContext context)
+        protected PrivateMessageException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
