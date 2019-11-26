@@ -517,7 +517,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
-            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.DataWritten += null, this, new ConnectionDataEventArgs(1, 1));
             transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))

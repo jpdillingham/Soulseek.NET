@@ -806,7 +806,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new byte[size]))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
 
