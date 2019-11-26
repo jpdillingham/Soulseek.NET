@@ -81,10 +81,7 @@
         {
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
 
-            var downloadTask = Client.DownloadAsync(username, filename, token, new TransferOptions(governor: (t) => {
-                Console.WriteLine($"Waiting 1000ms");
-                return Task.Delay(1000);
-            }, stateChanged: (e) =>
+            var downloadTask = Client.DownloadAsync(username, filename, token, new TransferOptions(stateChanged: (e) =>
             {
                 Tracker.AddOrUpdate(e);
 
