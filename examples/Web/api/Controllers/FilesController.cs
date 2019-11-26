@@ -57,7 +57,10 @@
         public async Task<IActionResult> Download([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token, [FromQuery]bool toDisk = true)
         {
             var fileBytes = await Client.DownloadAsync(username, filename, token, 
-                new TransferOptions(stateChanged: (e) => Tracker.AddOrUpdate(e), progressUpdated: (e) => Tracker.AddOrUpdate(e)));
+                new TransferOptions(governor: (t) => {
+                    Console.WriteLine($"Waiting 1000ms");
+                    return Task.Delay(1000);
+                }, stateChanged: (e) => Tracker.AddOrUpdate(e), progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
             if (toDisk)
             {
@@ -81,7 +84,10 @@
         {
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
 
-            var downloadTask = Client.DownloadAsync(username, filename, token, new TransferOptions(stateChanged: (e) =>
+            var downloadTask = Client.DownloadAsync(username, filename, token, new TransferOptions(governor: (t) => {
+                Console.WriteLine($"Waiting 1000ms");
+                return Task.Delay(1000);
+            }, stateChanged: (e) =>
             {
                 Tracker.AddOrUpdate(e);
 
