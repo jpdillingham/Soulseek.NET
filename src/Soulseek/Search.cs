@@ -102,11 +102,11 @@ namespace Soulseek
         ///     in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void AddResponse(SearchResponseSlim slimResponse)
+        internal void TryAddResponse(SearchResponseSlim slimResponse)
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
-            if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
+            if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
                 // extract the file list from the response and filter it
                 var fullResponse = SearchResponseResponse.FromSlimResponse(slimResponse);
@@ -120,21 +120,30 @@ namespace Soulseek
                     return;
                 }
 
-                Interlocked.Increment(ref resultCount);
-                Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
-
-                ResponseBag.Add(fullResponse);
-
-                ResponseReceived?.Invoke(fullResponse);
-                SearchTimeoutTimer.Reset();
-
-                if (resultCount >= Options.ResponseLimit)
+                try
                 {
-                    Complete(SearchStates.ResponseLimitReached);
+                    Interlocked.Increment(ref resultCount);
+                    Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
+
+                    ResponseBag.Add(fullResponse);
+
+                    ResponseReceived?.Invoke(fullResponse);
+                    SearchTimeoutTimer.Reset();
+
+                    if (resultCount >= Options.ResponseLimit)
+                    {
+                        Complete(SearchStates.ResponseLimitReached);
+                    }
+                    else if (resultFileCount >= Options.FileLimit)
+                    {
+                        Complete(SearchStates.FileLimitReached);
+                    }
                 }
-                else if (resultFileCount >= Options.FileLimit)
+                catch
                 {
-                    Complete(SearchStates.FileLimitReached);
+                    // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses to throw exceptions accessing the disposed instance
+                    // or a variety of other issues. swallowing exceptions here is the most pragmatic way to handle this, as anything else would involve synchronization and would
+                    // create lock contention when adding responses.
                 }
             }
         }
