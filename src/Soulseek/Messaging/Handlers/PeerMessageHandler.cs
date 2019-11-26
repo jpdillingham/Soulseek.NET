@@ -69,7 +69,7 @@ namespace Soulseek.Messaging.Handlers
                         var searchResponse = SearchResponseSlim.FromByteArray(message);
                         if (SoulseekClient.Searches.TryGetValue(searchResponse.Token, out var search))
                         {
-                            search.AddResponse(searchResponse);
+                            search.TryAddResponse(searchResponse);
                         }
 
                         break;
