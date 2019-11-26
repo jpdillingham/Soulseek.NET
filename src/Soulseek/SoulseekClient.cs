@@ -1222,7 +1222,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    var bytes = await download.Connection.ReadAsync(download.Size, cancellationToken).ConfigureAwait(false);
+                    var bytes = await download.Connection.ReadAsync(download.Size, () => options.Governor(download), cancellationToken).ConfigureAwait(false);
 
                     download.Data = bytes.ToArray();
                     download.State = TransferStates.Succeeded;
@@ -1650,7 +1650,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await upload.Connection.WriteAsync(upload.Data, cancellationToken).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(upload.Data, () => options.Governor(upload), cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 

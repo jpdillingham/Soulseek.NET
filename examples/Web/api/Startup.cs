@@ -79,7 +79,9 @@
                 {
                     Console.WriteLine($"Dispositioning {f}");
 
-                    Task.Run(async () => await Client.UploadAsync(u, f, System.IO.File.ReadAllBytes(f)))
+                    var topts = new TransferOptions();
+
+                    Task.Run(async () => await Client.UploadAsync(u, f, System.IO.File.ReadAllBytes(f), options: topts))
                         .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
 
                     return Task.CompletedTask;

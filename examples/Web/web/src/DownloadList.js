@@ -54,7 +54,7 @@ const DownloadList = ({ username, directoryName, files }) => (
                     {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
                         <Table.Row key={i}>
                             <Table.Cell className='downloadlist-filename'>{getFileName(f.filename)}</Table.Cell>
-                            <Table.Cell className='downloadlist-size'>{formatBytes(f.bytesDownloaded).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
+                            <Table.Cell className='downloadlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
                             <Table.Cell className='downloadlist-progress'>
                                 <Progress 
                                     style={{ margin: 0}}
