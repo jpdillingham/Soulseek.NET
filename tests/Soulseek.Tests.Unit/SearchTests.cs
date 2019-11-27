@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.Completed,
             };
 
-            s.AddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
+            s.TryAddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
 
@@ -173,7 +173,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.InProgress,
             };
 
-            s.AddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
+            s.TryAddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
 
@@ -189,7 +189,7 @@ namespace Soulseek.Tests.Unit
                 State = SearchStates.InProgress,
             };
 
-            s.AddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
+            s.TryAddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
 
             Assert.Empty(s.Responses);
 
@@ -226,7 +226,7 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.Single(s.Responses);
 
@@ -277,7 +277,7 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.Empty(s.Responses);
 
@@ -321,7 +321,7 @@ namespace Soulseek.Tests.Unit
 
             var task = s.WaitForCompletion(CancellationToken.None);
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             await task;
 
@@ -369,7 +369,7 @@ namespace Soulseek.Tests.Unit
 
             var task = s.WaitForCompletion(CancellationToken.None);
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             await task;
 
@@ -413,7 +413,7 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.AddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
+            s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
             Assert.NotNull(addResponse);
             Assert.Equal(filename, addResponse.Files.ToList()[0].Filename);
