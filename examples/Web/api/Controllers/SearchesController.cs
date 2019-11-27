@@ -33,6 +33,8 @@
         [HttpPost("")]
         public async Task<IActionResult> Post([FromBody]string searchText, [FromQuery]int? token = null)
         {
+            Tracker.Clear();
+
             var results = await Client.SearchAsync(searchText, token, new SearchOptions(
                 responseReceived: (e) => Tracker.AddOrUpdate(e), 
                 stateChanged: (e) => Tracker.AddOrUpdate(e)));

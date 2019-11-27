@@ -11,12 +11,18 @@
         ConcurrentDictionary<string, Search> Searches { get; }
         void AddOrUpdate(SearchResponseReceivedEventArgs args);
         void AddOrUpdate(SearchStateChangedEventArgs args);
+        void Clear();
     }
 
     public class SearchTracker : ISearchTracker
     {
         public ConcurrentDictionary<string, Search> Searches { get; private set; } = 
             new ConcurrentDictionary<string, Search>();
+
+        public void Clear()
+        {
+            Searches.Clear();
+        }
 
         public void AddOrUpdate(SearchResponseReceivedEventArgs args)
         {
