@@ -109,7 +109,7 @@ namespace Soulseek
             if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
                 // extract the file list from the response and filter it
-                var fullResponse = SearchResponseResponse.FromSlimResponse(slimResponse);
+                var fullResponse = SearchResponseFactory.FromSlimResponse(slimResponse);
                 var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
                 fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
