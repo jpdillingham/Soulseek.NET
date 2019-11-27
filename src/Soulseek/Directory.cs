@@ -12,7 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -32,7 +31,7 @@ namespace Soulseek
             Directoryname = directoryname;
             FileCount = fileCount;
 
-            FileList = fileList ?? Array.Empty<File>();
+            FileList = fileList ?? Enumerable.Empty<File>();
         }
 
         /// <summary>
@@ -48,7 +47,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the collection of files contained within the directory.
         /// </summary>
-        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
+        public IEnumerable<File> Files => FileList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the list of files contained within the directory.
