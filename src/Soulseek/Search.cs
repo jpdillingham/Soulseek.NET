@@ -102,14 +102,14 @@ namespace Soulseek
         ///     in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void AddResponse(SearchResponseSlim slimResponse)
+        internal void TryAddResponse(SearchResponseSlim slimResponse)
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
-            if (State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
+            if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
             {
                 // extract the file list from the response and filter it
-                var fullResponse = SearchResponseResponse.FromSlimResponse(slimResponse);
+                var fullResponse = SearchResponseFactory.FromSlimResponse(slimResponse);
                 var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
 
                 fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
@@ -120,10 +120,19 @@ namespace Soulseek
                     return;
                 }
 
-                Interlocked.Increment(ref resultCount);
-                Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
+                try
+                {
+                    Interlocked.Increment(ref resultCount);
+                    Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
 
-                ResponseBag.Add(fullResponse);
+                    ResponseBag.Add(fullResponse);
+                }
+                catch
+                {
+                    // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses to throw exceptions accessing the disposed instance
+                    // or a variety of other issues. swallowing exceptions here is the most pragmatic way to handle this, as anything else would involve synchronization and would
+                    // create lock contention when adding responses.
+                }
 
                 ResponseReceived?.Invoke(fullResponse);
                 SearchTimeoutTimer.Reset();
@@ -155,7 +164,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        internal async Task<IReadOnlyCollection<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 

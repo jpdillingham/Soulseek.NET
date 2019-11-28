@@ -49,7 +49,7 @@
             var options = new SoulseekClientOptions(
                 listenPort: ListenPort,
                 concurrentDistributedChildrenLimit: 10,
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
+                minimumDiagnosticLevel: DiagnosticLevel.Info,
                 concurrentPeerMessageConnectionLimit: 1000000,
                 serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),

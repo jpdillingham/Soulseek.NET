@@ -12,7 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -32,7 +31,7 @@ namespace Soulseek
             Directoryname = directoryname;
             FileCount = fileCount;
 
-            FileList = fileList ?? Array.Empty<File>();
+            FileList = fileList ?? Enumerable.Empty<File>();
         }
 
         /// <summary>

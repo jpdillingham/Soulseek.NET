@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchResponseResponse.cs" company="JP Dillingham">
+﻿// <copyright file="SearchResponseFactory.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     The response to a file search request.
     /// </summary>
-    internal static class SearchResponseResponse
+    internal static class SearchResponseFactory
     {
         /// <summary>
         ///     Creates a new instance of <see cref="SearchResponse"/> from the specified <paramref name="bytes"/>.
