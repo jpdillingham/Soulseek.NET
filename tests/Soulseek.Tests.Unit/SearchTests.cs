@@ -12,7 +12,7 @@
 
 namespace Soulseek.Tests.Unit
 {
-    using System;
+    using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -148,9 +148,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Fact(DisplayName = "AddResponse ignores response when search is not in progress")]
-        public void AddResponse_Ignores_Response_When_Search_Is_Not_In_Progress()
+        [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse ignores response when search is not in progress")]
+        public void TryAddResponse_Ignores_Response_When_Search_Is_Not_In_Progress()
         {
             var s = new Search("foo", 42)
             {
@@ -164,9 +164,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Fact(DisplayName = "AddResponse ignores response when token does not match")]
-        public void AddResponse_Ignores_Response_When_Token_Does_Not_Match()
+        [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse ignores response when token does not match")]
+        public void TryAddResponse_Ignores_Response_When_Token_Does_Not_Match()
         {
             var s = new Search("foo", 42)
             {
@@ -180,9 +180,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Fact(DisplayName = "AddResponse ignores response when response criteria not met")]
-        public void AddResponse_Ignores_Response_When_Response_Criteria_Not_Met()
+        [Trait("Category", "TryAddResponse")]
+        [Fact(DisplayName = "TryAddResponse ignores response when response criteria not met")]
+        public void TryAddResponse_Ignores_Response_When_Response_Criteria_Not_Met()
         {
             var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
@@ -196,9 +196,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse adds response"), AutoData]
-        public void AddResponse_Adds_Response(string username, int token, byte code, string filename, int size, string extension)
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
+        public void TryAddResponse_Adds_Response(string username, int token, byte code, string filename, int size, string extension)
         {
             var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
@@ -242,9 +242,48 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse ignores response when all files are filtered and response filtering is enabled"), AutoData]
-        public void AddResponse_Ignores_Response_When_All_Files_Are_Filtered_And_Response_Filtering_Is_Enabled(string username, int token, byte code, string filename, int size, string extension)
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
+        public void TryAddResponse_Swallows_Exceptions(string username, int token, byte code, string filename, int size, string extension)
+        {
+            var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
+            {
+                State = SearchStates.InProgress,
+            };
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.SearchResponse)
+                .WriteString(username)
+                .WriteInteger(token) // token
+                .WriteInteger(1) // file count
+                .WriteByte(code) // code
+                .WriteString(filename) // filename
+                .WriteLong(size) // size
+                .WriteString(extension) // extension
+                .WriteInteger(1) // attribute count
+                .WriteInteger((int)FileAttributeType.BitDepth) // attribute[0].type
+                .WriteInteger(4) // attribute[0].value
+                .WriteByte(1) // free upload slots
+                .WriteInteger(1) // upload speed
+                .WriteLong(0) // queue length
+                .WriteBytes(new byte[4]) // unknown 4 bytes
+                .Build();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            reader.Seek(username.Length + 12); // seek to the start of the file list
+
+            s.SetProperty("ResponseBag", default(ConcurrentBag<SearchResponse>));
+
+            var ex = Record.Exception(() => s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader)));
+
+            Assert.Null(ex);
+
+            s.Dispose();
+        }
+
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse ignores response when all files are filtered and response filtering is enabled"), AutoData]
+        public void TryAddResponse_Ignores_Response_When_All_Files_Are_Filtered_And_Response_Filtering_Is_Enabled(string username, int token, byte code, string filename, int size, string extension)
         {
             var options = new SearchOptions(
                     filterResponses: true,
@@ -284,9 +323,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse completes search and invokes completed event when file limit reached"), AutoData]
-        public async Task AddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse completes search and invokes completed event when file limit reached"), AutoData]
+        public async Task TryAddResponse_Completes_Search_And_Invokes_Completed_Event_When_File_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
         {
             var options = new SearchOptions(
                     filterResponses: false,
@@ -331,9 +370,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse completes search and invokes completed event when response limit reached"), AutoData]
-        public async Task AddResponse_Completes_Search_And_Invokes_Completed_Event_When_Response_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse completes search and invokes completed event when response limit reached"), AutoData]
+        public async Task TryAddResponse_Completes_Search_And_Invokes_Completed_Event_When_Response_Limit_Reached(string username, int token, byte code, string filename, int size, string extension)
         {
             var options = new SearchOptions(
                     filterResponses: false,
@@ -379,9 +418,9 @@ namespace Soulseek.Tests.Unit
             s.Dispose();
         }
 
-        [Trait("Category", "AddResponse")]
-        [Theory(DisplayName = "AddResponse invokes response received event"), AutoData]
-        public void AddResponse_Invokes_Response_Received_Event_Handler(string username, int token, byte code, string filename, int size, string extension)
+        [Trait("Category", "TryAddResponse")]
+        [Theory(DisplayName = "TryAddResponse invokes response received event"), AutoData]
+        public void TryAddResponse_Invokes_Response_Received_Event_Handler(string username, int token, byte code, string filename, int size, string extension)
         {
             SearchResponse addResponse = null;
 

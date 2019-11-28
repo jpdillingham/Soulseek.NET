@@ -126,24 +126,24 @@ namespace Soulseek
                     Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
 
                     ResponseBag.Add(fullResponse);
-
-                    ResponseReceived?.Invoke(fullResponse);
-                    SearchTimeoutTimer.Reset();
-
-                    if (resultCount >= Options.ResponseLimit)
-                    {
-                        Complete(SearchStates.ResponseLimitReached);
-                    }
-                    else if (resultFileCount >= Options.FileLimit)
-                    {
-                        Complete(SearchStates.FileLimitReached);
-                    }
                 }
                 catch
                 {
                     // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses to throw exceptions accessing the disposed instance
                     // or a variety of other issues. swallowing exceptions here is the most pragmatic way to handle this, as anything else would involve synchronization and would
                     // create lock contention when adding responses.
+                }
+
+                ResponseReceived?.Invoke(fullResponse);
+                SearchTimeoutTimer.Reset();
+
+                if (resultCount >= Options.ResponseLimit)
+                {
+                    Complete(SearchStates.ResponseLimitReached);
+                }
+                else if (resultFileCount >= Options.FileLimit)
+                {
+                    Complete(SearchStates.FileLimitReached);
                 }
             }
         }
