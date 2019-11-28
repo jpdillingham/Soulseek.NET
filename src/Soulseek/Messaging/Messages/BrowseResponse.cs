@@ -12,7 +12,6 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
     using Soulseek.Exceptions;
@@ -30,7 +29,7 @@ namespace Soulseek.Messaging.Messages
         public BrowseResponse(int directoryCount, IEnumerable<Directory> directoryList = null)
         {
             DirectoryCount = directoryCount;
-            DirectoryList = directoryList ?? Array.Empty<Directory>();
+            DirectoryList = directoryList ?? Enumerable.Empty<Directory>();
         }
 
         /// <summary>

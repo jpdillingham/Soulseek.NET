@@ -164,7 +164,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        internal async Task<IEnumerable<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        internal async Task<IReadOnlyCollection<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 

@@ -47,7 +47,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the collection of files contained within the directory.
         /// </summary>
-        public IEnumerable<File> Files => FileList.ToList().AsReadOnly();
+        public IReadOnlyCollection<File> Files => FileList.ToList().AsReadOnly();
 
         /// <summary>
         ///     Gets the list of files contained within the directory.

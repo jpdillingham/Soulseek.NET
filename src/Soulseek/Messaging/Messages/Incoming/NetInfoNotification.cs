@@ -14,6 +14,7 @@ namespace Soulseek.Messaging.Messages
 {
     using System;
     using System.Collections.Generic;
+    using System.Linq;
     using System.Net;
     using Soulseek.Exceptions;
 
@@ -30,7 +31,7 @@ namespace Soulseek.Messaging.Messages
         public NetInfoNotification(int parentCount, IEnumerable<(string Username, IPAddress IPAddress, int Port)> parents)
         {
             ParentCount = parentCount;
-            Parents = parents;
+            Parents = parents.ToList().AsReadOnly();
         }
 
         /// <summary>
@@ -41,7 +42,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the list of parent candidates.
         /// </summary>
-        public IEnumerable<(string Username, IPAddress IPAddress, int Port)> Parents { get; }
+        public IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Parents { get; }
 
         /// <summary>
         ///     Creates a new instance of <see cref="NetInfoNotification"/> from the specified <paramref name="bytes"/>.
@@ -74,7 +75,7 @@ namespace Soulseek.Messaging.Messages
                 parents.Add((username, ipAddress, port));
             }
 
-            return new NetInfoNotification(parentCount, parents);
+            return new NetInfoNotification(parentCount, parents.AsReadOnly());
         }
     }
 }
