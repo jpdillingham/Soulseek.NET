@@ -13,7 +13,6 @@
 namespace Soulseek
 {
     using System;
-    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Options for the search operation.

@@ -14,7 +14,6 @@ namespace Soulseek
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
 
     /// <summary>
     ///     Generic event arguments for search events.
@@ -28,7 +27,7 @@ namespace Soulseek
         internal SearchEventArgs(Search search)
         {
             Options = search.Options;
-            Responses = search.Responses.ToList();
+            Responses = search.Responses;
             SearchText = search.SearchText;
             State = search.State;
             Token = search.Token;
