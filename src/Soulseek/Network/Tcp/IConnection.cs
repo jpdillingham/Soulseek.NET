@@ -13,6 +13,7 @@
 namespace Soulseek.Network.Tcp
 {
     using System;
+    using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -128,16 +129,19 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         /// <remarks>The connection is disconnected if a <see cref="ConnectionReadException"/> is thrown.</remarks>
         /// <param name="length">The number of bytes to read.</param>
+        /// <param name="outputStream">The stream to which the read data is to be written.</param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="outputStream"/> is not writeable.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
-        Task<byte[]> ReadAsync(long length, Func<Task> governor, CancellationToken? cancellationToken = null);
+        Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to the connection.
@@ -158,16 +162,19 @@ namespace Soulseek.Network.Tcp
         ///     Asynchronously writes the specified bytes to the connection.
         /// </summary>
         /// <remarks>The connection is disconnected if a <see cref="ConnectionWriteException"/> is thrown.</remarks>
-        /// <param name="bytes">The bytes to write.</param>
+        /// <param name="length">The number of bytes to write.</param>
+        /// <param name="inputStream">The stream from which the written data is to be read.</param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="bytes"/> array is null or empty.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="inputStream"/> is not readable.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
         ///     is not connected.
         /// </exception>
         /// <exception cref="ConnectionWriteException">Thrown when an unexpected error occurs.</exception>
-        Task WriteAsync(byte[] bytes, Func<Task> governor, CancellationToken? cancellationToken = null);
+        Task WriteAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null);
     }
 }
