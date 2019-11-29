@@ -81,10 +81,16 @@
 
                     var topts = new TransferOptions();
 
-                    Task.Run(async () => await Client.UploadAsync(u, f, System.IO.File.ReadAllBytes(f), options: topts))
-                        .ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+                    Task.Run(async () =>
+                    {
+                        using (var stream = new FileStream(f, FileMode.Open))
+                        {
+                            await Client.UploadAsync(u, f, new FileInfo(f).Length, stream, options: topts);
+                        }
 
-                    return Task.CompletedTask;
+                    }).ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
+
+            return Task.CompletedTask;
                 }, searchResponseResolver: (u, t, q) =>
                 {
                     //Console.WriteLine($"Search request: {q}");
