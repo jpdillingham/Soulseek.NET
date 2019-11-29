@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
 
     /// <summary>
@@ -20,29 +21,49 @@ namespace Soulseek
     /// </summary>
     public class TransferOptions
     {
-        private readonly Func<Transfer, Task> defaultGovernor =
-            (t) => Task.CompletedTask;
+        private readonly Func<Transfer, CancellationToken, Task> defaultGovernor =
+            (tx, token) => Task.CompletedTask;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.
         /// </summary>
+        /// <param name="disposeInputStreamOnCompletion">
+        ///     A value indicating whether the input stream should be closed upon transfer completion.
+        /// </param>
+        /// <param name="disposeOutputStreamOnCompletion">
+        ///     A value indicating whether the output stream should be closed upon transfer completion.
+        /// </param>
         /// <param name="governor">The delegate used to govern transfer speed.</param>
         /// <param name="stateChanged">The Action to invoke when the transfer changes state.</param>
         /// <param name="progressUpdated">The Action to invoke when the transfer receives data.</param>
         public TransferOptions(
-            Func<Transfer, Task> governor = null,
+            bool disposeInputStreamOnCompletion = false,
+            bool disposeOutputStreamOnCompletion = false,
+            Func<Transfer, CancellationToken, Task> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
             Action<TransferProgressUpdatedEventArgs> progressUpdated = null)
         {
+            DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
+            DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;
             Governor = governor ?? defaultGovernor;
             StateChanged = stateChanged;
             ProgressUpdated = progressUpdated;
         }
 
         /// <summary>
+        ///     Gets a value indicating whether input streams should be closed upon transfer completion.
+        /// </summary>
+        public bool DisposeInputStreamOnCompletion { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether output streams should be closed upon transfer completion.
+        /// </summary>
+        public bool DisposeOutputStreamOnCompletion { get; }
+
+        /// <summary>
         ///     Gets the delegate used to govern transfer speed.
         /// </summary>
-        public Func<Transfer, Task> Governor { get; }
+        public Func<Transfer, CancellationToken, Task> Governor { get; }
 
         /// <summary>
         ///     Gets the Action to invoke when the transfer receives data.
