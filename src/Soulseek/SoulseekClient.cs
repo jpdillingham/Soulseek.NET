@@ -475,7 +475,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return DownloadInternalAsync(username, filename, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToByteArrayAsync(username, filename, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -547,7 +547,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return DownloadInternalAsync(username, filename, outputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToStreamAsync(username, filename, outputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1054,7 +1054,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return UploadInternalAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromByteArrayAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1133,7 +1133,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return UploadInternalAsync(username, filename, length, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromStreamAsync(username, filename, length, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1235,16 +1235,16 @@ namespace Soulseek
             StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
         }
 
-        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             using (var memoryStream = new MemoryStream())
             {
-                await DownloadInternalAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+                await DownloadToStreamAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
                 return memoryStream.ToArray();
             }
         }
 
-        private async Task DownloadInternalAsync(string username, string filename, Stream outputStream, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new Transfer(TransferDirection.Download, username, filename, token, options);
             Downloads.TryAdd(download.Token, download);
@@ -1388,7 +1388,7 @@ namespace Soulseek
                     download.State = TransferStates.Succeeded;
 
                     download.Connection.Disconnect("Transfer complete.");
-                    Diagnostic.Info($"Download of {System.IO.Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
+                    Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
                 }
                 catch (TimeoutException)
                 {
@@ -1713,15 +1713,15 @@ namespace Soulseek
             Disconnect(e);
         }
 
-        private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             using (var memoryStream = new MemoryStream(data))
             {
-                await UploadInternalAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+                await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
             }
         }
 
-        private async Task UploadInternalAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task UploadFromStreamAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
             {
