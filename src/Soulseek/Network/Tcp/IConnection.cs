@@ -134,7 +134,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="outputStream"/> is not writeable.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
@@ -168,7 +168,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="inputStream"/> is not readable.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient

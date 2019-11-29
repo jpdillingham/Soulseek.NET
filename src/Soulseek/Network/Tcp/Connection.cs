@@ -297,7 +297,7 @@ namespace Soulseek.Network.Tcp
         {
             if (length < 0)
             {
-                throw new ArgumentException($"The requested length must be greater than or equal to zero.");
+                throw new ArgumentException($"The requested length must be greater than or equal to zero.", nameof(length));
             }
 
             if (!TcpClient.Connected)
@@ -334,12 +334,12 @@ namespace Soulseek.Network.Tcp
         {
             if (length <= 0)
             {
-                throw new ArgumentException("The requested length must be greater than or equal to zero.");
+                throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
             }
 
             if (outputStream == null)
             {
-                throw new ArgumentException("The specified output stream is null.");
+                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null.");
             }
 
             if (!outputStream.CanWrite)
@@ -403,7 +403,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
-        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="inputStream"/> is not readable.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
@@ -414,12 +414,12 @@ namespace Soulseek.Network.Tcp
         {
             if (length <= 0)
             {
-                throw new ArgumentException("The requested length must be greater than or equal to zero.");
+                throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
             }
 
             if (inputStream == null)
             {
-                throw new ArgumentException("The specified output stream is null.");
+                throw new ArgumentNullException(nameof(inputStream), "The specified output stream is null.");
             }
 
             if (!inputStream.CanRead)
