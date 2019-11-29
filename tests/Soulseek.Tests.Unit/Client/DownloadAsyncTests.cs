@@ -15,6 +15,7 @@ namespace Soulseek.Tests.Unit.Client
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -399,7 +400,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
 
             var waiter = new Mock<IWaiter>();
@@ -806,7 +807,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new byte[size]))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
 
@@ -869,7 +870,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(token)))
                 .Raises(m => m.DataRead += null, this, new ConnectionDataEventArgs(1, 1));
 
@@ -1082,7 +1083,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new NullReferenceException()));
 
             var waiter = new Mock<IWaiter>();
@@ -1138,7 +1139,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new TimeoutException()));
 
             var waiter = new Mock<IWaiter>();
@@ -1192,7 +1193,7 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
-            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<Func<Task>>(), It.IsAny<CancellationToken>()))
+            transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new OperationCanceledException()));
 
             var waiter = new Mock<IWaiter>();
