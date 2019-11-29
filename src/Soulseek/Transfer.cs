@@ -63,11 +63,6 @@ namespace Soulseek
         public long BytesTransferred { get; private set; }
 
         /// <summary>
-        ///     Gets the data transferred.
-        /// </summary>
-        public byte[] Data { get; internal set; }
-
-        /// <summary>
         ///     Gets the transfer direction.
         /// </summary>
         public TransferDirection Direction { get; }

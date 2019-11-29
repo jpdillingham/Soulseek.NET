@@ -30,7 +30,6 @@ namespace Soulseek
             AverageSpeed = transfer.AverageSpeed;
             BytesTransferred = transfer.BytesTransferred;
             BytesRemaining = transfer.BytesRemaining;
-            Data = transfer.Data;
             ElapsedTime = transfer.ElapsedTime;
             EndTime = transfer.EndTime;
             Filename = transfer.Filename;
@@ -61,11 +60,6 @@ namespace Soulseek
         ///     Gets the total number of bytes transferred.
         /// </summary>
         public long BytesTransferred { get; }
-
-        /// <summary>
-        ///     Gets the data transferred.
-        /// </summary>
-        public byte[] Data { get; }
 
         /// <summary>
         ///     Gets the trasnfer direction.
