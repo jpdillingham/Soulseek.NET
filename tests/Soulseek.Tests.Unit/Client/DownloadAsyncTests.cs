@@ -31,6 +31,37 @@ namespace Soulseek.Tests.Unit.Client
     public class DownloadAsyncTests
     {
         [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws ArgumentNullException null stream")]
+        public async Task DownloadAsync_Stream_Throws_ArgumentNullException_Given_Null_Stream()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", outputStream: null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentNullException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws InvalidOperationException given unwriteable stream")]
+        public async Task DownloadAsync_Stream_Throws_InvalidOperationException_Given_Unwriteable_Stream()
+        {
+            using (var stream = new UnReadableWriteableStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync throws ArgumentException given bad username")]
         [InlineData(null)]
         [InlineData("")]
@@ -39,7 +70,26 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream throws ArgumentException given bad username")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task DownloadAsync_Stream_Throws_ArgumentException_Given_Bad_Username(string username)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -63,12 +113,44 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream throws ArgumentException given bad filename")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task DownloadAsync_Stream_Throws_ArgumentException_Given_Bad_Filename(string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", filename, stream));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Fact(DisplayName = "DownloadAsync throws InvalidOperationException when not connected")]
         public async Task DownloadAsync_Throws_InvalidOperationException_When_Not_Connected()
         {
             using (var s = new SoulseekClient())
             {
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("Connected", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws InvalidOperationException when not connected")]
+        public async Task DownloadAsync_Stream_Throws_InvalidOperationException_When_Not_Connected()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -85,6 +167,23 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+                Assert.Contains("logged in", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws InvalidOperationException when not logged in")]
+        public async Task DownloadAsync_Stream_Throws_InvalidOperationException_When_Not_Logged_In()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -114,6 +213,28 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws DuplicateTokenException when token used")]
+        public async Task DownloadAsync_Stream_Throws_DuplicateTokenException_When_Token_Used()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, Transfer>();
+                queued.TryAdd(1, new Transfer(TransferDirection.Download, "foo", "bar", 1));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTokenException>(ex);
+                Assert.Contains("token", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync throws DuplicateTransferException when an existing download matches the username and filename"), AutoData]
         public async Task DownloadAsync_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
         {
@@ -127,6 +248,28 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("Downloads", queued);
 
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<DuplicateTransferException>(ex);
+                Assert.Contains($"An active or queued download of {filename} from {username} is already in progress", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream throws DuplicateTransferException when an existing download matches the username and filename"), AutoData]
+        public async Task DownloadAsync_Stream_Throws_DuplicateTransferException_When_An_Existing_Download_Matches_The_Username_And_Filename(string username, string filename)
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var queued = new ConcurrentDictionary<int, Transfer>();
+                queued.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", queued);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync(username, filename, stream, 1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<DuplicateTransferException>(ex);
@@ -157,6 +300,36 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Theory(DisplayName = "DownloadAsync stream throws TimeoutException on peer message connection timeout"), AutoData]
+        public async Task DownloadAsync_Stream_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPAddress ip, int port)
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var options = new SoulseekClientOptions(messageTimeout: 1);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse("username", ip, port)));
+
+            var manager = new Mock<IPeerConnectionManager>();
+            manager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), ip, port, It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, options: options, peerConnectionManager: manager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename", stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -1242,6 +1415,43 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.IsType<AggregateException>(ex.InnerException.InnerException);
                 Assert.True(ex.InnerException.Message.ContainsInsensitive("Failed to establish a direct or indirect connection."));
+            }
+        }
+
+        private class UnReadableWriteableStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanWrite => false;
+
+            public override bool CanSeek => throw new NotImplementedException();
+
+            public override long Length => throw new NotImplementedException();
+
+            public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override void Flush()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void SetLength(long value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException();
             }
         }
     }
