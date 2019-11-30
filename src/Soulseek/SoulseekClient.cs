@@ -1463,6 +1463,7 @@ namespace Soulseek
 
                 if (options.DisposeOutputStreamOnCompletion)
                 {
+                    await outputStream.FlushAsync().ConfigureAwait(false);
                     outputStream.Dispose();
                 }
 
