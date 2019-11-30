@@ -30,11 +30,11 @@ namespace Soulseek.Tests.Unit
             Action<TransferProgressUpdatedEventArgs> progressUpdated)
         {
             var o = new TransferOptions(
-                disposeInput,
-                disposeOutput,
                 governor,
                 stateChanged,
-                progressUpdated);
+                progressUpdated,
+                disposeInput,
+                disposeOutput);
 
             Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
             Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
