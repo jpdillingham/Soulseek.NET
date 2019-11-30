@@ -43,15 +43,16 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(dl.Token, d.Token);
             Assert.Equal(dl.State, d.State);
             Assert.Equal(options, d.Options);
-            Assert.Equal(dl.Data, d.Data);
         }
 
         [Trait("Category", "TransferProgressUpdatedEventArgs Instantiation")]
         [Theory(DisplayName = "TransferProgressUpdatedEventArgs Instantiates with the given data"), AutoData]
         internal void TransferProgressUpdatedEventArgs_Instantiates_With_The_Given_Data(string username, string filename, int token, int size, int bytesDownloaded)
         {
-            var dl = new Transfer(TransferDirection.Download, username, filename, token);
-            dl.Size = size;
+            var dl = new Transfer(TransferDirection.Download, username, filename, token)
+            {
+                Size = size,
+            };
 
             var d = new TransferProgressUpdatedEventArgs(bytesDownloaded, dl);
 

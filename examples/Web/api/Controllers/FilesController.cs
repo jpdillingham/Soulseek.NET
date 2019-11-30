@@ -81,7 +81,9 @@
         {
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
 
-            var downloadTask = Client.DownloadAsync(username, filename, token, new TransferOptions(stateChanged: (e) =>
+            var stream = GetLocalFileStream(filename, @"C:\Users\JP.WHATNET\Desktop\Soulseek");
+
+            var downloadTask = Client.DownloadAsync(username, filename, stream, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
             {
                 Tracker.AddOrUpdate(e);
 
@@ -92,7 +94,7 @@
 
                 if (e.State.HasFlag(TransferStates.Completed) && e.State.HasFlag(TransferStates.Succeeded))
                 {
-                    SaveLocalFile(filename, OutputDirectory, e.Data);
+                    //SaveLocalFile(filename, OutputDirectory, e.Data);
                 }
             }, progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
@@ -134,6 +136,24 @@
             System.IO.File.WriteAllBytes(localFilename, data);
 
             return localFilename;
+        }
+
+        private static FileStream GetLocalFileStream(string remoteFilename, string saveDirectory)
+        {
+            // GetDirectoryName() and GetFileName() only work when the path separator is the same as the current OS' DirectorySeparatorChar.
+            // normalize for both Windows and Linux by replacing / and \ with Path.DirectorySeparatorChar.
+            var localFilename = remoteFilename.ToLocalOSPath();
+
+            var path = $"{saveDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(localFilename).Replace(Path.GetDirectoryName(Path.GetDirectoryName(localFilename)), "")}";
+
+            if (!System.IO.Directory.Exists(path))
+            {
+                System.IO.Directory.CreateDirectory(path);
+            }
+
+            localFilename = Path.Combine(path, Path.GetFileName(localFilename));
+
+            return new FileStream(localFilename, FileMode.Create);
         }
     }
 }

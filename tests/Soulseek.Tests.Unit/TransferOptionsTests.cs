@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using System;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Xunit;
@@ -22,15 +23,21 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiates_With_Defaults(
-            Func<Transfer, Task> governor,
+            bool disposeInput,
+            bool disposeOutput,
+            Func<Transfer, CancellationToken, Task> governor,
             Action<TransferStateChangedEventArgs> stateChanged,
             Action<TransferProgressUpdatedEventArgs> progressUpdated)
         {
             var o = new TransferOptions(
                 governor,
                 stateChanged,
-                progressUpdated);
+                progressUpdated,
+                disposeInput,
+                disposeOutput);
 
+            Assert.Equal(disposeInput, o.DisposeInputStreamOnCompletion);
+            Assert.Equal(disposeOutput, o.DisposeOutputStreamOnCompletion);
             Assert.Equal(governor, o.Governor);
             Assert.Equal(stateChanged, o.StateChanged);
             Assert.Equal(progressUpdated, o.ProgressUpdated);

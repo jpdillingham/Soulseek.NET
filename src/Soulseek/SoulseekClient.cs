@@ -15,6 +15,7 @@ namespace Soulseek
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Net.Sockets;
@@ -474,7 +475,79 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return DownloadInternalAsync(username, filename, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToByteArrayAsync(username, filename, token.Value, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     using the specified unique <paramref name="token"/> and optionally specified <paramref name="cancellationToken"/>
+        ///     to the specified <paramref name="outputStream"/>.
+        /// </summary>
+        /// <param name="username">The user from which to download the file.</param>
+        /// <param name="filename">The file to download.</param>
+        /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="token">The unique download token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including a byte array containing the file contents.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when a download of the specified <paramref name="filename"/> from the specified <paramref name="username"/>
+        ///     is already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        public Task DownloadAsync(string username, string filename, Stream outputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (outputStream == null)
+            {
+                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null.");
+            }
+
+            if (!outputStream.CanWrite)
+            {
+                throw new InvalidOperationException("The specified output stream is not writeable.");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to download files (currently: {State})");
+            }
+
+            token = token ?? GetNextToken();
+
+            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
+            }
+
+            if (Downloads.Values.Any(d => d.Username == username && d.Filename == filename))
+            {
+                throw new DuplicateTransferException($"An active or queued download of {filename} from {username} is already in progress");
+            }
+
+            options = options ?? new TransferOptions();
+
+            return DownloadToStreamAsync(username, filename, outputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -925,7 +998,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="username">The user to which to upload the file.</param>
         /// <param name="filename">The filename of the file to upload.</param>
-        /// <param name="data">The data to upload.</param>
+        /// <param name="data">The file contents.</param>
         /// <param name="token">The unique upload token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -981,7 +1054,86 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return UploadInternalAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return UploadFromByteArrayAsync(username, filename, data, token.Value, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously uploads the specified <paramref name="filename"/> from the specified <paramref name="inputStream"/>
+        ///     to the the specified <paramref name="username"/> using the specified unique <paramref name="token"/> and
+        ///     optionally specified <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="username">The user to which to upload the file.</param>
+        /// <param name="filename">The filename of the file to upload.</param>
+        /// <param name="length">The size of the file to upload, in bytes.</param>
+        /// <param name="inputStream">The stream from which to retrieve the file contents.</param>
+        /// <param name="token">The unique upload token.</param>
+        /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="inputStream"/> is not readable.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="DuplicateTransferException">
+        ///     Thrown when an upload of the specified <paramref name="filename"/> to the specified <paramref name="username"/> is
+        ///     already in progress.
+        /// </exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
+        public Task UploadAsync(string username, string filename, long length, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(filename))
+            {
+                throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (length <= 0)
+            {
+                throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
+            }
+
+            if (inputStream == null)
+            {
+                throw new ArgumentNullException(nameof(inputStream), "The specified input stream is null.");
+            }
+
+            if (!inputStream.CanRead)
+            {
+                throw new InvalidOperationException("The specified input stream is not readable.");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to upload files (currently: {State})");
+            }
+
+            token = token ?? GetNextToken();
+
+            if (Uploads.ContainsKey(token.Value) || Downloads.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"The specified or generated token {token} is already in progress");
+            }
+
+            if (Uploads.Values.Any(d => d.Username == username && d.Filename == filename))
+            {
+                throw new DuplicateTransferException($"An active or queued upload of {filename} to {username} is already in progress");
+            }
+
+            options = options ?? new TransferOptions();
+
+            return UploadFromStreamAsync(username, filename, length, inputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1083,12 +1235,29 @@ namespace Soulseek
             StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
         }
 
-        private async Task<byte[]> DownloadInternalAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
+        {
+            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+            options = new TransferOptions(
+                options.Governor,
+                options.StateChanged,
+                options.ProgressUpdated,
+                disposeInputStreamOnCompletion: false,
+                disposeOutputStreamOnCompletion: false);
+
+            using (var memoryStream = new MemoryStream())
+            {
+                await DownloadToStreamAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+                return memoryStream.ToArray();
+            }
+        }
+
+        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new Transfer(TransferDirection.Download, username, filename, token, options);
             Downloads.TryAdd(download.Token, download);
 
-            Task<byte[]> downloadCompleted = null;
+            Task downloadCompleted = null;
             var lastState = TransferStates.None;
 
             void UpdateState(TransferStates state)
@@ -1137,7 +1306,7 @@ namespace Soulseek
                     download.Size = transferRequestAcknowledgement.FileSize;
 
                     // prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
+                    downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
 
                     // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
                     download.Connection = await PeerConnectionManager
@@ -1174,7 +1343,7 @@ namespace Soulseek
                         cancellationToken: cancellationToken);
 
                     // also prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely<byte[]>(download.WaitKey, cancellationToken);
+                    downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
@@ -1198,7 +1367,7 @@ namespace Soulseek
                 {
                     if (download.State.HasFlag(TransferStates.Succeeded))
                     {
-                        Waiter.Complete(download.WaitKey, download.Data);
+                        Waiter.Complete(download.WaitKey);
                     }
                     else if (download.State.HasFlag(TransferStates.TimedOut))
                     {
@@ -1222,13 +1391,12 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    var bytes = await download.Connection.ReadAsync(download.Size, () => options.Governor(download), cancellationToken).ConfigureAwait(false);
+                    await download.Connection.ReadAsync(download.Size, outputStream, (cancelToken) => options.Governor(download, cancelToken), cancellationToken).ConfigureAwait(false);
 
-                    download.Data = bytes.ToArray();
                     download.State = TransferStates.Succeeded;
 
                     download.Connection.Disconnect("Transfer complete.");
-                    Diagnostic.Info($"Download of {System.IO.Path.GetFileName(download.Filename)} from {username} complete ({download.Data.Length} of {download.Size} bytes).");
+                    Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
                 }
                 catch (TimeoutException)
                 {
@@ -1247,8 +1415,7 @@ namespace Soulseek
 
                 // wait for the download to complete this wait is either completed (on success) or thrown (on anything other than
                 // success) in the Disconnected event handler of the transfer connection
-                download.Data = await downloadCompleted.ConfigureAwait(false);
-                return download.Data;
+                await downloadCompleted.ConfigureAwait(false);
             }
             catch (TransferRejectedException ex)
             {
@@ -1284,15 +1451,21 @@ namespace Soulseek
             finally
             {
                 // clean up the wait in case the code threw before it was awaited.
-                Waiter.Complete<byte[]>(download.WaitKey, null);
+                Waiter.Complete(download.WaitKey);
 
                 download.Connection?.Dispose();
 
                 // change state so we can fire the progress update a final time with the updated state little bit of a hack to
                 // avoid cloning the download
                 download.State = TransferStates.Completed | download.State;
-                UpdateProgress(download.Data?.Length ?? 0);
+                UpdateProgress((int)outputStream.Position);
                 UpdateState(download.State);
+
+                if (options.DisposeOutputStreamOnCompletion)
+                {
+                    await outputStream.FlushAsync().ConfigureAwait(false);
+                    outputStream.Dispose();
+                }
 
                 Downloads.TryRemove(download.Token, out _);
             }
@@ -1549,12 +1722,27 @@ namespace Soulseek
             Disconnect(e);
         }
 
-        private async Task UploadInternalAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
+        {
+            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+            options = new TransferOptions(
+                options.Governor,
+                options.StateChanged,
+                options.ProgressUpdated,
+                disposeInputStreamOnCompletion: false,
+                disposeOutputStreamOnCompletion: false);
+
+            using (var memoryStream = new MemoryStream(data))
+            {
+                await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+            }
+        }
+
+        private async Task UploadFromStreamAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
             {
-                Size = data.Length,
-                Data = data,
+                Size = length,
             };
 
             Uploads.TryAdd(upload.Token, upload);
@@ -1603,7 +1791,7 @@ namespace Soulseek
                     new WaitKey(MessageCode.Peer.TransferResponse, upload.Username, upload.Token), null, cancellationToken);
 
                 // request to start the upload
-                var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, data.Length);
+                var transferRequest = new TransferRequest(TransferDirection.Upload, upload.Token, upload.Filename, length);
                 await messageConnection.WriteAsync(transferRequest.ToByteArray(), cancellationToken).ConfigureAwait(false);
                 UpdateState(TransferStates.Requested);
 
@@ -1650,7 +1838,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await upload.Connection.WriteAsync(upload.Data, () => options.Governor(upload), cancellationToken).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(upload, cancelToken), cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 
@@ -1665,7 +1853,7 @@ namespace Soulseek
                         // swallow this specific exception
                     }
 
-                    Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({upload.Data.Length} of {upload.Size} bytes).");
+                    Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({inputStream.Position} of {upload.Size} bytes).");
                 }
                 catch (TimeoutException)
                 {
@@ -1728,7 +1916,7 @@ namespace Soulseek
                 upload.Connection?.Dispose();
 
                 upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress(upload?.Data.Length ?? 0);
+                UpdateProgress((int)inputStream.Position);
                 UpdateState(upload.State);
 
                 if (!upload.State.HasFlag(TransferStates.Succeeded))
@@ -1746,6 +1934,11 @@ namespace Soulseek
                     {
                         // swallow any exceptions here
                     }
+                }
+
+                if (options.DisposeInputStreamOnCompletion)
+                {
+                    inputStream.Dispose();
                 }
 
                 Uploads.TryRemove(upload.Token, out _);

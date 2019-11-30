@@ -41,7 +41,6 @@ namespace Soulseek.Tests.Unit
             Assert.Null(d.Connection);
             Assert.Null(d.IPAddress);
             Assert.Null(d.Port);
-            Assert.Null(d.Data);
             Assert.Null(d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(TransferStates.None, d.State);

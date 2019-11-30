@@ -14,6 +14,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
@@ -459,6 +460,70 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write from stream throws given negative length")]
+        [InlineData(-1)]
+        [InlineData(-121412)]
+        public async Task Write_From_Stream_Throws_Given_Negative_Length(long length)
+        {
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(length, stream, (ct) => Task.CompletedTask));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ArgumentException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write from stream throws given null stream")]
+        public async Task Write_From_Stream_Throws_Given_Null_Stream()
+        {
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(1, null, (ct) => Task.CompletedTask));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ArgumentNullException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write from stream throws given unreadable stream")]
+        public async Task Write_From_Stream_Throws_Given_Unreadable_Stream()
+        {
+            using (var stream = new UnReadableWriteableStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                var t = new Mock<ITcpClient>();
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(1, stream, (ct) => Task.CompletedTask));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
         [Fact(DisplayName = "Write throws if TcpClient is not connected")]
         public async Task Write_Throws_If_TcpClient_Is_Not_Connected()
         {
@@ -472,6 +537,28 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
                     var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write from stream throws if TcpClient is not connected"), AutoData]
+        public async Task Write_From_Stream_Throws_If_TcpClient_Is_Not_Connected(int length, Func<CancellationToken, Task> governor)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(false);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(length, stream, governor));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
@@ -495,6 +582,30 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     c.SetProperty("State", ConnectionState.Disconnected);
 
                     var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write from stream throws if connection is not connected"), AutoData]
+        public async Task Write_From_Stream_Throws_If_Connection_Is_Not_Connected(int length, Func<CancellationToken, Task> governor)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    c.SetProperty("State", ConnectionState.Disconnected);
+
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(length, stream, governor));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
@@ -555,6 +666,33 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write from stream does not throw given good input and if Stream does not throw")]
+        public async Task Write_From_Stream_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[] { 0x0, 0x1 };
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(data.Length, stream, (ct) => Task.CompletedTask));
+
+                    Assert.Null(ex);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
         [Trait("Category", "Read")]
         [Fact(DisplayName = "Read throws if TcpClient is not connected")]
         public async Task Read_Throws_If_TcpClient_Is_Not_Connected()
@@ -569,6 +707,28 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
                     var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream throws if TcpClient is not connected"), AutoData]
+        public async Task Read_To_Stream_Throws_If_TcpClient_Is_Not_Connected(Func<CancellationToken, Task> governor)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(false);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1, stream, governor));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
@@ -593,6 +753,31 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     c.SetProperty("State", ConnectionState.Disconnected);
 
                     var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream throws if connection is not connected"), AutoData]
+        public async Task Read_To_Stream_Throws_If_Connection_Is_Not_Connected(Func<CancellationToken, Task> governor)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    t.Setup(m => m.Client).Returns(socket);
+                    c.SetProperty("State", ConnectionState.Disconnected);
+
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1, stream, governor));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
@@ -626,17 +811,16 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Fact(DisplayName = "Read does not throw if length is long and fits in int")]
-        public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Fits_In_Int()
+        [Theory(DisplayName = "Read to stream does not throw if length is long and larger than int"), AutoData]
+        public async Task Read_To_Stream_Does_Not_Throw_If_Length_Is_Long_And_Larger_Than_Int(long length, Func<CancellationToken, Task> governor)
         {
-            long length = 2147483647; // max = 2147483647
-
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult((int)length));
 
             var t = new Mock<ITcpClient>();
 
+            using (var stream = new MemoryStream())
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
             {
                 t.Setup(m => m.Client).Returns(socket);
@@ -645,11 +829,9 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, governor));
 
                     Assert.Null(ex);
-
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
             }
         }
@@ -682,6 +864,34 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read to stream does not throw given good input and if Stream does not throw")]
+        public async Task Read_To_Stream_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1, stream, (ct) => Task.CompletedTask));
+
+                    Assert.Null(ex);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
         [Fact(DisplayName = "Read loops over Stream.ReadAsync on partial read")]
         public async Task Read_Loops_Over_Stream_ReadAsync_On_Partial_Read()
         {
@@ -700,6 +910,32 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
                     await c.ReadAsync(3);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read to stream loops over Stream.ReadAsync on partial read")]
+        public async Task Read_To_Stream_Loops_Over_Stream_ReadAsync_On_Partial_Read()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    await c.ReadAsync(3, stream, (ct) => Task.CompletedTask);
 
                     s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
                 }
@@ -776,10 +1012,10 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Theory(DisplayName = "Read throws given negative length")]
+        [Theory(DisplayName = "Read throws given zero or negative length")]
         [InlineData(-12151353)]
         [InlineData(-1)]
-        public async Task Read_Throws_Given_Negative_Length(int length)
+        public async Task Read_Throws_Given_Zero_Or_Negative_Length(int length)
         {
             var t = new Mock<ITcpClient>();
 
@@ -794,6 +1030,73 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream throws given zero or negative length")]
+        [InlineData(-12151353)]
+        [InlineData(-1)]
+        public async Task Read_To_Stream_Throws_Given_Zero_Or_Negative_Length(int length)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, (ct) => Task.CompletedTask));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ArgumentException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream throws given null stream"), AutoData]
+        public async Task Read_To_Stream_Throws_Given_Null_Stream(int length)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, null, (ct) => Task.CompletedTask));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ArgumentNullException>(ex);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read to stream throws given unwriteable stream"), AutoData]
+        public async Task Read_To_Stream_Throws_Given_Unwriteable_Stream(int length)
+        {
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new UnReadableWriteableStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, (ct) => Task.CompletedTask));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex);
                 }
             }
         }
@@ -914,6 +1217,43 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.NotNull(first);
                     Assert.Null(second);
                 }
+            }
+        }
+
+        private class UnReadableWriteableStream : Stream
+        {
+            public override bool CanRead => false;
+            public override bool CanWrite => false;
+
+            public override bool CanSeek => throw new NotImplementedException();
+
+            public override long Length => throw new NotImplementedException();
+
+            public override long Position { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+            public override void Flush()
+            {
+                throw new NotImplementedException();
+            }
+
+            public override int Read(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override long Seek(long offset, SeekOrigin origin)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void SetLength(long value)
+            {
+                throw new NotImplementedException();
+            }
+
+            public override void Write(byte[] buffer, int offset, int count)
+            {
+                throw new NotImplementedException();
             }
         }
     }

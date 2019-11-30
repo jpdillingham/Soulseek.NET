@@ -12,7 +12,6 @@
 
 namespace Soulseek
 {
-    using System;
     using System.Collections.Generic;
     using System.Linq;
 
@@ -38,7 +37,7 @@ namespace Soulseek
             Extension = extension;
             AttributeCount = attributeCount;
 
-            AttributeList = attributeList ?? Array.Empty<FileAttribute>();
+            AttributeList = attributeList ?? Enumerable.Empty<FileAttribute>();
         }
 
         /// <summary>
