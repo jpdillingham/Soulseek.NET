@@ -1239,6 +1239,14 @@ namespace Soulseek
         {
             using (var memoryStream = new MemoryStream())
             {
+                // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+                options = new TransferOptions(
+                    disposeInputStreamOnCompletion: false,
+                    disposeOutputStreamOnCompletion: false,
+                    options.Governor,
+                    options.StateChanged,
+                    options.ProgressUpdated);
+
                 await DownloadToStreamAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
                 return memoryStream.ToArray();
             }
@@ -1443,7 +1451,7 @@ namespace Soulseek
             finally
             {
                 // clean up the wait in case the code threw before it was awaited.
-                Waiter.Complete<byte[]>(download.WaitKey, null);
+                Waiter.Complete(download.WaitKey);
 
                 download.Connection?.Dispose();
 
