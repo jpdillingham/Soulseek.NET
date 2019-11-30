@@ -1237,16 +1237,16 @@ namespace Soulseek
 
         private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+            options = new TransferOptions(
+                options.Governor,
+                options.StateChanged,
+                options.ProgressUpdated,
+                disposeInputStreamOnCompletion: false,
+                disposeOutputStreamOnCompletion: false);
+
             using (var memoryStream = new MemoryStream())
             {
-                // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
-                options = new TransferOptions(
-                    options.Governor,
-                    options.StateChanged,
-                    options.ProgressUpdated,
-                    disposeInputStreamOnCompletion: false,
-                    disposeOutputStreamOnCompletion: false);
-
                 await DownloadToStreamAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
                 return memoryStream.ToArray();
             }
@@ -1724,6 +1724,14 @@ namespace Soulseek
 
         private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
         {
+            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+            options = new TransferOptions(
+                options.Governor,
+                options.StateChanged,
+                options.ProgressUpdated,
+                disposeInputStreamOnCompletion: false,
+                disposeOutputStreamOnCompletion: false);
+
             using (var memoryStream = new MemoryStream(data))
             {
                 await UploadFromStreamAsync(username, filename, data.Length, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
