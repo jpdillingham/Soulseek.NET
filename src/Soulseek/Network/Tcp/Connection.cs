@@ -332,7 +332,7 @@ namespace Soulseek.Network.Tcp
         /// <exception cref="ConnectionReadException">Thrown when an unexpected error occurs.</exception>
         public Task ReadAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken? cancellationToken = null)
         {
-            if (length <= 0)
+            if (length < 0)
             {
                 throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
             }
