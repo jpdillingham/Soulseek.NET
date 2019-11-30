@@ -736,6 +736,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadToByteArrayAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync disposes output stream given option flag"), AutoData]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task DownloadToStreamAsync_Disposes_Output_Stream_Given_Option_Flag(string username, IPAddress ip, int port, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
@@ -785,7 +786,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var ex = Record.Exception(() =>
                 {
-                    var _ = stream.Position;
+                    var p = stream.Position;
                 });
 
                 Assert.NotNull(ex);
@@ -795,6 +796,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "DownloadToByteArrayAsync")]
         [Theory(DisplayName = "DownloadToStreamAsync does not dispose output stream given no option flag"), AutoData]
+        [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
         public async Task DownloadToStreamAsync_Does_Not_Dispose_Output_Stream_Given_No_Option_Flag(string username, IPAddress ip, int port, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
@@ -844,7 +846,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var ex = Record.Exception(() =>
                 {
-                    var _ = stream.Position;
+                    var p = stream.Position;
                 });
 
                 Assert.Null(ex);

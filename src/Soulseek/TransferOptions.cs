@@ -27,21 +27,21 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="TransferOptions"/> class.
         /// </summary>
+        /// <param name="governor">The delegate used to govern transfer speed.</param>
+        /// <param name="stateChanged">The Action to invoke when the transfer changes state.</param>
+        /// <param name="progressUpdated">The Action to invoke when the transfer receives data.</param>
         /// <param name="disposeInputStreamOnCompletion">
         ///     A value indicating whether the input stream should be closed upon transfer completion.
         /// </param>
         /// <param name="disposeOutputStreamOnCompletion">
         ///     A value indicating whether the output stream should be closed upon transfer completion.
         /// </param>
-        /// <param name="governor">The delegate used to govern transfer speed.</param>
-        /// <param name="stateChanged">The Action to invoke when the transfer changes state.</param>
-        /// <param name="progressUpdated">The Action to invoke when the transfer receives data.</param>
         public TransferOptions(
-            bool disposeInputStreamOnCompletion = false,
-            bool disposeOutputStreamOnCompletion = false,
             Func<Transfer, CancellationToken, Task> governor = null,
             Action<TransferStateChangedEventArgs> stateChanged = null,
-            Action<TransferProgressUpdatedEventArgs> progressUpdated = null)
+            Action<TransferProgressUpdatedEventArgs> progressUpdated = null,
+            bool disposeInputStreamOnCompletion = false,
+            bool disposeOutputStreamOnCompletion = false)
         {
             DisposeInputStreamOnCompletion = disposeInputStreamOnCompletion;
             DisposeOutputStreamOnCompletion = disposeOutputStreamOnCompletion;

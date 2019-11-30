@@ -1241,11 +1241,11 @@ namespace Soulseek
             {
                 // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
                 options = new TransferOptions(
-                    disposeInputStreamOnCompletion: false,
-                    disposeOutputStreamOnCompletion: false,
                     options.Governor,
                     options.StateChanged,
-                    options.ProgressUpdated);
+                    options.ProgressUpdated,
+                    disposeInputStreamOnCompletion: false,
+                    disposeOutputStreamOnCompletion: false);
 
                 await DownloadToStreamAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
                 return memoryStream.ToArray();

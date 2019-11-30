@@ -972,35 +972,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Fact(DisplayName = "Read to stream throws if Stream throws")]
-        public async Task Read_To_Stream_Throws_If_Stream_Throws()
-        {
-            var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Throws(new SocketException());
-
-            var t = new Mock<ITcpClient>();
-
-            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
-            {
-                t.Setup(m => m.Client).Returns(socket);
-                t.Setup(m => m.Connected).Returns(true);
-                t.Setup(m => m.GetStream()).Returns(s.Object);
-
-                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
-                {
-                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
-
-                    Assert.NotNull(ex);
-                    Assert.IsType<ConnectionReadException>(ex);
-                    Assert.IsType<SocketException>(ex.InnerException);
-
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
-                }
-            }
-        }
-
-        [Trait("Category", "Read")]
         [Fact(DisplayName = "Read does not throw given zero length")]
         public async Task Read_Does_Not_Throw_Given_Zero_Length()
         {
@@ -1069,7 +1040,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [InlineData(-1)]
         public async Task Read_To_Stream_Throws_Given_Zero_Or_Negative_Length(int length)
         {
-            Func<CancellationToken, Task> governor = (c) => Task.CompletedTask;
             var t = new Mock<ITcpClient>();
 
             using (var stream = new MemoryStream())
@@ -1080,7 +1050,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, governor));
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, (ct) => Task.CompletedTask));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentException>(ex);
@@ -1092,7 +1062,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read to stream throws given null stream"), AutoData]
         public async Task Read_To_Stream_Throws_Given_Null_Stream(int length)
         {
-            Func<CancellationToken, Task> governor = (c) => Task.CompletedTask;
             var t = new Mock<ITcpClient>();
 
             using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
@@ -1102,7 +1071,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, null, governor));
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, null, (ct) => Task.CompletedTask));
 
                     Assert.NotNull(ex);
                     Assert.IsType<ArgumentNullException>(ex);
@@ -1114,7 +1083,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Read to stream throws given unwriteable stream"), AutoData]
         public async Task Read_To_Stream_Throws_Given_Unwriteable_Stream(int length)
         {
-            Func<CancellationToken, Task> governor = (c) => Task.CompletedTask;
             var t = new Mock<ITcpClient>();
 
             using (var stream = new UnReadableWriteableStream())
@@ -1125,7 +1093,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
-                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, governor));
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length, stream, (ct) => Task.CompletedTask));
 
                     Assert.NotNull(ex);
                     Assert.IsType<InvalidOperationException>(ex);
