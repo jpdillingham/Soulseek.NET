@@ -666,6 +666,33 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write from stream does not throw given good input and if Stream does not throw")]
+        public async Task Write_From_Stream_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+
+            var data = new byte[] { 0x0, 0x1 };
+
+            using (var stream = new MemoryStream(data))
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(data.Length, stream, (ct) => Task.CompletedTask));
+
+                    Assert.Null(ex);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
         [Trait("Category", "Read")]
         [Fact(DisplayName = "Read throws if TcpClient is not connected")]
         public async Task Read_Throws_If_TcpClient_Is_Not_Connected()
@@ -810,35 +837,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
-        [Fact(DisplayName = "Read does not throw if length is long and fits in int")]
-        public async Task Read_Does_Not_Throw_If_Length_Is_Long_And_Fits_In_Int()
-        {
-            long length = 2147483647; // max = 2147483647
-
-            var s = new Mock<INetworkStream>();
-            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult((int)length));
-
-            var t = new Mock<ITcpClient>();
-
-            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
-            {
-                t.Setup(m => m.Client).Returns(socket);
-                t.Setup(m => m.Connected).Returns(true);
-                t.Setup(m => m.GetStream()).Returns(s.Object);
-
-                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
-                {
-                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(length));
-
-                    Assert.Null(ex);
-
-                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
-                }
-            }
-        }
-
-        [Trait("Category", "Read")]
         [Fact(DisplayName = "Read does not throw given good input and if Stream does not throw")]
         public async Task Read_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
         {
@@ -857,6 +855,34 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
                 {
                     var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+                    Assert.Null(ex);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read to stream does not throw given good input and if Stream does not throw")]
+        public async Task Read_To_Stream_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1, stream, (ct) => Task.CompletedTask));
 
                     Assert.Null(ex);
 
@@ -891,8 +917,63 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read to stream loops over Stream.ReadAsync on partial read")]
+        public async Task Read_To_Stream_Loops_Over_Stream_ReadAsync_On_Partial_Read()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var stream = new MemoryStream())
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    await c.ReadAsync(3, stream, (ct) => Task.CompletedTask);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
         [Fact(DisplayName = "Read throws if Stream throws")]
         public async Task Read_Throws_If_Stream_Throws()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new SocketException());
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<ConnectionReadException>(ex);
+                    Assert.IsType<SocketException>(ex.InnerException);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read to stream throws if Stream throws")]
+        public async Task Read_To_Stream_Throws_If_Stream_Throws()
         {
             var s = new Mock<INetworkStream>();
             s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))

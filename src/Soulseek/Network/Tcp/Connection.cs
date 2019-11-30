@@ -13,9 +13,7 @@
 namespace Soulseek.Network.Tcp
 {
     using System;
-    using System.Collections.Generic;
     using System.IO;
-    using System.Linq;
     using System.Net;
     using System.Net.Sockets;
     using System.Threading;
@@ -485,6 +483,15 @@ namespace Soulseek.Network.Tcp
             }
         }
 
+        private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
+        {
+            using (var stream = new MemoryStream())
+            {
+                await ReadInternalAsync(length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
+                return stream.ToArray();
+            }
+        }
+
         private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
         {
             InactivityTimer?.Reset();
@@ -525,72 +532,11 @@ namespace Soulseek.Network.Tcp
             }
         }
 
-        private async Task<byte[]> ReadInternalAsync(long length, CancellationToken cancellationToken)
-        {
-            InactivityTimer?.Reset();
-
-            var result = new List<byte>();
-
-            var buffer = new byte[TcpClient.Client.ReceiveBufferSize];
-            var totalBytesRead = 0;
-
-            try
-            {
-                while (totalBytesRead < length)
-                {
-                    var bytesRemaining = length - totalBytesRead;
-                    var bytesToRead = bytesRemaining > buffer.Length ? buffer.Length : (int)bytesRemaining; // cast to int is safe because of the check against buffer length.
-
-                    var bytesRead = await Stream.ReadAsync(buffer, 0, bytesToRead, cancellationToken).ConfigureAwait(false);
-
-                    if (bytesRead == 0)
-                    {
-                        throw new ConnectionException($"Remote connection closed");
-                    }
-
-                    totalBytesRead += bytesRead;
-
-                    var data = buffer.Take(bytesRead);
-                    result.AddRange(data);
-
-                    DataRead?.Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
-                    InactivityTimer?.Reset();
-                }
-
-                return result.ToArray();
-            }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
-            {
-                Disconnect($"Read error: {ex.Message}");
-                throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
-            }
-        }
-
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
-            InactivityTimer?.Reset();
-
-            var totalBytesWritten = 0;
-
-            try
+            using (var stream = new MemoryStream(bytes))
             {
-                while (totalBytesWritten < bytes.Length)
-                {
-                    var bytesRemaining = bytes.Length - totalBytesWritten;
-                    var bytesToWrite = bytesRemaining > TcpClient.Client.SendBufferSize ? TcpClient.Client.SendBufferSize : bytesRemaining;
-
-                    await Stream.WriteAsync(bytes, totalBytesWritten, bytesToWrite, cancellationToken).ConfigureAwait(false);
-
-                    totalBytesWritten += bytesToWrite;
-
-                    DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, bytes.Length));
-                    InactivityTimer?.Reset();
-                }
-            }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
-            {
-                Disconnect($"Write error: {ex.Message}");
-                throw new ConnectionWriteException($"Failed to write {bytes.Length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
+                await WriteInternalAsync(bytes.Length, stream, (c) => Task.CompletedTask, cancellationToken).ConfigureAwait(false);
             }
         }
 
