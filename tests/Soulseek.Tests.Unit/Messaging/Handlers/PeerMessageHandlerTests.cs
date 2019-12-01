@@ -80,8 +80,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, ip, port);
 
-            var dict = new ConcurrentDictionary<int, Transfer>();
-            dict.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+            var dict = new ConcurrentDictionary<int, TransferInternal>();
+            dict.TryAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
             mocks.Client.Setup(m => m.Downloads)
                 .Returns(dict);
@@ -105,8 +105,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, ip, port);
 
-            var dict = new ConcurrentDictionary<int, Transfer>();
-            var download = new Transfer(TransferDirection.Download, username, filename, 0);
+            var dict = new ConcurrentDictionary<int, TransferInternal>();
+            var download = new TransferInternal(TransferDirection.Download, username, filename, 0);
             dict.TryAdd(0, download);
 
             mocks.Client.Setup(m => m.Downloads)
@@ -564,7 +564,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             public Mock<SoulseekClient> Client { get; }
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
-            public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
+            public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
             public ConcurrentDictionary<int, Search> Searches { get; } = new ConcurrentDictionary<int, Search>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();

@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         internal void Instantiates_With_The_Given_Data(string username, string filename, int token)
         {
-            var d = new Transfer(TransferDirection.Download, username, filename, token);
+            var d = new TransferInternal(TransferDirection.Download, username, filename, token);
 
             Assert.Equal(username, d.Username);
             Assert.Equal(filename, d.Filename);
@@ -36,7 +36,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Properties default to expected values"), AutoData]
         internal void Properties_Default_To_Expected_Values(string username, string filename, int token, TransferOptions options)
         {
-            var d = new Transfer(TransferDirection.Download, username, filename, token, options);
+            var d = new TransferInternal(TransferDirection.Download, username, filename, token, options);
 
             Assert.Null(d.Connection);
             Assert.Null(d.IPAddress);
@@ -60,7 +60,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "IPAddress and Port props return Connection props"), AutoData]
         internal void IPAddress_And_Port_Props_Return_Connection_Props(string username, string filename, int token, IPAddress ipAddress, int port)
         {
-            var d = new Transfer(TransferDirection.Download, username, filename, token);
+            var d = new TransferInternal(TransferDirection.Download, username, filename, token);
 
             var c = new Mock<IConnection>();
             c.Setup(m => m.IPAddress)
@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Wait key is expected value"), AutoData]
         internal void Wait_Key_Is_Expected_Value(string username, string filename, int token, TransferDirection direction)
         {
-            var d = new Transfer(direction, username, filename, token);
+            var d = new TransferInternal(direction, username, filename, token);
 
             Assert.Equal(new WaitKey(Constants.WaitKey.Transfer, direction, username, filename, token), d.WaitKey);
         }
@@ -87,7 +87,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "State transitions set time props")]
         internal void State_Transitions_Set_Time_Props()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             var s1 = d.StartTime;
             var e1 = d.EndTime;
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "ElapsedTime works")]
         internal void ElapsedTime_Works()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             var s = new DateTime(2019, 4, 25);
             var e = new DateTime(2019, 4, 26);
@@ -143,7 +143,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "RemainingTime works")]
         internal void RemainingTime_Works()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             Assert.Equal(default(TimeSpan), d.RemainingTime);
 
@@ -158,7 +158,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "PercentComplete works")]
         internal void PercentComplete_Works()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             Assert.Equal(0, d.PercentComplete);
 
@@ -172,7 +172,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "UpdateProgress sets AverageSpeed initial value")]
         internal void UpdateProgress_Sets_AverageSpeed_To_Initial_Value()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             Assert.Equal(0, d.AverageSpeed);
 
@@ -187,7 +187,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "UpdateProgress updates AverageSpeed on subsequent call")]
         internal void UpdateProgress_Updates_AverageSpeed_On_Subsequent_Call()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             Assert.Equal(0, d.AverageSpeed);
 
@@ -207,7 +207,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "UpdateProgress ignores AverageSpeed if StartTime and lastProgressTime is null")]
         internal void UpdateProgress_Ignores_AverageSpeed_If_StarTime_And_lastProgressTime_Is_Null()
         {
-            var d = new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0);
+            var d = new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0);
 
             Assert.Equal(0, d.AverageSpeed);
 

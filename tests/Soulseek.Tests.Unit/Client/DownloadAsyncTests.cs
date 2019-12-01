@@ -199,8 +199,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var queued = new ConcurrentDictionary<int, Transfer>();
-                queued.TryAdd(1, new Transfer(TransferDirection.Download, "foo", "bar", 1));
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(1, new TransferInternal(TransferDirection.Download, "foo", "bar", 1));
 
                 s.SetProperty("Downloads", queued);
 
@@ -221,8 +221,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var queued = new ConcurrentDictionary<int, Transfer>();
-                queued.TryAdd(1, new Transfer(TransferDirection.Download, "foo", "bar", 1));
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(1, new TransferInternal(TransferDirection.Download, "foo", "bar", 1));
 
                 s.SetProperty("Downloads", queued);
 
@@ -242,8 +242,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var queued = new ConcurrentDictionary<int, Transfer>();
-                queued.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("Downloads", queued);
 
@@ -264,8 +264,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var queued = new ConcurrentDictionary<int, Transfer>();
-                queued.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var queued = new ConcurrentDictionary<int, TransferInternal>();
+                queued.TryAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("Downloads", queued);
 
@@ -721,16 +721,16 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(4, events.Count);
 
                 Assert.Equal(TransferStates.None, events[0].PreviousState);
-                Assert.Equal(TransferStates.Requested, events[0].State);
+                Assert.Equal(TransferStates.Requested, events[0].Transfer.State);
 
                 Assert.Equal(TransferStates.Requested, events[1].PreviousState);
-                Assert.Equal(TransferStates.Initializing, events[1].State);
+                Assert.Equal(TransferStates.Initializing, events[1].Transfer.State);
 
                 Assert.Equal(TransferStates.Initializing, events[2].PreviousState);
-                Assert.Equal(TransferStates.InProgress, events[2].State);
+                Assert.Equal(TransferStates.InProgress, events[2].Transfer.State);
 
                 Assert.Equal(TransferStates.InProgress, events[3].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[3].State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[3].Transfer.State);
             }
         }
 
@@ -910,19 +910,19 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(5, events.Count);
 
                 Assert.Equal(TransferStates.None, events[0].PreviousState);
-                Assert.Equal(TransferStates.Requested, events[0].State);
+                Assert.Equal(TransferStates.Requested, events[0].Transfer.State);
 
                 Assert.Equal(TransferStates.Requested, events[1].PreviousState);
-                Assert.Equal(TransferStates.Queued, events[1].State);
+                Assert.Equal(TransferStates.Queued, events[1].Transfer.State);
 
                 Assert.Equal(TransferStates.Queued, events[2].PreviousState);
-                Assert.Equal(TransferStates.Initializing, events[2].State);
+                Assert.Equal(TransferStates.Initializing, events[2].Transfer.State);
 
                 Assert.Equal(TransferStates.Initializing, events[3].PreviousState);
-                Assert.Equal(TransferStates.InProgress, events[3].State);
+                Assert.Equal(TransferStates.InProgress, events[3].Transfer.State);
 
                 Assert.Equal(TransferStates.InProgress, events[4].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[4].State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[4].Transfer.State);
             }
         }
 
@@ -1036,9 +1036,9 @@ namespace Soulseek.Tests.Unit.Client
                 await s.InvokeMethod<Task<byte[]>>("DownloadToByteArrayAsync", username, filename, token, new TransferOptions(), null);
 
                 Assert.Equal(2, events.Count);
-                Assert.Equal(TransferStates.InProgress, events[0].State);
+                Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
 
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[1].State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[1].Transfer.State);
             }
         }
 
@@ -1159,7 +1159,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<MessageReadException>(ex.InnerException);
 
                 Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.Errored, events[events.Count - 1].State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Errored, events[events.Count - 1].Transfer.State);
             }
         }
 
@@ -1221,7 +1221,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<TimeoutException>(ex);
 
                 Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
-                Assert.Equal(TransferStates.Completed | TransferStates.TimedOut, events[events.Count - 1].State);
+                Assert.Equal(TransferStates.Completed | TransferStates.TimedOut, events[events.Count - 1].Transfer.State);
             }
         }
 
@@ -1253,7 +1253,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
 
-                Assert.Equal(TransferStates.Completed | TransferStates.Cancelled, events[events.Count - 1].State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Cancelled, events[events.Count - 1].Transfer.State);
             }
         }
 

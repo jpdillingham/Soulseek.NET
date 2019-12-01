@@ -395,14 +395,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Attempts connection on expected ConnectToPeerResponse 'F'"), AutoData]
         public void Attempts_Connection_On_Expected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
         {
-            var active = new ConcurrentDictionary<int, Transfer>();
-            active.TryAdd(token, new Transfer(TransferDirection.Download, username, filename, token));
+            var active = new ConcurrentDictionary<int, TransferInternal>();
+            active.TryAdd(token, new TransferInternal(TransferDirection.Download, username, filename, token));
 
             var mocks = new Mocks();
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
 
-            var transfer = new Transfer(TransferDirection.Download, username, "foo", token)
+            var transfer = new TransferInternal(TransferDirection.Download, username, "foo", token)
             {
                 RemoteToken = token,
             };
@@ -800,7 +800,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
             public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
-            public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
+            public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
         }
     }

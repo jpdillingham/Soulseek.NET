@@ -283,9 +283,9 @@ namespace Soulseek.Tests.Unit
             {
                 await s.ConnectAsync();
 
-                var downloads = new ConcurrentDictionary<int, Transfer>();
-                downloads.TryAdd(0, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0));
-                downloads.TryAdd(1, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 1));
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(0, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0));
+                downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 1));
 
                 s.SetProperty("Downloads", downloads);
 
