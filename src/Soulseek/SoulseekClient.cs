@@ -247,7 +247,7 @@ namespace Soulseek
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> Downloads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IListener Listener { get; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
@@ -255,7 +255,7 @@ namespace Soulseek
         internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
         internal virtual IMessageConnection ServerConnection { get; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, Transfer> Uploads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> Uploads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
@@ -1254,7 +1254,7 @@ namespace Soulseek
 
         private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var download = new Transfer(TransferDirection.Download, username, filename, token, options);
+            var download = new TransferInternal(TransferDirection.Download, username, filename, token, options);
             Downloads.TryAdd(download.Token, download);
 
             Task downloadCompleted = null;
@@ -1263,7 +1263,7 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 download.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: download);
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
                 lastState = state;
                 options.StateChanged?.Invoke(args);
                 TransferStateChanged?.Invoke(this, args);
@@ -1273,7 +1273,7 @@ namespace Soulseek
             {
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, download);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
                 options.ProgressUpdated?.Invoke(eventArgs);
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
@@ -1391,7 +1391,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await download.Connection.ReadAsync(download.Size, outputStream, (cancelToken) => options.Governor(download, cancelToken), cancellationToken).ConfigureAwait(false);
+                    await download.Connection.ReadAsync(download.Size, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     download.State = TransferStates.Succeeded;
 
@@ -1740,7 +1740,7 @@ namespace Soulseek
 
         private async Task UploadFromStreamAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
+            var upload = new TransferInternal(TransferDirection.Upload, username, filename, token, options)
             {
                 Size = length,
             };
@@ -1752,7 +1752,7 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 upload.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: upload);
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
                 lastState = state;
                 options.StateChanged?.Invoke(args);
                 TransferStateChanged?.Invoke(this, args);
@@ -1762,7 +1762,7 @@ namespace Soulseek
             {
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, upload);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
                 options.ProgressUpdated?.Invoke(eventArgs);
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
@@ -1838,7 +1838,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(upload, cancelToken), cancellationToken).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 
