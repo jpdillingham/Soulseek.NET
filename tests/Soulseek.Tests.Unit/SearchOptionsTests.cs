@@ -14,7 +14,6 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using AutoFixture.Xunit2;
-    using Soulseek.Messaging.Messages;
     using Xunit;
 
     public class SearchOptionsTests
@@ -43,8 +42,8 @@ namespace Soulseek.Tests.Unit
                 minimumPeerFreeUploadSlots,
                 maximumPeerQueueLength,
                 minimumPeerUploadSpeed,
-                responseFilter,
                 fileLimit,
+                responseFilter,
                 fileFilter,
                 stateChanged,
                 responseReceived);
