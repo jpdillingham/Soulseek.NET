@@ -22,17 +22,31 @@
     {
         private ISoulseekClient Client { get; }
         private string OutputDirectory { get; }
-        private IDownloadTracker Tracker { get; }
+        private ITransferTracker Tracker { get; }
 
-        public FilesController(IConfiguration configuration, ISoulseekClient client, IDownloadTracker tracker)
+        public FilesController(IConfiguration configuration, ISoulseekClient client, ITransferTracker tracker)
         {
             OutputDirectory = configuration.GetValue<string>("OUTPUT_DIR");
             Client = client;
             Tracker = tracker;
         }
 
-        [HttpGet("")]
-        public IActionResult GetAll()
+        [HttpGet("downloads")]
+        public IActionResult GetDownloads()
+        {
+            var x = Tracker.Downloads.Select(u => new
+            {
+                Username = u.Key,
+                Directories = u.Value.Values
+                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
+                    .Select(d => new { Directory = d.Key, Files = d })
+            });
+
+            return Ok(x);
+        }
+
+        [HttpGet("uploads")]
+        public IActionResult GetUploads()
         {
             var x = Tracker.Downloads.Select(u => new
             {
@@ -87,12 +101,12 @@
             {
                 Tracker.AddOrUpdate(e);
 
-                if (e.State == TransferStates.Queued)
+                if (e.Transfer.State == TransferStates.Queued)
                 {
                     waitUntilEnqueue.SetResult(true);
                 }
 
-                if (e.State.HasFlag(TransferStates.Completed) && e.State.HasFlag(TransferStates.Succeeded))
+                if (e.Transfer.State.HasFlag(TransferStates.Completed) && e.Transfer.State.HasFlag(TransferStates.Succeeded))
                 {
                     //SaveLocalFile(filename, OutputDirectory, e.Data);
                 }

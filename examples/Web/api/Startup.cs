@@ -119,7 +119,7 @@
                 }
             };
 
-            Client.TransferStateChanged += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PreviousState} => {args.State}");
+            Client.TransferStateChanged += (e, args) => Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}");
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
             //Client.TransferProgressUpdated += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
         }
@@ -162,7 +162,7 @@
             }).GetAwaiter().GetResult();
 
             services.AddSingleton<ISoulseekClient, SoulseekClient>(serviceProvider => Client);
-            services.AddSingleton<IDownloadTracker, DownloadTracker>();
+            services.AddSingleton<ITransferTracker, TransferTracker>();
             services.AddSingleton<ISearchTracker, SearchTracker>();
         }
 

@@ -23,7 +23,7 @@ class Downloads extends Component {
 
     fetch = () => {
         this.setState({ fetchState: 'pending' }, () => {
-            axios.get(BASE_URL + '/files')
+            axios.get(BASE_URL + '/transfers/download')
             .then(response => this.setState({ 
                 fetchState: 'complete', downloads: response.data
             }))
