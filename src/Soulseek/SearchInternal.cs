@@ -1,4 +1,4 @@
-﻿// <copyright file="Search.cs" company="JP Dillingham">
+﻿// <copyright file="SearchInternal.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -24,18 +24,18 @@ namespace Soulseek
     /// <summary>
     ///     A single file search.
     /// </summary>
-    internal class Search : IDisposable
+    internal class SearchInternal : IDisposable
     {
         private int resultCount = 0;
         private int resultFileCount = 0;
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Search"/> class.
+        ///     Initializes a new instance of the <see cref="SearchInternal"/> class.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchOptions options = null)
+        public SearchInternal(string searchText, int token, SearchOptions options = null)
         {
             SearchText = searchText;
             Token = token;
@@ -69,9 +69,9 @@ namespace Soulseek
         public string SearchText { get; }
 
         /// <summary>
-        ///     Gets the state of the search.
+        ///     Gets or sets the state of the search.
         /// </summary>
-        public SearchStates State { get; internal set; } = SearchStates.None;
+        public SearchStates State { get; set; } = SearchStates.None;
 
         /// <summary>
         ///     Gets the unique identifier for the search.
@@ -81,7 +81,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets or sets the Action to invoke when a new search response is received.
         /// </summary>
-        internal Action<SearchResponse> ResponseReceived { get; set; }
+        public Action<SearchResponse> ResponseReceived { get; set; }
 
         private bool Disposed { get; set; } = false;
         private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
@@ -89,7 +89,7 @@ namespace Soulseek
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="Search"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="SearchInternal"/>.
         /// </summary>
         public void Dispose()
         {
@@ -102,7 +102,7 @@ namespace Soulseek
         ///     in the search options.
         /// </summary>
         /// <param name="slimResponse">The response to add.</param>
-        internal void TryAddResponse(SearchResponseSlim slimResponse)
+        public void TryAddResponse(SearchResponseSlim slimResponse)
         {
             // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
             // the slim response for fitness prior to extracting the file list from it for performance reasons.
@@ -152,7 +152,7 @@ namespace Soulseek
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
-        internal void Complete(SearchStates state)
+        public void Complete(SearchStates state)
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
@@ -164,7 +164,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        internal async Task<IReadOnlyCollection<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        public async Task<IReadOnlyCollection<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -182,7 +182,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="Search"/>.
+        ///     Releases the managed and unmanaged resources used by the <see cref="SearchInternal"/>.
         /// </summary>
         /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
         protected virtual void Dispose(bool disposing)

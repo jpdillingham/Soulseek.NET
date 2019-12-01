@@ -24,7 +24,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with valid Search"), AutoData]
         public void SearchEventArgs_Instantiates_With_Valid_Search(string searchText, int token, SearchOptions options)
         {
-            using (var search = new Search(searchText, token, options))
+            using (var search = new SearchInternal(searchText, token, options))
             {
                 var e = new SearchEventArgs(search);
 
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit
             var searchText = Guid.NewGuid().ToString();
             var token = new Random().Next();
 
-            using (var search = new Search(searchText, token, new SearchOptions()))
+            using (var search = new SearchInternal(searchText, token, new SearchOptions()))
             {
                 var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
 
@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit
             var searchText = Guid.NewGuid().ToString();
             var token = new Random().Next();
 
-            using (var search = new Search(searchText, token, new SearchOptions()))
+            using (var search = new SearchInternal(searchText, token, new SearchOptions()))
             {
                 search.SetProperty("State", SearchStates.Completed);
 

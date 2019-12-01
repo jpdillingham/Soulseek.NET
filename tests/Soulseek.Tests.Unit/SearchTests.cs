@@ -27,7 +27,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with expected data"), AutoData]
         public void Instantiates_With_Expected_Data(string searchText, int token, SearchOptions options)
         {
-            var s = new Search(searchText, token, options);
+            var s = new SearchInternal(searchText, token, options);
 
             Assert.Equal(searchText, s.SearchText);
             Assert.Equal(token, s.Token);
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
         {
-            var s = new Search("foo", 42);
+            var s = new SearchInternal("foo", 42);
 
             var ex = Record.Exception(() => s.Dispose());
 
@@ -56,7 +56,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Complete sets state")]
         public void Complete_Sets_State()
         {
-            var s = new Search("foo", 42);
+            var s = new SearchInternal("foo", 42);
 
             s.Complete(SearchStates.Cancelled);
 
@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Response filter returns true when FilterResponses option is false")]
         public void Response_Filter_Returns_True_When_FilterResponses_Option_Is_False()
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: false));
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: false));
             var response = new SearchResponseSlim("u", 1, 1, 1, 1, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
@@ -87,7 +87,7 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, true)]
         public void Response_Filter_Respects_MinimumResponseFileCount_Option(int actual, int option, bool expected)
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: option));
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: option));
             var response = new SearchResponseSlim("u", 1, actual, 1, 1, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
@@ -104,7 +104,7 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, true)]
         public void Response_Filter_Respects_MinimumPeerFreeUploadSlots_Option(int actual, int option, bool expected)
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerFreeUploadSlots: option));
             var response = new SearchResponseSlim("u", 1, 1, actual, 1, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, true)]
         public void Response_Filter_Respects_MinimumPeerUploadSpeed_Option(int actual, int option, bool expected)
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumPeerUploadSpeed: option));
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumPeerUploadSpeed: option));
             var response = new SearchResponseSlim("u", 1, 1, 1, actual, 1, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
@@ -138,7 +138,7 @@ namespace Soulseek.Tests.Unit
         [InlineData(1, 0, false)]
         public void Response_Filter_Respects_MaximumPeerQueueLength_Option(int actual, int option, bool expected)
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, maximumPeerQueueLength: option));
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, maximumPeerQueueLength: option));
             var response = new SearchResponseSlim("u", 1, 1, 1, 1, actual, null);
 
             var filter = s.InvokeMethod<bool>("SlimResponseMeetsOptionCriteria", response);
@@ -152,7 +152,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "TryAddResponse ignores response when search is not in progress")]
         public void TryAddResponse_Ignores_Response_When_Search_Is_Not_In_Progress()
         {
-            var s = new Search("foo", 42)
+            var s = new SearchInternal("foo", 42)
             {
                 State = SearchStates.Completed,
             };
@@ -168,7 +168,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "TryAddResponse ignores response when token does not match")]
         public void TryAddResponse_Ignores_Response_When_Token_Does_Not_Match()
         {
-            var s = new Search("foo", 42)
+            var s = new SearchInternal("foo", 42)
             {
                 State = SearchStates.InProgress,
             };
@@ -184,7 +184,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "TryAddResponse ignores response when response criteria not met")]
         public void TryAddResponse_Ignores_Response_When_Response_Criteria_Not_Met()
         {
-            var s = new Search("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
+            var s = new SearchInternal("foo", 42, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
                 State = SearchStates.InProgress,
             };
@@ -200,7 +200,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
         public void TryAddResponse_Adds_Response(string username, int token, byte code, string filename, int size, string extension)
         {
-            var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
+            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
                 State = SearchStates.InProgress,
             };
@@ -246,7 +246,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "TryAddResponse adds response"), AutoData]
         public void TryAddResponse_Swallows_Exceptions(string username, int token, byte code, string filename, int size, string extension)
         {
-            var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
+            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
                 State = SearchStates.InProgress,
             };
@@ -290,7 +290,7 @@ namespace Soulseek.Tests.Unit
                     minimumResponseFileCount: 1,
                     fileFilter: (f) => false);
 
-            var s = new Search("foo", token, options)
+            var s = new SearchInternal("foo", token, options)
             {
                 State = SearchStates.InProgress,
             };
@@ -332,7 +332,7 @@ namespace Soulseek.Tests.Unit
                     minimumResponseFileCount: 1,
                     fileLimit: 1);
 
-            var s = new Search("foo", token, options)
+            var s = new SearchInternal("foo", token, options)
             {
                 State = SearchStates.InProgress,
             };
@@ -380,7 +380,7 @@ namespace Soulseek.Tests.Unit
                     responseLimit: 1,
                     fileLimit: 10000000);
 
-            var s = new Search("foo", token, options)
+            var s = new SearchInternal("foo", token, options)
             {
                 State = SearchStates.InProgress,
             };
@@ -424,7 +424,7 @@ namespace Soulseek.Tests.Unit
         {
             SearchResponse addResponse = null;
 
-            var s = new Search("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
+            var s = new SearchInternal("foo", token, new SearchOptions(filterResponses: true, minimumResponseFileCount: 1))
             {
                 State = SearchStates.InProgress,
             };

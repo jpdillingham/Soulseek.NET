@@ -306,7 +306,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Compress()
                 .Build();
 
-            using (var search = new Search("foo", token)
+            using (var search = new SearchInternal("foo", token)
             {
                 State = SearchStates.InProgress,
             })
@@ -565,7 +565,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             public Mock<SoulseekClient> Client { get; }
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
             public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
-            public ConcurrentDictionary<int, Search> Searches { get; } = new ConcurrentDictionary<int, Search>();
+            public ConcurrentDictionary<int, SearchInternal> Searches { get; } = new ConcurrentDictionary<int, SearchInternal>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IMessageConnection> PeerConnection { get; } = new Mock<IMessageConnection>();

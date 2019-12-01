@@ -24,7 +24,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
         /// </summary>
         /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchEventArgs(Search search)
+        internal SearchEventArgs(SearchInternal search)
         {
             Options = search.Options;
             Responses = search.Responses;
@@ -69,7 +69,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="response">The search response which raised the event.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchResponseReceivedEventArgs(SearchResponse response, Search search)
+        internal SearchResponseReceivedEventArgs(SearchResponse response, SearchInternal search)
             : base(search)
         {
             Response = response;
@@ -91,7 +91,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="previousState">The previous state of the client.</param>
         /// <param name="search">The search instance with which to initialize data.</param>
-        internal SearchStateChangedEventArgs(SearchStates previousState, Search search)
+        internal SearchStateChangedEventArgs(SearchStates previousState, SearchInternal search)
             : base(search)
         {
             PreviousState = previousState;
