@@ -1645,7 +1645,7 @@ namespace Soulseek
             void UpdateState(SearchStates state)
             {
                 search.State = state;
-                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
+                var args = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
                 lastState = state;
                 options.StateChanged?.Invoke(args);
                 SearchStateChanged?.Invoke(this, args);
@@ -1655,7 +1655,7 @@ namespace Soulseek
             {
                 search.ResponseReceived = (response) =>
                 {
-                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
+                    var eventArgs = new SearchResponseReceivedEventArgs(response, new Search(search));
                     options.ResponseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
