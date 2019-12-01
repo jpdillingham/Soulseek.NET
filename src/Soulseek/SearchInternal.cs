@@ -26,8 +26,8 @@ namespace Soulseek
     /// </summary>
     internal class SearchInternal : IDisposable
     {
-        private int resultCount = 0;
-        private int resultFileCount = 0;
+        private int fileCount = 0;
+        private int responseCount = 0;
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchInternal"/> class.
@@ -54,9 +54,24 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Gets the total number of files contained within received responses.
+        /// </summary>
+        public int FileCount => fileCount;
+
+        /// <summary>
         ///     Gets the options for the search.
         /// </summary>
         public SearchOptions Options { get; }
+
+        /// <summary>
+        ///     Gets the current number of responses received.
+        /// </summary>
+        public int ResponseCount => responseCount;
+
+        /// <summary>
+        ///     Gets or sets the Action to invoke when a new search response is received.
+        /// </summary>
+        public Action<SearchResponse> ResponseReceived { get; set; }
 
         /// <summary>
         ///     Gets the collection of responses received from peers.
@@ -78,15 +93,21 @@ namespace Soulseek
         /// </summary>
         public int Token { get; }
 
-        /// <summary>
-        ///     Gets or sets the Action to invoke when a new search response is received.
-        /// </summary>
-        public Action<SearchResponse> ResponseReceived { get; set; }
-
         private bool Disposed { get; set; } = false;
         private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
+
+        /// <summary>
+        ///     Completes the search with the specified <paramref name="state"/>.
+        /// </summary>
+        /// <param name="state">The terminal state of the search.</param>
+        public void Complete(SearchStates state)
+        {
+            SearchTimeoutTimer.Stop();
+            State = SearchStates.Completed | state;
+            TaskCompletionSource.SetResult(0);
+        }
 
         /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="SearchInternal"/>.
@@ -122,41 +143,31 @@ namespace Soulseek
 
                 try
                 {
-                    Interlocked.Increment(ref resultCount);
-                    Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
+                    Interlocked.Increment(ref responseCount);
+                    Interlocked.Add(ref fileCount, fullResponse.Files.Count);
 
                     ResponseBag.Add(fullResponse);
                 }
                 catch
                 {
-                    // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses to throw exceptions accessing the disposed instance
-                    // or a variety of other issues. swallowing exceptions here is the most pragmatic way to handle this, as anything else would involve synchronization and would
+                    // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses
+                    // to throw exceptions accessing the disposed instance or a variety of other issues. swallowing exceptions
+                    // here is the most pragmatic way to handle this, as anything else would involve synchronization and would
                     // create lock contention when adding responses.
                 }
 
                 ResponseReceived?.Invoke(fullResponse);
                 SearchTimeoutTimer.Reset();
 
-                if (resultCount >= Options.ResponseLimit)
+                if (responseCount >= Options.ResponseLimit)
                 {
                     Complete(SearchStates.ResponseLimitReached);
                 }
-                else if (resultFileCount >= Options.FileLimit)
+                else if (fileCount >= Options.FileLimit)
                 {
                     Complete(SearchStates.FileLimitReached);
                 }
             }
-        }
-
-        /// <summary>
-        ///     Completes the search with the specified <paramref name="state"/>.
-        /// </summary>
-        /// <param name="state">The terminal state of the search.</param>
-        public void Complete(SearchStates state)
-        {
-            SearchTimeoutTimer.Stop();
-            State = SearchStates.Completed | state;
-            TaskCompletionSource.SetResult(0);
         }
 
         /// <summary>

@@ -18,9 +18,7 @@ namespace Soulseek
     /// <summary>
     ///     A single file transfer.
     /// </summary>
-    /// <remarks>
-    ///     This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.
-    /// </remarks>
+    /// <remarks>This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.</remarks>
     public class Transfer
     {
         /// <summary>
@@ -43,7 +41,6 @@ namespace Soulseek
         /// <param name="remoteToken">The remote unique token for the transfer.</param>
         /// <param name="ipAddress">The ip address of the remote transfer connection, if one has been established.</param>
         /// <param name="port">The port of the remote transfer connection, if one has been established.</param>
-        /// <param name="options">The options for the transfer.</param>
         public Transfer(
             TransferDirection direction,
             string username,
@@ -57,8 +54,7 @@ namespace Soulseek
             DateTime? endTime = null,
             int? remoteToken = null,
             IPAddress ipAddress = null,
-            int? port = null,
-            TransferOptions options = null)
+            int? port = null)
         {
             Direction = direction;
             Username = username;
@@ -73,15 +69,6 @@ namespace Soulseek
             RemoteToken = remoteToken;
             IPAddress = ipAddress;
             Port = port;
-
-            // create a new instance of options so we can strip out delegates. these don't serialize well and they shouldn't be
-            // invoked by any code working with this DTO.
-            Options = new TransferOptions(
-                governor: null,
-                stateChanged: null,
-                progressUpdated: null,
-                options?.DisposeInputStreamOnCompletion ?? false,
-                options?.DisposeOutputStreamOnCompletion ?? false);
         }
 
         /// <summary>
@@ -102,8 +89,7 @@ namespace Soulseek
                 transferInternal.EndTime,
                 transferInternal.RemoteToken,
                 transferInternal.IPAddress,
-                transferInternal.Port,
-                transferInternal.Options)
+                transferInternal.Port)
         {
         }
 

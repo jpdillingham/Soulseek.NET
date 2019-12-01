@@ -12,15 +12,10 @@
 
 namespace Soulseek
 {
-    using System.Collections.Generic;
-    using System.Linq;
-
     /// <summary>
     ///     A single file search.
     /// </summary>
-    /// <remarks>
-    ///     This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.
-    /// </remarks>
+    /// <remarks>This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.</remarks>
     public class Search
     {
         /// <summary>
@@ -29,38 +24,15 @@ namespace Soulseek
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="state">The state of the search.</param>
-        /// <param name="responses">The collection of responses received from peers.</param>
-        /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchStates state, IEnumerable<SearchResponse> responses = null, SearchOptions options = null)
+        /// <param name="responseCount">The current number of responses received.</param>
+        /// <param name="fileCount">The total number of files contained within received responses.</param>
+        public Search(string searchText, int token, SearchStates state, int responseCount, int fileCount)
         {
             SearchText = searchText;
             Token = token;
             State = state;
-
-            ResponseList = responses ?? Enumerable.Empty<SearchResponse>();
-
-            if (options == null)
-            {
-                Options = new SearchOptions();
-            }
-            else
-            {
-                // create a new instance of options so we can strip out delegates. these don't serialize well and they shouldn't be
-                // invoked by any code working with this DTO.
-                Options = new SearchOptions(
-                    options.SearchTimeout,
-                    options.ResponseLimit,
-                    options.FilterResponses,
-                    options.MinimumResponseFileCount,
-                    options.MinimumPeerFreeUploadSlots,
-                    options.MaximumPeerQueueLength,
-                    options.MinimumPeerUploadSpeed,
-                    options.FileLimit,
-                    responseFilter: null,
-                    fileFilter: null,
-                    stateChanged: null,
-                    responseReceived: null);
-            }
+            ResponseCount = responseCount;
+            FileCount = fileCount;
         }
 
         /// <summary>
@@ -72,20 +44,20 @@ namespace Soulseek
                 searchInternal.SearchText,
                 searchInternal.Token,
                 searchInternal.State,
-                searchInternal.Responses,
-                searchInternal.Options)
+                searchInternal.ResponseCount,
+                searchInternal.FileCount)
         {
         }
 
         /// <summary>
-        ///     Gets the options for the search.
+        ///     Gets the total number of files contained within received responses.
         /// </summary>
-        public SearchOptions Options { get; }
+        public int FileCount { get; }
 
         /// <summary>
-        ///     Gets the collection of responses received from peers.
+        ///     Gets the current number of responses received.
         /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses => ResponseList.ToList().AsReadOnly();
+        public int ResponseCount { get; }
 
         /// <summary>
         ///     Gets the text for which to search.
@@ -101,7 +73,5 @@ namespace Soulseek
         ///     Gets the unique identifier for the search.
         /// </summary>
         public int Token { get; }
-
-        private IEnumerable<SearchResponse> ResponseList { get; }
     }
 }
