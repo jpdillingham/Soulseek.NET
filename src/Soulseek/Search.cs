@@ -24,7 +24,7 @@ namespace Soulseek
     /// <summary>
     ///     A single file search.
     /// </summary>
-    public class Search : IDisposable
+    internal class Search : IDisposable
     {
         private int resultCount = 0;
         private int resultFileCount = 0;
