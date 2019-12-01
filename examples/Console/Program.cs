@@ -388,7 +388,7 @@
                         filterResponses: true,
                         minimumResponseFileCount: minimumFileCount,
                         searchTimeout: 5,
-                        stateChanged: (e) => state = e.State,
+                        stateChanged: (e) => state = e.Search.State,
                         responseReceived: (e) =>
                         {
                             totalResponses++;

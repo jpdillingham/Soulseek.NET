@@ -54,8 +54,8 @@
                 SearchText = kvp.Key,
                 kvp.Value.Token,
                 kvp.Value.State,
-                ResponseCount = kvp.Value.Responses.Count,
-                FileCount = kvp.Value.Responses.Sum(r => r.FileCount)
+                kvp.Value.ResponseCount,
+                kvp.Value.FileCount
             });
 
             return Ok(response);
@@ -71,7 +71,7 @@
         {
             Tracker.Searches.TryGetValue(searchText, out var search);
 
-            if (search == default(WebAPI.Search))
+            if (search == default)
             {
                 return NotFound();
             }
@@ -81,8 +81,8 @@
                 search.SearchText,
                 search.Token,
                 search.State,
-                ResponseCount = search.Responses.Count,
-                FileCount = search.Responses.Sum(r => r.FileCount)
+                search.ResponseCount,
+                search.FileCount
             });
         }
 
