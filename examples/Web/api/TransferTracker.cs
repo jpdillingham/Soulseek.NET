@@ -1,9 +1,7 @@
 ﻿namespace WebAPI
 {
     using Soulseek;
-    using System;
     using System.Collections.Concurrent;
-    using System.Net;
 
     public interface ITransferTracker
     {
