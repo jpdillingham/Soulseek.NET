@@ -80,8 +80,8 @@ namespace Soulseek
                 governor: null,
                 stateChanged: null,
                 progressUpdated: null,
-                options.DisposeInputStreamOnCompletion,
-                options.DisposeOutputStreamOnCompletion);
+                options?.DisposeInputStreamOnCompletion ?? false,
+                options?.DisposeOutputStreamOnCompletion ?? false);
         }
 
         /// <summary>
