@@ -33,10 +33,10 @@ namespace Soulseek
         /// <param name="minimumPeerUploadSpeed">
         ///     The minimum upload speed a peer must have in order for a response to be processed.
         /// </param>
+        /// <param name="fileLimit">The maximum number of file results to accept before the search is considered complete.</param>
         /// <param name="responseFilter">
         ///     The function used to evaluate whether a response should be included in the search results.
         /// </param>
-        /// <param name="fileLimit">The maximum number of file results to accept before the search is considered complete.</param>
         /// <param name="fileFilter">The function used to evaluate whether a file should be included in a search response.</param>
         /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
@@ -48,8 +48,8 @@ namespace Soulseek
             int minimumPeerFreeUploadSlots = 0,
             int maximumPeerQueueLength = 1000000,
             int minimumPeerUploadSpeed = 0,
-            Func<SearchResponse, bool> responseFilter = null,
             int fileLimit = 10000,
+            Func<SearchResponse, bool> responseFilter = null,
             Func<File, bool> fileFilter = null,
             Action<SearchStateChangedEventArgs> stateChanged = null,
             Action<SearchResponseReceivedEventArgs> responseReceived = null)
