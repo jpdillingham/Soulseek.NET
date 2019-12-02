@@ -306,17 +306,20 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Compress()
                 .Build();
 
+            var responses = new List<SearchResponse>();
+
             using (var search = new SearchInternal("foo", token)
             {
                 State = SearchStates.InProgress,
+                ResponseReceived = (r) => responses.Add(r),
             })
             {
                 mocks.Searches.TryAdd(token, search);
 
                 handler.HandleMessage(mocks.PeerConnection.Object, msg);
 
-                Assert.Single(search.Responses);
-                Assert.Contains(search.Responses, r => r.Username == username && r.Token == token);
+                Assert.Single(responses);
+                Assert.Contains(responses, r => r.Username == username && r.Token == token);
             }
         }
 

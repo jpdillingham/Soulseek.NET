@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -34,7 +35,6 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(options, s.Options);
 
             Assert.Equal(SearchStates.None, s.State);
-            Assert.Empty(s.Responses);
 
             s.Dispose();
         }
@@ -159,7 +159,10 @@ namespace Soulseek.Tests.Unit
 
             s.TryAddResponse(new SearchResponseSlim("bar", 42, 1, 1, 1, 1, null));
 
-            Assert.Empty(s.Responses);
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
 
             s.Dispose();
         }
@@ -175,7 +178,10 @@ namespace Soulseek.Tests.Unit
 
             s.TryAddResponse(new SearchResponseSlim("bar", 24, 1, 1, 1, 1, null));
 
-            Assert.Empty(s.Responses);
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
 
             s.Dispose();
         }
@@ -191,7 +197,10 @@ namespace Soulseek.Tests.Unit
 
             s.TryAddResponse(new SearchResponseSlim("bar", 42, 0, 1, 1, 1, null));
 
-            Assert.Empty(s.Responses);
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
 
             s.Dispose();
         }
@@ -226,11 +235,13 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
+            var responses = new List<SearchResponse>();
+            s.ResponseReceived = (r) => responses.Add(r);
+
             s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
-            Assert.Single(s.Responses);
+            Assert.Single(responses);
 
-            var responses = s.Responses.ToList();
             var response = responses[0];
             var files = response.Files.ToList();
 
@@ -272,11 +283,13 @@ namespace Soulseek.Tests.Unit
             var reader = new MessageReader<MessageCode.Peer>(msg);
             reader.Seek(username.Length + 12); // seek to the start of the file list
 
-            s.SetProperty("ResponseBag", default(ConcurrentBag<SearchResponse>));
+            var invoked = false;
+            s.ResponseReceived += (r) => invoked = true;
 
             var ex = Record.Exception(() => s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader)));
 
             Assert.Null(ex);
+            Assert.True(invoked);
 
             s.Dispose();
         }
@@ -318,7 +331,10 @@ namespace Soulseek.Tests.Unit
 
             s.TryAddResponse(new SearchResponseSlim(username, token, 1, 1, 1, 1, reader));
 
-            Assert.Empty(s.Responses);
+            var invoked = false;
+            s.ResponseReceived = (r) => invoked = true;
+
+            Assert.False(invoked);
 
             s.Dispose();
         }

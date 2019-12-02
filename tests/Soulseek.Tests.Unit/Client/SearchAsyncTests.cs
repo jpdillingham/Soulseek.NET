@@ -152,15 +152,12 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SearchInternalAsync_Adds_Search_To_ActiveSearches(string searchText, int token)
         {
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             using (var search = new SearchInternal(searchText, token, options)
             {
                 State = SearchStates.InProgress,
             })
             {
-                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
-
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                     .Returns(Task.CompletedTask);
@@ -281,15 +278,12 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1, stateChanged: (e) => fired = true);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             using (var search = new SearchInternal(searchText, token, options)
             {
                 State = SearchStates.InProgress,
             })
             {
-                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
-
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                     .Returns(Task.CompletedTask);
@@ -313,15 +307,12 @@ namespace Soulseek.Tests.Unit.Client
         {
             var fired = false;
             var options = new SearchOptions(searchTimeout: 1, fileLimit: 1);
-            var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             using (var search = new SearchInternal(searchText, token, options)
             {
                 State = SearchStates.InProgress,
             })
             {
-                search.SetProperty("ResponseBag", new ConcurrentBag<SearchResponse>() { response });
-
                 var conn = new Mock<IMessageConnection>();
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                     .Returns(Task.CompletedTask);
