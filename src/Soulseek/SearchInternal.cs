@@ -13,8 +13,6 @@
 namespace Soulseek
 {
     using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
@@ -74,11 +72,6 @@ namespace Soulseek
         public Action<SearchResponse> ResponseReceived { get; set; }
 
         /// <summary>
-        ///     Gets the collection of responses received from peers.
-        /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses => ResponseBag.ToList().AsReadOnly();
-
-        /// <summary>
         ///     Gets the text for which to search.
         /// </summary>
         public string SearchText { get; }
@@ -94,7 +87,6 @@ namespace Soulseek
         public int Token { get; }
 
         private bool Disposed { get; set; } = false;
-        private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
         private SystemTimer SearchTimeoutTimer { get; set; }
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
@@ -141,20 +133,8 @@ namespace Soulseek
                     return;
                 }
 
-                try
-                {
-                    Interlocked.Increment(ref responseCount);
-                    Interlocked.Add(ref fileCount, fullResponse.Files.Count);
-
-                    ResponseBag.Add(fullResponse);
-                }
-                catch
-                {
-                    // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses
-                    // to throw exceptions accessing the disposed instance or a variety of other issues. swallowing exceptions
-                    // here is the most pragmatic way to handle this, as anything else would involve synchronization and would
-                    // create lock contention when adding responses.
-                }
+                Interlocked.Increment(ref responseCount);
+                Interlocked.Add(ref fileCount, fullResponse.Files.Count);
 
                 ResponseReceived?.Invoke(fullResponse);
                 SearchTimeoutTimer.Reset();
@@ -175,7 +155,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The collection of received search responses.</returns>
-        public async Task<IReadOnlyCollection<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
+        public async Task WaitForCompletion(CancellationToken cancellationToken)
         {
             var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
 
@@ -187,8 +167,6 @@ namespace Soulseek
                 {
                     throw new OperationCanceledException("Operation cancelled.");
                 }
-
-                return ResponseBag.ToList().AsReadOnly();
             }
         }
 
@@ -203,7 +181,6 @@ namespace Soulseek
                 if (disposing)
                 {
                     SearchTimeoutTimer.Dispose();
-                    ResponseBag = default;
                 }
 
                 Disposed = true;
