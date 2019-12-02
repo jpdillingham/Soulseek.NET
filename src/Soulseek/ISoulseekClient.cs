@@ -384,6 +384,29 @@ namespace Soulseek
         Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
+        ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="responseReceived">The delegate to invoke for each response.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the specified <paramref name="responseReceived"/> delegate is null.
+        /// </exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        Task SearchAsync(string searchText, Action<SearchResponse> responseReceived, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously sends the specified private <paramref name="message"/> to the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user to which the message is to be sent.</param>
