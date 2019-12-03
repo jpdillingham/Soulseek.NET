@@ -68,8 +68,9 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with expected data given TransferInternal"), AutoData]
-        internal void Instantiates_With_Expected_Data_Given_TransferInternal(TransferInternal i)
+        internal void Instantiates_With_Expected_Data_Given_TransferInternal(string username, string filename, int token)
         {
+            var i = new TransferInternal(TransferDirection.Download, username, filename, token);
             var t = new Transfer(i);
 
             Assert.Equal(i.Direction, t.Direction);
