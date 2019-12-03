@@ -1,4 +1,4 @@
-﻿// <copyright file="SearchTests.cs" company="JP Dillingham">
+﻿// <copyright file="SearchInternalTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,7 +12,6 @@
 
 namespace Soulseek.Tests.Unit
 {
-    using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading;
@@ -22,7 +21,7 @@ namespace Soulseek.Tests.Unit
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class SearchTests
+    public class SearchInternalTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with expected data"), AutoData]
