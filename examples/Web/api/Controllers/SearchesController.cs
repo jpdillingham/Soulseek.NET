@@ -1,5 +1,6 @@
 ﻿namespace WebAPI.Controllers
 {
+    using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
@@ -35,11 +36,20 @@
         {
             Tracker.Clear();
 
-            var results = await Client.SearchAsync(searchText, token, new SearchOptions(
-                responseReceived: (e) => Tracker.AddOrUpdate(e), 
-                stateChanged: (e) => Tracker.AddOrUpdate(e)));
+            var results = new ConcurrentBag<SearchResponse>();
 
-            return Ok(results.ToList());
+            try
+            {
+                await Client.SearchAsync(searchText, (r) => results.Add(r), token, new SearchOptions(
+                    responseReceived: (e) => Tracker.AddOrUpdate(e),
+                    stateChanged: (e) => Tracker.AddOrUpdate(e)));
+
+                return Ok(results);
+            }
+            finally
+            {
+                results = null;
+            }
         }
 
         /// <summary>
