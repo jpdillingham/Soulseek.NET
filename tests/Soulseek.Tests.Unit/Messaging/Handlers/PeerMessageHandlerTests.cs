@@ -556,8 +556,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions);
-                Client.CallBase = true;
+                Client = new Mock<SoulseekClient>(clientOptions)
+                {
+                    CallBase = true,
+                };
 
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
                 Client.Setup(m => m.Downloads).Returns(Downloads);

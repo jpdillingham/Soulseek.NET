@@ -80,10 +80,10 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var stat = await s.GetUserStatusAsync(username);
+                var (stat, isPrivileged) = await s.GetUserStatusAsync(username);
 
-                Assert.Equal(result.Status, stat.Status);
-                Assert.Equal(result.IsPrivileged, stat.IsPrivileged);
+                Assert.Equal(result.Status, stat);
+                Assert.Equal(result.IsPrivileged, isPrivileged);
             }
         }
 

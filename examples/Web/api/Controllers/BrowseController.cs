@@ -6,7 +6,6 @@
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
-    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     Search

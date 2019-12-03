@@ -17,15 +17,12 @@ namespace Soulseek.Tests.Unit.Network
     using System.Collections.Generic;
     using System.Linq;
     using System.Net;
-    using System.Net.Sockets;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -1342,8 +1339,10 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
-            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
-            candidates.Add(("foo", IPAddress.None, 1));
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>
+            {
+                ("foo", IPAddress.None, 1),
+            };
 
             var parent = new Mock<IMessageConnection>();
             parent.Setup(m => m.State)
@@ -1380,9 +1379,11 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
-            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
-            candidates.Add(("foo", IPAddress.None, 1));
-            candidates.Add(("bar", IPAddress.None, 2));
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>
+            {
+                ("foo", IPAddress.None, 1),
+                ("bar", IPAddress.None, 2),
+            };
 
             using (manager)
             {
@@ -1401,9 +1402,11 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
-            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
-            candidates.Add((username1, ip1, port1));
-            candidates.Add((username2, ip2, port2));
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>
+            {
+                (username1, ip1, port1),
+                (username2, ip2, port2),
+            };
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1461,9 +1464,11 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
-            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
-            candidates.Add((username1, ip1, port1));
-            candidates.Add((username2, ip2, port2));
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>
+            {
+                (username1, ip1, port1),
+                (username2, ip2, port2),
+            };
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);
@@ -1519,9 +1524,11 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture();
 
-            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>();
-            candidates.Add((username1, ip1, port1));
-            candidates.Add((username2, ip2, port2));
+            var candidates = new List<(string Username, IPAddress IPAddress, int Port)>
+            {
+                (username1, ip1, port1),
+                (username2, ip2, port2),
+            };
 
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUser);

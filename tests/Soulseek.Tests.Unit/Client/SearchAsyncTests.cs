@@ -23,7 +23,6 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
-    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
 

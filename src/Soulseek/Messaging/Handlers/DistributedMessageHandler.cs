@@ -85,9 +85,9 @@ namespace Soulseek.Messaging.Handlers
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {
-                                var address = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+                                var (ipAddress, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
 
-                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, address.IPAddress, address.Port, CancellationToken.None).ConfigureAwait(false);
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ipAddress, port, CancellationToken.None).ConfigureAwait(false);
                                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
                             }
                         }
