@@ -134,11 +134,6 @@ namespace Soulseek
         public IPAddress IPAddress { get; }
 
         /// <summary>
-        ///     Gets the options for the transfer, with delegates excluded.
-        /// </summary>
-        public TransferOptions Options { get; }
-
-        /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
         public double PercentComplete => Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
