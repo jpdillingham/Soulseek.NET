@@ -64,6 +64,11 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(remoteToken, t.RemoteToken);
             Assert.Equal(ipAddress, t.IPAddress);
             Assert.Equal(port, t.Port);
+
+            Assert.Equal(t.Size - t.BytesTransferred, t.BytesRemaining);
+            Assert.Equal(t.EndTime - t.StartTime, t.ElapsedTime);
+            Assert.Equal((t.BytesTransferred / (double)t.Size) * 100, t.PercentComplete);
+            Assert.NotNull(t.AverageSpeed);
         }
 
         [Trait("Category", "Instantiation")]
