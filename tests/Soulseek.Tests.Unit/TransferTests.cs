@@ -68,7 +68,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(t.Size - t.BytesTransferred, t.BytesRemaining);
             Assert.Equal(t.EndTime - t.StartTime, t.ElapsedTime);
             Assert.Equal((t.BytesTransferred / (double)t.Size) * 100, t.PercentComplete);
-            Assert.NotNull(t.AverageSpeed);
+            Assert.NotNull(t.RemainingTime);
         }
 
         [Trait("Category", "Instantiation")]
