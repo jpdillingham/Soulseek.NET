@@ -98,7 +98,7 @@ namespace Soulseek
         {
             SearchTimeoutTimer.Stop();
             State = SearchStates.Completed | state;
-            TaskCompletionSource.SetResult(0);
+            TaskCompletionSource.TrySetResult(0);
         }
 
         /// <summary>
