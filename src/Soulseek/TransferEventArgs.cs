@@ -13,7 +13,6 @@
 namespace Soulseek
 {
     using System;
-    using System.Net;
 
     /// <summary>
     ///     Generic event arguments for transfer events.
@@ -26,115 +25,13 @@ namespace Soulseek
         /// <param name="transfer">The transfer which raised the event.</param>
         internal TransferEventArgs(Transfer transfer)
         {
-            Direction = transfer.Direction;
-            AverageSpeed = transfer.AverageSpeed;
-            BytesTransferred = transfer.BytesTransferred;
-            BytesRemaining = transfer.BytesRemaining;
-            ElapsedTime = transfer.ElapsedTime;
-            EndTime = transfer.EndTime;
-            Filename = transfer.Filename;
-            IPAddress = transfer.IPAddress;
-            PercentComplete = transfer.PercentComplete;
-            Port = transfer.Connection?.Port;
-            RemainingTime = transfer.RemainingTime;
-            RemoteToken = transfer.RemoteToken;
-            Size = transfer.Size;
-            StartTime = transfer.StartTime;
-            State = transfer.State;
-            Token = transfer.Token;
-            Username = transfer.Username;
-            Options = transfer.Options;
+            Transfer = transfer;
         }
 
         /// <summary>
-        ///     Gets the current average transfer speed.
+        ///     Gets the instance which raised the event.
         /// </summary>
-        public double AverageSpeed { get; }
-
-        /// <summary>
-        ///     Gets the number of remaining bytes to be transferred.
-        /// </summary>
-        public long BytesRemaining { get; }
-
-        /// <summary>
-        ///     Gets the total number of bytes transferred.
-        /// </summary>
-        public long BytesTransferred { get; }
-
-        /// <summary>
-        ///     Gets the trasnfer direction.
-        /// </summary>
-        public TransferDirection Direction { get; }
-
-        /// <summary>
-        ///     Gets the current duration of the transfer, if it has been started.
-        /// </summary>
-        public TimeSpan? ElapsedTime { get; }
-
-        /// <summary>
-        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
-        /// </summary>
-        public DateTime? EndTime { get; }
-
-        /// <summary>
-        ///     Gets the filename of the file to be transferred.
-        /// </summary>
-        public string Filename { get; }
-
-        /// <summary>
-        ///     Gets the ip address of the remote transfer connection, if one has been established.
-        /// </summary>
-        public IPAddress IPAddress { get; }
-
-        /// <summary>
-        ///     Gets the options for the transfer.
-        /// </summary>
-        public TransferOptions Options { get; }
-
-        /// <summary>
-        ///     Gets the current progress in percent.
-        /// </summary>
-        public double PercentComplete { get; }
-
-        /// <summary>
-        ///     Gets the port of the remote transfer connection, if one has been established.
-        /// </summary>
-        public int? Port { get; }
-
-        /// <summary>
-        ///     Gets the projected remaining duration of the transfer.
-        /// </summary>
-        public TimeSpan? RemainingTime { get; }
-
-        /// <summary>
-        ///     Gets the remote unique token for the transfer.
-        /// </summary>
-        public int? RemoteToken { get; }
-
-        /// <summary>
-        ///     Gets the size of the file to be transferred, in bytes.
-        /// </summary>
-        public long Size { get; }
-
-        /// <summary>
-        ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
-        /// </summary>
-        public DateTime? StartTime { get; }
-
-        /// <summary>
-        ///     Gets the state of the transfer.
-        /// </summary>
-        public TransferStates State { get; }
-
-        /// <summary>
-        ///     Gets the unique token for thr transfer.
-        /// </summary>
-        public int Token { get; }
-
-        /// <summary>
-        ///     Gets the username of the peer to or from which the file is to be transferred.
-        /// </summary>
-        public string Username { get; }
+        public Transfer Transfer { get; }
     }
 
     /// <summary>

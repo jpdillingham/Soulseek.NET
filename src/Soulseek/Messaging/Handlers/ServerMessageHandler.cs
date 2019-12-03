@@ -136,7 +136,7 @@ namespace Soulseek.Messaging.Handlers
                                     var (connection, remoteToken) = await SoulseekClient.PeerConnectionManager.GetTransferConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                                     var download = SoulseekClient.Downloads.Values.FirstOrDefault(v => v.RemoteToken == remoteToken && v.Username == connectToPeerResponse.Username);
 
-                                    if (download != default(Transfer))
+                                    if (download != default(TransferInternal))
                                     {
                                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
                                     }

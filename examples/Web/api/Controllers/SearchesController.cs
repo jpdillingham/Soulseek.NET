@@ -1,5 +1,6 @@
 ﻿namespace WebAPI.Controllers
 {
+    using System.Collections.Concurrent;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
@@ -35,11 +36,20 @@
         {
             Tracker.Clear();
 
-            var results = await Client.SearchAsync(searchText, token, new SearchOptions(
-                responseReceived: (e) => Tracker.AddOrUpdate(e), 
-                stateChanged: (e) => Tracker.AddOrUpdate(e)));
+            var results = new ConcurrentBag<SearchResponse>();
 
-            return Ok(results.ToList());
+            try
+            {
+                await Client.SearchAsync(searchText, (r) => results.Add(r), token, new SearchOptions(
+                    responseReceived: (e) => Tracker.AddOrUpdate(e),
+                    stateChanged: (e) => Tracker.AddOrUpdate(e)));
+
+                return Ok(results);
+            }
+            finally
+            {
+                results = null;
+            }
         }
 
         /// <summary>
@@ -54,8 +64,8 @@
                 SearchText = kvp.Key,
                 kvp.Value.Token,
                 kvp.Value.State,
-                ResponseCount = kvp.Value.Responses.Count,
-                FileCount = kvp.Value.Responses.Sum(r => r.FileCount)
+                kvp.Value.ResponseCount,
+                kvp.Value.FileCount
             });
 
             return Ok(response);
@@ -71,7 +81,7 @@
         {
             Tracker.Searches.TryGetValue(searchText, out var search);
 
-            if (search == default(WebAPI.Search))
+            if (search == default)
             {
                 return NotFound();
             }
@@ -81,8 +91,8 @@
                 search.SearchText,
                 search.Token,
                 search.State,
-                ResponseCount = search.Responses.Count,
-                FileCount = search.Responses.Sum(r => r.FileCount)
+                search.ResponseCount,
+                search.FileCount
             });
         }
 

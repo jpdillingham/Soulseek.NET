@@ -20,7 +20,6 @@ namespace Soulseek.Tests.Unit.Client
     using Moq;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
-    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;

@@ -268,9 +268,9 @@
                 {
                     var bytes = await client.DownloadAsync(username, file, index++, new TransferOptions(stateChanged: (e) =>
                     {
-                        var key = (e.Username, e.Filename, e.Token);
-                        var progress = Downloads.GetOrAdd(key, (e.State, null, new ProgressBar(10)));
-                        progress.State = e.State;
+                        var key = (e.Transfer.Username, e.Transfer.Filename, e.Transfer.Token);
+                        var progress = Downloads.GetOrAdd(key, (e.Transfer.State, null, new ProgressBar(10)));
+                        progress.State = e.Transfer.State;
                         progress.ProgressBar = new ProgressBar(10, format: new ProgressBarFormat(left: "[", right: "]", full: '=', tip: '>', empty: ' ', emptyWhen: () => Downloads[key].State.HasFlag(TransferStates.Completed)));
                         progress.Spinner = new Spinner("⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏", format: new SpinnerFormat(completeWhen: () => Downloads[key].State.HasFlag(TransferStates.Completed)));
                         
@@ -282,23 +282,23 @@
                         }
                     }, progressUpdated: (e) =>
                     {
-                        var key = (e.Username, e.Filename, e.Token);
+                        var key = (e.Transfer.Username, e.Transfer.Filename, e.Transfer.Token);
                         Downloads.TryGetValue(key, out var progress);
 
-                        progress.State = e.State;
-                        progress.ProgressBar.Value = (int)e.PercentComplete;
+                        progress.State = e.Transfer.State;
+                        progress.ProgressBar.Value = (int)e.Transfer.PercentComplete;
 
                         var status = $"{$"{Downloads.Where(d => d.Value.State.HasFlag(TransferStates.Completed)).Count() + 1}".PadLeft(Downloads.Count.ToString().Length)}/{Downloads.Count}"; // [ 1/17]
 
                         Downloads.AddOrUpdate(key, progress, (k, v) => progress);
 
                         var longest = Downloads.Max(d => Path.GetFileName(d.Key.Filename.ToLocalOSPath()).Length);
-                        var fn = Path.GetFileName(e.Filename.ToLocalOSPath()).PadRight(longest);
+                        var fn = Path.GetFileName(e.Transfer.Filename.ToLocalOSPath()).PadRight(longest);
 
-                        var size = $"{e.BytesTransferred.ToMB()}/{e.Size.ToMB()}".PadLeft(15);
-                        var percent = $"({e.PercentComplete.ToString("N0").PadLeft(3)}%)";
+                        var size = $"{e.Transfer.BytesTransferred.ToMB()}/{e.Transfer.Size.ToMB()}".PadLeft(15);
+                        var percent = $"({e.Transfer.PercentComplete.ToString("N0").PadLeft(3)}%)";
 
-                        Console.Write($"\r {progress.Spinner}  {fn}  {size}  {percent}  [{status}]  {progress.ProgressBar} {e.AverageSpeed.ToMB()}/s {e.ElapsedTime.Value.ToString(@"m\:ss")} / {e.RemainingTime.Value.ToString(@"m\:ss")}");
+                        Console.Write($"\r {progress.Spinner}  {fn}  {size}  {percent}  [{status}]  {progress.ProgressBar} {e.Transfer.AverageSpeed.ToMB()}/s {e.Transfer.ElapsedTime.Value.ToString(@"m\:ss")} / {e.Transfer.RemainingTime.Value.ToString(@"m\:ss")}");
 
                     })).ConfigureAwait(false);
 
@@ -388,7 +388,7 @@
                         filterResponses: true,
                         minimumResponseFileCount: minimumFileCount,
                         searchTimeout: 5,
-                        stateChanged: (e) => state = e.State,
+                        stateChanged: (e) => state = e.Search.State,
                         responseReceived: (e) =>
                         {
                             totalResponses++;

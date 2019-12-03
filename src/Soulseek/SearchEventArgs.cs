@@ -13,7 +13,6 @@
 namespace Soulseek
 {
     using System;
-    using System.Collections.Generic;
 
     /// <summary>
     ///     Generic event arguments for search events.
@@ -23,40 +22,16 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchEventArgs"/> class.
         /// </summary>
-        /// <param name="search">The search instance with which to initialize data.</param>
+        /// <param name="search">The search which raised the event.</param>
         internal SearchEventArgs(Search search)
         {
-            Options = search.Options;
-            Responses = search.Responses;
-            SearchText = search.SearchText;
-            State = search.State;
-            Token = search.Token;
+            Search = search;
         }
 
         /// <summary>
-        ///     Gets the options for the search.
+        ///     Gets the instance which raised the event.
         /// </summary>
-        public SearchOptions Options { get; }
-
-        /// <summary>
-        ///     Gets the collection of responses received from peers.
-        /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses { get; }
-
-        /// <summary>
-        ///     Gets the text for which to search.
-        /// </summary>
-        public string SearchText { get; }
-
-        /// <summary>
-        ///     Gets the state of the search.
-        /// </summary>
-        public SearchStates State { get; }
-
-        /// <summary>
-        ///     Gets the unique identifier for the search.
-        /// </summary>
-        public int Token { get; }
+        public Search Search { get; }
     }
 
     /// <summary>

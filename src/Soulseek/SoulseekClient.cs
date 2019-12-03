@@ -247,15 +247,15 @@ namespace Soulseek
 #pragma warning disable SA1600 // Elements should be documented
         internal virtual IDistributedConnectionManager DistributedConnectionManager { get; }
         internal virtual IDistributedMessageHandler DistributedMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, Transfer> Downloads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> Downloads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IListener Listener { get; }
         internal virtual IListenerHandler ListenerHandler { get; }
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, Search> Searches { get; set; } = new ConcurrentDictionary<int, Search>();
+        internal virtual ConcurrentDictionary<int, SearchInternal> Searches { get; set; } = new ConcurrentDictionary<int, SearchInternal>();
         internal virtual IMessageConnection ServerConnection { get; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
-        internal virtual ConcurrentDictionary<int, Transfer> Uploads { get; set; } = new ConcurrentDictionary<int, Transfer>();
+        internal virtual ConcurrentDictionary<int, TransferInternal> Uploads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
@@ -853,7 +853,57 @@ namespace Soulseek
 
             options = options ?? new SearchOptions();
 
-            return SearchInternalAsync(searchText, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCollectionAsync(searchText, token.Value, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
+        ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
+        /// </summary>
+        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="responseReceived">The delegate to invoke for each response.</param>
+        /// <param name="token">The unique search token.</param>
+        /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentNullException">
+        ///     Thrown when the specified <paramref name="responseReceived"/> delegate is null.
+        /// </exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
+        public Task SearchAsync(string searchText, Action<SearchResponse> responseReceived, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(searchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(searchText));
+            }
+
+            if (responseReceived == default)
+            {
+                throw new ArgumentNullException(nameof(responseReceived), "The specified Response delegate is null.");
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
+            }
+
+            token = token ?? TokenFactory.NextToken();
+
+            if (Searches.ContainsKey(token.Value))
+            {
+                throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
+            }
+
+            options = options ?? new SearchOptions();
+
+            return SearchToCallbackAsync(searchText, responseReceived, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1254,7 +1304,7 @@ namespace Soulseek
 
         private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var download = new Transfer(TransferDirection.Download, username, filename, token, options);
+            var download = new TransferInternal(TransferDirection.Download, username, filename, token, options);
             Downloads.TryAdd(download.Token, download);
 
             Task downloadCompleted = null;
@@ -1263,7 +1313,7 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 download.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: download);
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(download));
                 lastState = state;
                 options.StateChanged?.Invoke(args);
                 TransferStateChanged?.Invoke(this, args);
@@ -1273,7 +1323,7 @@ namespace Soulseek
             {
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, download);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(download));
                 options.ProgressUpdated?.Invoke(eventArgs);
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
@@ -1391,7 +1441,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await download.Connection.ReadAsync(download.Size, outputStream, (cancelToken) => options.Governor(download, cancelToken), cancellationToken).ConfigureAwait(false);
+                    await download.Connection.ReadAsync(download.Size, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     download.State = TransferStates.Succeeded;
 
@@ -1637,15 +1687,28 @@ namespace Soulseek
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchInternalAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
         {
-            var search = new Search(searchText, token, options);
+            var responseBag = new ConcurrentBag<SearchResponse>();
+
+            void ResponseReceived(SearchResponse response)
+            {
+                responseBag.Add(response);
+            }
+
+            await SearchToCallbackAsync(searchText, ResponseReceived, token, options, cancellationToken).ConfigureAwait(false);
+            return responseBag.ToList().AsReadOnly();
+        }
+
+        private async Task SearchToCallbackAsync(string searchText, Action<SearchResponse> responseReceived, int token, SearchOptions options, CancellationToken cancellationToken)
+        {
+            var search = new SearchInternal(searchText, token, options);
             var lastState = SearchStates.None;
 
             void UpdateState(SearchStates state)
             {
                 search.State = state;
-                var args = new SearchStateChangedEventArgs(previousState: lastState, search: search);
+                var args = new SearchStateChangedEventArgs(previousState: lastState, search: new Search(search));
                 lastState = state;
                 options.StateChanged?.Invoke(args);
                 SearchStateChanged?.Invoke(this, args);
@@ -1655,7 +1718,9 @@ namespace Soulseek
             {
                 search.ResponseReceived = (response) =>
                 {
-                    var eventArgs = new SearchResponseReceivedEventArgs(response, search);
+                    responseReceived(response);
+
+                    var eventArgs = new SearchResponseReceivedEventArgs(response, new Search(search));
                     options.ResponseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
@@ -1666,8 +1731,7 @@ namespace Soulseek
                 await ServerConnection.WriteAsync(new SearchRequest(search.SearchText, search.Token).ToByteArray(), cancellationToken).ConfigureAwait(false);
                 UpdateState(SearchStates.InProgress);
 
-                var responses = await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
-                return responses.ToList().AsReadOnly();
+                await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
             }
             catch (OperationCanceledException)
             {
@@ -1740,7 +1804,7 @@ namespace Soulseek
 
         private async Task UploadFromStreamAsync(string username, string filename, long length, Stream inputStream, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var upload = new Transfer(TransferDirection.Upload, username, filename, token, options)
+            var upload = new TransferInternal(TransferDirection.Upload, username, filename, token, options)
             {
                 Size = length,
             };
@@ -1752,7 +1816,7 @@ namespace Soulseek
             void UpdateState(TransferStates state)
             {
                 upload.State = state;
-                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: upload);
+                var args = new TransferStateChangedEventArgs(previousState: lastState, transfer: new Transfer(upload));
                 lastState = state;
                 options.StateChanged?.Invoke(args);
                 TransferStateChanged?.Invoke(this, args);
@@ -1762,7 +1826,7 @@ namespace Soulseek
             {
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
-                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, upload);
+                var eventArgs = new TransferProgressUpdatedEventArgs(lastBytes, new Transfer(upload));
                 options.ProgressUpdated?.Invoke(eventArgs);
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
@@ -1838,7 +1902,7 @@ namespace Soulseek
 
                     UpdateState(TransferStates.InProgress);
 
-                    await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(upload, cancelToken), cancellationToken).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 

@@ -126,8 +126,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var dict = new ConcurrentDictionary<int, Transfer>();
-                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("Downloads", dict);
 
@@ -163,8 +163,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var dict = new ConcurrentDictionary<int, Transfer>();
-                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("Downloads", dict);
 
@@ -201,8 +201,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var dict = new ConcurrentDictionary<int, Transfer>();
-                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("Downloads", dict);
 
@@ -239,8 +239,8 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var dict = new ConcurrentDictionary<int, Transfer>();
-                dict.GetOrAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
                 s.SetProperty("Downloads", dict);
 

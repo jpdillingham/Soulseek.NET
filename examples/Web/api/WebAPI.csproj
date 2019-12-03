@@ -4,6 +4,10 @@
     <TargetFramework>netcoreapp2.2</TargetFramework>
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
+  
+  <PropertyGroup>
+    <ServerGarbageCollection>false</ServerGarbageCollection>
+  </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile>bin\Debug\netcoreapp2.2\WebAPI.xml</DocumentationFile>

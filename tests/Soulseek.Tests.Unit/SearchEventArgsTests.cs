@@ -14,7 +14,6 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using AutoFixture.Xunit2;
-    using Soulseek.Messaging.Messages;
     using Xunit;
 
     public class SearchEventArgsTests
@@ -24,15 +23,12 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Instantiates with valid Search"), AutoData]
         public void SearchEventArgs_Instantiates_With_Valid_Search(string searchText, int token, SearchOptions options)
         {
-            using (var search = new Search(searchText, token, options))
+            using (var search = new SearchInternal(searchText, token, options))
             {
-                var e = new SearchEventArgs(search);
+                var s = new Search(search);
+                var e = new SearchEventArgs(s);
 
-                Assert.Equal(searchText, e.SearchText);
-                Assert.Equal(token, e.Token);
-                Assert.Equal(options, e.Options);
-                Assert.Equal(search.State, e.State);
-                Assert.Empty(e.Responses);
+                Assert.Equal(s, e.Search);
             }
         }
 
@@ -44,14 +40,14 @@ namespace Soulseek.Tests.Unit
             var searchText = Guid.NewGuid().ToString();
             var token = new Random().Next();
 
-            using (var search = new Search(searchText, token, new SearchOptions()))
+            using (var search = new SearchInternal(searchText, token, new SearchOptions()))
             {
                 var response = new SearchResponse("foo", 1, 1, 1, 1, 1);
 
-                var e = new SearchResponseReceivedEventArgs(response, search);
+                var s = new Search(search);
+                var e = new SearchResponseReceivedEventArgs(response, s);
 
-                Assert.Equal(searchText, e.SearchText);
-                Assert.Equal(token, e.Token);
+                Assert.Equal(s, e.Search);
                 Assert.Equal(response, e.Response);
             }
         }
@@ -64,16 +60,16 @@ namespace Soulseek.Tests.Unit
             var searchText = Guid.NewGuid().ToString();
             var token = new Random().Next();
 
-            using (var search = new Search(searchText, token, new SearchOptions()))
+            using (var search = new SearchInternal(searchText, token, new SearchOptions()))
             {
                 search.SetProperty("State", SearchStates.Completed);
 
-                var e = new SearchStateChangedEventArgs(SearchStates.None, search);
+                var s = new Search(search);
+                var e = new SearchStateChangedEventArgs(SearchStates.None, s);
 
-                Assert.Equal(searchText, e.SearchText);
-                Assert.Equal(token, e.Token);
+                Assert.Equal(s, e.Search);
                 Assert.Equal(SearchStates.None, e.PreviousState);
-                Assert.Equal(SearchStates.Completed, e.State);
+                Assert.Equal(SearchStates.Completed, e.Search.State);
             }
         }
     }

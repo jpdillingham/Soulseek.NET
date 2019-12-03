@@ -80,8 +80,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, ip, port);
 
-            var dict = new ConcurrentDictionary<int, Transfer>();
-            dict.TryAdd(0, new Transfer(TransferDirection.Download, username, filename, 0));
+            var dict = new ConcurrentDictionary<int, TransferInternal>();
+            dict.TryAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
 
             mocks.Client.Setup(m => m.Downloads)
                 .Returns(dict);
@@ -105,8 +105,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture(username, ip, port);
 
-            var dict = new ConcurrentDictionary<int, Transfer>();
-            var download = new Transfer(TransferDirection.Download, username, filename, 0);
+            var dict = new ConcurrentDictionary<int, TransferInternal>();
+            var download = new TransferInternal(TransferDirection.Download, username, filename, 0);
             dict.TryAdd(0, download);
 
             mocks.Client.Setup(m => m.Downloads)
@@ -306,17 +306,20 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Compress()
                 .Build();
 
-            using (var search = new Search("foo", token)
+            var responses = new List<SearchResponse>();
+
+            using (var search = new SearchInternal("foo", token)
             {
                 State = SearchStates.InProgress,
+                ResponseReceived = (r) => responses.Add(r),
             })
             {
                 mocks.Searches.TryAdd(token, search);
 
                 handler.HandleMessage(mocks.PeerConnection.Object, msg);
 
-                Assert.Single(search.Responses);
-                Assert.Contains(search.Responses, r => r.Username == username && r.Token == token);
+                Assert.Single(responses);
+                Assert.Contains(responses, r => r.Username == username && r.Token == token);
             }
         }
 
@@ -553,8 +556,10 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             public Mocks(SoulseekClientOptions clientOptions = null)
             {
-                Client = new Mock<SoulseekClient>(clientOptions);
-                Client.CallBase = true;
+                Client = new Mock<SoulseekClient>(clientOptions)
+                {
+                    CallBase = true,
+                };
 
                 Client.Setup(m => m.Waiter).Returns(Waiter.Object);
                 Client.Setup(m => m.Downloads).Returns(Downloads);
@@ -564,8 +569,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             public Mock<SoulseekClient> Client { get; }
             public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
-            public ConcurrentDictionary<int, Transfer> Downloads { get; } = new ConcurrentDictionary<int, Transfer>();
-            public ConcurrentDictionary<int, Search> Searches { get; } = new ConcurrentDictionary<int, Search>();
+            public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
+            public ConcurrentDictionary<int, SearchInternal> Searches { get; } = new ConcurrentDictionary<int, SearchInternal>();
             public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
             public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
             public Mock<IMessageConnection> PeerConnection { get; } = new Mock<IMessageConnection>();

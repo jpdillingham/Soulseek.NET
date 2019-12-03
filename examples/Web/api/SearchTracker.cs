@@ -1,10 +1,8 @@
 ﻿namespace WebAPI
 {
     using Soulseek;
-    using Soulseek.Messaging.Messages;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Linq;
 
     public interface ISearchTracker
     {
@@ -26,32 +24,36 @@
 
         public void AddOrUpdate(SearchResponseReceivedEventArgs args)
         {
-            Searches.AddOrUpdate(args.SearchText, new Search(args), (searchText, search) => 
-            {
-                search.Responses.Add(args.Response);
-                return search;
-            });
+            Searches.AddOrUpdate(args.Search.SearchText, args.Search, (searchText, search) => args.Search);
         }
 
         public void AddOrUpdate(SearchStateChangedEventArgs args)
         {
-            Searches.AddOrUpdate(args.SearchText, new Search(args), (searchText, search) => new Search(args));
+            Searches.AddOrUpdate(args.Search.SearchText, args.Search, (searchText, search) => args.Search);
         }
     }
 
-    public class Search
-    {
-        internal Search(SearchEventArgs e)
-        {
-            SearchText = e.SearchText;
-            Token = e.Token;
-            State = e.State;
-            Responses = e.Responses.ToList();
-        }
+    //public class SearchRecord
+    //{
+    //    public Search Search { get; set; }
+    //    public List<SearchResponse> Responses { get; set; }
 
-        public string SearchText { get; set; }
-        public int Token { get; set; }
-        public SearchStates State { get; set; }
-        public List<SearchResponse> Responses { get; set; }
-    }
+    //    public static SearchRecord FromEventArgs(SearchStateChangedEventArgs args)
+    //    {
+    //        return new SearchRecord()
+    //        {
+    //            Search = args.Search,
+    //            Responses = new List<SearchResponse>()
+    //        };
+    //    }
+
+    //    public static SearchRecord FromEventArgs(SearchResponseReceivedEventArgs args)
+    //    {
+    //        return new SearchRecord()
+    //        {
+    //            Search = args.Search,
+    //            Responses = new List<SearchResponse>() { args.Response }
+    //        };
+    //    }
+    //}
 }

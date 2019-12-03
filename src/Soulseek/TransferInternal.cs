@@ -1,4 +1,4 @@
-﻿// <copyright file="Transfer.cs" company="JP Dillingham">
+﻿// <copyright file="TransferInternal.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -14,89 +14,43 @@ namespace Soulseek
 {
     using System;
     using System.Net;
+    using Soulseek.Network.Tcp;
 
     /// <summary>
     ///     A single file transfer.
     /// </summary>
-    /// <remarks>This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.</remarks>
-    public class Transfer
+    internal class TransferInternal
     {
+        private readonly int progressUpdateLimit = 100;
+        private readonly double speedAlpha = 2f / 10;
+        private double lastProgressBytes = 0;
+        private DateTime? lastProgressTime = null;
+        private bool speedInitialized = false;
+
+        private TransferStates state = TransferStates.None;
+
         /// <summary>
-        ///     Initializes a new instance of the <see cref="Transfer"/> class.
+        ///     Initializes a new instance of the <see cref="TransferInternal"/> class.
         /// </summary>
         /// <param name="direction">The transfer direction.</param>
         /// <param name="username">The username of the peer to or from which the file is to be transferred.</param>
         /// <param name="filename">The filename of the file to be transferred.</param>
         /// <param name="token">The unique token for the transfer.</param>
-        /// <param name="state">The state of the transfer.</param>
-        /// <param name="size">The size of the file to be transferred, in bytes.</param>
-        /// <param name="bytesTransferred">The total number of bytes transferred.</param>
-        /// <param name="averageSpeed">The current average download speed.</param>
-        /// <param name="startTime">
-        ///     The time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
-        /// </param>
-        /// <param name="endTime">
-        ///     The time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
-        /// </param>
-        /// <param name="remoteToken">The remote unique token for the transfer.</param>
-        /// <param name="ipAddress">The ip address of the remote transfer connection, if one has been established.</param>
-        /// <param name="port">The port of the remote transfer connection, if one has been established.</param>
-        public Transfer(
-            TransferDirection direction,
-            string username,
-            string filename,
-            int token,
-            TransferStates state,
-            long size,
-            long bytesTransferred = 0,
-            double averageSpeed = 0,
-            DateTime? startTime = null,
-            DateTime? endTime = null,
-            int? remoteToken = null,
-            IPAddress ipAddress = null,
-            int? port = null)
+        /// <param name="options">The options for the transfer.</param>
+        public TransferInternal(TransferDirection direction, string username, string filename, int token, TransferOptions options = null)
         {
             Direction = direction;
             Username = username;
             Filename = filename;
             Token = token;
-            State = state;
-            Size = size;
-            BytesTransferred = bytesTransferred;
-            AverageSpeed = averageSpeed;
-            StartTime = startTime;
-            EndTime = endTime;
-            RemoteToken = remoteToken;
-            IPAddress = ipAddress;
-            Port = port;
-        }
 
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="Transfer"/> class.
-        /// </summary>
-        /// <param name="transferInternal">The internal instance from which to copy data.</param>
-        internal Transfer(TransferInternal transferInternal)
-            : this(
-                transferInternal.Direction,
-                transferInternal.Username,
-                transferInternal.Filename,
-                transferInternal.Token,
-                transferInternal.State,
-                transferInternal.Size,
-                transferInternal.BytesTransferred,
-                transferInternal.AverageSpeed,
-                transferInternal.StartTime,
-                transferInternal.EndTime,
-                transferInternal.RemoteToken,
-                transferInternal.IPAddress,
-                transferInternal.Port)
-        {
+            Options = options ?? new TransferOptions();
         }
 
         /// <summary>
         ///     Gets the current average download speed.
         /// </summary>
-        public double AverageSpeed { get; }
+        public double AverageSpeed { get; private set; }
 
         /// <summary>
         ///     Gets the number of remaining bytes to be transferred.
@@ -106,7 +60,13 @@ namespace Soulseek
         /// <summary>
         ///     Gets the total number of bytes transferred.
         /// </summary>
-        public long BytesTransferred { get; }
+        public long BytesTransferred { get; private set; }
+
+        /// <summary>
+        ///     Gets or sets the connection used for the transfer.
+        /// </summary>
+        /// <remarks>Ensure that the reference instance is disposed when the transfer is complete.</remarks>
+        public IConnection Connection { get; set; }
 
         /// <summary>
         ///     Gets the transfer direction.
@@ -121,7 +81,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </summary>
-        public DateTime? EndTime { get; }
+        public DateTime? EndTime { get; private set; }
 
         /// <summary>
         ///     Gets the filename of the file to be transferred.
@@ -131,7 +91,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the ip address of the remote transfer connection, if one has been established.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => Connection?.IPAddress;
+
+        /// <summary>
+        ///     Gets the options for the transfer.
+        /// </summary>
+        public TransferOptions Options { get; }
 
         /// <summary>
         ///     Gets the current progress in percent.
@@ -141,7 +106,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the port of the remote transfer connection, if one has been established.
         /// </summary>
-        public int? Port { get; }
+        public int? Port => Connection?.Port;
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.
@@ -149,24 +114,45 @@ namespace Soulseek
         public TimeSpan? RemainingTime => AverageSpeed == 0 ? default : TimeSpan.FromSeconds(BytesRemaining / AverageSpeed);
 
         /// <summary>
-        ///     Gets the remote unique token for the transfer.
+        ///     Gets or sets the remote unique token for the transfer.
         /// </summary>
-        public int? RemoteToken { get; }
+        public int? RemoteToken { get; set; }
 
         /// <summary>
-        ///     Gets the size of the file to be transferred, in bytes.
+        ///     Gets or sets the size of the file to be transferred, in bytes.
         /// </summary>
-        public long Size { get; }
+        public long Size { get; set; }
 
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
-        public DateTime? StartTime { get; }
+        public DateTime? StartTime { get; private set; }
 
         /// <summary>
-        ///     Gets the state of the transfer.
+        ///     Gets or sets the state of the transfer.
         /// </summary>
-        public TransferStates State { get; }
+        public TransferStates State
+        {
+            get
+            {
+                return state;
+            }
+
+            set
+            {
+                if (!state.HasFlag(TransferStates.InProgress) && value.HasFlag(TransferStates.InProgress))
+                {
+                    StartTime = DateTime.Now;
+                    EndTime = null;
+                }
+                else if (!state.HasFlag(TransferStates.Completed) && value.HasFlag(TransferStates.Completed))
+                {
+                    EndTime = DateTime.Now;
+                }
+
+                state = value;
+            }
+        }
 
         /// <summary>
         ///     Gets the unique token for the transfer.
@@ -177,5 +163,30 @@ namespace Soulseek
         ///     Gets the username of the peer to or from which the file is to be transferred.
         /// </summary>
         public string Username { get; }
+
+        /// <summary>
+        ///     Gets the wait key for the transfer.
+        /// </summary>
+        public WaitKey WaitKey => new WaitKey(Constants.WaitKey.Transfer, Direction, Username, Filename, Token);
+
+        /// <summary>
+        ///     Updates the transfer progress.
+        /// </summary>
+        /// <param name="bytesTransferred">The total number of bytes transferred.</param>
+        public void UpdateProgress(int bytesTransferred)
+        {
+            BytesTransferred = bytesTransferred;
+
+            var ts = DateTime.Now - (lastProgressTime ?? StartTime);
+
+            if (ts.HasValue && (!speedInitialized || ts.Value.TotalMilliseconds >= progressUpdateLimit))
+            {
+                var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
+                AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
+                speedInitialized = true;
+                lastProgressTime = DateTime.Now;
+                lastProgressBytes = BytesTransferred;
+            }
+        }
     }
 }

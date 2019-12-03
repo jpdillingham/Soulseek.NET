@@ -255,10 +255,10 @@ namespace Soulseek.Tests.Unit
             {
                 await s.ConnectAsync();
 
-                using (var search1 = new Search(string.Empty, 0, new SearchOptions()))
-                using (var search2 = new Search(string.Empty, 1, new SearchOptions()))
+                using (var search1 = new SearchInternal(string.Empty, 0, new SearchOptions()))
+                using (var search2 = new SearchInternal(string.Empty, 1, new SearchOptions()))
                 {
-                    var searches = new ConcurrentDictionary<int, Search>();
+                    var searches = new ConcurrentDictionary<int, SearchInternal>();
                     searches.TryAdd(0, search1);
                     searches.TryAdd(1, search2);
 
@@ -283,9 +283,9 @@ namespace Soulseek.Tests.Unit
             {
                 await s.ConnectAsync();
 
-                var downloads = new ConcurrentDictionary<int, Transfer>();
-                downloads.TryAdd(0, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 0));
-                downloads.TryAdd(1, new Transfer(TransferDirection.Download, string.Empty, string.Empty, 1));
+                var downloads = new ConcurrentDictionary<int, TransferInternal>();
+                downloads.TryAdd(0, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0));
+                downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 1));
 
                 s.SetProperty("Downloads", downloads);
 

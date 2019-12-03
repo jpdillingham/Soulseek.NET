@@ -97,7 +97,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            BrowseResponse r = default(BrowseResponse);
+            BrowseResponse r = default;
 
             var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            BrowseResponse r = default(BrowseResponse);
+            BrowseResponse r = default;
 
             var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
@@ -150,7 +150,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress() // count is missing
                 .Build();
 
-            BrowseResponse r = default(BrowseResponse);
+            BrowseResponse r = default;
             var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
@@ -177,7 +177,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            BrowseResponse r = default(BrowseResponse);
+            BrowseResponse r = default;
 
             var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 
@@ -226,7 +226,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .Compress()
                 .Build();
 
-            BrowseResponse r = default(BrowseResponse);
+            BrowseResponse r = default;
 
             var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
 

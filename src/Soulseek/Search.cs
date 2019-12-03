@@ -12,56 +12,52 @@
 
 namespace Soulseek
 {
-    using System;
-    using System.Collections.Concurrent;
-    using System.Collections.Generic;
-    using System.Linq;
-    using System.Threading;
-    using System.Threading.Tasks;
-    using Soulseek.Messaging.Messages;
-    using SystemTimer = System.Timers.Timer;
-
     /// <summary>
     ///     A single file search.
     /// </summary>
-    public class Search : IDisposable
+    /// <remarks>This DTO wouldn't be necessary if Json.NET didn't serialize internal properties by default.</remarks>
+    public class Search
     {
-        private int resultCount = 0;
-        private int resultFileCount = 0;
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="Search"/> class.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="token">The unique search token.</param>
-        /// <param name="options">The options for the search.</param>
-        public Search(string searchText, int token, SearchOptions options = null)
+        /// <param name="state">The state of the search.</param>
+        /// <param name="responseCount">The current number of responses received.</param>
+        /// <param name="fileCount">The total number of files contained within received responses.</param>
+        public Search(string searchText, int token, SearchStates state, int responseCount, int fileCount)
         {
             SearchText = searchText;
             Token = token;
-
-            Options = options ?? new SearchOptions();
-
-            SearchTimeoutTimer = new SystemTimer()
-            {
-                Interval = Options.SearchTimeout * 1000,
-                Enabled = false,
-                AutoReset = false,
-            };
-
-            SearchTimeoutTimer.Elapsed += (sender, e) => { Complete(SearchStates.TimedOut); };
-            SearchTimeoutTimer.Reset();
+            State = state;
+            ResponseCount = responseCount;
+            FileCount = fileCount;
         }
 
         /// <summary>
-        ///     Gets the options for the search.
+        ///     Initializes a new instance of the <see cref="Search"/> class.
         /// </summary>
-        public SearchOptions Options { get; }
+        /// <param name="searchInternal">The internal instance from which to copy data.</param>
+        internal Search(SearchInternal searchInternal)
+            : this(
+                searchInternal.SearchText,
+                searchInternal.Token,
+                searchInternal.State,
+                searchInternal.ResponseCount,
+                searchInternal.FileCount)
+        {
+        }
 
         /// <summary>
-        ///     Gets the collection of responses received from peers.
+        ///     Gets the total number of files contained within received responses.
         /// </summary>
-        public IReadOnlyCollection<SearchResponse> Responses => ResponseBag.ToList().AsReadOnly();
+        public int FileCount { get; }
+
+        /// <summary>
+        ///     Gets the current number of responses received.
+        /// </summary>
+        public int ResponseCount { get; }
 
         /// <summary>
         ///     Gets the text for which to search.
@@ -71,146 +67,11 @@ namespace Soulseek
         /// <summary>
         ///     Gets the state of the search.
         /// </summary>
-        public SearchStates State { get; internal set; } = SearchStates.None;
+        public SearchStates State { get; }
 
         /// <summary>
         ///     Gets the unique identifier for the search.
         /// </summary>
         public int Token { get; }
-
-        /// <summary>
-        ///     Gets or sets the Action to invoke when a new search response is received.
-        /// </summary>
-        internal Action<SearchResponse> ResponseReceived { get; set; }
-
-        private bool Disposed { get; set; } = false;
-        private ConcurrentBag<SearchResponse> ResponseBag { get; set; } = new ConcurrentBag<SearchResponse>();
-        private SystemTimer SearchTimeoutTimer { get; set; }
-        private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="Search"/>.
-        /// </summary>
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        ///     Adds the specified <paramref name="slimResponse"/> to the list of responses after applying the filters specified
-        ///     in the search options.
-        /// </summary>
-        /// <param name="slimResponse">The response to add.</param>
-        internal void TryAddResponse(SearchResponseSlim slimResponse)
-        {
-            // ensure the search is still active, the token matches and that the response meets basic filtering criteria we check
-            // the slim response for fitness prior to extracting the file list from it for performance reasons.
-            if (!Disposed && State.HasFlag(SearchStates.InProgress) && slimResponse.Token == Token && SlimResponseMeetsOptionCriteria(slimResponse))
-            {
-                // extract the file list from the response and filter it
-                var fullResponse = SearchResponseFactory.FromSlimResponse(slimResponse);
-                var filteredFiles = fullResponse.Files.Where(f => Options.FileFilter?.Invoke(f) ?? true);
-
-                fullResponse = new SearchResponse(fullResponse.Username, fullResponse.Token, filteredFiles.Count(), fullResponse.FreeUploadSlots, fullResponse.UploadSpeed, fullResponse.QueueLength, filteredFiles);
-
-                // ensure the filtered file count still meets the response criteria
-                if ((Options.FilterResponses && fullResponse.FileCount < Options.MinimumResponseFileCount) || !(Options.ResponseFilter?.Invoke(fullResponse) ?? true))
-                {
-                    return;
-                }
-
-                try
-                {
-                    Interlocked.Increment(ref resultCount);
-                    Interlocked.Add(ref resultFileCount, fullResponse.Files.Count);
-
-                    ResponseBag.Add(fullResponse);
-                }
-                catch
-                {
-                    // when a search meets its completion criteria it is ended and disposed, causing several in-flight responses to throw exceptions accessing the disposed instance
-                    // or a variety of other issues. swallowing exceptions here is the most pragmatic way to handle this, as anything else would involve synchronization and would
-                    // create lock contention when adding responses.
-                }
-
-                ResponseReceived?.Invoke(fullResponse);
-                SearchTimeoutTimer.Reset();
-
-                if (resultCount >= Options.ResponseLimit)
-                {
-                    Complete(SearchStates.ResponseLimitReached);
-                }
-                else if (resultFileCount >= Options.FileLimit)
-                {
-                    Complete(SearchStates.FileLimitReached);
-                }
-            }
-        }
-
-        /// <summary>
-        ///     Completes the search with the specified <paramref name="state"/>.
-        /// </summary>
-        /// <param name="state">The terminal state of the search.</param>
-        internal void Complete(SearchStates state)
-        {
-            SearchTimeoutTimer.Stop();
-            State = SearchStates.Completed | state;
-            TaskCompletionSource.SetResult(0);
-        }
-
-        /// <summary>
-        ///     Asynchronously waits for the search to be completed.
-        /// </summary>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The collection of received search responses.</returns>
-        internal async Task<IReadOnlyCollection<SearchResponse>> WaitForCompletion(CancellationToken cancellationToken)
-        {
-            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
-
-            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
-            {
-                var completedTask = await Task.WhenAny(TaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
-
-                if (completedTask == cancellationTaskCompletionSource.Task)
-                {
-                    throw new OperationCanceledException("Operation cancelled.");
-                }
-
-                return ResponseBag.ToList().AsReadOnly();
-            }
-        }
-
-        /// <summary>
-        ///     Releases the managed and unmanaged resources used by the <see cref="Search"/>.
-        /// </summary>
-        /// <param name="disposing">A value indicating whether the object is in the process of disposing.</param>
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!Disposed)
-            {
-                if (disposing)
-                {
-                    SearchTimeoutTimer.Dispose();
-                    ResponseBag = default;
-                }
-
-                Disposed = true;
-            }
-        }
-
-        private bool SlimResponseMeetsOptionCriteria(SearchResponseSlim response)
-        {
-            if (Options.FilterResponses && (
-                    response.FileCount < Options.MinimumResponseFileCount ||
-                    response.FreeUploadSlots < Options.MinimumPeerFreeUploadSlots ||
-                    response.UploadSpeed < Options.MinimumPeerUploadSpeed ||
-                    response.QueueLength >= Options.MaximumPeerQueueLength))
-            {
-                return false;
-            }
-
-            return true;
-        }
     }
 }
