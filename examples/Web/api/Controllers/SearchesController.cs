@@ -1,7 +1,10 @@
 ﻿namespace WebAPI.Controllers
 {
+    using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Linq;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
@@ -45,6 +48,59 @@
                     stateChanged: (e) => Tracker.AddOrUpdate(e)));
 
                 return Ok(results);
+            }
+            finally
+            {
+                results = null;
+            }
+        }
+
+        /// <summary>
+        ///     Performs a search for the specified <paramref name="searchText"/>.
+        /// </summary>
+        /// <param name="searchText">The search phrase.</param>
+        /// <param name="token">The optional search token.</param>
+        /// <returns></returns>
+        [HttpPost("stream")]
+        public IEnumerable<SearchResponse> PostStream([FromBody]string searchText, [FromQuery]int? token = null)
+        {
+            Tracker.Clear();
+
+            var results = new ConcurrentBag<SearchResponse>();
+
+            try
+            {
+                var count = 0;
+                SearchResponse latest = default;
+                var sem = new SemaphoreSlim(1);
+                bool done = false;
+
+                Client.SearchAsync(searchText, (r) => {
+                    Console.WriteLine("releasing semaphore...");
+                    latest = r;
+                    sem.Release(1);
+                }, token, new SearchOptions(
+                    responseReceived: (e) => Tracker.AddOrUpdate(e),
+                    stateChanged: (e) => {
+                        if (e.Search.State.HasFlag(SearchStates.Completed))
+                        {
+                            Console.WriteLine("search completed");
+                            done = true;
+                            sem.Release(1);
+                        }
+
+                        Tracker.AddOrUpdate(e);
+                    }));
+
+                while (!done)
+                {
+                    Console.WriteLine("waiting on semaphore...");
+                    sem.Wait();
+                    Console.WriteLine("yielding return");
+                    count++;
+                    yield return latest;
+                }
+
             }
             finally
             {
