@@ -19,6 +19,7 @@
     using Soulseek;
     using Soulseek.Diagnostics;
     using Swashbuckle.AspNetCore.Swagger;
+    using WebAPI.Trackers;
 
     public class Startup
     {

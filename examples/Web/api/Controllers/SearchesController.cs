@@ -4,10 +4,11 @@
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Linq;
-    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
+    using WebAPI.DTO;
+    using WebAPI.Trackers;
 
     /// <summary>
     ///     Search
@@ -22,6 +23,11 @@
         private ISoulseekClient Client { get; }
         private ISearchTracker Tracker { get; }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchesController"/> class.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="tracker"></param>
         public SearchesController(ISoulseekClient client, ISearchTracker tracker)
         {
             Client = client;
@@ -29,82 +35,38 @@
         }
 
         /// <summary>
-        ///     Performs a search for the specified <paramref name="searchText"/>.
+        ///     Performs a search for the specified <paramref name="request"/>.
         /// </summary>
-        /// <param name="searchText">The search phrase.</param>
-        /// <param name="token">The optional search token.</param>
+        /// <param name="request">The search request.</param>
         /// <returns></returns>
+        /// <response code="200">The search completed successfully.</response>
+        /// <response code="400">The specified <paramref name="request"/> was malformed.</response>
+        /// <response code="500">The search terminated abnormally.</response>
         [HttpPost("")]
-        public async Task<IActionResult> Post([FromBody]string searchText, [FromQuery]int? token = null)
+        [ProducesResponseType(typeof(IEnumerable<SearchResponse>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(typeof(string), 500)]
+        public async Task<IActionResult> Post([FromBody]SearchRequest request)
         {
-            Tracker.Clear();
+            var options = request.ToSearchOptions(
+                responseReceived: (e) => Tracker.AddOrUpdate(e),
+                stateChanged: (e) => Tracker.AddOrUpdate(e));
 
             var results = new ConcurrentBag<SearchResponse>();
 
             try
             {
-                await Client.SearchAsync(searchText, (r) => results.Add(r), token, new SearchOptions(
-                    responseReceived: (e) => Tracker.AddOrUpdate(e),
-                    stateChanged: (e) => Tracker.AddOrUpdate(e)));
-
+                await Client.SearchAsync(request.SearchText, (r) => results.Add(r), request.Token, options);
                 return Ok(results);
             }
-            finally
+            catch (Exception ex)
             {
-                results = null;
-            }
-        }
-
-        /// <summary>
-        ///     Performs a search for the specified <paramref name="searchText"/>.
-        /// </summary>
-        /// <param name="searchText">The search phrase.</param>
-        /// <param name="token">The optional search token.</param>
-        /// <returns></returns>
-        [HttpPost("stream")]
-        public IEnumerable<SearchResponse> PostStream([FromBody]string searchText, [FromQuery]int? token = null)
-        {
-            Tracker.Clear();
-
-            var results = new ConcurrentBag<SearchResponse>();
-
-            try
-            {
-                var count = 0;
-                SearchResponse latest = default;
-                var sem = new SemaphoreSlim(1);
-                bool done = false;
-
-                Client.SearchAsync(searchText, (r) => {
-                    Console.WriteLine("releasing semaphore...");
-                    latest = r;
-                    sem.Release(1);
-                }, token, new SearchOptions(
-                    responseReceived: (e) => Tracker.AddOrUpdate(e),
-                    stateChanged: (e) => {
-                        if (e.Search.State.HasFlag(SearchStates.Completed))
-                        {
-                            Console.WriteLine("search completed");
-                            done = true;
-                            sem.Release(1);
-                        }
-
-                        Tracker.AddOrUpdate(e);
-                    }));
-
-                while (!done)
-                {
-                    Console.WriteLine("waiting on semaphore...");
-                    sem.Wait();
-                    Console.WriteLine("yielding return");
-                    count++;
-                    yield return latest;
-                }
-
+                return StatusCode(500, $"Search terminated abnormally: {ex.Message}");
             }
             finally
             {
                 results = null;
+                Tracker.TryRemove(request.SearchText);
             }
         }
 

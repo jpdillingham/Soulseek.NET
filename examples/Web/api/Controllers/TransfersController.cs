@@ -5,6 +5,7 @@
     using System.Collections.Concurrent;
     using System.IO;
     using System.Linq;
+    using WebAPI.Trackers;
 
     /// <summary>
     ///     Transfers
