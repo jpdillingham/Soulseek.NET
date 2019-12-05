@@ -227,9 +227,14 @@ namespace Soulseek.Network.Tcp
 
                 ChangeState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex)
             {
                 ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
+
+                if (ex is TimeoutException || ex is OperationCanceledException)
+                {
+                    throw;
+                }
 
                 throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
             }
@@ -525,9 +530,15 @@ namespace Soulseek.Network.Tcp
 
                 await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex)
             {
                 Disconnect($"Read error: {ex.Message}");
+
+                if (ex is TimeoutException || ex is OperationCanceledException)
+                {
+                    throw;
+                }
+
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
@@ -567,9 +578,15 @@ namespace Soulseek.Network.Tcp
                     InactivityTimer?.Reset();
                 }
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex)
             {
                 Disconnect($"Write error: {ex.Message}");
+
+                if (ex is TimeoutException || ex is OperationCanceledException)
+                {
+                    throw;
+                }
+
                 throw new ConnectionWriteException($"Failed to write {length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }

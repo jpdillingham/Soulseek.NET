@@ -257,6 +257,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.NotNull(ex);
                     Assert.IsType<TimeoutException>(ex);
 
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+
                     t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
                 }
             }
@@ -291,6 +293,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.NotNull(ex);
                     Assert.IsType<OperationCanceledException>(ex);
 
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+
                     t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
                 }
             }
@@ -317,6 +321,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.NotNull(ex);
                     Assert.IsType<ConnectionException>(ex);
                     Assert.IsType<SocketException>(ex.InnerException);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
 
                     t.Verify(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()), Times.Once);
                 }
@@ -636,6 +642,68 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.NotNull(ex);
                     Assert.IsType<ConnectionWriteException>(ex);
                     Assert.IsType<SocketException>(ex.InnerException);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws if Stream times out")]
+        public async Task Write_Throws_If_Stream_Times_Out()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<TimeoutException>(ex);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+
+                    s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
+        [Fact(DisplayName = "Write throws if Stream is canceled")]
+        public async Task Write_Throws_If_Stream_Is_Canceled()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(new byte[] { 0x0, 0x1 }));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
 
                     s.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
@@ -965,6 +1033,68 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.NotNull(ex);
                     Assert.IsType<ConnectionReadException>(ex);
                     Assert.IsType<SocketException>(ex.InnerException);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read throws if Stream times out")]
+        public async Task Read_Throws_If_Stream_Times_Out()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new TimeoutException());
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<TimeoutException>(ex);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+
+                    s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Fact(DisplayName = "Read throws if Stream is cancelled")]
+        public async Task Read_Throws_If_Stream_Is_Cancelled()
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Throws(new OperationCanceledException());
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(new IPAddress(0x0), 1, tcpClient: t.Object))
+                {
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
 
                     s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
                 }
