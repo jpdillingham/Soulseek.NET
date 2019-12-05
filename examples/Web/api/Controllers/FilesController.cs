@@ -3,7 +3,6 @@
     using System;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
-    using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
@@ -30,34 +29,6 @@
             OutputDirectory = configuration.GetValue<string>("OUTPUT_DIR");
             Client = client;
             Tracker = tracker;
-        }
-
-        [HttpGet("downloads")]
-        public IActionResult GetDownloads()
-        {
-            var x = Tracker.Downloads.Select(u => new
-            {
-                Username = u.Key,
-                Directories = u.Value.Values
-                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
-                    .Select(d => new { Directory = d.Key, Files = d })
-            });
-
-            return Ok(x);
-        }
-
-        [HttpGet("uploads")]
-        public IActionResult GetUploads()
-        {
-            var x = Tracker.Downloads.Select(u => new
-            {
-                Username = u.Key,
-                Directories = u.Value.Values
-                    .GroupBy(f => Path.GetDirectoryName(f.Filename))
-                    .Select(d => new { Directory = d.Key, Files = d })
-            });
-
-            return Ok(x);
         }
 
         /// <summary>
