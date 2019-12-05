@@ -31,43 +31,24 @@
             Tracker = tracker;
         }
 
-        /// <summary>
-        ///     Retrieves the files shared by the specified <paramref name="username"/>.
-        /// </summary>
-        /// <param name="username">The user from which to download.</param>
-        /// <param name="filename">The file to download.</param>
-        /// <param name="token">The optional download token.</param>
-        /// <param name="toDisk">A value indicating whether the downloaded data should be written to disk or returned in the request result.</param>
-        /// <returns></returns>
-        [HttpGet("{username}/{filename}")]
-        public async Task<IActionResult> Download([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token, [FromQuery]bool toDisk = true)
+        [HttpDelete("{username}/{filename}")]
+        public async Task Cancel([FromRoute, Required] string username, [FromRoute, Required]string filename)
         {
-            var fileBytes = await Client.DownloadAsync(username, filename, token, 
-                new TransferOptions(stateChanged: (e) => Tracker.AddOrUpdate(e), progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
-            if (toDisk)
-            {
-                var localFilename = SaveLocalFile(filename, OutputDirectory, fileBytes);
-                return Ok(localFilename);
-            }
-            else
-            {
-                return File(fileBytes, "application/octet-stream", Path.GetFileName(filename));
-            }
         }
 
-        [HttpGet("{username}/{filename}/placeInQueue")]
+        [HttpGet("{username}/{filename}/position")]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
             return Ok(await Client.GetDownloadPlaceInQueueAsync(username, filename));
         }
 
-        [HttpPost("queue/{username}/{filename}")]
+        [HttpPost("{username}/{filename}")]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
 
-            var stream = GetLocalFileStream(filename, @"C:\Users\JP.WHATNET\Desktop\Soulseek");
+            var stream = GetLocalFileStream(filename, OutputDirectory);
 
             var downloadTask = Client.DownloadAsync(username, filename, stream, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
             {
@@ -76,11 +57,6 @@
                 if (e.Transfer.State == TransferStates.Queued)
                 {
                     waitUntilEnqueue.SetResult(true);
-                }
-
-                if (e.Transfer.State.HasFlag(TransferStates.Completed) && e.Transfer.State.HasFlag(TransferStates.Succeeded))
-                {
-                    //SaveLocalFile(filename, OutputDirectory, e.Data);
                 }
             }, progressUpdated: (e) => Tracker.AddOrUpdate(e)));
 
@@ -102,26 +78,6 @@
             {
                 return StatusCode(500, ex);
             }
-        }
-
-        private static string SaveLocalFile(string remoteFilename, string saveDirectory, byte[] data)
-        {
-            // GetDirectoryName() and GetFileName() only work when the path separator is the same as the current OS' DirectorySeparatorChar.
-            // normalize for both Windows and Linux by replacing / and \ with Path.DirectorySeparatorChar.
-            var localFilename = remoteFilename.ToLocalOSPath();
-
-            var path = $"{saveDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(localFilename).Replace(Path.GetDirectoryName(Path.GetDirectoryName(localFilename)), "")}";
-
-            if (!System.IO.Directory.Exists(path))
-            {
-                System.IO.Directory.CreateDirectory(path);
-            }
-
-            localFilename = Path.Combine(path, Path.GetFileName(localFilename));
-
-            System.IO.File.WriteAllBytes(localFilename, data);
-
-            return localFilename;
         }
 
         private static FileStream GetLocalFileStream(string remoteFilename, string saveDirectory)
