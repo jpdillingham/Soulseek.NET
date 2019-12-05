@@ -2,11 +2,11 @@
 {
     using Soulseek;
     using System.Collections.Concurrent;
+    using System.Threading;
 
     public interface ITransferTracker
     {
-        ConcurrentDictionary<string, ConcurrentDictionary<string, Transfer>> Downloads { get; }
-        ConcurrentDictionary<string, ConcurrentDictionary<string, Transfer>> Uploads { get; }
+        ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationToken CancellationToken)>>> Transfers { get; }
         void AddOrUpdate(TransferEventArgs args);
     }
 }
