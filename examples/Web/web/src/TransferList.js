@@ -31,7 +31,11 @@ const downloadOne = (username, file) => {
     return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
 }
 
-const DownloadList = ({ username, directoryName, files }) => (
+const cancel = (username, file) => {
+    return axios.delete(`${BASE_URL}/files/${username}/${encodeURI(file.filename)}`);
+}
+
+const TransferList = ({ username, directoryName, files, direction }) => (
     <div>
         <Header 
             size='small' 
@@ -44,25 +48,27 @@ const DownloadList = ({ username, directoryName, files }) => (
             <Table>
                 <Table.Header>
                     <Table.Row>
-                        <Table.HeaderCell className='downloadlist-filename'>File</Table.HeaderCell>
-                        <Table.HeaderCell className='downloadlist-size'>Size</Table.HeaderCell>
-                        <Table.HeaderCell className='downloadlist-progress'>Progress</Table.HeaderCell>
-                        <Table.HeaderCell className='downloadlist-retry'>Retry</Table.HeaderCell>
+                        <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
+                        <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
+                        <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
+                        {direction === 'download' && <Table.HeaderCell className='transferlist-retry'>Retry</Table.HeaderCell>}
+                        <Table.HeaderCell className='transferlist-cancel'>Cancel</Table.HeaderCell>
                     </Table.Row>
                 </Table.Header>                                
                 <Table.Body>
                     {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
                         <Table.Row key={i}>
-                            <Table.Cell className='downloadlist-filename'>{getFileName(f.filename)}</Table.Cell>
-                            <Table.Cell className='downloadlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
-                            <Table.Cell className='downloadlist-progress'>
+                            <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
+                            <Table.Cell className='transferlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
+                            <Table.Cell className='transferlist-progress'>
                                 <Progress 
                                     style={{ margin: 0}}
                                     percent={Math.round(f.percentComplete)} 
                                     progress color={getColor(f.state)}
                                 />
                             </Table.Cell>
-                            <Table.Cell className='downloadlist-retry'><a onClick={() => downloadOne(username, f)}>Retry</a></Table.Cell>
+                            {direction === 'download' && <Table.Cell className='transferlist-retry'><a onClick={() => downloadOne(username, f)}>Retry</a></Table.Cell>}
+                            <Table.Cell className='transferlist-cancel'><a onClick={() => cancel(username, f)}>Cancel</a></Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>
@@ -72,4 +78,4 @@ const DownloadList = ({ username, directoryName, files }) => (
     </div>
 );
 
-export default DownloadList;
+export default TransferList;

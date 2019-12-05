@@ -6,9 +6,9 @@ import {
 } from 'semantic-ui-react';
 
 import { BASE_URL } from './constants';
-import DownloadList from './DownloadList';
+import TransferList from './TransferList';
 
-class Downloads extends Component {
+class Transfers extends Component {
     state = { fetchState: '', downloads: [], interval: undefined }
 
     componentDidMount = () => {
@@ -23,7 +23,7 @@ class Downloads extends Component {
 
     fetch = () => {
         this.setState({ fetchState: 'pending' }, () => {
-            axios.get(BASE_URL + '/transfers/download')
+            axios.get(BASE_URL + `/transfers/${this.props.direction}`)
             .then(response => this.setState({ 
                 fetchState: 'complete', downloads: response.data
             }))
@@ -36,13 +36,19 @@ class Downloads extends Component {
 
         return (
             downloads.length === 0 ? <span>No downloads.</span> :
-            <div className='download-segment'>
+            <div className='transfer-segment'>
                 {downloads.map((user, index) => 
-                    <Card key={index} className='download-card' raised>
+                    <Card key={index} className='transfer-card' raised>
                         <Card.Content>
                             <Card.Header>{user.username}</Card.Header>
                             {user.directories && user.directories.map((dir, index) => 
-                                <DownloadList key={index} username={user.username} directoryName={dir.directory} files={dir.files}/>
+                                <TransferList 
+                                    key={index} 
+                                    username={user.username} 
+                                    directoryName={dir.directory}
+                                    files={dir.files}
+                                    direction={this.props.direction}
+                                />
                             )}
                         </Card.Content>
                     </Card>
@@ -53,4 +59,4 @@ class Downloads extends Component {
     }
 }
 
-export default Downloads;
+export default Transfers;
