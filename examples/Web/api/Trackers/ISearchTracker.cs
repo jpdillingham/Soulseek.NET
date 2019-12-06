@@ -17,13 +17,7 @@
         ///     Adds or updates a tracked search.
         /// </summary>
         /// <param name="args"></param>
-        void AddOrUpdate(SearchResponseReceivedEventArgs args);
-
-        /// <summary>
-        ///     Adds or updates a tracked search.
-        /// </summary>
-        /// <param name="args"></param>
-        void AddOrUpdate(SearchStateChangedEventArgs args);
+        void AddOrUpdate(SearchEventArgs args);
 
         /// <summary>
         ///     Removes all tracked searches.

@@ -18,16 +18,7 @@
         ///     Adds or updates a tracked search.
         /// </summary>
         /// <param name="args"></param>
-        public void AddOrUpdate(SearchResponseReceivedEventArgs args)
-        {
-            Searches.AddOrUpdate(args.Search.SearchText, args.Search, (searchText, search) => args.Search);
-        }
-
-        /// <summary>
-        ///     Adds or updates a tracked search.
-        /// </summary>
-        /// <param name="args"></param>
-        public void AddOrUpdate(SearchStateChangedEventArgs args)
+        public void AddOrUpdate(SearchEventArgs args)
         {
             Searches.AddOrUpdate(args.Search.SearchText, args.Search, (searchText, search) => args.Search);
         }
