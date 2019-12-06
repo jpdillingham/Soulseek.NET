@@ -77,16 +77,7 @@
         [HttpGet("")]
         public IActionResult Get()
         {
-            var response = Tracker.Searches.Select(kvp => new
-            {
-                SearchText = kvp.Key,
-                kvp.Value.Token,
-                kvp.Value.State,
-                kvp.Value.ResponseCount,
-                kvp.Value.FileCount
-            });
-
-            return Ok(response);
+            return Ok(Tracker.Searches);
         }
 
         /// <summary>
@@ -104,14 +95,7 @@
                 return NotFound();
             }
 
-            return Ok(new
-            {
-                search.SearchText,
-                search.Token,
-                search.State,
-                search.ResponseCount,
-                search.FileCount
-            });
+            return Ok(search);
         }
 
         /// <summary>
@@ -122,14 +106,14 @@
         [HttpGet("{token:int}")]
         public IActionResult GetByToken([FromRoute]int token)
         {
-            var searchText = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token)?.SearchText;
+            var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
 
-            if (string.IsNullOrEmpty(searchText))
+            if (search == default)
             {
                 return NotFound();
             }
 
-            return GetBySearchText(searchText);
+            return Ok(search);
         }
     }
 }
