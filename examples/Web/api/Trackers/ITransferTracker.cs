@@ -12,13 +12,13 @@
         /// <summary>
         ///     Tracked transfers.
         /// </summary>
-        ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationToken CancellationToken)>>> Transfers { get; }
+        ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> Transfers { get; }
 
         /// <summary>
         ///     Adds or updates a tracked transfer.
         /// </summary>
         /// <param name="args"></param>
-        void AddOrUpdate(TransferEventArgs args);
+        void AddOrUpdate(TransferEventArgs args, CancellationTokenSource cancellationTokenSource);
 
         /// <summary>
         ///     Removes a tracked transfer.
