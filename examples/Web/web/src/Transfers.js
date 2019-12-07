@@ -23,7 +23,7 @@ class Transfers extends Component {
 
     fetch = () => {
         this.setState({ fetchState: 'pending' }, () => {
-            axios.get(BASE_URL + `/transfers/${this.props.direction}`)
+            axios.get(BASE_URL + `/transfers/${this.props.direction}s`)
             .then(response => this.setState({ 
                 fetchState: 'complete', downloads: response.data
             }))
