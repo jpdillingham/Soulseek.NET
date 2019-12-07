@@ -6,6 +6,7 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
+    using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
@@ -128,7 +129,7 @@
             var clientOptions = new SoulseekClientOptions(
                 listenPort: ListenPort,
                 concurrentDistributedChildrenLimit: 10,
-                minimumDiagnosticLevel: DiagnosticLevel.Info,
+                minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 concurrentPeerMessageConnectionLimit: 1000000,
                 serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
@@ -158,7 +159,8 @@
                 {
                     Console.WriteLine($"Dispositioning {f}");
 
-                    var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e), progressUpdated: (e) => tracker.AddOrUpdate(e));
+                    var cts = new CancellationTokenSource();
+                    var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts));
 
                     Task.Run(async () =>
                     {
