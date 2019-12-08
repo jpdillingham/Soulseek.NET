@@ -42,7 +42,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Occurs when the connection is disconnected.
         /// </summary>
-        event EventHandler<string> Disconnected;
+        event EventHandler<ConnectionDisconnectedEventArgs> Disconnected;
 
         /// <summary>
         ///     Occurs when the connection state changes.
