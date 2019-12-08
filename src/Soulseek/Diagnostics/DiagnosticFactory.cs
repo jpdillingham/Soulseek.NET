@@ -40,9 +40,10 @@ namespace Soulseek.Diagnostics
         ///     Creates a <see cref="DiagnosticLevel.Debug"/> diagnostic message.
         /// </summary>
         /// <param name="message">The desired message.</param>
-        public void Debug(string message)
+        /// <param name="exception">An optional Exception.</param>
+        public void Debug(string message, Exception exception = null)
         {
-            RaiseEvent(DiagnosticLevel.Debug, message);
+            RaiseEvent(DiagnosticLevel.Debug, message, exception);
         }
 
         /// <summary>
