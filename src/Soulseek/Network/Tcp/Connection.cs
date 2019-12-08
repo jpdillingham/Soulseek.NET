@@ -97,7 +97,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Occurs when the connection is disconnected.
         /// </summary>
-        public event EventHandler<string> Disconnected;
+        public event EventHandler<ConnectionDisconnectedEventArgs> Disconnected;
 
         /// <summary>
         ///     Occurs when the connection state changes.
@@ -229,7 +229,7 @@ namespace Soulseek.Network.Tcp
             }
             catch (Exception ex)
             {
-                ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}");
+                ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}", ex);
 
                 if (ex is TimeoutException || ex is OperationCanceledException)
                 {
@@ -244,8 +244,14 @@ namespace Soulseek.Network.Tcp
         ///     Disconnects the client.
         /// </summary>
         /// <param name="message">The optional message or reason for the disconnect.</param>
-        public void Disconnect(string message = null)
+        /// <param name="exception">The optional Exception associated with the disconnect.</param>
+        public void Disconnect(string message = null, Exception exception = null)
         {
+            if (string.IsNullOrEmpty(message))
+            {
+                message = exception?.Message;
+            }
+
             if (State != ConnectionState.Disconnected && State != ConnectionState.Disconnecting)
             {
                 ChangeState(ConnectionState.Disconnecting, message);
@@ -255,7 +261,7 @@ namespace Soulseek.Network.Tcp
                 Stream?.Close();
                 TcpClient?.Close();
 
-                ChangeState(ConnectionState.Disconnected, message);
+                ChangeState(ConnectionState.Disconnected, message, exception);
             }
         }
 
@@ -449,7 +455,8 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         /// <param name="state">The state to which to change.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>
-        protected void ChangeState(ConnectionState state, string message)
+        /// <param name="exception">The optional Exception associated with the change.</param>
+        protected void ChangeState(ConnectionState state, string message, Exception exception = null)
         {
             var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, currentState: state, message: message);
 
@@ -463,7 +470,7 @@ namespace Soulseek.Network.Tcp
             }
             else if (State == ConnectionState.Disconnected)
             {
-                Disconnected?.Invoke(this, message);
+                Disconnected?.Invoke(this, new ConnectionDisconnectedEventArgs(message, exception));
             }
         }
 
@@ -477,7 +484,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (disposing)
                 {
-                    Disconnect();
+                    Disconnect("Connection is being disposed.");
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
                     Stream?.Dispose();
@@ -532,13 +539,7 @@ namespace Soulseek.Network.Tcp
             }
             catch (Exception ex)
             {
-                Disconnect($"Read error: {ex.Message}");
-
-                if (ex is TimeoutException || ex is OperationCanceledException)
-                {
-                    throw;
-                }
-
+                Disconnect($"Read error: {ex.Message}", ex);
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
@@ -580,13 +581,7 @@ namespace Soulseek.Network.Tcp
             }
             catch (Exception ex)
             {
-                Disconnect($"Write error: {ex.Message}");
-
-                if (ex is TimeoutException || ex is OperationCanceledException)
-                {
-                    throw;
-                }
-
+                Disconnect($"Write error: {ex.Message}", ex);
                 throw new ConnectionWriteException($"Failed to write {length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
