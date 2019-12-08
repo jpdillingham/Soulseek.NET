@@ -1282,7 +1282,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.True(ex.Message.ContainsInsensitive($"Failed to initialize parent connection to {username}"));
             }
 
-            conn.Verify(m => m.Disconnect("One or more required messages was not received."), Times.Once);
+            conn.Verify(m => m.Disconnect("One or more required messages was not received.", It.IsAny<Exception>()), Times.Once);
             conn.Verify(m => m.Dispose(), Times.Once);
         }
 

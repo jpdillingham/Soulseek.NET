@@ -182,7 +182,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
 
                 var eventArgs = new List<string>();
 
-                c.Disconnected += (sender, e) => eventArgs.Add(e);
+                c.Disconnected += (sender, e) => eventArgs.Add(e.Message);
 
                 c.Disconnect("foo");
 
