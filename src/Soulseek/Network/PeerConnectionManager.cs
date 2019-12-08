@@ -150,7 +150,9 @@ namespace Soulseek.Network
                 tcpClient);
 
             // bind a temporary handler so we can get diagnostics for disconnects before the permanent handler is bound below
-            void HandleDisconnect(object sender, string message) => Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint.Address}:{endpoint.Port}) for token {token} disconnected.");
+            void HandleDisconnect(object sender, ConnectionDisconnectedEventArgs e) =>
+                Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint.Address}:{endpoint.Port}) for token {token} disconnected.");
+
             connection.Disconnected += HandleDisconnect;
 
             int remoteToken;
@@ -627,7 +629,7 @@ namespace Soulseek.Network
             }
         }
 
-        private void MessageConnection_Disconnected(object sender, string message)
+        private void MessageConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
             RemoveMessageConnectionRecord(connection);
