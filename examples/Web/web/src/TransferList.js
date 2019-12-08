@@ -31,8 +31,8 @@ const downloadOne = (username, file) => {
     return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
 }
 
-const cancel = (username, file) => {
-    return axios.delete(`${BASE_URL}/files/${username}/${encodeURI(file.filename)}`);
+const cancel = (direction, username, file) => {
+    return axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`);
 }
 
 const TransferList = ({ username, directoryName, files, direction }) => (
@@ -67,8 +67,8 @@ const TransferList = ({ username, directoryName, files, direction }) => (
                                     progress color={getColor(f.state)}
                                 />
                             </Table.Cell>
-                            {direction === 'download' && <Table.Cell className='transferlist-retry'><a onClick={() => downloadOne(username, f)}>Retry</a></Table.Cell>}
-                            <Table.Cell className='transferlist-cancel'><a onClick={() => cancel(username, f)}>Cancel</a></Table.Cell>
+                            {direction === 'download' && <Table.Cell className='transferlist-retry'><a onClick={() => downloadOne(direction, username, f)}>Retry</a></Table.Cell>}
+                            <Table.Cell className='transferlist-cancel'><a href="#" onClick={() => cancel(direction, username, f)}>Cancel</a></Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>

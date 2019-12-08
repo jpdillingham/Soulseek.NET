@@ -4,10 +4,8 @@
     using Microsoft.Extensions.Configuration;
     using Soulseek;
     using System;
-    using System.Collections.Concurrent;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using WebAPI.Trackers;
@@ -42,24 +40,32 @@
         [HttpDelete("downloads/{username}/{filename}")]
         public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filename)
         {
-            CancelTransfer(TransferDirection.Download, username, filename);
-            return NoContent();
+            return CancelTransfer(TransferDirection.Download, username, filename);
         }
 
         [HttpDelete("uploads/{username}/{filename}")]
         public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filename)
         {
-            CancelTransfer(TransferDirection.Upload, username, filename);
-            return NoContent();
+            return CancelTransfer(TransferDirection.Upload, username, filename);
         }
 
-        private async void CancelTransfer(TransferDirection direction, string username, string filename)
+        private IActionResult CancelTransfer(TransferDirection direction, string username, string filename)
         {
-            Tracker.Transfers.TryGetValue(direction, out var transfers);
-            transfers.TryGetValue(username, out var user);
-            user.TryGetValue(filename, out var transfer);
+            Console.WriteLine($"Cancelling {direction} {username}, {filename}");
+            if (Tracker.TryGet(direction, username, filename, out var transfer))
+            {
+                Console.WriteLine($"Got token. cancelling {transfer.CancellationTokenSource.GetHashCode()}");
+                transfer.CancellationTokenSource.Cancel();
 
-            transfer.CancellationTokenSource.Cancel();
+                if (transfer.Transfer.State.HasFlag(TransferStates.Completed))
+                {
+                    Tracker.TryRemove(direction, username, filename);
+                }
+
+                return NoContent();
+            }
+
+            return NotFound();
         }
 
         [HttpPost("downloads/{username}/{filename}")]
@@ -69,16 +75,18 @@
             var stream = GetLocalFileStream(filename, OutputDirectory);
 
             var cts = new CancellationTokenSource();
+            Console.WriteLine($"Created new token {cts.GetHashCode()}");
 
             var downloadTask = Client.DownloadAsync(username, filename, stream, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
             {
+                Console.WriteLine($"Transfer state changed from {e.PreviousState} to {e.Transfer.State}");
                 Tracker.AddOrUpdate(e, cts);
 
                 if (e.Transfer.State == TransferStates.Queued)
                 {
                     waitUntilEnqueue.SetResult(true);
                 }
-            }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)));
+            }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
 
             try
             {
@@ -132,18 +140,30 @@
             return Ok(await Client.GetDownloadPlaceInQueueAsync(username, filename));
         }
 
-        private (Transfer, CancellationTokenSource) GetTransfer(TransferDirection direction, string username, string filename)
+        [HttpGet("uploads")]
+        public IActionResult GetUploads()
         {
-            Tracker.Transfers.TryGetValue(direction, out var transfers);
+            return Ok(Tracker.Transfers
+                .WithDirection(TransferDirection.Upload)
+                .ToMap());
+        }
 
-            if (transfers == default) return default;
+        [HttpGet("uploads/{username}")]
+        public IActionResult GetUploads([FromRoute, Required]string username)
+        {
+            return Ok(Tracker.Transfers
+                .WithDirection(TransferDirection.Upload)
+                .FromUser(username)
+                .ToMap());
+        }
 
-            transfers.TryGetValue(username, out var user);
-
-            if (user == default) return default;
-
-            user.TryGetValue(filename, out var transfer);
-            return transfer;
+        [HttpGet("uploads/{username}/{filename}")]
+        public IActionResult GetUploads([FromRoute, Required]string username, [FromRoute, Required]string filename)
+        {
+            return Ok(Tracker.Transfers
+                .WithDirection(TransferDirection.Upload)
+                .FromUser(username)
+                .WithFilename(filename).Transfer);
         }
 
         private static FileStream GetLocalFileStream(string remoteFilename, string saveDirectory)
@@ -162,19 +182,6 @@
             localFilename = Path.Combine(path, Path.GetFileName(localFilename));
 
             return new FileStream(localFilename, FileMode.Create);
-        }
-
-        private object GetTransfers(TransferDirection direction)
-        {
-            Tracker.Transfers.TryGetValue(direction, out var transfers);
-
-            return transfers?.Select(u => new
-            {
-                Username = u.Key,
-                Directories = u.Value.Values
-                     .GroupBy(f => Path.GetDirectoryName(f.Transfer.Filename))
-                     .Select(d => new { Directory = d.Key, Files = d })
-            });
         }
     }
 }

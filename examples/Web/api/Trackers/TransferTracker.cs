@@ -105,6 +105,32 @@
             }
         }
 
+        /// <summary>
+        ///     Gets the specified transfer.
+        /// </summary>
+        /// <param name="direction"></param>
+        /// <param name="username"></param>
+        /// <param name="filename"></param>
+        /// <param name="transfer"></param>
+        /// <returns></returns>
+        public bool TryGet(TransferDirection direction, string username, string filename, out (Transfer Transfer, CancellationTokenSource CancellationTokenSource) transfer)
+        {
+            transfer = default;
+
+            if (Transfers.TryGetValue(direction, out var transfers))
+            {
+                if (transfers.TryGetValue(username, out var user))
+                {
+                    if (user.TryGetValue(filename, out transfer))
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         private ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> GetNewDictionaryForUser(TransferEventArgs args, CancellationTokenSource cancellationTokenSource)
         {
             var r = new ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
