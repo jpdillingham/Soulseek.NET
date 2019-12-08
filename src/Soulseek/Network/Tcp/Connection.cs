@@ -540,6 +540,12 @@ namespace Soulseek.Network.Tcp
             catch (Exception ex)
             {
                 Disconnect($"Read error: {ex.Message}", ex);
+
+                if (ex is TimeoutException || ex is OperationCanceledException)
+                {
+                    throw;
+                }
+
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
@@ -582,6 +588,12 @@ namespace Soulseek.Network.Tcp
             catch (Exception ex)
             {
                 Disconnect($"Write error: {ex.Message}", ex);
+
+                if (ex is TimeoutException || ex is OperationCanceledException)
+                {
+                    throw;
+                }
+
                 throw new ConnectionWriteException($"Failed to write {length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
             }
         }
