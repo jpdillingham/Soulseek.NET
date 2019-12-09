@@ -27,6 +27,16 @@ namespace Soulseek
     public interface ISoulseekClient : IDisposable, IDiagnosticGenerator
     {
         /// <summary>
+        ///     Occurs when the client connects.
+        /// </summary>
+        event EventHandler Connected;
+
+        /// <summary>
+        ///     Occurs when the client disconnects.
+        /// </summary>
+        event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
+
+        /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
         event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
