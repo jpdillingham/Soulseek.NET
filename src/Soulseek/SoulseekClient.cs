@@ -117,7 +117,7 @@ namespace Soulseek
                 ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
             }
 
-            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
+            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {Address}:{Port}");
             ServerConnection.Disconnected += ServerConnection_Disconnected;
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
@@ -157,6 +157,16 @@ namespace Soulseek
 
             ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
         }
+
+        /// <summary>
+        ///     Occurs when the client connects.
+        /// </summary>
+        public event EventHandler Connected;
+
+        /// <summary>
+        ///     Occurs when the client disconnects.
+        /// </summary>
+        public event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
 
         /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
@@ -389,8 +399,19 @@ namespace Soulseek
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         public void Disconnect(string message = null)
         {
+            // todo: review usage, pass exceptions where it makes sense
+            Disconnect(message, null);
+        }
+
+        /// <summary>
+        ///     Disconnects the client from the server.
+        /// </summary>
+        /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
+        /// <param name="exception">The optional Exception associated with the disconnect.</param>
+        private void Disconnect(string message, Exception exception = null)
+        {
             ServerConnection.Disconnected -= ServerConnection_Disconnected;
-            ServerConnection?.Disconnect(message ?? "Client disconnected");
+            ServerConnection?.Disconnect(message ?? exception?.Message ?? "Client disconnected");
 
             Listener?.Stop();
 
@@ -409,7 +430,7 @@ namespace Soulseek
 
             if (State != SoulseekClientStates.Disconnected)
             {
-                ChangeState(SoulseekClientStates.Disconnected, message);
+                ChangeState(SoulseekClientStates.Disconnected, message, exception);
             }
         }
 
@@ -1278,11 +1299,20 @@ namespace Soulseek
             }
         }
 
-        private void ChangeState(SoulseekClientStates state, string message = null)
+        private void ChangeState(SoulseekClientStates state, string message, Exception exception = null)
         {
             var previousState = State;
             State = state;
             StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
+
+            if (state == SoulseekClientStates.Connected)
+            {
+                Connected?.Invoke(this, new EventArgs());
+            }
+            else if (state == SoulseekClientStates.Disconnected)
+            {
+                Disconnected?.Invoke(this, new SoulseekClientDisconnectedEventArgs(message, exception));
+            }
         }
 
         private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
@@ -1646,7 +1676,7 @@ namespace Soulseek
                 if (response.Succeeded)
                 {
                     Username = username;
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in.");
 
                     if (Options.ListenPort.HasValue)
                     {
@@ -1765,7 +1795,7 @@ namespace Soulseek
 
         private void ServerConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
-            Disconnect(e.Message);
+            Disconnect(e.Message, e.Exception);
         }
 
         private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
