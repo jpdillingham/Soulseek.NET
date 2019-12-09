@@ -74,7 +74,9 @@
         ///     Gets the state of all current searches.
         /// </summary>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("")]
+        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult Get()
         {
             return Ok(Tracker.Searches);
@@ -85,7 +87,9 @@
         /// </summary>
         /// <param name="searchText">The search phrase of the desired search.</param>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("{searchText}")]
+        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult GetBySearchText([FromRoute]string searchText)
         {
             Tracker.Searches.TryGetValue(searchText, out var search);
@@ -103,7 +107,9 @@
         /// </summary>
         /// <param name="token">The token of the desired search.</param>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("{token:int}")]
+        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult GetByToken([FromRoute]int token)
         {
             var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
