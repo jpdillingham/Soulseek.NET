@@ -253,7 +253,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 using (var search1 = new SearchInternal(string.Empty, 0, new SearchOptions()))
                 using (var search2 = new SearchInternal(string.Empty, 1, new SearchOptions()))
@@ -281,7 +281,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var downloads = new ConcurrentDictionary<int, TransferInternal>();
                 downloads.TryAdd(0, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0));
@@ -307,7 +307,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object))
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
@@ -348,7 +348,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty));
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty, null));
 
                 Assert.Null(ex);
             }
