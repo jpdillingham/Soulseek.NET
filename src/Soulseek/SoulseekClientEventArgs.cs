@@ -88,7 +88,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClientDisconnectedEventArgs"/> class.
         /// </summary>
         /// <param name="message">The message describing the reason for the disconnect.</param>
-        /// <param name="exception">The optional Exception associated with the disconnect.</param>
+        /// <param name="exception">The Exception associated with the disconnect, if applicable.</param>
         public SoulseekClientDisconnectedEventArgs(string message, Exception exception = null)
         {
             Message = message;
@@ -96,7 +96,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the optional Exception associated with the disconnect.
+        ///     Gets the Exception associated with change in state, if applicable.
         /// </summary>
         public Exception Exception { get; }
 
@@ -117,12 +117,19 @@ namespace Soulseek
         /// <param name="previousState">The previous state of the client.</param>
         /// <param name="state">The current state of the client.</param>
         /// <param name="message">The message associated with the change in state, if applicable.</param>
-        public SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null)
+        /// <param name="exception">The Exception associated with the change in state, if applicable.</param>
+        public SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null, Exception exception = null)
         {
             PreviousState = previousState;
             State = state;
             Message = message;
+            Exception = exception;
         }
+
+        /// <summary>
+        ///     Gets the Exception associated with change in state, if applicable.
+        /// </summary>
+        public Exception Exception { get; }
 
         /// <summary>
         ///     Gets the message associated with the change in state, if applicable.

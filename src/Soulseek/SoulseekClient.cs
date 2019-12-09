@@ -1276,7 +1276,7 @@ namespace Soulseek
             var previousState = State;
             State = state;
 
-            StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
+            StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message, exception));
 
             if (State == SoulseekClientStates.Connected)
             {

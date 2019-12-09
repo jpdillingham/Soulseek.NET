@@ -455,7 +455,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="exception">The optional Exception associated with the change.</param>
         protected void ChangeState(ConnectionState state, string message, Exception exception = null)
         {
-            var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, currentState: state, message: message);
+            var eventArgs = new ConnectionStateChangedEventArgs(previousState: State, currentState: state, message: message, exception: exception);
 
             State = state;
 
