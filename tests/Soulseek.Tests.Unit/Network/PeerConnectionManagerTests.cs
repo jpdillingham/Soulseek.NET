@@ -156,7 +156,7 @@ namespace Soulseek.Tests.Unit.Network
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             conn.Setup(m => m.ReadAsync(4, null))
-                .Callback<long, CancellationToken?>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, "foo"))
+                .Callback<long, CancellationToken?>((i, t) => conn.Raise(mock => mock.Disconnected += null, null, new ConnectionDisconnectedEventArgs("foo")))
                 .Throws(expectedEx);
 
             var (manager, mocks) = GetFixture();
@@ -797,7 +797,7 @@ namespace Soulseek.Tests.Unit.Network
                     var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
                     ms.WaitAsync();
 
-                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
 
                     Assert.Empty(dict);
                 }
@@ -836,7 +836,7 @@ namespace Soulseek.Tests.Unit.Network
                     var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
                     ms.WaitAsync();
 
-                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+                    manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
 
                     Assert.Single(diagnostics);
                     Assert.Contains(diagnostics, m => m.ContainsInsensitive($"Removing message connection to {username}"));
@@ -867,7 +867,7 @@ namespace Soulseek.Tests.Unit.Network
                 var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
                 ms.WaitAsync();
 
-                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
 
                 Assert.Empty(dict);
             }
@@ -901,7 +901,7 @@ namespace Soulseek.Tests.Unit.Network
                 var ms = manager.GetProperty<SemaphoreSlim>("MessageSemaphore");
                 ms.WaitAsync();
 
-                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("MessageConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
 
                 Assert.Empty(diagnostics);
             }

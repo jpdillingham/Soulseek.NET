@@ -199,7 +199,7 @@ namespace Soulseek.Tests.Unit
             {
                 await s.ConnectAsync();
 
-                s.InvokeMethod("ServerConnection_Disconnected", null, string.Empty);
+                s.InvokeMethod("ServerConnection_Disconnected", null, new ConnectionDisconnectedEventArgs(string.Empty));
 
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
             }
