@@ -37,6 +37,11 @@ namespace Soulseek
         event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
 
         /// <summary>
+        ///     Occurs when the client is logged in.
+        /// </summary>
+        event EventHandler LoggedIn;
+
+        /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
         event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
