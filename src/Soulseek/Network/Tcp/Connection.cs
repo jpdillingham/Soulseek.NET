@@ -229,7 +229,7 @@ namespace Soulseek.Network.Tcp
             }
             catch (Exception ex)
             {
-                ChangeState(ConnectionState.Disconnected, $"Connection Error: {ex.Message}", ex);
+                Disconnect($"Connection Error: {ex.Message}", ex);
 
                 if (ex is TimeoutException || ex is OperationCanceledException)
                 {
@@ -247,13 +247,10 @@ namespace Soulseek.Network.Tcp
         /// <param name="exception">The optional Exception associated with the disconnect.</param>
         public void Disconnect(string message = null, Exception exception = null)
         {
-            if (string.IsNullOrEmpty(message))
-            {
-                message = exception?.Message;
-            }
-
             if (State != ConnectionState.Disconnected && State != ConnectionState.Disconnecting)
             {
+                message = message ?? exception?.Message;
+
                 ChangeState(ConnectionState.Disconnecting, message);
 
                 InactivityTimer?.Stop();
@@ -484,7 +481,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (disposing)
                 {
-                    Disconnect("Connection is being disposed.");
+                    Disconnect("Connection is being disposed.", new ObjectDisposedException(GetType().Name));
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
                     Stream?.Dispose();
