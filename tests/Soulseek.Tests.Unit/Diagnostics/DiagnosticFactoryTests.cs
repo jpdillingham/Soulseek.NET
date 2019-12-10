@@ -65,7 +65,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(message, e.Message);
             Assert.Equal(ex, e.Exception);
             Assert.Equal(DiagnosticLevel.Debug, e.Level);
-            Assert.False(e.IncludesException);
+            Assert.True(e.IncludesException);
             Assert.Null(e.Exception);
         }
 
