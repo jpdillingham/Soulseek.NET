@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit
 {
     using Soulseek.Network.Tcp;
+    using System;
     using Xunit;
 
     public class ConnectionEventArgsTests
@@ -41,7 +42,9 @@ namespace Soulseek.Tests.Unit
         {
             ConnectionStateChangedEventArgs s = null;
 
-            var ex = Record.Exception(() => s = new ConnectionStateChangedEventArgs(ConnectionState.Connected, ConnectionState.Disconnected, "foo"));
+            var e = new Exception("bar");
+
+            var ex = Record.Exception(() => s = new ConnectionStateChangedEventArgs(ConnectionState.Connected, ConnectionState.Disconnected, "foo", e));
 
             Assert.Null(ex);
             Assert.NotNull(s);
@@ -49,6 +52,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(ConnectionState.Connected, s.PreviousState);
             Assert.Equal(ConnectionState.Disconnected, s.CurrentState);
             Assert.Equal("foo", s.Message);
+            Assert.Equal(e, s.Exception);
         }
 
         [Trait("Category", "Instantiation")]
@@ -65,6 +69,23 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(ConnectionState.Connected, s.PreviousState);
             Assert.Equal(ConnectionState.Disconnected, s.CurrentState);
             Assert.Null(s.Message);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "ConnectionDisconnectedEventArgs instantiates properly")]
+        public void ConnectionDisconnectedEventArgs_Instantiates_Properly()
+        {
+            ConnectionDisconnectedEventArgs s = null;
+
+            var e = new Exception("bar");
+
+            var ex = Record.Exception(() => s = new ConnectionDisconnectedEventArgs("foo", e));
+
+            Assert.Null(ex);
+            Assert.NotNull(s);
+
+            Assert.Equal("foo", s.Message);
+            Assert.Equal(e, s.Exception);
         }
     }
 }
