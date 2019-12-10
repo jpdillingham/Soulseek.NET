@@ -117,7 +117,7 @@ namespace Soulseek
                 ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
             }
 
-            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected);
+            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {Address}:{Port}");
             ServerConnection.Disconnected += ServerConnection_Disconnected;
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
@@ -159,9 +159,24 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Occurs when the client connects.
+        /// </summary>
+        public event EventHandler Connected;
+
+        /// <summary>
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
+
+        /// <summary>
+        ///     Occurs when the client disconnects.
+        /// </summary>
+        public event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
+
+        /// <summary>
+        ///     Occurs when the client is logged in.
+        /// </summary>
+        public event EventHandler LoggedIn;
 
         /// <summary>
         ///     Occurs when a private message is received.
@@ -389,28 +404,7 @@ namespace Soulseek
         /// <param name="message">An optional message describing the reason the client is being disconnected.</param>
         public void Disconnect(string message = null)
         {
-            ServerConnection.Disconnected -= ServerConnection_Disconnected;
-            ServerConnection?.Disconnect(message ?? "Client disconnected");
-
-            Listener?.Stop();
-
-            UploadSemaphores?.RemoveAndDisposeAll();
-
-            PeerConnectionManager?.RemoveAndDisposeAll();
-            DistributedConnectionManager?.RemoveAndDisposeAll();
-
-            Searches?.RemoveAndDisposeAll();
-            Downloads?.RemoveAll();
-            Uploads?.RemoveAll();
-
-            Waiter?.CancelAll();
-
-            Username = null;
-
-            if (State != SoulseekClientStates.Disconnected)
-            {
-                ChangeState(SoulseekClientStates.Disconnected, message);
-            }
+            Disconnect(message, null);
         }
 
         /// <summary>
@@ -1194,10 +1188,9 @@ namespace Soulseek
         {
             if (!Disposed)
             {
-                Disconnect("Client is being disposed");
-
                 if (disposing)
                 {
+                    Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
                     PeerConnectionManager?.Dispose();
                     DistributedConnectionManager?.Dispose();
                     Waiter?.Dispose();
@@ -1278,16 +1271,59 @@ namespace Soulseek
             }
         }
 
-        private void ChangeState(SoulseekClientStates state, string message = null)
+        private void ChangeState(SoulseekClientStates state, string message, Exception exception = null)
         {
             var previousState = State;
             State = state;
-            StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message));
+
+            StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message, exception));
+
+            if (State == SoulseekClientStates.Connected)
+            {
+                Connected?.Invoke(this, EventArgs.Empty);
+            }
+            else if (State == (SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn))
+            {
+                LoggedIn?.Invoke(this, EventArgs.Empty);
+            }
+            else if (State == SoulseekClientStates.Disconnected)
+            {
+                Disconnected?.Invoke(this, new SoulseekClientDisconnectedEventArgs(message, exception));
+            }
+        }
+
+        private void Disconnect(string message, Exception exception = null)
+        {
+            if (State != SoulseekClientStates.Disconnected)
+            {
+                message = message ?? exception?.Message ?? "Client disconnected";
+
+                ServerConnection.Disconnected -= ServerConnection_Disconnected;
+                ServerConnection?.Disconnect(message, exception);
+
+                Listener?.Stop();
+
+                UploadSemaphores?.RemoveAndDisposeAll();
+
+                PeerConnectionManager?.RemoveAndDisposeAll();
+                DistributedConnectionManager?.RemoveAndDisposeAll();
+
+                Searches?.RemoveAndDisposeAll();
+                Downloads?.RemoveAll();
+                Uploads?.RemoveAll();
+
+                Waiter?.CancelAll();
+
+                Username = null;
+
+                ChangeState(SoulseekClientStates.Disconnected, message, exception);
+            }
         }
 
         private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
+            // stream from capturing the output.
             options = new TransferOptions(
                 options.Governor,
                 options.StateChanged,
@@ -1413,23 +1449,25 @@ namespace Soulseek
                 }
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
-                download.Connection.Disconnected += (sender, message) =>
+                download.Connection.Disconnected += (sender, e) =>
                 {
                     if (download.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(download.WaitKey);
                     }
-                    else if (download.State.HasFlag(TransferStates.TimedOut))
+                    else if (e.Exception is TimeoutException)
                     {
-                        Waiter.Throw(download.WaitKey, new TimeoutException(message));
+                        download.State = TransferStates.TimedOut;
+                        Waiter.Throw(download.WaitKey, e.Exception);
                     }
-                    else if (download.State.HasFlag(TransferStates.Cancelled))
+                    else if (e.Exception is OperationCanceledException)
                     {
-                        Waiter.Throw(download.WaitKey, new OperationCanceledException(message));
+                        download.State = TransferStates.Cancelled;
+                        Waiter.Throw(download.WaitKey, e.Exception);
                     }
                     else
                     {
-                        Waiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+                        Waiter.Throw(download.WaitKey, new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
                     }
                 };
 
@@ -1448,19 +1486,9 @@ namespace Soulseek
                     download.Connection.Disconnect("Transfer complete.");
                     Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
                 }
-                catch (TimeoutException)
-                {
-                    download.State = TransferStates.TimedOut;
-                    download.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
-                }
-                catch (OperationCanceledException)
-                {
-                    download.State = TransferStates.Cancelled;
-                    download.Connection.Disconnect($"Transfer cancelled.");
-                }
                 catch (Exception ex)
                 {
-                    download.Connection.Disconnect(ex.Message);
+                    download.Connection.Disconnect(exception: ex);
                 }
 
                 // wait for the download to complete this wait is either completed (on success) or thrown (on anything other than
@@ -1470,14 +1498,14 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 download.State = TransferStates.Rejected;
-                download.Connection?.Disconnect("Transfer rejected.");
+                download.Connection?.Disconnect("Transfer rejected.", ex);
 
                 throw new TransferException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 download.State = TransferStates.Cancelled;
-                download.Connection?.Disconnect("Transfer cancelled.");
+                download.Connection?.Disconnect("Transfer cancelled.", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -1485,7 +1513,7 @@ namespace Soulseek
             catch (TimeoutException ex)
             {
                 download.State = TransferStates.TimedOut;
-                download.Connection?.Disconnect("Transfer timed out.");
+                download.Connection?.Disconnect("Transfer timed out.", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -1493,7 +1521,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 download.State = TransferStates.Errored;
-                download.Connection?.Disconnect("Transfer error.");
+                download.Connection?.Disconnect("Transfer error.", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
@@ -1523,21 +1551,13 @@ namespace Soulseek
 
         private async Task<int> GetDownloadPlaceInQueueInternalAsync(string username, string filename, CancellationToken cancellationToken)
         {
-            IMessageConnection connection = null;
-
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename);
                 var responseWait = Waiter.Wait<PlaceInQueueResponse>(waitKey, null, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-
-                connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                connection.Disconnected += (sender, message) =>
-                {
-                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                };
-
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new PlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await responseWait.ConfigureAwait(false);
@@ -1576,8 +1596,6 @@ namespace Soulseek
 
         private async Task<UserInfo> GetUserInfoInternalAsync(string username, CancellationToken cancellationToken)
         {
-            IMessageConnection connection = null;
-
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.InfoResponse, username);
@@ -1585,12 +1603,7 @@ namespace Soulseek
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
-                connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                connection.Disconnected += (sender, message) =>
-                {
-                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
-                };
-
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new UserInfoRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await infoWait.ConfigureAwait(false);
@@ -1664,7 +1677,7 @@ namespace Soulseek
                 if (response.Succeeded)
                 {
                     Username = username;
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in.");
 
                     if (Options.ListenPort.HasValue)
                     {
@@ -1677,27 +1690,15 @@ namespace Soulseek
                 }
                 else
                 {
-                    Disconnect($"The server rejected login attempt: {response.Message}"); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
-                    throw new LoginRejectedException($"The server rejected login attempt: {response.Message}");
+                    var ex = new LoginRejectedException($"The server rejected login attempt: {response.Message}");
+                    Disconnect(ex.Message, exception: ex); // upon login failure the server will refuse to allow any more input, eventually disconnecting.
+                    throw ex;
                 }
             }
             catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
             }
-        }
-
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
-        {
-            var responseBag = new ConcurrentBag<SearchResponse>();
-
-            void ResponseReceived(SearchResponse response)
-            {
-                responseBag.Add(response);
-            }
-
-            await SearchToCallbackAsync(searchText, ResponseReceived, token, options, cancellationToken).ConfigureAwait(false);
-            return responseBag.ToList().AsReadOnly();
         }
 
         private async Task SearchToCallbackAsync(string searchText, Action<SearchResponse> responseReceived, int token, SearchOptions options, CancellationToken cancellationToken)
@@ -1757,6 +1758,19 @@ namespace Soulseek
             }
         }
 
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
+        {
+            var responseBag = new ConcurrentBag<SearchResponse>();
+
+            void ResponseReceived(SearchResponse response)
+            {
+                responseBag.Add(response);
+            }
+
+            await SearchToCallbackAsync(searchText, ResponseReceived, token, options, cancellationToken).ConfigureAwait(false);
+            return responseBag.ToList().AsReadOnly();
+        }
+
         private async Task SendPrivateMessageInternalAsync(string username, string message, CancellationToken cancellationToken)
         {
             try
@@ -1781,14 +1795,15 @@ namespace Soulseek
             }
         }
 
-        private void ServerConnection_Disconnected(object sender, string e)
+        private void ServerConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
-            Disconnect(e);
+            Disconnect(e.Message, e.Exception);
         }
 
         private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory stream from capturing the output.
+            // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
+            // stream from capturing the output.
             options = new TransferOptions(
                 options.Governor,
                 options.StateChanged,
@@ -1875,23 +1890,25 @@ namespace Soulseek
                     .ConfigureAwait(false);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
-                upload.Connection.Disconnected += (sender, message) =>
+                upload.Connection.Disconnected += (sender, e) =>
                 {
                     if (upload.State.HasFlag(TransferStates.Succeeded))
                     {
                         Waiter.Complete(upload.WaitKey);
                     }
-                    else if (upload.State.HasFlag(TransferStates.TimedOut))
+                    else if (e.Exception is TimeoutException)
                     {
-                        Waiter.Throw(upload.WaitKey, new TimeoutException(message));
+                        upload.State = TransferStates.TimedOut;
+                        Waiter.Throw(upload.WaitKey, e.Exception);
                     }
-                    else if (upload.State.HasFlag(TransferStates.Cancelled))
+                    else if (e.Exception is OperationCanceledException)
                     {
-                        Waiter.Throw(upload.WaitKey, new OperationCanceledException(message));
+                        upload.State = TransferStates.Cancelled;
+                        Waiter.Throw(upload.WaitKey, e.Exception);
                     }
                     else
                     {
-                        Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {message}"));
+                        Waiter.Throw(upload.WaitKey, new ConnectionException($"Transfer failed: {e.Message}", e.Exception));
                     }
                 };
 
@@ -1917,21 +1934,11 @@ namespace Soulseek
                         // swallow this specific exception
                     }
 
-                    Diagnostic.Info($"Upload of {System.IO.Path.GetFileName(upload.Filename)} from {username} complete ({inputStream.Position} of {upload.Size} bytes).");
-                }
-                catch (TimeoutException)
-                {
-                    upload.State = TransferStates.TimedOut;
-                    upload.Connection.Disconnect($"Transfer timed out after {Options.TransferConnectionOptions.InactivityTimeout} seconds of inactivity.");
-                }
-                catch (OperationCanceledException)
-                {
-                    upload.State = TransferStates.Cancelled;
-                    upload.Connection.Disconnect($"Transfer cancelled.");
+                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} from {username} complete ({inputStream.Position} of {upload.Size} bytes).");
                 }
                 catch (Exception ex)
                 {
-                    upload.Connection.Disconnect(ex.Message);
+                    upload.Connection.Disconnect(exception: ex);
                 }
 
                 await uploadCompleted.ConfigureAwait(false);
@@ -1939,14 +1946,14 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 upload.State = TransferStates.Rejected;
-                upload.Connection?.Disconnect("Transfer rejected.");
+                upload.Connection?.Disconnect("Transfer rejected.", ex);
 
                 throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 upload.State = TransferStates.Cancelled;
-                upload.Connection?.Disconnect("Transfer cancelled.");
+                upload.Connection?.Disconnect("Transfer cancelled.", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -1954,7 +1961,7 @@ namespace Soulseek
             catch (TimeoutException ex)
             {
                 upload.State = TransferStates.TimedOut;
-                upload.Connection?.Disconnect("Transfer timed out.");
+                upload.Connection?.Disconnect("Transfer timed out.", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -1962,7 +1969,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 upload.State = TransferStates.Errored;
-                upload.Connection?.Disconnect("Transfer error.");
+                upload.Connection?.Disconnect("Transfer error.", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);

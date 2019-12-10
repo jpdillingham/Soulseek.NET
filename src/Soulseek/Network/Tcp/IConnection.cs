@@ -42,7 +42,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Occurs when the connection is disconnected.
         /// </summary>
-        event EventHandler<string> Disconnected;
+        event EventHandler<ConnectionDisconnectedEventArgs> Disconnected;
 
         /// <summary>
         ///     Occurs when the connection state changes.
@@ -100,7 +100,8 @@ namespace Soulseek.Network.Tcp
         ///     Disconnects the client.
         /// </summary>
         /// <param name="message">The optional message or reason for the disconnect.</param>
-        void Disconnect(string message = null);
+        /// <param name="exception">The optional Exception associated with the disconnect.</param>
+        void Disconnect(string message = null, Exception exception = null);
 
         /// <summary>
         ///     Decouples and returns the underlying TCP connection for this connection, allowing the TCP connection to survive

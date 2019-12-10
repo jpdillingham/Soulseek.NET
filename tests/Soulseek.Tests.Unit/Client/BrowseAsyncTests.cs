@@ -213,7 +213,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
-                .Raises(m => m.Disconnected += null, conn.Object, string.Empty);
+                .Raises(m => m.Disconnected += null, conn.Object, new ConnectionDisconnectedEventArgs(string.Empty));
 
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))

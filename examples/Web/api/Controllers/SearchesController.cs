@@ -1,10 +1,14 @@
 ﻿namespace WebAPI.Controllers
 {
+    using System;
     using System.Collections.Concurrent;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
+    using WebAPI.DTO;
+    using WebAPI.Trackers;
 
     /// <summary>
     ///     Search
@@ -19,6 +23,11 @@
         private ISoulseekClient Client { get; }
         private ISearchTracker Tracker { get; }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchesController"/> class.
+        /// </summary>
+        /// <param name="client"></param>
+        /// <param name="tracker"></param>
         public SearchesController(ISoulseekClient client, ISearchTracker tracker)
         {
             Client = client;
@@ -26,29 +35,38 @@
         }
 
         /// <summary>
-        ///     Performs a search for the specified <paramref name="searchText"/>.
+        ///     Performs a search for the specified <paramref name="request"/>.
         /// </summary>
-        /// <param name="searchText">The search phrase.</param>
-        /// <param name="token">The optional search token.</param>
+        /// <param name="request">The search request.</param>
         /// <returns></returns>
+        /// <response code="200">The search completed successfully.</response>
+        /// <response code="400">The specified <paramref name="request"/> was malformed.</response>
+        /// <response code="500">The search terminated abnormally.</response>
         [HttpPost("")]
-        public async Task<IActionResult> Post([FromBody]string searchText, [FromQuery]int? token = null)
+        [ProducesResponseType(typeof(IEnumerable<SearchResponse>), 200)]
+        [ProducesResponseType(400)]
+        [ProducesResponseType(typeof(string), 500)]
+        public async Task<IActionResult> Post([FromBody]SearchRequest request)
         {
-            Tracker.Clear();
+            var options = request.ToSearchOptions(
+                responseReceived: (e) => Tracker.AddOrUpdate(e),
+                stateChanged: (e) => Tracker.AddOrUpdate(e));
 
             var results = new ConcurrentBag<SearchResponse>();
 
             try
             {
-                await Client.SearchAsync(searchText, (r) => results.Add(r), token, new SearchOptions(
-                    responseReceived: (e) => Tracker.AddOrUpdate(e),
-                    stateChanged: (e) => Tracker.AddOrUpdate(e)));
-
+                await Client.SearchAsync(request.SearchText, (r) => results.Add(r), request.Token, options);
                 return Ok(results);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, $"Search terminated abnormally: {ex.Message}");
             }
             finally
             {
                 results = null;
+                Tracker.TryRemove(request.SearchText);
             }
         }
 
@@ -56,19 +74,12 @@
         ///     Gets the state of all current searches.
         /// </summary>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("")]
+        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult Get()
         {
-            var response = Tracker.Searches.Select(kvp => new
-            {
-                SearchText = kvp.Key,
-                kvp.Value.Token,
-                kvp.Value.State,
-                kvp.Value.ResponseCount,
-                kvp.Value.FileCount
-            });
-
-            return Ok(response);
+            return Ok(Tracker.Searches);
         }
 
         /// <summary>
@@ -76,7 +87,9 @@
         /// </summary>
         /// <param name="searchText">The search phrase of the desired search.</param>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("{searchText}")]
+        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult GetBySearchText([FromRoute]string searchText)
         {
             Tracker.Searches.TryGetValue(searchText, out var search);
@@ -86,14 +99,7 @@
                 return NotFound();
             }
 
-            return Ok(new
-            {
-                search.SearchText,
-                search.Token,
-                search.State,
-                search.ResponseCount,
-                search.FileCount
-            });
+            return Ok(search);
         }
 
         /// <summary>
@@ -101,17 +107,19 @@
         /// </summary>
         /// <param name="token">The token of the desired search.</param>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("{token:int}")]
+        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
         public IActionResult GetByToken([FromRoute]int token)
         {
-            var searchText = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token)?.SearchText;
+            var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
 
-            if (string.IsNullOrEmpty(searchText))
+            if (search == default)
             {
                 return NotFound();
             }
 
-            return GetBySearchText(searchText);
+            return Ok(search);
         }
     }
 }

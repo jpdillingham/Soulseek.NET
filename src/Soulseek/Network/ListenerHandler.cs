@@ -117,7 +117,7 @@ namespace Soulseek.Network
             catch (Exception ex)
             {
                 Diagnostic.Debug($"Failed to initialize direct connection from {connection.IPAddress}:{connection.Port}: {ex.Message}");
-                connection.Disconnect(ex.Message);
+                connection.Disconnect(exception: ex);
                 connection.Dispose();
             }
         }

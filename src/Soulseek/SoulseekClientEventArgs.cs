@@ -23,40 +23,6 @@ namespace Soulseek
     }
 
     /// <summary>
-    ///     Event arguments for events raised by a change in client state.
-    /// </summary>
-    public class SoulseekClientStateChangedEventArgs : SoulseekClientEventArgs
-    {
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClientStateChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="previousState">The previous state of the client.</param>
-        /// <param name="state">The current state of the client.</param>
-        /// <param name="message">The message associated with the change in state, if applicable.</param>
-        public SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null)
-        {
-            PreviousState = previousState;
-            State = state;
-            Message = message;
-        }
-
-        /// <summary>
-        ///     Gets the message associated with the change in state, if applicable.
-        /// </summary>
-        public string Message { get; }
-
-        /// <summary>
-        ///     Gets the previous client state.
-        /// </summary>
-        public SoulseekClientStates PreviousState { get; }
-
-        /// <summary>
-        ///     Gets the current client state.
-        /// </summary>
-        public SoulseekClientStates State { get; }
-    }
-
-    /// <summary>
     ///     Event arguments for events raised upon receipt of a private message.
     /// </summary>
     public class PrivateMessageEventArgs : SoulseekClientEventArgs
@@ -88,16 +54,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the message content.
-        /// </summary>
-        public string Message { get; }
-
-        /// <summary>
-        ///     Gets the username of the user which sent the message.
-        /// </summary>
-        public string Username { get; }
-
-        /// <summary>
         ///     Gets the unique id of the message.
         /// </summary>
         public int Id { get; }
@@ -108,8 +64,86 @@ namespace Soulseek
         public bool IsAdmin { get; }
 
         /// <summary>
+        ///     Gets the message content.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
         ///     Gets the timestamp at which the message was sent.
         /// </summary>
         public DateTime Timestamp { get; }
+
+        /// <summary>
+        ///     Gets the username of the user which sent the message.
+        /// </summary>
+        public string Username { get; }
+    }
+
+    /// <summary>
+    ///     Event arguments for events raised by client disconnect.
+    /// </summary>
+    public class SoulseekClientDisconnectedEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClientDisconnectedEventArgs"/> class.
+        /// </summary>
+        /// <param name="message">The message describing the reason for the disconnect.</param>
+        /// <param name="exception">The Exception associated with the disconnect, if applicable.</param>
+        public SoulseekClientDisconnectedEventArgs(string message, Exception exception = null)
+        {
+            Message = message;
+            Exception = exception;
+        }
+
+        /// <summary>
+        ///     Gets the Exception associated with change in state, if applicable.
+        /// </summary>
+        public Exception Exception { get; }
+
+        /// <summary>
+        ///     Gets the message describing the reason for the disconnect.
+        /// </summary>
+        public string Message { get; }
+    }
+
+    /// <summary>
+    ///     Event arguments for events raised by a change in client state.
+    /// </summary>
+    public class SoulseekClientStateChangedEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClientStateChangedEventArgs"/> class.
+        /// </summary>
+        /// <param name="previousState">The previous state of the client.</param>
+        /// <param name="state">The current state of the client.</param>
+        /// <param name="message">The message associated with the change in state, if applicable.</param>
+        /// <param name="exception">The Exception associated with the change in state, if applicable.</param>
+        public SoulseekClientStateChangedEventArgs(SoulseekClientStates previousState, SoulseekClientStates state, string message = null, Exception exception = null)
+        {
+            PreviousState = previousState;
+            State = state;
+            Message = message;
+            Exception = exception;
+        }
+
+        /// <summary>
+        ///     Gets the Exception associated with change in state, if applicable.
+        /// </summary>
+        public Exception Exception { get; }
+
+        /// <summary>
+        ///     Gets the message associated with the change in state, if applicable.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        ///     Gets the previous client state.
+        /// </summary>
+        public SoulseekClientStates PreviousState { get; }
+
+        /// <summary>
+        ///     Gets the current client state.
+        /// </summary>
+        public SoulseekClientStates State { get; }
     }
 }

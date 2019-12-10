@@ -199,7 +199,7 @@ namespace Soulseek.Tests.Unit
             {
                 await s.ConnectAsync();
 
-                s.InvokeMethod("ServerConnection_Disconnected", null, string.Empty);
+                s.InvokeMethod("ServerConnection_Disconnected", null, new ConnectionDisconnectedEventArgs(string.Empty));
 
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
             }
@@ -253,7 +253,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 using (var search1 = new SearchInternal(string.Empty, 0, new SearchOptions()))
                 using (var search2 = new SearchInternal(string.Empty, 1, new SearchOptions()))
@@ -281,7 +281,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var downloads = new ConcurrentDictionary<int, TransferInternal>();
                 downloads.TryAdd(0, new TransferInternal(TransferDirection.Download, string.Empty, string.Empty, 0));
@@ -307,7 +307,7 @@ namespace Soulseek.Tests.Unit
 
             using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object))
             {
-                await s.ConnectAsync();
+                s.SetProperty("State", SoulseekClientStates.Connected);
 
                 var ex = Record.Exception(() => s.Disconnect());
 
@@ -348,9 +348,59 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty));
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty, null));
 
                 Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Theory(DisplayName = "ChangeState fires Disconnected event when transitioning to Disconnected"), AutoData]
+        public void ChangeState_Fires_Disconnected_Event_When_Transitioning_To_Disconnected(string message, Exception exception)
+        {
+            using (var s = new SoulseekClient())
+            {
+                SoulseekClientDisconnectedEventArgs args= null;
+                s.Disconnected += (sender, e) => args = e;
+
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, message, exception));
+
+                Assert.Null(ex);
+                Assert.NotNull(args);
+                Assert.Equal(message, args.Message);
+                Assert.Equal(exception, args.Exception);
+            }
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Fact(DisplayName = "ChangeState fires Connected event when transitioning to Connected")]
+        public void ChangeState_Fires_Connected_Event_When_Transitioning_To_Connected()
+        {
+            using (var s = new SoulseekClient())
+            {
+                bool fired = false;
+                s.Connected += (sender, e) => fired = true;
+
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty, null));
+
+                Assert.Null(ex);
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Fact(DisplayName = "ChangeState fires LoggedIn event when transitioning to LoggedIn")]
+        public void ChangeState_Fires_LoggedIn_Event_When_Transitioning_To_LoggedIn()
+        {
+            using (var s = new SoulseekClient())
+            {
+                bool fired = false;
+                s.LoggedIn += (sender, e) => fired = true;
+
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, string.Empty, null));
+
+                Assert.Null(ex);
+                Assert.True(fired);
             }
         }
 

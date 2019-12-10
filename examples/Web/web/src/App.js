@@ -3,7 +3,7 @@ import { Route, Link, Switch } from "react-router-dom";
 
 import './App.css';
 import Search from './Search';
-import Downloads from './Downloads';
+import Transfers from './Transfers';
 
 import { 
     Sidebar,
@@ -35,11 +35,17 @@ class App extends Component {
                             <Icon name='download'/>Downloads
                         </Menu.Item>
                     </Link>
+                    <Link to='/uploads'>
+                        <Menu.Item>
+                            <Icon name='upload'/>Uploads
+                        </Menu.Item>
+                    </Link>
                 </Sidebar>
                 <Sidebar.Pusher className='app-content'>
                     <Switch>
                         <Route exact path='/' component={Search}/>
-                        <Route path='/downloads/' component={Downloads}/>
+                        <Route path='/downloads/' render={(props) => <Transfers {...props} direction='download'/>}/>
+                        <Route path='/uploads/' render={(props) => <Transfers {...props} direction='upload'/>}/>
                     </Switch>
                 </Sidebar.Pusher>
             </Sidebar.Pushable>

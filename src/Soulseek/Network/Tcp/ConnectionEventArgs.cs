@@ -54,6 +54,33 @@ namespace Soulseek.Network.Tcp
     }
 
     /// <summary>
+    ///     EventArgs for <see cref="Connection"/> events raised when the connection is disconnected.
+    /// </summary>
+    internal sealed class ConnectionDisconnectedEventArgs : ConnectionEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectionDisconnectedEventArgs"/> class.
+        /// </summary>
+        /// <param name="message">The message describing the reason for the disconnect.</param>
+        /// <param name="exception">The optional Exception associated with the disconnect.</param>
+        public ConnectionDisconnectedEventArgs(string message, Exception exception = null)
+        {
+            Message = message;
+            Exception = exception;
+        }
+
+        /// <summary>
+        ///     Gets the optional Exception associated with the disconnect.
+        /// </summary>
+        public Exception Exception { get; }
+
+        /// <summary>
+        ///     Gets the message describing the reason for the disconnect.
+        /// </summary>
+        public string Message { get; }
+    }
+
+    /// <summary>
     ///     EventArgs for <see cref="Connection"/> events raised by a change of connection state.
     /// </summary>
     internal sealed class ConnectionStateChangedEventArgs : ConnectionEventArgs
@@ -64,17 +91,24 @@ namespace Soulseek.Network.Tcp
         /// <param name="previousState">The state from which the connection changed.</param>
         /// <param name="currentState">The state to which the connection changed.</param>
         /// <param name="message">The optional message describing the nature of the change.</param>
-        public ConnectionStateChangedEventArgs(ConnectionState previousState, ConnectionState currentState, string message = null)
+        /// <param name="exception">The optional Exception associated with the change.</param>
+        public ConnectionStateChangedEventArgs(ConnectionState previousState, ConnectionState currentState, string message = null, Exception exception = null)
         {
             PreviousState = previousState;
             CurrentState = currentState;
             Message = message;
+            Exception = exception;
         }
 
         /// <summary>
         ///     Gets the state to which the connection changed.
         /// </summary>
         public ConnectionState CurrentState { get; }
+
+        /// <summary>
+        ///     Gets the optional Exception associated with the change.
+        /// </summary>
+        public Exception Exception { get; }
 
         /// <summary>
         ///     Gets the optional message describing the nature of the change.

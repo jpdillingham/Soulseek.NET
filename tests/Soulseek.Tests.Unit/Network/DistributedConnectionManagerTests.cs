@@ -175,7 +175,7 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetProperty("BranchLevel", 1);
                 manager.SetProperty("BranchRoot", "foo");
 
-                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, message);
+                manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(message));
 
                 Assert.Null(manager.GetProperty<IMessageConnection>("ParentConnection"));
                 Assert.Equal(0, manager.BranchLevel);
@@ -712,7 +712,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ChildConnections", children);
 
-                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
 
                 Assert.Empty(children);
             }
@@ -733,7 +733,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ChildConnections", children);
 
-                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -754,7 +754,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ChildConnections", children);
 
-                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("ChildConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Child foo") && s.ContainsInsensitive("disconnected"))), Times.Once);
@@ -770,7 +770,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                manager.InvokeMethod("ParentCandidateConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("ParentCandidateConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -786,7 +786,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                manager.InvokeMethod("ParentCandidateConnection_Disconnected", conn.Object, message);
+                manager.InvokeMethod("ParentCandidateConnection_Disconnected", conn.Object, new ConnectionDisconnectedEventArgs(message));
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Parent candidate") && s.ContainsInsensitive("disconnected"))), Times.Once);
@@ -1282,7 +1282,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.True(ex.Message.ContainsInsensitive($"Failed to initialize parent connection to {username}"));
             }
 
-            conn.Verify(m => m.Disconnect("One or more required messages was not received."), Times.Once);
+            conn.Verify(m => m.Disconnect("One or more required messages was not received.", It.IsAny<Exception>()), Times.Once);
             conn.Verify(m => m.Dispose(), Times.Once);
         }
 

@@ -162,7 +162,7 @@ namespace Soulseek.Network
 
             using (var cts = new CancellationTokenSource())
             {
-                void CancelWait(object sender, string message) => cts.Cancel();
+                void CancelWait(object sender, ConnectionDisconnectedEventArgs e) => cts.Cancel();
 
                 Diagnostic.Debug($"Attempting child connection to {r.Username} ({r.IPAddress}:{r.Port})");
 
@@ -186,7 +186,7 @@ namespace Soulseek.Network
                 catch (Exception ex)
                 {
                     Diagnostic.Debug($"Discarded child connection to {r.Username} ({r.IPAddress}:{r.Port}): {ex.Message}");
-                    CancelWait(this, ex.Message);
+                    CancelWait(this, null);
                     connection.Dispose();
                     throw;
                 }
@@ -226,7 +226,7 @@ namespace Soulseek.Network
 
             using (var cts = new CancellationTokenSource())
             {
-                void CancelWait(object sender, string message) => cts.Cancel();
+                void CancelWait(object sender, ConnectionDisconnectedEventArgs e) => cts.Cancel();
 
                 connection.Disconnected += CancelWait;
 
@@ -246,7 +246,7 @@ namespace Soulseek.Network
                 catch (Exception ex)
                 {
                     Diagnostic.Debug($"Discarded child connection to {username} ({connection.IPAddress}:{connection.Port}): {ex.Message}");
-                    CancelWait(this, ex.Message);
+                    CancelWait(this, null);
                     connection.Dispose();
                     throw;
                 }
@@ -400,11 +400,11 @@ namespace Soulseek.Network
             });
         }
 
-        private void ChildConnection_Disconnected(object sender, string message)
+        private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
             ChildConnections.TryRemove(connection.Username, out _);
-            Diagnostic.Debug($"Child {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected: {message}");
+            Diagnostic.Debug($"Child {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected: {e.Message}");
             connection.Dispose();
 
             UpdateStatusAsync().ConfigureAwait(false);
@@ -560,18 +560,18 @@ namespace Soulseek.Network
             }
         }
 
-        private void ParentCandidateConnection_Disconnected(object sender, string message)
+        private void ParentCandidateConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
 
-            Diagnostic.Debug($"{connection.Context} Parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(message == null ? string.Empty : $": {message}")}");
+            Diagnostic.Debug($"{connection.Context} Parent candidate {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(e.Message == null ? string.Empty : $": {e.Message}")}");
             connection.Dispose();
         }
 
-        private void ParentConnection_Disconnected(object sender, string message)
+        private void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
-            Diagnostic.Info($"Parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(message == null ? "." : $": {message}")}");
+            Diagnostic.Info($"Parent {connection.Username} ({connection.IPAddress}:{connection.Port}) disconnected{(e.Message == null ? "." : $": {e.Message}")}");
             ParentConnection = null;
             BranchLevel = 0;
             BranchRoot = string.Empty;

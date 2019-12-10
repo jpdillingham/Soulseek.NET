@@ -71,30 +71,30 @@ body {
     width: 65px;
 }
 
-.download-button {
+.transfer-button {
     color: black;
 }
 
-.download-card {
+.transfer-card {
     width: 1200px !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
 
-.download-segment {
+.transfer-segment {
     margin-top: 16px;
 }
 
-.downloadlist-size {
+.transferlist-size {
     width: 130px;
     min-width: 130px;
 }
 
-.downloadlist-progress {
+.transferlist-progress {
     max-width: 1000px;
 }
 
-.downloadlist-filename {
+.transferlist-filename {
     width: 800px;
     min-width: 800px;
     word-wrap: break-word !important;

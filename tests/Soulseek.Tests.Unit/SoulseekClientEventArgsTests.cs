@@ -11,6 +11,7 @@
 // </copyright>
 namespace Soulseek.Tests.Unit
 {
+    using System;
     using AutoFixture.Xunit2;
     using Xunit;
 
@@ -26,6 +27,30 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(previousState, s.PreviousState);
             Assert.Equal(state, s.State);
             Assert.Equal(message, s.Message);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "SoulseekClientStateChangedEventArgs")]
+        [Theory(DisplayName = "Instantiates with the given data and Exception"), AutoData]
+        public void SoulseekClientStateChangedEventArgs_Instantiates_With_The_Given_Data_And_Exception(SoulseekClientStates previousState, SoulseekClientStates state, string message, Exception ex)
+        {
+            var s = new SoulseekClientStateChangedEventArgs(previousState, state, message, ex);
+
+            Assert.Equal(previousState, s.PreviousState);
+            Assert.Equal(state, s.State);
+            Assert.Equal(message, s.Message);
+            Assert.Equal(ex, s.Exception);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "SoulseekClientDisconnectedEventArgs")]
+        [Theory(DisplayName = "Instantiates with the given data and Exception"), AutoData]
+        public void SoulseekClientDisconnectedEventArgs_Instantiates_With_The_Given_Data_And_Exception(string message, Exception ex)
+        {
+            var s = new SoulseekClientDisconnectedEventArgs(message, ex);
+
+            Assert.Equal(message, s.Message);
+            Assert.Equal(ex, s.Exception);
         }
     }
 }

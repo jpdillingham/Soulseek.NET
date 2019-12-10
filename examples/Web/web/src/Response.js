@@ -57,7 +57,7 @@ class Response extends Component {
             });
         }
 
-        return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
+        return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
     }
 
     render = () => {
