@@ -50,6 +50,26 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Debug")]
+        [Theory(DisplayName = "Raises event on debug with Exception"), AutoData]
+        public void Raises_Event_On_Debug_With_Exception(string message, Exception ex)
+        {
+            DiagnosticEventArgs e = null;
+
+            var d = new DiagnosticFactory(this, DiagnosticLevel.Debug, (args) =>
+            {
+                e = args;
+            });
+
+            d.Debug(message, ex);
+
+            Assert.Equal(message, e.Message);
+            Assert.Equal(ex, e.Exception);
+            Assert.Equal(DiagnosticLevel.Debug, e.Level);
+            Assert.False(e.IncludesException);
+            Assert.Null(e.Exception);
+        }
+
+        [Trait("Category", "Debug")]
         [Theory(DisplayName = "Does not raise event on debug when level is > Debug"), AutoData]
         public void Does_Not_Raise_Event_On_Debug_When_Level_Is_Gt_Debug(string message)
         {
