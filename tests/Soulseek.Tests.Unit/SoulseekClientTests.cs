@@ -354,6 +354,56 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "ChangeState")]
+        [Theory(DisplayName = "ChangeState fires Disconnected event when transitioning to Disconnected"), AutoData]
+        public void ChangeState_Fires_Disconnected_Event_When_Transitioning_To_Disconnected(string message, Exception exception)
+        {
+            using (var s = new SoulseekClient())
+            {
+                SoulseekClientDisconnectedEventArgs args= null;
+                s.Disconnected += (sender, e) => args = e;
+
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, message, exception));
+
+                Assert.Null(ex);
+                Assert.NotNull(args);
+                Assert.Equal(message, args.Message);
+                Assert.Equal(exception, args.Exception);
+            }
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Fact(DisplayName = "ChangeState fires Connected event when transitioning to Connected")]
+        public void ChangeState_Fires_Connected_Event_When_Transitioning_To_Connected()
+        {
+            using (var s = new SoulseekClient())
+            {
+                bool fired = false;
+                s.Connected += (sender, e) => fired = true;
+
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected, string.Empty, null));
+
+                Assert.Null(ex);
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "ChangeState")]
+        [Fact(DisplayName = "ChangeState fires LoggedIn event when transitioning to LoggedIn")]
+        public void ChangeState_Fires_LoggedIn_Event_When_Transitioning_To_LoggedIn()
+        {
+            using (var s = new SoulseekClient())
+            {
+                bool fired = false;
+                s.LoggedIn += (sender, e) => fired = true;
+
+                var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, string.Empty, null));
+
+                Assert.Null(ex);
+                Assert.True(fired);
+            }
+        }
+
         [Trait("Category", "GetNextToken")]
         [Theory(DisplayName = "GetNextToken invokes TokenFactory"), AutoData]
         public void GetNextToken_Invokes_TokenFactory(int token)
