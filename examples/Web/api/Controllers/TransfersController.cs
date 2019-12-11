@@ -92,48 +92,53 @@
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
             var stream = GetLocalFileStream(filename, OutputDirectory);
 
-            var cts = new CancellationTokenSource();
-            Console.WriteLine($"Created new token {cts.GetHashCode()}");
-
-            var downloadTask = Client.DownloadAsync(username, filename, stream, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
+            using (var cts = new CancellationTokenSource())
             {
-                Console.WriteLine($"Transfer state changed from {e.PreviousState} to {e.Transfer.State}");
-                Tracker.AddOrUpdate(e, cts);
-
-                if (e.Transfer.State == TransferStates.Queued)
+                var downloadTask = Client.DownloadAsync(username, filename, stream, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
                 {
-                    waitUntilEnqueue.SetResult(true);
-                }
-            }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
+                    Tracker.AddOrUpdate(e, cts);
 
-            try
-            {
-                // wait until either the waitUntilEnqueue task completes because the download was successfully queued, or the
-                // downloadTask throws due to an error prior to successfully queueing.
-                var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
-
-                if (task == downloadTask)
-                {
-                    var rejected = downloadTask.Exception.InnerExceptions.Where(e => e is TransferRejectedException);
-
-                    if (rejected.Any())
+                    if (e.Transfer.State == TransferStates.Queued)
                     {
-                        return StatusCode(403, rejected.First().Message);
+                        waitUntilEnqueue.SetResult(true);
+                    }
+                }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
+
+                try
+                {
+                    // wait until either the waitUntilEnqueue task completes because the download was successfully queued, or the
+                    // downloadTask throws due to an error prior to successfully queueing.
+                    var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
+
+                    if (task == downloadTask)
+                    {
+                        var rejected = downloadTask.Exception.InnerExceptions.Where(e => e is TransferRejectedException);
+
+                        if (rejected.Any())
+                        {
+                            return StatusCode(403, rejected.First().Message);
+                        }
+
+                        return StatusCode(500, downloadTask.Exception.Message);
                     }
 
-                    return StatusCode(500, downloadTask.Exception.Message);
+                    // if it didn't throw, just return ok. the download will continue waiting in the background.
+                    return Ok();
                 }
-
-                // if it didn't throw, just return ok. the download will continue waiting in the background.
-                return Ok();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex);
+                catch (Exception ex)
+                {
+                    return StatusCode(500, ex);
+                }
             }
         }
 
+        /// <summary>
+        ///     Gets all downloads.
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads")]
+        [ProducesResponseType(200)]
         public IActionResult GetDownloads()
         {
             return Ok(Tracker.Transfers
@@ -141,7 +146,14 @@
                 .ToMap());
         }
 
+        /// <summary>
+        ///     Gets all downloads for the specified username.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads/{username}")]
+        [ProducesResponseType(200)]
         public IActionResult GetDownloads([FromRoute, Required]string username)
         {
             return Ok(Tracker.Transfers
@@ -150,7 +162,15 @@
                 .ToMap());
         }
 
+        /// <summary>
+        ///     Gets the download for the specified username matching the specified filename.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads/{username}/{filename}")]
+        [ProducesResponseType(typeof(Transfer), 200)]
         public IActionResult GetDownloads([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
             return Ok(Tracker.Transfers
@@ -159,13 +179,27 @@
                 .WithFilename(filename).Transfer);
         }
 
+        /// <summary>
+        ///     Gets the current place in the remote queue of the specified download.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("downloads/{username}/{filename}/position")]
+        [ProducesResponseType(typeof(int), 200)]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
             return Ok(await Client.GetDownloadPlaceInQueueAsync(username, filename));
         }
 
+        /// <summary>
+        ///     Gets all uploads.
+        /// </summary>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("uploads")]
+        [ProducesResponseType(200)]
         public IActionResult GetUploads()
         {
             return Ok(Tracker.Transfers
@@ -173,7 +207,14 @@
                 .ToMap());
         }
 
+        /// <summary>
+        ///     Gets all uploads for the specified username.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("uploads/{username}")]
+        [ProducesResponseType(200)]
         public IActionResult GetUploads([FromRoute, Required]string username)
         {
             return Ok(Tracker.Transfers
@@ -182,7 +223,15 @@
                 .ToMap());
         }
 
+        /// <summary>
+        ///     Gets the upload for the specified username matching the specified filename.
+        /// </summary>
+        /// <param name="username"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("uploads/{username}/{filename}")]
+        [ProducesResponseType(200)]
         public IActionResult GetUploads([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
             return Ok(Tracker.Transfers
@@ -192,11 +241,8 @@
         }
 
         private static FileStream GetLocalFileStream(string remoteFilename, string saveDirectory)
-        {
-            // GetDirectoryName() and GetFileName() only work when the path separator is the same as the current OS'
-            // DirectorySeparatorChar. normalize for both Windows and Linux by replacing / and \ with Path.DirectorySeparatorChar.
+       {
             var localFilename = remoteFilename.ToLocalOSPath();
-
             var path = $"{saveDirectory}{Path.DirectorySeparatorChar}{Path.GetDirectoryName(localFilename).Replace(Path.GetDirectoryName(Path.GetDirectoryName(localFilename)), "")}";
 
             if (!System.IO.Directory.Exists(path))
