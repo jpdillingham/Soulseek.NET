@@ -37,27 +37,26 @@
         private string OutputDirectory { get; }
         private ITransferTracker Tracker { get; }
 
+
         [HttpDelete("downloads/{username}/{filename}")]
-        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filename)
+        public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
         {
-            return CancelTransfer(TransferDirection.Download, username, filename);
+            return CancelTransfer(TransferDirection.Download, username, filename, remove);
         }
 
         [HttpDelete("uploads/{username}/{filename}")]
-        public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filename)
+        public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
         {
-            return CancelTransfer(TransferDirection.Upload, username, filename);
+            return CancelTransfer(TransferDirection.Upload, username, filename, remove);
         }
 
-        private IActionResult CancelTransfer(TransferDirection direction, string username, string filename)
+        private IActionResult CancelTransfer(TransferDirection direction, string username, string filename, bool remove = false)
         {
-            Console.WriteLine($"Cancelling {direction} {username}, {filename}");
             if (Tracker.TryGet(direction, username, filename, out var transfer))
             {
-                Console.WriteLine($"Got token. cancelling {transfer.CancellationTokenSource.GetHashCode()}");
                 transfer.CancellationTokenSource.Cancel();
 
-                if (transfer.Transfer.State.HasFlag(TransferStates.Completed))
+                if (remove)
                 {
                     Tracker.TryRemove(direction, username, filename);
                 }
