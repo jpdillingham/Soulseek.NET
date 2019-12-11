@@ -3,9 +3,11 @@
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
     using Soulseek;
+    using Soulseek.Exceptions;
     using System;
     using System.ComponentModel.DataAnnotations;
     using System.IO;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
     using WebAPI.Trackers;
@@ -37,37 +39,54 @@
         private string OutputDirectory { get; }
         private ITransferTracker Tracker { get; }
 
-
+        /// <summary>
+        ///     Cancels the specified download.
+        /// </summary>
+        /// <param name="username">The username of the download source.</param>
+        /// <param name="filename">The download filename.</param>
+        /// <param name="remove">A value indicating whether the tracked download should be removed after cancellation.</param>
+        /// <returns></returns>
+        /// <response code="204">The download was cancelled successfully.</response>
+        /// <response code="404">The specified download was not found.</response>
         [HttpDelete("downloads/{username}/{filename}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
         public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
         {
             return CancelTransfer(TransferDirection.Download, username, filename, remove);
         }
 
+        /// <summary>
+        ///     Cancels the specified upload.
+        /// </summary>
+        /// <param name="username">The username of the upload destination.</param>
+        /// <param name="filename">The upload filename.</param>
+        /// <param name="remove">A value indicating whether the tracked upload should be removed after cancellation.</param>
+        /// <returns></returns>
+        /// <response code="204">The upload was cancelled successfully.</response>
+        /// <response code="404">The specified upload was not found.</response>
         [HttpDelete("uploads/{username}/{filename}")]
+        [ProducesResponseType(204)]
+        [ProducesResponseType(404)]
         public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
         {
             return CancelTransfer(TransferDirection.Upload, username, filename, remove);
         }
 
-        private IActionResult CancelTransfer(TransferDirection direction, string username, string filename, bool remove = false)
-        {
-            if (Tracker.TryGet(direction, username, filename, out var transfer))
-            {
-                transfer.CancellationTokenSource.Cancel();
-
-                if (remove)
-                {
-                    Tracker.TryRemove(direction, username, filename);
-                }
-
-                return NoContent();
-            }
-
-            return NotFound();
-        }
-
+        /// <summary>
+        ///     Enqueues the specified download.
+        /// </summary>
+        /// <param name="username">The username of the download source.</param>
+        /// <param name="filename">The download filename.</param>
+        /// <param name="token">The optional unique download token.</param>
+        /// <returns></returns>
+        /// <response code="200">The download was successfully enqueued.</response>
+        /// <response code="403">The download was rejected.</response>
+        /// <response code="500">An unexpected error was encountered.</response>
         [HttpPost("downloads/{username}/{filename}")]
+        [ProducesResponseType(200)]
+        [ProducesResponseType(typeof(string), 403)]
+        [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
@@ -95,6 +114,13 @@
 
                 if (task == downloadTask)
                 {
+                    var rejected = downloadTask.Exception.InnerExceptions.Where(e => e is TransferRejectedException);
+
+                    if (rejected.Any())
+                    {
+                        return StatusCode(403, rejected.First().Message);
+                    }
+
                     return StatusCode(500, downloadTask.Exception.Message);
                 }
 
@@ -181,6 +207,23 @@
             localFilename = Path.Combine(path, Path.GetFileName(localFilename));
 
             return new FileStream(localFilename, FileMode.Create);
+        }
+
+        private IActionResult CancelTransfer(TransferDirection direction, string username, string filename, bool remove = false)
+        {
+            if (Tracker.TryGet(direction, username, filename, out var transfer))
+            {
+                transfer.CancellationTokenSource.Cancel();
+
+                if (remove)
+                {
+                    Tracker.TryRemove(direction, username, filename);
+                }
+
+                return NoContent();
+            }
+
+            return NotFound();
         }
     }
 }
