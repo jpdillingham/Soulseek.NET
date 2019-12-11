@@ -49,7 +49,7 @@ body {
     margin-top: 20px !important;
 }
 
-.filelist-selector {
+.filelist-selector, .transferlist-selector {
     width: 40px;
 }
 
