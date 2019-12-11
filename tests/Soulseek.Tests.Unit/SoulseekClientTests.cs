@@ -247,7 +247,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears searches")]
-        public async Task Disconnect_Clears_Searches()
+        public void Disconnect_Clears_Searches()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -275,7 +275,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears downloads")]
-        public async Task Disconnect_Clears_Downloads()
+        public void Disconnect_Clears_Downloads()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -299,7 +299,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect clears peer queue")]
-        public async Task Disconnect_Clears_Peer_Queue()
+        public void Disconnect_Clears_Peer_Queue()
         {
             var c = new Mock<IMessageConnection>();
 
@@ -360,7 +360,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                SoulseekClientDisconnectedEventArgs args= null;
+                SoulseekClientDisconnectedEventArgs args = null;
                 s.Disconnected += (sender, e) => args = e;
 
                 var ex = Record.Exception(() => s.InvokeMethod("ChangeState", SoulseekClientStates.Disconnected, message, exception));
