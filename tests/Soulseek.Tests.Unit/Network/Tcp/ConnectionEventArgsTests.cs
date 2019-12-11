@@ -12,8 +12,8 @@
 
 namespace Soulseek.Tests.Unit
 {
-    using Soulseek.Network.Tcp;
     using System;
+    using Soulseek.Network.Tcp;
     using Xunit;
 
     public class ConnectionEventArgsTests
