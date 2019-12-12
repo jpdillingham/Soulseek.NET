@@ -321,6 +321,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -354,6 +355,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         public Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -639,6 +641,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
         public virtual Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -1229,7 +1232,7 @@ namespace Soulseek
 
                 return response.UserData;
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new AddUserException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
@@ -1265,7 +1268,7 @@ namespace Soulseek
 
                 return response.Directories;
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
@@ -1588,7 +1591,7 @@ namespace Soulseek
 
                 return (response.IPAddress, response.Port);
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserAddressException($"Failed to retrieve address for user {username}: {ex.Message}", ex);
             }

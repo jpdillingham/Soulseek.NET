@@ -151,6 +151,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
         Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
@@ -171,6 +172,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null);
 
@@ -297,6 +299,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
         Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
 
