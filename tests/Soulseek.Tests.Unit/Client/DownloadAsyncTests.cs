@@ -278,8 +278,8 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
-        [Theory(DisplayName = "DownloadAsync throws UserOfflineException on user offline"), AutoData]
-        public async Task DownloadAsync_Throws_UserOfflineException_On_User_Offline(IPAddress ip, int port)
+        [Fact(DisplayName = "DownloadAsync throws UserOfflineException on user offline")]
+        public async Task DownloadAsync_Throws_UserOfflineException_On_User_Offline()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)

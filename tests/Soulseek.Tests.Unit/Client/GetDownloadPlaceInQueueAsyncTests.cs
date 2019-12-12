@@ -138,6 +138,33 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetDownloadPlaceInQueueAsync")]
+        [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws UserOfflineException on user offline"), AutoData]
+        public async Task GetDownloadPlaceInQueueAsync_Throws_UserOfflineException_On_User_Offline(string username, string filename)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<UserAddressResponse>(new UserOfflineException()));
+
+            var serverConn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dict = new ConcurrentDictionary<int, TransferInternal>();
+                dict.GetOrAdd(0, new TransferInternal(TransferDirection.Download, username, filename, 0));
+
+                s.SetProperty("Downloads", dict);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetDownloadPlaceInQueueAsync(username, filename));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserOfflineException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetDownloadPlaceInQueueAsync")]
         [Theory(DisplayName = "GetDownloadPlaceInQueueAsync throws DownloadPlaceInQueueException on exception"), AutoData]
         public async Task GetDownloadPlaceInQueueAsync_Throws_DownloadPlaceInQueueException_On_Exception(string username, string filename)
         {
