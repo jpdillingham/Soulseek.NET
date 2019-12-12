@@ -139,8 +139,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(async () => await s.GetUserAddressAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<UserAddressException>(ex);
-                Assert.IsType<UserOfflineException>(ex.InnerException);
+                Assert.IsType<UserOfflineException>(ex);
             }
         }
 
