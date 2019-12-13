@@ -1069,6 +1069,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1138,6 +1139,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, long length, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1986,6 +1988,12 @@ namespace Soulseek
                 upload.Connection?.Disconnect("Transfer error.", ex);
 
                 Diagnostic.Debug(ex.ToString());
+
+                if (ex is UserOfflineException)
+                {
+                    throw;
+                }
+
                 throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
             }
             finally
