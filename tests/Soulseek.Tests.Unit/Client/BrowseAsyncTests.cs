@@ -201,6 +201,32 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseInternalAsync")]
+        [Theory(DisplayName = "BrowseInternalAsync throws UserOfflineException on user not found"), AutoData]
+        public async Task BrowseInternalAsync_Throws_UserOfflineException_On_User_Not_Found(string username, IPAddress ip, int port, string localUsername)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<UserAddressResponse>(new UserOfflineException()));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserOfflineException>(ex);
+            }
+        }
+
+        [Trait("Category", "BrowseInternalAsync")]
         [Theory(DisplayName = "BrowseInternalAsync throws BrowseException on disconnect"), AutoData]
         public async Task BrowseInternalAsync_Throws_BrowseException_On_Disconnect(string username, IPAddress ip, int port, string localUsername)
         {

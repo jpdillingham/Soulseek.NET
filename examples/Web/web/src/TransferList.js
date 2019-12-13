@@ -2,6 +2,10 @@ import React from 'react';
 import axios from 'axios';
 import { BASE_URL } from './constants';
 
+import {
+    Checkbox
+} from 'semantic-ui-react';
+
 import { formatBytes, getFileName } from './util';
 
 import { 
@@ -48,6 +52,12 @@ const TransferList = ({ username, directoryName, files, direction }) => (
             <Table>
                 <Table.Header>
                     <Table.Row>
+                        <Table.Cell className='transferlist-selector'>
+                            <Checkbox 
+                                fitted 
+                                checked={false}
+                            />
+                        </Table.Cell>
                         <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
                         <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
                         <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
@@ -58,6 +68,12 @@ const TransferList = ({ username, directoryName, files, direction }) => (
                 <Table.Body>
                     {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
                         <Table.Row key={i}>
+                            <Table.Cell className='transferlist-selector'>
+                                <Checkbox 
+                                    fitted 
+                                    checked={f.selected}
+                                />
+                            </Table.Cell>
                             <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell className='transferlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
                             <Table.Cell className='transferlist-progress'>

@@ -6,8 +6,17 @@
     using System.IO;
     using System.Linq;
 
+    /// <summary>
+    ///     Transfer extensions.
+    /// </summary>
     public static class TransferTrackerExtensions
     {
+        /// <summary>
+        ///     Filters a Transfer collection by direction.
+        /// </summary>
+        /// <param name="allTransfers"></param>
+        /// <param name="direction"></param>
+        /// <returns></returns>
         public static ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> WithDirection(
             this ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> allTransfers,
             TransferDirection direction)
@@ -16,6 +25,11 @@
             return transfers ?? new ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>();
         }
 
+        /// <summary>
+        ///     Maps a Transfer collection to a serializable object.
+        /// </summary>
+        /// <param name="directedTransfers"></param>
+        /// <returns></returns>
         public static object ToMap(
             this ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> directedTransfers)
         {
@@ -28,6 +42,12 @@
             });
         }
 
+        /// <summary>
+        ///     Filters a Transfer collection by user.
+        /// </summary>
+        /// <param name="directedTransfers"></param>
+        /// <param name="username"></param>
+        /// <returns></returns>
         public static ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> FromUser(
             this ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>> directedTransfers,
             string username)
@@ -35,7 +55,11 @@
             directedTransfers.TryGetValue(username, out var transfers);
             return transfers ?? new ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>();
         }
-
+        
+        /// <summary>
+        ///     Maps a Transfer collection to a serializable object.
+        /// </summary>
+        /// <param name="userTransfers"></param>
         public static object ToMap(
             this ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers)
         {
@@ -44,6 +68,12 @@
                 .Select(d => new { Directory = d.Key, Files = d.Select(r => r.Transfer)});
         }
 
+        /// <summary>
+        ///     Retrieves a Transfer from a Transfer collection by filename.
+        /// </summary>
+        /// <param name="userTransfers"></param>
+        /// <param name="filename"></param>
+        /// <returns></returns>
         public static (Transfer Transfer, CancellationTokenSource CancellationTokenSource) WithFilename(
             this ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers,
             string filename)
@@ -64,6 +94,9 @@
         public ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>> Transfers { get; private set; } =
             new ConcurrentDictionary<TransferDirection, ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer, CancellationTokenSource)>>>();
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="TransferTracker"/> class.
+        /// </summary>
         public TransferTracker()
         {
             Transfers.TryAdd(TransferDirection.Download, new ConcurrentDictionary<string, ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)>>());

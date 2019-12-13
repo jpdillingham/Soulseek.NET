@@ -166,7 +166,7 @@
                     {
                         using (var stream = new FileStream(f, FileMode.Open))
                         {
-                            await Client.UploadAsync(u, f, new FileInfo(f).Length, stream, options: topts);
+                            await Client.UploadAsync(u, f, new FileInfo(f).Length, stream, options: topts, cancellationToken: cts.Token);
                         }
 
                     }).ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);

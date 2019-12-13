@@ -88,6 +88,27 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserStatusAsync")]
+        [Theory(DisplayName = "GetUserStatusAsync throws UserOfflineException on user offline"), AutoData]
+        public async Task GetUserStatusAsync_Throws_UserOfflineException_On_User_Offline(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<UserStatusResponse>(new UserOfflineException()));
+
+            var serverConn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GetUserStatusAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserOfflineException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetUserStatusAsync throws UserStatusException on throw"), AutoData]
         public async Task GetUserStatusAsync_Throws_UserStatusException_On_Throw(string username, UserStatus status, bool privileged)
         {

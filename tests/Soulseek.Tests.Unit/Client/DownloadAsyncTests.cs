@@ -278,6 +278,33 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws UserOfflineException on user offline")]
+        public async Task DownloadAsync_Throws_UserOfflineException_On_User_Offline()
+        {
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var options = new SoulseekClientOptions(messageTimeout: 1);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<UserAddressResponse>(new UserOfflineException()));
+
+            var manager = new Mock<IPeerConnectionManager>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, options: options, peerConnectionManager: manager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", "filename"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserOfflineException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
         [Theory(DisplayName = "DownloadAsync throws TimeoutException on peer message connection timeout"), AutoData]
         public async Task DownloadAsync_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPAddress ip, int port)
         {

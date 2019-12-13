@@ -175,6 +175,29 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "GetUserInfoAsync")]
+        [Theory(DisplayName = "GetUserInfoAsync throws UserOfflineException on user offline"), AutoData]
+        public async Task GetUserInfoAsync_Throws_UserOfflineException_On_User_Offline(string username)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<UserAddressResponse>(new UserOfflineException()));
+
+            var serverConn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                UserInfo info = null;
+                var ex = await Record.ExceptionAsync(async () => info = await s.GetUserInfoAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserOfflineException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetUserInfoAsync")]
         [Theory(DisplayName = "GetUserInfoAsync throws UserInfoException on throw"), AutoData]
         public async Task GetUserInfoAsync_Throws_UserInfoException_On_Throw(string username, string description, byte[] picture, int uploadSlots, int queueLength, bool hasFreeSlot)
         {

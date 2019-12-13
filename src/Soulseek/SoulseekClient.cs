@@ -321,6 +321,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
         /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -354,6 +355,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
         public Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -437,6 +439,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -499,6 +502,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task DownloadAsync(string username, string filename, Stream outputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -559,6 +563,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="DownloadPlaceInQueueException">Thrown when an exception is encountered during the operation.</exception>
         public Task<int> GetDownloadPlaceInQueueAsync(string username, string filename, CancellationToken? cancellationToken = null)
         {
@@ -639,6 +644,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
         public virtual Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -667,6 +673,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserInfoException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -695,6 +702,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
         public Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
         {
@@ -1061,6 +1069,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, byte[] data, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1130,6 +1139,7 @@ namespace Soulseek
         /// </exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
         public Task UploadAsync(string username, string filename, long length, Stream inputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
@@ -1229,7 +1239,7 @@ namespace Soulseek
 
                 return response.UserData;
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new AddUserException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
@@ -1265,7 +1275,7 @@ namespace Soulseek
 
                 return response.Directories;
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
             }
@@ -1524,6 +1534,12 @@ namespace Soulseek
                 download.Connection?.Disconnect("Transfer error.", ex);
 
                 Diagnostic.Debug(ex.ToString());
+
+                if (ex is UserOfflineException)
+                {
+                    throw;
+                }
+
                 throw new TransferException($"Failed to download file {filename} from user {username}: {ex.Message}", ex);
             }
             finally
@@ -1564,7 +1580,7 @@ namespace Soulseek
 
                 return response.PlaceInQueue;
             }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new DownloadPlaceInQueueException($"Failed to fetch place in queue for download of {filename} from {username}: {ex.Message}", ex);
             }
@@ -1588,7 +1604,7 @@ namespace Soulseek
 
                 return (response.IPAddress, response.Port);
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserAddressException($"Failed to retrieve address for user {username}: {ex.Message}", ex);
             }
@@ -1610,7 +1626,7 @@ namespace Soulseek
 
                 return response;
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserInfoException($"Failed to retrieve information for user {username}: {ex.Message}", ex);
             }
@@ -1627,7 +1643,7 @@ namespace Soulseek
 
                 return (response.Status, response.IsPrivileged);
             }
-            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
             }
@@ -1972,6 +1988,12 @@ namespace Soulseek
                 upload.Connection?.Disconnect("Transfer error.", ex);
 
                 Diagnostic.Debug(ex.ToString());
+
+                if (ex is UserOfflineException)
+                {
+                    throw;
+                }
+
                 throw new TransferException($"Failed to upload file {filename} to user {username}: {ex.Message}", ex);
             }
             finally
