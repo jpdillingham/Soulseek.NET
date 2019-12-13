@@ -357,7 +357,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws UserOfflineException when user offline"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_UserOfflineException_When_User_Offline(string username, IPAddress ip, int port, string filename, byte[] data, int token)
+        public async Task UploadFromByteArrayAsync_Throws_UserOfflineException_When_User_Offline(string username, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -369,7 +369,6 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            var transferConn = new Mock<IConnection>();
             var connManager = new Mock<IPeerConnectionManager>();
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))

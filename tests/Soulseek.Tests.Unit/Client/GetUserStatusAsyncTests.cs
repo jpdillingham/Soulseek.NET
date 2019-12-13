@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetUserStatusAsync throws UserOfflineException on user offline"), AutoData]
-        public async Task GetUserStatusAsync_Throws_UserOfflineException_On_User_Offline(string username, UserStatus status, bool privileged)
+        public async Task GetUserStatusAsync_Throws_UserOfflineException_On_User_Offline(string username)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
