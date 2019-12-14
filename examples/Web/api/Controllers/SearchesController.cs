@@ -89,7 +89,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("{searchText}")]
-        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
+        [ProducesResponseType(typeof(Search), 200)]
         public IActionResult GetBySearchText([FromRoute]string searchText)
         {
             Tracker.Searches.TryGetValue(searchText, out var search);
@@ -109,7 +109,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("{token:int}")]
-        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
+        [ProducesResponseType(typeof(Search), 200)]
         public IActionResult GetByToken([FromRoute]int token)
         {
             var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);

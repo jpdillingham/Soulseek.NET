@@ -2,11 +2,11 @@
 {
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
-    using System.Net;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using Soulseek.Exceptions;
+    using WebAPI.DTO;
 
     /// <summary>
     ///     Users
@@ -34,15 +34,16 @@
         /// </summary>
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
+        /// <response code="200">The request completed successfully.</response>
         [HttpGet("{username}/address")]
-        [ProducesResponseType(typeof((IPAddress, int)), 200)]
+        [ProducesResponseType(typeof(UserAddress), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Address([FromRoute, Required]string username)
         {
             try
             {
                 var response = await Client.GetUserAddressAsync(username);
-                return Ok(new { response.IPAddress, response.Port });
+                return Ok(new UserAddress() { IPAddress = response.IPAddress, Port = response.Port });
             }
             catch (UserOfflineException ex)
             {
@@ -98,14 +99,14 @@
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
         [HttpGet("{username}/status")]
-        [ProducesResponseType(typeof((UserStatus, bool)), 200)]
+        [ProducesResponseType(typeof(DTO.UserStatus), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Status([FromRoute, Required]string username)
         {
             try
             {
                 var response = await Client.GetUserStatusAsync(username);
-                return Ok(new { response.Status, response.IsPrivileged });
+                return Ok(new DTO.UserStatus() { Status = response.Status, IsPrivileged = response.IsPrivileged });
             }
             catch (UserOfflineException ex)
             {
