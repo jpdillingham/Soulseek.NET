@@ -4,7 +4,7 @@
 
     public class UserAddress
     {
-        public IPAddress IPAddress { get; set; }
+        public string IPAddress { get; set; }
         public int Port { get; set; }
     }
 }

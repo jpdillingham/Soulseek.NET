@@ -43,7 +43,7 @@
             try
             {
                 var response = await Client.GetUserAddressAsync(username);
-                return Ok(new UserAddress() { IPAddress = response.IPAddress, Port = response.Port });
+                return Ok(new UserAddress() { IPAddress = response.IPAddress.ToString(), Port = response.Port });
             }
             catch (UserOfflineException ex)
             {
