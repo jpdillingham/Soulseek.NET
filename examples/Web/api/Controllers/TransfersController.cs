@@ -80,11 +80,11 @@
         /// <param name="filename">The download filename.</param>
         /// <param name="token">The optional unique download token.</param>
         /// <returns></returns>
-        /// <response code="200">The download was successfully enqueued.</response>
+        /// <response code="201">The download was successfully enqueued.</response>
         /// <response code="403">The download was rejected.</response>
         /// <response code="500">An unexpected error was encountered.</response>
         [HttpPost("downloads/{username}/{filename}")]
-        [ProducesResponseType(200)]
+        [ProducesResponseType(201)]
         [ProducesResponseType(typeof(string), 403)]
         [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
@@ -123,7 +123,7 @@
                     }
 
                     // if it didn't throw, just return ok. the download will continue waiting in the background.
-                    return Ok();
+                    return StatusCode(201);
                 }
                 catch (Exception ex)
                 {

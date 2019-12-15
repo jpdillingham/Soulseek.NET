@@ -42,8 +42,8 @@
         {
             try
             {
-                var response = await Client.GetUserAddressAsync(username);
-                return Ok(new UserAddress() { IPAddress = response.IPAddress.ToString(), Port = response.Port });
+                var (ipAddress, port) = await Client.GetUserAddressAsync(username);
+                return Ok(new UserAddress() { IPAddress = ipAddress.ToString(), Port = port });
             }
             catch (UserOfflineException ex)
             {
