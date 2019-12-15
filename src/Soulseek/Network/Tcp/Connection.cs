@@ -52,7 +52,11 @@ namespace Soulseek.Network.Tcp
                     Interval = Options.InactivityTimeout * 1000,
                 };
 
-                InactivityTimer.Elapsed += (sender, e) => Disconnect($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
+                InactivityTimer.Elapsed += (sender, e) =>
+                {
+                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
+                    Disconnect(ex.Message, ex);
+                };
             }
 
             WatchdogTimer = new SystemTimer()
