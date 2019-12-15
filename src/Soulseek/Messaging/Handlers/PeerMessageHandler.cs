@@ -214,9 +214,9 @@ namespace Soulseek.Messaging.Handlers
             try
             {
                 await SoulseekClient.Options
-                    .QueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
+                    .EnqueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
             }
-            catch (QueueDownloadException ex)
+            catch (EnqueueDownloadException ex)
             {
                 // pass the exception message through to the remote user only if QueueDownloadException is thrown
                 rejected = true;

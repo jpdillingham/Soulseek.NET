@@ -29,7 +29,7 @@ namespace Soulseek
         private readonly Func<string, IPAddress, int, Task<IEnumerable<Directory>>> defaultBrowseResponse =
             (u, i, p) => Task.FromResult(Enumerable.Empty<Directory>());
 
-        private readonly Func<string, IPAddress, int, string, Task> defaultQueueDownloadAction =
+        private readonly Func<string, IPAddress, int, string, Task> defaultEnqueueDownloadAction =
             (u, i, p, f) => { return Task.CompletedTask; };
 
         private readonly Func<string, IPAddress, int, Task<UserInfo>> defaultUserInfoResponse =
@@ -61,7 +61,7 @@ namespace Soulseek
         /// <param name="userInfoResponseResolver">
         ///     The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.
         /// </param>
-        /// <param name="queueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>.</param>
+        /// <param name="enqueueDownloadAction">The delegate invoked upon an receipt of an incoming <see cref="EnqueueDownloadRequest"/>.</param>
         /// <param name="placeInQueueResponseResolver">
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
@@ -87,7 +87,7 @@ namespace Soulseek
             Func<string, int, string, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPAddress, int, Task<IEnumerable<Directory>>> browseResponseResolver = null,
             Func<string, IPAddress, int, Task<UserInfo>> userInfoResponseResolver = null,
-            Func<string, IPAddress, int, string, Task> queueDownloadAction = null,
+            Func<string, IPAddress, int, string, Task> enqueueDownloadAction = null,
             Func<string, IPAddress, int, string, Task<int>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
@@ -120,7 +120,7 @@ namespace Soulseek
             SearchResponseResolver = searchResponseResolver;
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
             UserInfoResponseResolver = userInfoResponseResolver ?? defaultUserInfoResponse;
-            QueueDownloadAction = queueDownloadAction ?? defaultQueueDownloadAction;
+            EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
             PlaceInQueueResponseResolver = placeInQueueResponseResolver;
         }
 
@@ -130,8 +130,7 @@ namespace Soulseek
         public bool AutoAcknowledgePrivateMessages { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the response for an incoming request. (Default = a response
-        ///     with no files or directories).
+        ///     Gets the delegate used to resolve the response for an incoming request. (Default = a response with no files or directories).
         /// </summary>
         public Func<string, IPAddress, int, Task<IEnumerable<Directory>>> BrowseResponseResolver { get; }
 
@@ -149,6 +148,15 @@ namespace Soulseek
         ///     Gets the options for distributed message connections.
         /// </summary>
         public ConnectionOptions DistributedConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the delegate invoked upon an receipt of an incoming <see cref="EnqueueDownloadRequest"/>. (Default = do nothing).
+        /// </summary>
+        /// <remarks>
+        ///     This delegate must throw an Exception to indicate a rejected download. If the thrown Exception is of type
+        ///     <see cref="EnqueueDownloadException"/> the message will be sent to the client, otherwise a default message will be sent.
+        /// </remarks>
+        public Func<string, IPAddress, int, string, Task> EnqueueDownloadAction { get; }
 
         /// <summary>
         ///     Gets the options for incoming connections.
@@ -181,15 +189,6 @@ namespace Soulseek
         public Func<string, IPAddress, int, string, Task<int>> PlaceInQueueResponseResolver { get; }
 
         /// <summary>
-        ///     Gets the delegate invoked upon an receipt of an incoming <see cref="QueueDownloadRequest"/>. (Default = do nothing).
-        /// </summary>
-        /// <remarks>
-        ///     This delegate must throw an Exception to indicate a rejected download. If the thrown Exception is of type
-        ///     <see cref="QueueDownloadException"/> the message will be sent to the client, otherwise a default message will be sent.
-        /// </remarks>
-        public Func<string, IPAddress, int, string, Task> QueueDownloadAction { get; }
-
-        /// <summary>
         ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
         /// </summary>
         public Func<string, int, string, Task<SearchResponse>> SearchResponseResolver { get; }
@@ -210,8 +209,7 @@ namespace Soulseek
         public ConnectionOptions TransferConnectionOptions { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a
-        ///     blank/zeroed response).
+        ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
         /// </summary>
         public Func<string, IPAddress, int, Task<UserInfo>> UserInfoResponseResolver { get; }
     }
