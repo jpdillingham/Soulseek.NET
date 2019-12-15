@@ -1257,9 +1257,9 @@ namespace Soulseek
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
                 connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                connection.Disconnected += (sender, message) =>
+                connection.Disconnected += (sender, args) =>
                 {
-                    Waiter.Throw(waitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {message}"));
+                    Waiter.Throw(waitKey, args.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}"));
                 };
 
                 var sw = new System.Diagnostics.Stopwatch();
