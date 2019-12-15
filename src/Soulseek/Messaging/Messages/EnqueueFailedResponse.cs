@@ -1,4 +1,4 @@
-﻿// <copyright file="QueueDownloadRequest.cs" company="JP Dillingham">
+﻿// <copyright file="EnqueueFailedResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,41 +15,50 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     A request to queue a file.
+    ///     The response received when an attempt to queue a file for downloading has failed.
     /// </summary>
-    internal sealed class QueueDownloadRequest
+    internal sealed class EnqueueFailedResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="QueueDownloadRequest"/> class.
+        ///     Initializes a new instance of the <see cref="EnqueueFailedResponse"/> class.
         /// </summary>
-        /// <param name="filename">The name of the file being enqueued.</param>
-        public QueueDownloadRequest(string filename)
+        /// <param name="filename">The filename which failed to be queued.</param>
+        /// <param name="message">The reason for the failure.</param>
+        public EnqueueFailedResponse(string filename, string message)
         {
             Filename = filename;
+            Message = message;
         }
 
         /// <summary>
-        ///     Gets the name of the file being enqueued.
+        ///     Gets the filename which failed to be queued.
         /// </summary>
         public string Filename { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="QueueDownloadRequest"/> from the specified <paramref name="bytes"/>.
+        ///     Gets the reason for the failure.
+        /// </summary>
+        public string Message { get; }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="EnqueueFailedResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static QueueDownloadRequest FromByteArray(byte[] bytes)
+        public static EnqueueFailedResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Peer>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Peer.QueueDownload)
+            if (code != MessageCode.Peer.QueueFailed)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Queue Download (expected: {(int)MessageCode.Peer.QueueDownload}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.Peer.QueueFailed}, received: {(int)code}.");
             }
 
             var filename = reader.ReadString();
-            return new QueueDownloadRequest(filename);
+            var msg = reader.ReadString();
+
+            return new EnqueueFailedResponse(filename, msg);
         }
 
         /// <summary>
@@ -59,8 +68,9 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Peer.QueueDownload)
+                .WriteCode(MessageCode.Peer.QueueFailed)
                 .WriteString(Filename)
+                .WriteString(Message)
                 .Build();
         }
     }

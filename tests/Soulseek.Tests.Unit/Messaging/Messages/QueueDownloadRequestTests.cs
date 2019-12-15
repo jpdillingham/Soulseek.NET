@@ -24,9 +24,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(string filename)
         {
-            QueueDownloadRequest response = null;
+            EnqueueDownloadRequest response = null;
 
-            var ex = Record.Exception(() => response = new QueueDownloadRequest(filename));
+            var ex = Record.Exception(() => response = new EnqueueDownloadRequest(filename));
 
             Assert.Null(ex);
 
@@ -41,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => QueueDownloadRequest.FromByteArray(msg));
+            var ex = Record.Exception(() => EnqueueDownloadRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -55,7 +55,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.QueueDownload)
                 .Build();
 
-            var ex = Record.Exception(() => QueueDownloadRequest.FromByteArray(msg));
+            var ex = Record.Exception(() => EnqueueDownloadRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -70,7 +70,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString(filename)
                 .Build();
 
-            var response = QueueDownloadRequest.FromByteArray(msg);
+            var response = EnqueueDownloadRequest.FromByteArray(msg);
 
             Assert.Equal(filename, response.Filename);
         }
@@ -79,7 +79,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "ToByteArray returns expected data"), AutoData]
         public void ToByteArray_Returns_Expected_Data(string filename)
         {
-            var a = new QueueDownloadRequest(filename);
+            var a = new EnqueueDownloadRequest(filename);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Peer>(msg);
