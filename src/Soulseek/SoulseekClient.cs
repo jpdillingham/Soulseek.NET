@@ -1262,6 +1262,8 @@ namespace Soulseek
                     Waiter.Throw(waitKey, args.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}"));
                 };
 
+                connection.PreventInactivityTimeout(true);
+
                 var sw = new System.Diagnostics.Stopwatch();
                 Diagnostic.Debug($"Sending browse request to peer {username}");
                 sw.Start();
@@ -1278,6 +1280,17 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
+            }
+            finally
+            {
+                try
+                {
+                    connection?.PreventInactivityTimeout(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    // swallow; inactivity is irrelevant
+                }
             }
         }
 
