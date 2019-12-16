@@ -265,8 +265,7 @@ namespace Soulseek.Network
         ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
         /// </summary>
         /// <remarks>
-        ///     If a connection doesn't exist, a new direct connection is attempted first, and, if unsuccessful, an indirect
-        ///     connection is attempted.
+        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to connect is returned.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="ipAddress">The remote IP address of the connection.</param>
