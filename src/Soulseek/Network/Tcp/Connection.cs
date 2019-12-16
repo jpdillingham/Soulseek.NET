@@ -301,7 +301,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="enabled">A value indicating whether the prevention should be enabled.</param>
         public void PreventInactivityTimeout(bool enabled)
         {
-            InactivityTimer.Interval = enabled ? int.MaxValue : Options.InactivityTimeout;
+            InactivityTimer.Interval = enabled ? int.MaxValue : Options.InactivityTimeout * 1000;
             InactivityTimer.Reset();
         }
 
