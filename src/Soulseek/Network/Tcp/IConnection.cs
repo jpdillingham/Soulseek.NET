@@ -111,6 +111,17 @@ namespace Soulseek.Network.Tcp
         ITcpClient HandoffTcpClient();
 
         /// <summary>
+        ///     Prevents or reverts prevention of an inactivity timeout, depending on <paramref name="enabled"/>.
+        /// </summary>
+        /// <remarks>
+        ///     This is needed to allow long-running operations (such as a browse request) time for the remote client to begin a
+        ///     response. Because connections are "pooled" per username, the timeout can't be overriden at the time of creation,
+        ///     and instead the inactivity timer must be defeated during long-running requests.
+        /// </remarks>
+        /// <param name="enabled">A value indicating whether the prevention should be enabled.</param>
+        void PreventInactivityTimeout(bool enabled);
+
+        /// <summary>
         ///     Asynchronously reads the specified number of bytes from the connection.
         /// </summary>
         /// <remarks>The connection is disconnected if a <see cref="ConnectionReadException"/> is thrown.</remarks>
@@ -136,7 +147,9 @@ namespace Soulseek.Network.Tcp
         /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="outputStream"/> is not writeable.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// </exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
         ///     is not connected.
@@ -170,7 +183,9 @@ namespace Soulseek.Network.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="inputStream"/> is not readable.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="inputStream"/> is not readable.
+        /// </exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
         ///     is not connected.
