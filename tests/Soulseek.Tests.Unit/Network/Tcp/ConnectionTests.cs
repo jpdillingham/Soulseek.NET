@@ -1350,6 +1350,24 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
+        [Trait("Category", "PreventInactivityTimeout")]
+        [Fact(DisplayName = "PreventInactivityTimeout(true) extends timer interval")]
+        public void PreventInactivtyTimeout_True_Extends_Timer_Interval()
+        {
+            using (var c = new Connection(new IPAddress(0x0), 1))
+            {
+                var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer");
+                var firstInterval = timer.Interval;
+
+                c.PreventInactivityTimeout(true);
+
+                var secondInterval = timer.Interval;
+
+                Assert.Equal(firstInterval, new ConnectionOptions().InactivityTimeout * 1000);
+                Assert.Equal(secondInterval, int.MaxValue);
+            }
+        }
+
         private class UnReadableWriteableStream : Stream
         {
             public override bool CanRead => false;
