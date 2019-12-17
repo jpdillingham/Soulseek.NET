@@ -94,7 +94,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the current average download speed.
+        ///     Gets the current average transfer speed.
         /// </summary>
         public double AverageSpeed { get; }
 
