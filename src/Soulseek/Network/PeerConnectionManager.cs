@@ -639,7 +639,7 @@ namespace Soulseek.Network
         {
             if (MessageConnectionDictionary.TryRemove(connection.Key.Username, out _))
             {
-                Diagnostic.Debug($"Removing message connection to {connection.Key.Username} ({connection.IPAddress}:{connection.Port})");
+                Diagnostic.Debug($"Removing {connection.Context} message connection to {connection.Key.Username} ({connection.IPAddress}:{connection.Port})");
 
                 // only release if we successfully removed a connection. this can throw if another thread released it first and
                 // the semaphore tries to release more than its capacity.
