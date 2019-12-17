@@ -21,9 +21,14 @@ namespace Soulseek.Network
     internal interface IMessageConnection : IConnection
     {
         /// <summary>
-        ///     Occurs when a new message is received.
+        ///     Occurs when a new message is read in its entirety.
         /// </summary>
-        event EventHandler<byte[]> MessageRead;
+        event EventHandler<MessageReadEventArgs> MessageRead;
+
+        /// <summary>
+        ///     Occurs when a new message is received, but before it is read.
+        /// </summary>
+        event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.

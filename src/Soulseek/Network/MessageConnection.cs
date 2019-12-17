@@ -72,9 +72,14 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Occurs when a new message is received.
+        ///     Occurs when a new message is read in its entirety.
         /// </summary>
-        public event EventHandler<byte[]> MessageRead;
+        public event EventHandler<MessageReadEventArgs> MessageRead;
+
+        /// <summary>
+        ///     Occurs when a new message is received, but before it is read.
+        /// </summary>
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -124,14 +129,14 @@ namespace Soulseek.Network
                     var codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
                     message.AddRange(codeBytes);
 
-                    MessageCodeReceived?.Invoke(this, codeBytes);
+                    MessageReceived?.Invoke(this, new MessageReceivedEventArgs(length, codeBytes));
 
                     var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
                     message.AddRange(payloadBytes);
 
                     var messageBytes = message.ToArray();
 
-                    MessageRead?.Invoke(this, messageBytes);
+                    MessageRead?.Invoke(this, new MessageReadEventArgs(messageBytes));
                 }
             }
             finally
