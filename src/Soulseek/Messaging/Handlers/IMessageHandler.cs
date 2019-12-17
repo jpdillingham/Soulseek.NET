@@ -24,6 +24,13 @@ namespace Soulseek.Messaging.Handlers
         ///     Handles incoming messages.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="args">The message event args.</param>
+        void HandleMessage(object sender, MessageReadEventArgs args);
+
+        /// <summary>
+        ///     Handles incoming messages.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="message">The message.</param>
         void HandleMessage(object sender, byte[] message);
     }
