@@ -1378,7 +1378,7 @@ namespace Soulseek
                 TransferStateChanged?.Invoke(this, args);
             }
 
-            void UpdateProgress(int bytesDownloaded)
+            void UpdateProgress(long bytesDownloaded)
             {
                 var lastBytes = download.BytesTransferred;
                 download.UpdateProgress(bytesDownloaded);
@@ -1866,7 +1866,7 @@ namespace Soulseek
                 TransferStateChanged?.Invoke(this, args);
             }
 
-            void UpdateProgress(int bytesUploaded)
+            void UpdateProgress(long bytesUploaded)
             {
                 var lastBytes = upload.BytesTransferred;
                 upload.UpdateProgress(bytesUploaded);
