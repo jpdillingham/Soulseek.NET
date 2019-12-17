@@ -164,6 +164,7 @@ namespace Soulseek
         ///     If a local timeout is desired, specify an appropriate <see cref="CancellationToken"/>.
         /// </remarks>
         /// <param name="username">The user to browse.</param>
+        /// <param name="options">The operation <see cref="BrowseOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the fetched list of files.</returns>
         /// <exception cref="ArgumentException">
@@ -174,7 +175,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
-        Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null);
+        Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.

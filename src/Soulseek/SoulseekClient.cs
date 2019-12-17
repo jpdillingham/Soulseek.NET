@@ -347,6 +347,7 @@ namespace Soulseek
         ///     If a local timeout is desired, specify an appropriate <see cref="CancellationToken"/>.
         /// </remarks>
         /// <param name="username">The user to browse.</param>
+        /// <param name="options">The operation <see cref="BrowseOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the fetched list of files.</returns>
         /// <exception cref="ArgumentException">
@@ -357,7 +358,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="BrowseException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -369,7 +370,9 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to browse (currently: {State})");
             }
 
-            return BrowseInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            options = options ?? new BrowseOptions();
+
+            return BrowseInternalAsync(username, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1245,7 +1248,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<IReadOnlyCollection<Directory>> BrowseInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<Directory>> BrowseInternalAsync(string username, BrowseOptions options, CancellationToken cancellationToken)
         {
             IMessageConnection connection = null;
 
@@ -1257,24 +1260,15 @@ namespace Soulseek
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
                 connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                connection.Disconnected += (sender, args) =>
+                connection.Disconnected += (sender, e) =>
                 {
-                    Waiter.Throw(waitKey, args.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}"));
+                    Waiter.Throw(waitKey, e.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
                 };
 
                 connection.PreventInactivityTimeout(true);
-
-                var sw = new System.Diagnostics.Stopwatch();
-                Diagnostic.Debug($"Sending browse request to peer {username}");
-                sw.Start();
-
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
-
-                sw.Stop();
-                Diagnostic.Debug($"Browse of {username} completed in {sw.ElapsedMilliseconds}ms.  {response.DirectoryCount} directories fetched");
-
                 return response.Directories;
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
@@ -1289,7 +1283,7 @@ namespace Soulseek
                 }
                 catch (ObjectDisposedException)
                 {
-                    // swallow; inactivity is irrelevant
+                    // swallow; inactivity is irrelevant if connection is disposed
                 }
             }
         }
