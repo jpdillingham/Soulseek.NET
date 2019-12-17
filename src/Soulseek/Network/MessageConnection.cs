@@ -72,6 +72,11 @@ namespace Soulseek.Network
         }
 
         /// <summary>
+        ///     Occurs when a new message code is recieved, but before the message is read.
+        /// </summary>
+        public event EventHandler<byte[]> MessageCodeReceived;
+
+        /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
         public event EventHandler<byte[]> MessageRead;
@@ -123,6 +128,8 @@ namespace Soulseek.Network
 
                     var codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
                     message.AddRange(codeBytes);
+
+                    MessageCodeReceived?.Invoke(this, codeBytes);
 
                     var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
                     message.AddRange(payloadBytes);
