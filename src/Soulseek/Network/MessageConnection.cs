@@ -72,11 +72,6 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Occurs when a new message code is recieved, but before the message is read.
-        /// </summary>
-        public event EventHandler<byte[]> MessageCodeReceived;
-
-        /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
         public event EventHandler<byte[]> MessageRead;

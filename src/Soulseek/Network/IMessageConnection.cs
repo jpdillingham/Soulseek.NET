@@ -21,11 +21,6 @@ namespace Soulseek.Network
     internal interface IMessageConnection : IConnection
     {
         /// <summary>
-        ///     Occurs when a new message code is recieved, but before the message is read.
-        /// </summary>
-        event EventHandler<byte[]> MessageCodeReceived;
-
-        /// <summary>
         ///     Occurs when a new message is received.
         /// </summary>
         event EventHandler<byte[]> MessageRead;
