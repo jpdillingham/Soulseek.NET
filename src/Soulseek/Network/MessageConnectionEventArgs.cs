@@ -22,7 +22,7 @@ namespace Soulseek.Network
     }
 
     /// <summary>
-    ///     EventArgs for <see cref="MessageConnection"/> events raised by the exchange of message data with a remote host.
+    ///     EventArgs for <see cref="MessageConnection"/> events raised message data is received.
     /// </summary>
     internal sealed class MessageDataEventArgs : MessageConnectionEventArgs
     {
