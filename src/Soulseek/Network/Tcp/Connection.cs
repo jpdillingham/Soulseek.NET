@@ -558,7 +558,9 @@ namespace Soulseek.Network.Tcp
 
                     await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 
-                    DataRead?.Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+                    Interlocked.CompareExchange(ref DataRead, null, null)?
+                        .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+
                     InactivityTimer?.Reset();
                 }
 
@@ -608,7 +610,9 @@ namespace Soulseek.Network.Tcp
 
                     totalBytesWritten += bytesRead;
 
-                    DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+                    Interlocked.CompareExchange(ref DataWritten, null, null)?
+                        .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+
                     InactivityTimer?.Reset();
                 }
             }
