@@ -1252,6 +1252,13 @@ namespace Soulseek
         {
             IMessageConnection connection = null;
 
+            void MessageDataRead(object sender, MessageDataEventArgs e)
+            {
+                var code = (MessageCode.Peer)BitConverter.ToInt32(e.Code, 0);
+
+                Console.WriteLine($"Message received: {code} {e.CurrentLength} of {e.TotalLength} -- {e.PercentComplete}%");
+            }
+
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
@@ -1264,6 +1271,7 @@ namespace Soulseek
                 {
                     Waiter.Throw(waitKey, e.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
                 };
+                connection.MessageDataRead += MessageDataRead;
 
                 connection.PreventInactivityTimeout(true);
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
@@ -1279,6 +1287,7 @@ namespace Soulseek
             {
                 try
                 {
+                    connection.MessageDataRead -= MessageDataRead;
                     connection?.PreventInactivityTimeout(false);
                 }
                 catch (ObjectDisposedException)
