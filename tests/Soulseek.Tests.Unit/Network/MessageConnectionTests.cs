@@ -229,7 +229,7 @@ namespace Soulseek.Tests.Unit.Network
                 {
                     c.StartReadingContinuously();
 
-                    c.MessageRead += (sender, e) => readMessage = e;
+                    c.MessageRead += (sender, e) => readMessage = e.Message;
 
                     Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
@@ -277,7 +277,7 @@ namespace Soulseek.Tests.Unit.Network
                 {
                     c.StartReadingContinuously();
 
-                    c.MessageCodeReceived += (sender, e) => readMessage = e;
+                    c.MessageDataRead += (sender, e) => readMessage = e.Code;
 
                     Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
