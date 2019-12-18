@@ -35,6 +35,8 @@ namespace Soulseek.Network.Tcp
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         public Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
+            Id = Guid.NewGuid();
+
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new ConnectionOptions();
@@ -112,6 +114,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets or sets the connection context.
         /// </summary>
         public object Context { get; set; }
+
+        /// <summary>
+        ///     Gets the connection id.
+        /// </summary>
+        public Guid Id { get; }
 
         /// <summary>
         ///     Gets or sets the remote IP address of the connection.

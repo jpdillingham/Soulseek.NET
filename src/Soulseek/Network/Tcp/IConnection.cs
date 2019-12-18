@@ -55,6 +55,11 @@ namespace Soulseek.Network.Tcp
         object Context { get; set; }
 
         /// <summary>
+        ///     Gets the connection id.
+        /// </summary>
+        Guid Id { get; }
+
+        /// <summary>
         ///     Gets the remote IP address of the connection.
         /// </summary>
         IPAddress IPAddress { get; }
