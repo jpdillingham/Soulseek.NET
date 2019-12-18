@@ -1290,9 +1290,9 @@ namespace Soulseek
                     connection.MessageDataRead -= MessageDataRead;
                     connection?.PreventInactivityTimeout(false);
                 }
-                catch (ObjectDisposedException)
+                catch
                 {
-                    // swallow; inactivity is irrelevant if connection is disposed
+                    // swallow any errors here; either connection is null or is being disposed if these statements throw
                 }
             }
         }
