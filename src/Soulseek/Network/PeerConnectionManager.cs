@@ -317,7 +317,7 @@ namespace Soulseek.Network
                         connection = await task.ConfigureAwait(false);
                         var isDirect = task == direct;
 
-                        Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipAddress}:{port}) established first, returning to caller and attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
+                        Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipAddress}:{port}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
                         (isDirect ? indirectCts : directCts).Cancel();
 
                         if (isDirect)
@@ -326,6 +326,7 @@ namespace Soulseek.Network
                             await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                         }
 
+                        Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipAddress}:{port}) established, returning to caller. (id: {connection.Id})");
                         return connection;
                     }
                 }
@@ -458,16 +459,21 @@ namespace Soulseek.Network
             return MessageConnectionDictionary.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
 #pragma warning restore IDE0067 // Dispose objects before losing scope
             {
-                Diagnostic.Debug($"Replacing existing connection to {username} (old: {v.Connection?.Id.ToString() ?? "<null>"}, new: {connection.Id})");
-
                 // unassign the handler from the connection we are discarding to prevent it from removing a live connection.
                 if (v.Connection != null)
                 {
-                    v.Connection.Disconnected -= MessageConnection_Disconnected;
+                    var old = v.Connection;
+                    Diagnostic.Debug($"Superceding cached connection to {username} ({connection.IPAddress}:{connection.Port}) (old: {old.Id}, new: {connection.Id})");
 
-                    Diagnostic.Debug($"Disconnecting superceded {v.Connection.Context} connection to {username} (id: {v.Connection.Id})");
-                    v.Connection.Disconnect($"Superceded by {connection.Id}");
+                    old.Disconnected -= MessageConnection_Disconnected;
+
+                    Diagnostic.Debug($"Disconnecting superceded {old.Context} connection to {username} ({old.IPAddress}:{old.Port}) (id: {old.Id})");
+                    v.Connection.Disconnect($"Superceded by new {connection.Context} connection (id: {connection.Id})");
                     v.Connection.Dispose();
+                }
+                else
+                {
+                    Diagnostic.Debug($"Adding cached connection to {username} ({connection.IPAddress}:{connection.Port}) (id: {connection.Id})");
                 }
 
                 return (v.Semaphore, connection);
@@ -538,16 +544,16 @@ namespace Soulseek.Network
                         SoulseekClient.Options.PeerConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
-                    Diagnostic.Debug($"Incoming indirect message connection to {username} ({incomingConnection.IPAddress}:{incomingConnection.Port}) handed off (old: {incomingConnection.Id}, new: {connection.Id})");
+                    Diagnostic.Debug($"Incoming Indirect message connection to {username} ({incomingConnection.IPAddress}:{incomingConnection.Port}) handed off (old: {incomingConnection.Id}, new: {connection.Id})");
 
                     connection.Context = Constants.ConnectionMethod.Indirect;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
                     connection.Disconnected += MessageConnection_Disconnected;
 
-                    connection.StartReadingContinuously();
-
                     Diagnostic.Debug($"Indirect message connection to {username} ({incomingConnection.IPAddress}:{incomingConnection.Port}) established. (id: {connection.Id})");
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
+
+                    connection.StartReadingContinuously();
                     return connection;
                 }
             }
