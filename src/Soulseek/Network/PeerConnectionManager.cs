@@ -320,6 +320,12 @@ namespace Soulseek.Network
                         Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipAddress}:{port}) established first, returning to caller and attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
                         (isDirect ? indirectCts : directCts).Cancel();
 
+                        if (isDirect)
+                        {
+                            var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
+                            await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                        }
+
                         return connection;
                     }
                 }
@@ -408,8 +414,14 @@ namespace Soulseek.Network
                 var connection = await task.ConfigureAwait(false);
                 var isDirect = task == direct;
 
-                Diagnostic.Debug($"Unsolicited {connection.Context} transfer connection to {username} ({ipAddress}:{port}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection and sending remote token. (id: {connection.Id})");
+                Diagnostic.Debug($"Unsolicited {connection.Context} transfer connection to {username} ({ipAddress}:{port}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
                 (isDirect ? indirectCts : directCts).Cancel();
+
+                if (isDirect)
+                {
+                    var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Transfer, token).ToByteArray();
+                    await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                }
 
                 // send our token (the remote token from the other side's perspective)
                 await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
@@ -491,9 +503,6 @@ namespace Soulseek.Network
             try
             {
                 await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-                var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
-                await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
@@ -522,13 +531,6 @@ namespace Soulseek.Network
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), null, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        incomingConnection.Disconnect("Cancelled.");
-                        incomingConnection.Dispose();
-                        return await Task.FromCanceled<IMessageConnection>(cancellationToken).ConfigureAwait(false);
-                    }
-
                     var connection = ConnectionFactory.GetMessageConnection(
                         username,
                         incomingConnection.IPAddress,
@@ -586,9 +588,6 @@ namespace Soulseek.Network
             try
             {
                 await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-
-                var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Transfer, token).ToByteArray();
-                await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
             }
             catch
             {
@@ -615,13 +614,6 @@ namespace Soulseek.Network
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), null, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    if (cancellationToken.IsCancellationRequested)
-                    {
-                        incomingConnection.Disconnect("Cancelled.");
-                        incomingConnection.Dispose();
-                        return await Task.FromCanceled<IConnection>(cancellationToken).ConfigureAwait(false);
-                    }
-
                     var connection = ConnectionFactory.GetConnection(
                         incomingConnection.IPAddress,
                         incomingConnection.Port,
