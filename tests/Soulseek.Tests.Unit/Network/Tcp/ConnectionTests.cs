@@ -1350,47 +1350,6 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             }
         }
 
-        [Trait("Category", "PreventInactivityTimeout")]
-        [Fact(DisplayName = "PreventInactivityTimeout(true) extends timer interval")]
-        public void PreventInactivtyTimeout_True_Extends_Timer_Interval()
-        {
-            using (var c = new Connection(new IPAddress(0x0), 1))
-            {
-                var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer");
-                var firstInterval = timer.Interval;
-
-                c.PreventInactivityTimeout(true);
-
-                var secondInterval = timer.Interval;
-
-                Assert.Equal(new ConnectionOptions().InactivityTimeout * 1000, firstInterval);
-                Assert.Equal(int.MaxValue, secondInterval);
-            }
-        }
-
-        [Trait("Category", "PreventInactivityTimeout")]
-        [Theory(DisplayName = "PreventInactivityTimeout(false) reverts timer interval"), AutoData]
-        public void PreventInactivtyTimeout_False_Reverts_Timer_Interval(int time)
-        {
-            using (var c = new Connection(new IPAddress(0x0), 1, options: new ConnectionOptions(inactivityTimeout: time)))
-            {
-                var timer = c.GetProperty<System.Timers.Timer>("InactivityTimer");
-                var firstInterval = timer.Interval;
-
-                c.PreventInactivityTimeout(true);
-
-                var secondInterval = timer.Interval;
-
-                c.PreventInactivityTimeout(false);
-
-                var thirdInterval = timer.Interval;
-
-                Assert.Equal(time * 1000, firstInterval);
-                Assert.Equal(int.MaxValue, secondInterval);
-                Assert.Equal(firstInterval, thirdInterval);
-            }
-        }
-
         private class UnReadableWriteableStream : Stream
         {
             public override bool CanRead => false;

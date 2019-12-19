@@ -1253,7 +1253,7 @@ namespace Soulseek
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
-                var browseWait = Waiter.Wait<BrowseResponse>(waitKey, options.ResponseTimeout, cancellationToken);
+                var browseWait = Waiter.Wait<BrowseResponse>(waitKey, options.Timeout, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
