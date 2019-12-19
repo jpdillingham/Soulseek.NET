@@ -550,7 +550,7 @@ namespace Soulseek.Network
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
                     connection.Disconnected += MessageConnection_Disconnected;
 
-                    Diagnostic.Debug($"Indirect message connection to {username} ({incomingConnection.IPAddress}:{incomingConnection.Port}) established. (id: {connection.Id})");
+                    Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPAddress}:{connection.Port}) established. (id: {connection.Id})");
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
 
                     connection.StartReadingContinuously();
