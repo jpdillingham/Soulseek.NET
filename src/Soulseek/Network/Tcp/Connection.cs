@@ -474,15 +474,18 @@ namespace Soulseek.Network.Tcp
 
             State = state;
 
-            StateChanged?.Invoke(this, eventArgs);
+            Interlocked.CompareExchange(ref StateChanged, null, null)?
+                .Invoke(this, eventArgs);
 
             if (State == ConnectionState.Connected)
             {
-                Connected?.Invoke(this, EventArgs.Empty);
+                Interlocked.CompareExchange(ref Connected, null, null)?
+                    .Invoke(this, EventArgs.Empty);
             }
             else if (State == ConnectionState.Disconnected)
             {
-                Disconnected?.Invoke(this, new ConnectionDisconnectedEventArgs(message, exception));
+                Interlocked.CompareExchange(ref Disconnected, null, null)?
+                    .Invoke(this, new ConnectionDisconnectedEventArgs(message, exception));
             }
         }
 
