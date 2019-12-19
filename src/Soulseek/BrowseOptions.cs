@@ -20,15 +20,15 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="BrowseOptions"/> class.
         /// </summary>
-        /// <param name="responseTimeout">The response timeout value, in seconds, for the start of the response data transfer.</param>
-        public BrowseOptions(int responseTimeout = 60)
+        /// <param name="timeout">The timeout for the response, in seconds.</param>
+        public BrowseOptions(int timeout = 60)
         {
-            ResponseTimeout = responseTimeout;
+            Timeout = timeout;
         }
 
         /// <summary>
-        ///     Gets the response timeout value, in seconds, for the start of the response data transfer.
+        ///     Gets the timeout for the response, in seconds.
         /// </summary>
-        public int ResponseTimeout { get; }
+        public int Timeout { get; }
     }
 }
