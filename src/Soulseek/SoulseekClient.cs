@@ -144,8 +144,8 @@ namespace Soulseek
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            //DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
-            //DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
+            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
@@ -1250,31 +1250,14 @@ namespace Soulseek
 
         private async Task<IReadOnlyCollection<Directory>> BrowseInternalAsync(string username, BrowseOptions options, CancellationToken cancellationToken)
         {
-            IMessageConnection connection = null;
-
-            void MessageDataRead(object sender, MessageDataEventArgs e)
-            {
-                var code = (MessageCode.Peer)BitConverter.ToInt32(e.Code, 0);
-
-                Console.WriteLine($"Message received: {code} {e.CurrentLength} of {e.TotalLength} -- {e.PercentComplete}%");
-            }
-
             try
             {
                 var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
-                var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(waitKey, cancellationToken);
+                var browseWait = Waiter.Wait<BrowseResponse>(waitKey, options.ResponseTimeout, cancellationToken);
 
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
-                connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
-                connection.Disconnected += (sender, e) =>
-                {
-                    //Waiter.Throw(waitKey, e.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
-                };
-                connection.MessageDataRead += MessageDataRead;
-
-                connection.PreventInactivityTimeout(true);
-                Console.WriteLine($"Sending browse request... {connection.Id}");
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
@@ -1283,18 +1266,6 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
-            }
-            finally
-            {
-                try
-                {
-                    connection.MessageDataRead -= MessageDataRead;
-                    connection?.PreventInactivityTimeout(false);
-                }
-                catch
-                {
-                    // swallow any errors here; either connection is null or is being disposed if these statements throw
-                }
             }
         }
 
