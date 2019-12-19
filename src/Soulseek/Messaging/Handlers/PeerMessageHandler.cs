@@ -53,6 +53,16 @@ namespace Soulseek.Messaging.Handlers
         ///     Handles incoming messages.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleMessage(object sender, MessageReadEventArgs args)
+        {
+            HandleMessage(sender, args.Message);
+        }
+
+        /// <summary>
+        ///     Handles incoming messages.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="message">The message.</param>
         public async void HandleMessage(object sender, byte[] message)
         {
@@ -135,14 +145,14 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.QueueDownload:
-                        var queueDownloadRequest = QueueDownloadRequest.FromByteArray(message);
+                        var queueDownloadRequest = EnqueueDownloadRequest.FromByteArray(message);
 
                         var (queueRejected, queueRejectionMessage) =
                             await TryEnqueueDownloadAsync(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename).ConfigureAwait(false);
 
                         if (queueRejected)
                         {
-                            await connection.WriteAsync(new QueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToByteArray()).ConfigureAwait(false);
+                            await connection.WriteAsync(new EnqueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToByteArray()).ConfigureAwait(false);
                         }
 
                         break;
@@ -161,7 +171,7 @@ namespace Soulseek.Messaging.Handlers
                             if (transferRejected)
                             {
                                 await connection.WriteAsync(new TransferResponse(transferRequest.Token, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
-                                await connection.WriteAsync(new QueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
+                                await connection.WriteAsync(new EnqueueFailedResponse(transferRequest.Filename, transferRejectionMessage).ToByteArray()).ConfigureAwait(false);
                             }
                             else
                             {
@@ -172,7 +182,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.QueueFailed:
-                        var queueFailedResponse = QueueFailedResponse.FromByteArray(message);
+                        var queueFailedResponse = EnqueueFailedResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, queueFailedResponse.Filename), new TransferRejectedException(queueFailedResponse.Message));
                         break;
 
@@ -214,9 +224,9 @@ namespace Soulseek.Messaging.Handlers
             try
             {
                 await SoulseekClient.Options
-                    .QueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
+                    .EnqueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
             }
-            catch (QueueDownloadException ex)
+            catch (EnqueueDownloadException ex)
             {
                 // pass the exception message through to the remote user only if QueueDownloadException is thrown
                 rejected = true;

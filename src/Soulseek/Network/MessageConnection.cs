@@ -72,9 +72,19 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Occurs when a new message is received.
+        ///     Occurs when message data is received.
         /// </summary>
-        public event EventHandler<byte[]> MessageRead;
+        public event EventHandler<MessageDataEventArgs> MessageDataRead;
+
+        /// <summary>
+        ///     Occurs when a new message is read in its entirety.
+        /// </summary>
+        public event EventHandler<MessageReadEventArgs> MessageRead;
+
+        /// <summary>
+        ///     Occurs when a new message is received, but before it is read.
+        /// </summary>
+        public event EventHandler<MessageReceivedEventArgs> MessageReceived;
 
         /// <summary>
         ///     Gets the unique identifier for the connection.
@@ -110,26 +120,47 @@ namespace Soulseek.Network
             }
 
             ReadingContinuously = true;
+            byte[] codeBytes = default;
+
+            void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
+            {
+                Interlocked.CompareExchange(ref MessageDataRead, null, null)?
+                    .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+            }
 
             try
             {
                 while (true)
                 {
-                    var message = new List<byte>();
+                    try
+                    {
+                        var message = new List<byte>();
 
-                    var lengthBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
-                    var length = BitConverter.ToInt32(lengthBytes, 0);
-                    message.AddRange(lengthBytes);
+                        var lengthBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
+                        var length = BitConverter.ToInt32(lengthBytes, 0);
+                        message.AddRange(lengthBytes);
 
-                    var codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
-                    message.AddRange(codeBytes);
+                        codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
+                        message.AddRange(codeBytes);
 
-                    var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
-                    message.AddRange(payloadBytes);
+                        RaiseMessageDataRead(this, new ConnectionDataEventArgs(0, length - 4));
 
-                    var messageBytes = message.ToArray();
+                        Interlocked.CompareExchange(ref MessageReceived, null, null)?
+                            .Invoke(this, new MessageReceivedEventArgs(length, codeBytes));
 
-                    MessageRead?.Invoke(this, messageBytes);
+                        DataRead += RaiseMessageDataRead;
+
+                        var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
+                        message.AddRange(payloadBytes);
+
+                        var messageBytes = message.ToArray();
+                        Interlocked.CompareExchange(ref MessageRead, null, null)?
+                            .Invoke(this, new MessageReadEventArgs(messageBytes));
+                    }
+                    finally
+                    {
+                        DataRead -= RaiseMessageDataRead;
+                    }
                 }
             }
             finally

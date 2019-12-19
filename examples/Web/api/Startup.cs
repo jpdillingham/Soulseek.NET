@@ -34,7 +34,7 @@
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
 
-        public Startup(IConfiguration configuration, IServiceProvider serviceProvider)
+        public Startup(IConfiguration configuration)
         {
             Configuration = configuration;
 
@@ -126,6 +126,11 @@
             app.UseSwaggerUI(options => provider.ApiVersionDescriptions.ToList()
                 .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
 
+            // ---------------------------------------------------------------------------------------------------------------------------------------------
+            // begin SoulseekClient implementation
+            // ---------------------------------------------------------------------------------------------------------------------------------------------
+
+            // create options for the client
             var clientOptions = new SoulseekClientOptions(
                 listenPort: ListenPort,
                 concurrentDistributedChildrenLimit: 10,
@@ -133,61 +138,15 @@
                 concurrentPeerMessageConnectionLimit: 1000000,
                 serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
-                transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
-                userInfoResponseResolver: (u, i, p) =>
-                {
-                    var info = new UserInfo(
-                        description: $"i'm a test! also, your username is {u}, IP address is {i}, and the port on which you connected to me is {p}",
-                        picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"),
-                        uploadSlots: 0,
-                        queueLength: 0,
-                        hasFreeUploadSlot: false);
-
-                    return Task.FromResult(info);
-                },
-                browseResponseResolver: (u, i, p) =>
-                {
-                                // limited to just the root for now
-                                var files = System.IO.Directory.GetFiles(SharedDirectory)
-                        .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0));
-
-                    var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
-
-                    IEnumerable<Soulseek.Directory> result = new List<Soulseek.Directory>() { dir };
-                    return Task.FromResult(result);
-                }, queueDownloadAction: (u, i, p, f) =>
-                {
-                    Console.WriteLine($"Dispositioning {f}");
-
-                    var cts = new CancellationTokenSource();
-                    var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts));
-
-                    Task.Run(async () =>
-                    {
-                        using (var stream = new FileStream(f, FileMode.Open))
-                        {
-                            await Client.UploadAsync(u, f, new FileInfo(f).Length, stream, options: topts, cancellationToken: cts.Token);
-                        }
-
-                    }).ContinueWith(t => { throw (Exception)Activator.CreateInstance(typeof(Exception), t.Exception.Message, t.Exception); }, TaskContinuationOptions.OnlyOnFaulted);
-
-                    return Task.CompletedTask;
-                }, searchResponseResolver: (u, t, q) =>
-                {
-                    //Console.WriteLine($"Search request: {q}");
-
-                    if (q == "killing your enemy in 1995")
-                    {
-                        var files = System.IO.Directory.GetFiles(SharedDirectory)
-                            .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0));
-
-                        return Task.FromResult(new SearchResponse(Username, t, files.Count(), 0, 0, 0, files));
-                    }
-
-                    return Task.FromResult<SearchResponse>(null);
-                });
+                transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 30),
+                userInfoResponseResolver: UserInfoResponseResolver,
+                browseResponseResolver: BrowseResponseResolver, 
+                enqueueDownloadAction: (username, ipAddress, port, filename) => EnqueueDownloadAction(username, ipAddress, port, filename, tracker), 
+                searchResponseResolver: SearchResponseResolver);
 
             Client = new SoulseekClient(options: clientOptions);
+
+            // bind the DiagnosticGenerated event so we can trap and display diagnostic messages
             Client.DiagnosticGenerated += (e, args) =>
             {
                 lock (ConsoleSyncRoot)
@@ -209,6 +168,64 @@
                 await Client.ConnectAsync();
                 await Client.LoginAsync(Username, Password);
             }).GetAwaiter().GetResult();
+
+            Console.WriteLine($"Connected and logged in.");
+        }
+
+        private Task<UserInfo> UserInfoResponseResolver(string username, IPAddress ipAddress, int port) 
+        {
+            var info = new UserInfo(
+                description: $"i'm a test! also, your username is {username}, IP address is {ipAddress}, and the port on which you connected to me is {port}",
+                picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"),
+                uploadSlots: 0,
+                queueLength: 0,
+                hasFreeUploadSlot: false);
+
+            return Task.FromResult(info);
+        }
+
+        private Task<IEnumerable<Soulseek.Directory>> BrowseResponseResolver(string username, IPAddress ipAddress, int port)
+        {
+            // limited to just the root for now
+            var files = System.IO.Directory.GetFiles(SharedDirectory)
+                .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0));
+
+            var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
+
+            IEnumerable<Soulseek.Directory> result = new List<Soulseek.Directory>() { dir };
+            return Task.FromResult(result);
+        }
+
+        private Task EnqueueDownloadAction(string username, IPAddress ipAddress, int port, string filename, ITransferTracker tracker)
+        {
+            // accept all download requests.
+            var cts = new CancellationTokenSource();
+            var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts));
+
+            Task.Run(async () =>
+            {
+                using (var stream = new FileStream(filename, FileMode.Open))
+                {
+                    await Client.UploadAsync(username, filename, new FileInfo(filename).Length, stream, options: topts, cancellationToken: cts.Token);
+                }
+            }).ContinueWith(t => { throw t.Exception; }, TaskContinuationOptions.OnlyOnFaulted); // fire and forget
+
+            return Task.CompletedTask;
+        }
+
+        private Task<SearchResponse> SearchResponseResolver(string username, int token, string query)
+        {
+            //Console.WriteLine($"Search request: {q}");
+
+            if (query == "killing your enemy in 1995")
+            {
+                var files = System.IO.Directory.GetFiles(SharedDirectory)
+                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0));
+
+                return Task.FromResult(new SearchResponse(Username, token, files.Count(), 0, 0, 0, files));
+            }
+
+            return Task.FromResult<SearchResponse>(null);
         }
     }
 

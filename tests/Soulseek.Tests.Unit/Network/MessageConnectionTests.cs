@@ -229,11 +229,59 @@ namespace Soulseek.Tests.Unit.Network
                 {
                     c.StartReadingContinuously();
 
-                    c.MessageRead += (sender, e) => readMessage = e;
+                    c.MessageRead += (sender, e) => readMessage = e.Message;
 
                     Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
 
                     Assert.Equal(MessageCode.Peer.InfoRequest, new MessageReader<MessageCode.Peer>(readMessage).ReadCode());
+                }
+            }
+        }
+
+        [Trait("Category", "ReadContinuouslyAsync")]
+        [Theory(DisplayName = "ReadContinuouslyAsync raises MessageCodeReceived on read"), AutoData]
+        public void ReadContinuouslyAsync_Raises_MessageCodeRecieved_On_Read(string username, IPAddress ipAddress, int port, int code)
+        {
+            int callCount = 0;
+
+            var streamMock = new Mock<INetworkStream>();
+            streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Callback<byte[], int, int, CancellationToken>((bytes, offset, length, token) =>
+                {
+                    if (callCount % 2 == 0)
+                    {
+                        var data = BitConverter.GetBytes(4);
+                        Array.Copy(data, bytes, data.Length);
+                    }
+                    else if (callCount % 2 == 1)
+                    {
+                        var data = BitConverter.GetBytes(code);
+                        Array.Copy(data, bytes, data.Length);
+                    }
+
+                    callCount++;
+                })
+                .Returns(Task.Run(() => 4));
+
+            var tcpMock = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                tcpMock.Setup(m => m.Client).Returns(socket);
+                tcpMock.Setup(s => s.Connected).Returns(true);
+                tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
+
+                byte[] readMessage = null;
+
+                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                {
+                    c.StartReadingContinuously();
+
+                    c.MessageDataRead += (sender, e) => readMessage = e.Code;
+
+                    Thread.Sleep(1000); // ReadContinuouslyAsync() runs in a separate task, so events won't arrive immediately after connect
+
+                    Assert.Equal(code, BitConverter.ToInt32(readMessage));
                 }
             }
         }

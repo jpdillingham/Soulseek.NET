@@ -173,7 +173,7 @@ namespace Soulseek
         ///     Updates the transfer progress.
         /// </summary>
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
-        public void UpdateProgress(int bytesTransferred)
+        public void UpdateProgress(long bytesTransferred)
         {
             BytesTransferred = bytesTransferred;
 

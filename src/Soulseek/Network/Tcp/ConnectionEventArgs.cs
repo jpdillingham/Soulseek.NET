@@ -31,7 +31,7 @@ namespace Soulseek.Network.Tcp
         /// </summary>
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
-        public ConnectionDataEventArgs(int currentLength, long totalLength)
+        public ConnectionDataEventArgs(long currentLength, long totalLength)
         {
             CurrentLength = currentLength;
             TotalLength = totalLength;
@@ -40,7 +40,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Gets the length of the event data.
         /// </summary>
-        public int CurrentLength { get; }
+        public long CurrentLength { get; }
 
         /// <summary>
         ///     Gets the progress of the data transfer as a percentage of current and total data length.

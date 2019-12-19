@@ -35,6 +35,8 @@ namespace Soulseek.Network.Tcp
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         public Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
+            Id = Guid.NewGuid();
+
             IPAddress = ipAddress;
             Port = port;
             Options = options ?? new ConnectionOptions();
@@ -52,7 +54,11 @@ namespace Soulseek.Network.Tcp
                     Interval = Options.InactivityTimeout * 1000,
                 };
 
-                InactivityTimer.Elapsed += (sender, e) => Disconnect($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
+                InactivityTimer.Elapsed += (sender, e) =>
+                {
+                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
+                    Disconnect(ex.Message, ex);
+                };
             }
 
             WatchdogTimer = new SystemTimer()
@@ -108,6 +114,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets or sets the connection context.
         /// </summary>
         public object Context { get; set; }
+
+        /// <summary>
+        ///     Gets the connection id.
+        /// </summary>
+        public Guid Id { get; }
 
         /// <summary>
         ///     Gets or sets the remote IP address of the connection.
@@ -330,7 +341,9 @@ namespace Soulseek.Network.Tcp
         /// <returns>A Task representing the asynchronous operation, including the read bytes.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="outputStream"/> is not writeable.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
+        /// </exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
         ///     is not connected.
@@ -410,7 +423,9 @@ namespace Soulseek.Network.Tcp
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">Thrown when the specified <paramref name="length"/> is less than 1.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="inputStream"/> is null.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when the specified <paramref name="inputStream"/> is not readable.</exception>
+        /// <exception cref="InvalidOperationException">
+        ///     Thrown when the specified <paramref name="inputStream"/> is not readable.
+        /// </exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the connection state is not <see cref="ConnectionState.Connected"/>, or when the underlying TcpClient
         ///     is not connected.
@@ -459,15 +474,18 @@ namespace Soulseek.Network.Tcp
 
             State = state;
 
-            StateChanged?.Invoke(this, eventArgs);
+            Interlocked.CompareExchange(ref StateChanged, null, null)?
+                .Invoke(this, eventArgs);
 
             if (State == ConnectionState.Connected)
             {
-                Connected?.Invoke(this, EventArgs.Empty);
+                Interlocked.CompareExchange(ref Connected, null, null)?
+                    .Invoke(this, EventArgs.Empty);
             }
             else if (State == ConnectionState.Disconnected)
             {
-                Disconnected?.Invoke(this, new ConnectionDisconnectedEventArgs(message, exception));
+                Interlocked.CompareExchange(ref Disconnected, null, null)?
+                    .Invoke(this, new ConnectionDisconnectedEventArgs(message, exception));
             }
         }
 
@@ -528,7 +546,9 @@ namespace Soulseek.Network.Tcp
 
                     await outputStream.WriteAsync(buffer, 0, bytesRead, cancellationToken).ConfigureAwait(false);
 
-                    DataRead?.Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+                    Interlocked.CompareExchange(ref DataRead, null, null)?
+                        .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
+
                     InactivityTimer?.Reset();
                 }
 
@@ -578,7 +598,9 @@ namespace Soulseek.Network.Tcp
 
                     totalBytesWritten += bytesRead;
 
-                    DataWritten?.Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+                    Interlocked.CompareExchange(ref DataWritten, null, null)?
+                        .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
+
                     InactivityTimer?.Reset();
                 }
             }

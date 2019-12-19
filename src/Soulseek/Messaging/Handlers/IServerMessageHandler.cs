@@ -13,13 +13,11 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
-    using Soulseek.Diagnostics;
-    using Soulseek.Network;
 
     /// <summary>
     ///     Handles incoming messages from the server connection.
     /// </summary>
-    internal interface IServerMessageHandler : IDiagnosticGenerator
+    internal interface IServerMessageHandler : IMessageHandler
     {
         /// <summary>
         ///     Occurs when a private message is received.
@@ -45,12 +43,5 @@ namespace Soulseek.Messaging.Handlers
         ///     Occurs when a watched user's status changes.
         /// </summary>
         event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
-
-        /// <summary>
-        ///     Handles incoming messages.
-        /// </summary>
-        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
-        /// <param name="message">The message.</param>
-        void HandleMessage(object sender, byte[] message);
     }
 }

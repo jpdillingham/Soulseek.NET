@@ -430,7 +430,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Creates diagnostic on failed QueueDownload invocation via QueueDownload"), AutoData]
         public void Creates_Diagnostic_On_Failed_QueueDownload_Invocation_Via_QueueDownload(string username, IPAddress ip, int port, string filename)
         {
-            var options = new SoulseekClientOptions(queueDownloadAction: (u, f, i, p) => throw new Exception());
+            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => throw new Exception());
             List<string> messages = new List<string>();
 
             var (handler, mocks) = GetFixture(username, ip, port, options);
@@ -438,7 +438,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()))
                 .Callback<string, Exception>((msg, ex) => messages.Add(msg));
 
-            var message = new QueueDownloadRequest(filename).ToByteArray();
+            var message = new EnqueueDownloadRequest(filename).ToByteArray();
 
             handler.HandleMessage(mocks.PeerConnection.Object, message);
 
@@ -449,7 +449,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Creates diagnostic on failed QueueDownload invocation via TransferRequest"), AutoData]
         public void Creates_Diagnostic_On_Failed_QueueDownload_Invocation_Via_TransferRequest(string username, IPAddress ip, int port, int token, string filename)
         {
-            var options = new SoulseekClientOptions(queueDownloadAction: (u, f, i, p) => throw new Exception());
+            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => throw new Exception());
             List<string> messages = new List<string>();
 
             var (handler, mocks) = GetFixture(username, ip, port, options);
@@ -468,7 +468,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Writes TransferResponse on successful QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_On_Successful_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename)
         {
-            var options = new SoulseekClientOptions(queueDownloadAction: (u, f, i, p) => Task.CompletedTask);
+            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => Task.CompletedTask);
             var (handler, mocks) = GetFixture(username, ip, port, options);
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
@@ -483,12 +483,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on failed QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_And_QueueFailedResponse_On_Failed_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename)
         {
-            var options = new SoulseekClientOptions(queueDownloadAction: (u, f, i, p) => throw new Exception());
+            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => throw new Exception());
             var (handler, mocks) = GetFixture(username, ip, port, options);
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
             var expectedTransferResponse = new TransferResponse(token, "Enqueue failed due to internal error.").ToByteArray();
-            var expectedQueueFailedResponse = new QueueFailedResponse(filename, "Enqueue failed due to internal error.").ToByteArray();
+            var expectedQueueFailedResponse = new EnqueueFailedResponse(filename, "Enqueue failed due to internal error.").ToByteArray();
 
             handler.HandleMessage(mocks.PeerConnection.Object, message);
 
@@ -500,12 +500,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on rejected QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_And_QueueFailedResponse_On_Rejected_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename, string rejectMessage)
         {
-            var options = new SoulseekClientOptions(queueDownloadAction: (u, f, i, p) => throw new QueueDownloadException(rejectMessage));
+            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => throw new EnqueueDownloadException(rejectMessage));
             var (handler, mocks) = GetFixture(username, ip, port, options);
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
             var expectedTransferResponse = new TransferResponse(token, rejectMessage).ToByteArray();
-            var expectedQueueFailedResponse = new QueueFailedResponse(filename, rejectMessage).ToByteArray();
+            var expectedQueueFailedResponse = new EnqueueFailedResponse(filename, rejectMessage).ToByteArray();
 
             handler.HandleMessage(mocks.PeerConnection.Object, message);
 

@@ -1,4 +1,4 @@
-﻿// <copyright file="IMessageHandler.cs" company="JP Dillingham">
+﻿// <copyright file="BrowseOptions.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -10,28 +10,25 @@
 //     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
 // </copyright>
 
-namespace Soulseek.Messaging.Handlers
+namespace Soulseek
 {
-    using Soulseek.Diagnostics;
-    using Soulseek.Network;
-
     /// <summary>
-    ///     Handles incoming messages.
+    ///     Options for the browse operation.
     /// </summary>
-    internal interface IMessageHandler : IDiagnosticGenerator
+    public class BrowseOptions
     {
         /// <summary>
-        ///     Handles incoming messages.
+        ///     Initializes a new instance of the <see cref="BrowseOptions"/> class.
         /// </summary>
-        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
-        /// <param name="args">The message event args.</param>
-        void HandleMessage(object sender, MessageReadEventArgs args);
+        /// <param name="timeout">The timeout for the response, in seconds.</param>
+        public BrowseOptions(int timeout = 60)
+        {
+            Timeout = timeout;
+        }
 
         /// <summary>
-        ///     Handles incoming messages.
+        ///     Gets the timeout for the response, in seconds.
         /// </summary>
-        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
-        /// <param name="message">The message.</param>
-        void HandleMessage(object sender, byte[] message);
+        public int Timeout { get; }
     }
 }

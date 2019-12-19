@@ -88,8 +88,10 @@
         /// <param name="searchText">The search phrase of the desired search.</param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">A matching search was not found.</response>
         [HttpGet("{searchText}")]
-        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
+        [ProducesResponseType(typeof(Search), 200)]
+        [ProducesResponseType(404)]
         public IActionResult GetBySearchText([FromRoute]string searchText)
         {
             Tracker.Searches.TryGetValue(searchText, out var search);
@@ -108,8 +110,10 @@
         /// <param name="token">The token of the desired search.</param>
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
+        /// <response code="404">A matching search was not found.</response>
         [HttpGet("{token:int}")]
-        [ProducesResponseType(typeof(IEnumerable<Search>), 200)]
+        [ProducesResponseType(typeof(Search), 200)]
+        [ProducesResponseType(404)]
         public IActionResult GetByToken([FromRoute]int token)
         {
             var search = Tracker.Searches.Values.SingleOrDefault(s => s.Token == token);
