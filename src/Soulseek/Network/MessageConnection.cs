@@ -122,7 +122,7 @@ namespace Soulseek.Network
             ReadingContinuously = true;
             byte[] codeBytes = default;
 
-            void RaiseEvent(object sender, ConnectionDataEventArgs e)
+            void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
             {
                 Interlocked.CompareExchange(ref MessageDataRead, null, null)?
                     .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
@@ -143,12 +143,12 @@ namespace Soulseek.Network
                         codeBytes = await ReadAsync(4, CancellationToken.None).ConfigureAwait(false);
                         message.AddRange(codeBytes);
 
-                        RaiseEvent(this, new ConnectionDataEventArgs(0, length - 4));
+                        RaiseMessageDataRead(this, new ConnectionDataEventArgs(0, length - 4));
 
                         Interlocked.CompareExchange(ref MessageReceived, null, null)?
                             .Invoke(this, new MessageReceivedEventArgs(length, codeBytes));
 
-                        DataRead += RaiseEvent;
+                        DataRead += RaiseMessageDataRead;
 
                         var payloadBytes = await ReadAsync(length - 4, CancellationToken.None).ConfigureAwait(false);
                         message.AddRange(payloadBytes);
@@ -159,7 +159,7 @@ namespace Soulseek.Network
                     }
                     finally
                     {
-                        DataRead -= RaiseEvent;
+                        DataRead -= RaiseMessageDataRead;
                     }
                 }
             }
