@@ -144,8 +144,8 @@ namespace Soulseek
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
-            DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            //DistributedConnectionManager = distributedConnectionManager ?? new DistributedConnectionManager(this);
+            //DistributedConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
@@ -1269,11 +1269,12 @@ namespace Soulseek
                 connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
                 connection.Disconnected += (sender, e) =>
                 {
-                    Waiter.Throw(waitKey, e.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
+                    //Waiter.Throw(waitKey, e.Exception ?? new ConnectionException($"Peer connection disconnected unexpectedly: {e.Message}"));
                 };
                 connection.MessageDataRead += MessageDataRead;
 
                 connection.PreventInactivityTimeout(true);
+                Console.WriteLine($"Sending browse request... {connection.Id}");
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await browseWait.ConfigureAwait(false);
