@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             var response = new BrowseResponse(directories.Count, directories);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
@@ -112,7 +112,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task BrowseInternalAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
@@ -144,7 +144,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task BrowseInternalAsync_Throws_TimeoutException_On_Timeout(string username, IPAddress ip, int port, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new TimeoutException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
@@ -233,7 +233,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
-            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
             var conn = new Mock<IMessageConnection>();

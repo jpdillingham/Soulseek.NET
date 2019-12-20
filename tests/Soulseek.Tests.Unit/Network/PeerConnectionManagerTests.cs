@@ -690,11 +690,11 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             using (var newConn = await manager.GetTransferConnectionAsync(username, ipAddress, directPort, token, CancellationToken.None))
             {
-                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting direct and indirect transfer connections"));
-                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established; cancelling"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting simultaneous direct and indirect transfer connections"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established first, attempting to cancel"));
                 Assert.Contains(
                     diagnostics,
-                    s => s.ContainsInsensitive("transfer connection to") && s.ContainsInsensitive("established."));
+                    s => s.ContainsInsensitive("transfer connection to") && s.ContainsInsensitive("established, returning"));
             }
         }
 
@@ -1473,8 +1473,8 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             using (var newConn = await manager.GetOrAddMessageConnectionAsync(username, ipAddress, directPort, CancellationToken.None))
             {
-                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting direct and indirect message connections"));
-                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established; cancelling"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive("Attempting simultaneous direct and indirect message connections"));
+                Assert.Contains(diagnostics, s => s.ContainsInsensitive($"established first, attempting to cancel"));
                 Assert.Contains(
                     diagnostics,
                     s => s.ContainsInsensitive("message connection to") && s.ContainsInsensitive("established."));
