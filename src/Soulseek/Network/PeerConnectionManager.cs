@@ -392,7 +392,7 @@ namespace Soulseek.Network
             using (var indirectCts = new CancellationTokenSource())
             using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
             {
-                Diagnostic.Debug($"Attempting direct and indirect transfer connections to {username} ({ipAddress}:{port})");
+                Diagnostic.Debug($"Attempting simultaneous direct and indirect transfer connections to {username} ({ipAddress}:{port})");
 
                 var direct = GetTransferConnectionOutboundDirectAsync(ipAddress, port, token, directLinkedCts.Token);
                 var indirect = GetTransferConnectionOutboundIndirectAsync(username, token, indirectLinkedCts.Token);
