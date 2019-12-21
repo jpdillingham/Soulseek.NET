@@ -47,7 +47,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessage(mocks.PeerConnection.Object, message);
+            handler.HandleMessage(mocks.PeerConnection.Object, new MessageReadEventArgs(message));
 
             Assert.Contains(messages, m => m.IndexOf("peer message received", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
