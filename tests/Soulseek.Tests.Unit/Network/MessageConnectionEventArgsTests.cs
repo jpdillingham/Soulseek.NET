@@ -19,10 +19,10 @@ namespace Soulseek.Tests.Unit.Network
     public class MessageConnectionEventArgsTests
     {
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "MessageDataEventArgs instantiates with the expected values"), AutoData]
-        public void MessageDataEventArgs_Instantiates_With_The_Expected_Values(byte[] code, long current, long total)
+        [Theory(DisplayName = "MessageDataReadEventArgs instantiates with the expected values"), AutoData]
+        public void MessageDataReadEventArgs_Instantiates_With_The_Expected_Values(byte[] code, long current, long total)
         {
-            var a = new MessageDataEventArgs(code, current, total);
+            var a = new MessageDataReadEventArgs(code, current, total);
 
             Assert.Equal(code, a.Code);
             Assert.Equal(current, a.CurrentLength);

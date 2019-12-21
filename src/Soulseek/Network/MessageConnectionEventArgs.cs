@@ -24,15 +24,15 @@ namespace Soulseek.Network
     /// <summary>
     ///     EventArgs for <see cref="MessageConnection"/> events raised message data is received.
     /// </summary>
-    internal sealed class MessageDataEventArgs : MessageConnectionEventArgs
+    internal sealed class MessageDataReadEventArgs : MessageConnectionEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="MessageDataEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="MessageDataReadEventArgs"/> class.
         /// </summary>
         /// <param name="code">The message code, as a byte array.</param>
         /// <param name="currentLength">The length of the event data.</param>
         /// <param name="totalLength">The total expected length of the data transfer.</param>
-        public MessageDataEventArgs(byte[] code, long currentLength, long totalLength)
+        public MessageDataReadEventArgs(byte[] code, long currentLength, long totalLength)
         {
             Code = code;
             CurrentLength = currentLength;

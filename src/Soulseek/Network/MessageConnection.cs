@@ -74,7 +74,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when message data is received.
         /// </summary>
-        public event EventHandler<MessageDataEventArgs> MessageDataRead;
+        public event EventHandler<MessageDataReadEventArgs> MessageDataRead;
 
         /// <summary>
         ///     Occurs when a new message is read in its entirety.
@@ -125,7 +125,7 @@ namespace Soulseek.Network
             void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
             {
                 Interlocked.CompareExchange(ref MessageDataRead, null, null)?
-                    .Invoke(this, new MessageDataEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
+                    .Invoke(this, new MessageDataReadEventArgs(codeBytes, e.CurrentLength, e.TotalLength));
             }
 
             try

@@ -23,7 +23,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Occurs when message data is received.
         /// </summary>
-        event EventHandler<MessageDataEventArgs> MessageDataRead;
+        event EventHandler<MessageDataReadEventArgs> MessageDataRead;
 
         /// <summary>
         ///     Occurs when a new message is read in its entirety.
