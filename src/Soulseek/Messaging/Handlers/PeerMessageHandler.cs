@@ -54,9 +54,9 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="args">The message event args.</param>
-        public void HandleMessage(object sender, MessageReadEventArgs args)
+        public void HandleMessageRead(object sender, MessageReadEventArgs args)
         {
-            HandleMessage(sender, args.Message);
+            HandleMessageRead(sender, args.Message);
         }
 
         /// <summary>
@@ -64,7 +64,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
         /// <param name="message">The message.</param>
-        public async void HandleMessage(object sender, byte[] message)
+        public async void HandleMessageRead(object sender, byte[] message)
         {
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Peer>(message).ReadCode();

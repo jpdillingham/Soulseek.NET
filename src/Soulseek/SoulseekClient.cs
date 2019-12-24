@@ -155,7 +155,7 @@ namespace Soulseek
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            ServerConnection.MessageRead += ServerMessageHandler.HandleMessage;
+            ServerConnection.MessageRead += ServerMessageHandler.HandleMessageRead;
         }
 
         /// <summary>

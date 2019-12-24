@@ -47,7 +47,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessage(conn.Object, new MessageReadEventArgs(message));
+            handler.HandleMessageRead(conn.Object, new MessageReadEventArgs(message));
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
         }
@@ -64,7 +64,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new MessageBuilder().WriteCode(MessageCode.Distributed.Unknown).Build();
 
-            handler.HandleMessage(new Mock<IMessageConnection>().Object, message);
+            handler.HandleMessageRead(new Mock<IMessageConnection>().Object, message);
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Exactly(2));
 
@@ -92,7 +92,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-            handler.HandleMessage(conn.Object, msg);
+            handler.HandleMessageRead(conn.Object, msg);
 
             diagnostics = diagnostics
                 .Where(d => d.Level == DiagnosticLevel.Warning)
@@ -122,7 +122,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(level)
                 .Build();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
         }
@@ -149,7 +149,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(level)
                 .Build();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
             mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
@@ -175,7 +175,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(root)
                 .Build();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
         }
@@ -202,7 +202,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(root)
                 .Build();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
             mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
@@ -228,7 +228,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(depth)
                 .Build();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete<int>(key, depth), Times.Once);
         }
@@ -249,7 +249,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteCode(MessageCode.Distributed.Ping)
                 .Build();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             var reader = new MessageReader<MessageCode.Distributed>(msg);
 
@@ -270,7 +270,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
         }
@@ -285,7 +285,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
         }
@@ -310,7 +310,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             diagnostics = diagnostics
                 .Where(d => d.Level == DiagnosticLevel.Warning)
@@ -339,7 +339,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Once);
@@ -366,7 +366,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
@@ -394,7 +394,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-            handler.HandleMessage(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
 
             mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
             mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
