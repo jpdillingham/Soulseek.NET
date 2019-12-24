@@ -216,6 +216,37 @@ namespace Soulseek.Messaging.Handlers
             }
         }
 
+        /// <summary>
+        ///     Handles the receipt of incoming messages, prior to the body having been read and parsed.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="args">The message receipt event args.</param>
+        public void HandleMessageReceived(object sender, MessageReceivedEventArgs args)
+        {
+            Console.WriteLine($"EVENT FIRED");
+            var connection = (IMessageConnection)sender;
+            var code = (MessageCode.Peer)BitConverter.ToInt32(args.Code, 0);
+
+            try
+            {
+                switch (code)
+                {
+                    case MessageCode.Peer.BrowseResponse:
+                        var key = new WaitKey(Constants.WaitKey.BrowseResponseConnection, connection.Username);
+                        Console.WriteLine($"BROWSE RESPONSE RECEIVED {key}");
+                        SoulseekClient.Waiter.Complete(key, connection);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
+            }
+        }
+
         private async Task<(bool Rejected, string RejectionMessage)> TryEnqueueDownloadAsync(string username, IPAddress ipAddress, int port, string filename)
         {
             bool rejected = false;

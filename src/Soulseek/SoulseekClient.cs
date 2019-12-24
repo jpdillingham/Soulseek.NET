@@ -1255,12 +1255,22 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
                 var browseWait = Waiter.Wait<BrowseResponse>(waitKey, options.Timeout, cancellationToken);
 
+                var key = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
+                var responseConnectionWait = Waiter.Wait<IMessageConnection>(key, options.Timeout, cancellationToken);
+
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
 
                 var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
+                var responseConnection = await responseConnectionWait.ConfigureAwait(false);
+                responseConnection.MessageDataRead += (sender, args) =>
+                {
+                    Console.WriteLine($"BROWSE RESPONSE: {args.PercentComplete}%");
+                };
+
                 var response = await browseWait.ConfigureAwait(false);
+                // todo: unwire dataread handler
                 return response.Directories;
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
