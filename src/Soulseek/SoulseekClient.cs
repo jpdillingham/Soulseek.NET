@@ -1250,27 +1250,61 @@ namespace Soulseek
 
         private async Task<IReadOnlyCollection<Directory>> BrowseInternalAsync(string username, BrowseOptions options, CancellationToken cancellationToken)
         {
+            var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
+            bool completionEventFired = false;
+
+            void Disconnected(object sender, ConnectionDisconnectedEventArgs args)
+            {
+                Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
+            }
+
+            void UpdateProgress(object sender, MessageDataReadEventArgs args)
+            {
+                Console.WriteLine($"BROWSE RESPONSE: {args.CurrentLength} of {args.TotalLength}/{args.PercentComplete}%");
+
+                if (args.PercentComplete == 100)
+                {
+                    completionEventFired = true;
+                }
+            }
+
             try
             {
-                var waitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
-                var browseWait = Waiter.Wait<BrowseResponse>(waitKey, options.Timeout, cancellationToken);
+                // prepare an indefinite wait for the operation.  this is completed by either successful completion of
+                // the message transfer, or by the receiving connection being disconnected.
+                var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(browseWaitKey, cancellationToken);
 
-                var key = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
-                var responseConnectionWait = Waiter.Wait<IMessageConnection>(key, options.Timeout, cancellationToken);
+                // prepare a wait for the receipt of the response message with the timeout value specified in options.  this allows the operation to wait
+                // for the remote client to compose the response message.  this wait is completed when the browse responce message is received, but before it is read entirely.
+                var responseConnectionKey = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
+                var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.Timeout, cancellationToken);
 
+                // fetch the user's address and a connection and write the browse request to the remote user
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-
                 var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                var responseConnection = await responseConnectionWait.ConfigureAwait(false);
-                responseConnection.MessageDataRead += (sender, args) =>
-                {
-                    Console.WriteLine($"BROWSE RESPONSE: {args.PercentComplete}%");
-                };
+                // wait for the receipt of the response message
+                var (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
+                var responseLength = responseReceivedEventArgs.Length - 4;
+                responseConnection.Disconnected += Disconnected;
+                responseConnection.MessageDataRead += UpdateProgress;
+
+                // fake a progress update since we'll always miss the first packet (this is what fires the received event, so we've already read the first 4k
+                // or whatever the read buffer size is)
+                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength));
 
                 var response = await browseWait.ConfigureAwait(false);
-                // todo: unwire dataread handler
+
+                responseConnection.Disconnected -= Disconnected;
+                responseConnection.MessageDataRead -= UpdateProgress;
+
+                // if the response was under 4k, we won't receive a DataRead event informing us of 100% completion.  if this is the case, fake it
+                if (!completionEventFired)
+                {
+                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, responseLength, responseLength));
+                }
+
                 return response.Directories;
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
