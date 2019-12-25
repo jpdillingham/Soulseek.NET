@@ -223,7 +223,6 @@ namespace Soulseek.Messaging.Handlers
         /// <param name="args">The message receipt event args.</param>
         public void HandleMessageReceived(object sender, MessageReceivedEventArgs args)
         {
-            Console.WriteLine($"EVENT FIRED");
             var connection = (IMessageConnection)sender;
             var code = (MessageCode.Peer)BitConverter.ToInt32(args.Code, 0);
 
@@ -233,8 +232,7 @@ namespace Soulseek.Messaging.Handlers
                 {
                     case MessageCode.Peer.BrowseResponse:
                         var key = new WaitKey(Constants.WaitKey.BrowseResponseConnection, connection.Username);
-                        Console.WriteLine($"BROWSE RESPONSE RECEIVED {key}");
-                        SoulseekClient.Waiter.Complete(key, connection);
+                        SoulseekClient.Waiter.Complete(key, (EventArgs: args, Connection: connection));
                         break;
 
                     default:
