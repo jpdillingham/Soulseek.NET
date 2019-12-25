@@ -162,8 +162,8 @@
             Client.TransferStateChanged += (e, args) => Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}");
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
             //Client.TransferProgressUpdated += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
-
-
+            //Client.BrowseProgressUpdated += (e, args) => Console.WriteLine($"[BROWSE] {args.Username}: {args.BytesTransferred} of {args.Size} ({args.PercentComplete}%)");
+            
             Task.Run(async () => {
                 await Client.ConnectAsync();
                 await Client.LoginAsync(Username, Password);
