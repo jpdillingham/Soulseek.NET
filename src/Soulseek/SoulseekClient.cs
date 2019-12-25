@@ -159,6 +159,11 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Occurs when a browse response receives data.
+        /// </summary>
+        public event EventHandler<BrowseProgressUpdatedEventArgs> BrowseProgressUpdated;
+
+        /// <summary>
         ///     Occurs when the client connects.
         /// </summary>
         public event EventHandler Connected;
@@ -1253,19 +1258,16 @@ namespace Soulseek
             var browseWaitKey = new WaitKey(MessageCode.Peer.BrowseResponse, username);
             bool completionEventFired = false;
 
-            void Disconnected(object sender, ConnectionDisconnectedEventArgs args)
-            {
-                Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
-            }
-
             void UpdateProgress(object sender, MessageDataReadEventArgs args)
             {
-                Console.WriteLine($"BROWSE RESPONSE: {args.CurrentLength} of {args.TotalLength}/{args.PercentComplete}%");
-
                 if (args.PercentComplete == 100)
                 {
                     completionEventFired = true;
                 }
+
+                var eventArgs = new BrowseProgressUpdatedEventArgs(username, args.CurrentLength, args.TotalLength);
+                options.ProgressUpdated?.Invoke(eventArgs);
+                BrowseProgressUpdated?.Invoke(this, eventArgs);
             }
 
             try
@@ -1277,7 +1279,7 @@ namespace Soulseek
                 // prepare a wait for the receipt of the response message with the timeout value specified in options.  this allows the operation to wait
                 // for the remote client to compose the response message.  this wait is completed when the browse responce message is received, but before it is read entirely.
                 var responseConnectionKey = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
-                var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.Timeout, cancellationToken);
+                var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.ResponseTimeout, cancellationToken);
 
                 // fetch the user's address and a connection and write the browse request to the remote user
                 var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1287,7 +1289,10 @@ namespace Soulseek
                 // wait for the receipt of the response message
                 var (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
                 var responseLength = responseReceivedEventArgs.Length - 4;
-                responseConnection.Disconnected += Disconnected;
+
+                responseConnection.Disconnected += (sender, args) =>
+                    Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
+
                 responseConnection.MessageDataRead += UpdateProgress;
 
                 // fake a progress update since we'll always miss the first packet (this is what fires the received event, so we've already read the first 4k
@@ -1296,7 +1301,6 @@ namespace Soulseek
 
                 var response = await browseWait.ConfigureAwait(false);
 
-                responseConnection.Disconnected -= Disconnected;
                 responseConnection.MessageDataRead -= UpdateProgress;
 
                 // if the response was under 4k, we won't receive a DataRead event informing us of 100% completion.  if this is the case, fake it
