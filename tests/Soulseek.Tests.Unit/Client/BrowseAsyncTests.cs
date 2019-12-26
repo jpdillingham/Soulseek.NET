@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             var response = new BrowseResponse(directories.Count, directories);
 
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
@@ -95,6 +95,9 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+
+            waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((new MessageReceivedEventArgs(1, new byte[] { 0x0 }), conn.Object)));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
@@ -112,7 +115,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task BrowseInternalAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
@@ -126,6 +129,9 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+
+            waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((new MessageReceivedEventArgs(1, new byte[] { 0x0 }), conn.Object)));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
@@ -144,7 +150,7 @@ namespace Soulseek.Tests.Unit.Client
         public async Task BrowseInternalAsync_Throws_TimeoutException_On_Timeout(string username, IPAddress ip, int port, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new TimeoutException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
@@ -158,6 +164,9 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+
+            waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((new MessageReceivedEventArgs(1, new byte[] { 0x0 }), conn.Object)));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
@@ -233,7 +242,7 @@ namespace Soulseek.Tests.Unit.Client
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
-            waiter.Setup(m => m.Wait<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
             var conn = new Mock<IMessageConnection>();
@@ -244,6 +253,9 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+
+            waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult((new MessageReceivedEventArgs(1, new byte[] { 0x0 }), conn.Object)));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
