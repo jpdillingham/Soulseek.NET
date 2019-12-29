@@ -19,6 +19,7 @@
     using Newtonsoft.Json.Converters;
     using Soulseek;
     using Soulseek.Diagnostics;
+    using Soulseek.Exceptions;
     using Swashbuckle.AspNetCore.Swagger;
     using WebAPI.Trackers;
 
@@ -163,6 +164,22 @@
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
             //Client.TransferProgressUpdated += (e, args) => Console.WriteLine($"[{args.Direction.ToString().ToUpper()}] [{args.Username}/{Path.GetFileName(args.Filename)}] {args.PercentComplete} {args.AverageSpeed}kb/s");
 
+            async Task ConnectAndLogIn()
+            {
+                await Client.ConnectAsync();
+                await Client.LoginAsync(Username, Password);
+            }
+
+            Client.Disconnected += async (e, args) =>
+            {
+                Console.WriteLine($"Disconnected from Soulseek server: {args.Message}");
+
+                if (!(args.Exception is KickedFromServerException || args.Exception is ObjectDisposedException))
+                {
+                    Console.WriteLine($"Attepting to reconnect...");
+                    await ConnectAndLogIn();
+                }
+            };
 
             Task.Run(async () => {
                 await Client.ConnectAsync();
