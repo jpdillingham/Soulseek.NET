@@ -27,6 +27,11 @@ namespace Soulseek
     public interface ISoulseekClient : IDisposable, IDiagnosticGenerator
     {
         /// <summary>
+        ///     Occurs when a browse response receives data.
+        /// </summary>
+        event EventHandler<BrowseProgressUpdatedEventArgs> BrowseProgressUpdated;
+
+        /// <summary>
         ///     Occurs when the client connects.
         /// </summary>
         event EventHandler Connected;

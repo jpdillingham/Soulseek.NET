@@ -464,7 +464,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains(messages, m => m.IndexOf("Failed to invoke QueueDownload action", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
-        [Trait("Category", "Diagnostic")]
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Writes TransferResponse on successful QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_On_Successful_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename)
         {
@@ -479,7 +479,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expected)), null), Times.Once);
         }
 
-        [Trait("Category", "Diagnostic")]
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on failed QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_And_QueueFailedResponse_On_Failed_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename)
         {
@@ -496,7 +496,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expectedQueueFailedResponse)), null), Times.Once);
         }
 
-        [Trait("Category", "Diagnostic")]
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on rejected QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_And_QueueFailedResponse_On_Rejected_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename, string rejectMessage)
         {
@@ -513,7 +513,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expectedQueueFailedResponse)), null), Times.Once);
         }
 
-        [Trait("Category", "Diagnostic")]
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Completes TransferRequest wait on upload request"), AutoData]
         public void Completes_TransferRequest_Wait_On_Upload_Request(string username, IPAddress ip, int port, int token, string filename)
         {
@@ -525,6 +525,39 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.Is<TransferRequest>(t => t.Direction == request.Direction && t.Token == request.Token && t.Filename == request.Filename)), Times.Once);
+        }
+
+        [Trait("Category", "HandleMessageReceived")]
+        [Theory(DisplayName = "Completes BrowseResponseConnection wait on browse response receipt"), AutoData]
+        public void Completes_BrowseResponseConnection_Wait_On_Browse_Response_Receipt(string username, IPAddress ip, int port)
+        {
+            var (handler, mocks) = GetFixture(username, ip, port);
+
+            var request = new BrowseResponse(0, Enumerable.Empty<Directory>());
+            var message = request.ToByteArray();
+            var args = new MessageReceivedEventArgs(message.Length, message.Skip(4).Take(4).ToArray());
+
+            handler.HandleMessageReceived(mocks.PeerConnection.Object, args);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.BrowseResponseConnection, username), It.IsAny<(MessageReceivedEventArgs, IMessageConnection)>()), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on exception handling BrowseResponse receipt"), AutoData]
+        public void Creates_Diagnostic_On_Exception_Handling_BrowseResponse_Receipt(string username, IPAddress ip, int port)
+        {
+            var (handler, mocks) = GetFixture(username, ip, port);
+
+            var request = new BrowseResponse(0, Enumerable.Empty<Directory>());
+            var message = request.ToByteArray();
+            var args = new MessageReceivedEventArgs(message.Length, message.Skip(4).Take(4).ToArray());
+
+            mocks.Waiter.Setup(m => m.Complete(new WaitKey(Constants.WaitKey.BrowseResponseConnection, username), It.IsAny<(MessageReceivedEventArgs, IMessageConnection)>()))
+                .Throws(new Exception("foo"));
+
+            handler.HandleMessageReceived(mocks.PeerConnection.Object, args);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Error handling peer message")), It.IsAny<Exception>()), Times.Once);
         }
 
         private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, SoulseekClientOptions options = null)

@@ -234,6 +234,7 @@ namespace Soulseek.Network
                         SoulseekClient.Options.PeerConnectionOptions);
 
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                    connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                     connection.Disconnected += MessageConnection_Disconnected;
 
                     try
@@ -504,6 +505,7 @@ namespace Soulseek.Network
 
             connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+            connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
             connection.Disconnected += MessageConnection_Disconnected;
 
             try
@@ -548,6 +550,7 @@ namespace Soulseek.Network
 
                     connection.Context = Constants.ConnectionMethod.Indirect;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                    connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                     connection.Disconnected += MessageConnection_Disconnected;
 
                     Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPAddress}:{connection.Port}) established. (id: {connection.Id})");

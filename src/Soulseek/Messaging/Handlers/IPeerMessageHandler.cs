@@ -12,10 +12,18 @@
 
 namespace Soulseek.Messaging.Handlers
 {
+    using Soulseek.Network;
+
     /// <summary>
     ///     Handles incoming messages from peer connections.
     /// </summary>
     internal interface IPeerMessageHandler : IMessageHandler
     {
+        /// <summary>
+        ///     Handles the receipt of incoming messages, prior to the body having been read and parsed.
+        /// </summary>
+        /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
+        /// <param name="args">The message receipt event args.</param>
+        void HandleMessageReceived(object sender, MessageReceivedEventArgs args);
     }
 }
