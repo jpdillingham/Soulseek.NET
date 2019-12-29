@@ -542,6 +542,24 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.BrowseResponseConnection, username), It.IsAny<(MessageReceivedEventArgs, IMessageConnection)>()), Times.Once);
         }
 
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on exception handling BrowseResponse receipt"), AutoData]
+        public void Creates_Diagnostic_On_Exception_Handling_BrowseResponse_Receipt(string username, IPAddress ip, int port)
+        {
+            var (handler, mocks) = GetFixture(username, ip, port);
+
+            var request = new BrowseResponse(0, Enumerable.Empty<Directory>());
+            var message = request.ToByteArray();
+            var args = new MessageReceivedEventArgs(message.Length, message.Skip(4).Take(4).ToArray());
+
+            mocks.Waiter.Setup(m => m.Complete(new WaitKey(Constants.WaitKey.BrowseResponseConnection, username), It.IsAny<(MessageReceivedEventArgs, IMessageConnection)>()))
+                .Throws(new Exception("foo"));
+
+            handler.HandleMessageReceived(mocks.PeerConnection.Object, args);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Error handling peer message")), It.IsAny<Exception>()), Times.Once);
+        }
+
         private (PeerMessageHandler Handler, Mocks Mocks) GetFixture(string username = null, IPAddress ip = null, int port = 0, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
