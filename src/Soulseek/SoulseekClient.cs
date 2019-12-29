@@ -155,6 +155,12 @@ namespace Soulseek
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
+            ServerMessageHandler.KickedFromServer += (sender, e) =>
+            {
+                Disconnect("Kicked from server.");
+                KickedFromServer?.Invoke(this, e);
+            };
+
             ServerConnection.MessageRead += ServerMessageHandler.HandleMessageRead;
         }
 
@@ -172,6 +178,12 @@ namespace Soulseek
         ///     Occurs when the client disconnects.
         /// </summary>
         public event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
+
+        /// <summary>
+        ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
+        ///     the same credentials.
+        /// </summary>
+        public event EventHandler KickedFromServer;
 
         /// <summary>
         ///     Occurs when the client is logged in.
