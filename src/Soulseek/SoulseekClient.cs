@@ -157,7 +157,8 @@ namespace Soulseek
 
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
-                Disconnect("Kicked from server.");
+                Diagnostic.Info($"Kicked from server.");
+                Disconnect("Kicked from server.", new KickedFromServerException());
                 KickedFromServer?.Invoke(this, e);
             };
 
@@ -1286,6 +1287,7 @@ namespace Soulseek
             var previousState = State;
             State = state;
 
+            Diagnostic.Debug($"Client state changed from {previousState} to {state}{(message == null ? string.Empty : $"; message: {message}")}");
             StateChanged?.Invoke(this, new SoulseekClientStateChangedEventArgs(previousState, State, message, exception));
 
             if (State == SoulseekClientStates.Connected)
