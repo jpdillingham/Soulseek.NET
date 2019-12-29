@@ -103,6 +103,11 @@ namespace Soulseek
             ///     Transfer.
             /// </summary>
             public const string Transfer = "Transfer";
+
+            /// <summary>
+            ///     BrowseResponseConnection.
+            /// </summary>
+            public const string BrowseResponseConnection = "BrowseResponseConnection";
         }
     }
 }

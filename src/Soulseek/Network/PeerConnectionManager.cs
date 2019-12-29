@@ -111,7 +111,7 @@ namespace Soulseek.Network
                 SoulseekClient.Options.PeerConnectionOptions,
                 tcpClient);
 
-            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
+            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.Disconnected += MessageConnection_Disconnected;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Unsolicited inbound message connection to {username} ({endpoint.Address}:{endpoint.Port}) disconnected. (id: {connection.Id})");
 
@@ -233,7 +233,8 @@ namespace Soulseek.Network
                         connectToPeerResponse.Port,
                         SoulseekClient.Options.PeerConnectionOptions);
 
-                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
+                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                    connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                     connection.Disconnected += MessageConnection_Disconnected;
 
                     try
@@ -503,7 +504,8 @@ namespace Soulseek.Network
                 SoulseekClient.Options.PeerConnectionOptions);
 
             connection.Context = Constants.ConnectionMethod.Direct;
-            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
+            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+            connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
             connection.Disconnected += MessageConnection_Disconnected;
 
             try
@@ -547,7 +549,8 @@ namespace Soulseek.Network
                     Diagnostic.Debug($"Incoming Indirect message connection to {username} ({incomingConnection.IPAddress}:{incomingConnection.Port}) handed off (old: {incomingConnection.Id}, new: {connection.Id})");
 
                     connection.Context = Constants.ConnectionMethod.Indirect;
-                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessage;
+                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                    connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                     connection.Disconnected += MessageConnection_Disconnected;
 
                     Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPAddress}:{connection.Port}) established. (id: {connection.Id})");

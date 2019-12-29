@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(1)
                 .Build();
 
-            handler.HandleMessage(null, new MessageReadEventArgs(message));
+            handler.HandleMessageRead(null, new MessageReadEventArgs(message));
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
         }
@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = new MessageBuilder().WriteCode(MessageCode.Server.PrivateRoomOwned).Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Exactly(2));
 
@@ -88,7 +88,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(port)
                 .Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(username, result.Username);
             Assert.Equal(ip, result.IPAddress);
@@ -117,7 +117,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             PrivateMessageEventArgs response = null;
             handler.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             Assert.NotNull(response);
             Assert.Equal(id, response.Id);
@@ -143,7 +143,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             mocks.Client.Verify(m =>
                 m.AcknowledgePrivateMessageAsync(id, It.IsAny<CancellationToken>()));
@@ -169,7 +169,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(value)
                 .Build();
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             Assert.Equal(value, result);
         }
@@ -195,7 +195,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteBytes(ipBytes)
                 .Build();
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             Assert.Equal(success, result.Succeeded);
             Assert.Equal(message, result.Message);
@@ -221,7 +221,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             builder.WriteInteger(rooms.Count);
             rooms.ForEach(room => builder.WriteInteger(room.UserCount));
 
-            handler.HandleMessage(null, builder.Build());
+            handler.HandleMessageRead(null, builder.Build());
 
             foreach (var (name, userCount) in rooms)
             {
@@ -250,7 +250,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var msg = builder.Build();
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             foreach (var name in names)
             {
@@ -282,7 +282,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             Assert.Equal(username, response.Username);
             Assert.Equal(ip, response.IPAddress);
@@ -311,7 +311,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            var ex = Record.Exception(() => handler.HandleMessage(null, msg));
+            var ex = Record.Exception(() => handler.HandleMessageRead(null, msg));
 
             Assert.Null(ex);
             Assert.Empty(mocks.Downloads);
@@ -344,7 +344,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             diagnostics = diagnostics
                 .Where(d => d.Level == DiagnosticLevel.Debug)
@@ -381,7 +381,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             diagnostics = diagnostics
                 .Where(d => d.Level == DiagnosticLevel.Debug)
@@ -428,7 +428,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
                 .Returns(Task.FromResult((conn.Object, token)));
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()), Times.Once);
         }
@@ -456,7 +456,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteInteger(token)
                 .Build();
 
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             Assert.Equal(username, result.Username);
             Assert.Equal(token, result.Token);
@@ -481,7 +481,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var diagnostics = new List<DiagnosticEventArgs>();
 
             handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-            handler.HandleMessage(null, msg);
+            handler.HandleMessageRead(null, msg);
 
             diagnostics = diagnostics
                 .Where(d => d.Level == DiagnosticLevel.Warning)
@@ -513,7 +513,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteString(userData.CountryCode)
                 .Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(username, result.Username);
             Assert.Equal(exists, result.Exists);
@@ -542,7 +542,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(privileged ? 1 : 0))
                 .Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(username, result.Username);
             Assert.Equal(status, result.Status);
@@ -577,7 +577,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(parents, result);
         }
@@ -609,7 +609,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             mocks.Diagnostic.Verify(m => m.Debug("Error handling NetInfo message: foo"));
         }
@@ -635,7 +635,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.UserStatusChanged += (sender, args) => eventArgs = args;
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(username, eventArgs.Username);
             Assert.Equal(status, eventArgs.Status);
@@ -665,7 +665,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(roomName, response.Name);
             Assert.Equal(0, response.UserCount);
@@ -683,7 +683,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             var key = new WaitKey(MessageCode.Server.LeaveRoom, roomName);
             mocks.Waiter.Verify(m => m.Complete(It.Is<WaitKey>(k => k.Equals(key))), Times.Once);
@@ -705,7 +705,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             RoomMessageEventArgs actual = default;
             handler.RoomMessageReceived += (sender, args) => actual = args;
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(roomName, actual.RoomName);
             Assert.Equal(username, actual.Username);
@@ -733,7 +733,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             RoomJoinedEventArgs actual = default;
             handler.RoomJoined += (sender, args) => actual = args;
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(roomName, actual.RoomName);
             Assert.Equal(username, actual.Username);
@@ -760,7 +760,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             RoomLeftEventArgs actual = default;
             handler.RoomLeft += (sender, args) => actual = args;
-            handler.HandleMessage(null, message);
+            handler.HandleMessageRead(null, message);
 
             Assert.Equal(roomName, actual.RoomName);
             Assert.Equal(username, actual.Username);

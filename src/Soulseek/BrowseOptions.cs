@@ -12,6 +12,8 @@
 
 namespace Soulseek
 {
+    using System;
+
     /// <summary>
     ///     Options for the browse operation.
     /// </summary>
@@ -20,15 +22,24 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="BrowseOptions"/> class.
         /// </summary>
-        /// <param name="timeout">The timeout for the response, in seconds.</param>
-        public BrowseOptions(int timeout = 60)
+        /// <param name="responseTimeout">The timeout for the response, in seconds.</param>
+        /// <param name="progressUpdated">The Action to invoke when the browse response receives data.</param>
+        public BrowseOptions(
+            int responseTimeout = 60,
+            Action<BrowseProgressUpdatedEventArgs> progressUpdated = null)
         {
-            Timeout = timeout;
+            ResponseTimeout = responseTimeout;
+            ProgressUpdated = progressUpdated;
         }
 
         /// <summary>
         ///     Gets the timeout for the response, in seconds.
         /// </summary>
-        public int Timeout { get; }
+        public int ResponseTimeout { get; }
+
+        /// <summary>
+        ///     Gets the Action to invoke when the browse response receives data.
+        /// </summary>
+        public Action<BrowseProgressUpdatedEventArgs> ProgressUpdated { get; }
     }
 }

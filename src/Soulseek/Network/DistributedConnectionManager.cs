@@ -158,7 +158,7 @@ namespace Soulseek.Network
                 r.Port,
                 SoulseekClient.Options.DistributedConnectionOptions);
 
-            connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
+            connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
 
             using (var cts = new CancellationTokenSource())
             {
@@ -222,7 +222,7 @@ namespace Soulseek.Network
                 SoulseekClient.Options.DistributedConnectionOptions,
                 tcpClient);
 
-            connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
+            connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
 
             using (var cts = new CancellationTokenSource())
             {
@@ -453,7 +453,7 @@ namespace Soulseek.Network
                 var connection = await task.ConfigureAwait(false);
                 var isDirect = connection.Context.ToString() == Constants.ConnectionMethod.Direct;
 
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessage;
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
 
                 Diagnostic.Debug($"{connection.Context} Parent candidate connection to {username} ({ipAddress}:{port}) established.  Waiting for branch information and first SearchRequest message");
                 (isDirect ? indirectCts : directCts).Cancel();

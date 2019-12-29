@@ -222,7 +222,7 @@ namespace Soulseek.Tests.Unit.Client
                 var task = s.SearchAsync(searchText, token, options);
 
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
-                handler.HandleMessage(conn.Object, msg);
+                handler.HandleMessageRead(conn.Object, msg);
 
                 var responses = await task.ConfigureAwait(false);
 
@@ -270,7 +270,7 @@ namespace Soulseek.Tests.Unit.Client
                 var task = s.SearchAsync(searchText, (r) => { responses.Add(r); }, token, options);
 
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
-                handler.HandleMessage(conn.Object, msg);
+                handler.HandleMessageRead(conn.Object, msg);
 
                 await task.ConfigureAwait(false);
 
