@@ -20,6 +20,12 @@ namespace Soulseek.Messaging.Handlers
     internal interface IServerMessageHandler : IMessageHandler
     {
         /// <summary>
+        ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
+        ///     the same credentials.
+        /// </summary>
+        event EventHandler KickedFromServer;
+
+        /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
         event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
