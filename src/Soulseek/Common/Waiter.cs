@@ -152,6 +152,8 @@ namespace Soulseek
                 CancellationToken = cancellationToken,
             };
 
+            // obtain a read lock for the key.  this is necessary to prevent this code from adding a wait to the
+            // ConcurrentQueue while the containing dictionary entry is being cleaned up in MonitorWaits(), effectively discarding the new wait.
             var recordLock = Locks.GetOrAdd(key, new ReaderWriterLockSlim());
             recordLock.EnterReadLock();
 
@@ -214,7 +216,6 @@ namespace Soulseek
             }
         }
 
-        /// <remarks>Not thread safe; ensure this is invoked only by the timer within this class.</remarks>
         private void MonitorWaits(object sender, object e)
         {
             foreach (var record in Waits)
@@ -243,16 +244,21 @@ namespace Soulseek
                         }
                     }
 
+                    // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty.
+                    // this is tricky, because we don't want to remove a record if another thread is in the process of enqueueing a new wait.
                     if (record.Value.IsEmpty)
                     {
                         // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits before
-                        // we can delete the dictionary record
+                        // we can delete the dictionary record.  it's ok and expected that Wait() might add this record back to the dictionary
+                        // as soon as this unblocks; we're preventing new waits from being discarded if they are added by another thread
+                        // just prior to the TryRemove() operation below.
                         recordLock.EnterWriteLock();
 
                         try
                         {
                             // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
                             // entered the write lock. this is guarateed to be safe since we now have exclusive access to the record
+                            // and it should be impossible to remove a record containing a non-empty queue
                             if (record.Value.IsEmpty)
                             {
                                 Waits.TryRemove(record.Key, out _);
