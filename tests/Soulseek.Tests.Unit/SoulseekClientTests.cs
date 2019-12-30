@@ -19,6 +19,7 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging.Handlers;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -419,6 +420,41 @@ namespace Soulseek.Tests.Unit
                 Assert.Equal(token, t);
 
                 f.Verify(m => m.NextToken(), Times.Once);
+            }
+        }
+
+        [Trait("Category", "KickedFromServer")]
+        [Fact(DisplayName = "Raises KickedFromServer when kicked from server")]
+        public void Raises_KickedFromServer_When_Kicked_From_Server()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverMessageHandler: handlerMock.Object))
+            {
+                bool fired = false;
+                s.KickedFromServer += (sender, args) => fired = true;
+
+                handlerMock.Raise(m => m.KickedFromServer += null, EventArgs.Empty);
+
+                Assert.True(fired);
+            }
+        }
+
+        [Trait("Category", "KickedFromServer")]
+        [Fact(DisplayName = "Disconnects when kicked from server")]
+        public void Disconnects_When_Kicked_From_Server()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverMessageHandler: handlerMock.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                SoulseekClientDisconnectedEventArgs e = null;
+                s.Disconnected += (sender, args) => e = args;
+
+                handlerMock.Raise(m => m.KickedFromServer += null, EventArgs.Empty);
+
+                Assert.True(e.Exception is KickedFromServerException);
             }
         }
     }
