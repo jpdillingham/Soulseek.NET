@@ -638,7 +638,16 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to update distributed status: {ex.Message}", ex);
+                var msg = $"Failed to update distributed status: {ex.Message}";
+
+                if (SoulseekClient.State != SoulseekClientStates.Disconnected)
+                {
+                    Diagnostic.Warning(msg, ex);
+                }
+                else
+                {
+                    Diagnostic.Debug(msg, ex);
+                }
             }
         }
     }
