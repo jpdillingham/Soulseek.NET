@@ -59,7 +59,7 @@ namespace Soulseek.Network
             StatusTimer = new SystemTimer()
             {
                 Enabled = true,
-                Interval = 5000,
+                Interval = 30000,
             };
 
             StatusTimer.Elapsed += async (sender, e) =>
@@ -416,9 +416,9 @@ namespace Soulseek.Network
             {
                 if (disposing)
                 {
+                    StatusTimer?.Dispose();
+                    ParentWatchdogTimer?.Dispose();
                     RemoveAndDisposeAll();
-                    ParentWatchdogTimer.Dispose();
-                    StatusTimer.Dispose();
                 }
 
                 Disposed = true;
@@ -638,7 +638,16 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Failed to update distributed status: {ex.Message}", ex);
+                var msg = $"Failed to update distributed status: {ex.Message}";
+
+                if (SoulseekClient.State != SoulseekClientStates.Disconnected)
+                {
+                    Diagnostic.Warning(msg, ex);
+                }
+                else
+                {
+                    Diagnostic.Debug(msg, ex);
+                }
             }
         }
     }

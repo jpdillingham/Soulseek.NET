@@ -46,6 +46,12 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
+        ///     the same credentials.
+        /// </summary>
+        public event EventHandler KickedFromServer;
+
+        /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
@@ -226,6 +232,10 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.UserLeftRoom:
                         var leftNotification = RoomLeftNotification.FromByteArray(message);
                         RoomLeft?.Invoke(this, new RoomLeftEventArgs(leftNotification));
+                        break;
+
+                    case MessageCode.Server.KickedFromServer:
+                        KickedFromServer?.Invoke(this, EventArgs.Empty);
                         break;
 
                     default:

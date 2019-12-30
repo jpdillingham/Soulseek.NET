@@ -671,8 +671,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "UpdateStatusAsync")]
-        [Fact(DisplayName = "UpdateStatusAsync produces diagnostic warning on failure")]
-        internal async Task UpdateStatusAsync_Produces_Diagnostic_Warning_On_Failure()
+        [Fact(DisplayName = "UpdateStatusAsync produces diagnostic warning on failure when connected")]
+        internal async Task UpdateStatusAsync_Produces_Diagnostic_Warning_On_Failure_When_Connected()
         {
             var expectedEx = new Exception(string.Empty);
 
@@ -695,6 +695,34 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to update distributed status")), It.Is<Exception>(e => e == expectedEx)), Times.Once);
+        }
+
+        [Trait("Category", "UpdateStatusAsync")]
+        [Fact(DisplayName = "UpdateStatusAsync produces diagnostic debug on failure when disconnected")]
+        internal async Task UpdateStatusAsync_Produces_Diagnostic_Debug_On_Failure_When_Disconnected()
+        {
+            var expectedEx = new Exception(string.Empty);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.State)
+                .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+            mocks.ServerConnection.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException(expectedEx))
+                .Callback(() => mocks.Client.Setup(m => m.State).Returns(SoulseekClientStates.Disconnected));
+
+            var conn = GetMessageConnectionMock("foo", IPAddress.None, 1);
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            using (manager)
+            {
+                manager.SetProperty("ParentConnection", conn.Object);
+                await manager.InvokeMethod<Task>("UpdateStatusAsync");
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to update distributed status")), It.Is<Exception>(e => e == expectedEx)), Times.Once);
         }
 
         [Trait("Category", "ChildConnection_Disconnected")]

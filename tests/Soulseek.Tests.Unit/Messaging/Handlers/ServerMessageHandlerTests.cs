@@ -766,6 +766,25 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(username, actual.Username);
         }
 
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Raises KickedFromServer on KickedFromServer")]
+        public void Raises_KickedFromServer_On_KickedFromServer()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.KickedFromServer)
+                .Build();
+
+            EventArgs eventArgs = null;
+
+            handler.KickedFromServer += (sender, args) => eventArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(eventArgs);
+        }
+
         private (ServerMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
