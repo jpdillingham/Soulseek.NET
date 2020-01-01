@@ -257,7 +257,7 @@ namespace Soulseek.Messaging.Handlers
             }
             catch (EnqueueDownloadException ex)
             {
-                // pass the exception message through to the remote user only if QueueDownloadException is thrown
+                // pass the exception message through to the remote user only if EnqueueDownloadException is thrown
                 rejected = true;
                 rejectionMessage = ex.Message;
             }
