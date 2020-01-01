@@ -58,7 +58,6 @@
                 .AddJsonOptions(options =>
                 {
                     options.SerializerSettings.Converters.Add(new StringEnumConverter());
-                    options.SerializerSettings.Converters.Add(new IPAddressConverter());
                     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                     options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 });
@@ -186,6 +185,9 @@
             {
                 Console.WriteLine($"Disconnected from Soulseek server: {args.Message}");
 
+                // don't reconnect if the disconnecting Exception is either of these types.
+                // if KickedFromServerException, another client was most likely signed in, and retrying will cause a connect loop.
+                // if ObjectDisposedException, the client is shutting down.
                 if (!(args.Exception is KickedFromServerException || args.Exception is ObjectDisposedException))
                 {
                     Console.WriteLine($"Attepting to reconnect...");
@@ -228,14 +230,11 @@
         /// <returns>A Task resolving an IEnumerable of Soulseek.Directory.</returns>
         private Task<IEnumerable<Soulseek.Directory>> BrowseResponseResolver(string username, IPAddress ipAddress, int port)
         {
-            // limited to just the root for now
-            // todo: enumerate shared files
-            var files = System.IO.Directory.GetFiles(SharedDirectory)
-                .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0));
+            var result = System.IO.Directory
+                .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
+                .Select(dir => new Soulseek.Directory(dir, System.IO.Directory.GetFiles(dir)
+                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0))));
 
-            var dir = new Soulseek.Directory(SharedDirectory, files.Count(), files);
-
-            IEnumerable<Soulseek.Directory> result = new List<Soulseek.Directory>() { dir };
             return Task.FromResult(result);
         }
 
@@ -270,37 +269,69 @@
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        ///     Creates and returns a <see cref="SearchResponse"/> in response to the given <paramref name="query"/>.
+        /// </summary>
+        /// <param name="username">The username of the requesting user.</param>
+        /// <param name="token">The search token.</param>
+        /// <param name="query">The search query.</param>
+        /// <returns>A Task resolving a SearchResponse, or null.</returns>
         private Task<SearchResponse> SearchResponseResolver(string username, int token, string query)
         {
-            //Console.WriteLine($"Search request: {q}");
+            var defaultResponse = Task.FromResult<SearchResponse>(null);
 
-            if (query == "killing your enemy in 1995")
+            // sanitize the query string.  there's probably more to it than this.
+            query = query.Replace("/", string.Empty).Replace("\\", string.Empty);
+
+            // some bots continually query for very common strings.  blacklist known names here.
+            var blacklist = new[] { "Lola45", "Lolo51" };
+            if (blacklist.Contains(username))
             {
-                var files = System.IO.Directory.GetFiles(SharedDirectory)
-                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0));
-
-                return Task.FromResult(new SearchResponse(Username, token, files.Count(), 0, 0, 0, files));
+                return defaultResponse;
             }
 
+            // some bots and perhaps users search for very short terms.  only respond to queries >= 3 characters.  sorry, U2 fans.
+            if (query.Length < 3)
+            {
+                return defaultResponse;
+            }
+
+            var results = new List<Soulseek.File>();
+
+            // add all files from any directory matching the search query
+            // to be done properly this needs to be recursively applied, but that's outside of the scope of this example.
+            results.AddRange(System.IO.Directory
+                .GetDirectories(SharedDirectory, $"*{query}*", SearchOption.AllDirectories)
+                .SelectMany(dir => System.IO.Directory.GetFiles(dir, "*")
+                    .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))));
+
+            // add all files matching the query, regardless of directory
+            results.AddRange(System.IO.Directory
+                .GetFiles(SharedDirectory, $"{query}", SearchOption.AllDirectories)
+                .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0)));
+
+            // we may have added some files twice, so dedupe entries
+            results = results
+                .GroupBy(f => f.Filename)
+                .Select(group => group.First())
+                .ToList();
+
+            if (results.Count() > 0)
+            {
+                Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query}");
+
+                return Task.FromResult(new SearchResponse(
+                    Username,
+                    token,
+                    freeUploadSlots: 1,
+                    uploadSpeed: 0,
+                    queueLength: 0,
+                    fileList: results));
+            }
+
+            // if no results, either return null or an instance of SearchResponse with a fileList of length 0
+            // in either case, no response will be sent to the requestor.
             return Task.FromResult<SearchResponse>(null);
-        }
-    }
-
-    class IPAddressConverter : JsonConverter
-    {
-        public override bool CanConvert(Type objectType)
-        {
-            return (objectType == typeof(IPAddress));
-        }
-
-        public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
-        {
-            writer.WriteValue(value.ToString());
-        }
-
-        public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
-        {
-            return IPAddress.Parse((string)reader.Value);
         }
     }
 }
