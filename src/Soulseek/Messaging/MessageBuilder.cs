@@ -191,7 +191,7 @@ namespace Soulseek.Messaging
         public MessageBuilder WriteString(string value)
         {
             return WriteBytes(BitConverter.GetBytes(value.Length))
-                .WriteBytes(Encoding.ASCII.GetBytes(value));
+                .WriteBytes(Encoding.UTF8.GetBytes(value));
         }
 
         private void Compress(byte[] inData, out byte[] outData)
