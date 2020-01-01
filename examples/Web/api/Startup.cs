@@ -58,6 +58,7 @@
                 .AddJsonOptions(options =>
                 {
                     options.SerializerSettings.Converters.Add(new StringEnumConverter());
+                    options.SerializerSettings.Converters.Add(new IPAddressConverter());
                     options.SerializerSettings.ReferenceLoopHandling = ReferenceLoopHandling.Ignore;
                     options.SerializerSettings.NullValueHandling = NullValueHandling.Ignore;
                 });
@@ -97,7 +98,7 @@
 
             app.UseFileServer(new FileServerOptions
             {
-                FileProvider = new PhysicalFileProvider(WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot")),
+                FileProvider = new PhysicalFileProvider(WebRoot),
                 RequestPath = "",
                 EnableDirectoryBrowsing = false,
                 EnableDefaultFiles = true
@@ -332,6 +333,24 @@
             // if no results, either return null or an instance of SearchResponse with a fileList of length 0
             // in either case, no response will be sent to the requestor.
             return Task.FromResult<SearchResponse>(null);
+        }
+
+        class IPAddressConverter : JsonConverter
+        {
+            public override bool CanConvert(Type objectType)
+            {
+                return (objectType == typeof(IPAddress));
+            }
+
+            public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
+            {
+                writer.WriteValue(value.ToString());
+            }
+
+            public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
+            {
+                return IPAddress.Parse((string)reader.Value);
+            }
         }
     }
 }
