@@ -14,6 +14,9 @@
     using System.Threading.Tasks;
     using System.Timers;
 
+    /// <summary>
+    ///     This is kind of a mess, and is really more of a test harness than an example to follow.
+    /// </summary>
     public static class Program
     {
         private static readonly Action<string> o = (s) => Console.WriteLine(s);
