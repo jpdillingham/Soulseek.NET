@@ -875,7 +875,7 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope = scope ?? new DefaultSearchScope();
+            scope = scope ?? new SearchScope();
             options = options ?? new SearchOptions();
 
             return SearchToCollectionAsync(searchText, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -927,7 +927,7 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
-            scope = scope ?? new DefaultSearchScope();
+            scope = scope ?? new SearchScope();
             options = options ?? new SearchOptions();
 
             return SearchToCallbackAsync(searchText, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
@@ -1787,6 +1787,23 @@ namespace Soulseek
 
             try
             {
+                byte[] message = null;
+
+                if (scope.Type == SearchScopeType.Room)
+                {
+                    message = new RoomSearchRequest(scope.Subjects.First(), search.SearchText, search.Token).ToByteArray();
+                }
+                else if (scope.Type == SearchScopeType.User)
+                {
+                    message = scope.Subjects
+                        .SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray())
+                        .ToArray();
+                }
+                else
+                {
+                    message = new SearchRequest(search.SearchText, search.Token).ToByteArray();
+                }
+
                 search.ResponseReceived = (response) =>
                 {
                     responseReceived(response);
@@ -1795,23 +1812,6 @@ namespace Soulseek
                     options.ResponseReceived?.Invoke(eventArgs);
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
-
-                byte[] message = null;
-
-                if (scope is RoomSearchScope roomScope)
-                {
-                    message = new RoomSearchRequest(roomScope.RoomName, search.SearchText, search.Token).ToByteArray();
-                }
-                else if (scope is UserSearchScope userScope)
-                {
-                    message = userScope.Usernames
-                        .SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray())
-                        .ToArray();
-                }
-                else
-                {
-                    message = new SearchRequest(search.SearchText, search.Token).ToByteArray();
-                }
 
                 Searches.TryAdd(search.Token, search);
                 UpdateState(SearchStates.Requested);
