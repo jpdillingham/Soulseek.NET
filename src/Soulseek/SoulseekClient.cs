@@ -843,6 +843,7 @@ namespace Soulseek
         ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
+        /// <param name="scope">the search scope.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -855,7 +856,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -874,9 +875,10 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
+            scope = scope ?? new DefaultSearchScope();
             options = options ?? new SearchOptions();
 
-            return SearchToCollectionAsync(searchText, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCollectionAsync(searchText, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -885,6 +887,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="searchText">The text for which to search.</param>
         /// <param name="responseReceived">The delegate to invoke for each response.</param>
+        /// <param name="scope">the search scope.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -900,7 +903,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task SearchAsync(string searchText, Action<SearchResponse> responseReceived, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task SearchAsync(string searchText, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(searchText))
             {
@@ -924,9 +927,10 @@ namespace Soulseek
                 throw new DuplicateTokenException($"An active search with token {token.Value} is already in progress");
             }
 
+            scope = scope ?? new DefaultSearchScope();
             options = options ?? new SearchOptions();
 
-            return SearchToCallbackAsync(searchText, responseReceived, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCallbackAsync(searchText, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1767,7 +1771,7 @@ namespace Soulseek
             }
         }
 
-        private async Task SearchToCallbackAsync(string searchText, Action<SearchResponse> responseReceived, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task SearchToCallbackAsync(string searchText, Action<SearchResponse> responseReceived, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var search = new SearchInternal(searchText, token, options);
             var lastState = SearchStates.None;
@@ -1795,7 +1799,7 @@ namespace Soulseek
                 Searches.TryAdd(search.Token, search);
                 UpdateState(SearchStates.Requested);
 
-                await ServerConnection.WriteAsync(new SearchRequest(search.SearchText, search.Token).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(scope.CreateSearchRequestMessage(search.SearchText, search.Token), cancellationToken).ConfigureAwait(false);
                 UpdateState(SearchStates.InProgress);
 
                 await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
@@ -1824,7 +1828,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(string searchText, int token, SearchOptions options, CancellationToken cancellationToken)
+        private async Task<IReadOnlyCollection<SearchResponse>> SearchToCollectionAsync(string searchText, SearchScope scope, int token, SearchOptions options, CancellationToken cancellationToken)
         {
             var responseBag = new ConcurrentBag<SearchResponse>();
 
@@ -1833,7 +1837,7 @@ namespace Soulseek
                 responseBag.Add(response);
             }
 
-            await SearchToCallbackAsync(searchText, ResponseReceived, token, options, cancellationToken).ConfigureAwait(false);
+            await SearchToCallbackAsync(searchText, ResponseReceived, scope, token, options, cancellationToken).ConfigureAwait(false);
             return responseBag.ToList().AsReadOnly();
         }
 
