@@ -12,36 +12,75 @@
 
 namespace Soulseek
 {
+    using System;
     using System.Collections.Generic;
+    using System.Linq;
 
-    public abstract class SearchScope
+    /// <summary>
+    ///     Search scope definition.
+    /// </summary>
+    public class SearchScope
     {
-        public static DefaultSearchScope Default => new DefaultSearchScope();
-        public static UserSearchScope User(params string[] usernames) => new UserSearchScope(usernames);
-        public static RoomSearchScope Room(string roomName) => new RoomSearchScope(roomName);
-    }
-
-    public class DefaultSearchScope : SearchScope
-    {
-    }
-
-    public class UserSearchScope : SearchScope
-    {
-        public UserSearchScope(params string[] usernames)
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchScope"/> class.
+        /// </summary>
+        /// <param name="type">The scope type.</param>
+        /// <param name="subjects">The scope subjects, if applicable.</param>
+        public SearchScope(SearchScopeType type = SearchScopeType.Default, params string[] subjects)
         {
-            Usernames = usernames;
+            Type = type;
+
+            if (Type == SearchScopeType.Room && (subjects == null || subjects.Length != 1 || string.IsNullOrEmpty(subjects[0])))
+            {
+                throw new ArgumentException($"The Room search scope requires a single, non null and non empty subject.", nameof(subjects));
+            }
+
+            if (Type == SearchScopeType.User)
+            {
+                if (subjects == null || subjects.Length == 0)
+                {
+                    throw new ArgumentException($"The User search scope requires at least one subject", nameof(subjects));
+                }
+
+                if (subjects.Any(s => string.IsNullOrEmpty(s)))
+                {
+                    throw new ArgumentException($"One or more of the supplied User scope subjects is null or empty.", nameof(subjects));
+                }
+            }
+
+            Subjects = subjects;
         }
 
-        public IEnumerable<string> Usernames { get; }
-    }
+        /// <summary>
+        ///     Gets the default scope (network).
+        /// </summary>
+        public static SearchScope Default => new SearchScope();
 
-    public class RoomSearchScope : SearchScope
-    {
-        public RoomSearchScope(string roomName)
-        {
-            RoomName = roomName;
-        }
+        /// <summary>
+        ///     Gets the scope subjects, if applicable.
+        /// </summary>
+        /// <remarks>
+        ///     Ignored for <see cref="SearchScopeType.Default"/>.
+        /// </remarks>
+        public IEnumerable<string> Subjects { get; }
 
-        public string RoomName { get; }
+        /// <summary>
+        ///     Gets the scope type.
+        /// </summary>
+        public SearchScopeType Type { get; }
+
+        /// <summary>
+        ///     Gets a <see cref="SearchScopeType.Room"/> scope with the specified <paramref name="roomName"/>.
+        /// </summary>
+        /// <param name="roomName">The room to search.</param>
+        /// <returns>A Room scope with the specified <paramref name="roomName"/>.</returns>
+        public static SearchScope Room(string roomName) => new SearchScope(SearchScopeType.Room, roomName);
+
+        /// <summary>
+        ///     Gets a <see cref="SearchScopeType.User"/> scope with the specified <paramref name="usernames"/>.
+        /// </summary>
+        /// <param name="usernames">The username(s) of the user(s) to search.</param>
+        /// <returns>A User scope with the specified <paramref name="usernames"/></returns>
+        public static SearchScope User(params string[] usernames) => new SearchScope(SearchScopeType.User, usernames);
     }
 }
