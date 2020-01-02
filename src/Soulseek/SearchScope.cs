@@ -13,23 +13,16 @@
 namespace Soulseek
 {
     using System.Collections.Generic;
-    using Soulseek.Messaging.Messages;
 
     public abstract class SearchScope
     {
         public static DefaultSearchScope Default => new DefaultSearchScope();
         public static UserSearchScope User(params string[] usernames) => new UserSearchScope(usernames);
         public static RoomSearchScope Room(string roomName) => new RoomSearchScope(roomName);
-
-        public abstract byte[] CreateSearchRequestMessage(string searchText, int token);
     }
 
     public class DefaultSearchScope : SearchScope
     {
-        public override byte[] CreateSearchRequestMessage(string searchText, int token)
-        {
-            return new SearchRequest(searchText, token).ToByteArray();
-        }
     }
 
     public class UserSearchScope : SearchScope
@@ -37,18 +30,6 @@ namespace Soulseek
         public UserSearchScope(params string[] usernames)
         {
             Usernames = usernames;
-        }
-
-        public override byte[] CreateSearchRequestMessage(string searchText, int token)
-        {
-            var message = new List<byte>();
-
-            foreach (var username in Usernames)
-            {
-                message.AddRange(new UserSearchRequest(username, searchText, token).ToByteArray());
-            }
-
-            return message.ToArray();
         }
 
         public IEnumerable<string> Usernames { get; }
@@ -59,11 +40,6 @@ namespace Soulseek
         public RoomSearchScope(string roomName)
         {
             RoomName = roomName;
-        }
-
-        public override byte[] CreateSearchRequestMessage(string searchText, int token)
-        {
-            return new RoomSearchRequest(RoomName, searchText, token).ToByteArray();
         }
 
         public string RoomName { get; }

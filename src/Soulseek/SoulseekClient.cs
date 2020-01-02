@@ -1796,10 +1796,27 @@ namespace Soulseek
                     SearchResponseReceived?.Invoke(this, eventArgs);
                 };
 
+                byte[] message = null;
+
+                if (scope is RoomSearchScope roomScope)
+                {
+                    message = new RoomSearchRequest(roomScope.RoomName, search.SearchText, search.Token).ToByteArray();
+                }
+                else if (scope is UserSearchScope userScope)
+                {
+                    message = userScope.Usernames
+                        .SelectMany(u => new UserSearchRequest(u, search.SearchText, search.Token).ToByteArray())
+                        .ToArray();
+                }
+                else
+                {
+                    message = new SearchRequest(search.SearchText, search.Token).ToByteArray();
+                }
+
                 Searches.TryAdd(search.Token, search);
                 UpdateState(SearchStates.Requested);
 
-                await ServerConnection.WriteAsync(scope.CreateSearchRequestMessage(search.SearchText, search.Token), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(message, cancellationToken).ConfigureAwait(false);
                 UpdateState(SearchStates.InProgress);
 
                 await search.WaitForCompletion(cancellationToken).ConfigureAwait(false);
