@@ -80,7 +80,7 @@ namespace Soulseek
         ///     Gets a <see cref="SearchScopeType.User"/> scope with the specified <paramref name="usernames"/>.
         /// </summary>
         /// <param name="usernames">The username(s) of the user(s) to search.</param>
-        /// <returns>A User scope with the specified <paramref name="usernames"/></returns>
+        /// <returns>A User scope with the specified <paramref name="usernames"/>.</returns>
         public static SearchScope User(params string[] usernames) => new SearchScope(SearchScopeType.User, usernames);
     }
 }
