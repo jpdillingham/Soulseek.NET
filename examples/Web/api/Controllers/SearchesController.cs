@@ -56,7 +56,7 @@
 
             try
             {
-                await Client.SearchAsync(request.SearchText, (r) => results.Add(r), request.Token, options);
+                await Client.SearchAsync(request.SearchText, (r) => results.Add(r), SearchScope.Default, request.Token, options);
                 return Ok(results);
             }
             catch (Exception ex)
