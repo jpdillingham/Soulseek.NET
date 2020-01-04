@@ -514,7 +514,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             var reader = new MessageReader<MessageCode.Server>(msg);
             var code = reader.ReadCode();
 
-            Assert.Equal(MessageCode.Server.UserSearch, code);
+            Assert.Equal(MessageCode.Server.RoomSearch, code);
             Assert.Equal(roomName, reader.ReadString());
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(searchText, reader.ReadString());
