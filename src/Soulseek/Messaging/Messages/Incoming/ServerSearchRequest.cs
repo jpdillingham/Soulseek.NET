@@ -15,8 +15,12 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     A server file search request.
+    ///     A file search request which originates from the server.
     /// </summary>
+    /// <remarks>
+    ///     This message is routed from the server, instead of the distributed network. This occurs when a remote user searches us
+    ///     directly either by username or from a room to which we are joined.
+    /// </remarks>
     internal sealed class ServerSearchRequest
     {
         /// <summary>
@@ -67,19 +71,6 @@ namespace Soulseek.Messaging.Messages
             var query = reader.ReadString();
 
             return new ServerSearchRequest(username, token, query);
-        }
-
-        /// <summary>
-        ///     Constructs a <see cref="byte"/> array from this message.
-        /// </summary>
-        /// <returns>The constructed byte array.</returns>
-        public byte[] ToByteArray()
-        {
-            return new MessageBuilder()
-                .WriteCode(MessageCode.Server.FileSearch)
-                .WriteInteger(Token)
-                .WriteString(Query)
-                .Build();
         }
     }
 }
