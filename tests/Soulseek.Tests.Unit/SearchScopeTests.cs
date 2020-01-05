@@ -114,7 +114,7 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates user"), AutoData]
+        [Theory(DisplayName = "Instantiates User"), AutoData]
         public void Instantiates_User(string user)
         {
             SearchScope s = null;
@@ -129,14 +129,85 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates users"), AutoData]
-        public void Instantiates_Users(string[] users)
+        [Fact(DisplayName = "Throws on User when subjects is empty")]
+        public void Throws_On_User_When_Subjects_Is_Empty()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.User, Array.Empty<string>()));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("requires at least one subject"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws on User when subjects contains a null")]
+        public void Throws_On_User_When_Subjects_Contains_A_Null()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.User, new string[] { "one", null }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("One or more of the supplied User scope subjects is null or empty."));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws on User when subjects contains an empty string")]
+        public void Throws_On_User_When_Subjects_Contains_An_Empty_String()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.User, new string[] { "one", string.Empty }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("One or more of the supplied User scope subjects is null or empty."));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates User with multiples"), AutoData]
+        public void Instantiates_User_With_Multiples(string[] users)
         {
             SearchScope s = null;
 
             var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.User, users));
 
             Assert.Null(ex);
+
+            Assert.Equal(SearchScopeType.User, s.Type);
+            Assert.Equal(users.Length, s.Subjects.Count());
+            Assert.Equal(users, s.Subjects);
+        }
+
+        [Trait("Category", "Factories")]
+        [Fact(DisplayName = "Default returns default scope")]
+        public void Default_Returns_Default_Scope()
+        {
+            var s = SearchScope.Default;
+
+            Assert.Equal(SearchScopeType.Default, s.Type);
+            Assert.Empty(s.Subjects);
+        }
+
+        [Trait("Category", "Factories")]
+        [Theory(DisplayName = "Room() returns Room scope"), AutoData]
+        public void Room_Returns_Room_Scope(string room)
+        {
+            var s = SearchScope.Room(room);
+
+            Assert.Equal(SearchScopeType.Room, s.Type);
+            Assert.Single(s.Subjects);
+            Assert.Equal(room, s.Subjects.First());
+        }
+
+        [Trait("Category", "Factories")]
+        [Theory(DisplayName = "User() returns User scope"), AutoData]
+        public void User_Returns_User_Scope(string[] users)
+        {
+            var s = SearchScope.User(users);
 
             Assert.Equal(SearchScopeType.User, s.Type);
             Assert.Equal(users.Length, s.Subjects.Count());
