@@ -12,6 +12,7 @@
 
 namespace Soulseek.Tests.Unit
 {
+    using System;
     using System.Linq;
     using AutoFixture.Xunit2;
     using Xunit;
@@ -19,8 +20,8 @@ namespace Soulseek.Tests.Unit
     public class SearchScopeTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with given data")]
-        public void Instantiates_With_Default()
+        [Fact(DisplayName = "Instantiates Default")]
+        public void Instantiates_Default()
         {
             SearchScope s = null;
 
@@ -33,7 +34,20 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates room"), AutoData]
+        [Theory(DisplayName = "Throws on Default when subjects is not empty"), AutoData]
+        public void Throws_On_Default_When_Subjects_Is_Not_Empty(string[] subjects)
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Default, subjects));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("accepts no subjects"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates Room"), AutoData]
         public void Instantiates_Room(string room)
         {
             SearchScope s = null;
@@ -45,6 +59,58 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(SearchScopeType.Room, s.Type);
             Assert.Single(s.Subjects);
             Assert.Equal(room, s.Subjects.First());
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws on Room when subjects is empty")]
+        public void Throws_On_Room_When_Subjects_Is_Empty()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Room, null));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("requires a single, non null and non empty"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws on Room when subjects is one null string")]
+        public void Throws_On_Room_When_Subjects_Is_One_Null_String()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Room, new string[] { null }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("requires a single, non null and non empty"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws on Room when subjects is one empty string")]
+        public void Throws_On_Room_When_Subjects_Is_One_Empty_String()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Room, new string[] { string.Empty }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("requires a single, non null and non empty"));
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Throws on Room when subjects is more than one")]
+        public void Throws_On_Room_When_Subjects_Is_More_Than_One()
+        {
+            SearchScope s = null;
+
+            var ex = Record.Exception(() => s = new SearchScope(SearchScopeType.Room, new[] { "one", "two" }));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentException>(ex);
+            Assert.True(ex.Message.ContainsInsensitive("requires a single, non null and non empty"));
         }
 
         [Trait("Category", "Instantiation")]
