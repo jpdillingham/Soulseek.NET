@@ -23,6 +23,7 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Xunit;
 
@@ -34,7 +35,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", 0, cancellationToken: CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", token: 0, cancellationToken: CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -48,7 +49,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", (r) => { }, 0, cancellationToken: CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", (r) => { }, token: 0, cancellationToken: CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -64,7 +65,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", 0));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -80,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", (r) => { }, 0));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", (r) => { }, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -99,7 +100,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(search, 0));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(search, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -118,7 +119,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(search, (r) => { }, 0));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(search, (r) => { }, token: 0));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -134,7 +135,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", null, 0));
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync("foo", responseReceived: null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentNullException>(ex);
@@ -156,7 +157,7 @@ namespace Soulseek.Tests.Unit.Client
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                     s.SetProperty("Searches", dict);
 
-                    var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, token));
+                    var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, token: token));
 
                     Assert.NotNull(ex);
                     Assert.IsType<DuplicateTokenException>(ex);
@@ -178,7 +179,7 @@ namespace Soulseek.Tests.Unit.Client
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                     s.SetProperty("Searches", dict);
 
-                    var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, (r) => { }, token));
+                    var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(text, (r) => { }, token: token));
 
                     Assert.NotNull(ex);
                     Assert.IsType<DuplicateTokenException>(ex);
@@ -219,7 +220,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var task = s.SearchAsync(searchText, token, options);
+                var task = s.SearchAsync(searchText, token: token, options: options);
 
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
                 handler.HandleMessageRead(conn.Object, msg);
@@ -267,7 +268,7 @@ namespace Soulseek.Tests.Unit.Client
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var responses = new List<SearchResponse>();
-                var task = s.SearchAsync(searchText, (r) => { responses.Add(r); }, token, options);
+                var task = s.SearchAsync(searchText, (r) => { responses.Add(r); }, token: token, options: options);
 
                 var handler = s.GetProperty<IPeerMessageHandler>("PeerMessageHandler");
                 handler.HandleMessageRead(conn.Object, msg);
@@ -301,7 +302,7 @@ namespace Soulseek.Tests.Unit.Client
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    var task = s.SearchAsync(searchText, token, options, cts.Token);
+                    var task = s.SearchAsync(searchText, SearchScope.Default, token, options, cts.Token);
 
                     var active = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches").ToList();
 
@@ -357,7 +358,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 var ct = new CancellationToken(true);
 
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, ct));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, SearchScope.Default, token, options, ct));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
@@ -378,7 +379,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, SearchScope.Default, token, options));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -399,7 +400,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, token, options, null));
+                var ex = await Record.ExceptionAsync(() => s.SearchAsync(searchText, SearchScope.Default, token, options, null));
 
                 Assert.NotNull(ex);
                 Assert.IsType<SearchException>(ex);
@@ -426,7 +427,7 @@ namespace Soulseek.Tests.Unit.Client
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    var task = s.SearchAsync(searchText, token, options, null);
+                    var task = s.SearchAsync(searchText, SearchScope.Default, token, options, null);
 
                     await task;
 
@@ -456,7 +457,7 @@ namespace Soulseek.Tests.Unit.Client
                     s.SearchStateChanged += (sender, e) => fired = true;
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                    var task = s.SearchAsync(searchText, token, options, null);
+                    var task = s.SearchAsync(searchText, SearchScope.Default, token, options, null);
 
                     await task;
 
@@ -480,7 +481,7 @@ namespace Soulseek.Tests.Unit.Client
             var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var task = s.SearchAsync(searchText, token, options, null);
+            var task = s.SearchAsync(searchText, SearchScope.Default, token, options, null);
 
             var search = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches")[token];
             search.ResponseReceived.Invoke(response);
@@ -506,7 +507,7 @@ namespace Soulseek.Tests.Unit.Client
             s.SearchResponseReceived += (sender, e) => fired = true;
             s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var task = s.SearchAsync(searchText, token, options, null);
+            var task = s.SearchAsync(searchText, SearchScope.Default, token, options, null);
 
             var search = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches")[token];
             search.ResponseReceived.Invoke(response);
@@ -514,6 +515,109 @@ namespace Soulseek.Tests.Unit.Client
             await task;
 
             Assert.True(fired);
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync sends SearchRequest given Default scope"), AutoData]
+        public async Task SearchAsync_Sends_SearchRequest_Given_Default_Scope(string searchText, int token)
+        {
+            var expected = new SearchRequest(searchText, token).ToByteArray();
+
+            using (var cts = new CancellationTokenSource(1000))
+            {
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                    .Callback(() => cts.Cancel());
+
+                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    await Record.ExceptionAsync(() =>
+                        s.SearchAsync(searchText, SearchScope.Default, token, cancellationToken: cts.Token));
+                }
+
+                conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync sends RoomSearchRequest given Room scope"), AutoData]
+        public async Task SearchAsync_Sends_RoomSearchRequest_Given_Room_Scope(string searchText, int token, string room)
+        {
+            var expected = new RoomSearchRequest(room, searchText, token).ToByteArray();
+
+            using (var cts = new CancellationTokenSource(1000))
+            {
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                    .Callback(() => cts.Cancel());
+
+                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    await Record.ExceptionAsync(() =>
+                        s.SearchAsync(searchText, SearchScope.Room(room), token, cancellationToken: cts.Token));
+                }
+
+                conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync sends UserSearchRequest given User scope"), AutoData]
+        public async Task SearchAsync_Sends_UserSearchRequest_Given_User_Scope(string searchText, int token, string user)
+        {
+            var expected = new UserSearchRequest(user, searchText, token).ToByteArray();
+
+            using (var cts = new CancellationTokenSource(1000))
+            {
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                    .Callback(() => cts.Cancel());
+
+                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    await Record.ExceptionAsync(() =>
+                        s.SearchAsync(searchText, SearchScope.User(user), token, cancellationToken: cts.Token));
+                }
+
+                conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Theory(DisplayName = "SearchAsync sends multiple UserSearchRequest given User scope with multiple users"), AutoData]
+        public async Task SearchAsync_Sends_Multiple_UserSearchRequest_Given_User_Scope_With_Multiple_Users(string searchText, int token, string[] users)
+        {
+            var messages = new List<byte>();
+
+            foreach (var user in users)
+            {
+                messages.AddRange(new UserSearchRequest(user, searchText, token).ToByteArray());
+            }
+
+            var expected = messages.ToArray();
+
+            using (var cts = new CancellationTokenSource(1000))
+            {
+                var conn = new Mock<IMessageConnection>();
+                conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                    .Callback(() => cts.Cancel());
+
+                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                    await Record.ExceptionAsync(() =>
+                        s.SearchAsync(searchText, SearchScope.User(users), token, cancellationToken: cts.Token));
+                }
+
+                conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
+            }
         }
     }
 }

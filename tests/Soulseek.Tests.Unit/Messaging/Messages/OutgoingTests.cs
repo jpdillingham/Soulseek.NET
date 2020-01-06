@@ -485,5 +485,39 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
             Assert.Equal(MessageCode.Server.RoomList, code);
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "UserSearchRequest")]
+        [Theory(DisplayName = "UserSearchRequest constructs the correct message"), AutoData]
+        public void UserSearchRequest_Constructs_The_Correct_Message(string username, string searchText, int token)
+        {
+            var a = new UserSearchRequest(username, searchText, token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.UserSearch, code);
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(searchText, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "RoomSearchRequest")]
+        [Theory(DisplayName = "RoomSearchRequest constructs the correct message"), AutoData]
+        public void RoomSearchRequest_Constructs_The_Correct_Message(string roomName, string searchText, int token)
+        {
+            var a = new RoomSearchRequest(roomName, searchText, token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.RoomSearch, code);
+            Assert.Equal(roomName, reader.ReadString());
+            Assert.Equal(token, reader.ReadInteger());
+            Assert.Equal(searchText, reader.ReadString());
+        }
     }
 }

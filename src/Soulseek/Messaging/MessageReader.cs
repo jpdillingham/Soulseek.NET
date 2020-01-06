@@ -195,7 +195,7 @@ namespace Soulseek.Messaging
             }
 
             var bytes = Payload.Slice(Position, length).ToArray();
-            var retVal = Encoding.ASCII.GetString(bytes);
+            var retVal = Encoding.UTF8.GetString(bytes);
             Position += length;
             return retVal;
         }

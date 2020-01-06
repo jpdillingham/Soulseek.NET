@@ -24,6 +24,19 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="Directory"/> class.
         /// </summary>
         /// <param name="directoryname">The directory name.</param>
+        /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
+        public Directory(string directoryname, IEnumerable<File> fileList = null)
+        {
+            Directoryname = directoryname;
+
+            FileList = fileList ?? Enumerable.Empty<File>();
+            FileCount = FileList.Count();
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="Directory"/> class.
+        /// </summary>
+        /// <param name="directoryname">The directory name.</param>
         /// <param name="fileCount">The number of files.</param>
         /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
         public Directory(string directoryname, int fileCount, IEnumerable<File> fileList = null)

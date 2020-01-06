@@ -238,6 +238,34 @@ namespace Soulseek.Messaging.Handlers
                         KickedFromServer?.Invoke(this, EventArgs.Empty);
                         break;
 
+                    case MessageCode.Server.FileSearch:
+                        var searchRequest = ServerSearchRequest.FromByteArray(message);
+                        SearchResponse searchResponse;
+
+                        if (SoulseekClient.Options.SearchResponseResolver == default)
+                        {
+                            break;
+                        }
+
+                        try
+                        {
+                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+
+                            if (searchResponse != null && searchResponse.FileCount > 0)
+                            {
+                                var (ipAddress, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ipAddress, port, CancellationToken.None).ConfigureAwait(false);
+                                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
+                        }
+
+                        break;
+
                     default:
                         Diagnostic.Debug($"Unhandled server message: {code}; {message.Length} bytes");
                         break;

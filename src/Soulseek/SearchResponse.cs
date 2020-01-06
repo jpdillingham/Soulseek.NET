@@ -25,6 +25,26 @@ namespace Soulseek
         /// </summary>
         /// <param name="username">The username of the responding peer.</param>
         /// <param name="token">The unique search token.</param>
+        /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
+        /// <param name="uploadSpeed">The upload speed of the peer.</param>
+        /// <param name="queueLength">The length of the peer's upload queue.</param>
+        /// <param name="fileList">The optional file list.</param>
+        public SearchResponse(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength, IEnumerable<File> fileList = null)
+        {
+            Username = username;
+            Token = token;
+            FreeUploadSlots = freeUploadSlots;
+            UploadSpeed = uploadSpeed;
+            QueueLength = queueLength;
+            FileList = fileList ?? Enumerable.Empty<File>();
+            FileCount = FileList.Count();
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchResponse"/> class.
+        /// </summary>
+        /// <param name="username">The username of the responding peer.</param>
+        /// <param name="token">The unique search token.</param>
         /// <param name="fileCount">The number of files contained within the result, as counted by the original response.</param>
         /// <param name="freeUploadSlots">The number of free upload slots for the peer.</param>
         /// <param name="uploadSpeed">The upload speed of the peer.</param>
