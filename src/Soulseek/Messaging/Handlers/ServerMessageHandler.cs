@@ -240,6 +240,13 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.FileSearch:
                         var searchRequest = ServerSearchRequest.FromByteArray(message);
+
+                        // sometimes (most of the time?) a room search will result in a request to ourselves (assuming we are joined to it)
+                        if (searchRequest.Username == SoulseekClient.Username)
+                        {
+                            break;
+                        }
+
                         SearchResponse searchResponse;
 
                         if (SoulseekClient.Options.SearchResponseResolver == default)

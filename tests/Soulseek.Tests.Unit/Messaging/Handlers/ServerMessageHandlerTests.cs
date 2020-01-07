@@ -899,6 +899,27 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if it came from the local user"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_It_Came_From_The_Local_User(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = GetServerSearchRequest(username, token, query);
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+        }
+
         private byte[] GetServerSearchRequest(string username, int token, string query)
         {
             return new MessageBuilder()
