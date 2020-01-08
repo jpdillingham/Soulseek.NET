@@ -132,7 +132,7 @@ namespace Soulseek.Tests.Unit.Client
                 var ex = await Record.ExceptionAsync(() => s.AddUserAsync(username));
 
                 Assert.NotNull(ex);
-                Assert.IsType<AddUserException>(ex);
+                Assert.IsType<UserAddException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
             }
         }
