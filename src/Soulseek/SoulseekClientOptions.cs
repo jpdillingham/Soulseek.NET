@@ -154,7 +154,7 @@ namespace Soulseek
         /// </summary>
         /// <remarks>
         ///     This delegate must throw an Exception to indicate a rejected download. If the thrown Exception is of type
-        ///     <see cref="EnqueueDownloadException"/> the message will be sent to the client, otherwise a default message will be sent.
+        ///     <see cref="DownloadEnqueueException"/> the message will be sent to the client, otherwise a default message will be sent.
         /// </remarks>
         public Func<string, IPAddress, int, string, Task> EnqueueDownloadAction { get; }
 
