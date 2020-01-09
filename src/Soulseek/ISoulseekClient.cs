@@ -520,7 +520,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetUserStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the
