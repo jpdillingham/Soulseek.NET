@@ -29,7 +29,7 @@ namespace Soulseek.Tests.Unit.Client
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SetUserStatusAsync(UserStatus.Online));
+                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -44,7 +44,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetUserStatusAsync(UserStatus.Online));
+                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
@@ -63,7 +63,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetUserStatusAsync(UserStatus.Online));
+                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online));
 
                 Assert.Null(ex);
             }
@@ -81,7 +81,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetUserStatusAsync(UserStatus.Online, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<UserStatusException>(ex);
@@ -101,7 +101,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetUserStatusAsync(UserStatus.Online, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
@@ -120,7 +120,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetUserStatusAsync(UserStatus.Online, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
