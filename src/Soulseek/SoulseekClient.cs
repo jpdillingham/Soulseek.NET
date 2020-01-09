@@ -394,6 +394,31 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously fetches the status of the privileges of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user for which to fetch privileges.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<bool> CheckUserPrivilegesAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to check user privileges (currently: {State})");
+            }
+
+            return CheckUserPrivilegesInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -765,7 +790,7 @@ namespace Soulseek
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user status (currently: {State})");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to grant user privileges (currently: {State})");
             }
 
             return GrantUserPrivilegesInternalAsync(username, days, cancellationToken ?? CancellationToken.None);
@@ -1365,6 +1390,24 @@ namespace Soulseek
             }
         }
 
+        private async Task<bool> CheckUserPrivilegesInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.UserPrivileges, username);
+                var wait = Waiter.Wait<bool>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new UserPrivilegesRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var result = await wait.ConfigureAwait(false);
+                return result;
+            }
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivilegeCheckException($"Failed to check privileges for {username}: {ex.Message}", ex);
+            }
+        }
+
         private void ChangeState(SoulseekClientStates state, string message, Exception exception = null)
         {
             var previousState = State;
@@ -1738,7 +1781,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new GivePrivilegesRequest(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {

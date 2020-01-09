@@ -122,6 +122,11 @@ namespace Soulseek.Messaging.Handlers
                         SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.FromByteArray(message));
                         break;
 
+                    case MessageCode.Server.UserPrivileges:
+                        var privilegeResponse = UserPrivilegeResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code, privilegeResponse.Username), privilegeResponse.IsPrivileged);
+                        break;
+
                     case MessageCode.Server.NetInfo:
                         var netInfo = NetInfoNotification.FromByteArray(message);
 

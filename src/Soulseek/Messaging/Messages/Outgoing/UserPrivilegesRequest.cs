@@ -13,7 +13,7 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Logs in to the server.
+    ///     Requests the status of a user's privileges.
     /// </summary>
     internal sealed class UserPrivilegesRequest
     {
