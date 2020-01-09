@@ -107,6 +107,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.ParentMinSpeed:
                     case MessageCode.Server.ParentSpeedRatio:
                     case MessageCode.Server.WishlistInterval:
+                    case MessageCode.Server.CheckPrivileges:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
                         break;
 
