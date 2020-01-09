@@ -1,4 +1,4 @@
-﻿// <copyright file="GivePrivilegesRequest.cs" company="JP Dillingham">
+﻿// <copyright file="UserPrivilegesRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,23 +15,16 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Logs in to the server.
     /// </summary>
-    internal sealed class GivePrivilegesRequest
+    internal sealed class UserPrivilegesRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GivePrivilegesRequest"/> class.
+        ///     Initializes a new instance of the <see cref="UserPrivilegesRequest"/> class.
         /// </summary>
         /// <param name="username">The username of the user to which to grant privileges.</param>
-        /// <param name="days">The number of days of privileged status to grant.</param>
-        public GivePrivilegesRequest(string username, int days)
+        public UserPrivilegesRequest(string username)
         {
             Username = username;
-            Days = days;
         }
-
-        /// <summary>
-        ///     Gets the number of days of privileged status to grant.
-        /// </summary>
-        public int Days { get; }
 
         /// <summary>
         ///     Gets the username of the user to which to grant privileges.
@@ -45,9 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.GivePrivileges)
+                .WriteCode(MessageCode.Server.UserPrivileges)
                 .WriteString(Username)
-                .WriteInteger(Days)
                 .Build();
         }
     }
