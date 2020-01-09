@@ -403,7 +403,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<bool> CheckUserPrivilegesAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -415,7 +415,34 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to check user privileges (currently: {State})");
             }
 
-            return CheckUserPrivilegesInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserPrivilegedInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously fetches the number of remaining days of privileges of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeCheckException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.CheckPrivileges);
+                var wait = Waiter.Wait<int>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new CheckPrivilegesRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var result = await wait.ConfigureAwait(false);
+                return result;
+            }
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivilegeCheckException($"Failed to get privileges: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
@@ -1390,7 +1417,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<bool> CheckUserPrivilegesInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<bool> GetUserPrivilegedInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
@@ -1404,7 +1431,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new PrivilegeCheckException($"Failed to check privileges for {username}: {ex.Message}", ex);
+                throw new PrivilegeCheckException($"Failed to get privileges for {username}: {ex.Message}", ex);
             }
         }
 
