@@ -142,7 +142,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.AddPrivilegedUser:
-                        PrivilegedUserAdded?.Invoke(this, new PrivilegedUserAddedEventArgs(AddPrivilegedUserNotification.FromByteArray(message)));
+                        PrivilegedUserAdded?.Invoke(this, new PrivilegedUserAddedEventArgs(PrivilegedUserNotification.FromByteArray(message)));
                         break;
 
                     case MessageCode.Server.UserPrivileges:

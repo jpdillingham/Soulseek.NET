@@ -17,10 +17,10 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     An incoming notification of a new privileged user.
     /// </summary>
-    internal static class AddPrivilegedUserNotification
+    internal static class PrivilegedUserNotification
     {
         /// <summary>
-        ///     Creates a new instance of <see cref="AddPrivilegedUserNotification"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="PrivilegedUserNotification"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
@@ -31,7 +31,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.AddPrivilegedUser)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(AddPrivilegedUserNotification)} (expected: {(int)MessageCode.Server.AddPrivilegedUser}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(PrivilegedUserNotification)} (expected: {(int)MessageCode.Server.AddPrivilegedUser}, received: {(int)code}.");
             }
 
             var username = reader.ReadString();
