@@ -146,8 +146,14 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.NotifyPrivileges:
-                        var privilegeNotification = PrivilegeNotification.FromByteArray(message);
-                        PrivilegeNotificationReceived?.Invoke(this, new PrivilegeNotificationReceivedEventArgs(privilegeNotification.Username, privilegeNotification.Id));
+                        var pn = PrivilegeNotification.FromByteArray(message);
+                        PrivilegeNotificationReceived?.Invoke(this, new PrivilegeNotificationReceivedEventArgs(pn.Username, pn.Id));
+
+                        if (SoulseekClient.Options.AutoAcknowledgePrivilegeNotifications)
+                        {
+                            await SoulseekClient.AcknowledgePrivilegeNotificationAsync(pn.Id, CancellationToken.None).ConfigureAwait(false);
+                        }
+
                         break;
 
                     case MessageCode.Server.UserPrivileges:
