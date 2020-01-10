@@ -31,14 +31,14 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
-        ///     Occurs when the server sends a notification of a new privileged user.
-        /// </summary>
-        event EventHandler<PrivilegedUserAddedEventArgs> PrivilegedUserAdded;
-
-        /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
         event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the server sends a notification of new user privileges.
+        /// </summary>
+        event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.

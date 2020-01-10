@@ -151,7 +151,7 @@ namespace Soulseek
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
-            ServerMessageHandler.PrivilegedUserAdded += (sender, e) => PrivilegedUserAdded?.Invoke(this, e);
+            ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
@@ -205,14 +205,14 @@ namespace Soulseek
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
-        ///     Occurs when the server sends a notification of a new privileged user.
-        /// </summary>
-        public event EventHandler<PrivilegedUserAddedEventArgs> PrivilegedUserAdded;
-
-        /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
         public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the server sends a notification of new user privileges.
+        /// </summary>
+        public event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
 
         /// <summary>
         ///     Occurs when a user joins a chat room.
