@@ -57,6 +57,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a notification of a new privileged user.
+        /// </summary>
+        public event EventHandler<PrivilegedUserAddedEventArgs> PrivilegedUserAdded;
+
+        /// <summary>
         ///     Occurs when the server sends a list of privileged users.
         /// </summary>
         public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
@@ -134,6 +139,10 @@ namespace Soulseek.Messaging.Handlers
                         var privilegedUserList = PrivilegedUserList.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code), privilegedUserList);
                         PrivilegedUserListReceived?.Invoke(this, new PrivilegedUserListReceivedEventArgs(privilegedUserList));
+                        break;
+
+                    case MessageCode.Server.AddPrivilegedUser:
+                        PrivilegedUserAdded?.Invoke(this, new PrivilegedUserAddedEventArgs(AddPrivilegedUserNotification.FromByteArray(message)));
                         break;
 
                     case MessageCode.Server.UserPrivileges:
