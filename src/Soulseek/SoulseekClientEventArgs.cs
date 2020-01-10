@@ -81,6 +81,26 @@ namespace Soulseek
     }
 
     /// <summary>
+    ///     Event arguments for events raised upon notification of a new privileged user.
+    /// </summary>
+    public class PrivilegedUserAddedEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivilegedUserAddedEventArgs"/> class.
+        /// </summary>
+        /// <param name="username">The username of the new privileged user.</param>
+        public PrivilegedUserAddedEventArgs(string username)
+        {
+            Username = username;
+        }
+
+        /// <summary>
+        ///     Gets the username of the new privileged user.
+        /// </summary>
+        public string Username { get; }
+    }
+
+    /// <summary>
     ///     Event arguments for events raised upon receipt of the list of privileged users.
     /// </summary>
     public class PrivilegedUserListReceivedEventArgs : SoulseekClientEventArgs
@@ -88,14 +108,14 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="PrivilegedUserListReceivedEventArgs"/> class.
         /// </summary>
-        /// <param name="usernames">The list of privilegd users.</param>
+        /// <param name="usernames">The list usernames of privilegd users.</param>
         public PrivilegedUserListReceivedEventArgs(IReadOnlyCollection<string> usernames)
         {
             Usernames = usernames;
         }
 
         /// <summary>
-        ///     Gets the list of privileged users.
+        ///     Gets the list of usernames of privileged users.
         /// </summary>
         public IReadOnlyCollection<string> Usernames { get; }
     }
