@@ -13,6 +13,7 @@
 namespace Soulseek
 {
     using System;
+    using System.Collections.Generic;
     using Soulseek.Messaging.Messages;
 
     /// <summary>
@@ -77,6 +78,26 @@ namespace Soulseek
         ///     Gets the username of the user which sent the message.
         /// </summary>
         public string Username { get; }
+    }
+
+    /// <summary>
+    ///     Event arguments for events raised upon receipt of the list of privileged users.
+    /// </summary>
+    public class PrivilegedUserListReceivedEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivilegedUserListReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="usernames">The list of privilegd users.</param>
+        public PrivilegedUserListReceivedEventArgs(IReadOnlyCollection<string> usernames)
+        {
+            Usernames = usernames;
+        }
+
+        /// <summary>
+        ///     Gets the list of privileged users.
+        /// </summary>
+        public IReadOnlyCollection<string> Usernames { get; }
     }
 
     /// <summary>
