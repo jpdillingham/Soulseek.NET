@@ -101,6 +101,26 @@ namespace Soulseek
     }
 
     /// <summary>
+    ///     Event arguments for events raised upon receipt of the list of rooms.
+    /// </summary>
+    public class RoomListReceivedEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="RoomListReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="rooms">The list of rooms.</param>
+        public RoomListReceivedEventArgs(IReadOnlyCollection<Room> rooms)
+        {
+            Rooms = rooms;
+        }
+
+        /// <summary>
+        ///     Gets the list of rooms.
+        /// </summary>
+        public IReadOnlyCollection<Room> Rooms { get; }
+    }
+
+    /// <summary>
     ///     Event arguments for events raised by client disconnect.
     /// </summary>
     public class SoulseekClientDisconnectedEventArgs : SoulseekClientEventArgs
