@@ -1,4 +1,4 @@
-﻿// <copyright file="SetSharedCounts.cs" company="JP Dillingham">
+﻿// <copyright file="BranchLevelCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,30 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current number of shared directories and files.
+    ///     Informs the server of the current distributed branch level.
     /// </summary>
-    internal sealed class SetSharedCounts
+    internal sealed class BranchLevelCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetSharedCounts"/> class.
+        ///     Initializes a new instance of the <see cref="BranchLevelCommand"/> class.
         /// </summary>
-        /// <param name="directoryCount">The number of shared directories.</param>
-        /// <param name="fileCount">The number of shared files.</param>
-        public SetSharedCounts(int directoryCount, int fileCount)
+        /// <param name="level">The current distributed branch level.</param>
+        public BranchLevelCommand(int level)
         {
-            DirectoryCount = directoryCount;
-            FileCount = fileCount;
+            Level = level;
         }
 
         /// <summary>
-        ///     Gets the number of shared directories.
+        ///     Gets the current distributed branch level.
         /// </summary>
-        public int DirectoryCount { get; }
-
-        /// <summary>
-        ///     Gets the number of shared files.
-        /// </summary>
-        public int FileCount { get; }
+        public int Level { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -45,9 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SharedFoldersAndFiles)
-                .WriteInteger(DirectoryCount)
-                .WriteInteger(FileCount)
+                .WriteCode(MessageCode.Server.BranchLevel)
+                .WriteInteger(Level)
                 .Build();
         }
     }

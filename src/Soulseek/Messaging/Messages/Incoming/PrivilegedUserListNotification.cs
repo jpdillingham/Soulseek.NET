@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivilegedUserList.cs" company="JP Dillingham">
+﻿// <copyright file="PrivilegedUserListNotification.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -18,7 +18,7 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     A list of the privileged users on the server.
     /// </summary>
-    internal static class PrivilegedUserList
+    internal static class PrivilegedUserListNotification
     {
         /// <summary>
         ///     Creates a new list of privileged users from the specified <paramref name="bytes"/>.

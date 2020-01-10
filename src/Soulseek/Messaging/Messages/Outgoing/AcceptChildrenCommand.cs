@@ -1,4 +1,4 @@
-﻿// <copyright file="ParentsIP.cs" company="JP Dillingham">
+﻿// <copyright file="AcceptChildrenCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,27 +12,24 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using System.Net;
-
     /// <summary>
-    ///     Informs the server of the IP address of the current distributed parent.
+    ///     Informs the server of our ability to accept distributed children connections.
     /// </summary>
-    internal sealed class ParentsIP
+    internal sealed class AcceptChildrenCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ParentsIP"/> class.
+        ///     Initializes a new instance of the <see cref="AcceptChildrenCommand"/> class.
         /// </summary>
-        /// <param name="ipAddress">The IP address of the current distributed parent.</param>
-        public ParentsIP(IPAddress ipAddress)
+        /// <param name="accepted">A value indicating whether child connections are accepted.</param>
+        public AcceptChildrenCommand(bool accepted)
         {
-            IPAddress = ipAddress;
+            Accepted = accepted;
         }
 
         /// <summary>
-        ///     Gets the IP address of the current distributed parent.
+        ///     Gets a value indicating whether child connections are accepted.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public bool Accepted { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -40,12 +37,9 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
-            var ipBytes = IPAddress.GetAddressBytes();
-            Array.Reverse(ipBytes);
-
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.ParentsIP)
-                .WriteBytes(ipBytes)
+                .WriteCode(MessageCode.Server.AcceptChildren)
+                .WriteByte((byte)(Accepted ? 1 : 0))
                 .Build();
         }
     }

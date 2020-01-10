@@ -1162,7 +1162,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetSharedCountsCommand(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1189,7 +1189,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetOnlineStatus(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetOnlineStatusCommand(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1925,10 +1925,10 @@ namespace Soulseek
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPort(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
-                    await ServerConnection.WriteAsync(new HaveNoParents(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new HaveNoParentsCommand(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {

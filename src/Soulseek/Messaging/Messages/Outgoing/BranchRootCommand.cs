@@ -1,4 +1,4 @@
-﻿// <copyright file="BranchLevel.cs" company="JP Dillingham">
+﻿// <copyright file="BranchRootCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current distributed branch level.
+    ///     Informs the server of the username of the current distributed branch root.
     /// </summary>
-    internal sealed class BranchLevel
+    internal sealed class BranchRootCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BranchLevel"/> class.
+        ///     Initializes a new instance of the <see cref="BranchRootCommand"/> class.
         /// </summary>
-        /// <param name="level">The current distributed branch level.</param>
-        public BranchLevel(int level)
+        /// <param name="username">The username of the current distributed branch root.</param>
+        public BranchRootCommand(string username)
         {
-            Level = level;
+            Username = username;
         }
 
         /// <summary>
-        ///     Gets the current distributed branch level.
+        ///     Gets the username of the current distributed branch root.
         /// </summary>
-        public int Level { get; }
+        public string Username { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.BranchLevel)
-                .WriteInteger(Level)
+                .WriteCode(MessageCode.Server.BranchRoot)
+                .WriteString(Username)
                 .Build();
         }
     }

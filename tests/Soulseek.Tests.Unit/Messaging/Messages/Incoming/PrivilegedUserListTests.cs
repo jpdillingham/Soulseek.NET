@@ -28,7 +28,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PrivilegedUserList.FromByteArray(msg));
+            var ex = Record.Exception(() => PrivilegedUserListNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -43,7 +43,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => PrivilegedUserList.FromByteArray(msg));
+            var ex = Record.Exception(() => PrivilegedUserListNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -62,7 +62,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("shemp")
                 .Build();
 
-            var response = PrivilegedUserList.FromByteArray(msg).ToList();
+            var response = PrivilegedUserListNotification.FromByteArray(msg).ToList();
 
             Assert.Equal(4, response.Count);
             Assert.Contains("larry", response);

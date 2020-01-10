@@ -1,4 +1,4 @@
-﻿// <copyright file="SetListenPort.cs" company="JP Dillingham">
+﻿// <copyright file="ChildDepthCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Logs in to the server.
+    ///     Informs the server of the current distributed child depth.
     /// </summary>
-    internal sealed class SetListenPort
+    internal sealed class ChildDepthCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetListenPort"/> class.
+        ///     Initializes a new instance of the <see cref="ChildDepthCommand"/> class.
         /// </summary>
-        /// <param name="port">The port on which to listen.</param>
-        public SetListenPort(int port)
+        /// <param name="depth">The current distributed child depth.</param>
+        public ChildDepthCommand(int depth)
         {
-            Port = port;
+            Depth = depth;
         }
 
         /// <summary>
-        ///     Gets the port on which to listen.
+        ///     Gets the current distributed child depth.
         /// </summary>
-        public int Port { get; }
+        public int Depth { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SetListenPort)
-                .WriteInteger(Port)
+                .WriteCode(MessageCode.Server.ChildDepth)
+                .WriteInteger(Depth)
                 .Build();
         }
     }

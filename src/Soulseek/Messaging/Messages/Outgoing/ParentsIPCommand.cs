@@ -1,4 +1,4 @@
-﻿// <copyright file="HaveNoParents.cs" company="JP Dillingham">
+﻿// <copyright file="ParentsIPCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,24 +12,27 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using System;
+    using System.Net;
+
     /// <summary>
-    ///     Informs the server that we have no distributed parent.
+    ///     Informs the server of the IP address of the current distributed parent.
     /// </summary>
-    internal sealed class HaveNoParents
+    internal sealed class ParentsIPCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="HaveNoParents"/> class.
+        ///     Initializes a new instance of the <see cref="ParentsIPCommand"/> class.
         /// </summary>
-        /// <param name="haveParents">A value indicating whether a distributed parent connections is needed.</param>
-        public HaveNoParents(bool haveParents)
+        /// <param name="ipAddress">The IP address of the current distributed parent.</param>
+        public ParentsIPCommand(IPAddress ipAddress)
         {
-            HaveParents = haveParents;
+            IPAddress = ipAddress;
         }
 
         /// <summary>
-        ///     Gets a value indicating whether a distributed parent connections is needed.
+        ///     Gets the IP address of the current distributed parent.
         /// </summary>
-        public bool HaveParents { get; }
+        public IPAddress IPAddress { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -37,9 +40,12 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
+            var ipBytes = IPAddress.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.HaveNoParents)
-                .WriteByte((byte)(HaveParents ? 1 : 0))
+                .WriteCode(MessageCode.Server.ParentsIP)
+                .WriteBytes(ipBytes)
                 .Build();
         }
     }

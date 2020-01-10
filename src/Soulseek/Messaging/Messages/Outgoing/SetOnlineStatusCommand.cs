@@ -1,4 +1,4 @@
-﻿// <copyright file="AcceptChildren.cs" company="JP Dillingham">
+﻿// <copyright file="SetOnlineStatusCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of our ability to accept distributed children connections.
+    ///     Informs the server of the current user status.
     /// </summary>
-    internal sealed class AcceptChildren
+    internal sealed class SetOnlineStatusCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AcceptChildren"/> class.
+        ///     Initializes a new instance of the <see cref="SetOnlineStatusCommand"/> class.
         /// </summary>
-        /// <param name="accepted">A value indicating whether child connections are accepted.</param>
-        public AcceptChildren(bool accepted)
+        /// <param name="status">The current status.</param>
+        public SetOnlineStatusCommand(UserStatus status)
         {
-            Accepted = accepted;
+            Status = status;
         }
 
         /// <summary>
-        ///     Gets a value indicating whether child connections are accepted.
+        ///     Gets the current status.
         /// </summary>
-        public bool Accepted { get; }
+        public UserStatus Status { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.AcceptChildren)
-                .WriteByte((byte)(Accepted ? 1 : 0))
+                .WriteCode(MessageCode.Server.SetOnlineStatus)
+                .WriteInteger((int)Status)
                 .Build();
         }
     }

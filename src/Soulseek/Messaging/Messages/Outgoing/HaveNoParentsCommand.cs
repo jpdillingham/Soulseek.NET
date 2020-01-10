@@ -1,4 +1,4 @@
-﻿// <copyright file="ChildDepth.cs" company="JP Dillingham">
+﻿// <copyright file="HaveNoParentsCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current distributed child depth.
+    ///     Informs the server that we have no distributed parent.
     /// </summary>
-    internal sealed class ChildDepth
+    internal sealed class HaveNoParentsCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ChildDepth"/> class.
+        ///     Initializes a new instance of the <see cref="HaveNoParentsCommand"/> class.
         /// </summary>
-        /// <param name="depth">The current distributed child depth.</param>
-        public ChildDepth(int depth)
+        /// <param name="haveParents">A value indicating whether a distributed parent connections is needed.</param>
+        public HaveNoParentsCommand(bool haveParents)
         {
-            Depth = depth;
+            HaveParents = haveParents;
         }
 
         /// <summary>
-        ///     Gets the current distributed child depth.
+        ///     Gets a value indicating whether a distributed parent connections is needed.
         /// </summary>
-        public int Depth { get; }
+        public bool HaveParents { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.ChildDepth)
-                .WriteInteger(Depth)
+                .WriteCode(MessageCode.Server.HaveNoParents)
+                .WriteByte((byte)(HaveParents ? 1 : 0))
                 .Build();
         }
     }

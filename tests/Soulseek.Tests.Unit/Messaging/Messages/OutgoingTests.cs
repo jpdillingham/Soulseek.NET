@@ -294,7 +294,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetListenPort instantiates properly"), AutoData]
         public void SetListenPort_Instantiates_Properly(int port)
         {
-            var a = new SetListenPort(port);
+            var a = new SetListenPortCommand(port);
 
             Assert.Equal(port, a.Port);
         }
@@ -304,7 +304,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetListenPort constructs the correct message"), AutoData]
         public void SetListenPort_Constructs_The_Correct_Message(int port)
         {
-            var a = new SetListenPort(port);
+            var a = new SetListenPortCommand(port);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -348,7 +348,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetSharedCounts instantiates properly"), AutoData]
         public void SetSharedCounts_Instantiates_Properly(int dirs, int files)
         {
-            var a = new SetSharedCounts(dirs, files);
+            var a = new SetSharedCountsCommand(dirs, files);
 
             Assert.Equal(dirs, a.DirectoryCount);
             Assert.Equal(files, a.FileCount);
@@ -359,7 +359,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetSharedCounts constructs the correct message"), AutoData]
         public void SetSharedCounts_Constructs_The_Correct_Message(int dirs, int files)
         {
-            var a = new SetSharedCounts(dirs, files);
+            var a = new SetSharedCountsCommand(dirs, files);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -375,7 +375,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetOnlineStatus instantiates properly"), AutoData]
         public void SetOnlineStatus_Instantiates_Properly(UserStatus status)
         {
-            var a = new SetOnlineStatus(status);
+            var a = new SetOnlineStatusCommand(status);
 
             Assert.Equal(status, a.Status);
         }
@@ -385,7 +385,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetOnlineStatus constructs the correct message"), AutoData]
         public void SetOnlineStatus_Constructs_The_Correct_Message(UserStatus status)
         {
-            var a = new SetOnlineStatus(status);
+            var a = new SetOnlineStatusCommand(status);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);

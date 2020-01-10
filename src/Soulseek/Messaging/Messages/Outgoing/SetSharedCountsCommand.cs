@@ -1,4 +1,4 @@
-﻿// <copyright file="SetOnlineStatus.cs" company="JP Dillingham">
+﻿// <copyright file="SetSharedCountsCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,30 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current user status.
+    ///     Informs the server of the current number of shared directories and files.
     /// </summary>
-    internal sealed class SetOnlineStatus
+    internal sealed class SetSharedCountsCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetOnlineStatus"/> class.
+        ///     Initializes a new instance of the <see cref="SetSharedCountsCommand"/> class.
         /// </summary>
-        /// <param name="status">The current status.</param>
-        public SetOnlineStatus(UserStatus status)
+        /// <param name="directoryCount">The number of shared directories.</param>
+        /// <param name="fileCount">The number of shared files.</param>
+        public SetSharedCountsCommand(int directoryCount, int fileCount)
         {
-            Status = status;
+            DirectoryCount = directoryCount;
+            FileCount = fileCount;
         }
 
         /// <summary>
-        ///     Gets the current status.
+        ///     Gets the number of shared directories.
         /// </summary>
-        public UserStatus Status { get; }
+        public int DirectoryCount { get; }
+
+        /// <summary>
+        ///     Gets the number of shared files.
+        /// </summary>
+        public int FileCount { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +45,9 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SetOnlineStatus)
-                .WriteInteger((int)Status)
+                .WriteCode(MessageCode.Server.SharedFoldersAndFiles)
+                .WriteInteger(DirectoryCount)
+                .WriteInteger(FileCount)
                 .Build();
         }
     }

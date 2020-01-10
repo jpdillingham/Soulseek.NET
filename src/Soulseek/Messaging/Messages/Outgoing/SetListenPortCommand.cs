@@ -1,4 +1,4 @@
-﻿// <copyright file="BranchRoot.cs" company="JP Dillingham">
+﻿// <copyright file="SetListenPortCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the username of the current distributed branch root.
+    ///     Advises the server of the local listen port.
     /// </summary>
-    internal sealed class BranchRoot
+    internal sealed class SetListenPortCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BranchRoot"/> class.
+        ///     Initializes a new instance of the <see cref="SetListenPortCommand"/> class.
         /// </summary>
-        /// <param name="username">The username of the current distributed branch root.</param>
-        public BranchRoot(string username)
+        /// <param name="port">The port on which to listen.</param>
+        public SetListenPortCommand(int port)
         {
-            Username = username;
+            Port = port;
         }
 
         /// <summary>
-        ///     Gets the username of the current distributed branch root.
+        ///     Gets the port on which to listen.
         /// </summary>
-        public string Username { get; }
+        public int Port { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.BranchRoot)
-                .WriteString(Username)
+                .WriteCode(MessageCode.Server.SetListenPort)
+                .WriteInteger(Port)
                 .Build();
         }
     }

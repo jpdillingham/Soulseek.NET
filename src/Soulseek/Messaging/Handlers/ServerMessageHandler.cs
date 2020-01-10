@@ -136,7 +136,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
-                        var privilegedUserList = PrivilegedUserList.FromByteArray(message);
+                        var privilegedUserList = PrivilegedUserListNotification.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(code), privilegedUserList);
                         PrivilegedUserListReceived?.Invoke(this, new PrivilegedUserListReceivedEventArgs(privilegedUserList));
                         break;
