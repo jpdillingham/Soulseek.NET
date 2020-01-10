@@ -150,9 +150,11 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
+            ServerMessageHandler.RoomListReceived += (sender, e) => RoomListReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler.KickedFromServer += (sender, e) =>
@@ -202,6 +204,11 @@ namespace Soulseek
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of privileged users.
+        /// </summary>
+        public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         public event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -210,6 +217,11 @@ namespace Soulseek
         ///     Occurs when a user leaves a chat room.
         /// </summary>
         public event EventHandler<RoomLeftEventArgs> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of chat rooms.
+        /// </summary>
+        public event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

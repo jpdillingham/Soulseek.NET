@@ -31,6 +31,11 @@ namespace Soulseek.Messaging.Handlers
         event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of privileged users.
+        /// </summary>
+        event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -39,6 +44,11 @@ namespace Soulseek.Messaging.Handlers
         ///     Occurs when a user leaves a chat room.
         /// </summary>
         event EventHandler<RoomLeftEventArgs> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of chat rooms.
+        /// </summary>
+        event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.

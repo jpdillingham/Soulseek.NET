@@ -57,6 +57,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of privileged users.
+        /// </summary>
+        public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         public event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -65,6 +70,11 @@ namespace Soulseek.Messaging.Handlers
         ///     Occurs when a user leaves a chat room.
         /// </summary>
         public event EventHandler<RoomLeftEventArgs> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of chat rooms.
+        /// </summary>
+        public event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -77,7 +87,6 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<UserStatusChangedEventArgs> UserStatusChanged;
 
         private IDiagnosticFactory Diagnostic { get; }
-
         private SoulseekClient SoulseekClient { get; }
 
         /// <summary>
@@ -116,11 +125,15 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Server.RoomList:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), RoomListResponse.FromByteArray(message));
+                        var roomList = RoomListResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), roomList);
+                        RoomListReceived?.Invoke(this, new RoomListReceivedEventArgs(roomList));
                         break;
 
                     case MessageCode.Server.PrivilegedUsers:
-                        SoulseekClient.Waiter.Complete(new WaitKey(code), PrivilegedUserList.FromByteArray(message));
+                        var privilegedUserList = PrivilegedUserList.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), privilegedUserList);
+                        PrivilegedUserListReceived?.Invoke(this, new PrivilegedUserListReceivedEventArgs(privilegedUserList));
                         break;
 
                     case MessageCode.Server.UserPrivileges:
@@ -247,7 +260,8 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.FileSearch:
                         var searchRequest = ServerSearchRequest.FromByteArray(message);
 
-                        // sometimes (most of the time?) a room search will result in a request to ourselves (assuming we are joined to it)
+                        // sometimes (most of the time?) a room search will result in a request to ourselves (assuming we are
+                        // joined to it)
                         if (searchRequest.Username == SoulseekClient.Username)
                         {
                             break;
