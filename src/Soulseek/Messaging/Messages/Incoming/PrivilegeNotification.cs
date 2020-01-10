@@ -18,7 +18,9 @@ namespace Soulseek.Messaging.Messages
     ///     An incoming notification of granted privileges.
     /// </summary>
     /// <remarks>
-    ///     The Museek documentation states that this notification is sent in regards to _our_ privileges as opposed to other users, however the inclusion of the username in the payload might imply this is incorrect.  The Museek documentation also has send/receive swapped; this was verified against the Nicotine source code.
+    ///     The Museek documentation states that this notification is sent in regards to _our_ privileges as opposed to other
+    ///     users, however the inclusion of the username in the payload might imply this is incorrect. The Museek documentation
+    ///     also has send/receive swapped; this was verified against the Nicotine source code.
     /// </remarks>
     internal sealed class PrivilegeNotification
     {

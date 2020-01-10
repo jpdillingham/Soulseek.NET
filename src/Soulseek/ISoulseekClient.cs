@@ -156,6 +156,19 @@ namespace Soulseek
         Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously sends a privilege notification acknowledgement for the specified <paramref name="privilegeNotificationId"/>.
+        /// </summary>
+        /// <param name="privilegeNotificationId">The unique id of the privilege notification to acknowledge.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeNotificationException">Thrown when an exception is encountered during the operation.</exception>
+        Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
         /// <remarks>

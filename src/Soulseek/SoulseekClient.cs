@@ -342,6 +342,32 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously sends a privilege notification acknowledgement for the specified <paramref name="privilegeNotificationId"/>.
+        /// </summary>
+        /// <param name="privilegeNotificationId">The unique id of the privilege notification to acknowledge.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeNotificationException">Thrown when an exception is encountered during the operation.</exception>
+        public virtual Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null)
+        {
+            if (privilegeNotificationId < 0)
+            {
+                throw new ArgumentException($"The privilege notification ID must be greater than zero.", nameof(privilegeNotificationId));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge privilege notifications (currently: {State})");
+            }
+
+            return AcknowledgePrivilegeNotificationInternalAsync(privilegeNotificationId, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
         /// <remarks>
@@ -1347,6 +1373,18 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new PrivateMessageException($"Failed to acknowledge private message with ID {privateMessageId}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task AcknowledgePrivilegeNotificationInternalAsync(int privilegeNotificationId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new AcknowledgePrivilegeNotificationCommand(privilegeNotificationId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivilegeNotificationException($"Failed to acknowledge privilege notification with ID {privilegeNotificationId}: {ex.Message}", ex);
             }
         }
 
