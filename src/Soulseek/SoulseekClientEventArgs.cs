@@ -81,23 +81,35 @@ namespace Soulseek
     }
 
     /// <summary>
-    ///     Event arguments for events raised upon notification of a new privileged user.
+    ///     Event arguments for events raised upon notification of new privileges.
     /// </summary>
-    public class PrivilegedUserAddedEventArgs : SoulseekClientEventArgs
+    public class PrivilegeNotificationReceivedEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivilegedUserAddedEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="PrivilegeNotificationReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="username">The username of the new privileged user.</param>
-        public PrivilegedUserAddedEventArgs(string username)
+        /// <param name="id">The unique id of the notification, if applicable.</param>
+        public PrivilegeNotificationReceivedEventArgs(string username, int? id = null)
         {
             Username = username;
+            Id = id;
         }
 
         /// <summary>
         ///     Gets the username of the new privileged user.
         /// </summary>
         public string Username { get; }
+
+        /// <summary>
+        ///     Gets the unique id of the notification, if applicable.
+        /// </summary>
+        public int? Id { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether the notification must be acknowleged.
+        /// </summary>
+        public bool RequiresAcknowlegement => Id.HasValue;
     }
 
     /// <summary>
