@@ -151,6 +151,7 @@ namespace Soulseek
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
             ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivilegedUserAdded += (sender, e) => PrivilegedUserAdded?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
@@ -202,6 +203,11 @@ namespace Soulseek
         ///     Occurs when a private message is received.
         /// </summary>
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
+
+        /// <summary>
+        ///     Occurs when the server sends a notification of a new privileged user.
+        /// </summary>
+        public event EventHandler<PrivilegedUserAddedEventArgs> PrivilegedUserAdded;
 
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
