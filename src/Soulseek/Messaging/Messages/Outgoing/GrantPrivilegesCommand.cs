@@ -1,4 +1,4 @@
-﻿// <copyright file="GivePrivilegesRequest.cs" company="JP Dillingham">
+﻿// <copyright file="GrantPrivilegesCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,14 +15,14 @@ namespace Soulseek.Messaging.Messages
     /// <summary>
     ///     Logs in to the server.
     /// </summary>
-    internal sealed class GivePrivilegesCommand
+    internal sealed class GrantPrivilegesCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="GivePrivilegesCommand"/> class.
+        ///     Initializes a new instance of the <see cref="GrantPrivilegesCommand"/> class.
         /// </summary>
         /// <param name="username">The username of the user to which to grant privileges.</param>
         /// <param name="days">The number of days of privileged status to grant.</param>
-        public GivePrivilegesCommand(string username, int days)
+        public GrantPrivilegesCommand(string username, int days)
         {
             Username = username;
             Days = days;

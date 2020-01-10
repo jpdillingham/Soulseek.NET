@@ -1867,7 +1867,7 @@ namespace Soulseek
         {
             try
             {
-                await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                await ServerConnection.WriteAsync(new GrantPrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
