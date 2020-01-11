@@ -55,7 +55,7 @@ namespace Soulseek.Messaging.Messages
             var reader = new MessageReader<MessageCode.Server>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.PrivateMessage)
+            if (code != MessageCode.Server.NotifyPrivileges)
             {
                 throw new MessageException($"Message Code mismatch creating {nameof(PrivilegeNotification)} (expected: {(int)MessageCode.Server.NotifyPrivileges}, received: {(int)code}.");
             }
