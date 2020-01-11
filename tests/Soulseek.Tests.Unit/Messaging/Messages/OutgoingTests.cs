@@ -519,5 +519,65 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(searchText, reader.ReadString());
         }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "AcknowledgePrivilegeNotificationCommand")]
+        [Theory(DisplayName = "AcknowledgePrivilegeNotificationCommand constructs the correct message"), AutoData]
+        public void AcknowledgePrivilegeNotificationCommand_Constructs_The_Correct_Message(int token)
+        {
+            var a = new AcknowledgePrivilegeNotificationCommand(token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.AcknowledgeNotifyPrivileges, code);
+            Assert.Equal(token, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "CheckPrivilegesRequest")]
+        [Fact(DisplayName = "CheckPrivilegesRequest constructs the correct message")]
+        public void CheckPrivilegesRequest_Constructs_The_Correct_Message()
+        {
+            var a = new CheckPrivilegesRequest();
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.CheckPrivileges, code);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "GivePrivilegesCommand")]
+        [Theory(DisplayName = "GivePrivilegesCommand constructs the correct message"), AutoData]
+        public void GivePrivilegesCommand_Constructs_The_Correct_Message(string username, int days)
+        {
+            var a = new GivePrivilegesCommand(username, days);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.GivePrivileges, code);
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(days, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "UserPrivilegesRequest")]
+        [Theory(DisplayName = "UserPrivilegesRequest constructs the correct message"), AutoData]
+        public void UserPrivilegesRequest_Constructs_The_Correct_Message(string username)
+        {
+            var a = new UserPrivilegesRequest(username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.UserPrivileges, code);
+            Assert.Equal(username, reader.ReadString());
+        }
     }
 }
