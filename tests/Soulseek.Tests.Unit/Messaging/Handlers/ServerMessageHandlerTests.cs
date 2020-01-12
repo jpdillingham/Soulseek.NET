@@ -231,6 +231,35 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomListReceived"), AutoData]
+        public void Raises_RoomListReceived(List<(string Name, int UserCount)> rooms)
+        {
+            IReadOnlyCollection<Room> result = null;
+
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
+                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomList)
+                .WriteInteger(rooms.Count);
+
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            handler.RoomListReceived += (sender, e) => result = e.Rooms;
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result, r => r.Name == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerPrivilegedUsers"), AutoData]
         public void Handles_ServerPrivilegedUsers(string[] names)
         {
