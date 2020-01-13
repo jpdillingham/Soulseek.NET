@@ -865,7 +865,92 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             Assert.NotNull(eventArgs);
             Assert.Equal(username, eventArgs.Username);
+            Assert.Null(eventArgs.Id);
             Assert.False(eventArgs.RequiresAcknowlegement);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivilegeNotificationReceived on NotifyPrivileges"), AutoData]
+        public void Raises_PrivilegeNotificationReceived_On_NotifyPrivileges(string username, int id)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username)
+                .Build();
+
+            PrivilegeNotificationReceivedEventArgs eventArgs = null;
+
+            handler.PrivilegeNotificationReceived += (sender, args) => eventArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(eventArgs);
+            Assert.Equal(username, eventArgs.Username);
+            Assert.Equal(id, eventArgs.Id);
+            Assert.True(eventArgs.RequiresAcknowlegement);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Acknowledges NotifyPrivileges when AutoAcknowledgePrivilegeNotifications is true"), AutoData]
+        public void Acknowledges_NotifyPrivileges_When_AutoAcknowledgePrivilegeNotifications_Is_True(string username, int id)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username)
+                .Build();
+
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(autoAcknowledgePrivilegeNotifications: true));
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Client.Verify(m => m.AcknowledgePrivilegeNotificationAsync(id, It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not acknowledge NotifyPrivileges when AutoAcknowledgePrivilegeNotifications is false"), AutoData]
+        public void Does_Not_Acknowledge_NotifyPrivileges_When_AutoAcknowledgePrivilegeNotifications_Is_False(string username, int id)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username)
+                .Build();
+
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(autoAcknowledgePrivilegeNotifications: false));
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Client.Verify(m => m.AcknowledgePrivilegeNotificationAsync(id, It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles UserPrivileges"), AutoData]
+        public void Handles_UserPrivileges(string username, bool privileged)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.UserPrivileges)
+                .WriteString(username)
+                .WriteByte((byte)(privileged ? 1 : 0))
+                .Build();
+
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(autoAcknowledgePrivilegeNotifications: false));
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete<bool>(new WaitKey(MessageCode.Server.UserPrivileges, username), privileged), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]
