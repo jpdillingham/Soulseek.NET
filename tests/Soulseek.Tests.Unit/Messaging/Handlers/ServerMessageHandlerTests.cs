@@ -846,6 +846,28 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.NotNull(eventArgs);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivilegeNotificationReceived on AddPrivilegedUser"), AutoData]
+        public void Raises_PrivilegeNotificationReceived_On_AddPrivilegedUser(string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.AddPrivilegedUser)
+                .WriteString(username)
+                .Build();
+
+            PrivilegeNotificationReceivedEventArgs eventArgs = null;
+
+            handler.PrivilegeNotificationReceived += (sender, args) => eventArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(eventArgs);
+            Assert.Equal(username, eventArgs.Username);
+            Assert.False(eventArgs.RequiresAcknowlegement);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
         public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
