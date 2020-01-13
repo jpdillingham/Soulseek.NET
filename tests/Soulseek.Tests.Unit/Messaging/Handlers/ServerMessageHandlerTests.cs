@@ -289,6 +289,37 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivilegedUserListReceived"), AutoData]
+        public void Raises_PrivilegedUserListReceived(string[] names)
+        {
+            IReadOnlyCollection<string> result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivilegedUsers)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            handler.PrivilegedUserListReceived += (sender, e) => result = e.Usernames;
+
+            handler.HandleMessageRead(null, msg);
+
+            foreach (var name in names)
+            {
+                Assert.Contains(result, n => n == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Creates connection on ConnectToPeerResponse 'P'"), AutoData]
         public void Creates_Connection_On_ConnectToPeerResponse_P(string username, int token, IPAddress ip, int port)
         {
