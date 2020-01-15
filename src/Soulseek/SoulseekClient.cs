@@ -677,6 +677,11 @@ namespace Soulseek
         /// <exception cref="PrivilegeCheckException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null)
         {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected and LoggedIn to check privileges (currently: {State})");
+            }
+
             try
             {
                 var waitKey = new WaitKey(MessageCode.Server.CheckPrivileges);
@@ -687,7 +692,7 @@ namespace Soulseek
                 var result = await wait.ConfigureAwait(false);
                 return result;
             }
-            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new PrivilegeCheckException($"Failed to get privileges: {ex.Message}", ex);
             }
