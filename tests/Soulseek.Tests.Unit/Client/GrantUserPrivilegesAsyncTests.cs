@@ -17,6 +17,8 @@ namespace Soulseek.Tests.Unit.Client
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
+    using Soulseek.Exceptions;
+    using Soulseek.Messaging;
     using Soulseek.Network;
     using Xunit;
 
@@ -66,7 +68,7 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(SoulseekClientStates.Disconnected)]
         [InlineData(SoulseekClientStates.Connected)]
         [InlineData(SoulseekClientStates.LoggedIn)]
-        public async Task GrantUserPrivilegesAsync_Throws_InvalidOperationException_If_Logged_In(SoulseekClientStates state)
+        public async Task GrantUserPrivilegesAsync_Throws_InvalidOperationException_If_Not_Connected_And_Logged_In(SoulseekClientStates state)
         {
             using (var s = new SoulseekClient())
             {
@@ -114,6 +116,71 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);
+            }
+        }
+
+        [Trait("Category", "GrantUserPrivilegesAsync")]
+        [Theory(DisplayName = "GrantUserPrivilegesAsync throws PrivilegeGrantException on throw"), AutoData]
+        public async Task GrantUserPrivilegesAsync_Throws_PrivilegeGrantException_On_Throw(string username, int days)
+        {
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Throws(new Exception());
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GrantUserPrivilegesAsync(username, days));
+
+                Assert.NotNull(ex);
+                Assert.IsType<PrivilegeGrantException>(ex);
+            }
+        }
+
+        [Trait("Category", "GrantUserPrivilegesAsync")]
+        [Theory(DisplayName = "GrantUserPrivilegesAsync does not throw on wait completion"), AutoData]
+        public async Task GrantUserPrivilegesAsync_Does_Not_Throw_On_Wait_Completion(string username, int days)
+        {
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait(It.Is<WaitKey>(k => k == new WaitKey(MessageCode.Server.GivePrivileges)), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GrantUserPrivilegesAsync(username, days));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "GrantUserPrivilegesAsync")]
+        [Theory(DisplayName = "GrantUserPrivilegesAsync throws PrivilegeGrantException on wait throw"), AutoData]
+        public async Task GrantUserPrivilegesAsync_Throws_PrivilegeGrantException_On_Wait_Throw(string username, int days)
+        {
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException(new ServerException()));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, waiter: waiter.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GrantUserPrivilegesAsync(username, days));
+
+                Assert.NotNull(ex);
+                Assert.IsType<PrivilegeGrantException>(ex);
+                Assert.IsType<ServerException>(ex.InnerException);
             }
         }
     }
