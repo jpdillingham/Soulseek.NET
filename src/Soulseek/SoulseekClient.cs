@@ -1872,9 +1872,10 @@ namespace Soulseek
         {
             try
             {
-                // todo: wait for server message "Youcurrently do not have any privileges to give." (failure)
-                // todo: wait for AddPrivilegedUser message (success?)
+                var wait = Waiter.Wait(new WaitKey(MessageCode.Server.GivePrivileges), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
