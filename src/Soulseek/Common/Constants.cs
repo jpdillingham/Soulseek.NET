@@ -18,6 +18,16 @@ namespace Soulseek
     internal static class Constants
     {
         /// <summary>
+        ///     The private message sent by the server when an attempt to grant privileges fails.
+        /// </summary>
+        public const string GrantPrivilegeRejectionMessage = "Youcurrently do not have any privileges to give.";
+
+        /// <summary>
+        ///     The username associated with private messages from the server.
+        /// </summary>
+        public const string ServerUsername = "server";
+
+        /// <summary>
         ///     Connection methods.
         /// </summary>
         internal static class ConnectionMethod
@@ -70,6 +80,11 @@ namespace Soulseek
             public const string BranchRootMessage = "BranchRootMessage";
 
             /// <summary>
+            ///     BrowseResponseConnection.
+            /// </summary>
+            public const string BrowseResponseConnection = "BrowseResponseConnection";
+
+            /// <summary>
             ///     ChildDepthMessage.
             /// </summary>
             public const string ChildDepthMessage = "ChildDepthMessage";
@@ -103,11 +118,6 @@ namespace Soulseek
             ///     Transfer.
             /// </summary>
             public const string Transfer = "Transfer";
-
-            /// <summary>
-            ///     BrowseResponseConnection.
-            /// </summary>
-            public const string BrowseResponseConnection = "BrowseResponseConnection";
         }
     }
 }
