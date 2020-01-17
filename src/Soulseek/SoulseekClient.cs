@@ -845,6 +845,29 @@ namespace Soulseek
         ///     Asynchronously grants the specified <paramref name="username"/> the specified number of days
         ///     <paramref name="days"/> of privileged status.
         /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         There is no immediate or direct response for this operation, and because error conditions may only be inferred
+        ///         by monitoring private messages as described below, this library defers this inferrence to implementing code.
+        ///         This method returns after the command is dispatched and does not monitor for any type of response.
+        ///     </para>
+        ///     <para>
+        ///         If the operation succeeds, there may or may not eventually be a <see cref="PrivilegedUserNotification"/> event
+        ///         for the specified user.
+        ///     </para>
+        ///     <para>
+        ///         If the operation fails, the server will send a private message from the username "server", with the IsAdmin
+        ///         flag set, and with one of the messages:
+        ///         <list type="bullet">
+        ///             <item>"User {specified username} does not exist."</item>
+        ///             <item>"Youcurrently do not have any privileges to give." (note the spacing in Youcurrently)</item>
+        ///             <item>
+        ///                 "You don't have enough privilege credit for this operation. Either give away less privilege or donate
+        ///                 in the Web tab to receive more credit."
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        /// </remarks>
         /// <param name="username">The user to which to grant privileges.</param>
         /// <param name="days">The number of days of privileged status to grant.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -1872,10 +1895,7 @@ namespace Soulseek
         {
             try
             {
-                var wait = Waiter.Wait(new WaitKey(MessageCode.Server.GivePrivileges), cancellationToken: cancellationToken);
                 await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-                await wait.ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
