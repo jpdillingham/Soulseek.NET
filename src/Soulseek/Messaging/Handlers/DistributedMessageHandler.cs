@@ -95,10 +95,14 @@ namespace Soulseek.Messaging.Handlers
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {
+                                Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{searchRequest.Query}'");
+
                                 var (ipAddress, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
 
                                 var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ipAddress, port, CancellationToken.None).ConfigureAwait(false);
                                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+
+                                Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {searchRequest.Username} for query '{searchRequest.Query}' with token {searchRequest.Token}");
                             }
                         }
                         catch (Exception ex)

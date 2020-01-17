@@ -294,7 +294,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetListenPort instantiates properly"), AutoData]
         public void SetListenPort_Instantiates_Properly(int port)
         {
-            var a = new SetListenPort(port);
+            var a = new SetListenPortCommand(port);
 
             Assert.Equal(port, a.Port);
         }
@@ -304,7 +304,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetListenPort constructs the correct message"), AutoData]
         public void SetListenPort_Constructs_The_Correct_Message(int port)
         {
-            var a = new SetListenPort(port);
+            var a = new SetListenPortCommand(port);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -348,7 +348,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetSharedCounts instantiates properly"), AutoData]
         public void SetSharedCounts_Instantiates_Properly(int dirs, int files)
         {
-            var a = new SetSharedCounts(dirs, files);
+            var a = new SetSharedCountsCommand(dirs, files);
 
             Assert.Equal(dirs, a.DirectoryCount);
             Assert.Equal(files, a.FileCount);
@@ -359,7 +359,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetSharedCounts constructs the correct message"), AutoData]
         public void SetSharedCounts_Constructs_The_Correct_Message(int dirs, int files)
         {
-            var a = new SetSharedCounts(dirs, files);
+            var a = new SetSharedCountsCommand(dirs, files);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -375,7 +375,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetOnlineStatus instantiates properly"), AutoData]
         public void SetOnlineStatus_Instantiates_Properly(UserStatus status)
         {
-            var a = new SetOnlineStatus(status);
+            var a = new SetOnlineStatusCommand(status);
 
             Assert.Equal(status, a.Status);
         }
@@ -385,7 +385,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "SetOnlineStatus constructs the correct message"), AutoData]
         public void SetOnlineStatus_Constructs_The_Correct_Message(UserStatus status)
         {
-            var a = new SetOnlineStatus(status);
+            var a = new SetOnlineStatusCommand(status);
             var msg = a.ToByteArray();
 
             var reader = new MessageReader<MessageCode.Server>(msg);
@@ -518,6 +518,66 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(roomName, reader.ReadString());
             Assert.Equal(token, reader.ReadInteger());
             Assert.Equal(searchText, reader.ReadString());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "AcknowledgePrivilegeNotificationCommand")]
+        [Theory(DisplayName = "AcknowledgePrivilegeNotificationCommand constructs the correct message"), AutoData]
+        public void AcknowledgePrivilegeNotificationCommand_Constructs_The_Correct_Message(int token)
+        {
+            var a = new AcknowledgePrivilegeNotificationCommand(token);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.AcknowledgeNotifyPrivileges, code);
+            Assert.Equal(token, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "CheckPrivilegesRequest")]
+        [Fact(DisplayName = "CheckPrivilegesRequest constructs the correct message")]
+        public void CheckPrivilegesRequest_Constructs_The_Correct_Message()
+        {
+            var a = new CheckPrivilegesRequest();
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.CheckPrivileges, code);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "GivePrivilegesCommand")]
+        [Theory(DisplayName = "GivePrivilegesCommand constructs the correct message"), AutoData]
+        public void GivePrivilegesCommand_Constructs_The_Correct_Message(string username, int days)
+        {
+            var a = new GivePrivilegesCommand(username, days);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.GivePrivileges, code);
+            Assert.Equal(username, reader.ReadString());
+            Assert.Equal(days, reader.ReadInteger());
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Trait("Request", "UserPrivilegesRequest")]
+        [Theory(DisplayName = "UserPrivilegesRequest constructs the correct message"), AutoData]
+        public void UserPrivilegesRequest_Constructs_The_Correct_Message(string username)
+        {
+            var a = new UserPrivilegesRequest(username);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Server>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Server.UserPrivileges, code);
+            Assert.Equal(username, reader.ReadString());
         }
     }
 }

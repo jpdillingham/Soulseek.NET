@@ -255,7 +255,7 @@ namespace Soulseek.Messaging.Handlers
                 await SoulseekClient.Options
                     .EnqueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
             }
-            catch (EnqueueDownloadException ex)
+            catch (DownloadEnqueueException ex)
             {
                 // pass the exception message through to the remote user only if EnqueueDownloadException is thrown
                 rejected = true;

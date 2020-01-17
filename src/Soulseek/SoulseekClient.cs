@@ -150,9 +150,12 @@ namespace Soulseek
             ServerMessageHandler = serverMessageHandler ?? new ServerMessageHandler(this);
             ServerMessageHandler.UserStatusChanged += (sender, e) => UserStatusChanged?.Invoke(this, e);
             ServerMessageHandler.PrivateMessageReceived += (sender, e) => PrivateMessageReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivilegedUserListReceived += (sender, e) => PrivilegedUserListReceived?.Invoke(this, e);
+            ServerMessageHandler.PrivilegeNotificationReceived += (sender, e) => PrivilegeNotificationReceived?.Invoke(this, e);
             ServerMessageHandler.RoomMessageReceived += (sender, e) => RoomMessageReceived?.Invoke(this, e);
             ServerMessageHandler.RoomJoined += (sender, e) => RoomJoined?.Invoke(this, e);
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
+            ServerMessageHandler.RoomListReceived += (sender, e) => RoomListReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
             ServerMessageHandler.KickedFromServer += (sender, e) =>
@@ -202,6 +205,16 @@ namespace Soulseek
         public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of privileged users.
+        /// </summary>
+        public event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the server sends a notification of new user privileges.
+        /// </summary>
+        public event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         public event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -210,6 +223,11 @@ namespace Soulseek
         ///     Occurs when a user leaves a chat room.
         /// </summary>
         public event EventHandler<RoomLeftEventArgs> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of chat rooms.
+        /// </summary>
+        public event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -324,6 +342,32 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously sends a privilege notification acknowledgement for the specified <paramref name="privilegeNotificationId"/>.
+        /// </summary>
+        /// <param name="privilegeNotificationId">The unique id of the privilege notification to acknowledge.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeNotificationException">Thrown when an exception is encountered during the operation.</exception>
+        public virtual Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null)
+        {
+            if (privilegeNotificationId < 0)
+            {
+                throw new ArgumentException($"The privilege notification ID must be greater than zero.", nameof(privilegeNotificationId));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to acknowledge privilege notifications (currently: {State})");
+            }
+
+            return AcknowledgePrivilegeNotificationInternalAsync(privilegeNotificationId, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
         /// <remarks>
@@ -340,7 +384,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
-        /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="UserAddException">Thrown when an exception is encountered during the operation.</exception>
         public Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
@@ -623,6 +667,38 @@ namespace Soulseek
         public virtual int GetNextToken() => TokenFactory.NextToken();
 
         /// <summary>
+        ///     Asynchronously fetches the number of remaining days of privileges of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeCheckException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be Connected and LoggedIn to check privileges (currently: {State})");
+            }
+
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.CheckPrivileges);
+                var wait = Waiter.Wait<int>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new CheckPrivilegesRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var result = await wait.ConfigureAwait(false);
+                return result;
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivilegeCheckException($"Failed to get privileges: {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the list of chat rooms from the server.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -712,6 +788,31 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously fetches the status of the privileges of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user for which to fetch privileges.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to check user privileges (currently: {State})");
+            }
+
+            return GetUserPrivilegedInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The username of the user for which to fetch the status.</param>
@@ -738,6 +839,61 @@ namespace Soulseek
             }
 
             return GetUserStatusInternalAsync(username, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously grants the specified <paramref name="username"/> the specified number of days
+        ///     <paramref name="days"/> of privileged status.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         There is no immediate or direct response for this operation, and because error conditions may only be inferred
+        ///         by monitoring private messages as described below, this library defers this inferrence to implementing code.
+        ///         This method returns after the command is dispatched and does not monitor for any type of response.
+        ///     </para>
+        ///     <para>
+        ///         If the operation succeeds, there may or may not eventually be a <see cref="PrivilegedUserNotification"/> event
+        ///         for the specified user.
+        ///     </para>
+        ///     <para>
+        ///         If the operation fails, the server will send a private message from the username "server", with the IsAdmin
+        ///         flag set, and with one of the messages:
+        ///         <list type="bullet">
+        ///             <item>"User {specified username} does not exist."</item>
+        ///             <item>"Youcurrently do not have any privileges to give." (note the spacing in Youcurrently)</item>
+        ///             <item>
+        ///                 "You don't have enough privilege credit for this operation. Either give away less privilege or donate
+        ///                 in the Web tab to receive more credit."
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        /// </remarks>
+        /// <param name="username">The user to which to grant privileges.</param>
+        /// <param name="days">The number of days of privileged status to grant.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
+        public Task GrantUserPrivilegesAsync(string username, int days, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting of only whitespace", nameof(username));
+            }
+
+            if (days <= 0)
+            {
+                throw new ArgumentException($"The number of days granted must be greater than zero.", nameof(days));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to grant user privileges (currently: {State})");
+            }
+
+            return GrantUserPrivilegesInternalAsync(username, days, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -781,7 +937,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="RoomLeaveException">Thrown when an exception is encountered during the operation.</exception>
         public Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(roomName))
@@ -1034,7 +1190,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetSharedCounts(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetSharedCountsCommand(directories, files).ToByteArray(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1052,7 +1208,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetUserStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        public Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -1061,7 +1217,7 @@ namespace Soulseek
 
             try
             {
-                return ServerConnection.WriteAsync(new SetOnlineStatus(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
+                return ServerConnection.WriteAsync(new SetOnlineStatusCommand(status).ToByteArray(), cancellationToken ?? CancellationToken.None);
             }
             catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -1248,6 +1404,18 @@ namespace Soulseek
             }
         }
 
+        private async Task AcknowledgePrivilegeNotificationInternalAsync(int privilegeNotificationId, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new AcknowledgePrivilegeNotificationCommand(privilegeNotificationId).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivilegeNotificationException($"Failed to acknowledge privilege notification with ID {privilegeNotificationId}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<UserData> AddUserInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
@@ -1266,7 +1434,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is UserNotFoundException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new AddUserException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
+                throw new UserAddException($"Failed to retrieve information for user {Username}: {ex.Message}", ex);
             }
         }
 
@@ -1289,12 +1457,13 @@ namespace Soulseek
 
             try
             {
-                // prepare an indefinite wait for the operation.  this is completed by either successful completion of
-                // the message transfer, or by the receiving connection being disconnected.
+                // prepare an indefinite wait for the operation. this is completed by either successful completion of the message
+                // transfer, or by the receiving connection being disconnected.
                 var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(browseWaitKey, cancellationToken);
 
-                // prepare a wait for the receipt of the response message with the timeout value specified in options.  this allows the operation to wait
-                // for the remote client to compose the response message.  this wait is completed when the browse responce message is received, but before it is read entirely.
+                // prepare a wait for the receipt of the response message with the timeout value specified in options. this allows
+                // the operation to wait for the remote client to compose the response message. this wait is completed when the
+                // browse responce message is received, but before it is read entirely.
                 var responseConnectionKey = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
                 var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.ResponseTimeout, cancellationToken);
 
@@ -1312,15 +1481,16 @@ namespace Soulseek
 
                 responseConnection.MessageDataRead += UpdateProgress;
 
-                // fake a progress update since we'll always miss the first packet (this is what fires the received event, so we've already read the first 4k
-                // or whatever the read buffer size is)
+                // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
+                // we've already read the first 4k or whatever the read buffer size is)
                 UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength));
 
                 var response = await browseWait.ConfigureAwait(false);
 
                 responseConnection.MessageDataRead -= UpdateProgress;
 
-                // if the response was under 4k, we won't receive a DataRead event informing us of 100% completion.  if this is the case, fake it
+                // if the response was under 4k, we won't receive a DataRead event informing us of 100% completion. if this is the
+                // case, fake it
                 if (!completionEventFired)
                 {
                     UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, responseLength, responseLength));
@@ -1686,6 +1856,24 @@ namespace Soulseek
             }
         }
 
+        private async Task<bool> GetUserPrivilegedInternalAsync(string username, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.UserPrivileges, username);
+                var wait = Waiter.Wait<bool>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new UserPrivilegesRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var result = await wait.ConfigureAwait(false);
+                return result;
+            }
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PrivilegeCheckException($"Failed to get privileges for {username}: {ex.Message}", ex);
+            }
+        }
+
         private async Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
@@ -1700,6 +1888,18 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new UserStatusException($"Failed to retrieve status for user {Username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task GrantUserPrivilegesInternalAsync(string username, int days, CancellationToken cancellationToken)
+        {
+            try
+            {
+                await ServerConnection.WriteAsync(new GivePrivilegesCommand(username, days).ToByteArray(), cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new PrivilegeGrantException($"Failed to grant {days} days of privileges to {username}: {ex.Message}", ex);
             }
         }
 
@@ -1753,10 +1953,10 @@ namespace Soulseek
                     {
                         // the client sends an undocumented message in the format 02/listen port/01/obfuscated port we don't
                         // support obfuscation, so we send only the listen port. it probably wouldn't hurt to send an 00 afterwards.
-                        await ServerConnection.WriteAsync(new SetListenPort(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                        await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
-                    await ServerConnection.WriteAsync(new HaveNoParents(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    await ServerConnection.WriteAsync(new HaveNoParentsCommand(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
                 }
                 else
                 {

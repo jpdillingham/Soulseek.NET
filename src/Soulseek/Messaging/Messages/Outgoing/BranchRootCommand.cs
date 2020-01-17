@@ -1,4 +1,4 @@
-﻿// <copyright file="AcceptChildren.cs" company="JP Dillingham">
+﻿// <copyright file="BranchRootCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of our ability to accept distributed children connections.
+    ///     Informs the server of the username of the current distributed branch root.
     /// </summary>
-    internal sealed class AcceptChildren
+    internal sealed class BranchRootCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="AcceptChildren"/> class.
+        ///     Initializes a new instance of the <see cref="BranchRootCommand"/> class.
         /// </summary>
-        /// <param name="accepted">A value indicating whether child connections are accepted.</param>
-        public AcceptChildren(bool accepted)
+        /// <param name="username">The username of the current distributed branch root.</param>
+        public BranchRootCommand(string username)
         {
-            Accepted = accepted;
+            Username = username;
         }
 
         /// <summary>
-        ///     Gets a value indicating whether child connections are accepted.
+        ///     Gets the username of the current distributed branch root.
         /// </summary>
-        public bool Accepted { get; }
+        public string Username { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.AcceptChildren)
-                .WriteByte((byte)(Accepted ? 1 : 0))
+                .WriteCode(MessageCode.Server.BranchRoot)
+                .WriteString(Username)
                 .Build();
         }
     }

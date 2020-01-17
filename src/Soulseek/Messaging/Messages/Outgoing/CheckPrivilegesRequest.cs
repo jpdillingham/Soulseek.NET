@@ -1,4 +1,4 @@
-﻿// <copyright file="SetListenPort.cs" company="JP Dillingham">
+﻿// <copyright file="CheckPrivilegesRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,16 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Logs in to the server.
+    ///     Requests the status of privileges.
     /// </summary>
-    internal sealed class SetListenPort
+    internal sealed class CheckPrivilegesRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetListenPort"/> class.
+        ///     Initializes a new instance of the <see cref="CheckPrivilegesRequest"/> class.
         /// </summary>
-        /// <param name="port">The port on which to listen.</param>
-        public SetListenPort(int port)
+        public CheckPrivilegesRequest()
         {
-            Port = port;
         }
-
-        /// <summary>
-        ///     Gets the port on which to listen.
-        /// </summary>
-        public int Port { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +31,7 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SetListenPort)
-                .WriteInteger(Port)
+                .WriteCode(MessageCode.Server.CheckPrivileges)
                 .Build();
         }
     }

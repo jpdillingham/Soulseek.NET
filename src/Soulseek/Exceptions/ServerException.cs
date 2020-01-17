@@ -1,4 +1,4 @@
-﻿// <copyright file="EnqueueDownloadException.cs" company="JP Dillingham">
+﻿// <copyright file="ServerException.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -17,31 +17,31 @@ namespace Soulseek.Exceptions
     using System.Runtime.Serialization;
 
     /// <summary>
-    ///     Represents errors that occur while attempting to enqueue a download.
+    ///     Represents errors that originate from the Soulseek server.
     /// </summary>
     [ExcludeFromCodeCoverage]
     [Serializable]
-    public class EnqueueDownloadException : SoulseekClientException
+    public class ServerException : SoulseekClientException
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="EnqueueDownloadException"/> class.
+        ///     Initializes a new instance of the <see cref="ServerException"/> class.
         /// </summary>
-        public EnqueueDownloadException()
+        public ServerException()
             : base()
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="EnqueueDownloadException"/> class with a specified error message.
+        ///     Initializes a new instance of the <see cref="ServerException"/> class with a specified error message.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
-        public EnqueueDownloadException(string message)
+        public ServerException(string message)
             : base(message)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="EnqueueDownloadException"/> class with a specified error message and a
+        ///     Initializes a new instance of the <see cref="ServerException"/> class with a specified error message and a
         ///     reference to the inner exception that is the cause of this exception.
         /// </summary>
         /// <param name="message">The message that describes the error.</param>
@@ -49,17 +49,17 @@ namespace Soulseek.Exceptions
         ///     The exception that is the cause of the current exception, or a null reference (Nothing in Visual Basic) if no
         ///     inner exception is specified.
         /// </param>
-        public EnqueueDownloadException(string message, Exception innerException)
+        public ServerException(string message, Exception innerException)
             : base(message, innerException)
         {
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="EnqueueDownloadException"/> class with serialized data.
+        ///     Initializes a new instance of the <see cref="ServerException"/> class with serialized data.
         /// </summary>
         /// <param name="info">The SerializationInfo that holds the serialized object data about the exception being thrown.</param>
         /// <param name="context">The StreamingContext that contains contextual information about the source or destination.</param>
-        protected EnqueueDownloadException(SerializationInfo info, StreamingContext context)
+        protected ServerException(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }

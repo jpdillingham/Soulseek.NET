@@ -1,4 +1,4 @@
-﻿// <copyright file="PrivilegedUserListTests.cs" company="JP Dillingham">
+﻿// <copyright file="PrivilegeNotificationTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -12,23 +12,25 @@
 
 namespace Soulseek.Tests.Unit.Messaging.Messages
 {
-    using System.Linq;
+    using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PrivilegedUserListTests
+    public class PrivilegeNotificationTests
     {
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse throws MessageExcepton on code mismatch")]
-        public void Parse_Throws_MessageException_On_Code_Mismatch()
+        [Theory(DisplayName = "Parse throws MessageExcepton on code mismatch"), AutoData]
+        public void Parse_Throws_MessageException_On_Code_Mismatch(int id, string username)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.BrowseRequest)
+                .WriteCode(MessageCode.Server.PrivateMessage)
+                .WriteInteger(id)
+                .WriteString(username)
                 .Build();
 
-            var ex = Record.Exception(() => PrivilegedUserListNotification.FromByteArray(msg));
+            var ex = Record.Exception(() => PrivilegeNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -39,36 +41,29 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivilegedUsers)
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => PrivilegedUserListNotification.FromByteArray(msg));
+            var ex = Record.Exception(() => PrivilegeNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data")]
-        public void Parse_Returns_Expected_Data()
+        [Theory(DisplayName = "Parse returns expected data"), AutoData]
+        public void Parse_Returns_Expected_Data(int id, string username)
         {
-            var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.PrivilegedUsers)
-                .WriteInteger(4)
-                .WriteString("larry")
-                .WriteString("moe")
-                .WriteString("curly")
-                .WriteString("shemp")
-                .Build();
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username);
 
-            var response = PrivilegedUserListNotification.FromByteArray(msg).ToList();
+            var response = PrivilegeNotification.FromByteArray(builder.Build());
 
-            Assert.Equal(4, response.Count);
-            Assert.Contains("larry", response);
-            Assert.Contains("moe", response);
-            Assert.Contains("curly", response);
-            Assert.Contains("shemp", response);
+            Assert.Equal(id, response.Id);
+            Assert.Equal(username, response.Username);
         }
     }
 }

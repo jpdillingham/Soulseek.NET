@@ -1,4 +1,4 @@
-﻿// <copyright file="SetSharedCounts.cs" company="JP Dillingham">
+﻿// <copyright file="UserPrivilegesRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,30 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current number of shared directories and files.
+    ///     Requests the status of a user's privileges.
     /// </summary>
-    internal sealed class SetSharedCounts
+    internal sealed class UserPrivilegesRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="SetSharedCounts"/> class.
+        ///     Initializes a new instance of the <see cref="UserPrivilegesRequest"/> class.
         /// </summary>
-        /// <param name="directoryCount">The number of shared directories.</param>
-        /// <param name="fileCount">The number of shared files.</param>
-        public SetSharedCounts(int directoryCount, int fileCount)
+        /// <param name="username">The username of the user to which to grant privileges.</param>
+        public UserPrivilegesRequest(string username)
         {
-            DirectoryCount = directoryCount;
-            FileCount = fileCount;
+            Username = username;
         }
 
         /// <summary>
-        ///     Gets the number of shared directories.
+        ///     Gets the username of the user to which to grant privileges.
         /// </summary>
-        public int DirectoryCount { get; }
-
-        /// <summary>
-        ///     Gets the number of shared files.
-        /// </summary>
-        public int FileCount { get; }
+        public string Username { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -45,9 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.SharedFoldersAndFiles)
-                .WriteInteger(DirectoryCount)
-                .WriteInteger(FileCount)
+                .WriteCode(MessageCode.Server.UserPrivileges)
+                .WriteString(Username)
                 .Build();
         }
     }

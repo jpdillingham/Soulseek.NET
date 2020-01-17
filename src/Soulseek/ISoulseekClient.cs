@@ -20,6 +20,7 @@ namespace Soulseek
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging.Messages;
 
     /// <summary>
     ///     A client for the Soulseek file sharing network.
@@ -52,6 +53,16 @@ namespace Soulseek
         event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
 
         /// <summary>
+        ///     Occurs when the server sends a list of privileged users.
+        /// </summary>
+        event EventHandler<PrivilegedUserListReceivedEventArgs> PrivilegedUserListReceived;
+
+        /// <summary>
+        ///     Occurs when the server sends a notification of new user privileges.
+        /// </summary>
+        event EventHandler<PrivilegeNotificationReceivedEventArgs> PrivilegeNotificationReceived;
+
+        /// <summary>
         ///     Occurs when a user joins a chat room.
         /// </summary>
         event EventHandler<RoomJoinedEventArgs> RoomJoined;
@@ -60,6 +71,11 @@ namespace Soulseek
         ///     Occurs when a user leaves a chat room.
         /// </summary>
         event EventHandler<RoomLeftEventArgs> RoomLeft;
+
+        /// <summary>
+        ///     Occurs when the server sends a list of chat rooms.
+        /// </summary>
+        event EventHandler<RoomListReceivedEventArgs> RoomListReceived;
 
         /// <summary>
         ///     Occurs when a chat room message is received.
@@ -141,6 +157,21 @@ namespace Soulseek
         Task AcknowledgePrivateMessageAsync(int privateMessageId, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously sends a privilege notification acknowledgement for the specified <paramref name="privilegeNotificationId"/>.
+        /// </summary>
+        /// <param name="privilegeNotificationId">The unique id of the privilege notification to acknowledge.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeNotificationException">Thrown when an exception is encountered during the operation.</exception>
+        Task AcknowledgePrivilegeNotificationAsync(int privilegeNotificationId, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously adds the specified <paramref name="username"/> to the server watch list for the current session.
         /// </summary>
         /// <remarks>
@@ -157,7 +188,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserNotFoundException">Thrown when the specified user is not registered.</exception>
-        /// <exception cref="AddUserException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="UserAddException">Thrown when an exception is encountered during the operation.</exception>
         Task<UserData> AddUserAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -286,6 +317,17 @@ namespace Soulseek
         int GetNextToken();
 
         /// <summary>
+        ///     Asynchronously fetches the number of remaining days of privileges of the currently logged in user.
+        /// </summary>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeCheckException">Thrown when an exception is encountered during the operation.</exception>
+        Task<int> GetPrivilegesAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously fetches the list of chat rooms on the server.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -329,6 +371,18 @@ namespace Soulseek
         Task<UserInfo> GetUserInfoAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously fetches the status of the privileges of the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The username of the user for which to fetch privileges.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeCheckException">Thrown when an exception is encountered during the operation.</exception>
+        Task<bool> GetUserPrivilegedAsync(string username, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously fetches the status of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The username of the user for which to fetch the status.</param>
@@ -343,6 +397,43 @@ namespace Soulseek
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
         Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously grants the specified <paramref name="username"/> the specified number of days
+        ///     <paramref name="days"/> of privileged status.
+        /// </summary>
+        /// <remarks>
+        ///     <para>
+        ///         There is no immediate or direct response for this operation, and because error conditions may only be inferred
+        ///         by monitoring private messages as described below, this library defers this inferrence to implementing code.
+        ///         This method returns after the command is dispatched and does not monitor for any type of response.
+        ///     </para>
+        ///     <para>
+        ///         If the operation succeeds, there may or may not eventually be a <see cref="PrivilegedUserNotification"/> event
+        ///         for the specified user.
+        ///     </para>
+        ///     <para>
+        ///         If the operation fails, the server will send a private message from the username "server", with the IsAdmin
+        ///         flag set, and with one of the messages:
+        ///         <list type="bullet">
+        ///             <item>"User {specified username} does not exist."</item>
+        ///             <item>"Youcurrently do not have any privileges to give." (note the spacing in Youcurrently)</item>
+        ///             <item>
+        ///                 "You don't have enough privilege credit for this operation. Either give away less privilege or donate
+        ///                 in the Web tab to receive more credit."
+        ///             </item>
+        ///         </list>
+        ///     </para>
+        /// </remarks>
+        /// <param name="username">The user to which to grant privileges.</param>
+        /// <param name="days">The number of days of privileged status to grant.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PrivilegeGrantException">Thrown when an exception is encountered during the operation.</exception>
+        Task GrantUserPrivilegesAsync(string username, int days, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously joins the chat room with the specified <paramref name="roomName"/>.
@@ -372,7 +463,7 @@ namespace Soulseek
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="RoomJoinException">Thrown when an exception is encountered during the operation.</exception>
+        /// <exception cref="RoomLeaveException">Thrown when an exception is encountered during the operation.</exception>
         Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
 
         /// <summary>
@@ -495,7 +586,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetUserStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the

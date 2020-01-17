@@ -596,12 +596,12 @@ namespace Soulseek.Network
             var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
-            payload.AddRange(new HaveNoParents(haveNoParents).ToByteArray());
-            payload.AddRange(new ParentsIP(parentsIp).ToByteArray());
-            payload.AddRange(new BranchLevel(branchLevel).ToByteArray());
-            payload.AddRange(new BranchRoot(branchRoot).ToByteArray());
-            payload.AddRange(new ChildDepth(ChildConnections.Count).ToByteArray());
-            payload.AddRange(new AcceptChildren(CanAcceptChildren).ToByteArray());
+            payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
+            payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
+            payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
+            payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
+            payload.AddRange(new ChildDepthCommand(ChildConnections.Count).ToByteArray());
+            payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
 
             var statusHash = Convert.ToBase64String(payload.ToArray());
 

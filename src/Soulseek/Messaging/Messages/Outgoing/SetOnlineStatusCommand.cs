@@ -1,4 +1,4 @@
-﻿// <copyright file="HaveNoParents.cs" company="JP Dillingham">
+﻿// <copyright file="SetOnlineStatusCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server that we have no distributed parent.
+    ///     Informs the server of the current user status.
     /// </summary>
-    internal sealed class HaveNoParents
+    internal sealed class SetOnlineStatusCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="HaveNoParents"/> class.
+        ///     Initializes a new instance of the <see cref="SetOnlineStatusCommand"/> class.
         /// </summary>
-        /// <param name="haveParents">A value indicating whether a distributed parent connections is needed.</param>
-        public HaveNoParents(bool haveParents)
+        /// <param name="status">The current status.</param>
+        public SetOnlineStatusCommand(UserStatus status)
         {
-            HaveParents = haveParents;
+            Status = status;
         }
 
         /// <summary>
-        ///     Gets a value indicating whether a distributed parent connections is needed.
+        ///     Gets the current status.
         /// </summary>
-        public bool HaveParents { get; }
+        public UserStatus Status { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.HaveNoParents)
-                .WriteByte((byte)(HaveParents ? 1 : 0))
+                .WriteCode(MessageCode.Server.SetOnlineStatus)
+                .WriteInteger((int)Status)
                 .Build();
         }
     }

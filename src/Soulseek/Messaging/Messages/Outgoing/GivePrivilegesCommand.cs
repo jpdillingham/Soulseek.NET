@@ -1,4 +1,4 @@
-﻿// <copyright file="BranchLevel.cs" company="JP Dillingham">
+﻿// <copyright file="GivePrivilegesCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,30 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the current distributed branch level.
+    ///     Grants privileges to a user.
     /// </summary>
-    internal sealed class BranchLevel
+    internal sealed class GivePrivilegesCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BranchLevel"/> class.
+        ///     Initializes a new instance of the <see cref="GivePrivilegesCommand"/> class.
         /// </summary>
-        /// <param name="level">The current distributed branch level.</param>
-        public BranchLevel(int level)
+        /// <param name="username">The username of the user to which to grant privileges.</param>
+        /// <param name="days">The number of days of privileged status to grant.</param>
+        public GivePrivilegesCommand(string username, int days)
         {
-            Level = level;
+            Username = username;
+            Days = days;
         }
 
         /// <summary>
-        ///     Gets the current distributed branch level.
+        ///     Gets the number of days of privileged status to grant.
         /// </summary>
-        public int Level { get; }
+        public int Days { get; }
+
+        /// <summary>
+        ///     Gets the username of the user to which to grant privileges.
+        /// </summary>
+        public string Username { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +45,9 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.BranchLevel)
-                .WriteInteger(Level)
+                .WriteCode(MessageCode.Server.GivePrivileges)
+                .WriteString(Username)
+                .WriteInteger(Days)
                 .Build();
         }
     }

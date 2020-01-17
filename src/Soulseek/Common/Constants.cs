@@ -70,6 +70,11 @@ namespace Soulseek
             public const string BranchRootMessage = "BranchRootMessage";
 
             /// <summary>
+            ///     BrowseResponseConnection.
+            /// </summary>
+            public const string BrowseResponseConnection = "BrowseResponseConnection";
+
+            /// <summary>
             ///     ChildDepthMessage.
             /// </summary>
             public const string ChildDepthMessage = "ChildDepthMessage";
@@ -103,11 +108,6 @@ namespace Soulseek
             ///     Transfer.
             /// </summary>
             public const string Transfer = "Transfer";
-
-            /// <summary>
-            ///     BrowseResponseConnection.
-            /// </summary>
-            public const string BrowseResponseConnection = "BrowseResponseConnection";
         }
     }
 }

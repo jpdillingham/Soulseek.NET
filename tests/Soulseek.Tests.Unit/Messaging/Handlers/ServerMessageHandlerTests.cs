@@ -231,6 +231,35 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises RoomListReceived"), AutoData]
+        public void Raises_RoomListReceived(List<(string Name, int UserCount)> rooms)
+        {
+            IReadOnlyCollection<Room> result = null;
+
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<Room>>()))
+                .Callback<WaitKey, IReadOnlyCollection<Room>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.RoomList)
+                .WriteInteger(rooms.Count);
+
+            rooms.ForEach(room => builder.WriteString(room.Name));
+            builder.WriteInteger(rooms.Count);
+            rooms.ForEach(room => builder.WriteInteger(room.UserCount));
+
+            handler.RoomListReceived += (sender, e) => result = e.Rooms;
+
+            handler.HandleMessageRead(null, builder.Build());
+
+            foreach (var (name, userCount) in rooms)
+            {
+                Assert.Contains(result, r => r.Name == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerPrivilegedUsers"), AutoData]
         public void Handles_ServerPrivilegedUsers(string[] names)
         {
@@ -250,6 +279,37 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             }
 
             var msg = builder.Build();
+
+            handler.HandleMessageRead(null, msg);
+
+            foreach (var name in names)
+            {
+                Assert.Contains(result, n => n == name);
+            }
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivilegedUserListReceived"), AutoData]
+        public void Raises_PrivilegedUserListReceived(string[] names)
+        {
+            IReadOnlyCollection<string> result = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Waiter.Setup(m => m.Complete(It.IsAny<WaitKey>(), It.IsAny<IReadOnlyCollection<string>>()))
+                .Callback<WaitKey, IReadOnlyCollection<string>>((key, response) => result = response);
+
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Server.PrivilegedUsers)
+                .WriteInteger(names.Length);
+
+            foreach (var name in names)
+            {
+                builder.WriteString(name);
+            }
+
+            var msg = builder.Build();
+
+            handler.PrivilegedUserListReceived += (sender, e) => result = e.Usernames;
 
             handler.HandleMessageRead(null, msg);
 
@@ -786,6 +846,113 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.NotNull(eventArgs);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivilegeNotificationReceived on AddPrivilegedUser"), AutoData]
+        public void Raises_PrivilegeNotificationReceived_On_AddPrivilegedUser(string username)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.AddPrivilegedUser)
+                .WriteString(username)
+                .Build();
+
+            PrivilegeNotificationReceivedEventArgs eventArgs = null;
+
+            handler.PrivilegeNotificationReceived += (sender, args) => eventArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(eventArgs);
+            Assert.Equal(username, eventArgs.Username);
+            Assert.Null(eventArgs.Id);
+            Assert.False(eventArgs.RequiresAcknowlegement);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Raises PrivilegeNotificationReceived on NotifyPrivileges"), AutoData]
+        public void Raises_PrivilegeNotificationReceived_On_NotifyPrivileges(string username, int id)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username)
+                .Build();
+
+            PrivilegeNotificationReceivedEventArgs eventArgs = null;
+
+            handler.PrivilegeNotificationReceived += (sender, args) => eventArgs = args;
+
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(eventArgs);
+            Assert.Equal(username, eventArgs.Username);
+            Assert.Equal(id, eventArgs.Id);
+            Assert.True(eventArgs.RequiresAcknowlegement);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Acknowledges NotifyPrivileges when AutoAcknowledgePrivilegeNotifications is true"), AutoData]
+        public void Acknowledges_NotifyPrivileges_When_AutoAcknowledgePrivilegeNotifications_Is_True(string username, int id)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username)
+                .Build();
+
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(autoAcknowledgePrivilegeNotifications: true));
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Client.Verify(m => m.AcknowledgePrivilegeNotificationAsync(id, It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not acknowledge NotifyPrivileges when AutoAcknowledgePrivilegeNotifications is false"), AutoData]
+        public void Does_Not_Acknowledge_NotifyPrivileges_When_AutoAcknowledgePrivilegeNotifications_Is_False(string username, int id)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NotifyPrivileges)
+                .WriteInteger(id)
+                .WriteString(username)
+                .Build();
+
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(autoAcknowledgePrivilegeNotifications: false));
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Client.Verify(m => m.AcknowledgePrivilegeNotificationAsync(id, It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles UserPrivileges"), AutoData]
+        public void Handles_UserPrivileges(string username, bool privileged)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.UserPrivileges)
+                .WriteString(username)
+                .WriteByte((byte)(privileged ? 1 : 0))
+                .Build();
+
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(autoAcknowledgePrivilegeNotifications: false));
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete<bool>(new WaitKey(MessageCode.Server.UserPrivileges, username), privileged), Times.Once);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
         public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
@@ -897,6 +1064,27 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if it came from the local user"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_It_Came_From_The_Local_User(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(username);
+
+            var message = GetServerSearchRequest(username, token, query);
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         private byte[] GetServerSearchRequest(string username, int token, string query)

@@ -1,4 +1,4 @@
-﻿// <copyright file="ParentsIP.cs" company="JP Dillingham">
+﻿// <copyright file="ChildDepthCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -12,27 +12,24 @@
 
 namespace Soulseek.Messaging.Messages
 {
-    using System;
-    using System.Net;
-
     /// <summary>
-    ///     Informs the server of the IP address of the current distributed parent.
+    ///     Informs the server of the current distributed child depth.
     /// </summary>
-    internal sealed class ParentsIP
+    internal sealed class ChildDepthCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ParentsIP"/> class.
+        ///     Initializes a new instance of the <see cref="ChildDepthCommand"/> class.
         /// </summary>
-        /// <param name="ipAddress">The IP address of the current distributed parent.</param>
-        public ParentsIP(IPAddress ipAddress)
+        /// <param name="depth">The current distributed child depth.</param>
+        public ChildDepthCommand(int depth)
         {
-            IPAddress = ipAddress;
+            Depth = depth;
         }
 
         /// <summary>
-        ///     Gets the IP address of the current distributed parent.
+        ///     Gets the current distributed child depth.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public int Depth { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -40,12 +37,9 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
-            var ipBytes = IPAddress.GetAddressBytes();
-            Array.Reverse(ipBytes);
-
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.ParentsIP)
-                .WriteBytes(ipBytes)
+                .WriteCode(MessageCode.Server.ChildDepth)
+                .WriteInteger(Depth)
                 .Build();
         }
     }

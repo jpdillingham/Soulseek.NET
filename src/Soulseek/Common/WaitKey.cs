@@ -38,6 +38,16 @@ namespace Soulseek
         /// </summary>
         public object[] TokenParts { get; private set; }
 
+        public static bool operator !=(WaitKey lhs, WaitKey rhs)
+        {
+            return !lhs.Equals(rhs);
+        }
+
+        public static bool operator ==(WaitKey lhs, WaitKey rhs)
+        {
+            return lhs.Equals(rhs);
+        }
+
         /// <summary>
         ///     Compares the specified <paramref name="obj"/> to this instance.
         /// </summary>

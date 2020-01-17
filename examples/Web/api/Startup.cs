@@ -176,6 +176,8 @@
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
 
+            Client.PrivateMessageReceived += (e, args) => Console.WriteLine($"[{args.Timestamp}] [PM]{(args.IsAdmin ? " [ADMIN]" : "")} {args.Username}: {args.Message}");
+
             async Task ConnectAndLogIn()
             {
                 await Client.ConnectAsync();
@@ -248,7 +250,7 @@
         /// <param name="filename">The filename of the requested file.</param>
         /// <param name="tracker">(for example purposes) the ITransferTracker used to track progress.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
-        /// <exception cref="EnqueueDownloadException">Thrown when the download is rejected.  The Exception message will be passed to the remote user.</exception>
+        /// <exception cref="DownloadEnqueueException">Thrown when the download is rejected.  The Exception message will be passed to the remote user.</exception>
         /// <exception cref="Exception">Thrown on any other Exception other than a rejection.  A generic message will be passed to the remote user for security reasons.</exception>
         private Task EnqueueDownloadAction(string username, IPAddress ipAddress, int port, string filename, ITransferTracker tracker)
         {

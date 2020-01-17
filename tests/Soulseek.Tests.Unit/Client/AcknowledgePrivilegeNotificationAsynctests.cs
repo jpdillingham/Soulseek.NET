@@ -1,4 +1,4 @@
-﻿// <copyright file="SetUserStatusAsyncTests.cs" company="JP Dillingham">
+﻿// <copyright file="AcknowledgePrivilegeNotificationAsynctests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -21,39 +21,52 @@ namespace Soulseek.Tests.Unit.Client
     using Soulseek.Network.Tcp;
     using Xunit;
 
-    public class SetUserStatusAsyncTests
+    public class AcknowledgePrivilegeNotificationAsyncTests
     {
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws InvalidOperationException when not connected")]
-        public async Task SetUserStatusAsync_Throws_InvalidOperationException_When_Not_Connected()
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws ArgumentException when ID is less than 0")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_ArgumentException_When_ID_Is_Less_Than_0()
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(-1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws InvalidOperationException when not connected")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_InvalidOperationException_When_Not_Connected()
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws InvalidOperationException when not logged in")]
-        public async Task SetUserStatusAsync_Throws_InvalidOperationException_When_Not_Logged_In()
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws InvalidOperationException when not logged in")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_InvalidOperationException_When_Not_Logged_In()
         {
             using (var s = new SoulseekClient())
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(1));
 
                 Assert.NotNull(ex);
                 Assert.IsType<InvalidOperationException>(ex);
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync does not throw when write does not throw")]
-        public async Task SetUserStatusAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync does not throw when write does not throw")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Does_Not_Throw_When_Write_Does_Not_Throw()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -63,15 +76,15 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(1));
 
                 Assert.Null(ex);
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws UserStatusException when write throws")]
-        public async Task SetUserStatusAsync_Throws_Exception_When_Write_Throws()
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws PrivateMessageException when write throws")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_PrivateMessageException_When_Write_Throws()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
@@ -81,17 +94,17 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
-                Assert.IsType<UserStatusException>(ex);
+                Assert.IsType<PrivilegeNotificationException>(ex);
                 Assert.IsType<ConnectionWriteException>(ex.InnerException);
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws TimeoutException when write times out")]
-        public async Task SetUserStatusAsync_Throws_TimeoutException_When_Write_Times_Out()
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws TimeoutException when write times out")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_TimeoutException_When_Write_Times_Out()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
@@ -101,16 +114,16 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<TimeoutException>(ex);
             }
         }
 
-        [Trait("Category", "SetUserStatusAsync")]
-        [Fact(DisplayName = "SetUserStatusAsync throws OperationCanceledException when write is canceled")]
-        public async Task SetUserStatusAsync_Throws_OperationCanceledException_When_Write_Is_Canceled()
+        [Trait("Category", "AcknowledgePrivilegeNotificationAsync")]
+        [Fact(DisplayName = "AcknowledgePrivilegeNotificationAsync throws OperationCanceledException when write is canceled")]
+        public async Task AcknowledgePrivilegeNotificationAsync_Throws_OperationCanceledException_When_Write_Is_Canceled()
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
@@ -120,7 +133,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var ex = await Record.ExceptionAsync(async () => await s.SetStatusAsync(UserStatus.Online, CancellationToken.None));
+                var ex = await Record.ExceptionAsync(async () => await s.AcknowledgePrivilegeNotificationAsync(1, CancellationToken.None));
 
                 Assert.NotNull(ex);
                 Assert.IsType<OperationCanceledException>(ex);

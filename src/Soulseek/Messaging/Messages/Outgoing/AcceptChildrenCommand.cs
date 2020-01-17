@@ -1,4 +1,4 @@
-﻿// <copyright file="BranchRoot.cs" company="JP Dillingham">
+﻿// <copyright file="AcceptChildrenCommand.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -13,23 +13,23 @@
 namespace Soulseek.Messaging.Messages
 {
     /// <summary>
-    ///     Informs the server of the username of the current distributed branch root.
+    ///     Informs the server of our ability to accept distributed children connections.
     /// </summary>
-    internal sealed class BranchRoot
+    internal sealed class AcceptChildrenCommand
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="BranchRoot"/> class.
+        ///     Initializes a new instance of the <see cref="AcceptChildrenCommand"/> class.
         /// </summary>
-        /// <param name="username">The username of the current distributed branch root.</param>
-        public BranchRoot(string username)
+        /// <param name="accepted">A value indicating whether child connections are accepted.</param>
+        public AcceptChildrenCommand(bool accepted)
         {
-            Username = username;
+            Accepted = accepted;
         }
 
         /// <summary>
-        ///     Gets the username of the current distributed branch root.
+        ///     Gets a value indicating whether child connections are accepted.
         /// </summary>
-        public string Username { get; }
+        public bool Accepted { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -38,8 +38,8 @@ namespace Soulseek.Messaging.Messages
         public byte[] ToByteArray()
         {
             return new MessageBuilder()
-                .WriteCode(MessageCode.Server.BranchRoot)
-                .WriteString(Username)
+                .WriteCode(MessageCode.Server.AcceptChildren)
+                .WriteByte((byte)(Accepted ? 1 : 0))
                 .Build();
         }
     }

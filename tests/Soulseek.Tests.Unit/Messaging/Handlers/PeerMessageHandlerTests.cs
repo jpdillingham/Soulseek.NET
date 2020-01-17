@@ -500,7 +500,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         [Theory(DisplayName = "Writes TransferResponse and QueueFailedResponse on rejected QueueDownload invocation"), AutoData]
         public void Writes_TransferResponse_And_QueueFailedResponse_On_Rejected_QueueDownload_Invocation(string username, IPAddress ip, int port, int token, string filename, string rejectMessage)
         {
-            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => throw new EnqueueDownloadException(rejectMessage));
+            var options = new SoulseekClientOptions(enqueueDownloadAction: (u, f, i, p) => throw new DownloadEnqueueException(rejectMessage));
             var (handler, mocks) = GetFixture(username, ip, port, options);
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();

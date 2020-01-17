@@ -131,7 +131,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(user, s.Username);
             }
 
-            var expectedBytes = new SetListenPort(port).ToByteArray();
+            var expectedBytes = new SetListenPortCommand(port).ToByteArray();
             conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
         }
 
