@@ -149,12 +149,6 @@ namespace Soulseek.Messaging.Handlers
                         var pn = PrivilegeNotification.FromByteArray(message);
                         PrivilegeNotificationReceived?.Invoke(this, new PrivilegeNotificationReceivedEventArgs(pn.Username, pn.Id));
 
-                        // the response to the 'GivePrivileges' command isn't clearly documented anywhere; the following is making the assumption
-                        // that upon successful grant of privileges, the 'NotifyPrivileges' message will be sent to confirm.  This needs to be tested
-                        // with a privileged account.
-                        // https://github.com/jpdillingham/Soulseek.NET/issues/211
-                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Server.GivePrivileges));
-
                         if (SoulseekClient.Options.AutoAcknowledgePrivilegeNotifications)
                         {
                             await SoulseekClient.AcknowledgePrivilegeNotificationAsync(pn.Id, CancellationToken.None).ConfigureAwait(false);
@@ -241,15 +235,6 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.PrivateMessage:
                         var pm = PrivateMessageNotification.FromByteArray(message);
                         PrivateMessageReceived?.Invoke(this, new PrivateMessageEventArgs(pm));
-
-                        // the 'GivePrivileges' command has no associated rejection message; if the command fails we receive a private
-                        // message from the server informing us of the failure.  this code handles rejection due to lack of privileges to grant,
-                        // there are probably a few other (user not found at least).  this needs to be tested more from a privileged account.
-                        // https://github.com/jpdillingham/Soulseek.NET/issues/211
-                        if (pm.IsAdmin && pm.Username == Constants.ServerUsername && pm.Message == Constants.GrantPrivilegeRejectionMessage)
-                        {
-                            SoulseekClient.Waiter.Throw(new WaitKey(MessageCode.Server.GivePrivileges), new ServerException(pm.Message));
-                        }
 
                         if (SoulseekClient.Options.AutoAcknowledgePrivateMessages)
                         {
