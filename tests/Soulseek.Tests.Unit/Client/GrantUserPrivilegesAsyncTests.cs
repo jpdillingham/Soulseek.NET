@@ -159,29 +159,5 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Null(ex);
             }
         }
-
-        [Trait("Category", "GrantUserPrivilegesAsync")]
-        [Theory(DisplayName = "GrantUserPrivilegesAsync throws PrivilegeGrantException on wait throw"), AutoData]
-        public async Task GrantUserPrivilegesAsync_Throws_PrivilegeGrantException_On_Wait_Throw(string username, int days)
-        {
-            var serverConn = new Mock<IMessageConnection>();
-            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.CompletedTask);
-
-            var waiter = new Mock<IWaiter>();
-            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException(new ServerException()));
-
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, waiter: waiter.Object))
-            {
-                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-
-                var ex = await Record.ExceptionAsync(() => s.GrantUserPrivilegesAsync(username, days));
-
-                Assert.NotNull(ex);
-                Assert.IsType<PrivilegeGrantException>(ex);
-                Assert.IsType<ServerException>(ex.InnerException);
-            }
-        }
     }
 }
