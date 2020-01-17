@@ -129,6 +129,17 @@ namespace Soulseek.Tests.Unit
             Assert.True(k2.Equals(k1));
         }
 
+        [Trait("Category", "==")]
+        [Fact(DisplayName = "== returns true when equal")]
+        public void DoubleEqualOperator_Returns_True_When_Equal()
+        {
+            var k1 = new WaitKey("foo", 2);
+            var k2 = new WaitKey("foo", 2);
+
+            Assert.True(k1 == k2);
+            Assert.True(k2 == k1);
+        }
+
         [Trait("Category", "Equals")]
         [Fact(DisplayName = "Equals returns false when not equal")]
         public void Equals_Returns_False_When_Not_Equal()
@@ -138,6 +149,17 @@ namespace Soulseek.Tests.Unit
 
             Assert.False(k1.Equals(k2));
             Assert.False(k2.Equals(k1));
+        }
+
+        [Trait("Category", "!=")]
+        [Fact(DisplayName = "!= returns false when not equal")]
+        public void NotEqualOperator_Returns_False_When_Not_Equal()
+        {
+            var k1 = new WaitKey("foo", 2);
+            var k2 = new WaitKey("bar", 3);
+
+            Assert.True(k1 != k2);
+            Assert.True(k2 != k1);
         }
 
         [Trait("Category", "Equals")]
