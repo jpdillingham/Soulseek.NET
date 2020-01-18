@@ -284,7 +284,10 @@
             var defaultResponse = Task.FromResult<SearchResponse>(null);
 
             // sanitize the query string.  there's probably more to it than this.
-            query = query.Replace("/", string.Empty).Replace("\\", string.Empty);
+            query = query
+                .Replace("/", " ")
+                .Replace("\\", " ")
+                .Replace(":", " ");
 
             // some bots continually query for very common strings.  blacklist known names here.
             var blacklist = new[] { "Lola45", "Lolo51" };
