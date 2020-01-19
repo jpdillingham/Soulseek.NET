@@ -13,7 +13,8 @@ import {
     Table, 
     Icon, 
     List, 
-    Progress
+    Progress,
+    Button
 } from 'semantic-ui-react';
 
 const getColor = (state) => {
@@ -22,8 +23,9 @@ const getColor = (state) => {
             return 'blue'; 
         case 'Completed, Succeeded':
             return 'green';
+        case 'Requested':
         case 'Queued':
-            return 'grey';
+            return '';
         case 'Initializing':
             return 'teal';
         default:
@@ -32,7 +34,7 @@ const getColor = (state) => {
 }
 
 const downloadOne = (username, file) => {
-    return axios.post(`${BASE_URL}/files/queue/${username}/${encodeURI(file.filename)}`);
+    return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
 }
 
 const cancel = (direction, username, file) => {
@@ -52,12 +54,12 @@ const TransferList = ({ username, directoryName, files, direction }) => (
             <Table>
                 <Table.Header>
                     <Table.Row>
-                        <Table.Cell className='transferlist-selector'>
+                        <Table.HeaderCell className='transferlist-selector'>
                             <Checkbox 
                                 fitted 
                                 checked={false}
                             />
-                        </Table.Cell>
+                        </Table.HeaderCell>
                         <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
                         <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
                         <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
@@ -77,14 +79,14 @@ const TransferList = ({ username, directoryName, files, direction }) => (
                             <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
                             <Table.Cell className='transferlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
                             <Table.Cell className='transferlist-progress'>
-                                <Progress 
-                                    style={{ margin: 0}}
+                                {f.state === 'InProgress' ? <Progress 
+                                    style={{ margin: 0 }}
                                     percent={Math.round(f.percentComplete)} 
                                     progress color={getColor(f.state)}
-                                />
+                                /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} color={getColor(f.state)}>{f.state}</Button>}
                             </Table.Cell>
-                            {direction === 'download' && <Table.Cell className='transferlist-retry'><a onClick={() => downloadOne(direction, username, f)}>Retry</a></Table.Cell>}
-                            <Table.Cell className='transferlist-cancel'><a href="#" onClick={() => cancel(direction, username, f)}>Cancel</a></Table.Cell>
+                            {direction === 'download' && <Table.Cell className='transferlist-retry'><Button size='mini' style={{ padding: 8 }} onClick={() => downloadOne(username, f)}>Retry</Button></Table.Cell>}
+                            <Table.Cell className='transferlist-cancel'><Button size='mini' style={{ padding: 8 }} onClick={() => cancel(direction, username, f)}>Cancel</Button></Table.Cell>
                         </Table.Row>
                     )}
                 </Table.Body>
