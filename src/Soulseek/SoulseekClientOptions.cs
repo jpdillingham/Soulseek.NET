@@ -88,7 +88,7 @@ namespace Soulseek
             ConnectionOptions transferConnectionOptions = null,
             ConnectionOptions incomingConnectionOptions = null,
             ConnectionOptions distributedConnectionOptions = null,
-            Func<string, int, string, Task<SearchResponse>> searchResponseResolver = null,
+            Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPAddress, int, Task<IEnumerable<Directory>>> browseResponseResolver = null,
             Func<string, IPAddress, int, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPAddress, int, string, Task> enqueueDownloadAction = null,
@@ -201,7 +201,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
         /// </summary>
-        public Func<string, int, string, Task<SearchResponse>> SearchResponseResolver { get; }
+        public Func<string, int, SearchQuery, Task<SearchResponse>> SearchResponseResolver { get; }
 
         /// <summary>
         ///     Gets the options for the server message connection.
