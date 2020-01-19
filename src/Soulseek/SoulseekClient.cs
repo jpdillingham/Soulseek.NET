@@ -1078,6 +1078,11 @@ namespace Soulseek
                 throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
+            if (responseReceived == default)
+            {
+                throw new ArgumentNullException(nameof(responseReceived), "The specified Response delegate is null.");
+            }
+
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
                 throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
