@@ -995,28 +995,34 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
+        ///     Asynchronously searches for the specified <paramref name="query"/> using the specified unique
         ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="query">The search query.</param>
         /// <param name="scope">the search scope.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="query"/> is null.</exception>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
         /// </exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(string searchText, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<IReadOnlyCollection<SearchResponse>> SearchAsync(SearchQuery query, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrWhiteSpace(searchText))
+            if (query == null)
             {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(searchText));
+                throw new ArgumentNullException(nameof(query));
+            }
+
+            if (string.IsNullOrWhiteSpace(query.SearchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1034,22 +1040,23 @@ namespace Soulseek
             scope = scope ?? new SearchScope();
             options = options ?? new SearchOptions();
 
-            return SearchToCollectionAsync(searchText, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCollectionAsync(query.SearchText, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
-        ///     Asynchronously searches for the specified <paramref name="searchText"/> using the specified unique
+        ///     Asynchronously searches for the specified <paramref name="query"/> using the specified unique
         ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>
-        /// <param name="searchText">The text for which to search.</param>
+        /// <param name="query">The search query.</param>
         /// <param name="responseReceived">The delegate to invoke for each response.</param>
         /// <param name="scope">the search scope.</param>
         /// <param name="token">The unique search token.</param>
         /// <param name="options">The operation <see cref="SearchOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the search results.</returns>
+        /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="query"/> is null.</exception>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the specified <paramref name="searchText"/> is null, empty, or consists of only whitespace.
+        ///     Thrown when the search text of the specified <paramref name="query"/> is null, empty, or consists of only whitespace..
         /// </exception>
         /// <exception cref="ArgumentNullException">
         ///     Thrown when the specified <paramref name="responseReceived"/> delegate is null.
@@ -1059,11 +1066,16 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="SearchException">Thrown when an unhandled Exception is encountered during the operation.</exception>
-        public Task SearchAsync(string searchText, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
+        public Task SearchAsync(SearchQuery query, Action<SearchResponse> responseReceived, SearchScope scope = null, int? token = null, SearchOptions options = null, CancellationToken? cancellationToken = null)
         {
-            if (string.IsNullOrWhiteSpace(searchText))
+            if (query == null)
             {
-                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(searchText));
+                throw new ArgumentNullException(nameof(query));
+            }
+
+            if (string.IsNullOrWhiteSpace(query.SearchText))
+            {
+                throw new ArgumentException($"Search text must not be a null or empty string, or one consisting only of whitespace", nameof(query));
             }
 
             if (responseReceived == default)
@@ -1086,7 +1098,7 @@ namespace Soulseek
             scope = scope ?? new SearchScope();
             options = options ?? new SearchOptions();
 
-            return SearchToCallbackAsync(searchText, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return SearchToCallbackAsync(query.SearchText, responseReceived, scope, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>

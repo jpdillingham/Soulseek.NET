@@ -91,7 +91,7 @@ namespace Soulseek.Messaging.Handlers
 
                         try
                         {
-                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
+                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {

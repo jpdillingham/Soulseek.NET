@@ -279,12 +279,15 @@
         /// <param name="token">The search token.</param>
         /// <param name="query">The search query.</param>
         /// <returns>A Task resolving a SearchResponse, or null.</returns>
-        private Task<SearchResponse> SearchResponseResolver(string username, int token, string query)
+        private Task<SearchResponse> SearchResponseResolver(string username, int token, SearchQuery query)
         {
             var defaultResponse = Task.FromResult<SearchResponse>(null);
 
             // sanitize the query string.  there's probably more to it than this.
-            query = query.Replace("/", string.Empty).Replace("\\", string.Empty);
+            var queryText = query.Query
+                .Replace("/", " ")
+                .Replace("\\", " ")
+                .Replace(":", " ");
 
             // some bots continually query for very common strings.  blacklist known names here.
             var blacklist = new[] { "Lola45", "Lolo51" };
@@ -294,7 +297,7 @@
             }
 
             // some bots and perhaps users search for very short terms.  only respond to queries >= 3 characters.  sorry, U2 fans.
-            if (query.Length < 3)
+            if (queryText.Length < 3)
             {
                 return defaultResponse;
             }
@@ -304,13 +307,13 @@
             // add all files from any directory matching the search query
             // to be done properly this needs to be recursively applied, but that's outside of the scope of this example.
             results.AddRange(System.IO.Directory
-                .GetDirectories(SharedDirectory, $"*{query}*", SearchOption.AllDirectories)
+                .GetDirectories(SharedDirectory, $"*{queryText}*", SearchOption.AllDirectories)
                 .SelectMany(dir => System.IO.Directory.GetFiles(dir, "*")
                     .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0))));
 
             // add all files matching the query, regardless of directory
             results.AddRange(System.IO.Directory
-                .GetFiles(SharedDirectory, $"{query}", SearchOption.AllDirectories)
+                .GetFiles(SharedDirectory, $"{queryText}", SearchOption.AllDirectories)
                 .Select(f => new Soulseek.File(1, f, new FileInfo(f).Length, Path.GetExtension(f), 0)));
 
             // we may have added some files twice, so dedupe entries
@@ -321,7 +324,7 @@
 
             if (results.Count() > 0)
             {
-                Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query}");
+                Console.WriteLine($"[SENDING SEARCH RESULTS]: {results.Count()} records to {username} for query {query.SearchText}");
 
                 return Task.FromResult(new SearchResponse(
                     Username,

@@ -386,7 +386,7 @@
 
                 timer.Start();
 
-                responses = await client.SearchAsync(searchText,
+                responses = await client.SearchAsync(SearchQuery.FromText(searchText),
                     options: new SearchOptions(
                         filterResponses: true,
                         minimumResponseFileCount: minimumFileCount,

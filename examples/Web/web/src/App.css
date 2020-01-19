@@ -91,11 +91,12 @@ body {
 }
 
 .transferlist-progress {
-    max-width: 1000px;
+    width: 300px;
+    max-width: 300px;
 }
 
 .transferlist-filename {
-    width: 800px;
-    min-width: 800px;
+    width: 600px;
+    min-width: 300px;
     word-wrap: break-word !important;
 }
