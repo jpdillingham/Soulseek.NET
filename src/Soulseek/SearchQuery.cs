@@ -52,6 +52,7 @@ namespace Soulseek
         /// <param name="searchText">The full search text of the query.</param>
         public SearchQuery(string searchText)
         {
+            searchText = searchText ?? string.Empty;
             RawSearchText = searchText;
 
             IEnumerable<string> tokens = searchText.Split(' ').ToList();
