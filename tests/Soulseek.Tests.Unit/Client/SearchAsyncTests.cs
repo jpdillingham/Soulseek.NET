@@ -109,6 +109,22 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync throws ArgumentNullException given null query")]
+        public async Task SearchAsync_Throws_ArgumentNullException_Given_Null_Query()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(null, token: 0));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentNullException>(ex);
+                Assert.Equal("query", ((ArgumentNullException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
         [Theory(DisplayName = "SearchAsync delegate throws ArgumentException given bad search text")]
         [InlineData("")]
         [InlineData(null)]
@@ -124,6 +140,22 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
                 Assert.Equal("query", ((ArgumentException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "SearchAsync")]
+        [Fact(DisplayName = "SearchAsync delegate throws ArgumentNullException given null query")]
+        public async Task SearchAsync_Delegate_Throws_ArgumentNullException_Given_Null_Query()
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.SearchAsync(null, (r) => { }, token: 0));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentNullException>(ex);
+                Assert.Equal("query", ((ArgumentNullException)ex).ParamName);
             }
         }
 
