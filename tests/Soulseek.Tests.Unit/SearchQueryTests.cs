@@ -12,11 +12,46 @@
 
 namespace Soulseek.Tests.Unit
 {
+    using System.Collections.Generic;
     using System.Linq;
+    using AutoFixture.Xunit2;
     using Xunit;
 
     public class SearchQueryTests
     {
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with given values"), AutoData]
+        public void Instantiates_With_Given_Values(string query, IEnumerable<string> exclusions, int? mbr, int? mfs, int? mfif, bool cbr, bool vbr)
+        {
+            var s = new SearchQuery(query, exclusions, mbr, mfs, mfif, vbr, cbr);
+
+            Assert.Equal(query, s.Query);
+            Assert.Equal(exclusions, s.Exclusions);
+            Assert.Equal(mbr, s.MinimumBitrate);
+            Assert.Equal(mfs, s.MinimumFileSize);
+            Assert.Equal(mfif, s.MinimumFilesInFolder);
+            Assert.Equal(cbr, s.IsCBR);
+            Assert.Equal(vbr, s.IsVBR);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Constructs expected search text")]
+        [InlineData("foo", new[] { "bar", "baz" }, 1, 2, 3, true, true, "foo -bar -baz mbr:1 mfs:2 mfif:3 isvbr iscbr")]
+        [InlineData("foo", new string[0], 1, 2, 3, true, true, "foo mbr:1 mfs:2 mfif:3 isvbr iscbr")]
+        [InlineData("foo", new string[0], null, 2, 3, true, true, "foo mfs:2 mfif:3 isvbr iscbr")]
+        [InlineData("foo", new string[0], 1, null, 3, true, true, "foo mbr:1 mfif:3 isvbr iscbr")]
+        [InlineData("foo", new string[0], 1, 2, null, true, true, "foo mbr:1 mfs:2 isvbr iscbr")]
+        [InlineData("foo", new string[0], null, null, null, true, false, "foo isvbr")]
+        [InlineData("foo", new string[0], null, null, null, false, true, "foo iscbr")]
+        [InlineData("foo", new string[0], null, null, null, false, false, "foo")]
+        [InlineData("foo", new[] { "bar" }, null, null, null, false, false, "foo -bar")]
+        public void Constructs_Expected_Search_Text(string query, string[] exclusions, int? mbr, int? mfs, int? mfif, bool cbr, bool vbr, string expected)
+        {
+            var s = new SearchQuery(query, exclusions, mbr, mfs, mfif, cbr, vbr);
+
+            Assert.Equal(expected, s.SearchText);
+        }
+
         [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Parses query-only search text")]
         public void Parses_Query_Only_Search_Text()
@@ -196,6 +231,46 @@ namespace Soulseek.Tests.Unit
             Assert.Null(s.MinimumFilesInFolder);
             Assert.False(s.IsCBR);
             Assert.False(s.IsVBR);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Parses IsCBR")]
+        [InlineData("foo iscbr", "foo", true)]
+        [InlineData("foo", "foo", false)]
+        [InlineData("foo iscbr iscbr", "foo", true)]
+        [InlineData("iscbr foo", "foo", true)]
+        public void Parses_IsCBR(string rawQuery, string query, bool value)
+        {
+            var s = new SearchQuery(rawQuery);
+
+            Assert.Equal(query, s.Query);
+            Assert.Equal(rawQuery, s.SearchText);
+            Assert.Empty(s.Exclusions);
+            Assert.Null(s.MinimumBitrate);
+            Assert.Null(s.MinimumFileSize);
+            Assert.Null(s.MinimumFilesInFolder);
+            Assert.Equal(value, s.IsCBR);
+            Assert.False(s.IsVBR);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Parses IsVBR")]
+        [InlineData("foo isvbr", "foo", true)]
+        [InlineData("foo", "foo", false)]
+        [InlineData("foo isvbr isvbr", "foo", true)]
+        [InlineData("isvbr foo", "foo", true)]
+        public void Parses_IsVBR(string rawQuery, string query, bool value)
+        {
+            var s = new SearchQuery(rawQuery);
+
+            Assert.Equal(query, s.Query);
+            Assert.Equal(rawQuery, s.SearchText);
+            Assert.Empty(s.Exclusions);
+            Assert.Null(s.MinimumBitrate);
+            Assert.Null(s.MinimumFileSize);
+            Assert.Null(s.MinimumFilesInFolder);
+            Assert.False(s.IsCBR);
+            Assert.Equal(value, s.IsVBR);
         }
     }
 }

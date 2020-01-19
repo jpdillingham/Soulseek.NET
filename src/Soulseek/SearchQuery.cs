@@ -18,10 +18,23 @@ namespace Soulseek
     using System.Linq;
     using System.Text;
 
+    /// <summary>
+    ///     A search query.
+    /// </summary>
     public class SearchQuery
     {
         private const StringComparison IgnoreCase = StringComparison.InvariantCultureIgnoreCase;
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchQuery"/> class.
+        /// </summary>
+        /// <param name="query">The query text.</param>
+        /// <param name="exclusions">The list of excluded terms.</param>
+        /// <param name="minimumBitrate">The minimum desired bitrate.</param>
+        /// <param name="minimumFileSize">The minimum desired file size.</param>
+        /// <param name="minimumFilesInFolder">The minimum desired number of files in the containing folder.</param>
+        /// <param name="isVBR">A value indicating whether to restrict the search to variable bit rate files.</param>
+        /// <param name="isCBR">A value indicating whehter to restrict the search to constant bit rate files.</param>
         public SearchQuery(string query, IEnumerable<string> exclusions, int? minimumBitrate, int? minimumFileSize, int? minimumFilesInFolder, bool isVBR, bool isCBR)
         {
             Query = query;
@@ -33,6 +46,10 @@ namespace Soulseek
             IsCBR = isCBR;
         }
 
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SearchQuery"/> class.
+        /// </summary>
+        /// <param name="searchText">The full search text of the query.</param>
         public SearchQuery(string searchText)
         {
             RawSearchText = searchText;
@@ -57,18 +74,53 @@ namespace Soulseek
             IsCBR = filterTokens.Any(t => t.Equals("iscbr", IgnoreCase));
         }
 
-        public string SearchText => RawSearchText ?? ToString();
-        public string Query { get; }
+        /// <summary>
+        ///     Gets the list of excluded terms.
+        /// </summary>
         public IReadOnlyCollection<string> Exclusions => ExclusionList.ToList().AsReadOnly();
-        public int? MinimumBitrate { get; }
-        public int? MinimumFileSize { get; }
-        public int? MinimumFilesInFolder { get; }
-        public bool IsVBR { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to restrict the search to constant bit rate files.
+        /// </summary>
         public bool IsCBR { get; }
 
-        private string RawSearchText { get; }
-        private IEnumerable<string> ExclusionList { get; }
+        /// <summary>
+        ///     Gets a value indicating whether to restrict the search to variable bit rate files.
+        /// </summary>
+        public bool IsVBR { get; }
 
+        /// <summary>
+        ///     Gets the minimum desired bitrate.
+        /// </summary>
+        public int? MinimumBitrate { get; }
+
+        /// <summary>
+        ///     Gets the minimum desired number of files in the containing folder.
+        /// </summary>
+        public int? MinimumFilesInFolder { get; }
+
+        /// <summary>
+        ///     Gets the minimum desired file size.
+        /// </summary>
+        public int? MinimumFileSize { get; }
+
+        /// <summary>
+        ///     Gets the query text.
+        /// </summary>
+        public string Query { get; }
+
+        /// <summary>
+        ///     Gets the full search text.
+        /// </summary>
+        public string SearchText => RawSearchText ?? ToString();
+
+        private IEnumerable<string> ExclusionList { get; }
+        private string RawSearchText { get; }
+
+        /// <summary>
+        ///     Returns the full search text.
+        /// </summary>
+        /// <returns>The full search text.</returns>
         public override string ToString()
         {
             var builder = new StringBuilder();
