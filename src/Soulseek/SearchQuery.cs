@@ -118,6 +118,13 @@ namespace Soulseek
         private string RawSearchText { get; }
 
         /// <summary>
+        ///     Returns a new instance of <see cref="SearchQuery"/> from the specified search text.
+        /// </summary>
+        /// <param name="searchText">The text from which to create the query.</param>
+        /// <returns>The new SearchQuery instance.</returns>
+        public static SearchQuery FromText(string searchText) => new SearchQuery(searchText);
+
+        /// <summary>
         ///     Returns the full search text.
         /// </summary>
         /// <returns>The full search text.</returns>

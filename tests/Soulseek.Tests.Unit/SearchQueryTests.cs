@@ -272,5 +272,14 @@ namespace Soulseek.Tests.Unit
             Assert.False(s.IsCBR);
             Assert.Equal(value, s.IsVBR);
         }
+
+        [Trait("Category", "FromText")]
+        [Theory(DisplayName ="FromText returns new instance from given text"), AutoData]
+        public void FromText_Returns_New_Instance_From_Given_Text(string searchText)
+        {
+            var s = SearchQuery.FromText(searchText);
+
+            Assert.Equal(searchText, s.SearchText);
+        }
     }
 }
