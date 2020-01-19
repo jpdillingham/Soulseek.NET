@@ -104,7 +104,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
-                Assert.Equal("searchText", ((ArgumentException)ex).ParamName);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
             }
         }
 
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
-                Assert.Equal("searchText", ((ArgumentException)ex).ParamName);
+                Assert.Equal("query", ((ArgumentException)ex).ParamName);
             }
         }
 
