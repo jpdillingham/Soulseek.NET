@@ -23,10 +23,9 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.
         /// </summary>
-        /// <param name="ipAddress">The IP address of the connection.</param>
-        /// <param name="port">The port of the connection.</param>
-        public ConnectionKey(IPAddress ipAddress, int port)
-            : this(null, ipAddress, port)
+        /// <param name="ipEndPoint">The IP endpoint of the connection.</param>
+        public ConnectionKey(IPEndPoint ipEndPoint)
+            : this(null, ipEndPoint)
         {
         }
 
@@ -34,24 +33,17 @@ namespace Soulseek.Network.Tcp
         ///     Initializes a new instance of the <see cref="ConnectionKey"/> class.
         /// </summary>
         /// <param name="username">The username associated with the connection.</param>
-        /// <param name="ipAddress">The IP address of the connection.</param>
-        /// <param name="port">The port of the connection.</param>
-        public ConnectionKey(string username, IPAddress ipAddress, int port)
+        /// <param name="ipEndPoint">The IP endpoint of the connection.</param>
+        public ConnectionKey(string username, IPEndPoint ipEndPoint)
         {
             Username = username;
-            IPAddress = ipAddress;
-            Port = port;
+            IPEndPoint = ipEndPoint;
         }
 
         /// <summary>
-        ///     Gets the IP address of the connection.
+        ///     Gets the IP endpoint of the connection.
         /// </summary>
-        public IPAddress IPAddress { get; private set; }
-
-        /// <summary>
-        ///     Gets the port of the connection.
-        /// </summary>
-        public int Port { get; private set; }
+        public IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the username associated with the connection.
@@ -66,8 +58,8 @@ namespace Soulseek.Network.Tcp
         public bool Equals(ConnectionKey other)
         {
             return Username == other.Username &&
-                IPAddress.ToString() == other.IPAddress.ToString() &&
-                Port == other.Port;
+                IPEndPoint?.Address?.ToString() == other.IPEndPoint?.Address?.ToString() &&
+                IPEndPoint?.Port == other.IPEndPoint?.Port;
         }
 
         /// <summary>
@@ -94,8 +86,8 @@ namespace Soulseek.Network.Tcp
         public override int GetHashCode()
         {
             var u = Username?.GetHashCode() ?? 0;
-            var i = IPAddress?.ToString().GetHashCode() ?? 0;
-            return u ^ i ^ Port.GetHashCode();
+            var i = IPEndPoint?.Address?.ToString().GetHashCode() ?? 0;
+            return u ^ i ^ IPEndPoint?.Port.GetHashCode() ?? 0;
         }
     }
 }

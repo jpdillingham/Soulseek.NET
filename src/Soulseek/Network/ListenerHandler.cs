@@ -53,7 +53,7 @@ namespace Soulseek.Network
         /// <param name="connection">The accepted connection.</param>
         public async void HandleConnection(object sender, IConnection connection)
         {
-            Diagnostic.Debug($"Accepted incoming connection from {connection.IPAddress}:{SoulseekClient.Listener.Port} (id: {connection.Id})");
+            Diagnostic.Debug($"Accepted incoming connection from {connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port} (id: {connection.Id})");
 
             try
             {
@@ -67,7 +67,7 @@ namespace Soulseek.Network
                 {
                     // this connection is the result of an unsolicited connection from the remote peer, either to request info or
                     // browse, or to send a file.
-                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPAddress}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                    Diagnostic.Debug($"PeerInit for connection type {peerInit.ConnectionType} received from {peerInit.Username} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
 
                     if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
@@ -96,17 +96,17 @@ namespace Soulseek.Network
                     // to determine the username of the remote user.
                     if (SoulseekClient.PeerConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var peerUsername))
                     {
-                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPAddress}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"Peer PierceFirewall with token {pierceFirewall.Token} received from {peerUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, peerUsername, pierceFirewall.Token), connection);
                     }
                     else if (SoulseekClient.DistributedConnectionManager.PendingSolicitations.TryGetValue(pierceFirewall.Token, out var distributedUsername))
                     {
-                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPAddress}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
+                        Diagnostic.Debug($"Distributed PierceFirewall with token {pierceFirewall.Token} received from {distributedUsername} ({connection.IPEndPoint.Address}:{SoulseekClient.Listener.Port}) (id: {connection.Id})");
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, distributedUsername, pierceFirewall.Token), connection);
                     }
                     else
                     {
-                        throw new ConnectionException($"Unknown PierceFirewall attempt with token {pierceFirewall.Token} from {connection.IPAddress}:{connection.Port} (id: {connection.Id})");
+                        throw new ConnectionException($"Unknown PierceFirewall attempt with token {pierceFirewall.Token} from {connection.IPEndPoint.Address}:{connection.IPEndPoint.Port} (id: {connection.Id})");
                     }
                 }
                 else
@@ -116,7 +116,7 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to initialize direct connection from {connection.IPAddress}:{connection.Port}: {ex.Message} (id: {connection.Id})");
+                Diagnostic.Debug($"Failed to initialize direct connection from {connection.IPEndPoint.Address}:{connection.IPEndPoint.Port}: {ex.Message} (id: {connection.Id})");
                 connection.Disconnect(exception: ex);
                 connection.Dispose();
             }

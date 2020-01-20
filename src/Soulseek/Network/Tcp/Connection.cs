@@ -194,7 +194,7 @@ namespace Soulseek.Network.Tcp
 
             try
             {
-                ChangeState(ConnectionState.Connecting, $"Connecting to {IPEndPoint.Address}:{IPEndPoint.Port}");
+                ChangeState(ConnectionState.Connecting, $"Connecting to {IPEndPoint}");
 
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
                 using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
@@ -229,7 +229,7 @@ namespace Soulseek.Network.Tcp
                 WatchdogTimer.Start();
                 Stream = TcpClient.GetStream();
 
-                ChangeState(ConnectionState.Connected, $"Connected to {IPEndPoint.Address}:{IPEndPoint.Port}");
+                ChangeState(ConnectionState.Connected, $"Connected to {IPEndPoint}");
             }
             catch (Exception ex)
             {
@@ -240,7 +240,7 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
 
-                throw new ConnectionException($"Failed to connect to {IPEndPoint.Address}:{IPEndPoint.Port}: {ex.Message}", ex);
+                throw new ConnectionException($"Failed to connect to {IPEndPoint}: {ex.Message}", ex);
             }
         }
 
@@ -556,7 +556,7 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
 
-                throw new ConnectionReadException($"Failed to read {length} bytes from {IPEndPoint.Address}:{IPEndPoint.Port}: {ex.Message}", ex);
+                throw new ConnectionReadException($"Failed to read {length} bytes from {IPEndPoint}: {ex.Message}", ex);
             }
         }
 
@@ -606,7 +606,7 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
 
-                throw new ConnectionWriteException($"Failed to write {length} bytes to {IPEndPoint.Address}:{IPEndPoint.Port}: {ex.Message}", ex);
+                throw new ConnectionWriteException($"Failed to write {length} bytes to {IPEndPoint}: {ex.Message}", ex);
             }
         }
     }
