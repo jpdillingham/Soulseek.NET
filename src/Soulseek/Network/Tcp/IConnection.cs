@@ -60,9 +60,9 @@ namespace Soulseek.Network.Tcp
         Guid Id { get; }
 
         /// <summary>
-        ///     Gets the remote IP address of the connection.
+        ///     Gets the remote IP endpoint of the connection.
         /// </summary>
-        IPAddress IPAddress { get; }
+        IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the unique identifier of the connection.
@@ -75,17 +75,12 @@ namespace Soulseek.Network.Tcp
         ConnectionOptions Options { get; }
 
         /// <summary>
-        ///     Gets the remote port of the connection.
-        /// </summary>
-        int Port { get; }
-
-        /// <summary>
         ///     Gets the current connection state.
         /// </summary>
         ConnectionState State { get; }
 
         /// <summary>
-        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
+        ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>

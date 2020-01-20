@@ -29,16 +29,14 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Initializes a new instance of the <see cref="Connection"/> class.
         /// </summary>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        public Connection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
+        public Connection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null)
         {
             Id = Guid.NewGuid();
 
-            IPAddress = ipAddress;
-            Port = port;
+            IPEndPoint = ipEndPoint;
             Options = options ?? new ConnectionOptions();
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
@@ -121,24 +119,19 @@ namespace Soulseek.Network.Tcp
         public Guid Id { get; }
 
         /// <summary>
-        ///     Gets or sets the remote IP address of the connection.
+        ///     Gets or sets the remote IP endpoint of the connection.
         /// </summary>
-        public IPAddress IPAddress { get; protected set; }
+        public IPEndPoint IPEndPoint { get; protected set; }
 
         /// <summary>
         ///     Gets the unique identifier of the connection.
         /// </summary>
-        public virtual ConnectionKey Key => new ConnectionKey(IPAddress, Port);
+        public virtual ConnectionKey Key => new ConnectionKey(IPEndPoint.Address, IPEndPoint.Port);
 
         /// <summary>
         ///     Gets or sets the options for the connection.
         /// </summary>
         public ConnectionOptions Options { get; protected set; }
-
-        /// <summary>
-        ///     Gets or sets the remote port of the connection.
-        /// </summary>
-        public int Port { get; protected set; }
 
         /// <summary>
         ///     Gets or sets the current connection state.
@@ -171,7 +164,7 @@ namespace Soulseek.Network.Tcp
         protected SystemTimer WatchdogTimer { get; set; }
 
         /// <summary>
-        ///     Asynchronously connects the client to the configured <see cref="IPAddress"/> and <see cref="Port"/>.
+        ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
@@ -201,12 +194,12 @@ namespace Soulseek.Network.Tcp
 
             try
             {
-                ChangeState(ConnectionState.Connecting, $"Connecting to {IPAddress}:{Port}");
+                ChangeState(ConnectionState.Connecting, $"Connecting to {IPEndPoint.Address}:{IPEndPoint.Port}");
 
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
                 using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
                 {
-                    var connectTask = TcpClient.ConnectAsync(IPAddress, Port);
+                    var connectTask = TcpClient.ConnectAsync(IPEndPoint.Address, IPEndPoint.Port);
 
                     // register the TCS with the CTS. when the cancellation fires (due to timeout), it will set the value of the
                     // TCS via the registered delegate, ending the 'fake' task, then bind the externally supplied CT with the same
@@ -236,7 +229,7 @@ namespace Soulseek.Network.Tcp
                 WatchdogTimer.Start();
                 Stream = TcpClient.GetStream();
 
-                ChangeState(ConnectionState.Connected, $"Connected to {IPAddress}:{Port}");
+                ChangeState(ConnectionState.Connected, $"Connected to {IPEndPoint.Address}:{IPEndPoint.Port}");
             }
             catch (Exception ex)
             {
@@ -247,7 +240,7 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
 
-                throw new ConnectionException($"Failed to connect to {IPAddress}:{Port}: {ex.Message}", ex);
+                throw new ConnectionException($"Failed to connect to {IPEndPoint.Address}:{IPEndPoint.Port}: {ex.Message}", ex);
             }
         }
 
@@ -563,7 +556,7 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
 
-                throw new ConnectionReadException($"Failed to read {length} bytes from {IPAddress}:{Port}: {ex.Message}", ex);
+                throw new ConnectionReadException($"Failed to read {length} bytes from {IPEndPoint.Address}:{IPEndPoint.Port}: {ex.Message}", ex);
             }
         }
 
@@ -613,7 +606,7 @@ namespace Soulseek.Network.Tcp
                     throw;
                 }
 
-                throw new ConnectionWriteException($"Failed to write {length} bytes to {IPAddress}:{Port}: {ex.Message}", ex);
+                throw new ConnectionWriteException($"Failed to write {length} bytes to {IPEndPoint.Address}:{IPEndPoint.Port}: {ex.Message}", ex);
             }
         }
     }
