@@ -44,6 +44,11 @@ namespace Soulseek.Messaging.Messages
         public IPAddress IPAddress { get; }
 
         /// <summary>
+        ///     Gets the IP endpoint to which to connect.
+        /// </summary>
+        public IPEndPoint IPEndPoint => new IPEndPoint(IPAddress, Port);
+
+        /// <summary>
         ///     Gets the port to which to connect.
         /// </summary>
         public int Port { get; }
