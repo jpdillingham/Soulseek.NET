@@ -87,7 +87,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the unique identifier for the connection.
         /// </summary>
-        public override ConnectionKey Key => new ConnectionKey(Username, IPEndPoint.Address, IPEndPoint.Port);
+        public override ConnectionKey Key => new ConnectionKey(Username, IPEndPoint);
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.
