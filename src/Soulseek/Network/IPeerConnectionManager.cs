@@ -34,7 +34,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets current list of peer message connections.
         /// </summary>
-        IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> MessageConnections { get; }
+        IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections { get; }
 
         /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
@@ -79,11 +79,10 @@ namespace Soulseek.Network
         ///     connection is attempted.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new or existing connection.</returns>
-        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPAddress ipAddress, int port, CancellationToken cancellationToken);
+        Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Gets a new transfer connection using the details in the specified <paramref name="connectToPeerResponse"/>,
@@ -98,12 +97,11 @@ namespace Soulseek.Network
         /// </summary>
         /// <remarks>A direct connection is attempted first, and, if unsuccessful, an indirect connection is attempted.</remarks>
         /// <param name="username">The username of the user to which to connect.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="token">The token with which to initialize the connection.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the new connection.</returns>
-        Task<IConnection> GetTransferConnectionAsync(string username, IPAddress ipAddress, int port, int token, CancellationToken cancellationToken);
+        Task<IConnection> GetTransferConnectionAsync(string username, IPEndPoint ipEndPoint, int token, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Removes and disposes all active and queued connections.
