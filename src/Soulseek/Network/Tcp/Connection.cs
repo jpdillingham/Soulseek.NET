@@ -126,7 +126,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Gets the unique identifier of the connection.
         /// </summary>
-        public virtual ConnectionKey Key => new ConnectionKey(IPEndPoint.Address, IPEndPoint.Port);
+        public virtual ConnectionKey Key => new ConnectionKey(IPEndPoint);
 
         /// <summary>
         ///     Gets or sets the options for the connection.
