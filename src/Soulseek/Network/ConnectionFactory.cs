@@ -23,24 +23,22 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a <see cref="IConnection"/> with the specified parameters.
         /// </summary>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        public IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
-            new Connection(ipAddress, port, options, tcpClient);
+        public IConnection GetConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
+            new Connection(ipEndPoint, options, tcpClient);
 
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> with the specified parameters.
         /// </summary>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        public IMessageConnection GetMessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
-            new MessageConnection(username, ipAddress, port, options, tcpClient);
+        public IMessageConnection GetMessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
+            new MessageConnection(username, ipEndPoint, options, tcpClient);
     }
 }
