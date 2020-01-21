@@ -589,7 +589,7 @@ namespace Soulseek.Network
             var payload = new List<byte>();
 
             var haveNoParents = !HasParent;
-            var parentsIp = HasParent ? ParentConnection.IPEndPoint.Address : IPAddress.None;
+            var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address ?? IPAddress.None : IPAddress.None;
             var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
