@@ -20,53 +20,53 @@ namespace Soulseek.Tests.Unit.Network.Tcp
     public class ConnectionKeyTests
     {
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with ip and port")]
-        public void Instantiates_With_IP_And_Port()
+        [Fact(DisplayName = "Instantiates with ip endpoint")]
+        public void Instantiates_With_IP_EndPoint()
         {
-            var ip = new IPAddress(0x0);
+            var ip = new IPEndPoint(new IPAddress(0x0), 1);
 
             ConnectionKey k = null;
-            var ex = Record.Exception(() => k = new ConnectionKey(ip, 0));
+            var ex = Record.Exception(() => k = new ConnectionKey(ip));
 
             Assert.Null(ex);
             Assert.NotNull(k);
 
-            Assert.Equal(ip, k.IPAddress);
-            Assert.Equal(0, k.Port);
+            Assert.Equal(ip.Address, k.IPEndPoint.Address);
+            Assert.Equal(1, k.IPEndPoint.Port);
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with username, ip, port and type")]
-        public void Instantiates_With_Username_IP_Port_And_Type()
+        [Fact(DisplayName = "Instantiates with username, ip endpoint and type")]
+        public void Instantiates_With_Username_IP_EndPoint_And_Type()
         {
-            var ip = new IPAddress(0x0);
+            var ip = new IPEndPoint(new IPAddress(0x0), 1);
 
             ConnectionKey k = null;
-            var ex = Record.Exception(() => k = new ConnectionKey("username", ip, 0));
+            var ex = Record.Exception(() => k = new ConnectionKey("username", ip));
 
             Assert.Null(ex);
             Assert.NotNull(k);
 
             Assert.Equal("username", k.Username);
-            Assert.Equal(ip, k.IPAddress);
-            Assert.Equal(0, k.Port);
+            Assert.Equal(ip.Address, k.IPEndPoint.Address);
+            Assert.Equal(1, k.IPEndPoint.Port);
         }
 
         public static IEnumerable<object[]> GetHashCodeData => new List<object[]>
         {
-            new object[] { null, null, 0 },
-            new object[] { null, new IPAddress(0x0), 0 },
-            new object[] { null, null, 1 },
-            new object[] { "a", new IPAddress(0x1), 0 },
+            new object[] { null, null },
+            new object[] { null, new IPEndPoint(new IPAddress(0x0), 0) },
+            new object[] { null, null },
+            new object[] { "a", new IPEndPoint(new IPAddress(0x1), 0) },
         };
 
         [Trait("Category", "Hash Code")]
         [Theory(DisplayName = "GetHashCode matches")]
         [MemberData(nameof(GetHashCodeData))]
-        public void GetHashCode_Matches(string username, IPAddress ipAddress, int port)
+        public void GetHashCode_Matches(string username, IPEndPoint endpoint)
         {
-            var a = new ConnectionKey(username, ipAddress, port);
-            var b = new ConnectionKey(username, ipAddress, port);
+            var a = new ConnectionKey(username, endpoint);
+            var b = new ConnectionKey(username, endpoint);
 
             Assert.Equal(a.GetHashCode(), b.GetHashCode());
         }
@@ -75,8 +75,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Fact(DisplayName = "GetHashCode does not match if key differs")]
         public void GetHashCode_Does_Not_Match_If_Key_Differs()
         {
-            var a = new ConnectionKey("a", new IPAddress(0x0), 1);
-            var b = new ConnectionKey("b", new IPAddress(0x0), 1);
+            var a = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
+            var b = new ConnectionKey("b", new IPEndPoint(new IPAddress(0x0), 1));
 
             Assert.NotEqual(a.GetHashCode(), b.GetHashCode());
         }
@@ -85,8 +85,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Fact(DisplayName = "Equals returns true when equal")]
         public void Equals_Returns_True_When_Equal()
         {
-            var a = new ConnectionKey("a", new IPAddress(0x0), 1);
-            var b = new ConnectionKey("a", new IPAddress(0x0), 1);
+            var a = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
+            var b = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
 
             Assert.True(a.Equals(b));
             Assert.True(b.Equals(a));
@@ -96,8 +96,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Fact(DisplayName = "Equals returns false when not equal")]
         public void Equals_Returns_False_When_Not_Equal()
         {
-            var a = new ConnectionKey("a", new IPAddress(0x0), 1);
-            var b = new ConnectionKey("a", new IPAddress(0x1), 1);
+            var a = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
+            var b = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x1), 1));
 
             Assert.False(a.Equals(b));
             Assert.False(b.Equals(a));
@@ -107,7 +107,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Fact(DisplayName = "Equals returns false when different type")]
         public void Equals_Returns_False_When_Different_Type()
         {
-            var a = new ConnectionKey("a", new IPAddress(0x0), 1);
+            var a = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
             var b = "foo";
 
             Assert.False(a.Equals(b));
@@ -118,8 +118,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Fact(DisplayName = "Equals handles boxed instances")]
         public void Equals_Handles_Boxed_Instances()
         {
-            var a = new ConnectionKey("a", new IPAddress(0x0), 1);
-            var b = new ConnectionKey("a", new IPAddress(0x0), 1);
+            var a = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
+            var b = new ConnectionKey("a", new IPEndPoint(new IPAddress(0x0), 1));
 
             Assert.True(a.Equals((object)b));
             Assert.True(b.Equals((object)a));
