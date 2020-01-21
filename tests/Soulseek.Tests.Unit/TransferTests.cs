@@ -33,8 +33,7 @@ namespace Soulseek.Tests.Unit
             DateTime? startTime,
             DateTime? endTime,
             int? remoteToken,
-            IPAddress ipAddress,
-            int? port)
+            IPEndPoint endpoint)
         {
             var t = new Transfer(
                 direction,
@@ -48,8 +47,7 @@ namespace Soulseek.Tests.Unit
                 startTime,
                 endTime,
                 remoteToken,
-                ipAddress,
-                port);
+                endpoint);
 
             Assert.Equal(direction, t.Direction);
             Assert.Equal(username, t.Username);
@@ -62,8 +60,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(startTime, t.StartTime);
             Assert.Equal(endTime, t.EndTime);
             Assert.Equal(remoteToken, t.RemoteToken);
-            Assert.Equal(ipAddress, t.IPAddress);
-            Assert.Equal(port, t.Port);
+            Assert.Equal(endpoint, t.IPEndPoint);
 
             Assert.Equal(t.Size - t.BytesTransferred, t.BytesRemaining);
             Assert.Equal(t.EndTime - t.StartTime, t.ElapsedTime);
@@ -89,8 +86,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(i.StartTime, t.StartTime);
             Assert.Equal(i.EndTime, t.EndTime);
             Assert.Equal(i.RemoteToken, t.RemoteToken);
-            Assert.Equal(i.IPAddress, t.IPAddress);
-            Assert.Equal(i.Port, t.Port);
+            Assert.Equal(i.IPEndPoint, t.IPEndPoint);
         }
     }
 }
