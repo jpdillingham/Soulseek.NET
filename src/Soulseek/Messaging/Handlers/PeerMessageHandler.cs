@@ -69,7 +69,7 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Peer>(message).ReadCode();
 
-            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
+            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPEndPoint})");
 
             try
             {
@@ -100,12 +100,12 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.InfoRequest:
                         var outgoingInfo = await new SoulseekClientOptions()
-                            .UserInfoResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                            .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 
                         try
                         {
                             outgoingInfo = await SoulseekClient.Options
-                                .UserInfoResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                                .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -118,11 +118,11 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Peer.BrowseRequest:
                         // make a default response
                         var browseResponse = await new SoulseekClientOptions()
-                            .BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                            .BrowseResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 
                         try
                         {
-                            browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPAddress, connection.Port).ConfigureAwait(false);
+                            browseResponse = await SoulseekClient.Options.BrowseResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -148,7 +148,7 @@ namespace Soulseek.Messaging.Handlers
                         var queueDownloadRequest = EnqueueDownloadRequest.FromByteArray(message);
 
                         var (queueRejected, queueRejectionMessage) =
-                            await TryEnqueueDownloadAsync(connection.Username, connection.IPAddress, connection.Port, queueDownloadRequest.Filename).ConfigureAwait(false);
+                            await TryEnqueueDownloadAsync(connection.Username, connection.IPEndPoint, queueDownloadRequest.Filename).ConfigureAwait(false);
 
                         if (queueRejected)
                         {
@@ -166,7 +166,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         else
                         {
-                            var (transferRejected, transferRejectionMessage) = await TryEnqueueDownloadAsync(connection.Username, connection.IPAddress, connection.Port, transferRequest.Filename).ConfigureAwait(false);
+                            var (transferRejected, transferRejectionMessage) = await TryEnqueueDownloadAsync(connection.Username, connection.IPEndPoint, transferRequest.Filename).ConfigureAwait(false);
 
                             if (transferRejected)
                             {
@@ -206,13 +206,13 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     default:
-                        Diagnostic.Debug($"Unhandled peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Length} bytes");
+                        Diagnostic.Debug($"Unhandled peer message: {code} from {connection.Username} ({connection.IPEndPoint}); {message.Length} bytes");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
+                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
         }
 
@@ -241,11 +241,11 @@ namespace Soulseek.Messaging.Handlers
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
+                Diagnostic.Warning($"Error handling peer message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
         }
 
-        private async Task<(bool Rejected, string RejectionMessage)> TryEnqueueDownloadAsync(string username, IPAddress ipAddress, int port, string filename)
+        private async Task<(bool Rejected, string RejectionMessage)> TryEnqueueDownloadAsync(string username, IPEndPoint ipEndPoint, string filename)
         {
             bool rejected = false;
             string rejectionMessage = string.Empty;
@@ -253,7 +253,7 @@ namespace Soulseek.Messaging.Handlers
             try
             {
                 await SoulseekClient.Options
-                    .EnqueueDownloadAction(username, ipAddress, port, filename).ConfigureAwait(false);
+                    .EnqueueDownloadAction(username, ipEndPoint, filename).ConfigureAwait(false);
             }
             catch (DownloadEnqueueException ex)
             {

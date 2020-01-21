@@ -14,6 +14,7 @@ namespace Soulseek.Messaging.Handlers
 {
     using System;
     using System.Linq;
+    using System.Net;
     using System.Threading;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
@@ -166,7 +167,8 @@ namespace Soulseek.Messaging.Handlers
 
                         try
                         {
-                            await SoulseekClient.DistributedConnectionManager.AddParentConnectionAsync(netInfo.Parents).ConfigureAwait(false);
+                            var parents = netInfo.Parents.Select(parent => (parent.Username, new IPEndPoint(parent.IPAddress, parent.Port)));
+                            await SoulseekClient.DistributedConnectionManager.AddParentConnectionAsync(parents).ConfigureAwait(false);
                         }
                         catch (Exception ex)
                         {
@@ -198,7 +200,7 @@ namespace Soulseek.Messaging.Handlers
                                 }
                                 else
                                 {
-                                    throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPAddress}:{connectToPeerResponse.Port}); Ignored");
+                                    throw new SoulseekClientException($"Unexpected transfer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}); Ignored");
                                 }
                             }
                             else if (connectToPeerResponse.Type == Constants.ConnectionType.Peer)
@@ -216,7 +218,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
-                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse?.Username} ({connectToPeerResponse?.IPAddress}:{connectToPeerResponse.Port}): {ex.Message}");
+                            Diagnostic.Debug($"Error handling ConnectToPeer response from {connectToPeerResponse?.Username} ({connectToPeerResponse?.IPEndPoint}): {ex.Message}");
                         }
 
                         break;
@@ -300,9 +302,9 @@ namespace Soulseek.Messaging.Handlers
 
                             if (searchResponse != null && searchResponse.FileCount > 0)
                             {
-                                var (ipAddress, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+                                var endpoint = await SoulseekClient.GetUserEndPointAsync(searchRequest.Username).ConfigureAwait(false);
 
-                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ipAddress, port, CancellationToken.None).ConfigureAwait(false);
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, endpoint, CancellationToken.None).ConfigureAwait(false);
                                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
                             }
                         }
