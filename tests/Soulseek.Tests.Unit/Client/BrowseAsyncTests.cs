@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync returns expected response on success"), AutoData]
-        public async Task BrowseAsync_Returns_Expected_Response_On_Success(string username, IPAddress ip, int port, string localUsername, List<Directory> directories)
+        public async Task BrowseAsync_Returns_Expected_Response_On_Success(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories)
         {
             var response = new BrowseResponse(directories.Count, directories);
 
@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -93,7 +93,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -112,7 +112,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync raises BrowseProgressUpdated event at least twice"), AutoData]
-        public async Task BrowseAsync_Raises_BrowseProgressUpdated_Event_At_Least_Twice(string username, IPAddress ip, int port, string localUsername, List<Directory> directories, int length)
+        public async Task BrowseAsync_Raises_BrowseProgressUpdated_Event_At_Least_Twice(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories, int length)
         {
             var response = new BrowseResponse(directories.Count, directories);
 
@@ -120,7 +120,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -129,7 +129,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -154,7 +154,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync invokes ProgressUpdated Action at least twice"), AutoData]
-        public async Task BrowseAsync_Invokes_ProgressUpdated_Action_At_Least_Twice(string username, IPAddress ip, int port, string localUsername, List<Directory> directories, int length)
+        public async Task BrowseAsync_Invokes_ProgressUpdated_Action_At_Least_Twice(string username, IPEndPoint endpoint, string localUsername, List<Directory> directories, int length)
         {
             var response = new BrowseResponse(directories.Count, directories);
 
@@ -162,7 +162,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(response));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -171,7 +171,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -195,13 +195,13 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task BrowseAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPAddress ip, int port, string localUsername)
+        public async Task BrowseAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -210,7 +210,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -230,12 +230,12 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws TimeoutException on timeout"), AutoData]
-        public async Task BrowseAsync_Throws_TimeoutException_On_Timeout(string username, IPAddress ip, int port, string localUsername)
+        public async Task BrowseAsync_Throws_TimeoutException_On_Timeout(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -244,7 +244,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -264,18 +264,18 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws BrowseException on write exception"), AutoData]
-        public async Task BrowseAsync_Throws_BrowseException_On_Write_Exception(string username, IPAddress ip, int port, string localUsername)
+        public async Task BrowseAsync_Throws_BrowseException_On_Write_Exception(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.Is<byte[]>(n => new MessageReader<MessageCode.Peer>(n).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
                 .Throws(new ConnectionWriteException());
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -293,7 +293,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws UserOfflineException on user not found"), AutoData]
-        public async Task BrowseAsync_Throws_UserOfflineException_On_User_Not_Found(string username, IPAddress ip, int port, string localUsername)
+        public async Task BrowseAsync_Throws_UserOfflineException_On_User_Not_Found(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -302,7 +302,7 @@ namespace Soulseek.Tests.Unit.Client
             var conn = new Mock<IMessageConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -319,11 +319,11 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws BrowseException on disconnect"), AutoData]
-        public async Task BrowseAsync_Throws_BrowseException_On_Disconnect(string username, IPAddress ip, int port, string localUsername)
+        public async Task BrowseAsync_Throws_BrowseException_On_Disconnect(string username, IPEndPoint endpoint, string localUsername)
         {
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
             waiter.Setup(m => m.WaitIndefinitely<BrowseResponse>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<BrowseResponse>(new ConnectionException("disconnected unexpectedly")));
 
@@ -333,7 +333,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Raises(m => m.Disconnected += null, conn.Object, new ConnectionDisconnectedEventArgs(string.Empty));
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             waiter.Setup(m => m.Wait<(MessageReceivedEventArgs, IMessageConnection)>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
