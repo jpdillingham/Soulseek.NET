@@ -1628,7 +1628,7 @@ namespace Soulseek.Tests.Unit.Network
         {
             var mock = new Mock<IMessageConnection>();
             mock.Setup(m => m.Username).Returns(username);
-            mock.Setup(m => m.IPEndPoint).Returns(endpoint);
+            mock.Setup(m => m.IPEndPoint).Returns(endpoint ?? new IPEndPoint(IPAddress.None, 0));
 
             return mock;
         }
