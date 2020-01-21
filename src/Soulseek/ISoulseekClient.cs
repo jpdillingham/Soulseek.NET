@@ -356,8 +356,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="UserIPEndPointException">Thrown when an exception is encountered during the operation.</exception>
-        Task<IPEndPoint> GetUserIPEndPointAsync(string username, CancellationToken? cancellationToken = null);
+        /// <exception cref="UserEndPointException">Thrown when an exception is encountered during the operation.</exception>
+        Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
