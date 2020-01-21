@@ -104,16 +104,15 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles BranchLevel"), AutoData]
-        public void Handles_BranchLevel(IPAddress ip, int port, int level)
+        public void Handles_BranchLevel(IPEndPoint endpoint, int level)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPAddress).Returns(ip);
-            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
             conn.Setup(m => m.Username).Returns("foo");
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
             var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
 
@@ -129,20 +128,19 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Sets BranchLevel on message from parent"), AutoData]
-        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPAddress ip, int port, int level)
+        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPEndPoint ipEndPoint, int level)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPAddress).Returns(ip);
-            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.IPEndPoint).Returns(ipEndPoint);
             conn.Setup(m => m.Username).Returns(parent);
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ipEndPoint));
 
             var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
 
-            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ip, port));
+            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ipEndPoint));
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Distributed.BranchLevel)
@@ -157,16 +155,15 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles BranchRoot"), AutoData]
-        public void Handles_BranchRoot(IPAddress ip, int port, string root)
+        public void Handles_BranchRoot(IPEndPoint endpoint, string root)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPAddress).Returns(ip);
-            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
             conn.Setup(m => m.Username).Returns("foo");
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
             var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
 
@@ -182,20 +179,19 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Sets BranchRoot on message from parent"), AutoData]
-        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPAddress ip, int port, string root)
+        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPEndPoint endpoint, string root)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPAddress).Returns(ip);
-            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
             conn.Setup(m => m.Username).Returns(parent);
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
             var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
 
-            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ip, port));
+            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, endpoint));
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Distributed.BranchRoot)
@@ -210,16 +206,15 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ChildDepth"), AutoData]
-        public void Handles_ChildDepth(IPAddress ip, int port, int depth)
+        public void Handles_ChildDepth(IPEndPoint endpoint, int depth)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPAddress).Returns(ip);
-            conn.Setup(m => m.Port).Returns(port);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
             conn.Setup(m => m.Username).Returns("foo");
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
             var key = new WaitKey(Constants.WaitKey.ChildDepthMessage, conn.Object.Key);
 
@@ -258,13 +253,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Completes SearchRequest wait"), AutoData]
-        public void Completes_SearchRequest_Wait(string username, int token, string query, IPAddress ip, int port)
+        public void Completes_SearchRequest_Wait(string username, int token, string query, IPEndPoint endpoint)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(ip, port));
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
             var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
 
@@ -328,11 +323,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(peerConn.Object));
 
             var conn = new Mock<IMessageConnection>();
@@ -341,8 +338,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Once);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
@@ -355,11 +352,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(peerConn.Object));
 
             var conn = new Mock<IMessageConnection>();
@@ -368,8 +367,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
@@ -383,11 +382,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
 
             var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(peerConn.Object));
 
             var conn = new Mock<IMessageConnection>();
@@ -396,8 +397,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
