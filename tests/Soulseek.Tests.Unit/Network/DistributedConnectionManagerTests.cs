@@ -1495,7 +1495,7 @@ namespace Soulseek.Tests.Unit.Network
             var candidates = new List<(string Username, IPEndPoint IPEndPoint)>
             {
                 (username1, endpoint1),
-                (username2, endpoint1),
+                (username2, endpoint2),
             };
 
             mocks.Client.Setup(m => m.Username)
