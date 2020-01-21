@@ -30,17 +30,17 @@ namespace Soulseek.Tests.Unit.Network
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given username and IP"), AutoData]
-        public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPAddress ipAddress, int port, ConnectionOptions options)
+        public void Instantiates_Peer_Connection_With_Given_Username_And_IP(string username, IPEndPoint endpoint, ConnectionOptions options)
         {
-            using (var c = new MessageConnection(username, ipAddress, port, options))
+            using (var c = new MessageConnection(username, endpoint, options))
             {
                 Assert.Equal(username, c.Username);
-                Assert.Equal(ipAddress, c.IPAddress);
-                Assert.Equal(port, c.Port);
+                Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
+                Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
                 Assert.Equal(options, c.Options);
                 Assert.False(c.ReadingContinuously);
 
-                Assert.Equal(new ConnectionKey(username, ipAddress, port), c.Key);
+                Assert.Equal(new ConnectionKey(username, endpoint), c.Key);
             }
         }
 
@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit.Network
         public void Throws_When_Given_Username_Is_Invalid(string username)
         {
             IMessageConnection c;
-            var ex = Record.Exception(() => c = new MessageConnection(username, IPAddress.Parse("0.0.0.0"), 1, null));
+            var ex = Record.Exception(() => c = new MessageConnection(username, new IPEndPoint(IPAddress.Parse("0.0.0.0"), 1), null));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
@@ -61,42 +61,42 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates server connection with given IP"), AutoData]
-        public void Instantiates_Server_Connection_With_Given_IP(IPAddress ipAddress, int port, ConnectionOptions options)
+        public void Instantiates_Server_Connection_With_Given_IP(IPEndPoint endpoint, ConnectionOptions options)
         {
-            using (var c = new MessageConnection(ipAddress, port, options))
+            using (var c = new MessageConnection(endpoint, options))
             {
-                Assert.Equal(ipAddress, c.IPAddress);
-                Assert.Equal(port, c.Port);
+                Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
+                Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
                 Assert.Equal(options, c.Options);
 
-                Assert.Equal(new ConnectionKey(string.Empty, ipAddress, port), c.Key);
+                Assert.Equal(new ConnectionKey(string.Empty, endpoint), c.Key);
             }
         }
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates peer connection with given IP and username"), AutoData]
-        public void Instantiates_Peer_Connection_With_Given_IP_And_Username(string username, IPAddress ipAddress, int port, ConnectionOptions options)
+        public void Instantiates_Peer_Connection_With_Given_IP_And_Username(string username, IPEndPoint endpoint, ConnectionOptions options)
         {
-            using (var c = new MessageConnection(username, ipAddress, port, options))
+            using (var c = new MessageConnection(username, endpoint, options))
             {
                 Assert.Equal(username, c.Username);
-                Assert.Equal(ipAddress, c.IPAddress);
-                Assert.Equal(port, c.Port);
+                Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
+                Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
                 Assert.Equal(options, c.Options);
 
-                Assert.Equal(new ConnectionKey(username, ipAddress, port), c.Key);
+                Assert.Equal(new ConnectionKey(username, endpoint), c.Key);
             }
         }
 
         [Trait("Category", "WriteAsync")]
         [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPAddress ipAddress, int port)
+        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnected(string username, IPEndPoint endpoint)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            using (var c = new MessageConnection(username, ipAddress, port))
+            using (var c = new MessageConnection(username, endpoint))
             {
                 c.SetProperty("State", ConnectionState.Disconnected);
 
@@ -109,13 +109,13 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "WriteAsync")]
         [Theory(DisplayName = "WriteAsync throws InvalidOperationException when disconnected"), AutoData]
-        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPAddress ipAddress, int port)
+        public async Task WriteAsync_Throws_InvalidOperationException_When_Disconnecting(string username, IPEndPoint endpoint)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            using (var c = new MessageConnection(username, ipAddress, port))
+            using (var c = new MessageConnection(username, endpoint))
             {
                 c.SetProperty("State", ConnectionState.Disconnecting);
 
@@ -128,7 +128,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "WriteAsync")]
         [Theory(DisplayName = "WriteAsync writes when connected"), AutoData]
-        public async Task WriteAsync_Writes_When_Connected(string username, IPAddress ipAddress, int port)
+        public async Task WriteAsync_Writes_When_Connected(string username, IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -146,7 +146,7 @@ namespace Soulseek.Tests.Unit.Network
                     .WriteCode(MessageCode.Peer.BrowseRequest)
                     .Build();
 
-                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
                     await c.WriteAsync(msg);
 
@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "WriteAsync")]
         [Theory(DisplayName = "WriteAsync throws ConnectionWriteException when Stream.WriteAsync throws"), AutoData]
-        public async Task WriteAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPAddress ipAddress, int port)
+        public async Task WriteAsync_Throws_ConnectionWriteException_When_Stream_WriteAsync_Throws(IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.WriteAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -177,7 +177,7 @@ namespace Soulseek.Tests.Unit.Network
                     .WriteCode(MessageCode.Peer.BrowseRequest)
                     .Build();
 
-                using (var c = new MessageConnection(ipAddress, port, tcpClient: tcpMock.Object))
+                using (var c = new MessageConnection(endpoint, tcpClient: tcpMock.Object))
                 {
                     var ex = await Record.ExceptionAsync(async () => await c.WriteAsync(msg));
 
@@ -192,7 +192,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadContinuouslyAsync")]
         [Theory(DisplayName = "ReadContinuouslyAsync raises MessageRead on read"), AutoData]
-        public void ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPAddress ipAddress, int port)
+        public void ReadContinuouslyAsync_Raises_MessageRead_On_Read(string username, IPEndPoint endpoint)
         {
             int callCount = 0;
 
@@ -225,7 +225,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 byte[] readMessage = null;
 
-                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
                     c.StartReadingContinuously();
 
@@ -240,7 +240,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadContinuouslyAsync")]
         [Theory(DisplayName = "ReadContinuouslyAsync raises MessageCodeReceived on read"), AutoData]
-        public void ReadContinuouslyAsync_Raises_MessageCodeRecieved_On_Read(string username, IPAddress ipAddress, int port, int code)
+        public void ReadContinuouslyAsync_Raises_MessageCodeRecieved_On_Read(string username, IPEndPoint endpoint, int code)
         {
             int callCount = 0;
 
@@ -273,7 +273,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 byte[] readMessage = null;
 
-                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
                     c.StartReadingContinuously();
 
@@ -288,7 +288,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadingContinuously")]
         [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
-        public async Task ReadingContinuously_Returns_Expected_Values(string username, IPAddress ipAddress, int port)
+        public async Task ReadingContinuously_Returns_Expected_Values(string username, IPEndPoint endpoint)
         {
             bool b = false;
 
@@ -308,7 +308,7 @@ namespace Soulseek.Tests.Unit.Network
                 tcpMock.Setup(s => s.Connected).Returns(true);
                 tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
                     var a = c.ReadingContinuously;
 
@@ -325,7 +325,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "ReadingContinuously")]
         [Theory(DisplayName = "ReadingContinuously changes as expected"), AutoData]
-        public async Task ReadingContinuously_Returns_If_Already_Reading(string username, IPAddress ipAddress, int port)
+        public async Task ReadingContinuously_Returns_If_Already_Reading(string username, IPEndPoint endpoint)
         {
             var streamMock = new Mock<INetworkStream>();
             streamMock.Setup(s => s.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -339,7 +339,7 @@ namespace Soulseek.Tests.Unit.Network
                 tcpMock.Setup(s => s.Connected).Returns(true);
                 tcpMock.Setup(s => s.GetStream()).Returns(streamMock.Object);
 
-                using (var c = new MessageConnection(username, ipAddress, port, tcpClient: tcpMock.Object))
+                using (var c = new MessageConnection(username, endpoint, tcpClient: tcpMock.Object))
                 {
                     c.SetProperty("ReadingContinuously", true);
 
