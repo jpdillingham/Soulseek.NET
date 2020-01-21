@@ -14,6 +14,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
     using System.Net;
+    using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -21,29 +22,20 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
     public class ConnectToPeerResponseTests
     {
-        private string RandomGuid => Guid.NewGuid().ToString();
-        private Random Random { get; } = new Random();
-
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with the given data")]
-        public void Instantiates_With_The_Given_Data()
+        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
+        public void Instantiates_With_The_Given_Data(string username, string type, IPEndPoint endpoint, int token)
         {
-            var un = RandomGuid;
-            var type = RandomGuid;
-            var ip = new IPAddress(Random.Next(1024));
-            var port = Random.Next();
-            var token = Random.Next();
-
             ConnectToPeerResponse response = null;
 
-            var ex = Record.Exception(() => response = new ConnectToPeerResponse(un, type, ip, port, token));
+            var ex = Record.Exception(() => response = new ConnectToPeerResponse(username, type, endpoint, token));
 
             Assert.Null(ex);
 
-            Assert.Equal(un, response.Username);
+            Assert.Equal(username, response.Username);
             Assert.Equal(type, response.Type);
-            Assert.Equal(ip, response.IPAddress);
-            Assert.Equal(port, response.Port);
+            Assert.Equal(endpoint.Address, response.IPEndPoint.Address);
+            Assert.Equal(endpoint.Port, response.IPEndPoint.Port);
             Assert.Equal(token, response.Token);
         }
 
@@ -78,34 +70,27 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data")]
-        public void Parse_Returns_Expected_Data()
+        [Theory(DisplayName = "Parse returns expected data"), AutoData]
+        public void Parse_Returns_Expected_Data(string username, string type, IPEndPoint endpoint, int token)
         {
-            var un = RandomGuid;
-            var type = RandomGuid;
-
-            var ip = new IPAddress(Random.Next(1024));
-            var ipBytes = ip.GetAddressBytes();
+            var ipBytes = endpoint.Address.GetAddressBytes();
             Array.Reverse(ipBytes);
-
-            var port = Random.Next();
-            var token = Random.Next();
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.ConnectToPeer)
-                .WriteString(un)
+                .WriteString(username)
                 .WriteString(type)
                 .WriteBytes(ipBytes)
-                .WriteInteger(port)
+                .WriteInteger(endpoint.Port)
                 .WriteInteger(token)
                 .Build();
 
             var response = ConnectToPeerResponse.FromByteArray(msg);
 
-            Assert.Equal(un, response.Username);
+            Assert.Equal(username, response.Username);
             Assert.Equal(type, response.Type);
-            Assert.Equal(ip, response.IPAddress);
-            Assert.Equal(port, response.Port);
+            Assert.Equal(endpoint.Address, response.IPAddress);
+            Assert.Equal(endpoint.Port, response.Port);
             Assert.Equal(token, response.Token);
         }
     }
