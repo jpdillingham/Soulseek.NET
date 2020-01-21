@@ -20,7 +20,7 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "UserStatusChangedEventArgs Instantiation")]
         [Theory(DisplayName = "UserStatusChangedEventArgs Instantiates with the given data"), AutoData]
-        public void UserStatusChangedEventArgs_Instantiates_With_The_Given_Data(string username, UserStatus status, bool privileged)
+        public void UserStatusChangedEventArgs_Instantiates_With_The_Given_Data(string username, UserPresence status, bool privileged)
         {
             var e = new UserStatusChangedEventArgs(new UserStatusResponse(username, status, privileged));
 

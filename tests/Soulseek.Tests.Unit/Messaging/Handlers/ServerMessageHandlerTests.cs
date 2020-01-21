@@ -587,7 +587,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerGetStatus"), AutoData]
-        public void Handles_ServerGetStatus(string username, UserStatus status, bool privileged)
+        public void Handles_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
             UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
@@ -676,7 +676,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
-        public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
+        public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
             UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();

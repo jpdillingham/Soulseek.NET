@@ -99,14 +99,14 @@
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
         [HttpGet("{username}/status")]
-        [ProducesResponseType(typeof(DTO.UserStatus), 200)]
+        [ProducesResponseType(typeof(UserStatus), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Status([FromRoute, Required]string username)
         {
             try
             {
                 var response = await Client.GetUserStatusAsync(username);
-                return Ok(new DTO.UserStatus() { Status = response.Status, IsPrivileged = response.IsPrivileged });
+                return Ok(response);
             }
             catch (UserOfflineException ex)
             {

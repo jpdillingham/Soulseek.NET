@@ -401,7 +401,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserStatus> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously grants the specified <paramref name="username"/> the specified number of days
@@ -593,7 +593,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+        Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the

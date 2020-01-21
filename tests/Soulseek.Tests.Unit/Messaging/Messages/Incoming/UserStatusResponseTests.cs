@@ -22,7 +22,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string username, UserStatus status, bool privileged)
+        public void Instantiates_With_The_Given_Data(string username, UserPresence status, bool privileged)
         {
             var r = new UserStatusResponse(username, status, privileged);
 
@@ -61,7 +61,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string username, UserStatus status, bool privileged)
+        public void Parse_Returns_Expected_Data(string username, UserPresence status, bool privileged)
         {
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetStatus)

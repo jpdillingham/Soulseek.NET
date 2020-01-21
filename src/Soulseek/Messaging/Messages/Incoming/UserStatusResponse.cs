@@ -25,7 +25,7 @@ namespace Soulseek.Messaging.Messages
         /// <param name="username">The username of the peer.</param>
         /// <param name="status">The status of the peer.</param>
         /// <param name="isPrivileged">A value indicating whether the peer is privileged.</param>
-        public UserStatusResponse(string username, UserStatus status, bool isPrivileged)
+        public UserStatusResponse(string username, UserPresence status, bool isPrivileged)
         {
             Username = username;
             Status = status;
@@ -40,7 +40,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the status of the peer.
         /// </summary>
-        public UserStatus Status { get; }
+        public UserPresence Status { get; }
 
         /// <summary>
         ///     Gets the username of the peer.
@@ -63,7 +63,7 @@ namespace Soulseek.Messaging.Messages
             }
 
             var username = reader.ReadString();
-            var status = (UserStatus)reader.ReadInteger();
+            var status = (UserPresence)reader.ReadInteger();
             var privileged = reader.ReadByte() > 0;
 
             return new UserStatusResponse(username, status, privileged);

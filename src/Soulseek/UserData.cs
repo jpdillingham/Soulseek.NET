@@ -28,7 +28,7 @@ namespace Soulseek
         /// <param name="directoryCount">The number of directories shared by the user.</param>
         /// <param name="slotsFree">The number of the user's free download slots, if provided.</param>
         /// <param name="countryCode">The user's country code, if provided.</param>
-        public UserData(string username, UserStatus status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, int? slotsFree = null, string countryCode = null)
+        public UserData(string username, UserPresence status, int averageSpeed, long downloadCount, int fileCount, int directoryCount, int? slotsFree = null, string countryCode = null)
         {
             Username = username;
             Status = status;
@@ -73,7 +73,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the status of the user (0 = offline, 1 = away, 2 = online).
         /// </summary>
-        public UserStatus Status { get; }
+        public UserPresence Status { get; }
 
         /// <summary>
         ///     Gets the username of the user.

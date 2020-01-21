@@ -33,7 +33,7 @@ namespace Soulseek
         /// <param name="username">The username of the user.</param>
         /// <param name="status">The status of the user.</param>
         /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
-        public UserStatusChangedEventArgs(string username, UserStatus status, bool isPrivileged = false)
+        public UserStatusChangedEventArgs(string username, UserPresence status, bool isPrivileged = false)
         {
             Username = username;
             Status = status;
@@ -57,7 +57,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the status of the user.
         /// </summary>
-        public UserStatus Status { get; }
+        public UserPresence Status { get; }
 
         /// <summary>
         ///     Gets the username of the user.

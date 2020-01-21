@@ -78,7 +78,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1) // user count
                 .WriteString("1")
                 .WriteInteger(1) // status count
-                .WriteInteger((int)UserStatus.Online)
+                .WriteInteger((int)UserPresence.Online)
                 .WriteInteger(1) // data count
                 .WriteInteger(10) // average speed
                 .WriteLong(11) // download count
@@ -95,7 +95,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(roomName, res.Name);
             Assert.Equal(1, res.UserCount);
             Assert.Equal("1", users[0].Username);
-            Assert.Equal(UserStatus.Online, users[0].Status);
+            Assert.Equal(UserPresence.Online, users[0].Status);
             Assert.Equal(10, users[0].AverageSpeed);
             Assert.Equal(11, users[0].DownloadCount);
             Assert.Equal(12, users[0].FileCount);
@@ -115,8 +115,8 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteString("10") // user name
                 .WriteString("20")
                 .WriteInteger(2) // status count
-                .WriteInteger((int)UserStatus.Online)
-                .WriteInteger((int)UserStatus.Away)
+                .WriteInteger((int)UserPresence.Online)
+                .WriteInteger((int)UserPresence.Away)
                 .WriteInteger(2) // data count
                 .WriteInteger(11) // average speed
                 .WriteLong(12) // download count
@@ -157,7 +157,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1) // user count
                 .WriteString("1")
                 .WriteInteger(1) // status count
-                .WriteInteger((int)UserStatus.Online)
+                .WriteInteger((int)UserPresence.Online)
                 .WriteInteger(1) // data count
                 .WriteInteger(10) // average speed
                 .WriteLong(11) // download count
@@ -178,7 +178,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.Equal(roomName, res.Name);
             Assert.Equal(1, res.UserCount);
             Assert.Equal("1", users[0].Username);
-            Assert.Equal(UserStatus.Online, users[0].Status);
+            Assert.Equal(UserPresence.Online, users[0].Status);
             Assert.Equal(10, users[0].AverageSpeed);
             Assert.Equal(11, users[0].DownloadCount);
             Assert.Equal(12, users[0].FileCount);

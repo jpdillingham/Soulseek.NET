@@ -1,4 +1,4 @@
-﻿// <copyright file="UserStatus.cs" company="JP Dillingham">
+﻿// <copyright file="UserPresence.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,27 +15,21 @@ namespace Soulseek
     /// <summary>
     ///     User status.
     /// </summary>
-    public class UserStatus
+    public enum UserPresence
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="UserStatus"/> class.
+        ///     Offline.
         /// </summary>
-        /// <param name="presence">The user's network presence.</param>
-        /// <param name="isPrivileged">A value indicating whether the user is privileged.</param>
-        public UserStatus(UserPresence presence, bool isPrivileged)
-        {
-            Presence = presence;
-            IsPrivileged = isPrivileged;
-        }
+        Offline = 0,
 
         /// <summary>
-        ///     Gets a value indicating whether the user is privileged.
+        ///     Away.
         /// </summary>
-        public bool IsPrivileged { get; }
+        Away = 1,
 
         /// <summary>
-        ///     Gets the user's network presence.
+        ///     Online.
         /// </summary>
-        public UserPresence Presence { get; }
+        Online = 2,
     }
 }
