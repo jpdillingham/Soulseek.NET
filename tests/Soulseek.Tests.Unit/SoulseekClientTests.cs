@@ -104,7 +104,7 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new ConnectionException());
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -120,7 +120,7 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -136,7 +136,7 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new OperationCanceledException());
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -151,7 +151,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -184,7 +184,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Instantiation throws on a bad address")]
         public void Instantiation_Throws_On_A_Bad_Address()
         {
-            var ex = Record.Exception(() => new SoulseekClient(address: Guid.NewGuid().ToString(), port: new Random().Next(), options: new SoulseekClientOptions()));
+            var ex = Record.Exception(() => new SoulseekClient(address: Guid.NewGuid().ToString(), port: new Random().Next(65535), options: new SoulseekClientOptions()));
 
             Assert.NotNull(ex);
             Assert.IsType<SoulseekClientException>(ex);
@@ -196,7 +196,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 await s.ConnectAsync();
 
@@ -212,7 +212,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 await s.ConnectAsync();
 
@@ -231,7 +231,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => fired = true;
 
@@ -252,7 +252,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -280,7 +280,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -306,7 +306,7 @@ namespace Soulseek.Tests.Unit
 
             var p = new Mock<IPeerConnectionManager>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(), serverConnection: c.Object, peerConnectionManager: p.Object))
+            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object, peerConnectionManager: p.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 

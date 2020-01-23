@@ -98,6 +98,11 @@ namespace Soulseek
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
+            if (port > IPEndPoint.MaxPort)
+            {
+                throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
+            }
+
             Address = address;
             Port = port;
 
@@ -124,8 +129,12 @@ namespace Soulseek
                 var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
                 var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
 
+                IPEndPoint = new IPEndPoint(IPAddress, Port);
                 ServerConnection = new MessageConnection(IPEndPoint, connectionOptions);
             }
+
+            IPAddress = IPAddress ?? IPAddress.None;
+            IPEndPoint = IPEndPoint ?? new IPEndPoint(IPAddress, Port);
 
             ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
             ServerConnection.Disconnected += ServerConnection_Disconnected;
@@ -288,7 +297,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server endpoint.
         /// </summary>
-        public IPEndPoint IPEndPoint => new IPEndPoint(IPAddress, Port);
+        public IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the resolved server address.
