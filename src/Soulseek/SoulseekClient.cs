@@ -103,6 +103,7 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
             }
 
+            Address = address;
             IPEndPoint = new IPEndPoint(IPAddress.None, port);
 
             Options = options ?? new SoulseekClientOptions();
