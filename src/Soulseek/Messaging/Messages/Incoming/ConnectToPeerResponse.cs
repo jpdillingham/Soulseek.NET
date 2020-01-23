@@ -30,13 +30,8 @@ namespace Soulseek.Messaging.Messages
         /// <param name="port">The port to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
         public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token)
+            : this(username, type, new IPEndPoint(ipAddress, port), token)
         {
-            Username = username;
-            Type = type;
-            Token = token;
-            IPAddress = ipAddress;
-            Port = port;
-            IPEndPoint = new IPEndPoint(IPAddress, Port);
         }
 
         /// <summary>
@@ -52,14 +47,12 @@ namespace Soulseek.Messaging.Messages
             Type = type;
             Token = token;
             IPEndPoint = endpoint;
-            IPAddress = IPEndPoint.Address;
-            Port = IPEndPoint.Port;
         }
 
         /// <summary>
         ///     Gets the IP address to which to connect.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => IPEndPoint.Address;
 
         /// <summary>
         ///     Gets the IP endpoint to which to connect.
@@ -69,7 +62,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the port to which to connect.
         /// </summary>
-        public int Port { get; }
+        public int Port => IPEndPoint.Port;
 
         /// <summary>
         ///     Gets the unique connection token.

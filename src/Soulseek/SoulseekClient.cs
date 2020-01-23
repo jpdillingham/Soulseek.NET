@@ -103,8 +103,7 @@ namespace Soulseek
                 throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
             }
 
-            Address = address;
-            Port = port;
+            IPEndPoint = new IPEndPoint(IPAddress.None, port);
 
             Options = options ?? new SoulseekClientOptions();
 
@@ -116,9 +115,11 @@ namespace Soulseek
 
             if (ServerConnection == null)
             {
+                IPAddress ipAddress;
+
                 try
                 {
-                    IPAddress = Address.ResolveIPAddress();
+                    ipAddress = address.ResolveIPAddress();
                 }
                 catch (SocketException ex)
                 {
@@ -129,12 +130,9 @@ namespace Soulseek
                 var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
                 var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
 
-                IPEndPoint = new IPEndPoint(IPAddress, Port);
+                IPEndPoint = new IPEndPoint(ipAddress, port);
                 ServerConnection = new MessageConnection(IPEndPoint, connectionOptions);
             }
-
-            IPAddress = IPAddress ?? IPAddress.None;
-            IPEndPoint = IPEndPoint ?? new IPEndPoint(IPAddress, Port);
 
             ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
             ServerConnection.Disconnected += ServerConnection_Disconnected;
@@ -292,7 +290,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => IPEndPoint.Address;
 
         /// <summary>
         ///     Gets the resolved server endpoint.
@@ -307,7 +305,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets server port.
         /// </summary>
-        public int Port { get; }
+        public int Port => IPEndPoint.Port;
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

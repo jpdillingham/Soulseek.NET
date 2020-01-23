@@ -28,11 +28,8 @@ namespace Soulseek.Messaging.Messages
         /// <param name="ipAddress">The IP address of the peer.</param>
         /// <param name="port">The port on which the peer is listening.</param>
         public UserAddressResponse(string username, IPAddress ipAddress, int port)
+            : this(username, new IPEndPoint(ipAddress, port))
         {
-            Username = username;
-            IPAddress = ipAddress;
-            Port = port;
-            IPEndPoint = new IPEndPoint(IPAddress, Port);
         }
 
         /// <summary>
@@ -44,14 +41,12 @@ namespace Soulseek.Messaging.Messages
         {
             Username = username;
             IPEndPoint = endpoint;
-            IPAddress = IPEndPoint.Address;
-            Port = IPEndPoint.Port;
         }
 
         /// <summary>
         ///     Gets the IP address of the peer.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => IPEndPoint.Address;
 
         /// <summary>
         ///     Gets the IP endpoint of the peer.
@@ -61,7 +56,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the port on which the peer is listening.
         /// </summary>
-        public int Port { get; }
+        public int Port => IPEndPoint.Port;
 
         /// <summary>
         ///     Gets the requested peer username.
