@@ -98,7 +98,7 @@ namespace Soulseek
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            if (port > IPEndPoint.MaxPort)
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
             {
                 throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
             }
