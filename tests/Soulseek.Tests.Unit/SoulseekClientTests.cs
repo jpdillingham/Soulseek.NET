@@ -14,6 +14,7 @@ namespace Soulseek.Tests.Unit
 {
     using System;
     using System.Collections.Concurrent;
+    using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
@@ -47,6 +48,21 @@ namespace Soulseek.Tests.Unit
 
                 Assert.Equal(defaultServer, s.Address);
                 Assert.Equal(defaultPort, s.Port);
+                Assert.NotEqual(IPAddress.None, s.IPAddress);
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "Instantiates with defaults given a null IPEndPoint")]
+        public void Instantiates_With_Defaults_Given_A_Null_IPEndPoint()
+        {
+            using (var s = new SoulseekClient(null))
+            {
+                var defaultServer = s.GetField<string>("DefaultAddress");
+                var defaultPort = s.GetField<int>("DefaultPort");
+
+                Assert.Equal(defaultServer, s.Address);
+                Assert.Equal(defaultPort, s.Port);
             }
         }
 
@@ -60,6 +76,21 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(ex);
             Assert.NotNull(s);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Throws given a port not in range")]
+        [InlineData(-1)]
+        [InlineData(123423523)]
+        public void Throws_Given_A_Port_Not_In_Range(int port)
+        {
+            SoulseekClient s = null;
+
+            var ex = Record.Exception(() => s = new SoulseekClient("127.0.0.1", port, new SoulseekClientOptions()));
+
+            Assert.NotNull(ex);
+            Assert.IsType<ArgumentOutOfRangeException>(ex);
+            Assert.Equal("port", ((ArgumentOutOfRangeException)ex).ParamName);
         }
 
         [Trait("Category", "Instantiation")]
