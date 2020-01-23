@@ -44,7 +44,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the current list of child connections.
         /// </summary>
-        IReadOnlyCollection<(string Username, IPAddress IPAddress, int Port)> Children { get; }
+        IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children { get; }
 
         /// <summary>
         ///     Gets the number of allowed concurrent child connections.
@@ -59,7 +59,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the current parent connection.
         /// </summary>
-        (string Username, IPAddress IPAddress, int Port) Parent { get; }
+        (string Username, IPEndPoint IPEndPoint) Parent { get; }
 
         /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
@@ -87,7 +87,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="parentCandidates">The list of parent connection candidates provided by the server.</param>
         /// <returns>The operation context.</returns>
-        Task AddParentConnectionAsync(IEnumerable<(string Username, IPAddress IPAddress, int Port)> parentCandidates);
+        Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates);
 
         /// <summary>
         ///     Asynchronously writes the specified bytes to each of the connected child connections.

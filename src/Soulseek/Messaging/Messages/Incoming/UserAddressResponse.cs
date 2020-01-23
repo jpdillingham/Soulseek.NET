@@ -28,21 +28,35 @@ namespace Soulseek.Messaging.Messages
         /// <param name="ipAddress">The IP address of the peer.</param>
         /// <param name="port">The port on which the peer is listening.</param>
         public UserAddressResponse(string username, IPAddress ipAddress, int port)
+            : this(username, new IPEndPoint(ipAddress, port))
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="UserAddressResponse"/> class.
+        /// </summary>
+        /// <param name="username">The requested peer username.</param>
+        /// <param name="endpoint">The IP endpoint of the peer.</param>
+        public UserAddressResponse(string username, IPEndPoint endpoint)
         {
             Username = username;
-            IPAddress = ipAddress;
-            Port = port;
+            IPEndPoint = endpoint;
         }
 
         /// <summary>
         ///     Gets the IP address of the peer.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => IPEndPoint.Address;
+
+        /// <summary>
+        ///     Gets the IP endpoint of the peer.
+        /// </summary>
+        public IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the port on which the peer is listening.
         /// </summary>
-        public int Port { get; }
+        public int Port => IPEndPoint.Port;
 
         /// <summary>
         ///     Gets the requested peer username.

@@ -30,9 +30,9 @@ namespace Soulseek.Tests.Unit.Network
     {
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on connection"), AutoData]
-        public void Creates_Diagnostic_On_Connection(IPAddress ip)
+        public void Creates_Diagnostic_On_Connection(IPEndPoint endpoint)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -43,9 +43,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on unknown connection"), AutoData]
-        public void Creates_Diagnostic_On_Unknown_Connection(IPAddress ip)
+        public void Creates_Diagnostic_On_Unknown_Connection(IPEndPoint endpoint)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(BitConverter.GetBytes(5)));
@@ -63,9 +63,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic if connection read throws"), AutoData]
-        public void Creates_Diagnostic_If_Connection_Read_Throws(IPAddress ip)
+        public void Creates_Diagnostic_If_Connection_Read_Throws(IPEndPoint endpoint)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
                 .Throws(new Exception());
@@ -80,9 +80,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on PeerInit"), AutoData]
-        public void Creates_Diagnostic_On_PeerInit(IPAddress ip, string username, int token)
+        public void Creates_Diagnostic_On_PeerInit(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
@@ -103,9 +103,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on unknown PierceFirewall"), AutoData]
-        public void Creates_Diagnostic_On_PierceFirewall(IPAddress ip, int token)
+        public void Creates_Diagnostic_On_PierceFirewall(IPEndPoint endpoint, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
                 .Throws(new Exception());
@@ -129,9 +129,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on peer PierceFirewall"), AutoData]
-        public void Creates_Diagnostic_On_Peer_PierceFirewall(IPAddress ip, string username, int token)
+        public void Creates_Diagnostic_On_Peer_PierceFirewall(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -155,9 +155,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on distributed PierceFirewall"), AutoData]
-        public void Creates_Diagnostic_On_Distributed_PierceFirewall(IPAddress ip, string username, int token)
+        public void Creates_Diagnostic_On_Distributed_PierceFirewall(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -181,9 +181,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "PeerInit")]
         [Theory(DisplayName = "Adds peer connection on peer PeerInit"), AutoData]
-        public void Adds_Peer_Connection_On_Peer_PeerInit(IPAddress ip, string username, int token)
+        public void Adds_Peer_Connection_On_Peer_PeerInit(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PeerInit(username, Constants.ConnectionType.Peer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -201,9 +201,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "PeerInit")]
         [Theory(DisplayName = "Adds transfer connection on transfer PeerInit"), AutoData]
-        public void Adds_Transfer_Connection_On_Transfer_PeerInit(IPAddress ip, string username, int token)
+        public void Adds_Transfer_Connection_On_Transfer_PeerInit(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -221,9 +221,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "PeerInit")]
         [Theory(DisplayName = "Adds distributed connection on distributed PeerInit"), AutoData]
-        public void Adds_Distributed_Connection_On_Distributed_PeerInit(IPAddress ip, string username, int token)
+        public void Adds_Distributed_Connection_On_Distributed_PeerInit(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PeerInit(username, Constants.ConnectionType.Distributed, token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -241,9 +241,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "PierceFirewall")]
         [Theory(DisplayName = "Completes solicited peer connection on peer PierceFirewall"), AutoData]
-        public void Completes_Solicited_Peer_Connection_On_Peer_PierceFirewall(IPAddress ip, string username, int token)
+        public void Completes_Solicited_Peer_Connection_On_Peer_PierceFirewall(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -267,9 +267,9 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "PierceFirewall")]
         [Theory(DisplayName = "Completes solicited distributed connection on distributed PierceFirewall"), AutoData]
-        public void Completes_Solicited_Distributed_Connection_On_Distributed_PierceFirewall(IPAddress ip, string username, int token)
+        public void Completes_Solicited_Distributed_Connection_On_Distributed_PierceFirewall(IPEndPoint endpoint, string username, int token)
         {
-            var (handler, mocks) = GetFixture(ip);
+            var (handler, mocks) = GetFixture(endpoint);
 
             var message = new PierceFirewall(token);
             var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
@@ -291,11 +291,11 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Verify(m => m.Complete(expectedKey, mocks.Connection.Object), Times.Once);
         }
 
-        private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPAddress ip, SoulseekClientOptions clientOptions = null)
+        private (ListenerHandler Handler, Mocks Mocks) GetFixture(IPEndPoint endpoint, SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);
 
-            mocks.Connection.Setup(m => m.IPAddress).Returns(ip);
+            mocks.Connection.Setup(m => m.IPEndPoint).Returns(endpoint);
 
             var handler = new ListenerHandler(
                 mocks.Client.Object,

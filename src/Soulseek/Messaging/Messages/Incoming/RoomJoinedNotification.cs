@@ -65,7 +65,7 @@ namespace Soulseek.Messaging.Messages
             var roomName = reader.ReadString();
             var username = reader.ReadString();
 
-            var status = (UserStatus)reader.ReadInteger();
+            var status = (UserPresence)reader.ReadInteger();
             var averageSpeed = reader.ReadInteger();
             var downloadCount = reader.ReadLong();
             var fileCount = reader.ReadInteger();

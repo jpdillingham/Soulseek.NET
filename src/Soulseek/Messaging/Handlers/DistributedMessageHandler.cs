@@ -15,7 +15,6 @@ namespace Soulseek.Messaging.Handlers
     using System;
     using System.Threading;
     using Soulseek.Diagnostics;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
 
@@ -68,7 +67,7 @@ namespace Soulseek.Messaging.Handlers
 
             if (code != MessageCode.Distributed.SearchRequest)
             {
-                Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port})");
+                Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPEndPoint})");
             }
 
             try
@@ -97,9 +96,9 @@ namespace Soulseek.Messaging.Handlers
                             {
                                 Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{searchRequest.Query}'");
 
-                                var (ipAddress, port) = await SoulseekClient.GetUserAddressAsync(searchRequest.Username).ConfigureAwait(false);
+                                var endpoint = await SoulseekClient.GetUserEndPointAsync(searchRequest.Username).ConfigureAwait(false);
 
-                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, ipAddress, port, CancellationToken.None).ConfigureAwait(false);
+                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, endpoint, CancellationToken.None).ConfigureAwait(false);
                                 await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
 
                                 Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {searchRequest.Username} for query '{searchRequest.Query}' with token {searchRequest.Token}");
@@ -124,7 +123,7 @@ namespace Soulseek.Messaging.Handlers
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key), branchLevel.Level);
 
-                        if ((connection.Username, connection.IPAddress, connection.Port) == SoulseekClient.DistributedConnectionManager.Parent)
+                        if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
                             SoulseekClient.DistributedConnectionManager.SetBranchLevel(branchLevel.Level);
                         }
@@ -136,7 +135,7 @@ namespace Soulseek.Messaging.Handlers
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key), branchRoot.Username);
 
-                        if ((connection.Username, connection.IPAddress, connection.Port) == SoulseekClient.DistributedConnectionManager.Parent)
+                        if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
                             SoulseekClient.DistributedConnectionManager.SetBranchRoot(branchRoot.Username);
                         }
@@ -149,13 +148,13 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     default:
-                        Diagnostic.Debug($"Unhandled distributed message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {message.Length} bytes");
+                        Diagnostic.Debug($"Unhandled distributed message: {code} from {connection.Username} ({connection.IPEndPoint}); {message.Length} bytes");
                         break;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Warning($"Error handling distributed message: {code} from {connection.Username} ({connection.IPAddress}:{connection.Port}); {ex.Message}", ex);
+                Diagnostic.Warning($"Error handling distributed message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
             }
         }
     }

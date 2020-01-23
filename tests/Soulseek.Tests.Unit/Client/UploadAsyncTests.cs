@@ -298,7 +298,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync throws TimeoutException on peer message connection timeout"), AutoData]
-        public async Task UploadAsync_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPAddress ip, int port)
+        public async Task UploadAsync_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPEndPoint endpoint)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -308,10 +308,10 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse("username", ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse("username", endpoint.Address, endpoint.Port)));
 
             var manager = new Mock<IPeerConnectionManager>();
-            manager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), ip, port, It.IsAny<CancellationToken>()))
+            manager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), endpoint, It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, options: options, peerConnectionManager: manager.Object))
@@ -327,7 +327,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadAsync")]
         [Theory(DisplayName = "UploadAsync stream throws TimeoutException on peer message connection timeout"), AutoData]
-        public async Task UploadAsync_Stream_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPAddress ip, int port)
+        public async Task UploadAsync_Stream_Throws_TimeoutException_On_Peer_Message_Connection_Timeout(IPEndPoint endpoint)
         {
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -337,10 +337,10 @@ namespace Soulseek.Tests.Unit.Client
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse("username", ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse("username", endpoint.Address, endpoint.Port)));
 
             var manager = new Mock<IPeerConnectionManager>();
-            manager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), ip, port, It.IsAny<CancellationToken>()))
+            manager.Setup(m => m.GetOrAddMessageConnectionAsync(It.IsAny<string>(), endpoint, It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
             using (var stream = new MemoryStream())
@@ -384,13 +384,13 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TimeoutException on TransferResponse timeout"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TimeoutException_On_TransferResponse_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token)
+        public async Task UploadFromByteArrayAsync_Throws_TimeoutException_On_TransferResponse_Timeout(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 1);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
             waiter.Setup(m => m.Wait<TransferResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
@@ -399,7 +399,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -415,7 +415,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws OperationCanceledException on TransferResponse cancellation"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_OperationCanceledException_On_TransferResponse_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token)
+        public async Task UploadFromByteArrayAsync_Throws_OperationCanceledException_On_TransferResponse_Cancellation(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -425,14 +425,14 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(waitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<TransferResponse>(new OperationCanceledException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -448,7 +448,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws OperationCanceledException on request write cancellation"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_OperationCanceledException_On_Request_Write_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Throws_OperationCanceledException_On_Request_Write_Cancellation(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -461,7 +461,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -472,9 +472,9 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -490,7 +490,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TimeoutException on transfer response timeout"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Throws_TimeoutException_On_Transfer_Response_Timeout(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -508,14 +508,14 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new TimeoutException()));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -531,7 +531,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync completes without Exception when transfer is allowed"), AutoData]
-        public async Task UploadFromByteArrayAsync_Completes_Without_Exception_When_Transfer_Is_Allowed(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Completes_Without_Exception_When_Transfer_Is_Allowed(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -544,7 +544,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -553,9 +553,9 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -571,7 +571,7 @@ namespace Soulseek.Tests.Unit.Client
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync disposes stream given dispose option flag"), AutoData]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
-        public async Task UploadFromStreamAsync_Disposes_Stream_Given_Dispose_Option_Flag(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task UploadFromStreamAsync_Disposes_Stream_Given_Dispose_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -584,7 +584,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -593,9 +593,9 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var stream = new MemoryStream())
@@ -622,7 +622,7 @@ namespace Soulseek.Tests.Unit.Client
         [Trait("Category", "UploadFromStreamAsync")]
         [Theory(DisplayName = "UploadFromStreamAsync does not dispose stream given false dispose option flag"), AutoData]
         [System.Diagnostics.CodeAnalysis.SuppressMessage("Minor Code Smell", "S1481:Unused local variables should be removed", Justification = "Discard")]
-        public async Task UploadFromStreamAsync_Does_Not_Dispose_Stream_Given_False_Dispose_Option_Flag(string username, IPAddress ip, int port, string filename, int token, int size)
+        public async Task UploadFromStreamAsync_Does_Not_Dispose_Stream_Given_False_Dispose_Option_Flag(string username, IPEndPoint endpoint, string filename, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -635,7 +635,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -644,9 +644,9 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var stream = new MemoryStream())
@@ -671,7 +671,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPAddress ip, int port, string filename, byte[] data, int token)
+        public async Task UploadFromByteArrayAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -684,7 +684,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -693,9 +693,9 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -712,7 +712,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync invokes StateChanged delegate on state change"), AutoData]
-        public async Task UploadFromByteArrayAsync_Invokes_StateChanged_Delegate_On_State_Change(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Invokes_StateChanged_Delegate_On_State_Change(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -735,16 +735,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -761,7 +761,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync raises UploadProgressUpdated event on data write"), AutoData]
-        public async Task UploadFromByteArrayAsync_Raises_UploadProgressUpdated_Event_On_Data_Read(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Raises_UploadProgressUpdated_Event_On_Data_Read(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -791,16 +791,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -823,7 +823,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync invokes ProgressUpdated delegate on data read"), AutoData]
-        public async Task UploadFromByteArrayAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Invokes_ProgressUpdated_Delegate_On_Data_Read(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -851,16 +851,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -877,7 +877,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync raises Upload events on failure"), AutoData]
-        public async Task UploadFromByteArrayAsync_Raises_Upload_Events_On_Failure(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Raises_Upload_Events_On_Failure(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -902,16 +902,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -938,7 +938,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync raises Upload events on timeout"), AutoData]
-        public async Task UploadFromByteArrayAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -963,16 +963,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1030,7 +1030,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException and ConnectionException on transfer exception"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Throws_TransferException_And_ConnectionException_On_Transfer_Exception(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1057,16 +1057,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1084,7 +1084,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TimeoutException on transfer timeout"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Throws_TimeoutException_On_Transfer_Timeout(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1111,16 +1111,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1136,7 +1136,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Throws_OperationCanceledException_On_Cancellation(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1163,16 +1163,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1190,7 +1190,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException on transfer rejection"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPAddress ip, int port, string filename, byte[] data, int token)
+        public async Task UploadFromByteArrayAsync_Throws_TransferException_On_Transfer_Rejection(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1203,7 +1203,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -1212,9 +1212,9 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1231,7 +1231,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws ConnectionException when transfer connection fails"), AutoData]
-        public async Task UploadFromByteArrayAsync_Throws_ConnectionException_When_Transfer_Connection_Fails(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Throws_ConnectionException_When_Transfer_Connection_Fails(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1244,16 +1244,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<IConnection>(new ConnectionException()));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1270,7 +1270,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync updates remote user on failure"), AutoData]
-        public void UploadFromByteArrayAsync_Updates_Remote_User_On_Failure(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public void UploadFromByteArrayAsync_Updates_Remote_User_On_Failure(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1297,16 +1297,16 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1324,7 +1324,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync swallows final read exception"), AutoData]
-        public async Task UploadFromByteArrayAsync_Swallows_Final_Read_Exception(string username, IPAddress ip, int port, string filename, byte[] data, int token, int size)
+        public async Task UploadFromByteArrayAsync_Swallows_Final_Read_Exception(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
             var options = new SoulseekClientOptions(messageTimeout: 5);
 
@@ -1337,7 +1337,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(new UserAddressResponse(username, ip, port)));
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
@@ -1349,9 +1349,9 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException<byte[]>(new ConnectionReadException("Remote connection closed.", new ConnectionException("Remote connection closed."))));
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, ip, port, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, ip, port, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))

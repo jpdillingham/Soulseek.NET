@@ -21,7 +21,7 @@ namespace Soulseek.Messaging.Messages
         ///     Initializes a new instance of the <see cref="SetOnlineStatusCommand"/> class.
         /// </summary>
         /// <param name="status">The current status.</param>
-        public SetOnlineStatusCommand(UserStatus status)
+        public SetOnlineStatusCommand(UserPresence status)
         {
             Status = status;
         }
@@ -29,7 +29,7 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Gets the current status.
         /// </summary>
-        public UserStatus Status { get; }
+        public UserPresence Status { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.

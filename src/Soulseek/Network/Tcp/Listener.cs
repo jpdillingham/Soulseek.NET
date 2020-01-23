@@ -93,7 +93,7 @@ namespace Soulseek.Network.Tcp
                 Task.Run(() =>
                 {
                     var endPoint = (IPEndPoint)client.Client.RemoteEndPoint;
-                    var eventArgs = new Connection(endPoint.Address, endPoint.Port, ConnectionOptions, new TcpClientAdapter(client));
+                    var eventArgs = new Connection(endPoint, ConnectionOptions, new TcpClientAdapter(client));
                     Accepted?.Invoke(this, eventArgs);
                 }).Forget();
             }

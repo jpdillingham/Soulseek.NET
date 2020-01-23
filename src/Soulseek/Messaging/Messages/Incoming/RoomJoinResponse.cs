@@ -47,11 +47,11 @@ namespace Soulseek
             }
 
             var statusCount = reader.ReadInteger();
-            var statuses = new List<UserStatus>();
+            var statuses = new List<UserPresence>();
 
             for (int i = 0; i < statusCount; i++)
             {
-                statuses.Add((UserStatus)reader.ReadInteger());
+                statuses.Add((UserPresence)reader.ReadInteger());
             }
 
             var dataCount = reader.ReadInteger();

@@ -21,23 +21,23 @@ namespace Soulseek.Tests.Unit
     {
         [Trait("Category", "GetConnection")]
         [Theory(DisplayName = "GetConnection returns the expected connection"), AutoData]
-        internal void GetConneciton_Returns_The_Expected_Connection(IPAddress ipAddress, int port, ConnectionOptions options)
+        internal void GetConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint, ConnectionOptions options)
         {
-            var c = new ConnectionFactory().GetConnection(ipAddress, port, options);
+            var c = new ConnectionFactory().GetConnection(endpoint, options);
 
-            Assert.Equal(ipAddress, c.IPAddress);
-            Assert.Equal(port, c.Port);
+            Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
+            Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
             Assert.Equal(options, c.Options);
         }
 
         [Trait("Category", "GetMessageConnection")]
         [Theory(DisplayName = "GetMessageConnection returns the expected connection"), AutoData]
-        internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPAddress ipAddress, int port, ConnectionOptions options)
+        internal void GetMessageConneciton_Returns_The_Expected_Connection(string username, IPEndPoint endpoint, ConnectionOptions options)
         {
-            var c = new ConnectionFactory().GetMessageConnection(username, ipAddress, port, options);
+            var c = new ConnectionFactory().GetMessageConnection(username, endpoint, options);
 
-            Assert.Equal(ipAddress, c.IPAddress);
-            Assert.Equal(port, c.Port);
+            Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
+            Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
             Assert.Equal(options, c.Options);
         }
     }

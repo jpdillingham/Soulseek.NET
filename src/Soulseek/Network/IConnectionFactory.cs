@@ -23,22 +23,20 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a <see cref="IConnection"/> with the specified parameters.
         /// </summary>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        IConnection GetConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null);
+        IConnection GetConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
 
         /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> with the specified parameters.
         /// </summary>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
-        IMessageConnection GetMessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null);
+        IMessageConnection GetMessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
     }
 }

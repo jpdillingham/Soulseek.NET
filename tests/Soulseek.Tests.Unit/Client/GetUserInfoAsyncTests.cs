@@ -84,7 +84,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
@@ -123,7 +123,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException(new TimeoutException()));
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
@@ -159,7 +159,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException(new OperationCanceledException()));
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
@@ -218,7 +218,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.FromException(new ConnectionException("foo")));
 
             var connManager = new Mock<IPeerConnectionManager>();
-            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPAddress>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))

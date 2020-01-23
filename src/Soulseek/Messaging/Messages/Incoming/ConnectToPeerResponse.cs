@@ -30,23 +30,39 @@ namespace Soulseek.Messaging.Messages
         /// <param name="port">The port to which to connect.</param>
         /// <param name="token">The unique connection token.</param>
         public ConnectToPeerResponse(string username, string type, IPAddress ipAddress, int port, int token)
+            : this(username, type, new IPEndPoint(ipAddress, port), token)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="ConnectToPeerResponse"/> class.
+        /// </summary>
+        /// <param name="username">The username of the peer.</param>
+        /// <param name="type">The connection type ('P' for message or 'F' for transfer).</param>
+        /// <param name="endpoint">The IP endpoint to which to connect.</param>
+        /// <param name="token">The unique connection token.</param>
+        public ConnectToPeerResponse(string username, string type, IPEndPoint endpoint, int token)
         {
             Username = username;
             Type = type;
-            IPAddress = ipAddress;
-            Port = port;
             Token = token;
+            IPEndPoint = endpoint;
         }
 
         /// <summary>
         ///     Gets the IP address to which to connect.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => IPEndPoint.Address;
+
+        /// <summary>
+        ///     Gets the IP endpoint to which to connect.
+        /// </summary>
+        public IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the port to which to connect.
         /// </summary>
-        public int Port { get; }
+        public int Port => IPEndPoint.Port;
 
         /// <summary>
         ///     Gets the unique connection token.

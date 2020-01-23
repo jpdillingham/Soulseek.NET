@@ -106,7 +106,7 @@
 
             app.UseMvc();
 
-            app.UseSwagger(options => 
+            app.UseSwagger(options =>
             {
                 // use camelCasing for routes and properties
                 options.PreSerializeFilters.Add((document, request) =>
@@ -140,8 +140,8 @@
                 peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
                 transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 30),
                 userInfoResponseResolver: UserInfoResponseResolver,
-                browseResponseResolver: BrowseResponseResolver, 
-                enqueueDownloadAction: (username, ipAddress, port, filename) => EnqueueDownloadAction(username, ipAddress, port, filename, tracker), 
+                browseResponseResolver: BrowseResponseResolver,
+                enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
                 searchResponseResolver: SearchResponseResolver);
 
             Client = new SoulseekClient(options: clientOptions);
@@ -161,18 +161,18 @@
             };
 
             // bind transfer events.  see TransferStateChangedEventArgs and TransferProgressEventArgs.
-            Client.TransferStateChanged += (e, args) => 
+            Client.TransferStateChanged += (e, args) =>
                 Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}");
             Client.TransferProgressUpdated += (e, args) =>
             {
                 // this is really verbose.
                 // Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.Transfer.PercentComplete} {args.Transfer.AverageSpeed}kb/s");
             };
-            
+
             // bind BrowseProgressUpdated to track progress of browse response payload transfers.  
             // these can take a while depending on number of files shared.
             Client.BrowseProgressUpdated += (e, args) => Console.WriteLine($"[BROWSE] {args.Username}: {args.BytesTransferred} of {args.Size} ({args.PercentComplete}%)");
-            
+
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");
 
@@ -197,8 +197,9 @@
                     await ConnectAndLogIn();
                 }
             };
-            
-            Task.Run(async () => {
+
+            Task.Run(async () =>
+            {
                 await ConnectAndLogIn();
             }).GetAwaiter().GetResult();
 
@@ -209,13 +210,12 @@
         ///     Creates and returns a <see cref="UserInfo"/> object in response to a remote request.
         /// </summary>
         /// <param name="username">The username of the requesting user.</param>
-        /// <param name="ipAddress">The IP address of the requesting user.</param>
-        /// <param name="port">The port on which the request was received.</param>
+        /// <param name="endpoint">The IP endpoint of the requesting user.</param>
         /// <returns>A Task resolving the UserInfo instance.</returns>
-        private Task<UserInfo> UserInfoResponseResolver(string username, IPAddress ipAddress, int port) 
+        private Task<UserInfo> UserInfoResponseResolver(string username, IPEndPoint endpoint)
         {
             var info = new UserInfo(
-                description: $"Soulseek.NET Web Example! also, your username is {username}, IP address is {ipAddress}, and the port on which you connected to me is {port}",
+                description: $"Soulseek.NET Web Example! also, your username is {username}, and IP endpoint is {endpoint}",
                 picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"),
                 uploadSlots: 1,
                 queueLength: 0,
@@ -228,10 +228,9 @@
         ///     Creates and returns an <see cref="IEnumerable{T}"/> of <see cref="Soulseek.Directory"/> in response to a remote request.
         /// </summary>
         /// <param name="username">The username of the requesting user.</param>
-        /// <param name="ipAddress">The IP address of the requesting user.</param>
-        /// <param name="port">The port on which the request was received.</param>
+        /// <param name="endpoint">The IP endpoint of the requesting user.</param>
         /// <returns>A Task resolving an IEnumerable of Soulseek.Directory.</returns>
-        private Task<IEnumerable<Soulseek.Directory>> BrowseResponseResolver(string username, IPAddress ipAddress, int port)
+        private Task<IEnumerable<Soulseek.Directory>> BrowseResponseResolver(string username, IPEndPoint endpoint)
         {
             var result = System.IO.Directory
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
@@ -245,14 +244,13 @@
         ///     Invoked upon a remote request to download a file.  
         /// </summary>
         /// <param name="username">The username of the requesting user.</param>
-        /// <param name="ipAddress">The IP address of the requesting user.</param>
-        /// <param name="port">The port on which the request was received.</param>
+        /// <param name="endpoint">The IP endpoint of the requesting user.</param>
         /// <param name="filename">The filename of the requested file.</param>
         /// <param name="tracker">(for example purposes) the ITransferTracker used to track progress.</param>
         /// <returns>A Task representing the asynchronous operation.</returns>
         /// <exception cref="DownloadEnqueueException">Thrown when the download is rejected.  The Exception message will be passed to the remote user.</exception>
         /// <exception cref="Exception">Thrown on any other Exception other than a rejection.  A generic message will be passed to the remote user for security reasons.</exception>
-        private Task EnqueueDownloadAction(string username, IPAddress ipAddress, int port, string filename, ITransferTracker tracker)
+        private Task EnqueueDownloadAction(string username, IPEndPoint endpoint, string filename, ITransferTracker tracker)
         {
             // create a new cancellation token source so that we can cancel the upload from the UI.
             var cts = new CancellationTokenSource();

@@ -124,6 +124,11 @@ namespace Soulseek
         IPAddress IPAddress { get; }
 
         /// <summary>
+        ///     Gets the resolved server endpoint.
+        /// </summary>
+        IPEndPoint IPEndPoint { get; }
+
+        /// <summary>
         ///     Gets the client options.
         /// </summary>
         SoulseekClientOptions Options { get; }
@@ -339,7 +344,7 @@ namespace Soulseek
         Task<IReadOnlyCollection<Room>> GetRoomListAsync(CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -351,8 +356,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null);
+        /// <exception cref="UserEndPointException">Thrown when an exception is encountered during the operation.</exception>
+        Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches information about the specified <paramref name="username"/>.
@@ -396,7 +401,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
+        Task<UserStatus> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously grants the specified <paramref name="username"/> the specified number of days
@@ -588,7 +593,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null);
+        Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously uploads the specified <paramref name="filename"/> containing <paramref name="data"/> to the the

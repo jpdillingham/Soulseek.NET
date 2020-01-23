@@ -14,6 +14,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 {
     using System;
     using System.Net;
+    using AutoFixture.Xunit2;
     using Soulseek.Exceptions;
     using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
@@ -21,26 +22,19 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
     public class UserAddressResponseTests
     {
-        private string RandomGuid => Guid.NewGuid().ToString();
-        private Random Random { get; } = new Random();
-
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with the given data")]
-        public void Instantiates_With_The_Given_Data()
+        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
+        public void Instantiates_With_The_Given_Data(string username, IPEndPoint endpoint)
         {
-            var un = RandomGuid;
-            var ip = new IPAddress(Random.Next(1024));
-            var port = Random.Next();
-
             UserAddressResponse response = null;
 
-            var ex = Record.Exception(() => response = new UserAddressResponse(un, ip, port));
+            var ex = Record.Exception(() => response = new UserAddressResponse(username, endpoint));
 
             Assert.Null(ex);
 
-            Assert.Equal(un, response.Username);
-            Assert.Equal(ip, response.IPAddress);
-            Assert.Equal(port, response.Port);
+            Assert.Equal(username, response.Username);
+            Assert.Equal(endpoint.Address, response.IPEndPoint.Address);
+            Assert.Equal(endpoint.Port, response.IPEndPoint.Port);
         }
 
         [Trait("Category", "Parse")]
@@ -73,29 +67,24 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Parse")]
-        [Fact(DisplayName = "Parse returns expected data")]
-        public void Parse_Returns_Expected_Data()
+        [Theory(DisplayName = "Parse returns expected data"), AutoData]
+        public void Parse_Returns_Expected_Data(string username, IPEndPoint endpoint)
         {
-            var un = RandomGuid;
-
-            var ip = new IPAddress(Random.Next(1024));
-            var ipBytes = ip.GetAddressBytes();
+            var ipBytes = endpoint.Address.GetAddressBytes();
             Array.Reverse(ipBytes);
-
-            var port = Random.Next();
 
             var msg = new MessageBuilder()
                 .WriteCode(MessageCode.Server.GetPeerAddress)
-                .WriteString(un)
+                .WriteString(username)
                 .WriteBytes(ipBytes)
-                .WriteInteger(port)
+                .WriteInteger(endpoint.Port)
                 .Build();
 
             var response = UserAddressResponse.FromByteArray(msg);
 
-            Assert.Equal(un, response.Username);
-            Assert.Equal(ip, response.IPAddress);
-            Assert.Equal(port, response.Port);
+            Assert.Equal(username, response.Username);
+            Assert.Equal(endpoint.Address, response.IPAddress);
+            Assert.Equal(endpoint.Port, response.Port);
         }
     }
 }

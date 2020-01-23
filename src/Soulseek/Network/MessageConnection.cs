@@ -29,12 +29,11 @@ namespace Soulseek.Network
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(string username, IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : this(ipAddress, port, options, tcpClient)
+        internal MessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : this(ipEndPoint, options, tcpClient)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -47,12 +46,11 @@ namespace Soulseek.Network
         /// <summary>
         ///     Initializes a new instance of the <see cref="MessageConnection"/> class.
         /// </summary>
-        /// <param name="ipAddress">The remote IP address of the connection.</param>
-        /// <param name="port">The remote port of the connection.</param>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
         /// <param name="options">The optional options for the connection.</param>
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        internal MessageConnection(IPAddress ipAddress, int port, ConnectionOptions options = null, ITcpClient tcpClient = null)
-            : base(ipAddress, port, options, tcpClient)
+        internal MessageConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null)
+            : base(ipEndPoint, options, tcpClient)
         {
             // bind the connected event to begin reading upon connection. if we received a connected client, this will never fire
             // and the read loop must be started via ReadContinuouslyAsync().
@@ -89,7 +87,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets the unique identifier for the connection.
         /// </summary>
-        public override ConnectionKey Key => new ConnectionKey(Username, IPAddress, Port);
+        public override ConnectionKey Key => new ConnectionKey(Username, IPEndPoint);
 
         /// <summary>
         ///     Gets a value indicating whether the internal continuous read loop is running.

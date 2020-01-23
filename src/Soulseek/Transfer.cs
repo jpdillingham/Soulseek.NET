@@ -39,8 +39,7 @@ namespace Soulseek
         ///     The time at which the transfer transitioned into the <see cref="TransferStates.Completed"/> state.
         /// </param>
         /// <param name="remoteToken">The remote unique token for the transfer.</param>
-        /// <param name="ipAddress">The ip address of the remote transfer connection, if one has been established.</param>
-        /// <param name="port">The port of the remote transfer connection, if one has been established.</param>
+        /// <param name="ipEndPoint">The ip endpoint of the remote transfer connection, if one has been established.</param>
         public Transfer(
             TransferDirection direction,
             string username,
@@ -53,8 +52,7 @@ namespace Soulseek
             DateTime? startTime = null,
             DateTime? endTime = null,
             int? remoteToken = null,
-            IPAddress ipAddress = null,
-            int? port = null)
+            IPEndPoint ipEndPoint = null)
         {
             Direction = direction;
             Username = username;
@@ -67,8 +65,7 @@ namespace Soulseek
             StartTime = startTime;
             EndTime = endTime;
             RemoteToken = remoteToken;
-            IPAddress = ipAddress;
-            Port = port;
+            IPEndPoint = ipEndPoint;
         }
 
         /// <summary>
@@ -88,8 +85,7 @@ namespace Soulseek
                 transferInternal.StartTime,
                 transferInternal.EndTime,
                 transferInternal.RemoteToken,
-                transferInternal.IPAddress,
-                transferInternal.Port)
+                transferInternal.IPEndPoint)
         {
         }
 
@@ -129,19 +125,14 @@ namespace Soulseek
         public string Filename { get; }
 
         /// <summary>
-        ///     Gets the ip address of the remote transfer connection, if one has been established.
+        ///     Gets the ip endpoint of the remote transfer connection, if one has been established.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the current progress in percent.
         /// </summary>
         public double PercentComplete => Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
-
-        /// <summary>
-        ///     Gets the port of the remote transfer connection, if one has been established.
-        /// </summary>
-        public int? Port { get; }
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.

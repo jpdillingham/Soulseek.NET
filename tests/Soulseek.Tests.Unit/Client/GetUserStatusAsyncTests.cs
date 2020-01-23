@@ -64,9 +64,9 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetPeerInfoAsync returns expected info"), AutoData]
-        public async Task GetUserStatusAsync_Returns_Expected_Info(string username, UserStatus status, bool privileged)
+        public async Task GetUserStatusAsync_Returns_Expected_Info(string username, UserPresence presence, bool privileged)
         {
-            var result = new UserStatusResponse(username, status, privileged);
+            var result = new UserStatusResponse(username, presence, privileged);
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<UserStatusResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
@@ -80,10 +80,10 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                var (stat, isPrivileged) = await s.GetUserStatusAsync(username);
+                var status = await s.GetUserStatusAsync(username);
 
-                Assert.Equal(result.Status, stat);
-                Assert.Equal(result.IsPrivileged, isPrivileged);
+                Assert.Equal(result.Status, status.Presence);
+                Assert.Equal(result.IsPrivileged, status.IsPrivileged);
             }
         }
 
@@ -110,7 +110,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetUserStatusAsync throws UserStatusException on throw"), AutoData]
-        public async Task GetUserStatusAsync_Throws_UserStatusException_On_Throw(string username, UserStatus status, bool privileged)
+        public async Task GetUserStatusAsync_Throws_UserStatusException_On_Throw(string username, UserPresence status, bool privileged)
         {
             var result = new UserStatusResponse(username, status, privileged);
 
@@ -136,7 +136,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetUserStatusAsync throws TimeoutException on timeout"), AutoData]
-        public async Task GetUserStatusAsync_Throws_TimeoutException_On_Timeout(string username, UserStatus status, bool privileged)
+        public async Task GetUserStatusAsync_Throws_TimeoutException_On_Timeout(string username, UserPresence status, bool privileged)
         {
             var result = new UserStatusResponse(username, status, privileged);
 
@@ -161,7 +161,7 @@ namespace Soulseek.Tests.Unit.Client
 
         [Trait("Category", "GetUserStatusAsync")]
         [Theory(DisplayName = "GetUserStatusAsync throws OperationCanceledException on cancellation"), AutoData]
-        public async Task GetUserStatusAsync_Throws_OperationCanceledException_On_Cancellation(string username, UserStatus status, bool privileged)
+        public async Task GetUserStatusAsync_Throws_OperationCanceledException_On_Cancellation(string username, UserPresence status, bool privileged)
         {
             var result = new UserStatusResponse(username, status, privileged);
 

@@ -60,6 +60,16 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
+        /// <param name="endpoint">The IP endpoint of the server to which to connect.</param>
+        /// <param name="options">The client options.</param>
+        public SoulseekClient(IPEndPoint endpoint, SoulseekClientOptions options = null)
+            : this(endpoint.Address.ToString(), endpoint.Port, options, null)
+        {
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
+        /// </summary>
         /// <param name="address">The address of the server to which to connect.</param>
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client options.</param>
@@ -88,8 +98,13 @@ namespace Soulseek
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+            {
+                throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
+            }
+
             Address = address;
-            Port = port;
+            IPEndPoint = new IPEndPoint(IPAddress.None, port);
 
             Options = options ?? new SoulseekClientOptions();
 
@@ -101,9 +116,11 @@ namespace Soulseek
 
             if (ServerConnection == null)
             {
+                IPAddress ipAddress;
+
                 try
                 {
-                    IPAddress = Address.ResolveIPAddress();
+                    ipAddress = address.ResolveIPAddress();
                 }
                 catch (SocketException ex)
                 {
@@ -114,10 +131,11 @@ namespace Soulseek
                 var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
                 var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
 
-                ServerConnection = new MessageConnection(IPAddress, Port, connectionOptions);
+                IPEndPoint = new IPEndPoint(ipAddress, port);
+                ServerConnection = new MessageConnection(IPEndPoint, connectionOptions);
             }
 
-            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {Address}:{Port}");
+            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
             ServerConnection.Disconnected += ServerConnection_Disconnected;
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
@@ -273,7 +291,12 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public IPAddress IPAddress { get; }
+        public IPAddress IPAddress => IPEndPoint.Address;
+
+        /// <summary>
+        ///     Gets the resolved server endpoint.
+        /// </summary>
+        public IPEndPoint IPEndPoint { get; }
 
         /// <summary>
         ///     Gets the resolved server address.
@@ -283,7 +306,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets server port.
         /// </summary>
-        public int Port { get; }
+        public int Port => IPEndPoint.Port;
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
@@ -730,7 +753,7 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously fetches the IP address and port of the specified <paramref name="username"/>.
+        ///     Asynchronously fetches the IP endpoint of the specified <paramref name="username"/>.
         /// </summary>
         /// <param name="username">The user from which to fetch the connection information.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -742,8 +765,8 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
-        /// <exception cref="UserAddressException">Thrown when an exception is encountered during the operation.</exception>
-        public virtual Task<(IPAddress IPAddress, int Port)> GetUserAddressAsync(string username, CancellationToken? cancellationToken = null)
+        /// <exception cref="UserEndPointException">Thrown when an exception is encountered during the operation.</exception>
+        public virtual Task<IPEndPoint> GetUserEndPointAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -755,7 +778,7 @@ namespace Soulseek
                 throw new InvalidOperationException($"The server connection must be connected and logged in to fetch user information (currently: {State})");
             }
 
-            return GetUserAddressInternalAsync(username, cancellationToken ?? CancellationToken.None);
+            return GetUserEndPointInternalAsync(username, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -826,7 +849,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
+        public Task<UserStatus> GetUserStatusAsync(string username, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -1220,7 +1243,7 @@ namespace Soulseek
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserStatusException">Thrown when an exception is encountered during the operation.</exception>
-        public Task SetStatusAsync(UserStatus status, CancellationToken? cancellationToken = null)
+        public Task SetStatusAsync(UserPresence status, CancellationToken? cancellationToken = null)
         {
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
@@ -1480,8 +1503,8 @@ namespace Soulseek
                 var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.ResponseTimeout, cancellationToken);
 
                 // fetch the user's address and a connection and write the browse request to the remote user
-                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+                var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 // wait for the receipt of the response message
@@ -1612,8 +1635,8 @@ namespace Soulseek
 
             try
             {
-                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-                var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+                var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
+                var peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
 
                 // prepare two waits; one for the transfer response to confirm that our request is acknowledged and another for
                 // the eventual transfer request sent when the peer is ready to send the file. the response message should be
@@ -1642,7 +1665,7 @@ namespace Soulseek
 
                     // connect to the peer to retrieve the file; for these types of transfers, we must initiate the transfer connection.
                     download.Connection = await PeerConnectionManager
-                        .GetTransferConnectionAsync(username, address.IPAddress, address.Port, transferRequestAcknowledgement.Token, cancellationToken)
+                        .GetTransferConnectionAsync(username, endpoint, transferRequestAcknowledgement.Token, cancellationToken)
                         .ConfigureAwait(false);
                 }
                 else if (transferRequestAcknowledgement.Message.Equals("File not shared.", StringComparison.InvariantCultureIgnoreCase))
@@ -1679,7 +1702,7 @@ namespace Soulseek
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                    peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+                    peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
 
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
@@ -1808,8 +1831,8 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Peer.PlaceInQueueResponse, username, filename);
                 var responseWait = Waiter.Wait<PlaceInQueueResponse>(waitKey, null, cancellationToken);
 
-                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
-                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+                var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new PlaceInQueueRequest(filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await responseWait.ConfigureAwait(false);
@@ -1822,7 +1845,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<(IPAddress IPAddress, int Port)> GetUserAddressInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<IPEndPoint> GetUserEndPointInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
@@ -1838,11 +1861,11 @@ namespace Soulseek
                     throw new UserOfflineException($"User {username} appears to be offline.");
                 }
 
-                return (response.IPAddress, response.Port);
+                return new IPEndPoint(response.IPAddress, response.Port);
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
-                throw new UserAddressException($"Failed to retrieve address for user {username}: {ex.Message}", ex);
+                throw new UserEndPointException($"Failed to retrieve endpoint for user {username}: {ex.Message}", ex);
             }
         }
 
@@ -1853,9 +1876,9 @@ namespace Soulseek
                 var waitKey = new WaitKey(MessageCode.Peer.InfoResponse, username);
                 var infoWait = Waiter.Wait<UserInfo>(waitKey, cancellationToken: cancellationToken);
 
-                var address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+                var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
 
-                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken).ConfigureAwait(false);
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new UserInfoRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
                 var response = await infoWait.ConfigureAwait(false);
@@ -1886,7 +1909,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<(UserStatus Status, bool IsPrivileged)> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
+        private async Task<UserStatus> GetUserStatusInternalAsync(string username, CancellationToken cancellationToken)
         {
             try
             {
@@ -1895,7 +1918,7 @@ namespace Soulseek
 
                 var response = await getStatusWait.ConfigureAwait(false);
 
-                return (response.Status, response.IsPrivileged);
+                return new UserStatus(response.Status, response.IsPrivileged);
             }
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
@@ -2152,16 +2175,16 @@ namespace Soulseek
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            (IPAddress IPAddress, int Port) address = default;
+            IPEndPoint endpoint = default;
 
             try
             {
                 // in case the upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
-                address = await GetUserAddressAsync(username, cancellationToken).ConfigureAwait(false);
+                endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
                 var messageConnection = await PeerConnectionManager
-                    .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+                    .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                     .ConfigureAwait(false);
 
                 // prepare a wait for the transfer response
@@ -2185,7 +2208,7 @@ namespace Soulseek
                 var uploadCompleted = Waiter.WaitIndefinitely(upload.WaitKey, cancellationToken);
 
                 upload.Connection = await PeerConnectionManager
-                    .GetTransferConnectionAsync(upload.Username, address.IPAddress, address.Port, upload.Token, cancellationToken)
+                    .GetTransferConnectionAsync(upload.Username, endpoint, upload.Token, cancellationToken)
                     .ConfigureAwait(false);
 
                 upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
@@ -2301,7 +2324,7 @@ namespace Soulseek
                     {
                         // if the upload failed, send a message to the user informing them.
                         var messageConnection = await PeerConnectionManager
-                            .GetOrAddMessageConnectionAsync(username, address.IPAddress, address.Port, cancellationToken)
+                            .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                             .ConfigureAwait(false);
 
                         await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);

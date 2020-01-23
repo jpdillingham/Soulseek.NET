@@ -89,9 +89,9 @@ namespace Soulseek
         public string Filename { get; }
 
         /// <summary>
-        ///     Gets the ip address of the remote transfer connection, if one has been established.
+        ///     Gets the ip endpoint of the remote transfer connection, if one has been established.
         /// </summary>
-        public IPAddress IPAddress => Connection?.IPAddress;
+        public IPEndPoint IPEndPoint => Connection?.IPEndPoint;
 
         /// <summary>
         ///     Gets the options for the transfer.
@@ -102,11 +102,6 @@ namespace Soulseek
         ///     Gets the current progress in percent.
         /// </summary>
         public double PercentComplete => Size == 0 ? 0 : (BytesTransferred / (double)Size) * 100;
-
-        /// <summary>
-        ///     Gets the port of the remote transfer connection, if one has been established.
-        /// </summary>
-        public int? Port => Connection?.Port;
 
         /// <summary>
         ///     Gets the projected remaining duration of the transfer.

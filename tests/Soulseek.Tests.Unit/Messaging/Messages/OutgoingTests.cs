@@ -373,7 +373,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Trait("Category", "Instantiation")]
         [Trait("Request", "SetOnlineStatus")]
         [Theory(DisplayName = "SetOnlineStatus instantiates properly"), AutoData]
-        public void SetOnlineStatus_Instantiates_Properly(UserStatus status)
+        public void SetOnlineStatus_Instantiates_Properly(UserPresence status)
         {
             var a = new SetOnlineStatusCommand(status);
 
@@ -383,7 +383,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Trait("Category", "ToByteArray")]
         [Trait("Request", "SetOnlineStatus")]
         [Theory(DisplayName = "SetOnlineStatus constructs the correct message"), AutoData]
-        public void SetOnlineStatus_Constructs_The_Correct_Message(UserStatus status)
+        public void SetOnlineStatus_Constructs_The_Correct_Message(UserPresence status)
         {
             var a = new SetOnlineStatusCommand(status);
             var msg = a.ToByteArray();

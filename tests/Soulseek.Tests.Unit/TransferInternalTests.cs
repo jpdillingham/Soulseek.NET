@@ -39,8 +39,7 @@ namespace Soulseek.Tests.Unit
             var d = new TransferInternal(TransferDirection.Download, username, filename, token, options);
 
             Assert.Null(d.Connection);
-            Assert.Null(d.IPAddress);
-            Assert.Null(d.Port);
+            Assert.Null(d.IPEndPoint);
             Assert.Null(d.RemoteToken);
             Assert.Equal(0, d.Size);
             Assert.Equal(TransferStates.None, d.State);
@@ -58,20 +57,17 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Properties")]
         [Theory(DisplayName = "IPAddress and Port props return Connection props"), AutoData]
-        internal void IPAddress_And_Port_Props_Return_Connection_Props(string username, string filename, int token, IPAddress ipAddress, int port)
+        internal void IPAddress_And_Port_Props_Return_Connection_Props(string username, string filename, int token, IPEndPoint endpoint)
         {
             var d = new TransferInternal(TransferDirection.Download, username, filename, token);
 
             var c = new Mock<IConnection>();
-            c.Setup(m => m.IPAddress)
-                .Returns(ipAddress);
-            c.Setup(m => m.Port)
-                .Returns(port);
+            c.Setup(m => m.IPEndPoint)
+                .Returns(endpoint);
 
             d.Connection = c.Object;
 
-            Assert.Equal(ipAddress, d.IPAddress);
-            Assert.Equal(port, (int)d.Port);
+            Assert.Equal(endpoint, d.IPEndPoint);
         }
 
         [Trait("Category", "Wait Key")]

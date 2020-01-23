@@ -70,7 +70,7 @@ namespace Soulseek.Messaging.Messages
 
             if (exists)
             {
-                var status = (UserStatus)reader.ReadInteger();
+                var status = (UserPresence)reader.ReadInteger();
                 var averageSpeed = reader.ReadInteger();
                 var downloadCount = reader.ReadLong();
                 var fileCount = reader.ReadInteger();

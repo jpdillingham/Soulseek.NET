@@ -530,13 +530,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         public void Raises_DiagnosticGenerated_On_Exception()
         {
             var mocks = new Mocks();
+
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
 
-            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
-
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteCode(MessageCode.Server.RoomList)
                 .Build();
 
             var diagnostics = new List<DiagnosticEventArgs>();
@@ -588,7 +587,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ServerGetStatus"), AutoData]
-        public void Handles_ServerGetStatus(string username, UserStatus status, bool privileged)
+        public void Handles_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
             UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
@@ -612,14 +611,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles NetInfo"), AutoData]
-        public void Handles_NetInfo(List<(string Username, IPAddress IPAddress, int Port)> parents)
+        public void Handles_NetInfo(List<(string Username, IPEndPoint IPEndPoint)> parents)
         {
-            IEnumerable<(string Username, IPAddress IPAddress, int Port)> result = null;
+            IEnumerable<(string Username, IPEndPoint IPEndPoint)> result = null;
             var (handler, mocks) = GetFixture();
 
             mocks.DistributedConnectionManager
-                .Setup(m => m.AddParentConnectionAsync(It.IsAny<IEnumerable<(string Username, IPAddress IPAddress, int Port)>>()))
-                .Callback<IEnumerable<(string Username, IPAddress IPAddress, int Port)>>(list => result = list);
+                .Setup(m => m.AddParentConnectionAsync(It.IsAny<IEnumerable<(string Username, IPEndPoint IPEndPoint)>>()))
+                .Callback<IEnumerable<(string Username, IPEndPoint IPEndPoint)>>(list => result = list);
 
             var builder = new MessageBuilder()
                 .WriteCode(MessageCode.Server.NetInfo)
@@ -629,11 +628,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             {
                 builder.WriteString(parent.Username);
 
-                var ipBytes = parent.IPAddress.GetAddressBytes();
+                var ipBytes = parent.IPEndPoint.Address.GetAddressBytes();
                 Array.Reverse(ipBytes);
 
                 builder.WriteBytes(ipBytes);
-                builder.WriteInteger(parent.Port);
+                builder.WriteInteger(parent.IPEndPoint.Port);
             }
 
             var message = builder.Build();
@@ -645,12 +644,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Produces diagnostic on NetInfo Exception"), AutoData]
-        public void Produces_Diagnostic_On_NetInfo_Exception(List<(string Username, IPAddress IPAddress, int Port)> parents)
+        public void Produces_Diagnostic_On_NetInfo_Exception(List<(string Username, IPEndPoint IPEndPoint)> parents)
         {
             var (handler, mocks) = GetFixture();
 
             mocks.DistributedConnectionManager
-                .Setup(m => m.AddParentConnectionAsync(It.IsAny<IEnumerable<(string Username, IPAddress IPAddress, int Port)>>()))
+                .Setup(m => m.AddParentConnectionAsync(It.IsAny<IEnumerable<(string Username, IPEndPoint IPEndPoint)>>()))
                 .Throws(new Exception("foo"));
 
             var builder = new MessageBuilder()
@@ -661,11 +660,11 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             {
                 builder.WriteString(parent.Username);
 
-                var ipBytes = parent.IPAddress.GetAddressBytes();
+                var ipBytes = parent.IPEndPoint.Address.GetAddressBytes();
                 Array.Reverse(ipBytes);
 
                 builder.WriteBytes(ipBytes);
-                builder.WriteInteger(parent.Port);
+                builder.WriteInteger(parent.IPEndPoint.Port);
             }
 
             var message = builder.Build();
@@ -677,7 +676,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Raises UserStatusChanged on ServerGetStatus"), AutoData]
-        public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserStatus status, bool privileged)
+        public void Raises_UserStatusChanged_On_ServerGetStatus(string username, UserPresence status, bool privileged)
         {
             UserStatusResponse result = null;
             var (handler, mocks) = GetFixture();
@@ -991,11 +990,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
 
             var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(peerConn.Object));
 
             var conn = new Mock<IMessageConnection>();
@@ -1004,8 +1005,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Once);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
@@ -1018,11 +1019,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(peerConn.Object));
 
             var conn = new Mock<IMessageConnection>();
@@ -1031,8 +1034,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
@@ -1046,11 +1049,13 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
             var (handler, mocks) = GetFixture(options);
 
-            mocks.Client.Setup(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult((IPAddress.None, 0)));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
 
             var peerConn = new Mock<IMessageConnection>();
-            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()))
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(peerConn.Object));
 
             var conn = new Mock<IMessageConnection>();
@@ -1059,8 +1064,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
             // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
@@ -1080,11 +1085,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .Returns(username);
 
             var message = GetServerSearchRequest(username, token, query);
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Client.Verify(m => m.GetUserAddressAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, IPAddress.None, 0, It.IsAny<CancellationToken>()), Times.Never);
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
         }
 
         private byte[] GetServerSearchRequest(string username, int token, string query)
