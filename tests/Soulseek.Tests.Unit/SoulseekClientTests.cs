@@ -67,6 +67,18 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Instantiates with given IPEndPoint"), AutoData]
+        public void Instantiates_With_Given_IPEndPoint(IPEndPoint endpoint)
+        {
+            using (var s = new SoulseekClient(endpoint))
+            {
+                Assert.Equal(endpoint.Address.ToString(), s.Address);
+                Assert.Equal(endpoint.Address, s.IPAddress);
+                Assert.Equal(endpoint.Port, s.Port);
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates without exception")]
         public void Instantiates_Without_Exception()
         {
