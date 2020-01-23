@@ -63,7 +63,7 @@ namespace Soulseek
         /// <param name="endpoint">The IP endpoint of the server to which to connect.</param>
         /// <param name="options">The client options.</param>
         public SoulseekClient(IPEndPoint endpoint, SoulseekClientOptions options = null)
-            : this(endpoint?.Address.ToString() ?? DefaultAddress, endpoint?.Port ?? DefaultPort, options, null)
+            : this(endpoint.Address.ToString(), endpoint.Port, options, null)
         {
         }
 

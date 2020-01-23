@@ -53,8 +53,8 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with defaults given a null IPEndPoint")]
-        public void Instantiates_With_Defaults_Given_A_Null_IPEndPoint()
+        [Fact(DisplayName = "Instantiates with defaults given a null IPEndPoint or address")]
+        public void Instantiates_With_Defaults_Given_A_Null_IPEndPoint_Or_Address()
         {
             using (var s = new SoulseekClient(null))
             {
