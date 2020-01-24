@@ -125,6 +125,11 @@ namespace Soulseek.Messaging.Handlers
                         SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
                         break;
 
+                    case MessageCode.Server.NewPassword:
+                        var confirmedPassword = NewPassword.FromByteArray(message).Password;
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), confirmedPassword);
+                        break;
+
                     case MessageCode.Server.Login:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.FromByteArray(message));
                         break;
