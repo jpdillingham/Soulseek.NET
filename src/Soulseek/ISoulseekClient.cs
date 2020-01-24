@@ -219,6 +219,21 @@ namespace Soulseek
         Task<IReadOnlyCollection<Directory>> BrowseAsync(string username, BrowseOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously changes the password for the currently logged in user.
+        /// </summary>
+        /// <param name="password">The new password.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="password"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="ChangePasswordException">Thrown when an exception is encountered during the operation.</exception>
+        Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
