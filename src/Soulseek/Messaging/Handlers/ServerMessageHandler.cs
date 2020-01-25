@@ -18,7 +18,6 @@ namespace Soulseek.Messaging.Handlers
     using System.Threading;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
-    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
 
@@ -124,6 +123,11 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.WishlistInterval:
                     case MessageCode.Server.CheckPrivileges:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), IntegerResponse.FromByteArray<MessageCode.Server>(message));
+                        break;
+
+                    case MessageCode.Server.NewPassword:
+                        var confirmedPassword = NewPassword.FromByteArray(message).Password;
+                        SoulseekClient.Waiter.Complete(new WaitKey(code), confirmedPassword);
                         break;
 
                     case MessageCode.Server.Login:

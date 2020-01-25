@@ -952,6 +952,22 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Waiter.Verify(m => m.Complete<bool>(new WaitKey(MessageCode.Server.UserPrivileges, username), privileged), Times.Once);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles NewPassword"), AutoData]
+        public void Handles_NewPassword(string password)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.NewPassword)
+                .WriteString(password)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete<string>(new WaitKey(MessageCode.Server.NewPassword), password), Times.Once);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
         public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)

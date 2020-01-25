@@ -370,7 +370,9 @@ namespace Soulseek
         /// <param name="privilegeNotificationId">The unique id of the privilege notification to acknowledge.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.</exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="privilegeNotificationId"/> is less than zero.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -458,6 +460,34 @@ namespace Soulseek
             options = options ?? new BrowseOptions();
 
             return BrowseInternalAsync(username, options, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously changes the password for the currently logged in user.
+        /// </summary>
+        /// <param name="password">The new password.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="password"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="ChangePasswordException">Thrown when an exception is encountered during the operation.</exception>
+        public Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(password))
+            {
+                throw new ArgumentException($"The password must not be a null or empty string, or one consisting only of whitespace", nameof(password));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in change a password (currently: {State})");
+            }
+
+            return ChangePasswordInternalAsync(password, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1536,6 +1566,30 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
                 throw new BrowseException($"Failed to browse user {username}: {ex.Message}", ex);
+            }
+        }
+
+        private async Task ChangePasswordInternalAsync(string password, CancellationToken cancellationToken)
+        {
+            string response;
+
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Server.NewPassword);
+                var wait = Waiter.Wait<string>(waitKey, cancellationToken: cancellationToken);
+
+                await ServerConnection.WriteAsync(new NewPassword(password).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                response = await wait.ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new ChangePasswordException($"Failed to change password: {ex.Message}", ex);
+            }
+
+            if (!response.Equals(password, StringComparison.InvariantCultureIgnoreCase))
+            {
+                throw new ChangePasswordException($"The response from the server doesn't match the specified password; the change likely failed");
             }
         }
 
