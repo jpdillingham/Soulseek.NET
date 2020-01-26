@@ -46,6 +46,11 @@ namespace Soulseek.Messaging.Handlers
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Occurs when a global message is received.
+        /// </summary>
+        public event EventHandler<GlobalMessageEventArgs> GlobalMessageReceived;
+
+        /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
         ///     the same credentials.
         /// </summary>
@@ -128,6 +133,11 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Server.NewPassword:
                         var confirmedPassword = NewPassword.FromByteArray(message).Password;
                         SoulseekClient.Waiter.Complete(new WaitKey(code), confirmedPassword);
+                        break;
+
+                    case MessageCode.Server.GlobalAdminMessage:
+                        var msg = GlobalMessageNotification.FromByteArray(message);
+                        GlobalMessageReceived?.Invoke(this, new GlobalMessageEventArgs(msg));
                         break;
 
                     case MessageCode.Server.Login:

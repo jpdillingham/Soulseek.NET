@@ -20,6 +20,11 @@ namespace Soulseek.Messaging.Handlers
     internal interface IServerMessageHandler : IMessageHandler
     {
         /// <summary>
+        ///     Occurs when a global message is received.
+        /// </summary>
+        event EventHandler<GlobalMessageEventArgs> GlobalMessageReceived;
+
+        /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
         ///     the same credentials.
         /// </summary>
