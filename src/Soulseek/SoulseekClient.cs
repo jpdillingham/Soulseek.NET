@@ -1059,15 +1059,15 @@ namespace Soulseek
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="PingException">Thrown when an exception is encountered during the operation.</exception>
         public async Task<long> PingServerAsync(CancellationToken? cancellationToken = null)
         {
-            if (!State.HasFlag(SoulseekClientStates.Connected))
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
             {
-                throw new InvalidOperationException($"The client must be connected to log in");
+                throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
             }
 
             try
