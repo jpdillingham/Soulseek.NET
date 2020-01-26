@@ -1057,6 +1057,9 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously pings the server to check connectivity.
         /// </summary>
+        /// <remarks>
+        ///     The server doesn't seem to be responding; this may have been deprecated.
+        /// </remarks>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
