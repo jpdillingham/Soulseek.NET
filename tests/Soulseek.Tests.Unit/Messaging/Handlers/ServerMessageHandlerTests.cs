@@ -987,6 +987,21 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Equal(msg, args.Message);
         }
 
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Handles Ping")]
+        public void Handles_Ping()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.Ping)
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.Ping)), Times.Once);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
         public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
