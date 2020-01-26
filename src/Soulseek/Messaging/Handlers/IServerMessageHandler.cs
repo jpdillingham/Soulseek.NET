@@ -20,6 +20,11 @@ namespace Soulseek.Messaging.Handlers
     internal interface IServerMessageHandler : IMessageHandler
     {
         /// <summary>
+        ///     Occurs when a global message is received.
+        /// </summary>
+        event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
+
+        /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
         ///     the same credentials.
         /// </summary>
@@ -28,7 +33,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
+        event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
@@ -58,7 +63,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
+        event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.

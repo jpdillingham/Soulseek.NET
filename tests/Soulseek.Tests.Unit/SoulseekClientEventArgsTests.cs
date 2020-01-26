@@ -52,5 +52,15 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(message, s.Message);
             Assert.Equal(ex, s.Exception);
         }
+
+        [Trait("Category", "Instantiation")]
+        [Trait("Class", "GlobalMessageReceivedEventArgs")]
+        [Theory(DisplayName = "Instantiates with the given data and Exception"), AutoData]
+        public void GlobalMessageReceivedEventArgs_Instantiates_With_The_Given_Data_And_Exception(string message)
+        {
+            var s = new GlobalMessageReceivedEventArgs(message);
+
+            Assert.Equal(message, s.Message);
+        }
     }
 }

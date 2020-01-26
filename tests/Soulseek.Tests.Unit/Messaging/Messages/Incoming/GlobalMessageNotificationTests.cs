@@ -1,4 +1,4 @@
-﻿// <copyright file="RoomMessageTests.cs" company="JP Dillingham">
+﻿// <copyright file="GlobalMessageNotificationTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,20 +18,18 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class RoomMessageTests
+    public class GlobalMessageNotificationTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string roomName, string username, string message)
+        public void Instantiates_With_The_Given_Data(string message)
         {
-            RoomMessageNotification response = null;
+            GlobalMessageNotification response = null;
 
-            var ex = Record.Exception(() => response = new RoomMessageNotification(roomName, username, message));
+            var ex = Record.Exception(() => response = new GlobalMessageNotification(message));
 
             Assert.Null(ex);
 
-            Assert.Equal(roomName, response.RoomName);
-            Assert.Equal(username, response.Username);
             Assert.Equal(message, response.Message);
         }
 
@@ -43,7 +41,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => RoomMessageNotification.FromByteArray(msg));
+            var ex = Record.Exception(() => GlobalMessageNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -54,10 +52,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.SayInChatRoom)
+                .WriteCode(MessageCode.Server.GlobalAdminMessage)
                 .Build();
 
-            var ex = Record.Exception(() => RoomMessageNotification.FromByteArray(msg));
+            var ex = Record.Exception(() => GlobalMessageNotification.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -65,19 +63,15 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string roomName, string username, string message)
+        public void Parse_Returns_Expected_Data(string message)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Server.SayInChatRoom)
-                .WriteString(roomName)
-                .WriteString(username)
+                .WriteCode(MessageCode.Server.GlobalAdminMessage)
                 .WriteString(message)
                 .Build();
 
-            var response = RoomMessageNotification.FromByteArray(msg);
+            var response = GlobalMessageNotification.FromByteArray(msg);
 
-            Assert.Equal(roomName, response.RoomName);
-            Assert.Equal(username, response.Username);
             Assert.Equal(message, response.Message);
         }
     }

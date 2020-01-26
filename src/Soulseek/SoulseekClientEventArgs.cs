@@ -24,19 +24,48 @@ namespace Soulseek
     }
 
     /// <summary>
-    ///     Event arguments for events raised upon receipt of a private message.
+    ///     Event arguments for events raised upon receipt of a global message.
     /// </summary>
-    public class PrivateMessageEventArgs : SoulseekClientEventArgs
+    public class GlobalMessageReceivedEventArgs : SoulseekClientEventArgs
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessageEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="GlobalMessageReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="message">The message content.</param>
+        public GlobalMessageReceivedEventArgs(string message)
+        {
+            Message = message;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="GlobalMessageReceivedEventArgs"/> class.
+        /// </summary>
+        /// <param name="notification">The notification which raised the event.</param>
+        internal GlobalMessageReceivedEventArgs(GlobalMessageNotification notification)
+            : this(notification.Message)
+        {
+        }
+
+        /// <summary>
+        ///     Gets the message content.
+        /// </summary>
+        public string Message { get; }
+    }
+
+    /// <summary>
+    ///     Event arguments for events raised upon receipt of a private message.
+    /// </summary>
+    public class PrivateMessageReceivedEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="PrivateMessageReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="id">The unique id of the message.</param>
         /// <param name="timestamp">The timestamp at which the message was sent.</param>
         /// <param name="username">The username of the user which sent the message.</param>
         /// <param name="message">The message content.</param>
         /// <param name="isAdmin">A value indicating whether the message was sent by an administrator.</param>
-        public PrivateMessageEventArgs(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
+        public PrivateMessageReceivedEventArgs(int id, DateTime timestamp, string username, string message, bool isAdmin = false)
         {
             Id = id;
             Timestamp = timestamp;
@@ -46,10 +75,10 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PrivateMessageEventArgs"/> class.
+        ///     Initializes a new instance of the <see cref="PrivateMessageReceivedEventArgs"/> class.
         /// </summary>
         /// <param name="notification">The notification which raised the event.</param>
-        internal PrivateMessageEventArgs(PrivateMessageNotification notification)
+        internal PrivateMessageReceivedEventArgs(PrivateMessageNotification notification)
             : this(notification.Id, notification.Timestamp, notification.Username, notification.Message, notification.IsAdmin)
         {
         }

@@ -115,7 +115,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 .WriteByte((byte)(isAdmin ? 1 : 0))
                 .Build();
 
-            PrivateMessageEventArgs response = null;
+            PrivateMessageReceivedEventArgs response = null;
             handler.PrivateMessageReceived += (_, privateMessage) => response = privateMessage;
 
             handler.HandleMessageRead(null, msg);
@@ -763,7 +763,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             var message = builder.Build();
 
-            RoomMessageEventArgs actual = default;
+            RoomMessageReceivedEventArgs actual = default;
             handler.RoomMessageReceived += (sender, args) => actual = args;
             handler.HandleMessageRead(null, message);
 
@@ -966,6 +966,25 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(null, message);
 
             mocks.Waiter.Verify(m => m.Complete<string>(new WaitKey(MessageCode.Server.NewPassword), password), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles GlobalAdminMessage"), AutoData]
+        public void Handles_GlobalAdminMessage(string msg)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.GlobalAdminMessage)
+                .WriteString(msg)
+                .Build();
+
+            GlobalMessageReceivedEventArgs args = default;
+            handler.GlobalMessageReceived += (sender, e) => args = e;
+            handler.HandleMessageRead(null, message);
+
+            Assert.NotNull(args);
+            Assert.Equal(msg, args.Message);
         }
 
         [Trait("Category", "Diagnostic")]
