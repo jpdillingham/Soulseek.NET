@@ -1,4 +1,4 @@
-﻿// <copyright file="PingResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedPingResponseTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,13 +18,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PingResponseTests
+    public class DistributedPingResponseTests
     {
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with the given data"), AutoData]
         public void Instantiates_With_The_Given_Data(int token)
         {
-            var r = new PingResponse(token);
+            var r = new DistributedPingResponse(token);
 
             Assert.Equal(token, r.Token);
         }
@@ -33,7 +33,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         [Theory(DisplayName = "ToByteArray Constructs the correct Message"), AutoData]
         public void ToByteArray_Constructs_The_Correct_Message(int token)
         {
-            var msg = new PingResponse(token).ToByteArray();
+            var msg = new DistributedPingResponse(token).ToByteArray();
 
             var reader = new MessageReader<MessageCode.Distributed>(msg);
             var code = reader.ReadCode();
@@ -53,7 +53,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(token)
                 .Build();
 
-            var response = PingResponse.FromByteArray(msg);
+            var response = DistributedPingResponse.FromByteArray(msg);
 
             Assert.Equal(token, response.Token);
         }
@@ -67,7 +67,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => PingResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => DistributedPingResponse.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);

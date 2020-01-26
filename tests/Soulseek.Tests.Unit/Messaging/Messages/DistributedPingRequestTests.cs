@@ -1,4 +1,4 @@
-﻿// <copyright file="PingRequestTests.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedPingRequestTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -17,13 +17,13 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PingRequestTests
+    public class DistributedPingRequestTests
     {
         [Trait("Category", "ToByteArray")]
         [Fact(DisplayName = "ToByteArray Constructs the correct Message")]
         public void ToByteArray_Constructs_The_Correct_Message()
         {
-            var msg = new PingRequest().ToByteArray();
+            var msg = new DistributedPingRequest().ToByteArray();
 
             var reader = new MessageReader<MessageCode.Distributed>(msg);
             var code = reader.ReadCode();
@@ -40,7 +40,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Distributed.Ping)
                 .Build();
 
-            var ex = Record.Exception(() => PingRequest.FromByteArray(msg));
+            var ex = Record.Exception(() => DistributedPingRequest.FromByteArray(msg));
 
             Assert.Null(ex);
         }
@@ -54,7 +54,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteInteger(1)
                 .Build();
 
-            var ex = Record.Exception(() => PingRequest.FromByteArray(msg));
+            var ex = Record.Exception(() => DistributedPingRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
