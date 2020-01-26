@@ -43,6 +43,11 @@ namespace Soulseek
         event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
 
         /// <summary>
+        ///     Occurs when a global message is received.
+        /// </summary>
+        event EventHandler<GlobalMessageEventArgs> GlobalMessageReceived;
+
+        /// <summary>
         ///     Occurs when the client is logged in.
         /// </summary>
         event EventHandler LoggedIn;

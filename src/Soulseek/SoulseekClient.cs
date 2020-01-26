@@ -175,6 +175,7 @@ namespace Soulseek
             ServerMessageHandler.RoomLeft += (sender, e) => RoomLeft?.Invoke(this, e);
             ServerMessageHandler.RoomListReceived += (sender, e) => RoomListReceived?.Invoke(this, e);
             ServerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+            ServerMessageHandler.GlobalMessageReceived += (sender, e) => GlobalMessageReceived?.Invoke(this, e);
 
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
@@ -200,6 +201,11 @@ namespace Soulseek
         ///     Occurs when an internal diagnostic message is generated.
         /// </summary>
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
+
+        /// <summary>
+        ///     Occurs when a global message is received.
+        /// </summary>
+        public event EventHandler<GlobalMessageEventArgs> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client disconnects.
