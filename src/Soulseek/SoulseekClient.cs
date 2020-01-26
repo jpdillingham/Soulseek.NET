@@ -205,7 +205,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        public event EventHandler<GlobalMessageEventArgs> GlobalMessageReceived;
+        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client disconnects.
@@ -226,7 +226,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
+        public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
@@ -256,7 +256,7 @@ namespace Soulseek
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
+        public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a new search result is received.

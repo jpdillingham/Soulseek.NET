@@ -238,7 +238,7 @@
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} joined room.");
         }
 
-        private static void Client_RoomMessageReceived(object sender, RoomMessageEventArgs e)
+        private static void Client_RoomMessageReceived(object sender, RoomMessageReceivedEventArgs e)
         {
             Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] [{e.Username}]: {e.Message}");
         }
@@ -248,7 +248,7 @@
             Console.WriteLine($"[DIAGNOSTICS] [{e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] [{e.Level}]: {e.Message}");
         }
 
-        private static void Client_PrivateMessageReceived(object sender, PrivateMessageEventArgs e)
+        private static void Client_PrivateMessageReceived(object sender, PrivateMessageReceivedEventArgs e)
         {
             Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }

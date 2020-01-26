@@ -48,7 +48,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a global message is received.
         /// </summary>
-        public event EventHandler<GlobalMessageEventArgs> GlobalMessageReceived;
+        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
@@ -59,7 +59,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a private message is received.
         /// </summary>
-        public event EventHandler<PrivateMessageEventArgs> PrivateMessageReceived;
+        public event EventHandler<PrivateMessageReceivedEventArgs> PrivateMessageReceived;
 
         /// <summary>
         ///     Occurs when the server sends a list of privileged users.
@@ -89,7 +89,7 @@ namespace Soulseek.Messaging.Handlers
         /// <summary>
         ///     Occurs when a chat room message is received.
         /// </summary>
-        public event EventHandler<RoomMessageEventArgs> RoomMessageReceived;
+        public event EventHandler<RoomMessageReceivedEventArgs> RoomMessageReceived;
 
         /// <summary>
         ///     Occurs when a watched user's status changes.
@@ -137,7 +137,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.GlobalAdminMessage:
                         var msg = GlobalMessageNotification.FromByteArray(message);
-                        GlobalMessageReceived?.Invoke(this, new GlobalMessageEventArgs(msg));
+                        GlobalMessageReceived?.Invoke(this, new GlobalMessageReceivedEventArgs(msg));
                         break;
 
                     case MessageCode.Server.Login:
@@ -250,7 +250,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.PrivateMessage:
                         var pm = PrivateMessageNotification.FromByteArray(message);
-                        PrivateMessageReceived?.Invoke(this, new PrivateMessageEventArgs(pm));
+                        PrivateMessageReceived?.Invoke(this, new PrivateMessageReceivedEventArgs(pm));
 
                         if (SoulseekClient.Options.AutoAcknowledgePrivateMessages)
                         {
@@ -276,7 +276,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Server.SayInChatRoom:
                         var roomMessage = RoomMessageNotification.FromByteArray(message);
-                        RoomMessageReceived?.Invoke(this, new RoomMessageEventArgs(roomMessage));
+                        RoomMessageReceived?.Invoke(this, new RoomMessageReceivedEventArgs(roomMessage));
                         break;
 
                     case MessageCode.Server.UserJoinedRoom:
