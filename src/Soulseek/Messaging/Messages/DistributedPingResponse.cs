@@ -1,4 +1,4 @@
-﻿// <copyright file="PingRequest.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedPingResponse.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,33 +15,42 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     A distributed ping request.
+    ///     A distributed ping response.
     /// </summary>
-    internal sealed class PingRequest
+    internal sealed class DistributedPingResponse
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="PingRequest"/> class.
+        ///     Initializes a new instance of the <see cref="DistributedPingResponse"/> class.
         /// </summary>
-        public PingRequest()
+        /// <param name="token">The unique token for the response.</param>
+        public DistributedPingResponse(int token)
         {
+            Token = token;
         }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="PingRequest"/> from the specified <paramref name="bytes"/>.
+        ///     Gets the unique token for the response.
+        /// </summary>
+        public int Token { get; }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="DistributedPingResponse"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The parsed instance.</returns>
-        public static PingRequest FromByteArray(byte[] bytes)
+        public static DistributedPingResponse FromByteArray(byte[] bytes)
         {
             var reader = new MessageReader<MessageCode.Distributed>(bytes);
             var code = reader.ReadCode();
 
             if (code != MessageCode.Distributed.Ping)
             {
-                throw new MessageException($"Message Code mismatch creating Ping Request (expected: {(int)MessageCode.Distributed.Ping}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(DistributedPingResponse)} (expected: {(int)MessageCode.Distributed.Ping}, received: {(int)code}.");
             }
 
-            return new PingRequest();
+            var token = reader.ReadInteger();
+
+            return new DistributedPingResponse(token);
         }
 
         /// <summary>
@@ -52,6 +61,7 @@ namespace Soulseek.Messaging.Messages
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Distributed.Ping)
+                .WriteInteger(Token)
                 .Build();
         }
     }

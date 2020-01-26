@@ -140,6 +140,10 @@ namespace Soulseek.Messaging.Handlers
                         GlobalMessageReceived?.Invoke(this, new GlobalMessageReceivedEventArgs(msg));
                         break;
 
+                    case MessageCode.Server.Ping:
+                        SoulseekClient.Waiter.Complete(new WaitKey(code));
+                        break;
+
                     case MessageCode.Server.Login:
                         SoulseekClient.Waiter.Complete(new WaitKey(code), LoginResponse.FromByteArray(message));
                         break;

@@ -510,6 +510,20 @@ namespace Soulseek
         Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously pings the server to check connectivity.
+        /// </summary>
+        /// <remarks>
+        ///     The server doesn't seem to be responding; this may have been deprecated.
+        /// </remarks>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PingException">Thrown when an exception is encountered during the operation.</exception>
+        Task<long> PingServerAsync(CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously searches for the specified <paramref name="query"/> using the specified unique
         ///     <paramref name="token"/> and with the optionally specified <paramref name="options"/> and <paramref name="cancellationToken"/>.
         /// </summary>

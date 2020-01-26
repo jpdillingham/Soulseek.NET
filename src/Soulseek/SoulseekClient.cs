@@ -15,6 +15,7 @@ namespace Soulseek
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
+    using System.Diagnostics;
     using System.IO;
     using System.Linq;
     using System.Net;
@@ -1051,6 +1052,46 @@ namespace Soulseek
             }
 
             return LoginInternalAsync(username, password, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously pings the server to check connectivity.
+        /// </summary>
+        /// <remarks>
+        ///     The server doesn't seem to be responding; this may have been deprecated.
+        /// </remarks>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="PingException">Thrown when an exception is encountered during the operation.</exception>
+        public async Task<long> PingServerAsync(CancellationToken? cancellationToken = null)
+        {
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to perform a search (currently: {State})");
+            }
+
+            try
+            {
+                var wait = Waiter.Wait(new WaitKey(MessageCode.Server.Ping), null, cancellationToken);
+                var ping = new ServerPing().ToByteArray();
+
+                var sw = new Stopwatch();
+                sw.Start();
+
+                await ServerConnection.WriteAsync(ping, cancellationToken).ConfigureAwait(false);
+
+                await wait.ConfigureAwait(false);
+
+                sw.Stop();
+                return sw.ElapsedMilliseconds;
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new PingException($"Failed to ping the server: {ex.Message}", ex);
+            }
         }
 
         /// <summary>
