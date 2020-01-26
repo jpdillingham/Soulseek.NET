@@ -24,6 +24,35 @@ namespace Soulseek
     }
 
     /// <summary>
+    ///     Event arguments for events raised upon receipt of a global message.
+    /// </summary>
+    public class GlobalMessageEventArgs : SoulseekClientEventArgs
+    {
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="GlobalMessageEventArgs"/> class.
+        /// </summary>
+        /// <param name="message">The message content.</param>
+        public GlobalMessageEventArgs(string message)
+        {
+            Message = message;
+        }
+
+        /// <summary>
+        ///     Initializes a new instance of the <see cref="GlobalMessageEventArgs"/> class.
+        /// </summary>
+        /// <param name="notification">The notification which raised the event.</param>
+        internal GlobalMessageEventArgs(GlobalMessageNotification notification)
+            : this(notification.Message)
+        {
+        }
+
+        /// <summary>
+        ///     Gets the message content.
+        /// </summary>
+        public string Message { get; }
+    }
+
+    /// <summary>
     ///     Event arguments for events raised upon receipt of a private message.
     /// </summary>
     public class PrivateMessageEventArgs : SoulseekClientEventArgs
