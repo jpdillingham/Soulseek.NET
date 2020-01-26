@@ -500,5 +500,23 @@ namespace Soulseek.Tests.Unit
                 Assert.True(e.Exception is KickedFromServerException);
             }
         }
+
+        [Trait("Category", "GlobalMessageRecieved")]
+        [Theory(DisplayName = "Raises GlobalMessageRecieved on receipt"), AutoData]
+        public void Raises_GlobalMessageReceived_On_Receipt(string msg)
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverMessageHandler: handlerMock.Object))
+            {
+                GlobalMessageReceivedEventArgs args = default;
+                s.GlobalMessageReceived += (sender, e) => args = e;
+
+                handlerMock.Raise(m => m.GlobalMessageReceived += null, new GlobalMessageReceivedEventArgs(msg));
+
+                Assert.NotNull(args);
+                Assert.Equal(msg, args.Message);
+            }
+        }
     }
 }
