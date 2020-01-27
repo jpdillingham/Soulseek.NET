@@ -21,12 +21,11 @@ namespace Soulseek
     /// </summary>
     internal class TransferInternal
     {
-        private readonly int progressUpdateLimit = 100;
+        private readonly int progressUpdateLimit = 1000;
         private readonly double speedAlpha = 2f / 10;
         private double lastProgressBytes = 0;
         private DateTime? lastProgressTime = null;
         private bool speedInitialized = false;
-
         private TransferStates state = TransferStates.None;
 
         /// <summary>
@@ -175,22 +174,17 @@ namespace Soulseek
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
         public void UpdateProgress(long bytesTransferred)
         {
-            BytesTransferred = bytesTransferred + StartOffset;
-
-            if (!speedInitialized)
-            {
-                lastProgressBytes = StartOffset;
-            }
+            BytesTransferred = bytesTransferred;
 
             var ts = DateTime.Now - (lastProgressTime ?? StartTime);
 
-            if (ts.HasValue && (!speedInitialized || ts.Value.TotalMilliseconds >= progressUpdateLimit))
+            if (ts.HasValue && ts.Value.TotalMilliseconds >= progressUpdateLimit)
             {
-                var currentSpeed = (BytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
+                var currentSpeed = (bytesTransferred - lastProgressBytes) / (ts.Value.TotalMilliseconds / 1000d);
                 AverageSpeed = !speedInitialized ? currentSpeed : ((currentSpeed - AverageSpeed) * speedAlpha) + AverageSpeed;
                 speedInitialized = true;
                 lastProgressTime = DateTime.Now;
-                lastProgressBytes = BytesTransferred;
+                lastProgressBytes = bytesTransferred;
             }
         }
     }
