@@ -1724,7 +1724,11 @@ namespace Soulseek
 
         private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
-            var download = new TransferInternal(TransferDirection.Download, username, filename, token, options);
+            var download = new TransferInternal(TransferDirection.Download, username, filename, token, options)
+            {
+                StartOffset = startOffset,
+            };
+
             Downloads.TryAdd(download.Token, download);
 
             Task downloadCompleted = null;
@@ -1832,7 +1836,7 @@ namespace Soulseek
                     }
                 }
 
-                download.Connection.DataRead += (sender, e) => UpdateProgress(e.CurrentLength);
+                download.Connection.DataRead += (sender, e) => UpdateProgress(startOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
                     if (download.State.HasFlag(TransferStates.Succeeded))
@@ -1857,13 +1861,14 @@ namespace Soulseek
 
                 try
                 {
-                    // this needs to be 16? bytes for transfers beginning immediately, or 8 for queued. not sure what this is; it
-                    // was identified via WireShark.
-                    await download.Connection.WriteAsync(new byte[8], cancellationToken).ConfigureAwait(false);
+                    Diagnostic.Debug($"Seeking download of {Path.GetFileName(download.Filename)} from {username} to starting offset of {startOffset} bytes");
+                    var startOffsetBytes = BitConverter.GetBytes(startOffset);
+                    await download.Connection.WriteAsync(startOffsetBytes, cancellationToken).ConfigureAwait(false);
 
                     UpdateState(TransferStates.InProgress);
+                    UpdateProgress(startOffset);
 
-                    await download.Connection.ReadAsync(download.Size, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
+                    await download.Connection.ReadAsync(download.Size - startOffset, outputStream, (cancelToken) => options.Governor(new Transfer(download), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     download.State = TransferStates.Succeeded;
 
@@ -1926,7 +1931,7 @@ namespace Soulseek
                 // change state so we can fire the progress update a final time with the updated state little bit of a hack to
                 // avoid cloning the download
                 download.State = TransferStates.Completed | download.State;
-                UpdateProgress((int)outputStream.Position);
+                UpdateProgress(download.Size);
                 UpdateState(download.State);
 
                 if (options.DisposeOutputStreamOnCompletion)
