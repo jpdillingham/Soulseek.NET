@@ -549,6 +549,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -556,6 +557,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
@@ -566,7 +568,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        public Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task<byte[]> DownloadAsync(string username, string filename, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -576,6 +578,11 @@ namespace Soulseek
             if (string.IsNullOrWhiteSpace(filename))
             {
                 throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (startOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero.");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -597,7 +604,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return DownloadToByteArrayAsync(username, filename, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToByteArrayAsync(username, filename, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -608,6 +615,7 @@ namespace Soulseek
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -615,6 +623,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
@@ -629,7 +638,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        public Task DownloadAsync(string username, string filename, Stream outputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
+        public Task DownloadAsync(string username, string filename, Stream outputStream, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrWhiteSpace(username))
             {
@@ -639,6 +648,11 @@ namespace Soulseek
             if (string.IsNullOrWhiteSpace(filename))
             {
                 throw new ArgumentException($"The filename must not be a null or empty string, or one consisting only of whitespace", nameof(filename));
+            }
+
+            if (startOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero.");
             }
 
             if (outputStream == null)
@@ -670,7 +684,7 @@ namespace Soulseek
 
             options = options ?? new TransferOptions();
 
-            return DownloadToStreamAsync(username, filename, outputStream, token.Value, options, cancellationToken ?? CancellationToken.None);
+            return DownloadToStreamAsync(username, filename, outputStream, startOffset, token.Value, options, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1690,7 +1704,7 @@ namespace Soulseek
             }
         }
 
-        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task<byte[]> DownloadToByteArrayAsync(string username, string filename, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             // overwrite provided options to ensure the stream disposal flags are false; this will prevent the enclosing memory
             // stream from capturing the output.
@@ -1703,12 +1717,12 @@ namespace Soulseek
 
             using (var memoryStream = new MemoryStream())
             {
-                await DownloadToStreamAsync(username, filename, memoryStream, token, options, cancellationToken).ConfigureAwait(false);
+                await DownloadToStreamAsync(username, filename, memoryStream, startOffset, token, options, cancellationToken).ConfigureAwait(false);
                 return memoryStream.ToArray();
             }
         }
 
-        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, int token, TransferOptions options, CancellationToken cancellationToken)
+        private async Task DownloadToStreamAsync(string username, string filename, Stream outputStream, long startOffset, int token, TransferOptions options, CancellationToken cancellationToken)
         {
             var download = new TransferInternal(TransferDirection.Download, username, filename, token, options);
             Downloads.TryAdd(download.Token, download);
