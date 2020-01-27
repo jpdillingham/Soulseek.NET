@@ -175,7 +175,12 @@ namespace Soulseek
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
         public void UpdateProgress(long bytesTransferred)
         {
-            BytesTransferred = bytesTransferred;
+            BytesTransferred = bytesTransferred + StartOffset;
+
+            if (!speedInitialized)
+            {
+                lastProgressBytes = StartOffset;
+            }
 
             var ts = DateTime.Now - (lastProgressTime ?? StartTime);
 
