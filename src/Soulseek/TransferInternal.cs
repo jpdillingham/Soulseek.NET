@@ -119,6 +119,11 @@ namespace Soulseek
         public long Size { get; set; }
 
         /// <summary>
+        ///     Gets or sets the start offset of the transfer, in bytes.
+        /// </summary>
+        public long StartOffset { get; set; }
+
+        /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.
         /// </summary>
         public DateTime? StartTime { get; private set; }
