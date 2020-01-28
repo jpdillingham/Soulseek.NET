@@ -939,6 +939,69 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "UploadFromByteArrayAsync")]
+        [Theory(DisplayName = "UploadFromByteArrayAsync raises Upload events on bad offset data"), AutoData]
+        public async Task UploadFromByteArrayAsync_Raises_Upload_Events_On_Bad_Offset_Data(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(Array.Empty<byte>()));
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new MessageReadException()));
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var events = new List<TransferStateChangedEventArgs>();
+
+                s.TransferStateChanged += (sender, e) =>
+                {
+                    events.Add(e);
+                };
+
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TransferException>(ex);
+                Assert.IsType<MessageReadException>(ex.InnerException);
+
+                Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
+                Assert.Equal(TransferStates.Completed | TransferStates.Errored, events[events.Count - 1].Transfer.State);
+            }
+        }
+
+        [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync raises Upload events on timeout"), AutoData]
         public async Task UploadFromByteArrayAsync_Raises_Expected_Final_Event_On_Timeout(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
         {
@@ -1046,6 +1109,60 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<byte[]>(new NullReferenceException()));
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely<TransferRequest>(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(request));
+            waiter.Setup(m => m.Wait(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<Task>(new ConnectionException("foo", new NullReferenceException())));
+
+            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null));
+
+                Assert.NotNull(ex);
+                Assert.IsType<TransferException>(ex);
+                Assert.IsType<ConnectionException>(ex.InnerException);
+                Assert.IsType<NullReferenceException>(ex.InnerException.InnerException);
+            }
+        }
+
+        [Trait("Category", "UploadFromByteArrayAsync")]
+        [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferException on bad offset data"), AutoData]
+        public async Task UploadFromByteArrayAsync_Throws_TransferException_On_Bad_Offset_Data(string username, IPEndPoint endpoint, string filename, byte[] data, int token, int size)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var request = new TransferRequest(TransferDirection.Upload, token, filename, size);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(Array.Empty<byte>()));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
