@@ -773,6 +773,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
             transferConn.Setup(m => m.WriteAsync(It.IsAny<long>(), It.IsAny<Stream>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask)
                 .Raises(m => m.DataWritten += null, this, new ConnectionDataEventArgs(1, 1));
@@ -813,11 +815,9 @@ namespace Soulseek.Tests.Unit.Client
 
                 await s.InvokeMethod<Task>("UploadFromByteArrayAsync", username, filename, data, token, new TransferOptions(), null);
 
-                // 2 events, 1 fired from the mock above, 1 fired in the finally block
-                Assert.Equal(2, events.Count);
+                Assert.Equal(3, events.Count);
                 Assert.Equal(TransferStates.InProgress, events[0].Transfer.State);
-
-                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[1].Transfer.State);
+                Assert.Equal(TransferStates.Completed | TransferStates.Succeeded, events[2].Transfer.State);
             }
         }
 
@@ -889,6 +889,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
@@ -950,6 +952,8 @@ namespace Soulseek.Tests.Unit.Client
             var transferConn = new Mock<IConnection>();
             transferConn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
+            transferConn.Setup(m => m.ReadAsync(It.IsAny<long>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(0L)));
 
             var waiter = new Mock<IWaiter>();
             waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
