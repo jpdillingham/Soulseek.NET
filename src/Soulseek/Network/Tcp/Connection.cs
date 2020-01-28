@@ -68,7 +68,7 @@ namespace Soulseek.Network.Tcp
 
             WatchdogTimer.Elapsed += (sender, e) =>
             {
-                if (!TcpClient.Connected)
+                if (TcpClient == null || !TcpClient.Connected)
                 {
                     Disconnect($"The server connection was closed unexpectedly.");
                 }
