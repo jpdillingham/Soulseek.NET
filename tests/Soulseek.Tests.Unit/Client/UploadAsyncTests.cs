@@ -996,7 +996,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<TransferException>(ex);
                 Assert.IsType<MessageReadException>(ex.InnerException);
 
-                Assert.Equal(TransferStates.InProgress, events[events.Count - 1].PreviousState);
+                Assert.Equal(TransferStates.Initializing, events[events.Count - 1].PreviousState);
                 Assert.Equal(TransferStates.Completed | TransferStates.Errored, events[events.Count - 1].Transfer.State);
             }
         }
