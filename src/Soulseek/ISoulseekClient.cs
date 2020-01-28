@@ -261,6 +261,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -268,6 +269,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
@@ -278,7 +280,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        Task<byte[]> DownloadAsync(string username, string filename, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task<byte[]> DownloadAsync(string username, string filename, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously downloads the specified <paramref name="filename"/> from the specified <paramref name="username"/>
@@ -288,6 +290,7 @@ namespace Soulseek
         /// <param name="username">The user from which to download the file.</param>
         /// <param name="filename">The file to download.</param>
         /// <param name="outputStream">The stream to which to write the file contents.</param>
+        /// <param name="startOffset">The offset at which to start the download, in bytes.</param>
         /// <param name="token">The unique download token.</param>
         /// <param name="options">The operation <see cref="TransferOptions"/>.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
@@ -295,6 +298,7 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
@@ -309,7 +313,7 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
         /// <exception cref="TransferException">Thrown when an exception is encountered during the operation.</exception>
-        Task DownloadAsync(string username, string filename, Stream outputStream, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
+        Task DownloadAsync(string username, string filename, Stream outputStream, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the

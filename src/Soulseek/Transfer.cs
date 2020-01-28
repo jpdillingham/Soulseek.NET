@@ -30,6 +30,7 @@ namespace Soulseek
         /// <param name="token">The unique token for the transfer.</param>
         /// <param name="state">The state of the transfer.</param>
         /// <param name="size">The size of the file to be transferred, in bytes.</param>
+        /// <param name="startOffset">The start offset of the transfer, in bytes.</param>
         /// <param name="bytesTransferred">The total number of bytes transferred.</param>
         /// <param name="averageSpeed">The current average download speed.</param>
         /// <param name="startTime">
@@ -47,6 +48,7 @@ namespace Soulseek
             int token,
             TransferStates state,
             long size,
+            long startOffset,
             long bytesTransferred = 0,
             double averageSpeed = 0,
             DateTime? startTime = null,
@@ -60,6 +62,7 @@ namespace Soulseek
             Token = token;
             State = state;
             Size = size;
+            StartOffset = startOffset;
             BytesTransferred = bytesTransferred;
             AverageSpeed = averageSpeed;
             StartTime = startTime;
@@ -80,6 +83,7 @@ namespace Soulseek
                 transferInternal.Token,
                 transferInternal.State,
                 transferInternal.Size,
+                transferInternal.StartOffset,
                 transferInternal.BytesTransferred,
                 transferInternal.AverageSpeed,
                 transferInternal.StartTime,
@@ -148,6 +152,11 @@ namespace Soulseek
         ///     Gets the size of the file to be transferred, in bytes.
         /// </summary>
         public long Size { get; }
+
+        /// <summary>
+        ///     Gets the starting offset of the transfer, in bytes.
+        /// </summary>
+        public long StartOffset { get; }
 
         /// <summary>
         ///     Gets the time at which the transfer transitioned into the <see cref="TransferStates.InProgress"/> state.

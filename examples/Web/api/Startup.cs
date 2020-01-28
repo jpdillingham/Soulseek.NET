@@ -166,7 +166,7 @@
             Client.TransferProgressUpdated += (e, args) =>
             {
                 // this is really verbose.
-                // Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.Transfer.PercentComplete} {args.Transfer.AverageSpeed}kb/s");
+                // Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.Transfer.BytesTransferred}/{args.Transfer.Size} {args.Transfer.PercentComplete}% {args.Transfer.AverageSpeed}kb/s");
             };
 
             // bind BrowseProgressUpdated to track progress of browse response payload transfers.  
