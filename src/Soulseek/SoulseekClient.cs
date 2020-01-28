@@ -1836,7 +1836,7 @@ namespace Soulseek
                     }
                 }
 
-                download.Connection.DataRead += (sender, e) => UpdateProgress(startOffset + e.CurrentLength);
+                download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
                 download.Connection.Disconnected += (sender, e) =>
                 {
                     if (download.State.HasFlag(TransferStates.Succeeded))
@@ -1873,7 +1873,7 @@ namespace Soulseek
                     download.State = TransferStates.Succeeded;
 
                     download.Connection.Disconnect("Transfer complete.");
-                    Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({outputStream.Position} of {download.Size} bytes).");
+                    Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
                 }
                 catch (Exception ex)
                 {
@@ -1931,7 +1931,7 @@ namespace Soulseek
                 // change state so we can fire the progress update a final time with the updated state little bit of a hack to
                 // avoid cloning the download
                 download.State = TransferStates.Completed | download.State;
-                UpdateProgress(download.Size);
+                UpdateProgress(download.StartOffset + outputStream.Position);
                 UpdateState(download.State);
 
                 if (options.DisposeOutputStreamOnCompletion)
@@ -2331,7 +2331,7 @@ namespace Soulseek
                     .GetTransferConnectionAsync(upload.Username, endpoint, upload.Token, cancellationToken)
                     .ConfigureAwait(false);
 
-                upload.Connection.DataWritten += (sender, e) => UpdateProgress(e.CurrentLength);
+                upload.Connection.DataWritten += (sender, e) => UpdateProgress(upload.StartOffset + e.CurrentLength);
                 upload.Connection.Disconnected += (sender, e) =>
                 {
                     if (upload.State.HasFlag(TransferStates.Succeeded))
@@ -2356,10 +2356,16 @@ namespace Soulseek
 
                 try
                 {
-                    // read the 8 magic bytes. not sure why.
-                    await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
+                    var startOffsetBytes = await upload.Connection.ReadAsync(8, cancellationToken).ConfigureAwait(false);
+                    var startOffset = BitConverter.ToInt64(startOffsetBytes, 0);
+
+                    upload.StartOffset = startOffset;
+
+                    Diagnostic.Debug($"Seeking upload of {Path.GetFileName(upload.Filename)} to {username} to starting offset of {startOffset} bytes");
+                    inputStream.Seek(startOffset, SeekOrigin.Begin);
 
                     UpdateState(TransferStates.InProgress);
+                    UpdateProgress(startOffset);
 
                     await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
 
@@ -2376,7 +2382,7 @@ namespace Soulseek
                         // swallow this specific exception
                     }
 
-                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} from {username} complete ({inputStream.Position} of {upload.Size} bytes).");
+                    Diagnostic.Info($"Upload of {Path.GetFileName(upload.Filename)} from {username} complete ({startOffset + inputStream.Position} of {upload.Size} bytes).");
                 }
                 catch (Exception ex)
                 {
@@ -2435,7 +2441,7 @@ namespace Soulseek
                 upload.Connection?.Dispose();
 
                 upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress((int)inputStream.Position);
+                UpdateProgress(upload.StartOffset + inputStream.Position);
                 UpdateState(upload.State);
 
                 if (!upload.State.HasFlag(TransferStates.Succeeded))
