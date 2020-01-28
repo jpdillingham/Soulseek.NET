@@ -459,11 +459,13 @@ namespace Soulseek.Network
                     var old = v.Connection;
                     Diagnostic.Debug($"Superceding cached connection to {username} ({connection.IPEndPoint}) (old: {old.Id}, new: {connection.Id})");
 
-                    old.Disconnected -= MessageConnection_Disconnected;
+                    old.Disconnected += (sender, e) =>
+                    {
+                        Diagnostic.Debug($"Superceded connection to {username} ({old.IPEndPoint}) (context: {old.Context}, id: {old.Id}) disconnected");
+                        v.Connection.Dispose();
+                    };
 
-                    Diagnostic.Debug($"Disconnecting superceded {old.Context} connection to {username} ({old.IPEndPoint}) (id: {old.Id})");
-                    v.Connection.Disconnect($"Superceded by new {connection.Context} connection (id: {connection.Id})");
-                    v.Connection.Dispose();
+                    old.Disconnected -= MessageConnection_Disconnected;
                 }
                 else
                 {
