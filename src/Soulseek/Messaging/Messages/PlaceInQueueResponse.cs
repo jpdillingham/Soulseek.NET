@@ -60,5 +60,18 @@ namespace Soulseek.Messaging.Messages
 
             return new PlaceInQueueResponse(filename, placeInQueue);
         }
+
+        /// <summary>
+        ///     Constructs a <see cref="byte"/> array from this message.
+        /// </summary>
+        /// <returns>The constructed byte array.</returns>
+        public byte[] ToByteArray()
+        {
+            return new MessageBuilder()
+                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
+                .WriteString(Filename)
+                .WriteInteger(PlaceInQueue)
+                .Build();
+        }
     }
 }

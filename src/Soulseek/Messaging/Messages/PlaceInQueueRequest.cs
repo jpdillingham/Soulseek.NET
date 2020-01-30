@@ -12,6 +12,8 @@
 
 namespace Soulseek.Messaging.Messages
 {
+    using Soulseek.Exceptions;
+
     /// <summary>
     ///     Requests the place of a file in a remote queue.
     /// </summary>
@@ -30,6 +32,26 @@ namespace Soulseek.Messaging.Messages
         ///     Gets the filename to check.
         /// </summary>
         public string Filename { get; }
+
+        /// <summary>
+        ///     Creates a new instance of <see cref="PlaceInQueueRequest"/> from the specified <paramref name="bytes"/>.
+        /// </summary>
+        /// <param name="bytes">The byte array from which to parse.</param>
+        /// <returns>The parsed instance.</returns>
+        public static PlaceInQueueRequest FromByteArray(byte[] bytes)
+        {
+            var reader = new MessageReader<MessageCode.Peer>(bytes);
+            var code = reader.ReadCode();
+
+            if (code != MessageCode.Peer.PlaceInQueueRequest)
+            {
+                throw new MessageException($"Message Code mismatch creating {nameof(PlaceInQueueRequest)} response (expected: {(int)MessageCode.Peer.PlaceInQueueRequest}, received: {(int)code}.");
+            }
+
+            var filename = reader.ReadString();
+
+            return new PlaceInQueueRequest(filename);
+        }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
