@@ -74,7 +74,7 @@ namespace Soulseek.Network
                 Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout * 1000,
             };
 
-            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} seconds was reached; no broadcastable messages recieved");
+            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection?.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} seconds was reached; no broadcastable messages recieved");
         }
 
         /// <summary>

@@ -233,8 +233,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddMessageConnectionAsync")]
-        [Theory(DisplayName = "AddMessageConnectionAsync replaces duplicate connection and disposes old"), AutoData]
-        internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Disposes_Old(string username, IPEndPoint endpoint, int token)
+        [Theory(DisplayName = "AddMessageConnectionAsync replaces duplicate connection and does not dispose old"), AutoData]
+        internal async Task AddMessageConnectionAsync_Replaces_Duplicate_Connection_And_Does_Not_Dispose_Old(string username, IPEndPoint endpoint, int token)
         {
             var conn1 = GetMessageConnectionMock(username, endpoint);
             conn1.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
@@ -275,7 +275,8 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Contains(manager.MessageConnections, c => c.Username == username && c.IPEndPoint == endpoint);
 
                 // verify that the first connection was disposed
-                conn1.Verify(m => m.Dispose());
+                conn1.Verify(m => m.Dispose(), Times.Never);
+                conn1.Verify(m => m.Disconnect(It.IsAny<string>(), It.IsAny<Exception>()), Times.Never);
             }
         }
 

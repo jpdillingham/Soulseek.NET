@@ -28,6 +28,7 @@ namespace Soulseek.Tests.Unit
             int token,
             TransferStates state,
             long size,
+            long startOffset,
             long bytesTransferred,
             double averageSpeed,
             DateTime? startTime,
@@ -42,6 +43,7 @@ namespace Soulseek.Tests.Unit
                 token,
                 state,
                 size,
+                startOffset,
                 bytesTransferred,
                 averageSpeed,
                 startTime,
@@ -55,6 +57,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(token, t.Token);
             Assert.Equal(state, t.State);
             Assert.Equal(size, t.Size);
+            Assert.Equal(startOffset, t.StartOffset);
             Assert.Equal(bytesTransferred, t.BytesTransferred);
             Assert.Equal(averageSpeed, t.AverageSpeed);
             Assert.Equal(startTime, t.StartTime);
@@ -81,6 +84,7 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(i.Token, t.Token);
             Assert.Equal(i.State, t.State);
             Assert.Equal(i.Size, t.Size);
+            Assert.Equal(i.StartOffset, t.StartOffset);
             Assert.Equal(i.BytesTransferred, t.BytesTransferred);
             Assert.Equal(i.AverageSpeed, t.AverageSpeed);
             Assert.Equal(i.StartTime, t.StartTime);
