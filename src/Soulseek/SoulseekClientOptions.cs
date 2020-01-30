@@ -35,6 +35,9 @@ namespace Soulseek
         private readonly Func<string, IPEndPoint, Task<UserInfo>> defaultUserInfoResponse =
             (u, i) => Task.FromResult(new UserInfo(string.Empty, 0, 0, false));
 
+        private readonly Func<string, IPEndPoint, string, Task<int?>> defaultPlaceInQueueResponse =
+            (u, i, f) => Task.FromResult<int?>(null);
+
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
@@ -92,7 +95,7 @@ namespace Soulseek
             Func<string, IPEndPoint, Task<IEnumerable<Directory>>> browseResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
-            Func<string, IPEndPoint, string, Task<int>> placeInQueueResponseResolver = null)
+            Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
 
@@ -126,7 +129,7 @@ namespace Soulseek
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
             UserInfoResponseResolver = userInfoResponseResolver ?? defaultUserInfoResponse;
             EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
-            PlaceInQueueResponseResolver = placeInQueueResponseResolver;
+            PlaceInQueueResponseResolver = placeInQueueResponseResolver ?? defaultPlaceInQueueResponse;
         }
 
         /// <summary>
@@ -196,7 +199,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </summary>
-        public Func<string, IPEndPoint, string, Task<int>> PlaceInQueueResponseResolver { get; }
+        public Func<string, IPEndPoint, string, Task<int?>> PlaceInQueueResponseResolver { get; }
 
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="SearchResponse"/> for an incoming request. (Default = do not respond).
