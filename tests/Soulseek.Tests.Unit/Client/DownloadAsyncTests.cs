@@ -122,10 +122,39 @@ namespace Soulseek.Tests.Unit.Client
             using (var stream = new MemoryStream())
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(async () => await s.DownloadAsync("username", filename, stream));
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", filename, stream));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync stream throws ArgumentOutOfRangeException given negative startOffset")]
+        public async Task DownloadAsync_Stream_Throws_ArgumentOutOfRangeException_Given_Negative_StartOffset()
+        {
+            using (var stream = new MemoryStream())
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "foo", stream, -1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+                Assert.Equal("startOffset", ((ArgumentOutOfRangeException)ex).ParamName);
+            }
+        }
+
+        [Trait("Category", "DownloadAsync")]
+        [Fact(DisplayName = "DownloadAsync throws ArgumentOutOfRangeException given negative startOffset")]
+        public async Task DownloadAsync_Throws_ArgumentOutOfRangeException_Given_Negative_StartOffset()
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.DownloadAsync("username", "foo", -1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+                Assert.Equal("startOffset", ((ArgumentOutOfRangeException)ex).ParamName);
             }
         }
 
