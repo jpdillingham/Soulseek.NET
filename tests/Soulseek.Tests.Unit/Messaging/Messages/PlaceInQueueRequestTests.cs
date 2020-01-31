@@ -1,4 +1,4 @@
-﻿// <copyright file="PlaceInQueueResponseTests.cs" company="JP Dillingham">
+﻿// <copyright file="PlaceInQueueRequestTests.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
@@ -18,16 +18,29 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
     using Soulseek.Messaging.Messages;
     using Xunit;
 
-    public class PlaceInQueueResponseTests
+    public class PlaceInQueueRequestTests
     {
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with the given data"), AutoData]
-        public void Instantiates_With_The_Given_Data(string filename, int placeInQueue)
+        [Theory(DisplayName = "Instantiates properly"), AutoData]
+        public void Instantiates_Properly(string filename)
         {
-            var a = new PlaceInQueueResponse(filename, placeInQueue);
+            var a = new PlaceInQueueRequest(filename);
 
             Assert.Equal(filename, a.Filename);
-            Assert.Equal(placeInQueue, a.PlaceInQueue);
+        }
+
+        [Trait("Category", "ToByteArray")]
+        [Theory(DisplayName = "Constructs the correct Message"), AutoData]
+        public void Constructs_The_Correct_Message(string filename)
+        {
+            var a = new PlaceInQueueRequest(filename);
+            var msg = a.ToByteArray();
+
+            var reader = new MessageReader<MessageCode.Peer>(msg);
+            var code = reader.ReadCode();
+
+            Assert.Equal(MessageCode.Peer.PlaceInQueueRequest, code);
+            Assert.Equal(filename, reader.ReadString());
         }
 
         [Trait("Category", "Parse")]
@@ -38,7 +51,7 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
                 .WriteCode(MessageCode.Peer.BrowseRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PlaceInQueueResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => PlaceInQueueRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageException>(ex);
@@ -49,10 +62,10 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         public void Parse_Throws_MessageReadException_On_Missing_Data()
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
+                .WriteCode(MessageCode.Peer.PlaceInQueueRequest)
                 .Build();
 
-            var ex = Record.Exception(() => PlaceInQueueResponse.FromByteArray(msg));
+            var ex = Record.Exception(() => PlaceInQueueRequest.FromByteArray(msg));
 
             Assert.NotNull(ex);
             Assert.IsType<MessageReadException>(ex);
@@ -60,18 +73,16 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Parse")]
         [Theory(DisplayName = "Parse returns expected data"), AutoData]
-        public void Parse_Returns_Expected_Data(string filename, int placeInQueue)
+        public void Parse_Returns_Expected_Data(string filename)
         {
             var msg = new MessageBuilder()
-                .WriteCode(MessageCode.Peer.PlaceInQueueResponse)
+                .WriteCode(MessageCode.Peer.PlaceInQueueRequest)
                 .WriteString(filename)
-                .WriteInteger(placeInQueue)
                 .Build();
 
-            var response = PlaceInQueueResponse.FromByteArray(msg);
+            var response = PlaceInQueueRequest.FromByteArray(msg);
 
             Assert.Equal(filename, response.Filename);
-            Assert.Equal(placeInQueue, response.PlaceInQueue);
         }
     }
 }
