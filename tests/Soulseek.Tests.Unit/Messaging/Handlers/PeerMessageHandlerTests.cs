@@ -18,6 +18,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
     using System.Linq;
     using System.Net;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using AutoFixture.Xunit2;
     using Moq;
@@ -445,6 +446,42 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             Assert.Contains(messages, m => m.IndexOf("Failed to invoke QueueDownload action", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Writes PlaceInQueueResponse on successful enqueue via QueueDownload"), AutoData]
+        public void Writes_PlaceInQueueResponse_On_Successful_Enqueue_Via_QueueDownload(string username, IPEndPoint endpoint, string filename, int placeInQueue)
+        {
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromResult<int?>(placeInQueue));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new EnqueueDownloadRequest(filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection
+                .Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new PlaceInQueueResponse(filename, placeInQueue).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not write PlaceInQueueResponse on successful enqueue via QueueDownload if placeInQueueResponse is null"), AutoData]
+        public void Does_Not_Write_PlaceInQueueResponse_On_Successful_Enqueue_Via_QueueDownload_If_PlaceInQueueResponse_Is_Null(string username, IPEndPoint endpoint, string filename)
+        {
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromResult<int?>(null));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new EnqueueDownloadRequest(filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection
+                .Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic on failed QueueDownload invocation via TransferRequest"), AutoData]
         public void Creates_Diagnostic_On_Failed_QueueDownload_Invocation_Via_TransferRequest(string username, IPEndPoint endpoint, int token, string filename)
@@ -477,6 +514,97 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
             mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(expected)), null), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Writes PlaceInQueueResponse on successful QueueDownload invocation"), AutoData]
+        public void Writes_PlaceInQueueResponse_On_Successful_QueueDownload_Invocation(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        {
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromResult<int?>(placeInQueue));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection
+                .Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new PlaceInQueueResponse(filename, placeInQueue).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Writes PlaceInQueueResponse on PlaceInQueueRequest"), AutoData]
+        public void Writes_PlaceInQueueResponse_On_PlaceInQueueRequest(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        {
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromResult<int?>(placeInQueue));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new PlaceInQueueRequest(filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection
+                .Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new PlaceInQueueResponse(filename, placeInQueue).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not write PlaceInQueueResponse on PlaceInQueueRequest if response is null"), AutoData]
+        public void Does_Not_Write_PlaceInQueueResponse_On_PlaceInQueueRequest_If_Response_Is_Null(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        {
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromResult<int?>(null));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new PlaceInQueueRequest(filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection
+                .Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not Write PlaceInQueueResponse on successful QueueDownload invocation if PlaceInQueueResponse is null"), AutoData]
+        public void Does_Not_Write_PlaceInQueueResponse_On_Successful_QueueDownload_Invocation_If_PlaceInQueueResponse_Is_Null(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        {
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromResult<int?>(null));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.PeerConnection
+                .Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new PlaceInQueueResponse(filename, placeInQueue).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic when PlaceInQueueResponseResolver throws"), AutoData]
+        public void Creates_Diagnostic_When_PlaceInQueueResponseResolver_Throws(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        {
+            var ex = new NullReferenceException();
+
+            var options = new SoulseekClientOptions(
+                enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
+                placeInQueueResponseResolver: (u, f, i) => Task.FromException<int?>(ex));
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("Failed to resolve place in Queue")), ex), Times.Once);
         }
 
         [Trait("Category", "Message")]
