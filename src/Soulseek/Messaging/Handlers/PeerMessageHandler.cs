@@ -153,6 +153,10 @@ namespace Soulseek.Messaging.Handlers
                         {
                             await connection.WriteAsync(new EnqueueFailedResponse(queueDownloadRequest.Filename, queueRejectionMessage).ToByteArray()).ConfigureAwait(false);
                         }
+                        else
+                        {
+                            await TrySendPlaceInQueueAsync(connection, queueDownloadRequest.Filename).ConfigureAwait(false);
+                        }
 
                         break;
 
@@ -175,6 +179,7 @@ namespace Soulseek.Messaging.Handlers
                             else
                             {
                                 await connection.WriteAsync(new TransferResponse(transferRequest.Token, "Queued.").ToByteArray()).ConfigureAwait(false);
+                                await TrySendPlaceInQueueAsync(connection, transferRequest.Filename).ConfigureAwait(false);
                             }
                         }
 
@@ -188,6 +193,12 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Peer.PlaceInQueueResponse:
                         var placeInQueueResponse = PlaceInQueueResponse.FromByteArray(message);
                         SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.PlaceInQueueResponse, connection.Username, placeInQueueResponse.Filename), placeInQueueResponse);
+                        break;
+
+                    case MessageCode.Peer.PlaceInQueueRequest:
+                        var placeInQueueRequest = PlaceInQueueRequest.FromByteArray(message);
+                        await TrySendPlaceInQueueAsync(connection, placeInQueueRequest.Filename).ConfigureAwait(false);
+
                         break;
 
                     case MessageCode.Peer.UploadFailed:
@@ -271,6 +282,25 @@ namespace Soulseek.Messaging.Handlers
             }
 
             return (rejected, rejectionMessage);
+        }
+
+        private async Task TrySendPlaceInQueueAsync(IMessageConnection connection, string filename)
+        {
+            int? placeInQueue = default;
+
+            try
+            {
+                placeInQueue = await SoulseekClient.Options.PlaceInQueueResponseResolver(connection.Username, connection.IPEndPoint, filename).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Failed to resolve place in queue for file {filename} from {connection.Username}: {ex.Message}", ex);
+            }
+
+            if (placeInQueue.HasValue)
+            {
+                await connection.WriteAsync(new PlaceInQueueResponse(filename, placeInQueue.Value).ToByteArray()).ConfigureAwait(false);
+            }
         }
     }
 }

@@ -215,31 +215,6 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
         }
 
         [Trait("Category", "Instantiation")]
-        [Trait("Request", "PlaceInQueueRequest")]
-        [Theory(DisplayName = "PlaceInQueueRequest instantiates properly"), AutoData]
-        public void PlaceInQueueRequest_Instantiates_Properly(string filename)
-        {
-            var a = new PlaceInQueueRequest(filename);
-
-            Assert.Equal(filename, a.Filename);
-        }
-
-        [Trait("Category", "ToByteArray")]
-        [Trait("Request", "PlaceInQueueRequest")]
-        [Theory(DisplayName = "PlaceInQueueRequest constructs the correct Message"), AutoData]
-        public void PlaceInQueueRequest_Constructs_The_Correct_Message(string filename)
-        {
-            var a = new PlaceInQueueRequest(filename);
-            var msg = a.ToByteArray();
-
-            var reader = new MessageReader<MessageCode.Peer>(msg);
-            var code = reader.ReadCode();
-
-            Assert.Equal(MessageCode.Peer.PlaceInQueueRequest, code);
-            Assert.Equal(filename, reader.ReadString());
-        }
-
-        [Trait("Category", "Instantiation")]
         [Trait("Request", "AddUserRequest")]
         [Theory(DisplayName = "AddUserRequest instantiates properly"), AutoData]
         public void AddUserRequest_Instantiates_Properly(string username)

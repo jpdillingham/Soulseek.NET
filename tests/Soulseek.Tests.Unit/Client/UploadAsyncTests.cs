@@ -712,6 +712,53 @@ namespace Soulseek.Tests.Unit.Client
             }
         }
 
+        [Trait("Category", "UploadFromStreamAsync")]
+        [Theory(DisplayName = "UploadFromStreamAsync seeks stream to offset value"), AutoData]
+        public async Task UploadFromStreamAsync_Seeks_Stream_To_Offset_Value(string username, IPEndPoint endpoint, string filename, int token)
+        {
+            var options = new SoulseekClientOptions(messageTimeout: 5);
+            long size = new Random().Next(1000);
+            long offset = size / 2;
+
+            var response = new TransferResponse(token, size);
+            var responseWaitKey = new WaitKey(MessageCode.Peer.TransferResponse, username, token);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<TransferResponse>(It.Is<WaitKey>(w => w.Equals(responseWaitKey)), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(response));
+            waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
+            var transferConn = new Mock<IConnection>();
+            transferConn.Setup(m => m.ReadAsync(8, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(offset)));
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
+
+            using (var stream = new MemoryStream(new byte[size]))
+            using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var txoptions = new TransferOptions(disposeInputStreamOnCompletion: false);
+
+                var ex = await Record.ExceptionAsync(() => s.InvokeMethod<Task>("UploadFromStreamAsync", username, filename, 1, stream, token, txoptions, null));
+
+                Assert.Null(ex);
+                Assert.Equal(offset, stream.Position);
+            }
+        }
+
         [Trait("Category", "UploadFromByteArrayAsync")]
         [Theory(DisplayName = "UploadFromByteArrayAsync throws TransferRejectedException when acknowledgement is disallowed and message contains 'File not shared'"), AutoData]
         public async Task UploadFromByteArrayAsync_Throws_TransferRejectedException_When_Acknowledgement_Is_Disallowed_And_File_Not_Shared(string username, IPEndPoint endpoint, string filename, byte[] data, int token)
