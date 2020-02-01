@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
     <IsPackable>true</IsPackable>
@@ -28,7 +28,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.0.1</Version>
+    <Version>0.9.0-beta</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
