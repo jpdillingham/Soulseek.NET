@@ -75,10 +75,8 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
-                    // some clients erroneously send code 93, which is a server code, in place of 3. it isn't clear if this is
-                    // normal, but we're going to handle these the same way we handle the others.
                     case MessageCode.Distributed.ServerSearchRequest:
-                        var serverSearchRequest = ServerSearchRequest.FromByteArray(message);
+                        var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
