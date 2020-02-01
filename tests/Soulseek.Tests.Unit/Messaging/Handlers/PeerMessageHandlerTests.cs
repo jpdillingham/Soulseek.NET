@@ -536,7 +536,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Writes PlaceInQueueResponse on PlaceInQueueRequest"), AutoData]
-        public void Writes_PlaceInQueueResponse_On_PlaceInQueueRequest(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        public void Writes_PlaceInQueueResponse_On_PlaceInQueueRequest(string username, IPEndPoint endpoint, string filename, int placeInQueue)
         {
             var options = new SoulseekClientOptions(
                 enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
@@ -554,7 +554,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Does not write PlaceInQueueResponse on PlaceInQueueRequest if response is null"), AutoData]
-        public void Does_Not_Write_PlaceInQueueResponse_On_PlaceInQueueRequest_If_Response_Is_Null(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        public void Does_Not_Write_PlaceInQueueResponse_On_PlaceInQueueRequest_If_Response_Is_Null(string username, IPEndPoint endpoint, string filename)
         {
             var options = new SoulseekClientOptions(
                 enqueueDownloadAction: (u, f, i) => Task.CompletedTask,
@@ -590,7 +590,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Creates diagnostic when PlaceInQueueResponseResolver throws"), AutoData]
-        public void Creates_Diagnostic_When_PlaceInQueueResponseResolver_Throws(string username, IPEndPoint endpoint, int token, string filename, int placeInQueue)
+        public void Creates_Diagnostic_When_PlaceInQueueResponseResolver_Throws(string username, IPEndPoint endpoint, int token, string filename)
         {
             var ex = new NullReferenceException();
 

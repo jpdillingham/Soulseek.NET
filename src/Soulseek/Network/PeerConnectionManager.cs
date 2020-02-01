@@ -449,9 +449,9 @@ namespace Soulseek.Network
 
         private (SemaphoreSlim Semaphore, IMessageConnection Connection) AddOrUpdateMessageConnectionRecord(string username, IMessageConnection connection)
         {
-#pragma warning disable IDE0067 // Dispose objects before losing scope
+#pragma warning disable IDE0067, CA2000 // Dispose objects before losing scope
             return MessageConnectionDictionary.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
-#pragma warning restore IDE0067 // Dispose objects before losing scope
+#pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
             {
                 // unassign the handler from the connection we are discarding to prevent it from removing a live connection.
                 if (v.Connection != null)

@@ -64,7 +64,7 @@ namespace Soulseek.Network
 
             StatusTimer.Elapsed += async (sender, e) =>
             {
-                await UpdateStatusAsync();
+                await UpdateStatusAsync().ConfigureAwait(false);
             };
 
             ParentWatchdogTimer = new SystemTimer()
