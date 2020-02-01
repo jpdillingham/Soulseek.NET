@@ -59,7 +59,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Distributed.SearchRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Distributed.SearchRequest}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Distributed.SearchRequest}, received: {(int)code})");
             }
 
             // nobody knows what this is.

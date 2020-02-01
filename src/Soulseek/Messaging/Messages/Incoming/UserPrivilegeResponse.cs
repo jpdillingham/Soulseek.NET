@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.UserPrivileges)
             {
-                throw new MessageException($"Message Code mismatch creating User Privilege Response (expected: {(int)MessageCode.Server.UserPrivileges}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating User Privilege Response (expected: {(int)MessageCode.Server.UserPrivileges}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.UploadFailed)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Upload Failed Response (expected: {(int)MessageCode.Peer.UploadFailed}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Upload Failed Response (expected: {(int)MessageCode.Peer.UploadFailed}, received: {(int)code})");
             }
 
             var filename = reader.ReadString();

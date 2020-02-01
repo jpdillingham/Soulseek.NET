@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.GlobalAdminMessage)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(GlobalMessageNotification)} (expected: {(int)MessageCode.Server.GlobalAdminMessage}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(GlobalMessageNotification)} (expected: {(int)MessageCode.Server.GlobalAdminMessage}, received: {(int)code})");
             }
 
             var msg = reader.ReadString();

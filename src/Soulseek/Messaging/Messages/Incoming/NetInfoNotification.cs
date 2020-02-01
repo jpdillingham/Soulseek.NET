@@ -56,7 +56,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.NetInfo)
             {
-                throw new MessageException($"Message Code mismatch creating Net Info (expected: {(int)MessageCode.Server.GetStatus}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Net Info (expected: {(int)MessageCode.Server.GetStatus}, received: {(int)code})");
             }
 
             var parentCount = reader.ReadInteger();

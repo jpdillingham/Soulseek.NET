@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Distributed.ChildDepth)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Child Depth (expected: {(int)MessageCode.Distributed.ChildDepth}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Distributed Child Depth (expected: {(int)MessageCode.Distributed.ChildDepth}, received: {(int)code})");
             }
 
             var depth = reader.ReadInteger();

@@ -38,7 +38,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.Ping)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(ServerPing)} (expected: {(int)MessageCode.Server.Ping}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(ServerPing)} (expected: {(int)MessageCode.Server.Ping}, received: {(int)code})");
             }
 
             return new ServerPing();

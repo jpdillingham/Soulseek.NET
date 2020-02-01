@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.PlaceInQueueRequest)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(PlaceInQueueRequest)} response (expected: {(int)MessageCode.Peer.PlaceInQueueRequest}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(PlaceInQueueRequest)} response (expected: {(int)MessageCode.Peer.PlaceInQueueRequest}, received: {(int)code})");
             }
 
             var filename = reader.ReadString();

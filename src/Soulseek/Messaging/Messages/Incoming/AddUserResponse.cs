@@ -59,7 +59,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.AddUser)
             {
-                throw new MessageException($"Message Code mismatch creating Add User Response (expected: {(int)MessageCode.Server.AddUser}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Add User Response (expected: {(int)MessageCode.Server.AddUser}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

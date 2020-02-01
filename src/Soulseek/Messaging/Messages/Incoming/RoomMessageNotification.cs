@@ -59,7 +59,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.SayInChatRoom)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(RoomMessageNotification)} (expected: {(int)MessageCode.Server.SayInChatRoom}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(RoomMessageNotification)} (expected: {(int)MessageCode.Server.SayInChatRoom}, received: {(int)code})");
             }
 
             var roomName = reader.ReadString();
