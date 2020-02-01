@@ -145,15 +145,14 @@ namespace Soulseek
 
         private int? GetFilterValue(IEnumerable<string> tokens, params string[] prefixes)
         {
-            try
+            var firstToken = tokens.FirstOrDefault(token => prefixes.Any(prefix => token.StartsWith(prefix, IgnoreCase)));
+
+            if (firstToken != default && firstToken.Contains(":") && int.TryParse(firstToken.Split(':')[1], NumberStyles.Integer, CultureInfo.InvariantCulture, out var value))
             {
-                var firstToken = tokens.FirstOrDefault(token => prefixes.Any(prefix => token.StartsWith(prefix, IgnoreCase)));
-                return int.Parse(firstToken.Split(':')[1], CultureInfo.InvariantCulture);
+                return value;
             }
-            catch (Exception)
-            {
-                return null;
-            }
+
+            return null;
         }
     }
 }
