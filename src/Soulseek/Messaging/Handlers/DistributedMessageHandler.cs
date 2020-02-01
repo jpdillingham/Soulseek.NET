@@ -14,6 +14,7 @@ namespace Soulseek.Messaging.Handlers
 {
     using System;
     using System.Threading;
+    using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -74,40 +75,25 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
-                    // some clients erroneously send code 93, which is a server code, in place of 3.
+                    // some clients erroneously send code 93, which is a server code, in place of 3. it isn't clear if this is
+                    // normal, but we're going to handle these the same way we handle the others.
                     case MessageCode.Distributed.ServerSearchRequest:
-                    case MessageCode.Distributed.SearchRequest:
-                        var searchRequest = DistributedSearchRequest.FromByteArray(message);
-                        SearchResponse searchResponse;
+                        var serverSearchRequest = ServerSearchRequest.FromByteArray(message);
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
 
-                        if (SoulseekClient.Options.SearchResponseResolver == default)
-                        {
-                            break;
-                        }
+                        await TrySendSearchResults(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query).ConfigureAwait(false);
 
-                        try
-                        {
-                            searchResponse = await SoulseekClient.Options.SearchResponseResolver(searchRequest.Username, searchRequest.Token, SearchQuery.FromText(searchRequest.Query)).ConfigureAwait(false);
+                        break;
 
-                            if (searchResponse != null && searchResponse.FileCount > 0)
-                            {
-                                Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{searchRequest.Query}'");
+                    case MessageCode.Distributed.SearchRequest:
+                        var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
-                                var endpoint = await SoulseekClient.GetUserEndPointAsync(searchRequest.Username).ConfigureAwait(false);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
+                        SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
 
-                                var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(searchRequest.Username, endpoint, CancellationToken.None).ConfigureAwait(false);
-                                await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
-
-                                Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {searchRequest.Username} for query '{searchRequest.Query}' with token {searchRequest.Token}");
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
-                        }
+                        await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                         break;
 
@@ -155,6 +141,44 @@ namespace Soulseek.Messaging.Handlers
             catch (Exception ex)
             {
                 Diagnostic.Warning($"Error handling distributed message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
+            }
+        }
+
+        private async Task TrySendSearchResults(string username, int token, string query)
+        {
+            if (SoulseekClient.Options.SearchResponseResolver == default)
+            {
+                return;
+            }
+
+            SearchResponse searchResponse = default;
+
+            try
+            {
+                searchResponse = await SoulseekClient.Options.SearchResponseResolver(username, token, SearchQuery.FromText(query)).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error resolving search response for query '{query}' requested by {username} with token {token}: {ex.Message}", ex);
+            }
+
+            if (searchResponse != default && searchResponse.FileCount > 0)
+            {
+                try
+                {
+                    Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}'");
+
+                    var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
+
+                    var peerConnection = await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, CancellationToken.None).ConfigureAwait(false);
+                    await peerConnection.WriteAsync(searchResponse.ToByteArray()).ConfigureAwait(false);
+
+                    Diagnostic.Debug($"Sent response containing {searchResponse.FileCount} files to {username} for query '{query}' with token {token}");
+                }
+                catch (Exception ex)
+                {
+                    Diagnostic.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex);
+                }
             }
         }
     }
