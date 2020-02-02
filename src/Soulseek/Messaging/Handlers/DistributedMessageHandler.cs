@@ -66,7 +66,7 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
 
-            if (code != MessageCode.Distributed.SearchRequest)
+            if (code != MessageCode.Distributed.SearchRequest && code != MessageCode.Distributed.ServerSearchRequest)
             {
                 Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPEndPoint})");
             }
@@ -75,16 +75,23 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
+                    // if we are connected to a branch root, we get search requests with code DistributedServerSearchRequest.  convert this
+                    // message to a normal DistributedSearchRequest before forwarding. not sure if this is correct, but it would match the
+                    // observed behavior.
                     case MessageCode.Distributed.ServerSearchRequest:
                         var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
 
                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
-                        SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
+
+                        var forwardedMessage = new DistributedSearchRequest(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query);
+                        SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(forwardedMessage.ToByteArray()).Forget();
 
                         await TrySendSearchResults(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query).ConfigureAwait(false);
 
                         break;
 
+                    // if we are connected to anyone other than a branch root, we should get search requests with code SearchRequest.
+                    // forward these requests as is.
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
