@@ -333,6 +333,12 @@ namespace Soulseek.Messaging.Handlers
 
                         break;
 
+                    case MessageCode.Server.SearchRequest:
+                        var req = DistributedServerSearchRequest.FromByteArray(message);
+                        Console.WriteLine($"{req.Username}, {req.Query}");
+                        // todo: figure out what to do here.
+                        break;
+
                     default:
                         Diagnostic.Debug($"Unhandled server message: {code}; {message.Length} bytes");
                         break;
