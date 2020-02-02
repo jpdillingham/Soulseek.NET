@@ -170,14 +170,13 @@ namespace Soulseek.Network
                     await connection.ConnectAsync().ConfigureAwait(false);
                     connection.Disconnected += CancelWait;
 
-                    Diagnostic.Debug($"Child connection to {r.Username} ({r.IPEndPoint}) established.  Waiting for ChildDepth message");
-
-                    var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), null, cts.Token);
+                    Diagnostic.Debug($"Child connection to {r.Username} ({r.IPEndPoint}) established.  Piercing firewall.");
 
                     var request = new PierceFirewall(r.Token);
                     await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
-                    await childDepthWait.ConfigureAwait(false);
+                    await connection.WriteAsync(GetBranchInformationMessage(), cts.Token).ConfigureAwait(false);
+                    Diagnostic.Debug($"Sent branch information to {r.Username} ({r.IPEndPoint}); level: {(HasParent ? BranchLevel + 1 : 0)}, root: {(HasParent ? BranchRoot : "N/A")}");
 
                     connection.Disconnected += ChildConnection_Disconnected;
                     connection.Disconnected -= CancelWait;
@@ -230,13 +229,12 @@ namespace Soulseek.Network
 
                 Diagnostic.Debug($"Accepted child connection to {username} ({endpoint}).");
 
-                var childDepthWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.ChildDepthMessage, connection.Key), null, cts.Token);
-
                 try
                 {
                     connection.StartReadingContinuously();
 
-                    await childDepthWait.ConfigureAwait(false);
+                    await connection.WriteAsync(GetBranchInformationMessage(), cts.Token).ConfigureAwait(false);
+                    Diagnostic.Debug($"Sent branch information to {username} ({endpoint}); level: {(HasParent ? BranchLevel + 1 : 0)}, root: {(HasParent ? BranchRoot : "N/A")}");
 
                     connection.Disconnected += ChildConnection_Disconnected;
                     connection.Disconnected -= CancelWait;
@@ -423,6 +421,23 @@ namespace Soulseek.Network
             }
         }
 
+        private byte[] GetBranchInformationMessage()
+        {
+            var branchLevel = HasParent ? BranchLevel + 1 : 0;
+            var branchRoot = HasParent ? BranchRoot : string.Empty;
+
+            var payload = new List<byte>();
+
+            payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
+
+            if (!string.IsNullOrEmpty(branchRoot))
+            {
+                payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
+            }
+
+            return payload.ToArray();
+        }
+
         private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
             using (var directCts = new CancellationTokenSource())
@@ -465,7 +480,8 @@ namespace Soulseek.Network
                 var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key), cancellationToken: cancellationToken);
                 var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key), cancellationToken: cancellationToken);
 
-                var waits = new[] { branchLevelWait, branchRootWait, searchWait }.ToList();
+                // wait for the branch level and first search request. branch roots will not send the root.
+                var waits = new[] { branchLevelWait, searchWait }.ToList();
                 var waitsTask = Task.WhenAll(waits);
 
                 try
@@ -481,7 +497,19 @@ namespace Soulseek.Network
                 }
 
                 var branchLevel = await branchLevelWait.ConfigureAwait(false);
-                var branchRoot = await branchRootWait.ConfigureAwait(false);
+                string branchRoot;
+
+                // if we didn't connect to a root, ensure we get the name of the root.
+                if (branchLevel > 0)
+                {
+                    branchRoot = await branchRootWait.ConfigureAwait(false);
+                }
+                else
+                {
+                    Diagnostic.Debug($"Received branch level 0 from {username}; this user is a branch root.");
+                    branchRoot = username;
+                }
+
                 await searchWait.ConfigureAwait(false);
 
                 Diagnostic.Debug($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({ipEndPoint})");
@@ -590,13 +618,14 @@ namespace Soulseek.Network
 
             var haveNoParents = !HasParent;
             var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address ?? IPAddress.None : IPAddress.None;
-            var branchLevel = HasParent ? BranchLevel : 0;
+            var branchLevel = HasParent ? BranchLevel + 1 : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
+
+            var branchInfo = GetBranchInformationMessage();
 
             payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
             payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
-            payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
-            payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
+            payload.AddRange(branchInfo);
             payload.AddRange(new ChildDepthCommand(ChildConnections.Count).ToByteArray());
             payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
 
@@ -616,8 +645,7 @@ namespace Soulseek.Network
             {
                 await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-                await BroadcastMessageAsync(new DistributedBranchLevel(BranchLevel).ToByteArray()).ConfigureAwait(false);
-                await BroadcastMessageAsync(new DistributedBranchRoot(BranchRoot ?? string.Empty).ToByteArray()).ConfigureAwait(false);
+                await BroadcastMessageAsync(branchInfo).ConfigureAwait(false);
 
                 if (HasParent)
                 {
