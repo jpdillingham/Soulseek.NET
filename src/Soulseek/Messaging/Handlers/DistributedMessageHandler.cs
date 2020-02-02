@@ -77,7 +77,8 @@ namespace Soulseek.Messaging.Handlers
                 {
                     // if we are connected to a branch root, we get search requests with code DistributedServerSearchRequest.  convert this
                     // message to a normal DistributedSearchRequest before forwarding. not sure if this is correct, but it would match the
-                    // observed behavior.
+                    // observed behavior.  these messages may also be forwarded from the server message handler if we haven't connected to
+                    // a distributed parent in a timely manner.
                     case MessageCode.Distributed.ServerSearchRequest:
                         var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
 
