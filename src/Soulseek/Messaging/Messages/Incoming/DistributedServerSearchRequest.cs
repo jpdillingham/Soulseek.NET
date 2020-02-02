@@ -59,16 +59,16 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The created instance.</returns>
         public static DistributedServerSearchRequest FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Server>(bytes);
+            var reader = new MessageReader<MessageCode.Distributed>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.SearchRequest)
+            if (code != MessageCode.Distributed.ServerSearchRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Server.SearchRequest}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Distributed.ServerSearchRequest}, received: {(int)code})");
             }
 
-            // nobody knows what this is.
-            reader.ReadInteger();
+            // nobody knows what this is.  always 0000000331000000 in hex.
+            reader.ReadBytes(8);
 
             var username = reader.ReadString();
             var token = reader.ReadInteger();
