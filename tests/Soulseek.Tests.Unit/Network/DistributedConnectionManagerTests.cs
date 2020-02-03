@@ -569,7 +569,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "UpdateStatusAsync writes payload to server")]
         internal async Task UpdateStatusAsync_Writes_Payload_To_Server()
         {
-            var expectedPayload = Convert.FromBase64String("BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
+            var expectedPayload = Convert.FromBase64String("BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAABAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
 
             var (manager, mocks) = GetFixture();
 
@@ -1213,7 +1213,7 @@ namespace Soulseek.Tests.Unit.Network
             var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
             var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(branchLevel));
+                .Returns(Task.FromResult(branchLevel + 1));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<string>(new Exception()));
             mocks.Waiter.Setup(m => m.Wait(searchWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
