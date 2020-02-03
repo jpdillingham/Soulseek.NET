@@ -369,7 +369,7 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedEx);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
@@ -377,9 +377,6 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.TcpClient.Setup(m => m.RemoteEndPoint)
                 .Returns(endpoint);
-
-            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromException<int>(expectedEx));
 
             using (manager)
             {
@@ -506,6 +503,8 @@ namespace Soulseek.Tests.Unit.Network
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new Exception("foo"));
 
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -515,9 +514,6 @@ namespace Soulseek.Tests.Unit.Network
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
-
-            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromException<int>(new Exception()));
 
             using (manager)
             {
@@ -561,7 +557,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 // bit of a hack here, but this is the expected hash on an uninitialized instance
-                manager.SetProperty("StatusHash", "BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
+                manager.SetProperty("StatusHash", "BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAABAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
                 manager.SetProperty("ParentConnection", conn.Object);
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
@@ -594,8 +590,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "UpdateStatusAsync")]
-        [Fact(DisplayName = "UpdateStatusAsync broadcasts branch level and root to children")]
-        internal async Task UpdateStatusAsync_Broadcasts_Branc_Level_And_Root_To_Children()
+        [Theory(DisplayName = "UpdateStatusAsync broadcasts branch level and root to children"), AutoData]
+        internal async Task UpdateStatusAsync_Broadcasts_Branc_Level_And_Root_To_Children(int level, string root)
         {
             var (manager, mocks) = GetFixture();
 
@@ -615,14 +611,16 @@ namespace Soulseek.Tests.Unit.Network
             {
                 manager.SetProperty("ParentConnection", conn.Object);
                 manager.SetProperty("ChildConnections", children);
+                manager.SetBranchLevel(level);
+                manager.SetBranchRoot(root);
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
 
-            var expectedBranchLevelBytes = new DistributedBranchLevel(manager.BranchLevel).ToByteArray();
-            var expectedBranchRootBytes = new DistributedBranchRoot(manager.BranchRoot ?? string.Empty).ToByteArray();
+            var bytes = new List<byte>();
+            bytes.AddRange(new DistributedBranchLevel(manager.BranchLevel + 1).ToByteArray());
+            bytes.AddRange(new DistributedBranchRoot(manager.BranchRoot).ToByteArray());
 
-            child.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBranchLevelBytes)), It.IsAny<CancellationToken?>()), Times.Once);
-            child.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBranchRootBytes)), It.IsAny<CancellationToken?>()), Times.Once);
+            child.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(bytes.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
