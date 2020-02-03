@@ -288,7 +288,7 @@
                 .Replace(":", " ");
 
             // some bots continually query for very common strings.  blacklist known names here.
-            var blacklist = new[] { "Lola45", "Lolo51" };
+            var blacklist = new[] { "Lola45", "Lolo51", "rajah" };
             if (blacklist.Contains(username))
             {
                 return defaultResponse;
