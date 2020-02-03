@@ -488,9 +488,27 @@ namespace Soulseek.Network
                 var waits = new[] { branchLevelWait, searchWait }.ToList();
                 var waitsTask = Task.WhenAll(waits);
 
+                int? branchLevel = default;
+                string branchRoot;
+
                 try
                 {
                     await waitsTask.ConfigureAwait(false);
+
+                    branchLevel = await branchLevelWait.ConfigureAwait(false);
+
+                    // if we didn't connect to a root, ensure we get the name of the root.
+                    if (branchLevel > 0)
+                    {
+                        branchRoot = await branchRootWait.ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        Diagnostic.Debug($"Received branch level 0 from {username}; this user is a branch root.");
+                        branchRoot = username;
+                    }
+
+                    await searchWait.ConfigureAwait(false);
                 }
                 catch (Exception)
                 {
@@ -500,25 +518,9 @@ namespace Soulseek.Network
                     throw new ConnectionException($"Failed to initialize parent connection to {username} ({ipEndPoint}); one or more required messages was not received.");
                 }
 
-                var branchLevel = await branchLevelWait.ConfigureAwait(false);
-                string branchRoot;
-
-                // if we didn't connect to a root, ensure we get the name of the root.
-                if (branchLevel > 0)
-                {
-                    branchRoot = await branchRootWait.ConfigureAwait(false);
-                }
-                else
-                {
-                    Diagnostic.Debug($"Received branch level 0 from {username}; this user is a branch root.");
-                    branchRoot = username;
-                }
-
-                await searchWait.ConfigureAwait(false);
-
                 Diagnostic.Debug($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({ipEndPoint})");
 
-                return (connection, branchLevel, branchRoot);
+                return (connection, branchLevel.Value, branchRoot);
             }
         }
 
