@@ -291,11 +291,11 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Attempting child connection to {ctpr.Username}"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Attempting indirect child connection to {ctpr.Username}"))), Times.Once);
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Child connection to {ctpr.Username}") && s.ContainsInsensitive("established"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {ctpr.Username}") && s.ContainsInsensitive("established"))), Times.Once);
             mocks.Diagnostic
-                .Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive($"Added child {ctpr.Username}"))), Times.Once);
+                .Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive($"Added child connection to {ctpr.Username}"))), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -521,7 +521,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Discarded child connection to {username}"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {username}") && s.ContainsInsensitive("discarded: foo"))), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -1355,8 +1355,8 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, endpoint, CancellationToken.None);
             }
 
-            mocks.Diagnostic.Verify(m => m.Debug($"{conn.Object.Context} Parent candidate connection to {username} ({endpoint}) established.  Waiting for branch information and first SearchRequest message"), Times.Once);
-            mocks.Diagnostic.Verify(m => m.Debug($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({endpoint})"), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Waiting for branch information and first SearchRequest message."))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({endpoint})"))), Times.Once);
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
