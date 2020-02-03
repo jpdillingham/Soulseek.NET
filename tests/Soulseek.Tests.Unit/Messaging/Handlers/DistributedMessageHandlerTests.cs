@@ -395,6 +395,33 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
+        public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var ex = new Exception("foo");
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Responds to ServerSearchRequest"), AutoData]
         public void Responds_To_ServerSearchRequest(string username, int token, string query)
         {
