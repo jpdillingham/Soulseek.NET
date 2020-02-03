@@ -23,6 +23,7 @@ namespace Soulseek.Network
     using System.Threading.Tasks;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network.Tcp;
     using SystemTimer = System.Timers.Timer;
@@ -175,7 +176,7 @@ namespace Soulseek.Network
                     var request = new PierceFirewall(r.Token);
                     await connection.WriteAsync(request.ToByteArray()).ConfigureAwait(false);
 
-                    await connection.WriteAsync(GetBranchInformationMessage(), cts.Token).ConfigureAwait(false);
+                    await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>(), cts.Token).ConfigureAwait(false);
                     Diagnostic.Debug($"Sent branch information to {r.Username} ({r.IPEndPoint}); level: {(HasParent ? BranchLevel + 1 : 0)}, root: {(HasParent ? BranchRoot : "N/A")}");
 
                     connection.Disconnected += ChildConnection_Disconnected;
@@ -233,7 +234,7 @@ namespace Soulseek.Network
                 {
                     connection.StartReadingContinuously();
 
-                    await connection.WriteAsync(GetBranchInformationMessage(), cts.Token).ConfigureAwait(false);
+                    await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>(), cts.Token).ConfigureAwait(false);
                     Diagnostic.Debug($"Sent branch information to {username} ({endpoint}); level: {(HasParent ? BranchLevel + 1 : 0)}, root: {(HasParent ? BranchRoot : "N/A")}");
 
                     connection.Disconnected += ChildConnection_Disconnected;
@@ -421,18 +422,21 @@ namespace Soulseek.Network
             }
         }
 
-        private byte[] GetBranchInformationMessage()
+        private byte[] GetBranchInformation<T>()
         {
             var branchLevel = HasParent ? BranchLevel + 1 : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
+            var isPeer = typeof(T) == typeof(MessageCode.Peer);
             var payload = new List<byte>();
 
-            payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
+            payload.AddRange(isPeer ? new DistributedBranchLevel(branchLevel).ToByteArray() :
+                new BranchLevelCommand(branchLevel).ToByteArray());
 
             if (!string.IsNullOrEmpty(branchRoot))
             {
-                payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
+                payload.AddRange(isPeer ? new DistributedBranchRoot(branchRoot).ToByteArray() :
+                    new BranchRootCommand(branchRoot).ToByteArray());
             }
 
             return payload.ToArray();
@@ -621,11 +625,9 @@ namespace Soulseek.Network
             var branchLevel = HasParent ? BranchLevel + 1 : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
-            var branchInfo = GetBranchInformationMessage();
-
             payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
             payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
-            payload.AddRange(branchInfo);
+            payload.AddRange(GetBranchInformation<MessageCode.Server>());
             payload.AddRange(new ChildDepthCommand(ChildConnections.Count).ToByteArray());
             payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
 
@@ -645,7 +647,7 @@ namespace Soulseek.Network
             {
                 await SoulseekClient.ServerConnection.WriteAsync(payload.ToArray()).ConfigureAwait(false);
 
-                await BroadcastMessageAsync(branchInfo).ConfigureAwait(false);
+                await BroadcastMessageAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
 
                 if (HasParent)
                 {
