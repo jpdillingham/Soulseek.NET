@@ -195,7 +195,7 @@ namespace Soulseek.Network
             AddOrUpdateChildConnectionRecord(connection);
 
             Diagnostic.Debug($"{connection.Context} child connection to {connection.Username} ({connection.IPEndPoint}) added. (id: {connection.Id})");
-            Diagnostic.Info($"Child connection to {connection.Username} ({connection.IPEndPoint}) added.");
+            Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
         }
 
         /// <summary>
@@ -255,7 +255,7 @@ namespace Soulseek.Network
             AddOrUpdateChildConnectionRecord(connection);
 
             Diagnostic.Debug($"{connection.Context} child connection to {connection.Username} ({connection.IPEndPoint}) added. (id: {connection.Id})");
-            Diagnostic.Info($"Child connection to {connection.Username} ({connection.IPEndPoint}) added.");
+            Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
         }
 
         /// <summary>

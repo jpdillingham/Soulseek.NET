@@ -322,7 +322,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Discarded child connection to {ctpr.Username}"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"discarded: foo"))), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -491,9 +491,9 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Accepted child connection to {username}"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {username}") && s.ContainsInsensitive("added"))), Times.Once);
             mocks.Diagnostic
-                .Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive($"Added child {username}"))), Times.Once);
+                .Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive($"Added child connection to {username}"))), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
