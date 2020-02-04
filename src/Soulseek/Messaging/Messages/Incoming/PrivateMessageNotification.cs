@@ -74,7 +74,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.PrivateMessage)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessageNotification)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(PrivateMessageNotification)} (expected: {(int)MessageCode.Server.PrivateMessage}, received: {(int)code})");
             }
 
             var id = reader.ReadInteger();

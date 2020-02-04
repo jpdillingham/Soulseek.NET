@@ -117,7 +117,11 @@ namespace Soulseek.Messaging.Handlers
         public async void HandleMessageRead(object sender, byte[] message)
         {
             var code = new MessageReader<MessageCode.Server>(message).ReadCode();
-            Diagnostic.Debug($"Server message received: {code}");
+
+            if (code != MessageCode.Server.SearchRequest)
+            {
+                Diagnostic.Debug($"Server message received: {code}");
+            }
 
             try
             {
@@ -331,6 +335,12 @@ namespace Soulseek.Messaging.Handlers
                             Diagnostic.Warning($"Error resolving search response for query '{searchRequest.Query}' requested by {searchRequest.Username} with token {searchRequest.Token}: {ex.Message}", ex);
                         }
 
+                        break;
+
+                    // if we fail to connect to a distributed parent in a timely manner, the server will begin to send us distributed search requests directly.
+                    // forward these to the distributed message handler.
+                    case MessageCode.Server.SearchRequest:
+                        SoulseekClient.DistributedMessageHandler.HandleMessageRead(SoulseekClient.ServerConnection, message);
                         break;
 
                     default:

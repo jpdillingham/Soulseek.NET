@@ -66,7 +66,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.TransferRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Transfer Request response (expected: {(int)MessageCode.Peer.TransferRequest}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Transfer Request response (expected: {(int)MessageCode.Peer.TransferRequest}, received: {(int)code})");
             }
 
             var direction = (TransferDirection)reader.ReadInteger();

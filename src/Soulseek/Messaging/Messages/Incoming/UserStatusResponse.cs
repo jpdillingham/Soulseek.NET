@@ -59,7 +59,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.GetStatus)
             {
-                throw new MessageException($"Message Code mismatch creating Get Status Response (expected: {(int)MessageCode.Server.GetStatus}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Get Status Response (expected: {(int)MessageCode.Server.GetStatus}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

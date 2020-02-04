@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Distributed.BranchLevel)
             {
-                throw new MessageException($"Message Code mismatch creating Distributed Branch Level (expected: {(int)MessageCode.Distributed.BranchLevel}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Distributed Branch Level (expected: {(int)MessageCode.Distributed.BranchLevel}, received: {(int)code})");
             }
 
             var level = reader.ReadInteger();

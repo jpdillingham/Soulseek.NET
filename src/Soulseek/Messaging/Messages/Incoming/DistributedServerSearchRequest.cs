@@ -1,4 +1,4 @@
-﻿// <copyright file="ServerSearchRequest.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedServerSearchRequest.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -15,21 +15,22 @@ namespace Soulseek.Messaging.Messages
     using Soulseek.Exceptions;
 
     /// <summary>
-    ///     A file search request which originates from the server.
+    ///     A distributed file search request.
     /// </summary>
     /// <remarks>
-    ///     This message is routed from the server, instead of the distributed network. This occurs when a remote user searches us
-    ///     directly either by username or from a room to which we are joined.
+    ///     This is an odd message; according to the documentation and the code, it is a server message, however i've only seen it
+    ///     come from a distributed parent. It isn't clear whether this can ever come from the server; perhaps if we are connected
+    ///     directly, but no idea how to do that or why we'd want to.
     /// </remarks>
-    internal sealed class ServerSearchRequest
+    internal sealed class DistributedServerSearchRequest
     {
         /// <summary>
-        ///     Initializes a new instance of the <see cref="ServerSearchRequest"/> class.
+        ///     Initializes a new instance of the <see cref="DistributedServerSearchRequest"/> class.
         /// </summary>
         /// <param name="username">The username of the requesting user.</param>
         /// <param name="token">The unique token for the request.</param>
         /// <param name="query">The search query.</param>
-        public ServerSearchRequest(string username, int token, string query)
+        public DistributedServerSearchRequest(string username, int token, string query)
         {
             Username = username;
             Token = token;
@@ -52,25 +53,28 @@ namespace Soulseek.Messaging.Messages
         public string Username { get; }
 
         /// <summary>
-        ///     Creates a new instance of <see cref="ServerSearchRequest"/> from the specified <paramref name="bytes"/>.
+        ///     Creates a new instance of <see cref="DistributedServerSearchRequest"/> from the specified <paramref name="bytes"/>.
         /// </summary>
         /// <param name="bytes">The byte array from which to parse.</param>
         /// <returns>The created instance.</returns>
-        public static ServerSearchRequest FromByteArray(byte[] bytes)
+        public static DistributedServerSearchRequest FromByteArray(byte[] bytes)
         {
-            var reader = new MessageReader<MessageCode.Server>(bytes);
+            var reader = new MessageReader<MessageCode.Distributed>(bytes);
             var code = reader.ReadCode();
 
-            if (code != MessageCode.Server.FileSearch)
+            if (code != MessageCode.Distributed.ServerSearchRequest)
             {
-                throw new MessageException($"Message Code mismatch creating Server Search Request (expected: {(int)MessageCode.Server.FileSearch}, received: {(int)code})");
+                throw new MessageException($"Message Code mismatch creating Distributed Search Request (expected: {(int)MessageCode.Distributed.ServerSearchRequest}, received: {(int)code})");
             }
+
+            // nobody knows what this is.  always 0000000331000000 in hex.
+            reader.ReadBytes(8);
 
             var username = reader.ReadString();
             var token = reader.ReadInteger();
             var query = reader.ReadString();
 
-            return new ServerSearchRequest(username, token, query);
+            return new DistributedServerSearchRequest(username, token, query);
         }
     }
 }

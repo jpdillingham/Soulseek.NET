@@ -285,6 +285,55 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
         }
 
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Broadcasts ServerSearchRequest as SearchRequest"), AutoData]
+        public void Broadcasts_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteBytes(new byte[8])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            var forwardedMessage = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.DistributedConnectionManager
+                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes SearchRequest wait on ServerSearchRequest"), AutoData]
+        public void Completes_SearchRequest_Wait_On_ServerSearchRequest(string username, int token, string query, IPEndPoint endpoint)
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+
+            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteBytes(new byte[8])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
         public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
@@ -335,6 +384,69 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var conn = new Mock<IMessageConnection>();
 
             var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
+
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
+        public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var ex = new Exception("foo");
+
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Responds to ServerSearchRequest"), AutoData]
+        public void Responds_To_ServerSearchRequest(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteBytes(new byte[8])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
 
             handler.HandleMessageRead(conn.Object, message);
 

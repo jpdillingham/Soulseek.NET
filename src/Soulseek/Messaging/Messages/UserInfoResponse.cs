@@ -32,7 +32,7 @@ namespace Soulseek
 
             if (code != MessageCode.Peer.InfoResponse)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Info Response (expected: {(int)MessageCode.Peer.InfoResponse}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Info Response (expected: {(int)MessageCode.Peer.InfoResponse}, received: {(int)code})");
             }
 
             var description = reader.ReadString();

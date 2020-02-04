@@ -52,7 +52,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.QueueFailed)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.Peer.QueueFailed}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Queue Failed Response (expected: {(int)MessageCode.Peer.QueueFailed}, received: {(int)code})");
             }
 
             var filename = reader.ReadString();

@@ -75,7 +75,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.GetPeerAddress)
             {
-                throw new MessageException($"Message Code mismatch creating Get Peer Address response (expected: {(int)MessageCode.Server.GetPeerAddress}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Get Peer Address response (expected: {(int)MessageCode.Server.GetPeerAddress}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

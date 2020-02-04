@@ -1002,6 +1002,30 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Server.Ping)), Times.Once);
         }
 
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Forwards distributed search requests")]
+        public void Forwards_Distributed_Search_Requests()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var distributedHandler = new Mock<IDistributedMessageHandler>();
+
+            mocks.Client.Setup(m => m.DistributedMessageHandler)
+                .Returns(distributedHandler.Object);
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Server.SearchRequest) // 93, same as distributed code
+                .WriteBytes(new byte[8])
+                .WriteString("username")
+                .WriteInteger(1)
+                .WriteString("query")
+                .Build();
+
+            handler.HandleMessageRead(null, message);
+
+            distributedHandler.Verify(m => m.HandleMessageRead(It.IsAny<object>(), message), Times.Once);
+        }
+
         [Trait("Category", "Diagnostic")]
         [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
         public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)

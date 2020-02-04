@@ -31,7 +31,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.AddPrivilegedUser)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(PrivilegedUserNotification)} (expected: {(int)MessageCode.Server.AddPrivilegedUser}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(PrivilegedUserNotification)} (expected: {(int)MessageCode.Server.AddPrivilegedUser}, received: {(int)code})");
             }
 
             var username = reader.ReadString();

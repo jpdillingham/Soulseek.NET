@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Peer.QueueDownload)
             {
-                throw new MessageException($"Message Code mismatch creating Peer Queue Download (expected: {(int)MessageCode.Peer.QueueDownload}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating Peer Queue Download (expected: {(int)MessageCode.Peer.QueueDownload}, received: {(int)code})");
             }
 
             var filename = reader.ReadString();

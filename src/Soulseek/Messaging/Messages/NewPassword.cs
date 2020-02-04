@@ -45,7 +45,7 @@ namespace Soulseek.Messaging.Messages
 
             if (code != MessageCode.Server.NewPassword)
             {
-                throw new MessageException($"Message Code mismatch creating {nameof(MessageCode.Server.NewPassword)} (expected: {(int)MessageCode.Server.NewPassword}, received: {(int)code}.");
+                throw new MessageException($"Message Code mismatch creating {nameof(MessageCode.Server.NewPassword)} (expected: {(int)MessageCode.Server.NewPassword}, received: {(int)code})");
             }
 
             var password = reader.ReadString();
