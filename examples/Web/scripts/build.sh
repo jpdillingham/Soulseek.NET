@@ -4,14 +4,15 @@ set -e
 # build web
 cd web
 pwd
-npm run build
+# npm install
+# npm run build
 
 # remove old build, but keep .gitkeep
 rm -rf ../api/wwwroot
+mkdir ../api/wwwroot
 touch ../api/wwwroot/.gitkeep
 
 # copy new files
-mkdir ../api/wwwroot
 cp -r build/* ../api/wwwroot/
 
 # publish api + web

@@ -2,7 +2,6 @@ import React, { Component } from 'react';
 import axios from 'axios';
 
 import { BASE_URL } from './constants';
-import data from './data';
 
 import Response from './Response';
 
@@ -20,7 +19,7 @@ class Search extends Component {
             responseCount: 0, 
             fileCount: 0 
         }, 
-        results: data, 
+        results: [], 
         interval: undefined 
     }
 
