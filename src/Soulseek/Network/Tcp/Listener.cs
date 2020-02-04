@@ -40,7 +40,7 @@ namespace Soulseek.Network.Tcp
         {
             Port = port;
             ConnectionOptions = connectionOptions ?? new ConnectionOptions();
-            TcpListener = tcpListener ?? new TcpListenerAdapter(new TcpListener(IPAddress.None, port));
+            TcpListener = tcpListener ?? new TcpListenerAdapter(new TcpListener(IPAddress.Parse("0.0.0.0"), port));
         }
 
         /// <summary>
