@@ -34,7 +34,7 @@ namespace Soulseek.Network.Tcp
         /// <param name="tcpListener">The optional TcpListener to wrap.</param>
         public TcpListenerAdapter(TcpListener tcpListener = null)
         {
-            TcpListener = tcpListener ?? new TcpListener(IPAddress.Parse("0.0.0.0"), 1);
+            TcpListener = tcpListener ?? new TcpListener(IPAddress.None, 1);
         }
 
         private TcpListener TcpListener { get; set; }

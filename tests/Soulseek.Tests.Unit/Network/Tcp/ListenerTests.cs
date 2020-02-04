@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit.Network.Tcp
 {
     using AutoFixture.Xunit2;
+    using Moq;
     using Soulseek.Network.Tcp;
     using Xunit;
 
@@ -34,7 +35,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Start starts listening"), AutoData]
         public void Start_Starts_Listening(int port, ConnectionOptions options)
         {
-            var l = new Listener(port, options);
+            var listener = new Mock<ITcpListener>();
+            var l = new Listener(port, options, listener.Object);
 
             var first = l.Listening;
 
@@ -48,7 +50,8 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         [Theory(DisplayName = "Stop stops listening"), AutoData]
         public void Stop_Stops_Listening(int port, ConnectionOptions options)
         {
-            var l = new Listener(port, options);
+            var listener = new Mock<ITcpListener>();
+            var l = new Listener(port, options, listener.Object);
 
             l.Start();
 
