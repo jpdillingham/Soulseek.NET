@@ -257,7 +257,8 @@
 
             if (!fileInfo.Exists) 
             {
-                throw new EnqueueDownloadException($"File {filename} not found.", filename);
+                Console.WriteLine($"[UPLOAD REJECTED] File {filename} not found.");
+                throw new DownloadEnqueueException($"File not found.");
             }
 
             // create a new cancellation token source so that we can cancel the upload from the UI.
