@@ -68,7 +68,7 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Peer>(message).ReadCode();
 
-            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPEndPoint})");
+            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
 
             try
             {

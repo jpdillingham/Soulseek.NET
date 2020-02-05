@@ -71,12 +71,14 @@ namespace Soulseek.Network
 
                     if (peerInit.ConnectionType == Constants.ConnectionType.Peer)
                     {
+                        Diagnostic.Debug($"Handing incoming message connection to {peerInit.Username} off (id: {connection.Id})");
                         await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(
                             peerInit.Username,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
+                        Diagnostic.Debug($"Handing incoming transfer connection to {peerInit.Username} with token {peerInit.Token} off (id: {connection.Id})");
                         await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
@@ -84,6 +86,7 @@ namespace Soulseek.Network
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
+                        Diagnostic.Debug($"Handing incoming distributed child connection to {peerInit.Username} off (id: {connection.Id})");
                         await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(
                             peerInit.Username,
                             connection.HandoffTcpClient()).ConfigureAwait(false);
