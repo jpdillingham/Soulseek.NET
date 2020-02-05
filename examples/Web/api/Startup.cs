@@ -252,6 +252,14 @@
         /// <exception cref="Exception">Thrown on any other Exception other than a rejection.  A generic message will be passed to the remote user for security reasons.</exception>
         private Task EnqueueDownloadAction(string username, IPEndPoint endpoint, string filename, ITransferTracker tracker)
         {
+            filename = filename.ToLocalOSPath();
+            var fileInfo = new FileInfo(filename);
+
+            if (!fileInfo.Exists) 
+            {
+                throw new EnqueueDownloadException($"File {filename} not found.", filename);
+            }
+
             // create a new cancellation token source so that we can cancel the upload from the UI.
             var cts = new CancellationTokenSource();
             var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts));
@@ -260,11 +268,14 @@
             // normally there would be an internal queue, and uploads would be handled separately.
             Task.Run(async () =>
             {
-                using (var stream = new FileStream(filename, FileMode.Open))
+                using (var stream = new FileStream(fileInfo.FullName, FileMode.Open))
                 {
-                    await Client.UploadAsync(username, filename, new FileInfo(filename).Length, stream, options: topts, cancellationToken: cts.Token);
+                    await Client.UploadAsync(username, fileInfo.FullName, fileInfo.Length, stream, options: topts, cancellationToken: cts.Token);
                 }
-            }).ContinueWith(t => { throw t.Exception; }, TaskContinuationOptions.OnlyOnFaulted); // fire and forget
+            }).ContinueWith(t => 
+            { 
+                Console.WriteLine($"[UPLOAD FAILED] {t.Exception}");
+            }, TaskContinuationOptions.NotOnRanToCompletion); // fire and forget
 
             // return a completed task so that the invoking code can respond to the remote client.
             return Task.CompletedTask;
