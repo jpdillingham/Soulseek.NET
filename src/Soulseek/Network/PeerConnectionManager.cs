@@ -220,6 +220,7 @@ namespace Soulseek.Network
                 // GetOrAddMessageConnectionAsync(). either way, return it as is.
                 if (connection != null)
                 {
+                    Diagnostic.Debug($"Returning cached message connection to {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
                     return connection;
                 }
                 else
@@ -281,6 +282,7 @@ namespace Soulseek.Network
 
                 if (connection != null)
                 {
+                    Diagnostic.Debug($"Returning cached message connection to {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
                     return connection;
                 }
                 else
