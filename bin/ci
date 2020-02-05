@@ -36,8 +36,8 @@ dotnet-sonarscanner begin \
     /d:sonar.cs.opencover.reportsPaths="tests/opencover.xml" \
     /d:sonar.login="${TOKEN_SONARCLOUD}" \
 
-. "${dir}/build.sh"
-. "${dir}/test.sh"
+. "${dir}/build"
+. "${dir}/test"
 
 dotnet-sonarscanner end /d:sonar.login="${TOKEN_SONARCLOUD}"
 

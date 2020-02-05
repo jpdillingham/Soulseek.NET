@@ -4,8 +4,8 @@ set -e
 # build web
 cd web
 pwd
-# npm install
-# npm run build
+npm install
+npm run build
 
 # remove old build, but keep .gitkeep
 rm -rf ../api/wwwroot
