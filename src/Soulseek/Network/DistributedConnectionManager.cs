@@ -202,16 +202,16 @@ namespace Soulseek.Network
         ///     Adds a new child connection from an incoming connection.
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
-        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddChildConnectionAsync(string username, ITcpClient tcpClient)
+        public async Task AddChildConnectionAsync(string username, IConnection incomingConnection)
         {
-            var endpoint = tcpClient.RemoteEndPoint;
+            var endpoint = incomingConnection.IPEndPoint;
 
             if (!CanAcceptChildren)
             {
                 Diagnostic.Debug($"Direct child connection to {username} ({endpoint}) rejected: limit of {ConcurrentChildLimit} reached.");
-                tcpClient.Dispose();
+                incomingConnection.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -220,7 +220,7 @@ namespace Soulseek.Network
                 username,
                 endpoint,
                 SoulseekClient.Options.DistributedConnectionOptions,
-                tcpClient);
+                incomingConnection.HandoffTcpClient());
 
             connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
@@ -231,7 +231,7 @@ namespace Soulseek.Network
 
                 connection.Disconnected += CancelWait;
 
-                Diagnostic.Debug($"{connection.Context} child connection to {username} ({endpoint}) accepted. (id: {connection.Id})");
+                Diagnostic.Debug($"{connection.Context} child connection to {username} ({endpoint}) accepted and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
                 try
                 {

@@ -98,24 +98,24 @@ namespace Soulseek.Network
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
-        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddMessageConnectionAsync(string username, ITcpClient tcpClient)
+        public async Task AddMessageConnectionAsync(string username, IConnection incomingConnection)
         {
-            var endpoint = tcpClient.RemoteEndPoint;
+            var endpoint = incomingConnection.IPEndPoint;
 
             var connection = ConnectionFactory.GetMessageConnection(
                 username,
                 endpoint,
                 SoulseekClient.Options.PeerConnectionOptions,
-                tcpClient);
+                incomingConnection.HandoffTcpClient());
 
             connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.Disconnected += MessageConnection_Disconnected;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Unsolicited inbound message connection to {username} ({endpoint}) disconnected. (id: {connection.Id})");
 
-            Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
+            Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPEndPoint}) established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
             connection.StartReadingContinuously();
 
@@ -137,16 +137,16 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
-        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient)
+        public async Task AddTransferConnectionAsync(string username, int token, IConnection incomingConnection)
         {
-            var endpoint = tcpClient.RemoteEndPoint;
+            var endpoint = incomingConnection.IPEndPoint;
 
             var connection = ConnectionFactory.GetConnection(
                 endpoint,
                 SoulseekClient.Options.TransferConnectionOptions,
-                tcpClient);
+                incomingConnection.HandoffTcpClient());
 
             // bind a temporary handler so we can get diagnostics for disconnects before the permanent handler is bound below
             void HandleDisconnect(object sender, ConnectionDisconnectedEventArgs e) =>
@@ -177,7 +177,7 @@ namespace Soulseek.Network
             // remove the temporary handler
             connection.Disconnected -= HandleDisconnect;
 
-            Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint}) for token {token} (remote: {remoteToken}) established. (id: {connection.Id})");
+            Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint}) for remote token {remoteToken} established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
             SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
         }
 
