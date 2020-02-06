@@ -208,7 +208,7 @@ namespace Soulseek.Messaging.Handlers
 
                             if (connectToPeerResponse.Type == Constants.ConnectionType.Transfer)
                             {
-                                Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
+                                Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token}");
 
                                 // ensure that we are expecting at least one file from this user before we connect. the response
                                 // doesn't contain any other identifying information about the file.
@@ -219,7 +219,13 @@ namespace Soulseek.Messaging.Handlers
 
                                     if (download != default(TransferInternal))
                                     {
+                                        Diagnostic.Debug($"Solicited inbound transfer connection to {download.Username} ({connection.IPEndPoint}) for token {download.Token} (remote: {download.RemoteToken}) established. (id: {connection.Id})");
                                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
+                                    }
+                                    else
+                                    {
+                                        Diagnostic.Debug($"Transfer ConnectToPeer request from { connectToPeerResponse.Username} ({ connectToPeerResponse.IPEndPoint}) for remote token { connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
+                                        connection.Disconnect($"Unknown transfer");
                                     }
                                 }
                                 else
