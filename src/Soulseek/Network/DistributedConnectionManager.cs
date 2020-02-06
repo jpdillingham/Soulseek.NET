@@ -406,7 +406,7 @@ namespace Soulseek.Network
         {
             var connection = (IMessageConnection)sender;
             ChildConnections.TryRemove(connection.Username, out _);
-            Diagnostic.Debug($"Child {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message}. (id: {connection.Id})");
+            Diagnostic.Debug($"Child {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (id: {connection.Id})");
             connection.Dispose();
 
             UpdateStatusAsync().ConfigureAwait(false);
