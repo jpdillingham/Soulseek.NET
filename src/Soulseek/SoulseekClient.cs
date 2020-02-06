@@ -2379,7 +2379,7 @@ namespace Soulseek
                     {
                         await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
                     }
-                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed")
+                    catch (ConnectionReadException ex) when (ex.InnerException is ConnectionException && ex.InnerException.Message == "Remote connection closed.")
                     {
                         // swallow this specific exception
                     }
