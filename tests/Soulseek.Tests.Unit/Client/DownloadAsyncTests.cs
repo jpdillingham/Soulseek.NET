@@ -1638,7 +1638,7 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.IsType<TransferException>(ex);
                 Assert.IsType<ConnectionException>(ex.InnerException);
                 Assert.IsType<AggregateException>(ex.InnerException.InnerException);
-                Assert.True(ex.InnerException.Message.ContainsInsensitive("Failed to establish a direct or indirect connection."));
+                Assert.True(ex.InnerException.Message.ContainsInsensitive("Failed to establish a direct or indirect connection"));
             }
         }
 
