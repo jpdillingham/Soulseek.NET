@@ -278,7 +278,7 @@ namespace Soulseek.Messaging.Handlers
                 // if any other exception is thrown, return a generic message. do this to avoid exposing potentially sensitive
                 // information that may be contained in the Exception message (filesystem details, etc.)
                 rejected = true;
-                rejectionMessage = "Enqueue failed due to internal error.";
+                rejectionMessage = "Enqueue failed due to internal error";
             }
 
             return (rejected, rejectionMessage);

@@ -181,7 +181,7 @@ namespace Soulseek
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
                 Diagnostic.Info($"Kicked from server.");
-                Disconnect("Kicked from server.", new KickedFromServerException());
+                Disconnect("Kicked from server", new KickedFromServerException());
                 KickedFromServer?.Invoke(this, e);
             };
 
@@ -1872,7 +1872,7 @@ namespace Soulseek
 
                     download.State = TransferStates.Succeeded;
 
-                    download.Connection.Disconnect("Transfer complete.");
+                    download.Connection.Disconnect("Transfer complete");
                     Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
                 }
                 catch (Exception ex)
@@ -2102,7 +2102,7 @@ namespace Soulseek
                 if (response.Succeeded)
                 {
                     Username = username;
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in.");
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
 
                     if (Options.ListenPort.HasValue)
                     {

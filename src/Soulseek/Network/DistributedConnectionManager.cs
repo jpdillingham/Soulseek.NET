@@ -286,7 +286,7 @@ namespace Soulseek.Network
 
                 if (parentTask.Status != TaskStatus.RanToCompletion)
                 {
-                    var msg = "Failed to connect to any of the distributed parent candidates.";
+                    var msg = "Failed to connect to any of the distributed parent candidates";
                     Diagnostic.Warning(msg);
                     await UpdateStatusAsync().ConfigureAwait(false);
                     throw new ConnectionException(msg);
@@ -517,7 +517,7 @@ namespace Soulseek.Network
                 }
                 catch (Exception)
                 {
-                    connection.Disconnect("One or more required messages was not received.");
+                    connection.Disconnect("One or more required messages was not received");
                     connection.Dispose();
 
                     throw new ConnectionException($"Failed to initialize parent connection to {username} ({ipEndPoint}); one or more required messages was not received. (id: {connection.Id})");

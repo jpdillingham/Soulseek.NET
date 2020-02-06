@@ -1430,7 +1430,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.True(ex.Message.ContainsInsensitive($"Failed to initialize parent connection to {username}"));
             }
 
-            conn.Verify(m => m.Disconnect("One or more required messages was not received.", It.IsAny<Exception>()), Times.Once);
+            conn.Verify(m => m.Disconnect("One or more required messages was not received", It.IsAny<Exception>()), Times.Once);
             conn.Verify(m => m.Dispose(), Times.Once);
         }
 
@@ -1541,7 +1541,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.IsType<ConnectionException>(ex);
             }
 
-            mocks.Diagnostic.Verify(m => m.Warning("Failed to connect to any of the distributed parent candidates.", It.IsAny<Exception>()), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Warning("Failed to connect to any of the distributed parent candidates", It.IsAny<Exception>()), Times.Once);
         }
 
         [Trait("Category", "AddParentConnectionAsync")]

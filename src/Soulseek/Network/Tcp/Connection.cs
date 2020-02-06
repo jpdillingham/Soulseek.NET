@@ -70,7 +70,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (TcpClient == null || !TcpClient.Connected)
                 {
-                    Disconnect($"The server connection was closed unexpectedly.");
+                    Disconnect($"The server connection was closed unexpectedly");
                 }
             };
 

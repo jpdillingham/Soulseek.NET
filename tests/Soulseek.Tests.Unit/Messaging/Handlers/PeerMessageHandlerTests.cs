@@ -615,8 +615,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var (handler, mocks) = GetFixture(username, endpoint, options);
 
             var message = new TransferRequest(TransferDirection.Download, token, filename).ToByteArray();
-            var expectedTransferResponse = new TransferResponse(token, "Enqueue failed due to internal error.").ToByteArray();
-            var expectedQueueFailedResponse = new EnqueueFailedResponse(filename, "Enqueue failed due to internal error.").ToByteArray();
+            var expectedTransferResponse = new TransferResponse(token, "Enqueue failed due to internal error").ToByteArray();
+            var expectedQueueFailedResponse = new EnqueueFailedResponse(filename, "Enqueue failed due to internal error").ToByteArray();
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
