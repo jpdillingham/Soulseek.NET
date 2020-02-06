@@ -1806,6 +1806,8 @@ namespace Soulseek
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
 
+                    // todo: add paired cancellation tokens
+
                     // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
                     // this is necessary because the remote peer is responsible for establishing the connection and we can't send a ConnecToPeerResponse to initiate this.
                     var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
@@ -1842,6 +1844,9 @@ namespace Soulseek
                     {
                         throw new ConnectionException($"Failed to establish a direct or indirect transfer connection to {username}", task.Exception);
                     }
+
+                    var isDirect = task == directTransferConnectionInitialized;
+                    // todo : cancel
 
                     var connection = await task.ConfigureAwait(false);
 
