@@ -112,7 +112,6 @@ namespace Soulseek.Network
 
             connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
-            connection.Disconnected += MessageConnection_Disconnected;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Unsolicited inbound message connection to {username} ({endpoint}) disconnected. (id: {connection.Id})");
 
             Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPEndPoint}) established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
@@ -234,7 +233,6 @@ namespace Soulseek.Network
 
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                     connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
-                    connection.Disconnected += MessageConnection_Disconnected;
 
                     try
                     {
@@ -453,6 +451,11 @@ namespace Soulseek.Network
 
         private (SemaphoreSlim Semaphore, IMessageConnection Connection) AddOrUpdateMessageConnectionRecord(string username, IMessageConnection connection)
         {
+            if (connection != null)
+            {
+                connection.Disconnected += MessageConnection_Disconnected;
+            }
+
 #pragma warning disable IDE0067, CA2000 // Dispose objects before losing scope
             return MessageConnectionDictionary.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
 #pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
@@ -461,17 +464,24 @@ namespace Soulseek.Network
                 if (v.Connection != null)
                 {
                     var old = v.Connection;
-                    Diagnostic.Debug($"Superceding cached connection to {username} ({connection.IPEndPoint}) (old: {old.Id}, new: {connection.Id})");
 
-                    old.Disconnected += (sender, e) =>
+                    if (connection != null)
                     {
-                        Diagnostic.Debug($"Superceded connection to {username} ({old.IPEndPoint}) (context: {old.Context}, id: {old.Id}) disconnected");
-                        v.Connection.Dispose();
-                    };
+                        Diagnostic.Debug($"Superceding cached connection to {username} ({v.Connection.IPEndPoint}) (old: {old.Id}, new: {connection.Id})");
+                    }
+                    else
+                    {
+                        Diagnostic.Debug($"Discarding cached connection to {username} ({v.Connection.IPEndPoint}) (id: {v.Connection.Id})");
+                    }
 
                     old.Disconnected -= MessageConnection_Disconnected;
+                    old.Disconnected += (sender, e) =>
+                    {
+                        Diagnostic.Debug($"{(connection == null ? "Discarded" : "Superceded")} connection to {username} ({old.IPEndPoint}) (context: {old.Context}, id: {old.Id}) disconnected");
+                        v.Connection.Dispose();
+                    };
                 }
-                else
+                else if (v.Connection == null && connection != null)
                 {
                     Diagnostic.Debug($"Adding cached connection to {username} ({connection.IPEndPoint}) (id: {connection.Id})");
                 }
@@ -504,7 +514,6 @@ namespace Soulseek.Network
             connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
-            connection.Disconnected += MessageConnection_Disconnected;
 
             try
             {
@@ -548,7 +557,6 @@ namespace Soulseek.Network
                     connection.Context = Constants.ConnectionMethod.Indirect;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                     connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
-                    connection.Disconnected += MessageConnection_Disconnected;
 
                     Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
                     (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
@@ -559,29 +567,56 @@ namespace Soulseek.Network
             }
             finally
             {
-                PendingSolicitationDictionary.TryRemove(solicitationToken, out var _);
+                PendingSolicitationDictionary.TryRemove(solicitationToken, out _);
             }
         }
 
         private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username)
         {
-            if (MessageConnectionDictionary.TryGetValue(username, out var record))
+            async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> VerifyOrDiscardCachedRecord((SemaphoreSlim Semaphore, IMessageConnection Connection) cachedRecord)
             {
-                return record;
+                bool ping = false;
+
+                if (cachedRecord.Connection != null)
+                {
+                    try
+                    {
+                        await cachedRecord.Connection.WriteAsync(new ServerPing().ToByteArray()).ConfigureAwait(false);
+                        ping = true;
+                    }
+                    catch (Exception)
+                    {
+                        ping = false;
+                        Diagnostic.Debug($"Failed to ping {cachedRecord.Connection?.Username} ({cachedRecord.Connection?.IPEndPoint}) (id: {cachedRecord.Connection?.Id})");
+                    }
+
+                    if (!ping || cachedRecord.Connection.State != ConnectionState.Connected)
+                    {
+                        Diagnostic.Debug($"Cached message connection to {username} ({cachedRecord.Connection.IPEndPoint}) is stale and is being discarded (id: {cachedRecord.Connection.Id})");
+                        return AddOrUpdateMessageConnectionRecord(username, null);
+                    }
+                }
+
+                return cachedRecord;
             }
 
+            // try to pull a cached record
+            if (MessageConnectionDictionary.TryGetValue(username, out var record))
+            {
+                return await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
+            }
+
+            // if we weren't able to get a connection above, this connection is not yet cached.  to control the number of active connections
+            // we must wait on the relevant semaphore here which will block downstream code until a connection slot frees up.  make sure that any
+            // code that is sensitive to timeout gets a connection before invoking any operation that can time out, as a delay obtaining a connection
+            // shouldn't generally cause a timeout. make sure waits are set up after fetching connections.
             Interlocked.Increment(ref waitingMessageConnections);
             await MessageSemaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
             Interlocked.Decrement(ref waitingMessageConnections);
 
             record = MessageConnectionDictionary.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
 
-            if (record.Connection == null)
-            {
-                Diagnostic.Debug($"Initialized message connection to {username}");
-            }
-
-            return record;
+            return await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
         }
 
         private async Task<IConnection> GetTransferConnectionOutboundDirectAsync(IPEndPoint ipEndPoint, int token, CancellationToken cancellationToken)
