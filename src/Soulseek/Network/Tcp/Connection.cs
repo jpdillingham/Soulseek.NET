@@ -492,7 +492,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (disposing)
                 {
-                    Disconnect("Connection is being disposed.", new ObjectDisposedException(GetType().Name));
+                    Disconnect("Connection is being disposed", new ObjectDisposedException(GetType().Name));
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
                     Stream?.Dispose();

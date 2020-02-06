@@ -38,7 +38,7 @@ namespace Soulseek.Messaging
         {
             if (CodeBytes.Count == 0)
             {
-                throw new InvalidOperationException($"Unable to build the message without having set the message Code.");
+                throw new InvalidOperationException($"Unable to build the message without having set the message Code");
             }
 
             var withLength = new List<byte>(BitConverter.GetBytes(CodeBytes.Count + PayloadBytes.Count));
@@ -59,12 +59,12 @@ namespace Soulseek.Messaging
         {
             if (PayloadBytes.Count == 0)
             {
-                throw new InvalidOperationException($"Unable to compress an empty message.");
+                throw new InvalidOperationException($"Unable to compress an empty message");
             }
 
             if (Compressed)
             {
-                throw new InvalidOperationException("The message has already been compressed.");
+                throw new InvalidOperationException("The message has already been compressed");
             }
 
             Compress(PayloadBytes.ToArray(), out var compressedBytes);
@@ -100,12 +100,12 @@ namespace Soulseek.Messaging
         {
             if (Compressed)
             {
-                throw new InvalidOperationException("Unable to write additional data after message has been compressed.");
+                throw new InvalidOperationException("Unable to write additional data after message has been compressed");
             }
 
             if (bytes == null)
             {
-                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to write a null byte array to message.");
+                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to write a null byte array to message");
             }
 
             PayloadBytes.AddRange(bytes);
@@ -222,7 +222,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                throw new MessageCompressionException($"Failed to compress the message payload.", ex);
+                throw new MessageCompressionException($"Failed to compress the message payload", ex);
             }
         }
 

@@ -91,7 +91,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
-                            SoulseekClient.Waiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
+                            SoulseekClient.Waiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response", ex));
                             throw;
                         }
 
@@ -203,7 +203,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.UploadFailed:
                         var uploadFailedResponse = UploadFailed.FromByteArray(message);
-                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
+                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
                         if (download != null)

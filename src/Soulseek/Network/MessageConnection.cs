@@ -37,7 +37,7 @@ namespace Soulseek.Network
         {
             if (string.IsNullOrWhiteSpace(username))
             {
-                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace.", nameof(username));
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
             }
 
             Username = username;
