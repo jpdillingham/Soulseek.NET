@@ -1803,21 +1803,22 @@ namespace Soulseek
                     download.RemoteToken = transferStartRequest.Token;
                     UpdateState(TransferStates.Initializing);
 
+                    // also prepare a wait for the overall completion of the download
+                    downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
+
                     // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
+                    // this is necessary because the remote peer is responsible for establishing the connection and we can't send a ConnecToPeerResponse to initiate this.
                     var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
-                        timeout: Options.PeerConnectionOptions.ConnectTimeout,
+                        timeout: Options.TransferConnectionOptions.ConnectTimeout,
                         cancellationToken: cancellationToken);
 
                     // set up a wait for a direct connection. this wait is completed in
                     // PeerConnectionManager.AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
                     var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
                         key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
-                        timeout: Options.PeerConnectionOptions.ConnectTimeout,
+                        timeout: Options.TransferConnectionOptions.ConnectTimeout,
                         cancellationToken: cancellationToken);
-
-                    // also prepare a wait for the overall completion of the download
-                    downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
@@ -1825,15 +1826,28 @@ namespace Soulseek
 
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                    try
+                    var tasks = new[] { directTransferConnectionInitialized, indirectTransferConnectionInitialized }.ToList();
+                    Task<IConnection> task;
+
+                    Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {download.RemoteToken} for {download.Filename}");
+
+                    do
                     {
-                        var connectionInitialized = await Task.WhenAny(indirectTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
-                        download.Connection = connectionInitialized.Result;
+                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                        tasks.Remove(task);
                     }
-                    catch (AggregateException ex)
+                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+                    if (task.Status != TaskStatus.RanToCompletion)
                     {
-                        throw new ConnectionException("Failed to establish a direct or indirect connection", ex);
+                        throw new ConnectionException($"Failed to establish a direct or indirect transfer connection to {username}", task.Exception);
                     }
+
+                    var connection = await task.ConfigureAwait(false);
+
+                    Diagnostic.Debug($"{connection.Context} transfer connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
+
+                    download.Connection = connection;
                 }
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
