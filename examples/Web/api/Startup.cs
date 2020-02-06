@@ -135,10 +135,10 @@
                 listenPort: ListenPort,
                 concurrentDistributedChildrenLimit: 10,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
-                concurrentPeerMessageConnectionLimit: 1000000,
-                serverConnectionOptions: new ConnectionOptions(inactivityTimeout: 15),
-                peerConnectionOptions: new ConnectionOptions(inactivityTimeout: 5),
-                transferConnectionOptions: new ConnectionOptions(inactivityTimeout: 30),
+                concurrentPeerMessageConnectionLimit: 1000,
+                serverConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 15),
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 1),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 15),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
                 enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
@@ -155,7 +155,7 @@
                     if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
                     if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
 
-                    Console.WriteLine($"[DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+                    Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
                     Console.ResetColor();
                 }
             };
