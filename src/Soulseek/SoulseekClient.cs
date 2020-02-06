@@ -1801,12 +1801,17 @@ namespace Soulseek
 
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
+
                     UpdateState(TransferStates.Initializing);
 
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
 
-                    // todo: add paired cancellation tokens
+                    // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
+                    // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
+                    peerConnection = await PeerConnectionManager
+                        .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
+                        .ConfigureAwait(false);
 
                     // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
                     // this is necessary because the remote peer is responsible for establishing the connection and we can't send a ConnecToPeerResponse to initiate this.
@@ -1821,10 +1826,6 @@ namespace Soulseek
                         key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
                         timeout: Options.TransferConnectionOptions.ConnectTimeout,
                         cancellationToken: cancellationToken);
-
-                    // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
-                    // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                    peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
 
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
