@@ -137,7 +137,7 @@
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 concurrentPeerMessageConnectionLimit: 1000,
                 serverConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 15),
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 1),
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 15),
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: 5, inactivityTimeout: 15),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
