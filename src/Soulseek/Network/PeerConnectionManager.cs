@@ -118,7 +118,9 @@ namespace Soulseek.Network
 
             connection.StartReadingContinuously();
 
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
+            // get the cached semaphore and await it to prevent concurrent connection attempts from colliding
+            // this may appear to hang if an indirect connection attempt is in progress and ultimately times out
+            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username, semaphoreOnly: true).ConfigureAwait(false);
             await semaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
 
             try
@@ -204,7 +206,7 @@ namespace Soulseek.Network
             IMessageConnection connection = null;
 
             // get or add a connection. we only care about the semphore at this point, so discard the connection.
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(key.Username).ConfigureAwait(false);
+            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(key.Username, semaphoreOnly: true).ConfigureAwait(false);
 
             // await the semaphore we got back to ensure exclusive access over the code that follows. this is important because
             // while the GetOrAdd above either gets or retrieves a connection in a thread safe manner (through
@@ -271,7 +273,7 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new or existing connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
+            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username, semaphoreOnly: true).ConfigureAwait(false);
             await semaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
 
             IMessageConnection connection;
@@ -571,7 +573,7 @@ namespace Soulseek.Network
             }
         }
 
-        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username)
+        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username, bool semaphoreOnly = false)
         {
             async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> VerifyOrDiscardCachedRecord((SemaphoreSlim Semaphore, IMessageConnection Connection) cachedRecord)
             {
@@ -581,6 +583,7 @@ namespace Soulseek.Network
                 {
                     try
                     {
+                        Diagnostic.Debug($"Pinging cached connection to {cachedRecord.Connection?.Username} ({cachedRecord.Connection?.IPEndPoint}) (id: {cachedRecord.Connection?.Id})");
                         await cachedRecord.Connection.WriteAsync(new ServerPing().ToByteArray()).ConfigureAwait(false);
                         ping = true;
                     }
@@ -603,7 +606,7 @@ namespace Soulseek.Network
             // try to pull a cached record
             if (MessageConnectionDictionary.TryGetValue(username, out var record))
             {
-                return await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
+                return semaphoreOnly ? (record.Semaphore, null) : await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
             }
 
             // if we weren't able to get a connection above, this connection is not yet cached.  to control the number of active connections
@@ -616,7 +619,7 @@ namespace Soulseek.Network
 
             record = MessageConnectionDictionary.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
 
-            return await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
+            return semaphoreOnly ? (record.Semaphore, null) : await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
         }
 
         private async Task<IConnection> GetTransferConnectionOutboundDirectAsync(IPEndPoint ipEndPoint, int token, CancellationToken cancellationToken)
