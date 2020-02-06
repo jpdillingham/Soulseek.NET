@@ -165,7 +165,7 @@ namespace Soulseek
 
                 if (completedTask == cancellationTaskCompletionSource.Task)
                 {
-                    throw new OperationCanceledException("Operation cancelled.");
+                    throw new OperationCanceledException("Operation cancelled");
                 }
             }
         }

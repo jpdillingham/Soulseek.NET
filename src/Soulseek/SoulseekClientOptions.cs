@@ -103,14 +103,14 @@ namespace Soulseek
 
             if (ConcurrentDistributedChildrenLimit < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(concurrentDistributedChildrenLimit), "Must be greater than or equal to zero.");
+                throw new ArgumentOutOfRangeException(nameof(concurrentDistributedChildrenLimit), "Must be greater than or equal to zero");
             }
 
             ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
 
             if (ConcurrentPeerMessageConnectionLimit < 1)
             {
-                throw new ArgumentOutOfRangeException(nameof(concurrentPeerMessageConnectionLimit), "Must be greater than zero.");
+                throw new ArgumentOutOfRangeException(nameof(concurrentPeerMessageConnectionLimit), "Must be greater than zero");
             }
 
             MessageTimeout = messageTimeout;

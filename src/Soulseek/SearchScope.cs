@@ -34,12 +34,12 @@ namespace Soulseek
 
             if (Type == SearchScopeType.Default && subjects.Length > 0)
             {
-                throw new ArgumentException($"The default search scope accepts no subjects.", nameof(subjects));
+                throw new ArgumentException($"The default search scope accepts no subjects", nameof(subjects));
             }
 
             if (Type == SearchScopeType.Room && (subjects.Length != 1 || string.IsNullOrEmpty(subjects[0])))
             {
-                throw new ArgumentException($"The Room search scope requires a single, non null and non empty subject.", nameof(subjects));
+                throw new ArgumentException($"The Room search scope requires a single, non null and non empty subject", nameof(subjects));
             }
 
             if (Type == SearchScopeType.User)
@@ -51,7 +51,7 @@ namespace Soulseek
 
                 if (subjects.Any(s => string.IsNullOrEmpty(s)))
                 {
-                    throw new ArgumentException($"One or more of the supplied User scope subjects is null or empty.", nameof(subjects));
+                    throw new ArgumentException($"One or more of the supplied User scope subjects is null or empty", nameof(subjects));
                 }
             }
 
