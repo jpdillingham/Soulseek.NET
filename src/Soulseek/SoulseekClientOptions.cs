@@ -79,8 +79,8 @@ namespace Soulseek
         /// </exception>
         public SoulseekClientOptions(
             int? listenPort = null,
-            int concurrentDistributedChildrenLimit = 100,
-            int concurrentPeerMessageConnectionLimit = 500,
+            int concurrentDistributedChildrenLimit = 25,
+            int concurrentPeerMessageConnectionLimit = 1000,
             int messageTimeout = 5,
             bool autoAcknowledgePrivateMessages = true,
             bool autoAcknowledgePrivilegeNotifications = true,
