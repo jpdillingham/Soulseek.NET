@@ -110,6 +110,7 @@ namespace Soulseek.Network
                 SoulseekClient.Options.PeerConnectionOptions,
                 tcpClient);
 
+            connection.Context = Constants.ConnectionMethod.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.Disconnected += MessageConnection_Disconnected;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Unsolicited inbound message connection to {username} ({endpoint}) disconnected. (id: {connection.Id})");
@@ -151,6 +152,7 @@ namespace Soulseek.Network
             void HandleDisconnect(object sender, ConnectionDisconnectedEventArgs e) =>
                 Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint}) for token {token} disconnected. (id: {connection.Id})");
 
+            connection.Context = Constants.ConnectionMethod.Direct;
             connection.Disconnected += HandleDisconnect;
 
             int remoteToken;
