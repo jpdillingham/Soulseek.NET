@@ -2374,7 +2374,7 @@ namespace Soulseek
                     upload.State = TransferStates.Succeeded;
 
                     // force a disconnect of the connection by trying to read. this may be unreliable if a client actually sends
-                    // data after the magic bytes.
+                    // data after the offset
                     try
                     {
                         await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
