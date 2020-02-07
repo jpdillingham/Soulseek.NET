@@ -469,18 +469,18 @@ namespace Soulseek.Network
 
                     if (connection != null)
                     {
-                        Diagnostic.Debug($"Superceding cached connection to {username} ({v.Connection.IPEndPoint}) (old: {old.Id}, new: {connection.Id})");
+                        Diagnostic.Debug($"Superceding cached connection to {username} ({old.IPEndPoint}) (old: {old.Id}, new: {connection.Id})");
                     }
                     else
                     {
-                        Diagnostic.Debug($"Discarding cached connection to {username} ({v.Connection.IPEndPoint}) (id: {v.Connection.Id})");
+                        Diagnostic.Debug($"Discarding cached connection to {username} ({old.IPEndPoint}) (id: {v.Connection.Id})");
                     }
 
                     old.Disconnected -= MessageConnection_Disconnected;
                     old.Disconnected += (sender, e) =>
                     {
                         Diagnostic.Debug($"{(connection == null ? "Discarded" : "Superceded")} connection to {username} ({old.IPEndPoint}) (context: {old.Context}, id: {old.Id}) disconnected");
-                        v.Connection.Dispose();
+                        old.Dispose();
                     };
                 }
                 else if (v.Connection == null && connection != null)
@@ -678,11 +678,11 @@ namespace Soulseek.Network
         private void MessageConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
-            RemoveMessageConnectionRecord(connection);
+            TryRemoveMessageConnectionRecord(connection);
             connection.Dispose();
         }
 
-        private void RemoveMessageConnectionRecord(IMessageConnection connection)
+        private void TryRemoveMessageConnectionRecord(IMessageConnection connection)
         {
             if (MessageConnectionDictionary.TryRemove(connection.Key.Username, out _))
             {
