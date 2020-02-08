@@ -1851,7 +1851,7 @@ namespace Soulseek
 
                     var connection = await task.ConfigureAwait(false);
 
-                    Diagnostic.Debug($"{connection.Context} transfer connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
+                    Diagnostic.Debug($"{connection.Type} transfer connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
 
                     download.Connection = connection;
                 }
