@@ -83,10 +83,12 @@ namespace Soulseek.Network
             await MessageConnectionDictionary.AddOrUpdate(
                 username,
                 new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection())),
-                (key, existing) => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
+                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection(cachedConnectionRecord)))).Value.ConfigureAwait(false);
 
-            IMessageConnection GetConnection()
+            async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
+                Diagnostic.Debug($"Inbound message connection to {username} ({incomingConnection.IPEndPoint}) accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
+
                 var endpoint = incomingConnection.IPEndPoint;
 
                 var connection = ConnectionFactory.GetMessageConnection(
@@ -95,12 +97,20 @@ namespace Soulseek.Network
                     SoulseekClient.Options.PeerConnectionOptions,
                     incomingConnection.HandoffTcpClient());
 
-                connection.Context = Constants.ConnectionMethod.Direct;
-                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Unsolicited | ConnectionTypes.Direct;
+                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.Disconnected += MessageConnection_Disconnected;
 
-                Diagnostic.Debug($"{connection.Type} connection to {username} ({connection.IPEndPoint}) established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+
+                if (cachedConnectionRecord != null)
+                {
+                    var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
+                    cachedConnection.Disconnected -= MessageConnection_Disconnected;
+                    Diagnostic.Debug($"Superceding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
+                }
+
+                Diagnostic.Debug($"Message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
 
                 connection.StartReadingContinuously();
                 return connection;
@@ -116,19 +126,17 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddTransferConnectionAsync(string username, int token, IConnection incomingConnection)
         {
-            var endpoint = incomingConnection.IPEndPoint;
+            Diagnostic.Debug($"Inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token} accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
 
             var connection = ConnectionFactory.GetConnection(
-                endpoint,
+                incomingConnection.IPEndPoint,
                 SoulseekClient.Options.TransferConnectionOptions,
                 incomingConnection.HandoffTcpClient());
 
-            // bind a temporary handler so we can get diagnostics for disconnects before the permanent handler is bound below
-            void HandleDisconnect(object sender, ConnectionDisconnectedEventArgs e) =>
-                Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint}) for token {token} disconnected. (id: {connection.Id})");
+            connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {token} disconnected. (type: {connection.Type}, id: {connection.Id})");
 
-            connection.Context = Constants.ConnectionMethod.Direct;
-            connection.Disconnected += HandleDisconnect;
+            Diagnostic.Debug($"Inbound transfer connection to {username} ({connection.IPEndPoint}) for token {token} handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
             int remoteToken;
 
@@ -143,16 +151,7 @@ namespace Soulseek.Network
                 throw;
             }
 
-            connection.Disconnected += (sender, e) =>
-            {
-                Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint}) for token {token} (remote: {remoteToken}) disconnected. (id: {connection.Id})");
-                ((IConnection)sender).Dispose();
-            };
-
-            // remove the temporary handler
-            connection.Disconnected -= HandleDisconnect;
-
-            Diagnostic.Debug($"Unsolicited inbound transfer connection to {username} ({endpoint}) for remote token {remoteToken} established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+            Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for remote token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
             SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
         }
 
@@ -182,13 +181,14 @@ namespace Soulseek.Network
 
             async Task<IMessageConnection> GetConnection()
             {
+                Diagnostic.Debug($"Attempting indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
+
                 var connection = ConnectionFactory.GetMessageConnection(
                     connectToPeerResponse.Username,
                     connectToPeerResponse.IPEndPoint,
                     SoulseekClient.Options.PeerConnectionOptions);
 
-                connection.Context = Constants.ConnectionMethod.Indirect;
-                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Solicited | ConnectionTypes.Indirect;
+                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
                 connection.Disconnected += MessageConnection_Disconnected;
@@ -206,7 +206,7 @@ namespace Soulseek.Network
                     throw;
                 }
 
-                Diagnostic.Debug($"{connection.Type} message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (id: {connection.Id})");
+                Diagnostic.Debug($"Message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
         }
@@ -256,9 +256,11 @@ namespace Soulseek.Network
                     }
 
                     var connection = await task.ConfigureAwait(false);
+                    connection.Disconnected += MessageConnection_Disconnected;
+
                     var isDirect = task == direct;
 
-                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
+                    Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
                     (isDirect ? indirectCts : directCts).Cancel();
 
                     if (isDirect)
@@ -266,8 +268,12 @@ namespace Soulseek.Network
                         var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
                         await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                     }
+                    else
+                    {
+                        connection.StartReadingContinuously();
+                    }
 
-                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({ipEndPoint}) established, returning to caller. (id: {connection.Id})");
+                    Diagnostic.Debug($"Message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
             }
@@ -281,12 +287,14 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new connection and the associated remote token.</returns>
         public async Task<(IConnection Connection, int RemoteToken)> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
+            Diagnostic.Debug($"Attempting indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
+
             var connection = ConnectionFactory.GetConnection(
                 connectToPeerResponse.IPEndPoint,
                 SoulseekClient.Options.TransferConnectionOptions);
 
-            connection.Context = Constants.ConnectionMethod.Direct;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Solicited direct transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} disconnected. (id: {connection.Id})");
+            connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} disconnected. (type: {connection.Type}, id: {connection.Id})");
 
             int remoteToken;
 
@@ -306,7 +314,7 @@ namespace Soulseek.Network
                 throw;
             }
 
-            Diagnostic.Debug($"Solicited direct transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} established. (id: {connection.Id})");
+            Diagnostic.Debug($"Transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} established. (type: {connection.Type}, id: {connection.Id})");
             return (connection, remoteToken);
         }
 
@@ -349,7 +357,7 @@ namespace Soulseek.Network
                 var connection = await task.ConfigureAwait(false);
                 var isDirect = task == direct;
 
-                Diagnostic.Debug($"Unsolicited {connection.Context} transfer connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
                 (isDirect ? indirectCts : directCts).Cancel();
 
                 if (isDirect)
@@ -358,10 +366,9 @@ namespace Soulseek.Network
                     await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
                 }
 
-                // send our token (the remote token from the other side's perspective)
                 await connection.WriteAsync(BitConverter.GetBytes(token), cancellationToken).ConfigureAwait(false);
 
-                Diagnostic.Debug($"Unsolicited {connection.Context} transfer connection to {username} ({ipEndPoint}) established, returning to caller. (id: {connection.Id})");
+                Diagnostic.Debug($"Transfer connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
         }
@@ -397,14 +404,14 @@ namespace Soulseek.Network
 
         private async Task<IMessageConnection> GetMessageConnectionOutboundDirectAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
+            Diagnostic.Debug($"Attempting direct message connection to {username} ({ipEndPoint})");
+
             var connection = ConnectionFactory.GetMessageConnection(
                 username,
                 ipEndPoint,
                 SoulseekClient.Options.PeerConnectionOptions);
 
-            connection.Context = Constants.ConnectionMethod.Direct;
-            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Unsolicited | ConnectionTypes.Direct;
-            connection.Disconnected += MessageConnection_Disconnected;
+            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
 
@@ -418,13 +425,15 @@ namespace Soulseek.Network
                 throw;
             }
 
-            Diagnostic.Debug($"{connection.Type} message connection to {username} ({ipEndPoint}) established. (id: {connection.Id})");
+            Diagnostic.Debug($"Direct message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
             return connection;
         }
 
         private async Task<IMessageConnection> GetMessageConnectionOutboundIndirectAsync(string username, CancellationToken cancellationToken)
         {
             var solicitationToken = SoulseekClient.GetNextToken();
+
+            Diagnostic.Debug($"Soliciting indirect message connection to {username} with token {solicitationToken}");
 
             try
             {
@@ -444,17 +453,13 @@ namespace Soulseek.Network
                         SoulseekClient.Options.PeerConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
-                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({incomingConnection.IPEndPoint}) handed off (old: {incomingConnection.Id}, new: {connection.Id})");
+                    Diagnostic.Debug($"Indirect message connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
-                    connection.Context = Constants.ConnectionMethod.Indirect;
-                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Unsolicited | ConnectionTypes.Indirect;
-                    connection.Disconnected += MessageConnection_Disconnected;
+                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                     connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
 
-                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
-
-                    connection.StartReadingContinuously();
+                    Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
             }
@@ -466,10 +471,12 @@ namespace Soulseek.Network
 
         private async Task<IConnection> GetTransferConnectionOutboundDirectAsync(IPEndPoint ipEndPoint, int token, CancellationToken cancellationToken)
         {
+            Diagnostic.Debug($"Attempting direct transfer connection for token {token} to {ipEndPoint}");
+
             var connection = ConnectionFactory.GetConnection(ipEndPoint, SoulseekClient.Options.TransferConnectionOptions);
 
-            connection.Context = Constants.ConnectionMethod.Direct;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound direct transfer connection for token {token} ({ipEndPoint}) disconnected. (id: {connection.Id})");
+            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
+            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} to {ipEndPoint} disconnected. (type: {connection.Type}, id: {connection.Id})");
 
             try
             {
@@ -481,11 +488,14 @@ namespace Soulseek.Network
                 throw;
             }
 
+            Diagnostic.Debug($"Direct transfer connection for {token} to {connection.IPEndPoint} established. (type: {connection.Type}, id: {connection.Id})");
             return connection;
         }
 
         private async Task<IConnection> GetTransferConnectionOutboundIndirectAsync(string username, int token, CancellationToken cancellationToken)
         {
+            Diagnostic.Debug($"Soliciting indirect message connection to {username} with token {token}");
+
             var solicitationToken = SoulseekClient.GetNextToken();
 
             try
@@ -505,9 +515,12 @@ namespace Soulseek.Network
                         SoulseekClient.Options.TransferConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
-                    connection.Context = Constants.ConnectionMethod.Indirect;
-                    connection.Disconnected += (sender, e) => Diagnostic.Debug($"Outbound indirect transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (id: {connection.Id})");
+                    Diagnostic.Debug($"Indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
+                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Inbound;
+                    connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
+
+                    Diagnostic.Debug($"Indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
             }
@@ -521,7 +534,7 @@ namespace Soulseek.Network
         {
             var connection = (IMessageConnection)sender;
 
-            Diagnostic.Debug($"{connection.Type} message connection to {connection.Username} ({connection.IPEndPoint}) disconnected. (id: {connection.Id})");
+            Diagnostic.Debug($"Message connection to {connection.Username} ({connection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
 
             TryRemoveMessageConnectionRecord(connection);
             connection.Dispose();
@@ -529,12 +542,12 @@ namespace Soulseek.Network
 
         private void TryRemoveMessageConnectionRecord(IMessageConnection connection)
         {
-            if (MessageConnectionDictionary.TryRemove(connection.Username, out _))
+            if (MessageConnectionDictionary.TryRemove(connection.Username, out var cachedConnection))
             {
                 Diagnostic.Debug($"Removed message connection record for {connection.Key.Username} ({connection.IPEndPoint}) (type: {connection.Type}, id: {connection.Id})");
             }
 
-            Diagnostic.Debug($"Connection cache now contains {MessageConnectionDictionary.Count} connections.");
+            Diagnostic.Debug($"Message connection cache now contains {MessageConnectionDictionary.Count} connections.");
         }
     }
 }
