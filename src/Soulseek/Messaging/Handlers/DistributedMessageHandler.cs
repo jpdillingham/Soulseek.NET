@@ -82,7 +82,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.ServerSearchRequest:
                         var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
 
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Id));
 
                         var forwardedMessage = new DistributedSearchRequest(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query);
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(forwardedMessage.ToByteArray()).Forget();
@@ -96,7 +96,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Context, connection.Key));
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Id));
                         SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
 
                         await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
@@ -113,7 +113,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.BranchLevel:
                         var branchLevel = DistributedBranchLevel.FromByteArray(message);
 
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Context, connection.Key), branchLevel.Level);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Id), branchLevel.Level);
 
                         if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
@@ -125,7 +125,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.BranchRoot:
                         var branchRoot = DistributedBranchRoot.FromByteArray(message);
 
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Context, connection.Key), branchRoot.Username);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Id), branchRoot.Username);
 
                         if ((connection.Username, connection.IPEndPoint) == SoulseekClient.DistributedConnectionManager.Parent)
                         {
