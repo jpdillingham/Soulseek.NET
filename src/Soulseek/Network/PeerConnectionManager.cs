@@ -30,8 +30,6 @@ namespace Soulseek.Network
     /// </summary>
     internal sealed class PeerConnectionManager : IPeerConnectionManager
     {
-        private int waitingMessageConnections = 0;
-
         /// <summary>
         ///     Initializes a new instance of the <see cref="PeerConnectionManager"/> class.
         /// </summary>
@@ -45,15 +43,10 @@ namespace Soulseek.Network
         {
             SoulseekClient = soulseekClient ?? throw new ArgumentNullException(nameof(soulseekClient));
 
-            ConcurrentMessageConnectionLimit = SoulseekClient?.Options?.ConcurrentPeerMessageConnectionLimit
-                ?? new SoulseekClientOptions().ConcurrentPeerMessageConnectionLimit;
-
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-
-            MessageSemaphore = new SemaphoreSlim(ConcurrentMessageConnectionLimit, ConcurrentMessageConnectionLimit);
         }
 
         /// <summary>
@@ -62,74 +55,55 @@ namespace Soulseek.Network
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Gets the number of allowed concurrent peer message connections.
-        /// </summary>
-        public int ConcurrentMessageConnectionLimit { get; }
-
-        /// <summary>
-        ///     Gets current list of peer message connections.
-        /// </summary>
-        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections =>
-            MessageConnectionDictionary.Values.Select(r => (r.Connection.Username, r.Connection.IPEndPoint)).ToList().AsReadOnly();
-
-        /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
-
-        /// <summary>
-        ///     Gets the number of waiting peer message connections.
-        /// </summary>
-        public int WaitingMessageConnections => waitingMessageConnections;
 
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
 
-        private ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)> MessageConnectionDictionary { get; set; } =
-            new ConcurrentDictionary<string, (SemaphoreSlim Semaphore, IMessageConnection Connection)>();
+        private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> MessageConnectionDictionary { get; set; } =
+            new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
 
-        private SemaphoreSlim MessageSemaphore { get; }
-        private CancellationTokenSource MessageSemaphoreCancellationTokenSource { get; } = new CancellationTokenSource();
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; set; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
 
         /// <summary>
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
+        /// <remarks>
+        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message only.  Because this connection is fully established by the time it is passed to this method, it must supercede any cached connection, as it will be the most recently established connection as tracked by the remote user.
+        /// </remarks>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
         public async Task AddMessageConnectionAsync(string username, IConnection incomingConnection)
         {
-            var endpoint = incomingConnection.IPEndPoint;
-
-            var connection = ConnectionFactory.GetMessageConnection(
+            await MessageConnectionDictionary.AddOrUpdate(
                 username,
-                endpoint,
-                SoulseekClient.Options.PeerConnectionOptions,
-                incomingConnection.HandoffTcpClient());
+                new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection())),
+                (key, existing) => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
 
-            connection.Context = Constants.ConnectionMethod.Direct;
-            connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
-            connection.Disconnected += (sender, e) => Diagnostic.Debug($"Unsolicited inbound message connection to {username} ({endpoint}) disconnected. (id: {connection.Id})");
-
-            Diagnostic.Debug($"Unsolicited inbound connection to {username} ({connection.IPEndPoint}) established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
-
-            connection.StartReadingContinuously();
-
-            // get the cached semaphore and await it to prevent concurrent connection attempts from colliding
-            // this may appear to hang if an indirect connection attempt is in progress and ultimately times out
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username, semaphoreOnly: true).ConfigureAwait(false);
-            await semaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
-
-            try
+            IMessageConnection GetConnection()
             {
-                AddOrUpdateMessageConnectionRecord(username, connection);
-            }
-            finally
-            {
-                semaphore.Release();
+                var endpoint = incomingConnection.IPEndPoint;
+
+                var connection = ConnectionFactory.GetMessageConnection(
+                    username,
+                    endpoint,
+                    SoulseekClient.Options.PeerConnectionOptions,
+                    incomingConnection.HandoffTcpClient());
+
+                connection.Context = Constants.ConnectionMethod.Direct;
+                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Unsolicited | ConnectionTypes.Direct;
+                connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                connection.Disconnected += MessageConnection_Disconnected;
+
+                Diagnostic.Debug($"{connection.Type} connection to {username} ({connection.IPEndPoint}) established and handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+
+                connection.StartReadingContinuously();
+                return connection;
             }
         }
 
@@ -195,69 +169,45 @@ namespace Soulseek.Network
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
+        /// <remarks>
+        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an unsolicited <see cref="ConnectToPeerResponse"/> of type 'P' only. This connection should only be initiated if there is no existing connection; superceding should be avoided if possible.
+        /// </remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new or updated connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
-            var key = new ConnectionKey(
+            return await MessageConnectionDictionary.GetOrAdd(
                 connectToPeerResponse.Username,
-                connectToPeerResponse.IPEndPoint);
+                key => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
 
-            IMessageConnection connection = null;
-
-            // get or add a connection. we only care about the semphore at this point, so discard the connection.
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(key.Username, semaphoreOnly: true).ConfigureAwait(false);
-
-            // await the semaphore we got back to ensure exclusive access over the code that follows. this is important because
-            // while the GetOrAdd above either gets or retrieves a connection in a thread safe manner (through
-            // ConcurrentDictionary), the connection itself is not synchronized.
-            await semaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
-
-            try
+            async Task<IMessageConnection> GetConnection()
             {
-                // retrieve the connection now that we have exclusive access to the record.
-                (_, connection) = await GetOrAddMessageConnectionRecordAsync(key.Username).ConfigureAwait(false);
+                var connection = ConnectionFactory.GetMessageConnection(
+                    connectToPeerResponse.Username,
+                    connectToPeerResponse.IPEndPoint,
+                    SoulseekClient.Options.PeerConnectionOptions);
 
-                // the connection is null when added, so if it is no longer null then it was either already established prior to
-                // this method being invoked, or has been established by another thread between the first and second calls to
-                // GetOrAddMessageConnectionAsync(). either way, return it as is.
-                if (connection != null)
+                connection.Context = Constants.ConnectionMethod.Indirect;
+                connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Solicited | ConnectionTypes.Indirect;
+                connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
+                connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
+                connection.Disconnected += MessageConnection_Disconnected;
+
+                try
                 {
-                    Diagnostic.Debug($"Returning cached message connection to {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
-                    return connection;
+                    await connection.ConnectAsync().ConfigureAwait(false);
+
+                    var request = new PierceFirewall(connectToPeerResponse.Token).ToByteArray();
+                    await connection.WriteAsync(request).ConfigureAwait(false);
                 }
-                else
+                catch
                 {
-                    connection = ConnectionFactory.GetMessageConnection(
-                        connectToPeerResponse.Username,
-                        connectToPeerResponse.IPEndPoint,
-                        SoulseekClient.Options.PeerConnectionOptions);
-
-                    connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
-                    connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
-
-                    try
-                    {
-                        await connection.ConnectAsync().ConfigureAwait(false);
-
-                        var request = new PierceFirewall(connectToPeerResponse.Token).ToByteArray();
-                        await connection.WriteAsync(request).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        connection.Dispose();
-                        throw;
-                    }
-
-                    (_, connection) = AddOrUpdateMessageConnectionRecord(connectToPeerResponse.Username, connection);
-
-                    Diagnostic.Debug($"Solicited direct connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (id: {connection.Id})");
-                    return connection;
+                    connection.Dispose();
+                    throw;
                 }
-            }
-            finally
-            {
-                semaphore.Release();
+
+                Diagnostic.Debug($"{connection.Type} message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (id: {connection.Id})");
+                return connection;
             }
         }
 
@@ -265,7 +215,8 @@ namespace Soulseek.Network
         ///     Gets a new or existing message connection to the specified <paramref name="username"/>.
         /// </summary>
         /// <remarks>
-        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to connect is returned.
+        ///     If a connection doesn't exist, new direct and indirect connections are attempted simultaneously, and the first to
+        ///     connect is returned.
         /// </remarks>
         /// <param name="username">The username of the user to which to connect.</param>
         /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
@@ -273,67 +224,52 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new or existing connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
-            var (semaphore, _) = await GetOrAddMessageConnectionRecordAsync(username, semaphoreOnly: true).ConfigureAwait(false);
-            await semaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
+            return await MessageConnectionDictionary.GetOrAdd(
+                username,
+                key => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
 
-            IMessageConnection connection;
-
-            try
+            async Task<IMessageConnection> GetConnection()
             {
-                (_, connection) = await GetOrAddMessageConnectionRecordAsync(username).ConfigureAwait(false);
-
-                if (connection != null)
+                using (var directCts = new CancellationTokenSource())
+                using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
+                using (var indirectCts = new CancellationTokenSource())
+                using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
                 {
-                    Diagnostic.Debug($"Returning cached message connection to {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+                    Diagnostic.Debug($"Attempting simultaneous direct and indirect message connections to {username} ({ipEndPoint})");
+
+                    var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
+                    var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
+
+                    var tasks = new[] { direct, indirect }.ToList();
+                    Task<IMessageConnection> task;
+
+                    do
+                    {
+                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                        tasks.Remove(task);
+                    }
+                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+                    if (task.Status != TaskStatus.RanToCompletion)
+                    {
+                        throw new ConnectionException($"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})");
+                    }
+
+                    var connection = await task.ConfigureAwait(false);
+                    var isDirect = task == direct;
+
+                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
+                    (isDirect ? indirectCts : directCts).Cancel();
+
+                    if (isDirect)
+                    {
+                        var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
+                        await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                    }
+
+                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({ipEndPoint}) established, returning to caller. (id: {connection.Id})");
                     return connection;
                 }
-                else
-                {
-                    using (var directCts = new CancellationTokenSource())
-                    using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
-                    using (var indirectCts = new CancellationTokenSource())
-                    using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
-                    {
-                        Diagnostic.Debug($"Attempting simultaneous direct and indirect message connections to {username} ({ipEndPoint})");
-
-                        var direct = GetMessageConnectionOutboundDirectAsync(username, ipEndPoint, directLinkedCts.Token);
-                        var indirect = GetMessageConnectionOutboundIndirectAsync(username, indirectLinkedCts.Token);
-
-                        var tasks = new[] { direct, indirect }.ToList();
-                        Task<IMessageConnection> task;
-
-                        do
-                        {
-                            task = await Task.WhenAny(tasks).ConfigureAwait(false);
-                            tasks.Remove(task);
-                        }
-                        while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-
-                        if (task.Status != TaskStatus.RanToCompletion)
-                        {
-                            throw new ConnectionException($"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})");
-                        }
-
-                        connection = await task.ConfigureAwait(false);
-                        var isDirect = task == direct;
-
-                        Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection. (id: {connection.Id})");
-                        (isDirect ? indirectCts : directCts).Cancel();
-
-                        if (isDirect)
-                        {
-                            var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Peer, SoulseekClient.GetNextToken()).ToByteArray();
-                            await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
-                        }
-
-                        Diagnostic.Debug($"Unsolicited {connection.Context} message connection to {username} ({ipEndPoint}) established, returning to caller. (id: {connection.Id})");
-                        return connection;
-                    }
-                }
-            }
-            finally
-            {
-                semaphore.Release();
             }
         }
 
@@ -433,63 +369,17 @@ namespace Soulseek.Network
         /// <summary>
         ///     Removes and disposes all active and queued connections.
         /// </summary>
-        public void RemoveAndDisposeAll()
+        public async void RemoveAndDisposeAll()
         {
-            MessageSemaphoreCancellationTokenSource.Cancel();
-
             PendingSolicitationDictionary.Clear();
 
             while (!MessageConnectionDictionary.IsEmpty)
             {
-                if (MessageConnectionDictionary.TryRemove(MessageConnectionDictionary.Keys.First(), out var value))
+                if (MessageConnectionDictionary.TryRemove(MessageConnectionDictionary.Keys.First(), out var connection))
                 {
-                    value.Semaphore?.Dispose();
-                    value.Connection?.Dispose();
+                    (await connection.Value.ConfigureAwait(false))?.Dispose();
                 }
             }
-
-            waitingMessageConnections = 0;
-        }
-
-        private (SemaphoreSlim Semaphore, IMessageConnection Connection) AddOrUpdateMessageConnectionRecord(string username, IMessageConnection connection)
-        {
-            if (connection != null)
-            {
-                connection.Disconnected += MessageConnection_Disconnected;
-            }
-
-#pragma warning disable IDE0067, CA2000 // Dispose objects before losing scope
-            return MessageConnectionDictionary.AddOrUpdate(username, (new SemaphoreSlim(1, 1), connection), (k, v) =>
-#pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
-            {
-                // unassign the handler from the connection we are discarding to prevent it from removing a live connection.
-                if (v.Connection != null)
-                {
-                    var old = v.Connection;
-
-                    if (connection != null)
-                    {
-                        Diagnostic.Debug($"Superceding cached connection to {username} ({old.IPEndPoint}) (old: {old.Id}, new: {connection.Id})");
-                    }
-                    else
-                    {
-                        Diagnostic.Debug($"Discarding cached connection to {username} ({old.IPEndPoint}) (id: {v.Connection.Id})");
-                    }
-
-                    old.Disconnected -= MessageConnection_Disconnected;
-                    old.Disconnected += (sender, e) =>
-                    {
-                        Diagnostic.Debug($"{(connection == null ? "Discarded" : "Superceded")} connection to {username} ({old.IPEndPoint}) (context: {old.Context}, id: {old.Id}) disconnected");
-                        old.Dispose();
-                    };
-                }
-                else if (v.Connection == null && connection != null)
-                {
-                    Diagnostic.Debug($"Adding cached connection to {username} ({connection.IPEndPoint}) (id: {connection.Id})");
-                }
-
-                return (v.Semaphore, connection);
-            });
         }
 
         private void Dispose(bool disposing)
@@ -499,7 +389,6 @@ namespace Soulseek.Network
                 if (disposing)
                 {
                     RemoveAndDisposeAll();
-                    MessageSemaphore.Dispose();
                 }
 
                 Disposed = true;
@@ -514,6 +403,8 @@ namespace Soulseek.Network
                 SoulseekClient.Options.PeerConnectionOptions);
 
             connection.Context = Constants.ConnectionMethod.Direct;
+            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Unsolicited | ConnectionTypes.Direct;
+            connection.Disconnected += MessageConnection_Disconnected;
             connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
             connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
 
@@ -527,8 +418,7 @@ namespace Soulseek.Network
                 throw;
             }
 
-            Diagnostic.Debug($"Direct message connection to {username} ({ipEndPoint}) established. (id: {connection.Id})");
-            (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
+            Diagnostic.Debug($"{connection.Type} message connection to {username} ({ipEndPoint}) established. (id: {connection.Id})");
             return connection;
         }
 
@@ -554,14 +444,15 @@ namespace Soulseek.Network
                         SoulseekClient.Options.PeerConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
-                    Diagnostic.Debug($"Incoming Indirect message connection to {username} ({incomingConnection.IPEndPoint}) handed off (old: {incomingConnection.Id}, new: {connection.Id})");
+                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({incomingConnection.IPEndPoint}) handed off (old: {incomingConnection.Id}, new: {connection.Id})");
 
                     connection.Context = Constants.ConnectionMethod.Indirect;
+                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Unsolicited | ConnectionTypes.Indirect;
+                    connection.Disconnected += MessageConnection_Disconnected;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                     connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
 
-                    Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
-                    (_, connection) = AddOrUpdateMessageConnectionRecord(username, connection);
+                    Diagnostic.Debug($"{connection.Type} message connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
 
                     connection.StartReadingContinuously();
                     return connection;
@@ -571,55 +462,6 @@ namespace Soulseek.Network
             {
                 PendingSolicitationDictionary.TryRemove(solicitationToken, out _);
             }
-        }
-
-        private async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> GetOrAddMessageConnectionRecordAsync(string username, bool semaphoreOnly = false)
-        {
-            async Task<(SemaphoreSlim Semaphore, IMessageConnection Connection)> VerifyOrDiscardCachedRecord((SemaphoreSlim Semaphore, IMessageConnection Connection) cachedRecord)
-            {
-                bool ping = false;
-
-                if (cachedRecord.Connection != null)
-                {
-                    try
-                    {
-                        Diagnostic.Debug($"Pinging cached connection to {cachedRecord.Connection?.Username} ({cachedRecord.Connection?.IPEndPoint}) (id: {cachedRecord.Connection?.Id})");
-                        await cachedRecord.Connection.WriteAsync(new ServerPing().ToByteArray()).ConfigureAwait(false);
-                        ping = true;
-                    }
-                    catch (Exception)
-                    {
-                        ping = false;
-                        Diagnostic.Debug($"Failed to ping {cachedRecord.Connection?.Username} ({cachedRecord.Connection?.IPEndPoint}) (id: {cachedRecord.Connection?.Id})");
-                    }
-
-                    if (!ping || cachedRecord.Connection.State != ConnectionState.Connected)
-                    {
-                        Diagnostic.Debug($"Cached message connection to {username} ({cachedRecord.Connection.IPEndPoint}) is stale and is being discarded (id: {cachedRecord.Connection.Id})");
-                        return AddOrUpdateMessageConnectionRecord(username, null);
-                    }
-                }
-
-                return cachedRecord;
-            }
-
-            // try to pull a cached record
-            if (MessageConnectionDictionary.TryGetValue(username, out var record))
-            {
-                return semaphoreOnly ? (record.Semaphore, null) : await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
-            }
-
-            // if we weren't able to get a connection above, this connection is not yet cached.  to control the number of active connections
-            // we must wait on the relevant semaphore here which will block downstream code until a connection slot frees up.  make sure that any
-            // code that is sensitive to timeout gets a connection before invoking any operation that can time out, as a delay obtaining a connection
-            // shouldn't generally cause a timeout. make sure waits are set up after fetching connections.
-            Interlocked.Increment(ref waitingMessageConnections);
-            await MessageSemaphore.WaitAsync(MessageSemaphoreCancellationTokenSource.Token).ConfigureAwait(false);
-            Interlocked.Decrement(ref waitingMessageConnections);
-
-            record = MessageConnectionDictionary.GetOrAdd(username, (k) => (new SemaphoreSlim(1, 1), null));
-
-            return semaphoreOnly ? (record.Semaphore, null) : await VerifyOrDiscardCachedRecord(record).ConfigureAwait(false);
         }
 
         private async Task<IConnection> GetTransferConnectionOutboundDirectAsync(IPEndPoint ipEndPoint, int token, CancellationToken cancellationToken)
@@ -678,20 +520,21 @@ namespace Soulseek.Network
         private void MessageConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
+
+            Diagnostic.Debug($"{connection.Type} message connection to {connection.Username} ({connection.IPEndPoint}) disconnected. (id: {connection.Id})");
+
             TryRemoveMessageConnectionRecord(connection);
             connection.Dispose();
         }
 
         private void TryRemoveMessageConnectionRecord(IMessageConnection connection)
         {
-            if (MessageConnectionDictionary.TryRemove(connection.Key.Username, out _))
+            if (MessageConnectionDictionary.TryRemove(connection.Username, out _))
             {
-                Diagnostic.Debug($"Removing message connection to {connection.Key.Username} ({connection.IPEndPoint}) (context: {connection.Context ?? "<none>"}, id: {connection.Id})");
-
-                // only release if we successfully removed a connection. this can throw if another thread released it first and
-                // the semaphore tries to release more than its capacity.
-                MessageSemaphore.Release();
+                Diagnostic.Debug($"Removed message connection record for {connection.Key.Username} ({connection.IPEndPoint}) (type: {connection.Type}, id: {connection.Id})");
             }
+
+            Diagnostic.Debug($"Connection cache now contains {MessageConnectionDictionary.Count} connections.");
         }
     }
 }
