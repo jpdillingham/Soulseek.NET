@@ -139,6 +139,11 @@ namespace Soulseek.Network.Tcp
         public ConnectionState State { get; protected set; }
 
         /// <summary>
+        ///     Gets or sets the connection type.
+        /// </summary>
+        public ConnectionTypes Type { get; set; }
+
+        /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
         /// </summary>
         protected bool Disposed { get; set; } = false;

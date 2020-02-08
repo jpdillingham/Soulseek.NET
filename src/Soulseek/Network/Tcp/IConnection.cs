@@ -80,6 +80,11 @@ namespace Soulseek.Network.Tcp
         ConnectionState State { get; }
 
         /// <summary>
+        ///     Gets or sets the connection type.
+        /// </summary>
+        ConnectionTypes Type { get; set; }
+
+        /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
         /// </summary>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
