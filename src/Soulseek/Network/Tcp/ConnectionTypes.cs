@@ -36,23 +36,13 @@ namespace Soulseek.Network
         Inbound = 2,
 
         /// <summary>
-        ///     Unsolicited.
-        /// </summary>
-        Unsolicited = 4,
-
-        /// <summary>
-        ///     Solicited.
-        /// </summary>
-        Solicited = 8,
-
-        /// <summary>
         ///     Direct.
         /// </summary>
-        Direct = 16,
+        Direct = 4,
 
         /// <summary>
         ///     Indirect.
         /// </summary>
-        Indirect = 32,
+        Indirect = 8,
     }
 }

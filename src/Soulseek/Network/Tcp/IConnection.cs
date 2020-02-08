@@ -50,11 +50,6 @@ namespace Soulseek.Network.Tcp
         event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        ///     Gets or sets the connection context.
-        /// </summary>
-        object Context { get; set; }
-
-        /// <summary>
         ///     Gets the connection id.
         /// </summary>
         Guid Id { get; }
