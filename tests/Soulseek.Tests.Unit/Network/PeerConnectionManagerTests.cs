@@ -83,9 +83,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 manager.RemoveAndDisposeAll();
 
-                Assert.Empty(manager.MessageConnections);
                 Assert.Empty(manager.PendingSolicitations);
-                Assert.Equal(0, manager.WaitingMessageConnections);
             }
         }
 
@@ -393,16 +391,16 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferOutboundDirectAsync")]
-        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync sets connection context to Direct"), AutoData]
-        internal async Task GetTransferConnectionOutboundDirectAsync_Sets_Connection_Context_To_Direct(IPEndPoint endpoint, int token)
+        [Theory(DisplayName = "GetTransferConnectionOutboundDirectAsync sets connection type to Outbound Direct"), AutoData]
+        internal async Task GetTransferConnectionOutboundDirectAsync_Sets_Connection_Type_To_Outbound_Direct(IPEndPoint endpoint, int token)
         {
-            object context = null;
+            ConnectionTypes type = ConnectionTypes.None;
 
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
-            conn.SetupSet(m => m.Context = It.IsAny<string>())
-                .Callback<object>(o => context = o);
+            conn.SetupSet(m => m.Type = It.IsAny<ConnectionTypes>())
+                .Callback<ConnectionTypes>(o => type = o);
 
             var (manager, mocks) = GetFixture();
 
@@ -412,10 +410,10 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             using (var newConn = await manager.InvokeMethod<Task<IConnection>>("GetTransferConnectionOutboundDirectAsync", endpoint, token, CancellationToken.None))
             {
-                Assert.Equal(Constants.ConnectionMethod.Direct, context);
+                Assert.Equal(ConnectionTypes.Outbound | ConnectionTypes.Direct, type);
             }
 
-            conn.VerifySet(m => m.Context = Constants.ConnectionMethod.Direct);
+            conn.VerifySet(m => m.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct);
         }
 
         [Trait("Category", "GetTransferConnectionOutboundIndirectAsync")]
