@@ -33,7 +33,6 @@ namespace Soulseek.Network
     /// </summary>
     internal sealed class DistributedConnectionManager : IDistributedConnectionManager
     {
-        private readonly object parentCandidateSyncRoot = new object();
         private readonly object statusSyncRoot = new object();
 
         /// <summary>
@@ -56,17 +55,6 @@ namespace Soulseek.Network
 
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-
-            StatusTimer = new SystemTimer()
-            {
-                Enabled = true,
-                Interval = 30000,
-            };
-
-            StatusTimer.Elapsed += async (sender, e) =>
-            {
-                await UpdateStatusAsync().ConfigureAwait(false);
-            };
 
             ParentWatchdogTimer = new SystemTimer()
             {
@@ -123,13 +111,12 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
-        private List<IMessageConnection> ParentCandidateConnections { get; } = new List<IMessageConnection>();
+        private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
         private SystemTimer ParentWatchdogTimer { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
-        private SystemTimer StatusTimer { get; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
@@ -143,7 +130,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Inbound child connection solicitation from {r.Username} ({r.IPEndPoint}) for token {r.Token} rejected: limit of {ConcurrentChildLimit} reached");
+                Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} rejected: limit of {ConcurrentChildLimit} reached");
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
@@ -181,7 +168,7 @@ namespace Soulseek.Network
                     throw;
                 }
 
-                Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) added. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
 
                 return connection;
@@ -200,7 +187,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Direct child connection to {username} ({endpoint}) rejected: limit of {ConcurrentChildLimit} reached.");
+                Diagnostic.Debug($"Inbound child connection to {username} ({endpoint}) rejected: limit of {ConcurrentChildLimit} reached.");
                 incomingConnection.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
@@ -214,6 +201,8 @@ namespace Soulseek.Network
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
                 Diagnostic.Debug($"Inbound child connection to {username} ({incomingConnection.IPEndPoint}) accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
+
+                var superceded = false;
 
                 var connection = ConnectionFactory.GetMessageConnection(
                     username,
@@ -233,6 +222,7 @@ namespace Soulseek.Network
                     Diagnostic.Debug($"Superceding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
                     cachedConnection.Disconnect("Superceded.");
                     cachedConnection.Dispose();
+                    superceded = true;
                 }
 
                 try
@@ -248,8 +238,8 @@ namespace Soulseek.Network
                     throw;
                 }
 
-                Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) added. (type: {connection.Type}, id: {connection.Id})");
-                Diagnostic.Info($"Added child connection to {connection.Username} ({connection.IPEndPoint})");
+                Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Info($"{(superceded ? "Updated" : "Added")} child connection to {connection.Username} ({connection.IPEndPoint})");
 
                 return connection;
             }
@@ -258,58 +248,75 @@ namespace Soulseek.Network
         /// <summary>
         ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.
         /// </summary>
+        /// <remarks>
+        ///     This method is invoked upon receipt of a list of new parent candidates via a <see cref="NetInfoNotification"/>, or
+        ///     when a previous parent is disconnected. In the event of a disconnection, a connection will be attempted using the
+        ///     existing list of parent connections, if there is one.
+        /// </remarks>
         /// <param name="parentCandidates">The list of parent connection candidates provided by the server.</param>
         /// <returns>The operation context.</returns>
         public async Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates)
         {
-            if (HasParent || !parentCandidates.Any())
+            ParentCandidateList = parentCandidates.ToList();
+
+            if (HasParent || !ParentCandidateList.Any())
             {
+                await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
 
-            Diagnostic.Info($"Attempting to select a new parent connection from {parentCandidates.Count()} candidates");
+            Diagnostic.Info($"Attempting to establish a new parent connection from {ParentCandidateList.Count} candidates");
 
             using (var cts = new CancellationTokenSource())
             {
-                var pendingConnectTasks = parentCandidates.Select(p => GetParentConnectionAsync(p.Username, p.IPEndPoint, cts.Token)).ToList();
-                Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> parentTask;
+                var tasks = ParentCandidateList.Select(p => GetParentCandidateConnectionAsync(p.Username, p.IPEndPoint, cts.Token)).ToList();
 
-                do
+                try
                 {
-                    parentTask = await Task.WhenAny(pendingConnectTasks).ConfigureAwait(false);
-                    pendingConnectTasks.Remove(parentTask);
+                    await Task.WhenAll(tasks).ConfigureAwait(false);
                 }
-                while (parentTask.Status != TaskStatus.RanToCompletion && pendingConnectTasks.Count > 0);
-
-                if (parentTask.Status != TaskStatus.RanToCompletion)
+                catch
                 {
-                    var msg = "Failed to connect to any of the distributed parent candidates";
-                    Diagnostic.Warning(msg);
-                    await UpdateStatusAsync().ConfigureAwait(false);
-                    throw new ConnectionException(msg);
+                    // noop
                 }
 
-                (ParentConnection, BranchLevel, BranchRoot) = await parentTask.ConfigureAwait(false);
+                var successfulConnections = tasks
+                    .Where(t => t.Status == TaskStatus.RanToCompletion)
+                    .Select(async t => await t.ConfigureAwait(false))
+                    .Select(t => t.Result)
+                    .OrderBy(c => c.BranchLevel)
+                    .ToList();
 
-                ParentConnection.Disconnected += ParentConnection_Disconnected;
-                ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
-
-                Diagnostic.Debug($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPEndPoint}) (id: {ParentConnection.Id})");
-                Diagnostic.Info($"Adopted parent {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
-
-                cts.Cancel();
-                PendingSolicitationDictionary.Clear();
-
-                lock (parentCandidateSyncRoot)
+                if (successfulConnections.Any())
                 {
-                    ParentCandidateConnections.Remove(ParentConnection);
+                    Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
 
-                    foreach (var connection in ParentCandidateConnections)
+                    (ParentConnection, BranchLevel, BranchRoot) = successfulConnections.First();
+                    Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {BranchRoot}, branch level: {BranchLevel}");
+
+                    ParentConnection.Disconnected += ParentConnection_Disconnected;
+                    ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
+                    ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+
+                    Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
+                    Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
+
+                    successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
+                    ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
+
+                    foreach (var connection in successfulConnections)
                     {
-                        connection.Dispose();
+                        var c = connection.Connection;
+                        Diagnostic.Debug($"Disconnecting parent candidate connection to {c.Username} ({c.IPEndPoint})");
+                        c.Disconnect("Not selected.");
+                        c.Dispose();
                     }
-
-                    ParentCandidateConnections.Clear();
+                }
+                else
+                {
+                    var msg = "Failed to connect to any of the available parent candidates";
+                    Diagnostic.Warning(msg);
+                    throw new ConnectionException(msg);
                 }
 
                 await UpdateStatusAsync().ConfigureAwait(false);
@@ -376,6 +383,7 @@ namespace Soulseek.Network
         public void SetBranchLevel(int branchLevel)
         {
             BranchLevel = branchLevel;
+            UpdateStatusAsync().ConfigureAwait(false);
         }
 
         /// <summary>
@@ -385,14 +393,15 @@ namespace Soulseek.Network
         public void SetBranchRoot(string branchRoot)
         {
             BranchRoot = branchRoot;
+            UpdateStatusAsync().ConfigureAwait(false);
         }
 
         private void ChildConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
             ChildConnectionDictionary.TryRemove(connection.Username, out _);
-            Diagnostic.Debug($"Child {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (id: {connection.Id})");
-            Diagnostic.Info($"Removed child connection to {connection.Username} ({connection.IPEndPoint}): {e.Message}");
+            Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (type: {connection.Type}, id: {connection.Id})");
+            Diagnostic.Info($"Child connection to {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? "." : $": {e.Message}")}.");
             connection.Dispose();
 
             UpdateStatusAsync().ConfigureAwait(false);
@@ -404,7 +413,6 @@ namespace Soulseek.Network
             {
                 if (disposing)
                 {
-                    StatusTimer?.Dispose();
                     ParentWatchdogTimer?.Dispose();
                     RemoveAndDisposeAll();
                 }
@@ -433,98 +441,74 @@ namespace Soulseek.Network
             return payload.ToArray();
         }
 
-        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentCandidateConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
-            using (var directCts = new CancellationTokenSource())
-            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
-            using (var indirectCts = new CancellationTokenSource())
-            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
-            {
-                var direct = GetParentConnectionDirectAsync(username, ipEndPoint, directLinkedCts.Token);
-                var indirect = GetParentConnectionIndirectAsync(username, indirectLinkedCts.Token);
+            Diagnostic.Debug($"Attempting simultaneous direct and indirect parent candidate connections to {username} ({ipEndPoint})");
 
-                var tasks = new[] { direct, indirect }.ToList();
-                Task<IMessageConnection> task;
+            var direct = GetParentCandidateConnectionDirectAsync(username, ipEndPoint, cancellationToken);
+            var indirect = GetParentCandidateConnectionIndirectAsync(username, cancellationToken);
 
-                do
-                {
-                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
-                    tasks.Remove(task);
-                }
-                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-
-                if (task.Status != TaskStatus.RanToCompletion)
-                {
-                    throw new ConnectionException($"Failed to establish a distributed parent connection to {username} ({ipEndPoint})");
-                }
-
-                var connection = await task.ConfigureAwait(false);
-                var isDirect = task == direct;
-
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
-
-                Diagnostic.Debug($"{connection.Type} parent candidate connection to {username} ({ipEndPoint}) established.  Waiting for branch information and first SearchRequest message. (id: {connection.Id})");
-                (isDirect ? indirectCts : directCts).Cancel();
-
-                if (!isDirect)
-                {
-                    connection.StartReadingContinuously();
-                }
-
-                var branchLevelWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Id), cancellationToken: cancellationToken);
-                var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Id), cancellationToken: cancellationToken);
-                var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Id), cancellationToken: cancellationToken);
-
-                // wait for the branch level and first search request. branch roots will not send the root.
-                var waits = new[] { branchLevelWait, searchWait }.ToList();
-                var waitsTask = Task.WhenAll(waits);
-
-                int? branchLevel = default;
-                string branchRoot;
-
-                try
-                {
-                    await waitsTask.ConfigureAwait(false);
-
-                    branchLevel = await branchLevelWait.ConfigureAwait(false);
-
-                    // if we didn't connect to a root, ensure we get the name of the root.
-                    if (branchLevel > 0)
-                    {
-                        branchRoot = await branchRootWait.ConfigureAwait(false);
-                    }
-                    else
-                    {
-                        Diagnostic.Debug($"Received branch level 0 from {username}; this user is a branch root");
-                        branchRoot = username;
-                    }
-
-                    await searchWait.ConfigureAwait(false);
-                }
-                catch (Exception)
-                {
-                    connection.Disconnect("One or more required messages was not received");
-                    connection.Dispose();
-
-                    throw new ConnectionException($"Failed to initialize parent connection to {username} ({ipEndPoint}); one or more required messages was not received. (id: {connection.Id})");
-                }
-
-                Diagnostic.Debug($"Received branch level {branchLevel}, root {branchRoot} and first search request from {username} ({ipEndPoint}) (id: {connection.Id})");
-
-                return (connection, branchLevel.Value, branchRoot);
-            }
-        }
-
-        private async Task<IMessageConnection> GetParentConnectionDirectAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
-        {
-            var connection = ConnectionFactory.GetMessageConnection(username, ipEndPoint, SoulseekClient.Options.DistributedConnectionOptions);
-            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
-            connection.Disconnected += ParentCandidateConnection_Disconnected;
+            var tasks = new[] { direct, indirect };
 
             try
             {
+                await Task.WhenAll(tasks).ConfigureAwait(false);
+            }
+            catch
+            {
+                // noop
+            }
+
+            var successfulConnections = tasks
+                .Where(t => t.Status == TaskStatus.RanToCompletion)
+                .Select(async t => await t.ConfigureAwait(false))
+                .Select(t => t.Result)
+                .ToList();
+
+            if (!successfulConnections.Any())
+            {
+                throw new ConnectionException($"Failed to establish a parent candidate connection to {username} ({ipEndPoint})");
+            }
+            else if (successfulConnections.Count == 1)
+            {
+                return successfulConnections.First();
+            }
+            else
+            {
+                Diagnostic.Debug($"Both direct and indirect parent candidate connections to {username} ({ipEndPoint}) established.  Using direct connection.");
+
+                var i = successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Direct)).Connection;
+                i.Disconnect("Not selected.");
+                i.Dispose();
+
+                return successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Direct));
+            }
+        }
+
+        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentCandidateConnectionDirectAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+        {
+            Diagnostic.Debug($"Attempting direct parent candidate connection to {username} ({ipEndPoint})");
+
+            var connection = ConnectionFactory.GetMessageConnection(
+                username,
+                ipEndPoint,
+                SoulseekClient.Options.DistributedConnectionOptions);
+
+            connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
+            connection.Disconnected += ParentCandidateConnection_Disconnected;
+
+            int branchLevel;
+            string branchRoot;
+
+            try
+            {
+                var initWait = WaitForParentCandidateConnectionInitializationAsync(connection, cancellationToken);
+
                 await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
                 await connection.WriteAsync(new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                Diagnostic.Debug($"Direct parent candidate connection to {username} ({ipEndPoint}) initialized.  Waiting for branch information and first search request. (id: {connection.Id})");
+                (branchLevel, branchRoot) = await initWait.ConfigureAwait(false);
             }
             catch
             {
@@ -532,18 +516,15 @@ namespace Soulseek.Network
                 throw;
             }
 
-            lock (parentCandidateSyncRoot)
-            {
-                ParentCandidateConnections.Add(connection);
-            }
-
-            Diagnostic.Debug($"{connection.Type} parent candidate connection to {connection.Username} ({connection.IPEndPoint}) connected. (id: {connection.Id})");
-            return connection;
+            Diagnostic.Debug($"Parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+            return (connection, branchLevel, branchRoot);
         }
 
-        private async Task<IMessageConnection> GetParentConnectionIndirectAsync(string username, CancellationToken cancellationToken)
+        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentCandidateConnectionIndirectAsync(string username, CancellationToken cancellationToken)
         {
             var token = SoulseekClient.GetNextToken();
+
+            Diagnostic.Debug($"Soliciting indirect parent candidate connection to {username} with token {token}");
 
             try
             {
@@ -563,17 +544,31 @@ namespace Soulseek.Network
                         SoulseekClient.Options.DistributedConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
+                    Diagnostic.Debug($"Indirect parent candidate connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+
                     connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                     connection.Disconnected += ParentCandidateConnection_Disconnected;
 
-                    lock (parentCandidateSyncRoot)
+                    int branchLevel;
+                    string branchRoot;
+
+                    try
                     {
-                        ParentCandidateConnections.Add(connection);
+                        var initWait = WaitForParentCandidateConnectionInitializationAsync(connection, cancellationToken);
+
+                        connection.StartReadingContinuously();
+
+                        Diagnostic.Debug($"Indirect parent candidate connection to {username} ({incomingConnection.IPEndPoint}) initialized.  Waiting for branch information and first search request. (id: {connection.Id})");
+                        (branchLevel, branchRoot) = await initWait.ConfigureAwait(false);
+                    }
+                    catch
+                    {
+                        connection.Dispose();
+                        throw;
                     }
 
-                    Diagnostic.Debug($"{connection.Type} parent candidate connection to {connection.Username} ({connection.IPEndPoint}) connected. (id: {connection.Id})");
-
-                    return connection;
+                    Diagnostic.Debug($"Parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                    return (connection, branchLevel, branchRoot);
                 }
             }
             finally
@@ -586,21 +581,25 @@ namespace Soulseek.Network
         {
             var connection = (IMessageConnection)sender;
 
-            Diagnostic.Debug($"{connection.Type} Parent candidate {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? string.Empty : $": {e.Message}")}. (id: {connection.Id})");
+            Diagnostic.Debug($"Parent candidate connection to {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (type: {connection.Type}, id: {connection.Id})");
+
             connection.Dispose();
         }
 
-        private void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
+        private async void ParentConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             var connection = (IMessageConnection)sender;
-            Diagnostic.Info($"Parent {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? "." : $": {e.Message}")}. (id: {connection.Id})");
+
+            Diagnostic.Debug($"Parent connection to {connection.Username} ({connection.IPEndPoint}) disconnected: {e.Message} (type: {connection.Type}, id: {connection.Id})");
+            Diagnostic.Info($"Parent connection to {connection.Username} ({connection.IPEndPoint}) disconnected{(e.Message == null ? "." : $": {e.Message}")}.");
+
             ParentConnection = null;
             BranchLevel = 0;
             BranchRoot = string.Empty;
 
             connection.Dispose();
 
-            UpdateStatusAsync().ConfigureAwait(false);
+            await AddParentConnectionAsync(ParentCandidateList).ConfigureAwait(false);
         }
 
         private async Task UpdateStatusAsync()
@@ -615,7 +614,7 @@ namespace Soulseek.Network
 
             var haveNoParents = !HasParent;
             var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address ?? IPAddress.None : IPAddress.None;
-            var branchLevel = HasParent ? BranchLevel + 1 : 0;
+            var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
             payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
@@ -667,6 +666,86 @@ namespace Soulseek.Network
                 else
                 {
                     Diagnostic.Debug(msg, ex);
+                }
+            }
+        }
+
+        private async Task<(int BranchLevel, string BranchRoot)> WaitForParentCandidateConnectionInitializationAsync(IMessageConnection connection, CancellationToken cancellationToken)
+        {
+            connection.MessageRead += ParentCandidateConnection_MessageRead;
+
+            var branchLevelWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Id), cancellationToken: cancellationToken);
+            var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Id), cancellationToken: cancellationToken);
+            var searchWait = SoulseekClient.Waiter.Wait(new WaitKey(Constants.WaitKey.SearchRequestMessage, connection.Id), cancellationToken: cancellationToken);
+
+            // wait for the branch level and first search request. branch roots will not send the root.
+            var waits = new[] { branchLevelWait, searchWait }.ToList();
+            var waitsTask = Task.WhenAll(waits);
+
+            try
+            {
+                int branchLevel;
+                string branchRoot;
+
+                await waitsTask.ConfigureAwait(false);
+
+                branchLevel = await branchLevelWait.ConfigureAwait(false);
+
+                // if we didn't connect to a root, ensure we get the name of the root.
+                if (branchLevel > 0)
+                {
+                    branchRoot = await branchRootWait.ConfigureAwait(false);
+                }
+                else
+                {
+                    Diagnostic.Debug($"Received branch level 0 from parent candidate {connection.Username}; this user is a branch root.");
+                    branchRoot = connection.Username;
+                }
+
+                await searchWait.ConfigureAwait(false);
+
+                return (branchLevel, branchRoot);
+            }
+            catch (Exception)
+            {
+                throw new ConnectionException($"Failed to retrieve branch info from parent candidate connection to {connection.Username} ({connection.IPEndPoint}); one or more required messages was not received. (id: {connection.Id})");
+            }
+            finally
+            {
+                connection.MessageRead -= ParentCandidateConnection_MessageRead;
+            }
+
+            void ParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
+            {
+                var conn = (IMessageConnection)sender;
+                var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
+
+                try
+                {
+                    switch (code)
+                    {
+                        case MessageCode.Distributed.ServerSearchRequest:
+                        case MessageCode.Distributed.SearchRequest:
+                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Id));
+                            break;
+
+                        case MessageCode.Distributed.BranchLevel:
+                            var branchLevel = DistributedBranchLevel.FromByteArray(e.Message);
+                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Id), branchLevel.Level);
+                            break;
+
+                        case MessageCode.Distributed.BranchRoot:
+                            var branchRoot = DistributedBranchRoot.FromByteArray(e.Message);
+                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Id), branchRoot.Username);
+                            break;
+
+                        default:
+                            break;
+                    }
+                }
+                catch
+                {
+                    // noop
                 }
             }
         }
