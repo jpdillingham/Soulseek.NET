@@ -22,7 +22,6 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given data"), AutoData]
         public void Instantiation(
-            int concurrentPeerMessageConnectionLimit,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
             DiagnosticLevel minimumDiagnosticLevel,
@@ -32,7 +31,6 @@ namespace Soulseek.Tests.Unit
             ConnectionOptions transferConnectionOptions)
         {
             var o = new SoulseekClientOptions(
-                concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
                 minimumDiagnosticLevel: minimumDiagnosticLevel,
@@ -41,7 +39,6 @@ namespace Soulseek.Tests.Unit
                 peerConnectionOptions: peerConnectionOptions,
                 transferConnectionOptions: transferConnectionOptions);
 
-            Assert.Equal(concurrentPeerMessageConnectionLimit, o.ConcurrentPeerMessageConnectionLimit);
             Assert.Equal(messageTimeout, o.MessageTimeout);
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
             Assert.Equal(minimumDiagnosticLevel, o.MinimumDiagnosticLevel);
@@ -54,14 +51,12 @@ namespace Soulseek.Tests.Unit
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with default options if null"), AutoData]
         public void Instantiation_Defaults_Options_If_Null(
-            int concurrentPeerMessageConnectionLimit,
             int messageTimeout,
             bool autoAcknowledgePrivateMessages,
             DiagnosticLevel minimumDiagnosticLevel,
             int startingToken)
         {
             var o = new SoulseekClientOptions(
-                concurrentPeerMessageConnectionLimit: concurrentPeerMessageConnectionLimit,
                 messageTimeout: messageTimeout,
                 autoAcknowledgePrivateMessages: autoAcknowledgePrivateMessages,
                 minimumDiagnosticLevel: minimumDiagnosticLevel,
@@ -70,17 +65,6 @@ namespace Soulseek.Tests.Unit
             Assert.NotNull(o.ServerConnectionOptions);
             Assert.NotNull(o.PeerConnectionOptions);
             Assert.NotNull(o.TransferConnectionOptions);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Throws if concurrent peer limit is less than one")]
-        public void Throws_If_Concurrent_Peer_Limit_Is_Less_Than_One()
-        {
-            SoulseekClientOptions x;
-            var ex = Record.Exception(() => x = new SoulseekClientOptions(concurrentPeerMessageConnectionLimit: 0));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(ex);
         }
 
         [Trait("Category", "Instantiation")]

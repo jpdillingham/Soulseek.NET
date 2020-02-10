@@ -43,7 +43,6 @@ namespace Soulseek
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="concurrentDistributedChildrenLimit">The number of allowed distributed children.</param>
-        /// <param name="concurrentPeerMessageConnectionLimit">The number of allowed concurrent outgoing peer message connections.</param>
         /// <param name="messageTimeout">The message timeout, in seconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
@@ -74,13 +73,9 @@ namespace Soulseek
         /// <exception cref="ArgumentOutOfRangeException">
         ///     Thrown when the value supplied for <paramref name="concurrentDistributedChildrenLimit"/> is less than zero.
         /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the value supplied for <paramref name="concurrentPeerMessageConnectionLimit"/> is less than one.
-        /// </exception>
         public SoulseekClientOptions(
             int? listenPort = null,
             int concurrentDistributedChildrenLimit = 25,
-            int concurrentPeerMessageConnectionLimit = 1000,
             int messageTimeout = 5,
             bool autoAcknowledgePrivateMessages = true,
             bool autoAcknowledgePrivilegeNotifications = true,
@@ -104,13 +99,6 @@ namespace Soulseek
             if (ConcurrentDistributedChildrenLimit < 0)
             {
                 throw new ArgumentOutOfRangeException(nameof(concurrentDistributedChildrenLimit), "Must be greater than or equal to zero");
-            }
-
-            ConcurrentPeerMessageConnectionLimit = concurrentPeerMessageConnectionLimit;
-
-            if (ConcurrentPeerMessageConnectionLimit < 1)
-            {
-                throw new ArgumentOutOfRangeException(nameof(concurrentPeerMessageConnectionLimit), "Must be greater than zero");
             }
 
             MessageTimeout = messageTimeout;
@@ -151,11 +139,6 @@ namespace Soulseek
         ///     Gets the number of allowed distributed children. (Default = 100).
         /// </summary>
         public int ConcurrentDistributedChildrenLimit { get; }
-
-        /// <summary>
-        ///     Gets the number of allowed concurrent outgoing peer message connections. (Default = 1000).
-        /// </summary>
-        public int ConcurrentPeerMessageConnectionLimit { get; }
 
         /// <summary>
         ///     Gets the options for distributed message connections.
