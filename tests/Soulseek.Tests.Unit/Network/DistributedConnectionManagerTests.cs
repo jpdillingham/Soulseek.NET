@@ -389,12 +389,9 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
@@ -406,12 +403,9 @@ namespace Soulseek.Tests.Unit.Network
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("rejected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
@@ -433,12 +427,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             using (manager)
             {
-                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, mocks.TcpClient.Object));
+                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
                 Assert.Equal(expectedEx, ex);
@@ -461,7 +452,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()), Times.Once);
@@ -478,15 +469,12 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 var child = manager.Children.FirstOrDefault();
 
@@ -511,9 +499,6 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
@@ -522,7 +507,7 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetProperty("ParentConnection", conn.Object); // fake any connection
                 manager.SetBranchLevel(level);
                 manager.SetBranchRoot(root);
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             var expected = new List<byte>();
@@ -545,15 +530,12 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             var expected = new List<byte>();
@@ -573,15 +555,12 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             conn.Verify(m => m.StartReadingContinuously(), Times.Once);
@@ -598,9 +577,6 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
@@ -609,7 +585,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddChildConnectionAsync(username, mocks.TcpClient.Object);
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
             mocks.Diagnostic
@@ -631,15 +607,12 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            mocks.TcpClient.Setup(m => m.RemoteEndPoint)
-                .Returns(endpoint);
-
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
             {
-                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, mocks.TcpClient.Object));
+                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
             }
 
             mocks.Diagnostic
@@ -1109,7 +1082,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync returns direct when direct connects first"), AutoData]
-        internal async Task GetParentConnectionAsync_Returns_Direct_When_Direct_Connects_First(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Returns_Direct_When_Direct_Connects_First(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1117,8 +1090,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(localUser);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
@@ -1127,9 +1100,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(branchLevel));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1142,7 +1115,7 @@ namespace Soulseek.Tests.Unit.Network
                 var actual = await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, endpoint, CancellationToken.None);
 
                 Assert.Equal(conn.Object, actual.Connection);
-                Assert.Equal(Constants.ConnectionMethod.Direct, actual.Connection.Context);
+                Assert.Equal(ConnectionTypes.Outbound | ConnectionTypes.Direct, actual.Connection.Type);
                 Assert.Equal(branchLevel, actual.BranchLevel);
                 Assert.Equal(branchRoot, actual.BranchRoot);
             }
@@ -1150,7 +1123,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync returns indirect when indirect connects first"), AutoData]
-        internal async Task GetParentConnectionAsync_Returns_Indirect_When_Inirect_Connects_First(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Returns_Indirect_When_Inirect_Connects_First(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1162,8 +1135,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(mocks.TcpClient.Object);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Indirect);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             // direct fetch fails
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
@@ -1176,9 +1149,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(initConn.Object));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(branchLevel));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1191,7 +1164,7 @@ namespace Soulseek.Tests.Unit.Network
                 var actual = await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentConnectionAsync", username, endpoint, CancellationToken.None);
 
                 Assert.Equal(conn.Object, actual.Connection);
-                Assert.Equal(Constants.ConnectionMethod.Indirect, actual.Connection.Context);
+                Assert.Equal(ConnectionTypes.Outbound | ConnectionTypes.Indirect, actual.Connection.Type);
             }
 
             conn.Verify(m => m.StartReadingContinuously(), Times.Once);
@@ -1211,8 +1184,6 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(mocks.TcpClient.Object);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Indirect);
 
             // direct fetch fails
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
@@ -1234,7 +1205,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync returns expected branch info"), AutoData]
-        internal async Task GetParentConnectionAsync_Returns_Expected_Branch_Info(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Returns_Expected_Branch_Info(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1242,8 +1213,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(localUser);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
@@ -1252,9 +1223,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(branchLevel));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1273,7 +1244,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync throws when branch level not received"), AutoData]
-        internal async Task GetParentConnectionAsync_Throws_When_Branch_Level_Not_Received(string localUser, string username, IPEndPoint endpoint, string branchRoot)
+        internal async Task GetParentConnectionAsync_Throws_When_Branch_Level_Not_Received(string localUser, string username, IPEndPoint endpoint, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1281,8 +1252,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(localUser);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
@@ -1291,9 +1262,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<int>(new Exception()));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1313,7 +1284,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync throws when branch root not received"), AutoData]
-        internal async Task GetParentConnectionAsync_Throws_When_Branch_Root_Not_Received(string localUser, string username, IPEndPoint endpoint, int branchLevel)
+        internal async Task GetParentConnectionAsync_Throws_When_Branch_Root_Not_Received(string localUser, string username, IPEndPoint endpoint, int branchLevel, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1321,8 +1292,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(localUser);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
@@ -1331,9 +1302,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(branchLevel + 1));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1353,7 +1324,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync throws when initial search request not received"), AutoData]
-        internal async Task GetParentConnectionAsync_Throws_When_Initial_Search_Request_Not_Received(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Throws_When_Initial_Search_Request_Not_Received(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1361,8 +1332,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(localUser);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
@@ -1371,9 +1342,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(branchLevel));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1393,7 +1364,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync disconnects and disposes connection when init fails"), AutoData]
-        internal async Task GetParentConnectionAsync_Disconnects_And_Disposes_Connection_When_Init_Fails(string localUser, string username, IPEndPoint endpoint, string branchRoot)
+        internal async Task GetParentConnectionAsync_Disconnects_And_Disposes_Connection_When_Init_Fails(string localUser, string username, IPEndPoint endpoint, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1401,8 +1372,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(localUser);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
@@ -1411,9 +1382,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<IConnection>(new Exception()));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromException<int>(new Exception()));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1436,7 +1407,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "GetParentConnectionAsync")]
         [Theory(DisplayName = "GetParentConnectionAsync produces expected diagnostic on success"), AutoData]
-        internal async Task GetParentConnectionAsync_Produces_Expected_Diagnostic_On_Success(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot)
+        internal async Task GetParentConnectionAsync_Produces_Expected_Diagnostic_On_Success(string localUser, string username, IPEndPoint endpoint, int branchLevel, string branchRoot, Guid id)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
 
@@ -1448,8 +1419,8 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(mocks.TcpClient.Object);
 
             var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Indirect);
+            conn.Setup(m => m.Id)
+                .Returns(id);
 
             // direct fetch fails
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
@@ -1462,9 +1433,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(initConn.Object));
 
-            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var branchLevelWaitKey = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
+            var branchRootWaitKey = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id);
+            var searchWaitKey = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(branchLevel));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1546,7 +1517,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddParentConnectionAsync")]
         [Theory(DisplayName = "AddParentConnectionAsync sets Parent to successful connection"), AutoData]
-        internal async Task AddParentConnectionAsync_Sets_Parent_To_Successful_Connection(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2)
+        internal async Task AddParentConnectionAsync_Sets_Parent_To_Successful_Connection(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
         {
             var (manager, mocks) = GetFixture();
 
@@ -1561,24 +1532,24 @@ namespace Soulseek.Tests.Unit.Network
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
-            conn1.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn1.Setup(m => m.Id)
+                .Returns(id1);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
             var conn2 = GetMessageConnectionMock(username2, endpoint1);
-            conn2.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn2.Setup(m => m.Id)
+                .Returns(id2);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully
-            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Context, conn1.Object.Key);
-            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Context, conn1.Object.Key);
-            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Context, conn1.Object.Key);
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Id);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Id);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(0));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1586,9 +1557,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
-            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Context, conn2.Object.Key);
-            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Context, conn2.Object.Key);
-            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Context, conn2.Object.Key);
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Id);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Id);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(0));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1608,7 +1579,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddParentConnectionAsync")]
         [Theory(DisplayName = "AddParentConnectionAsync disposes unselected candidates"), AutoData]
-        internal async Task AddParentConnectionAsync_Disposes_Unselected_Candidates(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2)
+        internal async Task AddParentConnectionAsync_Disposes_Unselected_Candidates(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
         {
             var (manager, mocks) = GetFixture();
 
@@ -1623,24 +1594,24 @@ namespace Soulseek.Tests.Unit.Network
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
-            conn1.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn1.Setup(m => m.Id)
+                .Returns(id1);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
             var conn2 = GetMessageConnectionMock(username2, endpoint2);
-            conn2.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn2.Setup(m => m.Id)
+                .Returns(id2);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully
-            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Context, conn1.Object.Key);
-            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Context, conn1.Object.Key);
-            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Context, conn1.Object.Key);
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Id);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Id);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(0));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1648,9 +1619,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
-            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Context, conn2.Object.Key);
-            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Context, conn2.Object.Key);
-            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Context, conn2.Object.Key);
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Id);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Id);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(0));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1668,7 +1639,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AddParentConnectionAsync")]
         [Theory(DisplayName = "AddParentConnectionAsync produces expected diagnostics on connect"), AutoData]
-        internal async Task AddParentConnectionAsync_Produces_Expected_Diagnostic_On_Connect(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2)
+        internal async Task AddParentConnectionAsync_Produces_Expected_Diagnostic_On_Connect(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
         {
             var (manager, mocks) = GetFixture();
 
@@ -1683,24 +1654,24 @@ namespace Soulseek.Tests.Unit.Network
 
             // mocks for connection #1
             var conn1 = GetMessageConnectionMock(username1, endpoint1);
-            conn1.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn1.Setup(m => m.Id)
+                .Returns(id1);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username1, endpoint1, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn1.Object);
 
             // mocks for connection #2
             var conn2 = GetMessageConnectionMock(username2, endpoint2);
-            conn2.Setup(m => m.Context)
-                .Returns(Constants.ConnectionMethod.Direct);
+            conn2.Setup(m => m.Id)
+                .Returns(id2);
 
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username2, endpoint2, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn2.Object);
 
             // message mocks, to allow either connection to be established fully
-            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Context, conn1.Object.Key);
-            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Context, conn1.Object.Key);
-            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Context, conn1.Object.Key);
+            var branchLevelWaitKey1 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn1.Object.Id);
+            var branchRootWaitKey1 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn1.Object.Id);
+            var searchWaitKey1 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn1.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(0));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
@@ -1708,9 +1679,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait(searchWaitKey1, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.CompletedTask);
 
-            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Context, conn2.Object.Key);
-            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Context, conn2.Object.Key);
-            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Context, conn2.Object.Key);
+            var branchLevelWaitKey2 = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn2.Object.Id);
+            var branchRootWaitKey2 = new WaitKey(Constants.WaitKey.BranchRootMessage, conn2.Object.Id);
+            var searchWaitKey2 = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn2.Object.Id);
             mocks.Waiter.Setup(m => m.Wait<int>(branchLevelWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(0));
             mocks.Waiter.Setup(m => m.Wait<string>(branchRootWaitKey2, It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
