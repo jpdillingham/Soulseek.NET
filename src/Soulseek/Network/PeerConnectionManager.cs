@@ -549,7 +549,7 @@ namespace Soulseek.Network
 
         private void TryRemoveMessageConnectionRecord(IMessageConnection connection)
         {
-            if (MessageConnectionDictionary.TryRemove(connection.Username, out var cachedConnection))
+            if (MessageConnectionDictionary.TryRemove(connection.Username, out _))
             {
                 Diagnostic.Debug($"Removed message connection record for {connection.Key.Username} ({connection.IPEndPoint}) (type: {connection.Type}, id: {connection.Id})");
             }
