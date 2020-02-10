@@ -55,6 +55,13 @@ namespace Soulseek.Network
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
+        ///     Gets current list of peer message connections.
+        /// </summary>
+        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections => MessageConnectionDictionary.Values
+            .Select(async c => await c.Value.ConfigureAwait(false))
+            .Select(c => (c.Result.Username, c.Result.IPEndPoint)).ToList().AsReadOnly();
+
+        /// <summary>
         ///     Gets a dictionary containing the pending connection solicitations.
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
