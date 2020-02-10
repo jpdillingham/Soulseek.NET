@@ -146,9 +146,9 @@ namespace Soulseek.Tests.Unit.Network
             c2.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Throws(new Exception("foo"));
 
-            var dict = manager.GetProperty<ConcurrentDictionary<string, IMessageConnection>>("ChildConnections");
-            dict.TryAdd("c1", c1.Object);
-            dict.TryAdd("c2", c2.Object);
+            var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+            dict.TryAdd("c1", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c1.Object)));
+            dict.TryAdd("c2", new Lazy<Task<IMessageConnection>>(() => Task.FromResult(c2.Object)));
 
             using (manager)
             {
@@ -589,7 +589,9 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {username}") && s.ContainsInsensitive("added"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {username}") && s.ContainsInsensitive("accepted"))), Times.Once);
+            mocks.Diagnostic
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {username}") && s.ContainsInsensitive("handed off"))), Times.Once);
             mocks.Diagnostic
                 .Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive($"Added child connection to {username}"))), Times.Once);
         }
