@@ -87,6 +87,13 @@ namespace Soulseek.Network
         public bool CanAcceptChildren => ChildConnectionDictionary.Count < ConcurrentChildLimit;
 
         /// <summary>
+        ///     Gets the current list of child connections.
+        /// </summary>
+        public IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children => ChildConnectionDictionary.Values
+            .Select(async c => await c.Value.ConfigureAwait(false))
+            .Select(c => (c.Result.Username, c.Result.IPEndPoint)).ToList().AsReadOnly();
+
+        /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
         public int ConcurrentChildLimit { get; }

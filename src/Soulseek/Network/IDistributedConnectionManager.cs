@@ -42,6 +42,11 @@ namespace Soulseek.Network
         bool CanAcceptChildren { get; }
 
         /// <summary>
+        ///     Gets the current list of child connections.
+        /// </summary>
+        IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> Children { get; }
+
+        /// <summary>
         ///     Gets the number of allowed concurrent child connections.
         /// </summary>
         int ConcurrentChildLimit { get; }
