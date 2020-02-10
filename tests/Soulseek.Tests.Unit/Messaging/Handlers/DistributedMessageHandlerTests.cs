@@ -1,557 +1,556 @@
-﻿//// <copyright file="DistributedMessageHandlerTests.cs" company="JP Dillingham">
-////     Copyright (c) JP Dillingham. All rights reserved.
-////
-////     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
-////     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
-////
-////     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
-////     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
-////
-////     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
-//// </copyright>
-
-//namespace Soulseek.Tests.Unit.Messaging.Handlers
-//{
-//    using System;
-//    using System.Collections.Concurrent;
-//    using System.Collections.Generic;
-//    using System.Linq;
-//    using System.Net;
-//    using System.Text;
-//    using System.Threading;
-//    using System.Threading.Tasks;
-//    using AutoFixture.Xunit2;
-//    using Moq;
-//    using Soulseek.Diagnostics;
-//    using Soulseek.Messaging;
-//    using Soulseek.Messaging.Handlers;
-//    using Soulseek.Messaging.Messages;
-//    using Soulseek.Network;
-//    using Soulseek.Network.Tcp;
-//    using Xunit;
-
-//    public class DistributedMessageHandlerTests
-//    {
-//        [Trait("Category", "Diagnostic")]
-//        [Fact(DisplayName = "Creates diagnostic on message")]
-//        public void Creates_Diagnostic_On_Message()
-//        {
-//            var (handler, mocks) = GetFixture();
-
-//            var conn = new Mock<IMessageConnection>();
-
-//            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
-
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.BranchLevel)
-//                .WriteInteger(1)
-//                .Build();
-
-//            handler.HandleMessageRead(conn.Object, new MessageReadEventArgs(message));
-
-//            mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
-//        }
-
-//        [Trait("Category", "Diagnostic")]
-//        [Fact(DisplayName = "Creates unhandled diagnostic on unhandled message")]
-//        public void Creates_Unhandled_Diagnostic_On_Unhandled_Message()
-//        {
-//            string msg = null;
-//            var (handler, mocks) = GetFixture();
-
-//            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
-//                .Callback<string>(m => msg = m);
-
-//            var message = new MessageBuilder().WriteCode(MessageCode.Distributed.Unknown).Build();
-
-//            handler.HandleMessageRead(new Mock<IMessageConnection>().Object, message);
-
-//            mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Exactly(2));
-
-//            Assert.Contains("Unhandled", msg, StringComparison.InvariantCultureIgnoreCase);
-//        }
-
-//        [Trait("Category", "Diagnostic")]
-//        [Fact(DisplayName = "Raises DiagnosticGenerated on Exception")]
-//        public void Raises_DiagnosticGenerated_On_Exception()
-//        {
-//            var mocks = new Mocks();
-//            var handler = new DistributedMessageHandler(
-//                mocks.Client.Object);
-
-//            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
-
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
-//                .Throws(new Exception());
-
-//            var msg = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.Ping)
-//                .Build();
-
-//            var diagnostics = new List<DiagnosticEventArgs>();
-
-//            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-//            handler.HandleMessageRead(conn.Object, msg);
-
-//            diagnostics = diagnostics
-//                .Where(d => d.Level == DiagnosticLevel.Warning)
-//                .Where(d => d.Message.IndexOf("Error handling distributed message", StringComparison.InvariantCultureIgnoreCase) > -1)
-//                .ToList();
-
-//            Assert.Single(diagnostics);
-//        }
+﻿// <copyright file="DistributedMessageHandlerTests.cs" company="JP Dillingham">
+//     Copyright (c) JP Dillingham. All rights reserved.
+//
+//     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as
+//     published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+//
+//     This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+//     of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.See the GNU General Public License for more details.
+//
+//     You should have received a copy of the GNU General Public License along with this program. If not, see https://www.gnu.org/licenses/.
+// </copyright>
+
+namespace Soulseek.Tests.Unit.Messaging.Handlers
+{
+    using System;
+    using System.Collections.Concurrent;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Net;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
+    using AutoFixture.Xunit2;
+    using Moq;
+    using Soulseek.Diagnostics;
+    using Soulseek.Messaging;
+    using Soulseek.Messaging.Handlers;
+    using Soulseek.Messaging.Messages;
+    using Soulseek.Network;
+    using Soulseek.Network.Tcp;
+    using Xunit;
+
+    public class DistributedMessageHandlerTests
+    {
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Creates diagnostic on message")]
+        public void Creates_Diagnostic_On_Message()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchLevel)
+                .WriteInteger(1)
+                .Build();
+
+            handler.HandleMessageRead(conn.Object, new MessageReadEventArgs(message));
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Creates unhandled diagnostic on unhandled message")]
+        public void Creates_Unhandled_Diagnostic_On_Unhandled_Message()
+        {
+            string msg = null;
+            var (handler, mocks) = GetFixture();
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()))
+                .Callback<string>(m => msg = m);
+
+            var message = new MessageBuilder().WriteCode(MessageCode.Distributed.Unknown).Build();
+
+            handler.HandleMessageRead(new Mock<IMessageConnection>().Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.IsAny<string>()), Times.Exactly(2));
+
+            Assert.Contains("Unhandled", msg, StringComparison.InvariantCultureIgnoreCase);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Fact(DisplayName = "Raises DiagnosticGenerated on Exception")]
+        public void Raises_DiagnosticGenerated_On_Exception()
+        {
+            var mocks = new Mocks();
+            var handler = new DistributedMessageHandler(
+                mocks.Client.Object);
+
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.Ping)
+                .Build();
+
+            var diagnostics = new List<DiagnosticEventArgs>();
+
+            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            handler.HandleMessageRead(conn.Object, msg);
+
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("Error handling distributed message", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
+
+            Assert.Single(diagnostics);
+        }
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Handles BranchLevel"), AutoData]
-//        public void Handles_BranchLevel(IPEndPoint endpoint, int level)
-//        {
-//            var (handler, mocks) = GetFixture();
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles BranchLevel"), AutoData]
+        public void Handles_BranchLevel(IPEndPoint endpoint, int level, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
-//            conn.Setup(m => m.Username).Returns("foo");
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
+            conn.Setup(m => m.Username).Returns("foo");
 
-//            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.BranchLevel)
-//                .WriteInteger(level)
-//                .Build();
+            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id);
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchLevel)
+                .WriteInteger(level)
+                .Build();
 
-//            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Sets BranchLevel on message from parent"), AutoData]
-//        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPEndPoint ipEndPoint, int level)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.IPEndPoint).Returns(ipEndPoint);
-//            conn.Setup(m => m.Username).Returns(parent);
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(ipEndPoint));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Sets BranchLevel on message from parent"), AutoData]
+        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPEndPoint ipEndPoint, int level, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.IPEndPoint).Returns(ipEndPoint);
+            conn.Setup(m => m.Username).Returns(parent);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(ipEndPoint));
 
-//            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ipEndPoint));
+            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Id, conn.Object.Key);
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.BranchLevel)
-//                .WriteInteger(level)
-//                .Build();
+            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ipEndPoint));
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchLevel)
+                .WriteInteger(level)
+                .Build();
 
-//            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
-//            mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Handles BranchRoot"), AutoData]
-//        public void Handles_BranchRoot(IPEndPoint endpoint, string root)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
-//            conn.Setup(m => m.Username).Returns("foo");
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles BranchRoot"), AutoData]
+        public void Handles_BranchRoot(IPEndPoint endpoint, string root, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
+            conn.Setup(m => m.Username).Returns("foo");
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.BranchRoot)
-//                .WriteString(root)
-//                .Build();
+            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id, conn.Object.Key);
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchRoot)
+                .WriteString(root)
+                .Build();
 
-//            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Sets BranchRoot on message from parent"), AutoData]
-//        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPEndPoint endpoint, string root)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
-//            conn.Setup(m => m.Username).Returns(parent);
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Sets BranchRoot on message from parent"), AutoData]
+        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPEndPoint endpoint, string root, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
+            conn.Setup(m => m.Username).Returns(parent);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
-//            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, endpoint));
+            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Id, conn.Object.Key);
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.BranchRoot)
-//                .WriteString(root)
-//                .Build();
+            mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, endpoint));
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.BranchRoot)
+                .WriteString(root)
+                .Build();
 
-//            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
-//            mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Handles ChildDepth"), AutoData]
-//        public void Handles_ChildDepth(IPEndPoint endpoint, int depth)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
-//            conn.Setup(m => m.Username).Returns("foo");
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Handles ChildDepth"), AutoData]
+        public void Handles_ChildDepth(IPEndPoint endpoint, int depth, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var key = new WaitKey(Constants.WaitKey.ChildDepthMessage, conn.Object.Key);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
+            conn.Setup(m => m.Username).Returns("foo");
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.ChildDepth)
-//                .WriteInteger(depth)
-//                .Build();
+            var key = new WaitKey(Constants.WaitKey.ChildDepthMessage, conn.Object.Key);
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ChildDepth)
+                .WriteInteger(depth)
+                .Build();
 
-//            mocks.Waiter.Verify(m => m.Complete<int>(key, depth), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Fact(DisplayName = "Handles Ping")]
-//        public void Handles_Ping()
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Verify(m => m.Complete<int>(key, depth), Times.Once);
+        }
 
-//            byte[] msg = null;
+        [Trait("Category", "Message")]
+        [Fact(DisplayName = "Handles Ping")]
+        public void Handles_Ping()
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
-//                .Callback<byte[], CancellationToken?>((b, c) => msg = b);
+            byte[] msg = null;
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.Ping)
-//                .Build();
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Callback<byte[], CancellationToken?>((b, c) => msg = b);
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.Ping)
+                .Build();
 
-//            var reader = new MessageReader<MessageCode.Distributed>(msg);
+            handler.HandleMessageRead(conn.Object, message);
 
-//            Assert.Equal(MessageCode.Distributed.Ping, reader.ReadCode());
-//        }
+            var reader = new MessageReader<MessageCode.Distributed>(msg);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Completes SearchRequest wait"), AutoData]
-//        public void Completes_SearchRequest_Wait(string username, int token, string query, IPEndPoint endpoint)
-//        {
-//            var (handler, mocks) = GetFixture();
+            Assert.Equal(MessageCode.Distributed.Ping, reader.ReadCode());
+        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes SearchRequest wait"), AutoData]
+        public void Completes_SearchRequest_Wait(string username, int token, string query, IPEndPoint endpoint, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id, conn.Object.Key);
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Broadcasts SearchRequest"), AutoData]
-//        public void Broadcasts_SearchRequest(string username, int token, string query)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Broadcasts SearchRequest"), AutoData]
+        public void Broadcasts_SearchRequest(string username, int token, string query)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var conn = new Mock<IMessageConnection>();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Broadcasts ServerSearchRequest as SearchRequest"), AutoData]
-//        public void Broadcasts_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Broadcasts ServerSearchRequest as SearchRequest"), AutoData]
+        public void Broadcasts_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
-//                .WriteBytes(new byte[8])
-//                .WriteString(username)
-//                .WriteInteger(token)
-//                .WriteString(query)
-//                .Build();
+            var conn = new Mock<IMessageConnection>();
 
-//            var forwardedMessage = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteBytes(new byte[8])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var forwardedMessage = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.DistributedConnectionManager
-//                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Completes SearchRequest wait on ServerSearchRequest"), AutoData]
-//        public void Completes_SearchRequest_Wait_On_ServerSearchRequest(string username, int token, string query, IPEndPoint endpoint)
-//        {
-//            var (handler, mocks) = GetFixture();
+            mocks.DistributedConnectionManager
+                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
+        }
 
-//            var conn = new Mock<IMessageConnection>();
-//            conn.Setup(m => m.Context).Returns(null);
-//            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes SearchRequest wait on ServerSearchRequest"), AutoData]
+        public void Completes_SearchRequest_Wait_On_ServerSearchRequest(string username, int token, string query, IPEndPoint endpoint, Guid id)
+        {
+            var (handler, mocks) = GetFixture();
 
-//            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.Id).Returns(id);
+            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
-//                .WriteBytes(new byte[8])
-//                .WriteString(username)
-//                .WriteInteger(token)
-//                .WriteString(query)
-//                .Build();
+            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Id, conn.Object.Key);
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteBytes(new byte[8])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
 
-//            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Diagnostic")]
-//        [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
-//        public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
-//        {
-//            var mocks = new Mocks();
-//            var handler = new DistributedMessageHandler(
-//                mocks.Client.Object);
+            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
+        }
 
-//            mocks.Client.Setup(m => m.Options)
-//                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => throw new Exception()));
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Raises DiagnosticGenerated on SearchResponseResolver Exception"), AutoData]
+        public void Raises_DiagnosticGenerated_On_SearchResponseResolver_Exception(string username, int token, string query)
+        {
+            var mocks = new Mocks();
+            var handler = new DistributedMessageHandler(
+                mocks.Client.Object);
 
-//            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
+            mocks.Client.Setup(m => m.Options)
+                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => throw new Exception()));
 
-//            var conn = new Mock<IMessageConnection>();
+            mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var conn = new Mock<IMessageConnection>();
 
-//            var diagnostics = new List<DiagnosticEventArgs>();
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
-//            handler.HandleMessageRead(conn.Object, message);
+            var diagnostics = new List<DiagnosticEventArgs>();
 
-//            diagnostics = diagnostics
-//                .Where(d => d.Level == DiagnosticLevel.Warning)
-//                .Where(d => d.Message.IndexOf("Error resolving search response", StringComparison.InvariantCultureIgnoreCase) > -1)
-//                .ToList();
+            handler.DiagnosticGenerated += (_, e) => diagnostics.Add(e);
+            handler.HandleMessageRead(conn.Object, message);
 
-//            Assert.Single(diagnostics);
-//        }
+            diagnostics = diagnostics
+                .Where(d => d.Level == DiagnosticLevel.Warning)
+                .Where(d => d.Message.IndexOf("Error resolving search response", StringComparison.InvariantCultureIgnoreCase) > -1)
+                .ToList();
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
-//        public void Responds_To_SearchRequest(string username, int token, string query)
-//        {
-//            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
-//            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-//            var (handler, mocks) = GetFixture(options);
+            Assert.Single(diagnostics);
+        }
 
-//            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-//                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Responds to SearchRequest"), AutoData]
+        public void Responds_To_SearchRequest(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
 
-//            var endpoint = new IPEndPoint(IPAddress.None, 0);
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
 
-//            var peerConn = new Mock<IMessageConnection>();
-//            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-//                .Returns(Task.FromResult(peerConn.Object));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
-//            var conn = new Mock<IMessageConnection>();
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var conn = new Mock<IMessageConnection>();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-//            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
+            handler.HandleMessageRead(conn.Object, message);
 
-//            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-//            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
-//        }
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
-//        public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
-//        {
-//            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
-//            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-//            var (handler, mocks) = GetFixture(options);
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
 
-//            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-//                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
+        public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
 
-//            var endpoint = new IPEndPoint(IPAddress.None, 0);
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
 
-//            var ex = new Exception("foo");
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
-//            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-//                .Returns(Task.FromException<IMessageConnection>(ex));
+            var ex = new Exception("foo");
 
-//            var conn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IMessageConnection>(ex));
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var conn = new Mock<IMessageConnection>();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.Diagnostic.Verify(m => m.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex), Times.Once);
-//        }
+            handler.HandleMessageRead(conn.Object, message);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Responds to ServerSearchRequest"), AutoData]
-//        public void Responds_To_ServerSearchRequest(string username, int token, string query)
-//        {
-//            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
-//            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-//            var (handler, mocks) = GetFixture(options);
+            mocks.Diagnostic.Verify(m => m.Debug($"Failed to send search response for {query} to {username}: {ex.Message}", ex), Times.Once);
+        }
 
-//            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-//                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Responds to ServerSearchRequest"), AutoData]
+        public void Responds_To_ServerSearchRequest(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
 
-//            var endpoint = new IPEndPoint(IPAddress.None, 0);
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
 
-//            var peerConn = new Mock<IMessageConnection>();
-//            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-//                .Returns(Task.FromResult(peerConn.Object));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
-//            var conn = new Mock<IMessageConnection>();
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
 
-//            var message = new MessageBuilder()
-//                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
-//                .WriteBytes(new byte[8])
-//                .WriteString(username)
-//                .WriteInteger(token)
-//                .WriteString(query)
-//                .Build();
+            var conn = new Mock<IMessageConnection>();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .WriteBytes(new byte[8])
+                .WriteString(username)
+                .WriteInteger(token)
+                .WriteString(query)
+                .Build();
 
-//            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
-//            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
+            handler.HandleMessageRead(conn.Object, message);
 
-//            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-//            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
-//        }
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Once);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
-//        public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
-//        {
-//            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
-//            var (handler, mocks) = GetFixture(options);
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
 
-//            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-//                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if result is null"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_Result_Is_Null(string username, int token, string query)
+        {
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult<SearchResponse>(null));
+            var (handler, mocks) = GetFixture(options);
 
-//            var endpoint = new IPEndPoint(IPAddress.None, 0);
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
 
-//            var peerConn = new Mock<IMessageConnection>();
-//            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-//                .Returns(Task.FromResult(peerConn.Object));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
-//            var conn = new Mock<IMessageConnection>();
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var conn = new Mock<IMessageConnection>();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-//            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
+            handler.HandleMessageRead(conn.Object, message);
 
-//            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-//            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
-//        }
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-//        [Trait("Category", "Message")]
-//        [Theory(DisplayName = "Doesn't respond to SearchRequest if result contains no files"), AutoData]
-//        public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
-//        {
-//            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
-//            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
-//            var (handler, mocks) = GetFixture(options);
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
+        }
 
-//            var endpoint = new IPEndPoint(IPAddress.None, 0);
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Doesn't respond to SearchRequest if result contains no files"), AutoData]
+        public void Doesnt_Respond_To_SearchRequest_If_Result_Contains_No_Files(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 0, 1, 1, 1, new List<File>());
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response));
+            var (handler, mocks) = GetFixture(options);
 
-//            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
-//                .Returns(Task.FromResult(endpoint));
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
 
-//            var peerConn = new Mock<IMessageConnection>();
-//            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
-//                .Returns(Task.FromResult(peerConn.Object));
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(endpoint));
 
-//            var conn = new Mock<IMessageConnection>();
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
 
-//            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+            var conn = new Mock<IMessageConnection>();
 
-//            handler.HandleMessageRead(conn.Object, message);
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
 
-//            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
-//            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
+            handler.HandleMessageRead(conn.Object, message);
 
-//            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
-//            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
-//        }
+            mocks.Client.Verify(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()), Times.Never);
+            mocks.PeerConnectionManager.Verify(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()), Times.Never);
 
-//        private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
-//        {
-//            var mocks = new Mocks(clientOptions);
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
+        }
 
-//            var handler = new DistributedMessageHandler(
-//                mocks.Client.Object,
-//                mocks.Diagnostic.Object);
+        private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
+        {
+            var mocks = new Mocks(clientOptions);
 
-//            return (handler, mocks);
-//        }
+            var handler = new DistributedMessageHandler(
+                mocks.Client.Object,
+                mocks.Diagnostic.Object);
 
-//        private class Mocks
-//        {
-//            public Mocks(SoulseekClientOptions clientOptions = null)
-//            {
-//                Client = new Mock<SoulseekClient>(clientOptions)
-//                {
-//                    CallBase = true,
-//                };
+            return (handler, mocks);
+        }
 
-//                Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
-//                Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
-//                Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
-//                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
-//                Client.Setup(m => m.Downloads).Returns(Downloads);
-//                Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
-//                Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
-//            }
+        private class Mocks
+        {
+            public Mocks(SoulseekClientOptions clientOptions = null)
+            {
+                Client = new Mock<SoulseekClient>(clientOptions)
+                {
+                    CallBase = true,
+                };
 
-//            public Mock<SoulseekClient> Client { get; }
-//            public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
-//            public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
-//            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
-//            public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
-//            public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
-//            public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
-//        }
-//    }
-//}
+                Client.Setup(m => m.ServerConnection).Returns(ServerConnection.Object);
+                Client.Setup(m => m.PeerConnectionManager).Returns(PeerConnectionManager.Object);
+                Client.Setup(m => m.DistributedConnectionManager).Returns(DistributedConnectionManager.Object);
+                Client.Setup(m => m.Waiter).Returns(Waiter.Object);
+                Client.Setup(m => m.Downloads).Returns(Downloads);
+                Client.Setup(m => m.State).Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                Client.Setup(m => m.Options).Returns(clientOptions ?? new SoulseekClientOptions());
+            }
+
+            public Mock<SoulseekClient> Client { get; }
+            public Mock<IMessageConnection> ServerConnection { get; } = new Mock<IMessageConnection>();
+            public Mock<IPeerConnectionManager> PeerConnectionManager { get; } = new Mock<IPeerConnectionManager>();
+            public Mock<IDistributedConnectionManager> DistributedConnectionManager { get; } = new Mock<IDistributedConnectionManager>();
+            public Mock<IWaiter> Waiter { get; } = new Mock<IWaiter>();
+            public ConcurrentDictionary<int, TransferInternal> Downloads { get; } = new ConcurrentDictionary<int, TransferInternal>();
+            public Mock<IDiagnosticFactory> Diagnostic { get; } = new Mock<IDiagnosticFactory>();
+        }
+    }
+}
