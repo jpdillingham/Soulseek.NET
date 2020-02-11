@@ -181,7 +181,7 @@ namespace Soulseek
             ServerMessageHandler.KickedFromServer += (sender, e) =>
             {
                 Diagnostic.Info($"Kicked from server.");
-                Disconnect("Kicked from server.", new KickedFromServerException());
+                Disconnect("Kicked from server", new KickedFromServerException());
                 KickedFromServer?.Invoke(this, e);
             };
 
@@ -360,7 +360,7 @@ namespace Soulseek
         {
             if (privateMessageId < 0)
             {
-                throw new ArgumentException($"The private message ID must be greater than zero.", nameof(privateMessageId));
+                throw new ArgumentException($"The private message ID must be greater than zero", nameof(privateMessageId));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -388,7 +388,7 @@ namespace Soulseek
         {
             if (privilegeNotificationId < 0)
             {
-                throw new ArgumentException($"The privilege notification ID must be greater than zero.", nameof(privilegeNotificationId));
+                throw new ArgumentException($"The privilege notification ID must be greater than zero", nameof(privilegeNotificationId));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -521,7 +521,7 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                throw new ConnectionException($"Failed to connect: {ex.Message}.", ex);
+                throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
             }
         }
 
@@ -582,7 +582,7 @@ namespace Soulseek
 
             if (startOffset < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero.");
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -652,17 +652,17 @@ namespace Soulseek
 
             if (startOffset < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero.");
+                throw new ArgumentOutOfRangeException(nameof(startOffset), "The start offset must be greater than or equal to zero");
             }
 
             if (outputStream == null)
             {
-                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null.");
+                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null");
             }
 
             if (!outputStream.CanWrite)
             {
-                throw new InvalidOperationException("The specified output stream is not writeable.");
+                throw new InvalidOperationException("The specified output stream is not writeable");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -959,7 +959,7 @@ namespace Soulseek
 
             if (days <= 0)
             {
-                throw new ArgumentException($"The number of days granted must be greater than zero.", nameof(days));
+                throw new ArgumentException($"The number of days granted must be greater than zero", nameof(days));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1194,7 +1194,7 @@ namespace Soulseek
 
             if (responseReceived == default)
             {
-                throw new ArgumentNullException(nameof(responseReceived), "The specified Response delegate is null.");
+                throw new ArgumentNullException(nameof(responseReceived), "The specified Response delegate is null");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1392,7 +1392,7 @@ namespace Soulseek
 
             if (data == null || data.Length == 0)
             {
-                throw new ArgumentException($"The data must not be a null or zero length array.", nameof(data));
+                throw new ArgumentException($"The data must not be a null or zero length array", nameof(data));
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1462,17 +1462,17 @@ namespace Soulseek
 
             if (length <= 0)
             {
-                throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
+                throw new ArgumentException("The requested length must be greater than or equal to zero", nameof(length));
             }
 
             if (inputStream == null)
             {
-                throw new ArgumentNullException(nameof(inputStream), "The specified input stream is null.");
+                throw new ArgumentNullException(nameof(inputStream), "The specified input stream is null");
             }
 
             if (!inputStream.CanRead)
             {
-                throw new InvalidOperationException("The specified input stream is not readable.");
+                throw new InvalidOperationException("The specified input stream is not readable");
             }
 
             if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
@@ -1553,7 +1553,7 @@ namespace Soulseek
 
                 if (!response.Exists)
                 {
-                    throw new UserNotFoundException($"User {Username} does not exist.");
+                    throw new UserNotFoundException($"User {Username} does not exist");
                 }
 
                 return response.UserData;
@@ -1801,39 +1801,59 @@ namespace Soulseek
 
                     download.Size = transferStartRequest.FileSize;
                     download.RemoteToken = transferStartRequest.Token;
+
                     UpdateState(TransferStates.Initializing);
-
-                    // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
-                    var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
-                        key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
-                        timeout: Options.PeerConnectionOptions.ConnectTimeout,
-                        cancellationToken: cancellationToken);
-
-                    // set up a wait for a direct connection. this wait is completed in
-                    // PeerConnectionManager.AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
-                    var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
-                        key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
-                        timeout: Options.PeerConnectionOptions.ConnectTimeout,
-                        cancellationToken: cancellationToken);
 
                     // also prepare a wait for the overall completion of the download
                     downloadCompleted = Waiter.WaitIndefinitely(download.WaitKey, cancellationToken);
 
                     // respond to the peer that we are ready to accept the file but first, get a fresh connection (or maybe it's
                     // cached in the manager) to the peer in case it disconnected and was purged while we were waiting.
-                    peerConnection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
+                    peerConnection = await PeerConnectionManager
+                        .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
+                        .ConfigureAwait(false);
+
+                    // set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
+                    // this is necessary because the remote peer is responsible for establishing the connection and we can't send a ConnecToPeerResponse to initiate this.
+                    var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
+                        key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
+                        timeout: Options.TransferConnectionOptions.ConnectTimeout,
+                        cancellationToken: cancellationToken);
+
+                    // set up a wait for a direct connection. this wait is completed in
+                    // PeerConnectionManager.AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
+                    var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
+                        key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
+                        timeout: Options.TransferConnectionOptions.ConnectTimeout,
+                        cancellationToken: cancellationToken);
 
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                    try
+                    var tasks = new[] { directTransferConnectionInitialized, indirectTransferConnectionInitialized }.ToList();
+                    Task<IConnection> task;
+
+                    Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {download.RemoteToken} for {download.Filename}");
+
+                    do
                     {
-                        var connectionInitialized = await Task.WhenAny(indirectTransferConnectionInitialized, directTransferConnectionInitialized).ConfigureAwait(false);
-                        download.Connection = connectionInitialized.Result;
+                        task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                        tasks.Remove(task);
                     }
-                    catch (AggregateException ex)
+                    while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+                    if (task.Status != TaskStatus.RanToCompletion)
                     {
-                        throw new ConnectionException("Failed to establish a direct or indirect connection.", ex);
+                        throw new ConnectionException($"Failed to establish a direct or indirect transfer connection to {username}", task.Exception);
                     }
+
+                    var isDirect = task == directTransferConnectionInitialized;
+                    // todo : cancel
+
+                    var connection = await task.ConfigureAwait(false);
+
+                    Diagnostic.Debug($"{connection.Type} transfer connection to {username} ({connection.IPEndPoint}) established. (id: {connection.Id})");
+
+                    download.Connection = connection;
                 }
 
                 download.Connection.DataRead += (sender, e) => UpdateProgress(download.StartOffset + e.CurrentLength);
@@ -1872,7 +1892,7 @@ namespace Soulseek
 
                     download.State = TransferStates.Succeeded;
 
-                    download.Connection.Disconnect("Transfer complete.");
+                    download.Connection.Disconnect("Transfer complete");
                     Diagnostic.Info($"Download of {Path.GetFileName(download.Filename)} from {username} complete ({startOffset + outputStream.Position} of {download.Size} bytes).");
                 }
                 catch (Exception ex)
@@ -1887,14 +1907,14 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 download.State = TransferStates.Rejected;
-                download.Connection?.Disconnect("Transfer rejected.", ex);
+                download.Connection?.Disconnect("Transfer rejected", ex);
 
                 throw new TransferException($"Download of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 download.State = TransferStates.Cancelled;
-                download.Connection?.Disconnect("Transfer cancelled.", ex);
+                download.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -1902,7 +1922,7 @@ namespace Soulseek
             catch (TimeoutException ex)
             {
                 download.State = TransferStates.TimedOut;
-                download.Connection?.Disconnect("Transfer timed out.", ex);
+                download.Connection?.Disconnect("Transfer timed out", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -1910,7 +1930,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 download.State = TransferStates.Errored;
-                download.Connection?.Disconnect("Transfer error.", ex);
+                download.Connection?.Disconnect("Transfer error", ex);
 
                 Diagnostic.Debug(ex.ToString());
 
@@ -1978,7 +1998,7 @@ namespace Soulseek
 
                 if (response.IPAddress.Equals(IPAddress.Parse("0.0.0.0")))
                 {
-                    throw new UserOfflineException($"User {username} appears to be offline.");
+                    throw new UserOfflineException($"User {username} appears to be offline");
                 }
 
                 return new IPEndPoint(response.IPAddress, response.Port);
@@ -2102,7 +2122,7 @@ namespace Soulseek
                 if (response.Succeeded)
                 {
                     Username = username;
-                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in.");
+                    ChangeState(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, "Logged in");
 
                     if (Options.ListenPort.HasValue)
                     {
@@ -2374,7 +2394,7 @@ namespace Soulseek
                     upload.State = TransferStates.Succeeded;
 
                     // force a disconnect of the connection by trying to read. this may be unreliable if a client actually sends
-                    // data after the magic bytes.
+                    // data after the offset
                     try
                     {
                         await upload.Connection.ReadAsync(1, cancellationToken).ConfigureAwait(false);
@@ -2396,14 +2416,14 @@ namespace Soulseek
             catch (TransferRejectedException ex)
             {
                 upload.State = TransferStates.Rejected;
-                upload.Connection?.Disconnect("Transfer rejected.", ex);
+                upload.Connection?.Disconnect("Transfer rejected", ex);
 
                 throw new TransferException($"Upload of file {filename} rejected by user {username}: {ex.Message}", ex);
             }
             catch (OperationCanceledException ex)
             {
                 upload.State = TransferStates.Cancelled;
-                upload.Connection?.Disconnect("Transfer cancelled.", ex);
+                upload.Connection?.Disconnect("Transfer cancelled", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -2411,7 +2431,7 @@ namespace Soulseek
             catch (TimeoutException ex)
             {
                 upload.State = TransferStates.TimedOut;
-                upload.Connection?.Disconnect("Transfer timed out.", ex);
+                upload.Connection?.Disconnect("Transfer timed out", ex);
 
                 Diagnostic.Debug(ex.ToString());
                 throw;
@@ -2419,7 +2439,7 @@ namespace Soulseek
             catch (Exception ex)
             {
                 upload.State = TransferStates.Errored;
-                upload.Connection?.Disconnect("Transfer error.", ex);
+                upload.Connection?.Disconnect("Transfer error", ex);
 
                 Diagnostic.Debug(ex.ToString());
 

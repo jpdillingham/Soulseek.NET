@@ -103,42 +103,16 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Handles BranchLevel"), AutoData]
-        public void Handles_BranchLevel(IPEndPoint endpoint, int level)
-        {
-            var (handler, mocks) = GetFixture();
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
-            conn.Setup(m => m.Username).Returns("foo");
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
-
-            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
-
-            var message = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.BranchLevel)
-                .WriteInteger(level)
-                .Build();
-
-            handler.HandleMessageRead(conn.Object, message);
-
-            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
-        }
-
-        [Trait("Category", "Message")]
         [Theory(DisplayName = "Sets BranchLevel on message from parent"), AutoData]
-        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPEndPoint ipEndPoint, int level)
+        public void Sets_BranchLevel_On_Message_From_Parent(string parent, IPEndPoint ipEndPoint, int level, Guid id)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.Id).Returns(id);
             conn.Setup(m => m.IPEndPoint).Returns(ipEndPoint);
             conn.Setup(m => m.Username).Returns(parent);
             conn.Setup(m => m.Key).Returns(new ConnectionKey(ipEndPoint));
-
-            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Object.Context, conn.Object.Key);
 
             mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, ipEndPoint));
 
@@ -149,47 +123,20 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Waiter.Verify(m => m.Complete<int>(key, level), Times.Once);
             mocks.DistributedConnectionManager.Verify(m => m.SetBranchLevel(level), Times.Once);
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Handles BranchRoot"), AutoData]
-        public void Handles_BranchRoot(IPEndPoint endpoint, string root)
-        {
-            var (handler, mocks) = GetFixture();
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.IPEndPoint).Returns(endpoint);
-            conn.Setup(m => m.Username).Returns("foo");
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
-
-            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
-
-            var message = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.BranchRoot)
-                .WriteString(root)
-                .Build();
-
-            handler.HandleMessageRead(conn.Object, message);
-
-            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
-        }
-
-        [Trait("Category", "Message")]
         [Theory(DisplayName = "Sets BranchRoot on message from parent"), AutoData]
-        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPEndPoint endpoint, string root)
+        public void Sets_BranchRoot_On_Message_From_Parent(string parent, IPEndPoint endpoint, string root, Guid id)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.Id).Returns(id);
             conn.Setup(m => m.IPEndPoint).Returns(endpoint);
             conn.Setup(m => m.Username).Returns(parent);
             conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
-
-            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Object.Context, conn.Object.Key);
 
             mocks.DistributedConnectionManager.Setup(m => m.Parent).Returns((parent, endpoint));
 
@@ -200,18 +147,17 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.Waiter.Verify(m => m.Complete<string>(key, root), Times.Once);
             mocks.DistributedConnectionManager.Verify(m => m.SetBranchRoot(root), Times.Once);
         }
 
         [Trait("Category", "Message")]
         [Theory(DisplayName = "Handles ChildDepth"), AutoData]
-        public void Handles_ChildDepth(IPEndPoint endpoint, int depth)
+        public void Handles_ChildDepth(IPEndPoint endpoint, int depth, Guid id)
         {
             var (handler, mocks) = GetFixture();
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
+            conn.Setup(m => m.Id).Returns(id);
             conn.Setup(m => m.IPEndPoint).Returns(endpoint);
             conn.Setup(m => m.Username).Returns("foo");
             conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
@@ -252,25 +198,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Completes SearchRequest wait"), AutoData]
-        public void Completes_SearchRequest_Wait(string username, int token, string query, IPEndPoint endpoint)
-        {
-            var (handler, mocks) = GetFixture();
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
-
-            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
-
-            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
-
-            handler.HandleMessageRead(conn.Object, message);
-
-            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
-        }
-
-        [Trait("Category", "Message")]
         [Theory(DisplayName = "Broadcasts SearchRequest"), AutoData]
         public void Broadcasts_SearchRequest(string username, int token, string query)
         {
@@ -307,31 +234,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             mocks.DistributedConnectionManager
                 .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
-        }
-
-        [Trait("Category", "Message")]
-        [Theory(DisplayName = "Completes SearchRequest wait on ServerSearchRequest"), AutoData]
-        public void Completes_SearchRequest_Wait_On_ServerSearchRequest(string username, int token, string query, IPEndPoint endpoint)
-        {
-            var (handler, mocks) = GetFixture();
-
-            var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.Context).Returns(null);
-            conn.Setup(m => m.Key).Returns(new ConnectionKey(endpoint));
-
-            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Object.Context, conn.Object.Key);
-
-            var message = new MessageBuilder()
-                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
-                .WriteBytes(new byte[8])
-                .WriteString(username)
-                .WriteInteger(token)
-                .WriteString(query)
-                .Build();
-
-            handler.HandleMessageRead(conn.Object, message);
-
-            mocks.Waiter.Verify(m => m.Complete(key), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]

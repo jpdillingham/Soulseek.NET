@@ -26,14 +26,9 @@ namespace Soulseek.Network
     /// </summary>
     internal interface IPeerConnectionManager : IDisposable, IDiagnosticGenerator
     {
-        /// <summary>
-        ///     Gets the concurrent message connection limit.
-        /// </summary>
-        int ConcurrentMessageConnectionLimit { get; }
-
-        /// <summary>
-        ///     Gets current list of peer message connections.
-        /// </summary>
+        /// <summary>	
+        ///     Gets current list of peer message connections.	
+        /// </summary>	
         IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections { get; }
 
         /// <summary>
@@ -42,26 +37,21 @@ namespace Soulseek.Network
         IReadOnlyDictionary<int, string> PendingSolicitations { get; }
 
         /// <summary>
-        ///     Gets the number of waiting peer message connections.
-        /// </summary>
-        int WaitingMessageConnections { get; }
-
-        /// <summary>
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
-        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddMessageConnectionAsync(string username, ITcpClient tcpClient);
+        Task AddMessageConnectionAsync(string username, IConnection incomingConnection);
 
         /// <summary>
         ///     Adds a new transfer connection from an incoming connection.
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
-        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddTransferConnectionAsync(string username, int token, ITcpClient tcpClient);
+        Task AddTransferConnectionAsync(string username, int token, IConnection incomingConnection);
 
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified

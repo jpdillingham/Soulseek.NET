@@ -208,6 +208,8 @@ namespace Soulseek.Messaging.Handlers
 
                             if (connectToPeerResponse.Type == Constants.ConnectionType.Transfer)
                             {
+                                Diagnostic.Debug($"Received transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token}");
+
                                 // ensure that we are expecting at least one file from this user before we connect. the response
                                 // doesn't contain any other identifying information about the file.
                                 if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connectToPeerResponse.Username))
@@ -217,7 +219,13 @@ namespace Soulseek.Messaging.Handlers
 
                                     if (download != default(TransferInternal))
                                     {
+                                        Diagnostic.Debug($"Solicited inbound transfer connection to {download.Username} ({connection.IPEndPoint}) for token {download.Token} (remote: {download.RemoteToken}) established. (id: {connection.Id})");
                                         SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken), connection);
+                                    }
+                                    else
+                                    {
+                                        Diagnostic.Debug($"Transfer ConnectToPeer request from { connectToPeerResponse.Username} ({ connectToPeerResponse.IPEndPoint}) for remote token { connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
+                                        connection.Disconnect($"Unknown transfer");
                                     }
                                 }
                                 else
@@ -227,10 +235,12 @@ namespace Soulseek.Messaging.Handlers
                             }
                             else if (connectToPeerResponse.Type == Constants.ConnectionType.Peer)
                             {
+                                Diagnostic.Debug($"Received message ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
                                 await SoulseekClient.PeerConnectionManager.GetOrAddMessageConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                             }
                             else if (connectToPeerResponse.Type == Constants.ConnectionType.Distributed)
                             {
+                                Diagnostic.Debug($"Received distributed ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
                                 await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(connectToPeerResponse).ConfigureAwait(false);
                             }
                             else

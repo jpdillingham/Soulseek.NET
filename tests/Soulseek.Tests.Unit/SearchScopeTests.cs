@@ -151,7 +151,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
-            Assert.True(ex.Message.ContainsInsensitive("One or more of the supplied User scope subjects is null or empty."));
+            Assert.True(ex.Message.ContainsInsensitive("One or more of the supplied User scope subjects is null or empty"));
         }
 
         [Trait("Category", "Instantiation")]
@@ -164,7 +164,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentException>(ex);
-            Assert.True(ex.Message.ContainsInsensitive("One or more of the supplied User scope subjects is null or empty."));
+            Assert.True(ex.Message.ContainsInsensitive("One or more of the supplied User scope subjects is null or empty"));
         }
 
         [Trait("Category", "Instantiation")]

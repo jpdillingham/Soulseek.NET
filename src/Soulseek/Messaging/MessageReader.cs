@@ -35,7 +35,7 @@ namespace Soulseek.Messaging
         {
             if (bytes == null)
             {
-                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to initialize MessageReader with a null byte array.");
+                throw new ArgumentNullException(nameof(bytes), "Invalid attempt to initialize MessageReader with a null byte array");
             }
 
             if (Enum.GetUnderlyingType(typeof(T)) == typeof(byte))
@@ -49,7 +49,7 @@ namespace Soulseek.Messaging
 
             if (bytes.Length < 4 + CodeLength)
             {
-                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, $"Invalid attempt to initialize MessageReader with byte array of length less than the minimum ({4 + CodeLength} bytes).");
+                throw new ArgumentOutOfRangeException(nameof(bytes), bytes.Length, $"Invalid attempt to initialize MessageReader with byte array of length less than the minimum ({4 + CodeLength} bytes)");
             }
 
             Message = bytes.AsMemory();
@@ -83,12 +83,12 @@ namespace Soulseek.Messaging
         {
             if (Payload.Length == 0)
             {
-                throw new InvalidOperationException($"Unable to decompress an empty message.");
+                throw new InvalidOperationException($"Unable to decompress an empty message");
             }
 
             if (Decompressed)
             {
-                throw new InvalidOperationException($"The message has already been decompressed.");
+                throw new InvalidOperationException($"The message has already been decompressed");
             }
 
             Decompress(Payload.ToArray(), out byte[] decompressedPayload);
@@ -113,7 +113,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                throw new MessageReadException($"Failed to read a byte from position {Position} of the message.", ex);
+                throw new MessageReadException($"Failed to read a byte from position {Position} of the message", ex);
             }
         }
 
@@ -126,7 +126,7 @@ namespace Soulseek.Messaging
         {
             if (count > Payload.Length - Position)
             {
-                throw new MessageReadException($"Requested bytes extend beyond the length of the message payload.");
+                throw new MessageReadException($"Requested bytes extend beyond the length of the message payload");
             }
 
             var retVal = Payload.Slice(Position, count).ToArray();
@@ -159,7 +159,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                throw new MessageReadException($"Failed to read an integer (4 bytes) from position {Position} of the message.", ex);
+                throw new MessageReadException($"Failed to read an integer (4 bytes) from position {Position} of the message", ex);
             }
         }
 
@@ -177,7 +177,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                throw new MessageReadException($"Failed to read a long integer (8 bytes) from position {Position} of the message.", ex);
+                throw new MessageReadException($"Failed to read a long integer (8 bytes) from position {Position} of the message", ex);
             }
         }
 
@@ -191,7 +191,7 @@ namespace Soulseek.Messaging
 
             if (length > Payload.Length - Position)
             {
-                throw new MessageReadException($"Specified string extends beyond the length of the message payload.");
+                throw new MessageReadException($"Specified string extends beyond the length of the message payload");
             }
 
             var bytes = Payload.Slice(Position, length).ToArray();
@@ -208,12 +208,12 @@ namespace Soulseek.Messaging
         {
             if (position < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(position), $"Attempt to seek to a negative position.");
+                throw new ArgumentOutOfRangeException(nameof(position), $"Attempt to seek to a negative position");
             }
 
             if (position > Payload.Length)
             {
-                throw new ArgumentOutOfRangeException(nameof(position), $"Seek to position {position} would extend beyond the length of the message.");
+                throw new ArgumentOutOfRangeException(nameof(position), $"Seek to position {position} would extend beyond the length of the message");
             }
 
             Position = position;
@@ -247,7 +247,7 @@ namespace Soulseek.Messaging
             }
             catch (Exception ex)
             {
-                throw new MessageCompressionException($"Failed to decompress the message payload.", ex);
+                throw new MessageCompressionException($"Failed to decompress the message payload", ex);
             }
         }
     }

@@ -68,7 +68,7 @@ namespace Soulseek.Messaging.Handlers
             var connection = (IMessageConnection)sender;
             var code = new MessageReader<MessageCode.Peer>(message).ReadCode();
 
-            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPEndPoint})");
+            Diagnostic.Debug($"Peer message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
 
             try
             {
@@ -91,7 +91,7 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
-                            SoulseekClient.Waiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response.", ex));
+                            SoulseekClient.Waiter.Throw(browseWaitKey, new MessageReadException("The peer returned an invalid browse response", ex));
                             throw;
                         }
 
@@ -203,7 +203,7 @@ namespace Soulseek.Messaging.Handlers
 
                     case MessageCode.Peer.UploadFailed:
                         var uploadFailedResponse = UploadFailed.FromByteArray(message);
-                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}.";
+                        var msg = $"Download of {uploadFailedResponse.Filename} reported as failed by {connection.Username}";
 
                         var download = SoulseekClient.Downloads.Values.FirstOrDefault(d => d.Username == connection.Username && d.Filename == uploadFailedResponse.Filename);
                         if (download != null)
@@ -278,7 +278,7 @@ namespace Soulseek.Messaging.Handlers
                 // if any other exception is thrown, return a generic message. do this to avoid exposing potentially sensitive
                 // information that may be contained in the Exception message (filesystem details, etc.)
                 rejected = true;
-                rejectionMessage = "Enqueue failed due to internal error.";
+                rejectionMessage = "Enqueue failed due to internal error";
             }
 
             return (rejected, rejectionMessage);

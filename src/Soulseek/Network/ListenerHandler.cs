@@ -73,20 +73,20 @@ namespace Soulseek.Network
                     {
                         await SoulseekClient.PeerConnectionManager.AddMessageConnectionAsync(
                             peerInit.Username,
-                            connection.HandoffTcpClient()).ConfigureAwait(false);
+                            connection).ConfigureAwait(false);
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
                         await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
-                            connection.HandoffTcpClient()).ConfigureAwait(false);
+                            connection).ConfigureAwait(false);
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
                         await SoulseekClient.DistributedConnectionManager.AddChildConnectionAsync(
                             peerInit.Username,
-                            connection.HandoffTcpClient()).ConfigureAwait(false);
+                            connection).ConfigureAwait(false);
                     }
                 }
                 else if (PierceFirewall.TryFromByteArray(message, out var pierceFirewall))

@@ -78,9 +78,9 @@ namespace Soulseek.Network
         ///     Adds a new child connection from an incoming connection.
         /// </summary>
         /// <param name="username">The username from which the connection originated.</param>
-        /// <param name="tcpClient">The TcpClient handling the accepted connection.</param>
+        /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddChildConnectionAsync(string username, ITcpClient tcpClient);
+        Task AddChildConnectionAsync(string username, IConnection incomingConnection);
 
         /// <summary>
         ///     Asynchronously connects to one of the specified <paramref name="parentCandidates"/>.

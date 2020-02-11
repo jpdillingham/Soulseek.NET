@@ -54,7 +54,7 @@ namespace Soulseek.Network.Tcp
 
                 InactivityTimer.Elapsed += (sender, e) =>
                 {
-                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached.");
+                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached");
                     Disconnect(ex.Message, ex);
                 };
             }
@@ -70,7 +70,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (TcpClient == null || !TcpClient.Connected)
                 {
-                    Disconnect($"The server connection was closed unexpectedly.");
+                    Disconnect($"The server connection was closed unexpectedly");
                 }
             };
 
@@ -109,11 +109,6 @@ namespace Soulseek.Network.Tcp
         public event EventHandler<ConnectionStateChangedEventArgs> StateChanged;
 
         /// <summary>
-        ///     Gets or sets the connection context.
-        /// </summary>
-        public object Context { get; set; }
-
-        /// <summary>
         ///     Gets the connection id.
         /// </summary>
         public Guid Id { get; }
@@ -137,6 +132,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets or sets the current connection state.
         /// </summary>
         public ConnectionState State { get; protected set; }
+
+        /// <summary>
+        ///     Gets or sets the connection type.
+        /// </summary>
+        public ConnectionTypes Type { get; set; }
 
         /// <summary>
         ///     Gets or sets a value indicating whether the object is disposed.
@@ -215,7 +215,7 @@ namespace Soulseek.Network.Tcp
                         }
                         else if (completedTask == cancellationTaskCompletionSource.Task)
                         {
-                            throw new OperationCanceledException("Operation cancelled.");
+                            throw new OperationCanceledException("Operation cancelled");
                         }
 
                         if (connectTask.Exception?.InnerException != null)
@@ -307,12 +307,12 @@ namespace Soulseek.Network.Tcp
         {
             if (length < 0)
             {
-                throw new ArgumentException($"The requested length must be greater than or equal to zero.", nameof(length));
+                throw new ArgumentException($"The requested length must be greater than or equal to zero", nameof(length));
             }
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
+                throw new InvalidOperationException($"The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -346,22 +346,22 @@ namespace Soulseek.Network.Tcp
         {
             if (length < 0)
             {
-                throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
+                throw new ArgumentException("The requested length must be greater than or equal to zero", nameof(length));
             }
 
             if (outputStream == null)
             {
-                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null.");
+                throw new ArgumentNullException(nameof(outputStream), "The specified output stream is null");
             }
 
             if (!outputStream.CanWrite)
             {
-                throw new InvalidOperationException("The specified output stream is not writeable.");
+                throw new InvalidOperationException("The specified output stream is not writeable");
             }
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException("The underlying Tcp connection is closed.");
+                throw new InvalidOperationException("The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -389,12 +389,12 @@ namespace Soulseek.Network.Tcp
         {
             if (bytes == null || bytes.Length == 0)
             {
-                throw new ArgumentException($"Invalid attempt to send empty data.", nameof(bytes));
+                throw new ArgumentException($"Invalid attempt to send empty data", nameof(bytes));
             }
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
+                throw new InvalidOperationException($"The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -428,22 +428,22 @@ namespace Soulseek.Network.Tcp
         {
             if (length <= 0)
             {
-                throw new ArgumentException("The requested length must be greater than or equal to zero.", nameof(length));
+                throw new ArgumentException("The requested length must be greater than or equal to zero", nameof(length));
             }
 
             if (inputStream == null)
             {
-                throw new ArgumentNullException(nameof(inputStream), "The specified output stream is null.");
+                throw new ArgumentNullException(nameof(inputStream), "The specified output stream is null");
             }
 
             if (!inputStream.CanRead)
             {
-                throw new InvalidOperationException("The specified input stream is not readable.");
+                throw new InvalidOperationException("The specified input stream is not readable");
             }
 
             if (!TcpClient.Connected)
             {
-                throw new InvalidOperationException($"The underlying Tcp connection is closed.");
+                throw new InvalidOperationException($"The underlying Tcp connection is closed");
             }
 
             if (State != ConnectionState.Connected)
@@ -492,7 +492,7 @@ namespace Soulseek.Network.Tcp
             {
                 if (disposing)
                 {
-                    Disconnect("Connection is being disposed.", new ObjectDisposedException(GetType().Name));
+                    Disconnect("Connection is being disposed", new ObjectDisposedException(GetType().Name));
                     InactivityTimer?.Dispose();
                     WatchdogTimer?.Dispose();
                     Stream?.Dispose();

@@ -70,7 +70,7 @@ namespace Soulseek.Messaging.Messages
         public int Token { get; }
 
         /// <summary>
-        ///     Gets the connection type ('P' for message or 'F' for transfer).
+        ///     Gets the connection type ('P' for message, 'F' for transfer, or 'D' for distributed).
         /// </summary>
         public string Type { get; }
 

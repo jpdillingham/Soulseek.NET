@@ -238,12 +238,12 @@ namespace Soulseek
                         {
                             if (record.Value.TryDequeue(out var cancelledWait))
                             {
-                                cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled."));
+                                cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled"));
                             }
                         }
                         else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && record.Value.TryDequeue(out var timedOutWait))
                         {
-                            timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds."));
+                            timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds"));
                         }
                     }
 
