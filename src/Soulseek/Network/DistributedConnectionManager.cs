@@ -194,7 +194,7 @@ namespace Soulseek.Network
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Inbound child connection to {username} ({endpoint}) rejected: limit of {ConcurrentChildLimit} reached.");
+                Diagnostic.Debug($"Inbound child connection to {username} ({endpoint}) rejected: limit of {ConcurrentChildLimit} concurrent connections reached.");
                 incomingConnection.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
@@ -715,6 +715,7 @@ namespace Soulseek.Network
             }
             catch (Exception)
             {
+                connection.Disconnect($"One or more required messages was not received.");
                 throw new ConnectionException($"Failed to retrieve branch info from parent candidate connection to {connection.Username} ({connection.IPEndPoint}); one or more required messages was not received. (id: {connection.Id})");
             }
             finally
