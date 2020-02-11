@@ -524,7 +524,7 @@ namespace Soulseek.Network
 
                     Diagnostic.Debug($"Indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
-                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Inbound;
+                    connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                     connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
 
                     Diagnostic.Debug($"Indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
