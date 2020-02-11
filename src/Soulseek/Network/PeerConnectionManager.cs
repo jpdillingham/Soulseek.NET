@@ -89,8 +89,8 @@ namespace Soulseek.Network
         {
             await MessageConnectionDictionary.AddOrUpdate(
                 username,
-                new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection())),
-                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection(cachedConnectionRecord)))).Value.ConfigureAwait(false);
+                new Lazy<Task<IMessageConnection>>(() => GetConnection()),
+                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => GetConnection(cachedConnectionRecord))).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
@@ -184,7 +184,7 @@ namespace Soulseek.Network
         {
             return await MessageConnectionDictionary.GetOrAdd(
                 connectToPeerResponse.Username,
-                key => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
+                key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection()
             {
@@ -233,7 +233,7 @@ namespace Soulseek.Network
         {
             return await MessageConnectionDictionary.GetOrAdd(
                 username,
-                key => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
+                key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection()
             {

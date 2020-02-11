@@ -144,7 +144,7 @@ namespace Soulseek.Network
 
             await ChildConnectionDictionary.GetOrAdd(
                 connectToPeerResponse.Username,
-                key => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
+                key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection()
             {
@@ -202,8 +202,8 @@ namespace Soulseek.Network
 
             await ChildConnectionDictionary.AddOrUpdate(
                 username,
-                new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection())),
-                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection(cachedConnectionRecord)))).Value.ConfigureAwait(false);
+                new Lazy<Task<IMessageConnection>>(() => GetConnection()),
+                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => GetConnection(cachedConnectionRecord))).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
