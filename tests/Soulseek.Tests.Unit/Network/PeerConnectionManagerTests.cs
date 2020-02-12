@@ -1322,7 +1322,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var iendpoint = new IPEndPoint(ipAddress, indirectPort);
             var indirect = GetMessageConnectionMock(username, iendpoint);
-            direct.Setup(m => m.Type)
+            indirect.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Indirect);
 
             var (manager, mocks) = GetFixture();
@@ -1335,7 +1335,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IMessageConnection>(It.Is<WaitKey>(k => k.TokenParts.Contains(Constants.WaitKey.SolicitedPeerConnection)), null, It.IsAny<CancellationToken?>()))
                 .Throws(new Exception());
 
             using (manager)
@@ -1365,7 +1365,7 @@ namespace Soulseek.Tests.Unit.Network
                 .Returns(new Mock<ITcpClient>().Object);
 
             var indirect = GetMessageConnectionMock(username, iendpoint);
-            direct.Setup(m => m.Type)
+            indirect.Setup(m => m.Type)
                 .Returns(ConnectionTypes.Indirect);
 
             var (manager, mocks) = GetFixture();
