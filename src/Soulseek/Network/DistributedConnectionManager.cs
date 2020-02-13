@@ -273,6 +273,7 @@ namespace Soulseek.Network
             }
 
             Diagnostic.Info($"Attempting to establish a new parent connection from {ParentCandidateList.Count} candidates");
+            Diagnostic.Debug($"Parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -310,6 +311,8 @@ namespace Soulseek.Network
 
                     successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
+
+                    Diagnostic.Debug($"Connected parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
 
                     foreach (var connection in successfulConnections)
                     {
@@ -484,9 +487,8 @@ namespace Soulseek.Network
             {
                 Diagnostic.Debug($"Both direct and indirect parent candidate connections to {username} ({ipEndPoint}) established.  Using direct connection.");
 
-                var i = successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Direct)).Connection;
-                i.Disconnect("Not selected.");
-                i.Dispose();
+                var i = successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Indirect)).Connection;
+                i.Disconnect("Superceded by direct connection.");
 
                 return successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Direct));
             }
@@ -517,13 +519,14 @@ namespace Soulseek.Network
                 Diagnostic.Debug($"Direct parent candidate connection to {username} ({ipEndPoint}) initialized.  Waiting for branch information and first search request. (id: {connection.Id})");
                 (branchLevel, branchRoot) = await initWait.ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                Diagnostic.Debug($"Failed to establish a direct parent candidate connection to {username} ({ipEndPoint}): {ex.Message}");
                 connection.Dispose();
                 throw;
             }
 
-            Diagnostic.Debug($"Parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+            Diagnostic.Debug($"Direct parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
             return (connection, branchLevel, branchRoot);
         }
 
@@ -542,7 +545,7 @@ namespace Soulseek.Network
                     .ConfigureAwait(false);
 
                 using (var incomingConnection = await SoulseekClient.Waiter
-                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, username, token), null, cancellationToken)
+                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, username, token), SoulseekClient.Options.DistributedConnectionOptions.ConnectTimeout, cancellationToken)
                     .ConfigureAwait(false))
                 {
                     var connection = ConnectionFactory.GetMessageConnection(
@@ -574,9 +577,14 @@ namespace Soulseek.Network
                         throw;
                     }
 
-                    Diagnostic.Debug($"Parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                    Diagnostic.Debug($"Indirect parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return (connection, branchLevel, branchRoot);
                 }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to establish an indirect parent candidate connection to {username} with token {token}: {ex.Message}");
+                throw;
             }
             finally
             {
