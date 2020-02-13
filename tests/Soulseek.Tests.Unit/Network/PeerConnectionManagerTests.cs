@@ -273,6 +273,109 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync throws expected exception on failure"), AutoData]
+        internal async Task AddMessageConnectionAsync_Throws_Expected_Exception_Failure(string username, IPEndPoint endpoint)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+            incomingConn.Setup(m => m.HandoffTcpClient())
+                .Throws(new Exception("foo"));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive("Failed to establish an inbound message connection"));
+                Assert.IsType<Exception>(ex.InnerException);
+                Assert.Equal("foo", ex.InnerException.Message);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync purges cache on failure"), AutoData]
+        internal async Task AddMessageConnectionAsync_Purges_Cache_On_Failure(string username, IPEndPoint endpoint)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+            incomingConn.Setup(m => m.HandoffTcpClient())
+                .Throws(new Exception("foo"));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+
+                Assert.Empty(manager.MessageConnections);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync produces expected diagnostic on failure"), AutoData]
+        internal async Task AddMessageConnectionAsync_Produces_Expected_Diagnostic_On_Failure(string username, IPEndPoint endpoint)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+            incomingConn.Setup(m => m.HandoffTcpClient())
+                .Throws(new Exception("foo"));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.NotNull(ex);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an inbound message connection"))));
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Purging message connection cache of failed connection"))));
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync sets connection type to inbound direct"), AutoData]
+        internal async Task AddMessageConnectionAsync_Sets_Connection_Type_To_Inbound_Direct(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+            }
+
+            conn.VerifySet(m => m.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct);
+        }
+
         [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync connects and pierces firewall"), AutoData]
         internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPEndPoint endpoint, int token)
@@ -1502,36 +1605,6 @@ namespace Soulseek.Tests.Unit.Network
 
                 direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
             }
-        }
-
-        [Fact]
-        public void AddMessageConnectionAsync_Purges_Cache_On_Failure()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void AddMessageConnectionAsync_Produces_Expected_Diagnostic_Failure()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void AddMessageConnectionAsync_Caches_Connection_If_Uncached()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void AddMessageConnectionAsync_Replaces_Cached_Connection_If_Cached()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void AddMessageConnectionAsync_Sets_Connection_Type_To_Inbound_Direct()
-        {
-            Assert.True(false);
         }
 
         [Fact]
