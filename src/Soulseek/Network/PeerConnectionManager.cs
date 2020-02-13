@@ -97,7 +97,7 @@ namespace Soulseek.Network
             catch (Exception ex)
             {
                 Diagnostic.Debug($"Failed to establish an inbound message connection to {username} ({incomingConnection.IPEndPoint}): {ex.Message}");
-                Diagnostic.Debug($"Purging connection cache of failed connection to {username} ({incomingConnection.IPEndPoint}).");
+                Diagnostic.Debug($"Purging messgage connection cache of failed connection to {username} ({incomingConnection.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(username, out _);
                 throw;
             }
@@ -127,9 +127,9 @@ namespace Soulseek.Network
                     Diagnostic.Debug($"Superceding cached message connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
                 }
 
-                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-
                 connection.StartReadingContinuously();
+
+                Diagnostic.Debug($"Message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
         }
@@ -169,7 +169,7 @@ namespace Soulseek.Network
                 throw;
             }
 
-            Diagnostic.Debug($"Inbound transfer connection to {username} ({connection.IPEndPoint}) for token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
+            Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
             SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
         }
 
@@ -203,7 +203,7 @@ namespace Soulseek.Network
 
                 if (cached)
                 {
-                    Diagnostic.Debug($"Retrieved cached connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
+                    Diagnostic.Debug($"Retrieved cached message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
                 }
 
                 return connection;
@@ -211,7 +211,7 @@ namespace Soulseek.Network
             catch (Exception ex)
             {
                 Diagnostic.Debug($"Failed to establish an inbound indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
-                Diagnostic.Debug($"Purging connection cache of failed connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}).");
+                Diagnostic.Debug($"Purging message connection cache of failed connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(connectToPeerResponse.Username, out _);
                 throw;
             }
@@ -245,7 +245,7 @@ namespace Soulseek.Network
                     throw;
                 }
 
-                Diagnostic.Debug($"Inbound indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Debug($"Message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
         }
@@ -273,7 +273,7 @@ namespace Soulseek.Network
 
                 if (cached)
                 {
-                    Diagnostic.Debug($"Retrieved cached connection to {username} ({ipEndPoint})");
+                    Diagnostic.Debug($"Retrieved cached message connection to {username} ({ipEndPoint})");
                 }
 
                 return connection;
@@ -281,7 +281,7 @@ namespace Soulseek.Network
             catch (Exception ex)
             {
                 Diagnostic.Debug(ex.Message);
-                Diagnostic.Debug($"Purging connection cache of failed connection to {username} ({ipEndPoint}).");
+                Diagnostic.Debug($"Purging message connection cache of failed connection to {username} ({ipEndPoint}).");
                 MessageConnectionDictionary.TryRemove(username, out _);
                 throw;
             }
@@ -347,7 +347,7 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new connection and the associated remote token.</returns>
         public async Task<(IConnection Connection, int RemoteToken)> GetTransferConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
-            Diagnostic.Debug($"Attempting indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
+            Diagnostic.Debug($"Attempting inbound indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
 
             var connection = ConnectionFactory.GetConnection(
                 connectToPeerResponse.IPEndPoint,
@@ -370,7 +370,7 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to establish an indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
+                Diagnostic.Debug($"Failed to establish an inbound indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
                 connection.Dispose();
                 throw;
             }
@@ -495,7 +495,7 @@ namespace Soulseek.Network
         {
             var solicitationToken = SoulseekClient.GetNextToken();
 
-            Diagnostic.Debug($"Soliciting outbound indirect message connection to {username} with token {solicitationToken}");
+            Diagnostic.Debug($"Soliciting indirect message connection to {username} with token {solicitationToken}");
 
             try
             {
@@ -515,19 +515,19 @@ namespace Soulseek.Network
                         SoulseekClient.Options.PeerConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
-                    Diagnostic.Debug($"Outbound indirect message connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                    Diagnostic.Debug($"Indirect message connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
                     connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                     connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                     connection.MessageReceived += SoulseekClient.PeerMessageHandler.HandleMessageReceived;
 
-                    Diagnostic.Debug($"Outbound indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                    Diagnostic.Debug($"Indirect message connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to establish an outbound indirect message connection to {username} with token {solicitationToken}: {ex.Message}");
+                Diagnostic.Debug($"Failed to establish an indirect message connection to {username} with token {solicitationToken}: {ex.Message}");
                 throw;
             }
             finally
@@ -562,7 +562,7 @@ namespace Soulseek.Network
 
         private async Task<IConnection> GetTransferConnectionOutboundIndirectAsync(string username, int token, CancellationToken cancellationToken)
         {
-            Diagnostic.Debug($"Soliciting outbound indirect message connection to {username} with token {token}");
+            Diagnostic.Debug($"Soliciting indirect transfer connection to {username} with token {token}");
 
             var solicitationToken = SoulseekClient.GetNextToken();
 
@@ -583,18 +583,18 @@ namespace Soulseek.Network
                         SoulseekClient.Options.TransferConnectionOptions,
                         incomingConnection.HandoffTcpClient());
 
-                    Diagnostic.Debug($"Outbound indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                    Diagnostic.Debug($"Indirect transfer connection to {username} ({incomingConnection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
 
                     connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                     connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} ({incomingConnection.IPEndPoint}) disconnected. (type: {connection.Type}, id: {connection.Id})");
 
-                    Diagnostic.Debug($"Outbound indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                    Diagnostic.Debug($"Indirect transfer connection for {token} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to establish an outbound indirect transfer connection to {username} with token {token}: {ex.Message}");
+                Diagnostic.Debug($"Failed to establish an indirect transfer connection to {username} with token {token}: {ex.Message}");
                 throw;
             }
             finally
