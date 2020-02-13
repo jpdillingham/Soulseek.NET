@@ -94,8 +94,9 @@ namespace Soulseek.Network
                     new Lazy<Task<IMessageConnection>>(() => GetConnection()),
                     (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => GetConnection(cachedConnectionRecord))).Value.ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                Diagnostic.Debug(ex.Message);
                 Diagnostic.Debug($"Purging connection cache of failed connection to {username} ({incomingConnection.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(username, out _);
                 throw;
@@ -191,14 +192,24 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new or updated connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
+            bool cached = true;
+
             try
             {
-                return await MessageConnectionDictionary.GetOrAdd(
+                var connection = await MessageConnectionDictionary.GetOrAdd(
                     connectToPeerResponse.Username,
                     key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
+
+                if (cached)
+                {
+                    Diagnostic.Debug($"Retrieved cached connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
+                }
+
+                return connection;
             }
-            catch
+            catch (Exception ex)
             {
+                Diagnostic.Debug(ex.Message);
                 Diagnostic.Debug($"Purging connection cache of failed connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(connectToPeerResponse.Username, out _);
                 throw;
@@ -206,6 +217,8 @@ namespace Soulseek.Network
 
             async Task<IMessageConnection> GetConnection()
             {
+                cached = false;
+
                 Diagnostic.Debug($"Attempting indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
 
                 var connection = ConnectionFactory.GetMessageConnection(
@@ -249,14 +262,24 @@ namespace Soulseek.Network
         /// <returns>The operation context, including the new or existing connection.</returns>
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
+            bool cached = true;
+
             try
             {
-                return await MessageConnectionDictionary.GetOrAdd(
+                var connection = await MessageConnectionDictionary.GetOrAdd(
                     username,
                     key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
+
+                if (cached)
+                {
+                    Diagnostic.Debug($"Retrieved cached connection to {username} ({ipEndPoint})");
+                }
+
+                return connection;
             }
-            catch
+            catch (Exception ex)
             {
+                Diagnostic.Debug(ex.Message);
                 Diagnostic.Debug($"Purging connection cache of failed connection to {username} ({ipEndPoint}).");
                 MessageConnectionDictionary.TryRemove(username, out _);
                 throw;
@@ -264,6 +287,8 @@ namespace Soulseek.Network
 
             async Task<IMessageConnection> GetConnection()
             {
+                cached = false;
+
                 using (var directCts = new CancellationTokenSource())
                 using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
                 using (var indirectCts = new CancellationTokenSource())
