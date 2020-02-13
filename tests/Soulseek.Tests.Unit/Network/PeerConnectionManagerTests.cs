@@ -424,7 +424,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -451,7 +451,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedException);
 
             using (manager)
@@ -476,7 +476,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -501,7 +501,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -530,7 +530,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
 
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                     .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
                     .Returns(Task.FromResult(conn.Object));
 
@@ -608,7 +608,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(indirect.Object));
 
             using (manager)
@@ -964,7 +964,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -993,7 +993,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Throws(expectedException);
 
             using (manager)
@@ -1020,7 +1020,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -1047,7 +1047,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(msgConn.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(conn.Object));
 
             using (manager)
@@ -1078,7 +1078,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
 
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                     .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
                     .Returns(Task.FromResult(conn.Object));
 
@@ -1114,7 +1114,7 @@ namespace Soulseek.Tests.Unit.Network
             {
                 List<KeyValuePair<int, string>> pending = new List<KeyValuePair<int, string>>();
 
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                     .Callback<WaitKey, int?, CancellationToken?>((w, i, c) => pending = manager.GetProperty<ConcurrentDictionary<int, string>>("PendingSolicitationDictionary").ToList())
                     .Returns(Task.FromResult(conn.Object));
 
@@ -1284,7 +1284,7 @@ namespace Soulseek.Tests.Unit.Network
                 (await manager.GetOrAddMessageConnectionAsync(ctpr)).Dispose();
             }
 
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Attempting indirect message connection"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Attempting inbound indirect message connection"))), Times.Once);
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Message connection to {username}") && s.ContainsInsensitive("established"))), Times.Once);
         }
 
@@ -1378,7 +1378,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, iendpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
-            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(incomingIndirect.Object));
 
             using (manager)
