@@ -1504,6 +1504,180 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Fact]
+        public void AddMessageConnectionAsync_Purges_Cache_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void AddMessageConnectionAsync_Produces_Expected_Diagnostic_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void AddMessageConnectionAsync_Caches_Connection_If_Uncached()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void AddMessageConnectionAsync_Replaces_Cached_Connection_If_Cached()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void AddMessageConnectionAsync_Sets_Connection_Type_To_Inbound_Direct()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void AddTransferConnectionAsync_Sets_Connection_Type_To_Inbound_Direct()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void AddTransferConnectionAsync_Produces_Expected_Diagnostic_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_CTPR_Purges_Cache_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_CTPR_Produces_Expected_Diagnostic_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_CTPR_Caches_Connection_If_Uncached()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_CTPR_Returns_Cached_Connection_If_Cached()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_CTPR_Sets_Connection_Type_To_Inbound_Indirect()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_Purges_Cache_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_Produces_Expected_Diagnostic_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_Caches_Connection_If_Uncached()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_Returns_Cached_Connection_If_Cached()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetOrAddMessageConnectionAsync_Starts_Reading_Continuously_If_Indirect()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionAsync_CTPR_Sets_Type_To_Inbound_Indirect()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionAsync_CTPR_Produces_Expected_Diagnostic_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionAsync_Produces_Expected_Diagnostic_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionAsync_Produces_Expected_Diagnostic_On_Initialization_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetMessageConnectionOutboundDirectAsync_Sets_Type_To_Outbound_Direct()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetMessageConnectionOutboundDirectAsync_Produces_Expected_Diagnostic_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetMessageConnectionOutboundIndirectAsync_Sets_Type_To_Outbound_Indirect()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetMessageConnectionOutboundIndirectAsync_Produces_Expected_Diagnostic_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionOutboundDirectAsyncnc_Sets_Type_To_Outbound_Direct()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionOutboundDirectAsyncnc_Produces_Expected_Diagnostic_On_Failure()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionOutboundIndirectAsync_Sets_Type_To_Outbound_Indirect()
+        {
+            Assert.True(false);
+        }
+
+        [Fact]
+        public void GetTransferConnectionOutboundIndirectAsync_Produces_Expected_Diagnostic_On_Failure()
+        {
+            Assert.True(false);
+        }
+
         private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
