@@ -224,7 +224,7 @@ namespace Soulseek.Messaging.Handlers
                                     }
                                     else
                                     {
-                                        Diagnostic.Debug($"Transfer ConnectToPeer request from { connectToPeerResponse.Username} ({ connectToPeerResponse.IPEndPoint}) for remote token { connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
+                                        Diagnostic.Debug($"Transfer ConnectToPeer request from {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for remote token {connectToPeerResponse.Token} does not match any waiting downloads, discarding.");
                                         connection.Disconnect($"Unknown transfer");
                                     }
                                 }
