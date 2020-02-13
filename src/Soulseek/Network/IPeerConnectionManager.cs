@@ -26,9 +26,9 @@ namespace Soulseek.Network
     /// </summary>
     internal interface IPeerConnectionManager : IDisposable, IDiagnosticGenerator
     {
-        /// <summary>	
-        ///     Gets current list of peer message connections.	
-        /// </summary>	
+        /// <summary>
+        ///     Gets current list of peer message connections.
+        /// </summary>
         IReadOnlyCollection<(string Username, IPEndPoint IPEndPoint)> MessageConnections { get; }
 
         /// <summary>
