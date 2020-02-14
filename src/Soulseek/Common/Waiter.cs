@@ -71,6 +71,7 @@ namespace Soulseek
                 while (record.Value.TryDequeue(out var wait))
                 {
                     wait.TaskCompletionSource.SetCanceled();
+                    wait.CancellationTokenRegistration?.Dispose();
                 }
             }
         }
@@ -86,6 +87,7 @@ namespace Soulseek
             if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
             {
                 ((TaskCompletionSource<T>)wait.TaskCompletionSource).SetResult(result);
+                wait.CancellationTokenRegistration?.Dispose();
             }
         }
 
@@ -117,6 +119,7 @@ namespace Soulseek
             if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
             {
                 wait.TaskCompletionSource.SetException(exception);
+                wait.CancellationTokenRegistration?.Dispose();
             }
         }
 
@@ -143,13 +146,19 @@ namespace Soulseek
         public Task<T> Wait<T>(WaitKey key, int? timeout = null, CancellationToken? cancellationToken = null)
         {
             timeout = timeout ?? DefaultTimeout;
+            cancellationToken = cancellationToken ?? CancellationToken.None;
+
+            var taskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously);
+
+            var cancellationTokenRegistration = cancellationToken?.Register(() => taskCompletionSource.TrySetCanceled(cancellationToken.Value));
 
             var wait = new PendingWait()
             {
-                TaskCompletionSource = new TaskCompletionSource<T>(TaskCreationOptions.RunContinuationsAsynchronously),
+                TaskCompletionSource = taskCompletionSource,
                 DateTime = DateTime.UtcNow,
                 TimeoutAfter = (int)timeout,
                 CancellationToken = cancellationToken,
+                CancellationTokenRegistration = cancellationTokenRegistration,
             };
 
             // obtain a read lock for the key.  this is necessary to prevent this code from adding a wait to the
@@ -239,11 +248,13 @@ namespace Soulseek
                             if (record.Value.TryDequeue(out var cancelledWait))
                             {
                                 cancelledWait.TaskCompletionSource.SetException(new OperationCanceledException("The wait was cancelled"));
+                                cancelledWait.CancellationTokenRegistration?.Dispose();
                             }
                         }
                         else if (nextPendingWait.DateTime.AddSeconds(nextPendingWait.TimeoutAfter) < DateTime.UtcNow && record.Value.TryDequeue(out var timedOutWait))
                         {
                             timedOutWait.TaskCompletionSource.SetException(new TimeoutException($"The wait timed out after {timedOutWait.TimeoutAfter} seconds"));
+                            timedOutWait.CancellationTokenRegistration?.Dispose();
                         }
                     }
 
@@ -290,6 +301,11 @@ namespace Soulseek
             ///     The cancellation token for the wait.
             /// </summary>
             public CancellationToken? CancellationToken;
+
+            /// <summary>
+            ///     The handle for the cancellation token registration.
+            /// </summary>
+            public CancellationTokenRegistration? CancellationTokenRegistration;
 
             /// <summary>
             ///     The time at which the wait was enqueued.
