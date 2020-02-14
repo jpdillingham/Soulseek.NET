@@ -175,6 +175,83 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.Contains("disconnected", StringComparison.InvariantCultureIgnoreCase))), Times.Once);
         }
 
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync sets connection type to inbound direct"), AutoData]
+        internal async Task AddTransferConnectionAsync_Sets_Connection_Type_To_Inbound_Direct(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                await manager.AddTransferConnectionAsync(username, token, incomingConn.Object);
+            }
+
+            conn.VerifySet(m => m.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct);
+        }
+
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync produces expected diagnostic on failure"), AutoData]
+        internal async Task AddTransferConnectionAsync_Produces_Expected_Diagnostic_On_Failure(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromException<byte[]>(new Exception("foo")));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+
+                Assert.NotNull(ex);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an inbound transfer connection"))));
+        }
+
+        [Trait("Category", "AddTransferConnectionAsync")]
+        [Theory(DisplayName = "AddTransferConnectionAsync throws expected exception on failure"), AutoData]
+        internal async Task AddTransferConnectionAsync_Throws_Expected_Exception_On_Failure(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromException<byte[]>(new Exception("foo")));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.True(ex.Message.ContainsInsensitive("Failed to establish an inbound transfer connection"));
+                Assert.IsType<Exception>(ex.InnerException);
+                Assert.True(ex.InnerException.Message.ContainsInsensitive("foo"));
+            }
+        }
+
         [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync starts reading"), AutoData]
         internal async Task AddMessageConnectionAsync_Starts_Reading(string username, IPEndPoint endpoint, int token)
@@ -1605,18 +1682,6 @@ namespace Soulseek.Tests.Unit.Network
 
                 direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
             }
-        }
-
-        [Fact]
-        public void AddTransferConnectionAsync_Sets_Connection_Type_To_Inbound_Direct()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void AddTransferConnectionAsync_Produces_Expected_Diagnostic_Failure()
-        {
-            Assert.True(false);
         }
 
         [Fact]
