@@ -40,10 +40,83 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 var peek = queue.TryPeek(out var wait);
 
-                Assert.Equal(result, waitResult);
-                Assert.NotNull(queue);
-                Assert.Empty(queue);
-                Assert.False(peek);
+                try
+                {
+                    Assert.Equal(result, waitResult);
+                    Assert.NotNull(queue);
+                    Assert.Empty(queue);
+                    Assert.False(peek);
+                }
+                finally
+                {
+                    wait?.Dispose();
+                }
+            }
+        }
+
+        [Trait("Category", "Wait Cancellation")]
+        [Fact(DisplayName = "Cancel dequeues wait and cancels task")]
+        public async Task Cancel_Dequeues_Wait_And_Cancels_Task()
+        {
+            using (var waiter = new Waiter())
+            {
+                var key = new WaitKey(MessageCode.Server.Login);
+                var task = waiter.Wait(key);
+
+                waiter.Cancel(key);
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                var peek = queue.TryPeek(out var wait);
+
+                try
+                {
+                    Assert.NotNull(ex);
+                    Assert.IsType<TaskCanceledException>(ex);
+
+                    Assert.NotNull(queue);
+                    Assert.Empty(queue);
+                    Assert.False(peek);
+                }
+                finally
+                {
+                    wait?.Dispose();
+                }
+            }
+        }
+
+        [Trait("Category", "Wait Timeout")]
+        [Fact(DisplayName = "Timeout dequeues wait and throws task with TimeoutException")]
+        public async Task Timeout_Dequeues_Wait_And_Throws_Task_With_TimeoutException()
+        {
+            using (var waiter = new Waiter())
+            {
+                var key = new WaitKey(MessageCode.Server.Login);
+                var task = waiter.Wait(key);
+
+                waiter.Timeout(key);
+
+                var ex = await Record.ExceptionAsync(() => task);
+
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                var peek = queue.TryPeek(out var wait);
+
+                try
+                {
+                    Assert.NotNull(ex);
+                    Assert.IsType<TimeoutException>(ex);
+
+                    Assert.NotNull(queue);
+                    Assert.Empty(queue);
+                    Assert.False(peek);
+                }
+                finally
+                {
+                    wait?.Dispose();
+                }
             }
         }
 
@@ -90,14 +163,21 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
-                Assert.NotNull(ex);
-                Assert.IsType<TimeoutException>(ex.InnerException);
+                try
+                {
+                    Assert.NotNull(ex);
+                    Assert.IsType<TimeoutException>(ex.InnerException);
 
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                    Assert.NotNull(queue);
+                    Assert.Single(queue);
+                }
+                finally
+                {
+                    wait.Dispose();
+                }
             }
         }
 
@@ -181,20 +261,26 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
-                Assert.IsType<Task<object>>(task);
-                Assert.NotNull(task);
-                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
-
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
-
-                Assert.NotNull(queue);
-                Assert.Single(queue);
-                Assert.NotEqual(new DateTime(), wait.DateTime);
-
-                if (timeout != null)
+                try
                 {
-                    Assert.Equal(timeout, wait.TimeoutAfter);
+                    Assert.IsType<Task<object>>(task);
+                    Assert.NotNull(task);
+                    Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
+
+                    Assert.NotNull(queue);
+                    Assert.Single(queue);
+
+                    if (timeout != null)
+                    {
+                        Assert.Equal(timeout, wait.Timeout);
+                    }
+                }
+                finally
+                {
+                    wait.Dispose();
                 }
             }
         }
@@ -217,20 +303,26 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
-                Assert.IsType<Task<object>>(task);
-                Assert.NotNull(task);
-                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
-
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
-
-                Assert.NotNull(queue);
-                Assert.Single(queue);
-                Assert.NotEqual(new DateTime(), wait.DateTime);
-
-                if (timeout != null)
+                try
                 {
-                    Assert.Equal(timeout, wait.TimeoutAfter);
+                    Assert.IsType<Task<object>>(task);
+                    Assert.NotNull(task);
+                    Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
+
+                    Assert.NotNull(queue);
+                    Assert.Single(queue);
+
+                    if (timeout != null)
+                    {
+                        Assert.Equal(timeout, wait.Timeout);
+                    }
+                }
+                finally
+                {
+                    wait.Dispose();
                 }
             }
         }
@@ -256,14 +348,21 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
-                Assert.NotNull(ex);
-                Assert.IsType<TimeoutException>(ex.InnerException);
+                try
+                {
+                    Assert.NotNull(ex);
+                    Assert.IsType<TimeoutException>(ex.InnerException);
 
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
+                    Assert.NotNull(queue);
+                    Assert.Single(queue);
+                }
+                finally
+                {
+                    wait.Dispose();
+                }
             }
         }
 
@@ -279,12 +378,12 @@ namespace Soulseek.Tests.Unit
 
                 using (var waiter = new Waiter(0))
                 {
-                    Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
+                    Task<object> task = waiter.Wait<object>(key, 9999, tcs.Token);
                     object result = null;
 
                     // stick another wait in the same queue to prevent the disposal logic from removing
                     // the dictionary record before we can inspect it
-                    waiter.Wait<object>(key, 999999, CancellationToken.None);
+                    waiter.Wait<object>(key, 99999, CancellationToken.None);
 
                     var ex = Record.Exception(() => result = task.Result);
 
@@ -292,14 +391,21 @@ namespace Soulseek.Tests.Unit
                     waits.TryGetValue(key, out var queue);
                     queue.TryPeek(out var wait);
 
-                    Assert.NotNull(ex);
-                    Assert.IsType<OperationCanceledException>(ex.InnerException);
+                    try
+                    {
+                        Assert.NotNull(ex);
+                        Assert.IsAssignableFrom<OperationCanceledException>(ex.InnerException);
 
-                    Assert.NotEmpty(waits);
-                    Assert.Single(waits);
+                        Assert.NotEmpty(waits);
+                        Assert.Single(waits);
 
-                    Assert.NotNull(queue);
-                    Assert.Single(queue); // should contain only the dummy wait
+                        Assert.NotNull(queue);
+                        Assert.Single(queue); // should contain only the dummy wait
+                    }
+                    finally
+                    {
+                        wait.Dispose();
+                    }
                 }
             }
         }
@@ -326,7 +432,7 @@ namespace Soulseek.Tests.Unit
                     var exists = waits.TryGetValue(key, out var record);
 
                     Assert.NotNull(ex);
-                    Assert.IsType<OperationCanceledException>(ex.InnerException);
+                    Assert.IsAssignableFrom<OperationCanceledException>(ex.InnerException);
 
                     Assert.Empty(waits);
                     Assert.False(exists);
@@ -375,15 +481,22 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
-                Assert.NotNull(ex);
-                Assert.IsType<InvalidOperationException>(ex.InnerException);
-                Assert.Equal("error", ex.InnerException.Message);
+                try
+                {
+                    Assert.NotNull(ex);
+                    Assert.IsType<InvalidOperationException>(ex.InnerException);
+                    Assert.Equal("error", ex.InnerException.Message);
 
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Empty(queue);
+                    Assert.NotNull(queue);
+                    Assert.Empty(queue);
+                }
+                finally
+                {
+                    wait?.Dispose();
+                }
             }
         }
 
@@ -401,17 +514,23 @@ namespace Soulseek.Tests.Unit
                 waits.TryGetValue(key, out var queue);
                 queue.TryPeek(out var wait);
 
-                Assert.IsType<Task<object>>(task);
-                Assert.NotNull(task);
-                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+                try
+                {
+                    Assert.IsType<Task<object>>(task);
+                    Assert.NotNull(task);
+                    Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
 
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
-                Assert.NotEqual(new DateTime(), wait.DateTime);
-                Assert.Equal(int.MaxValue, wait.TimeoutAfter);
+                    Assert.NotNull(queue);
+                    Assert.Single(queue);
+                    Assert.Equal(int.MaxValue, wait.Timeout);
+                }
+                finally
+                {
+                    wait.Dispose();
+                }
             }
         }
 
@@ -427,19 +546,26 @@ namespace Soulseek.Tests.Unit
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
                 waits.TryGetValue(key, out var queue);
+
                 queue.TryPeek(out var wait);
 
-                Assert.IsType<Task<object>>(task);
-                Assert.NotNull(task);
-                Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
+                try
+                {
+                    Assert.IsType<Task<object>>(task);
+                    Assert.NotNull(task);
+                    Assert.Equal(TaskStatus.WaitingForActivation, task.Status);
 
-                Assert.NotEmpty(waits);
-                Assert.Single(waits);
+                    Assert.NotEmpty(waits);
+                    Assert.Single(waits);
 
-                Assert.NotNull(queue);
-                Assert.Single(queue);
-                Assert.NotEqual(new DateTime(), wait.DateTime);
-                Assert.Equal(int.MaxValue, wait.TimeoutAfter);
+                    Assert.NotNull(queue);
+                    Assert.Single(queue);
+                    Assert.Equal(int.MaxValue, wait.Timeout);
+                }
+                finally
+                {
+                    wait.Dispose();
+                }
             }
         }
     }
