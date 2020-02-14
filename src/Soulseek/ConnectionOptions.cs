@@ -22,9 +22,9 @@ namespace Soulseek
         /// </summary>
         /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
         /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
-        /// <param name="connectTimeout">The connection timeout, in seconds, for client and peer TCP connections.</param>
-        /// <param name="inactivityTimeout">The inactivity timeout, in seconds, for peer TCP connections.</param>
-        public ConnectionOptions(int readBufferSize = 8192, int writeBufferSize = 8192, int connectTimeout = 5, int inactivityTimeout = 15)
+        /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
+        /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
+        public ConnectionOptions(int readBufferSize = 8192, int writeBufferSize = 8192, int connectTimeout = 5000, int inactivityTimeout = 15000)
         {
             ReadBufferSize = readBufferSize;
             WriteBufferSize = writeBufferSize;
@@ -33,12 +33,12 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Gets the connection timeout, in seconds, for client and peer TCP connections. (Default = 5).
+        ///     Gets the connection timeout, in milliseconds, for client and peer TCP connections. (Default = 5000).
         /// </summary>
         public int ConnectTimeout { get; }
 
         /// <summary>
-        ///     Gets the inactivity timeout, in seconds, for peer TCP connections. (Default = 15).
+        ///     Gets the inactivity timeout, in milliseconds, for peer TCP connections. (Default = 15000).
         /// </summary>
         /// <remarks>
         ///     Once connected and after reading data, if a no additional data is read within this threshold the connection will
@@ -61,8 +61,8 @@ namespace Soulseek
         /// </summary>
         /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
         /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
-        /// <param name="connectTimeout">The connection timeout, in seconds, for client and peer TCP connections.</param>
-        /// <param name="inactivityTimeout">The inactivity timeout, in seconds, for peer TCP connections.</param>
+        /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
+        /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
         public void Deconstruct(out int readBufferSize, out int writeBufferSize, out int connectTimeout, out int inactivityTimeout)
         {
             readBufferSize = ReadBufferSize;
