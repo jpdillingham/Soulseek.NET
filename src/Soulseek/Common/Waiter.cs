@@ -17,7 +17,6 @@ namespace Soulseek
     using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using SystemTimer = System.Timers.Timer;
 
     /// <summary>
     ///     Enables await-able server messages.
@@ -41,15 +40,6 @@ namespace Soulseek
         public Waiter(int defaultTimeout)
         {
             DefaultTimeout = defaultTimeout;
-
-            MonitorTimer = new SystemTimer()
-            {
-                Enabled = true,
-                AutoReset = true,
-                Interval = 500,
-            };
-
-            MonitorTimer.Elapsed += MonitorWaits;
         }
 
         /// <summary>
@@ -59,8 +49,17 @@ namespace Soulseek
 
         private bool Disposed { get; set; }
         private ConcurrentDictionary<WaitKey, ReaderWriterLockSlim> Locks { get; } = new ConcurrentDictionary<WaitKey, ReaderWriterLockSlim>();
-        private SystemTimer MonitorTimer { get; set; }
         private ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>> Waits { get; } = new ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>();
+
+        /// <summary>
+        ///     Cancels the oldest wait matching the specified <paramref name="key"/>.
+        /// </summary>
+        /// <param name="key">The unique WaitKey for the wait.</param>
+        public void Cancel(WaitKey key)
+        {
+            Disposition(key, wait =>
+                wait.TaskCompletionSource.TrySetCanceled());
+        }
 
         /// <summary>
         ///     Cancels all waits.
@@ -76,32 +75,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Cancels the oldest wait matching the specified <paramref name="key"/>.
-        /// </summary>
-        /// <param name="key">The unique WaitKey for the wait.</param>
-        public void Cancel(WaitKey key)
-        {
-            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
-            {
-                wait.TaskCompletionSource.TrySetCanceled();
-                wait.Dispose();
-            }
-        }
-
-        /// <summary>
-        ///     Causes the oldest wait matching the specified <paramref name="key"/> to time out.
-        /// </summary>
-        /// <param name="key">The unique WaitKey for the wait.</param>
-        public void Timeout(WaitKey key)
-        {
-            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
-            {
-                wait.TaskCompletionSource.TrySetException(new TimeoutException($"The wait timed out after {wait.Timeout} milliseconds"));
-                wait.Dispose();
-            }
-        }
-
-        /// <summary>
         ///     Completes the oldest wait matching the specified <paramref name="key"/> with the specified <paramref name="result"/>.
         /// </summary>
         /// <typeparam name="T">The wait result type.</typeparam>
@@ -109,11 +82,8 @@ namespace Soulseek
         /// <param name="result">The wait result.</param>
         public void Complete<T>(WaitKey key, T result)
         {
-            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
-            {
-                ((TaskCompletionSource<T>)wait.TaskCompletionSource).TrySetResult(result);
-                wait.Dispose();
-            }
+            Disposition(key, wait =>
+                ((TaskCompletionSource<T>)wait.TaskCompletionSource).TrySetResult(result));
         }
 
         /// <summary>
@@ -141,11 +111,18 @@ namespace Soulseek
         /// <param name="exception">The Exception to throw.</param>
         public void Throw(WaitKey key, Exception exception)
         {
-            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
-            {
-                wait.TaskCompletionSource.TrySetException(exception);
-                wait.Dispose();
-            }
+            Disposition(key, wait =>
+                wait.TaskCompletionSource.TrySetException(exception));
+        }
+
+        /// <summary>
+        ///     Causes the oldest wait matching the specified <paramref name="key"/> to time out.
+        /// </summary>
+        /// <param name="key">The unique WaitKey for the wait.</param>
+        public void Timeout(WaitKey key)
+        {
+            Disposition(key, wait =>
+                wait.TaskCompletionSource.TrySetException(new TimeoutException($"The wait timed out after {wait.Timeout} milliseconds")));
         }
 
         /// <summary>
@@ -182,8 +159,8 @@ namespace Soulseek
                 timeoutAction: () => Timeout(key),
                 cancellationToken.Value);
 
-            // obtain a read lock for the key.  this is necessary to prevent this code from adding a wait to the
-            // ConcurrentQueue while the containing dictionary entry is being cleaned up in MonitorWaits(), effectively discarding the new wait.
+            // obtain a read lock for the key. this is necessary to prevent this code from adding a wait to the ConcurrentQueue
+            // while the containing dictionary entry is being cleaned up in MonitorWaits(), effectively discarding the new wait.
 #pragma warning disable IDE0067, CA2000 // Dispose objects before losing scope
             var recordLock = Locks.GetOrAdd(key, new ReaderWriterLockSlim());
 #pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
@@ -239,9 +216,6 @@ namespace Soulseek
             {
                 if (disposing)
                 {
-                    MonitorTimer.Stop();
-                    MonitorTimer.Dispose();
-
                     CancelAll();
                 }
 
@@ -249,38 +223,41 @@ namespace Soulseek
             }
         }
 
-        private void MonitorWaits(object sender, object e)
+        private void Disposition(WaitKey key, Action<PendingWait> action)
         {
-            foreach (var record in Waits)
+            if (Waits.TryGetValue(key, out var queue) && queue.TryDequeue(out var wait))
             {
+                action(wait);
+                wait.Dispose();
+
                 // a lock should always be available or added prior to a wait; if not we'll take the null ref exception that would
                 // follow. it should be impossible to hit this so a catastrophic failure is appropriate.
-                Locks.TryGetValue(record.Key, out var recordLock);
+                Locks.TryGetValue(key, out var recordLock);
 
                 // enter a read lock first; TryPeek and TryDequeue are atomic so there's no risky operation until later.
                 recordLock.EnterUpgradeableReadLock();
 
                 try
                 {
-                    // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty.
-                    // this is tricky, because we don't want to remove a record if another thread is in the process of enqueueing a new wait.
-                    if (record.Value.IsEmpty)
+                    // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty. this is
+                    // tricky, because we don't want to remove a record if another thread is in the process of enqueueing a new wait.
+                    if (queue.IsEmpty)
                     {
                         // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits before
-                        // we can delete the dictionary record.  it's ok and expected that Wait() might add this record back to the dictionary
-                        // as soon as this unblocks; we're preventing new waits from being discarded if they are added by another thread
-                        // just prior to the TryRemove() operation below.
+                        // we can delete the dictionary record. it's ok and expected that Wait() might add this record back to the
+                        // dictionary as soon as this unblocks; we're preventing new waits from being discarded if they are added
+                        // by another thread just prior to the TryRemove() operation below.
                         recordLock.EnterWriteLock();
 
                         try
                         {
                             // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
-                            // entered the write lock. this is guarateed to be safe since we now have exclusive access to the record
-                            // and it should be impossible to remove a record containing a non-empty queue
-                            if (record.Value.IsEmpty)
+                            // entered the write lock. this is guarateed to be safe since we now have exclusive access to the
+                            // record and it should be impossible to remove a record containing a non-empty queue
+                            if (queue.IsEmpty)
                             {
-                                Waits.TryRemove(record.Key, out _);
-                                Locks.TryRemove(record.Key, out _);
+                                Waits.TryRemove(key, out _);
+                                Locks.TryRemove(key, out _);
                             }
                         }
                         finally
@@ -331,9 +308,9 @@ namespace Soulseek
             public int Timeout { get; }
 
             private CancellationTokenRegistration CancellationTokenRegistration { get; set; }
+            private bool Disposed { get; set; }
             private CancellationTokenRegistration TimeoutTokenRegistration { get; set; }
             private CancellationTokenSource TimeoutTokenSource { get; set; }
-            private bool Disposed { get; set; }
 
             /// <summary>
             ///     Releases the managed and unmanaged resources used by the <see cref="PendingWait"/>.
