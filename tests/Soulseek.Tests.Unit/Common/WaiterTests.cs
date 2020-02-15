@@ -37,20 +37,10 @@ namespace Soulseek.Tests.Unit
                 var key = new WaitKey(MessageCode.Server.Login);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                var peek = queue.TryPeek(out var wait);
 
-                try
-                {
-                    Assert.Equal(result, waitResult);
-                    Assert.NotNull(queue);
-                    Assert.Empty(queue);
-                    Assert.False(peek);
-                }
-                finally
-                {
-                    wait?.Dispose();
-                }
+                Assert.Equal(result, waitResult);
+
+                Assert.False(waits.TryGetValue(key, out _));
             }
         }
 
@@ -68,22 +58,11 @@ namespace Soulseek.Tests.Unit
                 var ex = await Record.ExceptionAsync(() => task);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                var peek = queue.TryPeek(out var wait);
 
-                try
-                {
-                    Assert.NotNull(ex);
-                    Assert.IsType<TaskCanceledException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<TaskCanceledException>(ex);
 
-                    Assert.NotNull(queue);
-                    Assert.Empty(queue);
-                    Assert.False(peek);
-                }
-                finally
-                {
-                    wait?.Dispose();
-                }
+                Assert.False(waits.TryGetValue(key, out _));
             }
         }
 
@@ -101,22 +80,11 @@ namespace Soulseek.Tests.Unit
                 var ex = await Record.ExceptionAsync(() => task);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                var peek = queue.TryPeek(out var wait);
 
-                try
-                {
-                    Assert.NotNull(ex);
-                    Assert.IsType<TimeoutException>(ex);
+                Assert.NotNull(ex);
+                Assert.IsType<TimeoutException>(ex);
 
-                    Assert.NotNull(queue);
-                    Assert.Empty(queue);
-                    Assert.False(peek);
-                }
-                finally
-                {
-                    wait?.Dispose();
-                }
+                Assert.False(waits.TryGetValue(key, out _));
             }
         }
 
@@ -129,6 +97,32 @@ namespace Soulseek.Tests.Unit
                 var ex = Record.Exception(() => waiter.Complete<object>(new WaitKey(MessageCode.Server.AddPrivilegedUser), null));
 
                 Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Wait Completion")]
+        [Fact(DisplayName = "Complete does not remove queue if additional waits are enqueued")]
+        public void Complete_Does_Not_Remove_Queue_If_Additional_Waits_Are_Enqueued()
+        {
+            int CountWaits(Waiter waiter, WaitKey key)
+            {
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                waits.TryGetValue(key, out var queue);
+                return queue?.Count ?? 0;
+            }
+
+            using (var waiter = new Waiter())
+            {
+                var key = new WaitKey("foo");
+
+                waiter.Wait(key);
+                waiter.Wait(key);
+
+                Assert.Equal(2, CountWaits(waiter, key));
+
+                waiter.Complete(key);
+
+                Assert.Equal(1, CountWaits(waiter, key));
             }
         }
 
@@ -414,29 +408,37 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "Wait dictionary and queue are collected after last wait is dequeued")]
         public void Wait_Dictionary_And_Queue_Are_Collected_After_Last_Wait_Is_Dequeued()
         {
-            using (var tcs = new CancellationTokenSource())
+            using (var waiter = new Waiter())
             {
-                tcs.CancelAfter(100);
+                var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                var locks = waiter.GetProperty<ConcurrentDictionary<WaitKey, ReaderWriterLockSlim>>("Locks");
 
-                var key = new WaitKey(MessageCode.Server.Login);
-
-                using (var waiter = new Waiter(0))
+                int CountWaits(WaitKey k)
                 {
-                    Task<object> task = waiter.Wait<object>(key, 999999, tcs.Token);
-                    object result = null;
-
-                    var ex = Record.Exception(() => result = task.Result);
-                    waiter.InvokeMethod("MonitorWaits", null, null); // force clean up.  normally this is on a timer.
-
-                    var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                    var exists = waits.TryGetValue(key, out var record);
-
-                    Assert.NotNull(ex);
-                    Assert.IsAssignableFrom<OperationCanceledException>(ex.InnerException);
-
-                    Assert.Empty(waits);
-                    Assert.False(exists);
+                    waits.TryGetValue(k, out var queue);
+                    return queue?.Count ?? 0;
                 }
+
+                var key = new WaitKey("foo");
+
+                waiter.Wait(key);
+                waiter.Wait(key);
+
+                Assert.Equal(2, CountWaits(key));
+                Assert.True(waits.TryGetValue(key, out _));
+                Assert.True(locks.TryGetValue(key, out _));
+
+                waiter.Complete(key);
+
+                Assert.Equal(1, CountWaits(key));
+                Assert.True(waits.TryGetValue(key, out _));
+                Assert.True(locks.TryGetValue(key, out _));
+
+                waiter.Complete(key);
+
+                Assert.Equal(0, CountWaits(key));
+                Assert.False(waits.TryGetValue(key, out _));
+                Assert.False(locks.TryGetValue(key, out _));
             }
         }
 
@@ -444,7 +446,7 @@ namespace Soulseek.Tests.Unit
         [Fact(DisplayName = "All waits are cancelled when CancelAll is invoked")]
         public void All_Waits_Are_Cancelled_When_CancelAll_Is_Invoked()
         {
-            using (var waiter = new Waiter(0))
+            using (var waiter = new Waiter(9999))
             {
                 var loginKey = new WaitKey(MessageCode.Server.Login, "1");
                 var loginKey2 = new WaitKey(MessageCode.Server.Login, "2");
@@ -478,25 +480,12 @@ namespace Soulseek.Tests.Unit
                 var ex = Record.Exception(() => result = task.Result);
 
                 var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-                waits.TryGetValue(key, out var queue);
-                queue.TryPeek(out var wait);
 
-                try
-                {
-                    Assert.NotNull(ex);
-                    Assert.IsType<InvalidOperationException>(ex.InnerException);
-                    Assert.Equal("error", ex.InnerException.Message);
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex.InnerException);
+                Assert.Equal("error", ex.InnerException.Message);
 
-                    Assert.NotEmpty(waits);
-                    Assert.Single(waits);
-
-                    Assert.NotNull(queue);
-                    Assert.Empty(queue);
-                }
-                finally
-                {
-                    wait?.Dispose();
-                }
+                Assert.False(waits.TryGetValue(key, out _));
             }
         }
 
