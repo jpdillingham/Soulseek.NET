@@ -342,7 +342,6 @@ namespace Soulseek.Network
                         throw new ConnectionException($"Failed to negotiate message connection to {username} ({ipEndPoint}): {ex.Message} (type: {connection.Type}, id: {connection.Id})", ex);
                     }
 
-
                     Diagnostic.Debug($"Message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                     return connection;
                 }
