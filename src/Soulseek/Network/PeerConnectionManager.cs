@@ -212,10 +212,11 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to establish an inbound indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
+                var msg = $"Failed to establish an inbound indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}";
+                Diagnostic.Debug(msg);
                 Diagnostic.Debug($"Purging message connection cache of failed connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(connectToPeerResponse.Username, out _);
-                throw;
+                throw new ConnectionException(msg, ex);
             }
 
             async Task<IMessageConnection> GetConnection()
@@ -280,9 +281,8 @@ namespace Soulseek.Network
 
                 return connection;
             }
-            catch (Exception ex)
+            catch
             {
-                Diagnostic.Debug(ex.Message);
                 Diagnostic.Debug($"Purging message connection cache of failed connection to {username} ({ipEndPoint}).");
                 MessageConnectionDictionary.TryRemove(username, out _);
                 throw;
@@ -314,7 +314,9 @@ namespace Soulseek.Network
 
                     if (task.Status != TaskStatus.RanToCompletion)
                     {
-                        throw new ConnectionException($"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})");
+                        var msg = $"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})";
+                        Diagnostic.Debug(msg);
+                        throw new ConnectionException(msg);
                     }
 
                     var connection = await task.ConfigureAwait(false);
@@ -339,7 +341,10 @@ namespace Soulseek.Network
                     }
                     catch (Exception ex)
                     {
-                        throw new ConnectionException($"Failed to negotiate message connection to {username} ({ipEndPoint}): {ex.Message} (type: {connection.Type}, id: {connection.Id})", ex);
+                        var msg = $"Failed to negotiate message connection to {username} ({ipEndPoint}): {ex.Message}";
+                        Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
+                        connection.Dispose();
+                        throw new ConnectionException(msg, ex);
                     }
 
                     Diagnostic.Debug($"Message connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
@@ -379,9 +384,10 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                Diagnostic.Debug($"Failed to establish an inbound indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}");
+                var msg = $"Failed to establish an inbound indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}";
+                Diagnostic.Debug(msg);
                 connection.Dispose();
-                throw;
+                throw new ConnectionException(msg, ex);
             }
 
             Diagnostic.Debug($"Transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token} established. (type: {connection.Type}, id: {connection.Id})");
@@ -446,6 +452,7 @@ namespace Soulseek.Network
                 {
                     var msg = $"Failed to negotiate transfer connection to {username} ({ipEndPoint}): {ex.Message}";
                     Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
+                    connection.Dispose();
                     throw new ConnectionException(msg, ex);
                 }
 

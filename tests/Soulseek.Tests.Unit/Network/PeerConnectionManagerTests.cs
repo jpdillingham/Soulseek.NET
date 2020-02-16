@@ -137,7 +137,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedEx, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -168,7 +169,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(async () => await manager.AddTransferConnectionAsync(username, token, incomingConn.Object));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedEx, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -513,7 +515,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedException, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedException, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -1381,7 +1384,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedEx, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose());
@@ -1410,7 +1414,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(async () => await manager.GetOrAddMessageConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedEx, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose());
