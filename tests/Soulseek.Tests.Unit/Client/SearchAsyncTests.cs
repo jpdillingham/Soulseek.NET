@@ -318,7 +318,7 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "SearchAsync adds search to ActiveSearches"), AutoData]
         public async Task SearchInternalAsync_Adds_Search_To_ActiveSearches(string searchText, int token)
         {
-            var options = new SearchOptions(searchTimeout: 5, fileLimit: 1);
+            var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1);
 
             using (var search = new SearchInternal(searchText, token, options)
             {
@@ -329,7 +329,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                     .Returns(Task.CompletedTask);
 
-                using (var cts = new CancellationTokenSource(5000))
+                using (var cts = new CancellationTokenSource(1000))
                 using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -503,14 +503,14 @@ namespace Soulseek.Tests.Unit.Client
         public async Task SearchAsync_Invokes_ResponseReceived_Delegate(string searchText, int token)
         {
             var fired = false;
-            var options = new SearchOptions(searchTimeout: 5, fileLimit: 1, responseReceived: (e) => fired = true);
+            var options = new SearchOptions(searchTimeout: 1000, fileLimit: 1, responseReceived: (e) => fired = true);
             var response = new SearchResponse("username", token, 1, 1, 1, 0, new List<File>() { new File(1, "foo", 1, "bar", 0) });
 
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
-            using (var cts = new CancellationTokenSource(5000))
+            using (var cts = new CancellationTokenSource(1000))
             {
                 var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
