@@ -42,7 +42,7 @@ namespace Soulseek
 
             SearchTimeoutTimer = new SystemTimer()
             {
-                Interval = Options.SearchTimeout * 1000,
+                Interval = Options.SearchTimeout,
                 Enabled = false,
                 AutoReset = false,
             };

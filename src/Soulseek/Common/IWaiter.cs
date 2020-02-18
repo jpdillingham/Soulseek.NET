@@ -27,6 +27,12 @@ namespace Soulseek
         int DefaultTimeout { get; }
 
         /// <summary>
+        ///     Cancels the oldest wait matching the specified <paramref name="key"/>.
+        /// </summary>
+        /// <param name="key">The unique WaitKey for the wait.</param>
+        void Cancel(WaitKey key);
+
+        /// <summary>
         ///     Cancels all waits.
         /// </summary>
         void CancelAll();
@@ -51,6 +57,12 @@ namespace Soulseek
         /// <param name="key">The unique WaitKey for the wait.</param>
         /// <param name="exception">The Exception to throw.</param>
         void Throw(WaitKey key, Exception exception);
+
+        /// <summary>
+        ///     Causes the oldest wait matching the specified <paramref name="key"/> to time out.
+        /// </summary>
+        /// <param name="key">The unique WaitKey for the wait.</param>
+        void Timeout(WaitKey key);
 
         /// <summary>
         ///     Adds a new wait for the specified <paramref name="key"/> and with the specified <paramref name="timeout"/>.

@@ -49,12 +49,12 @@ namespace Soulseek.Network.Tcp
                 {
                     Enabled = false,
                     AutoReset = false,
-                    Interval = Options.InactivityTimeout * 1000,
+                    Interval = Options.InactivityTimeout,
                 };
 
                 InactivityTimer.Elapsed += (sender, e) =>
                 {
-                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} seconds was reached");
+                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} milliseconds was reached");
                     Disconnect(ex.Message, ex);
                 };
             }
@@ -197,7 +197,7 @@ namespace Soulseek.Network.Tcp
                 ChangeState(ConnectionState.Connecting, $"Connecting to {IPEndPoint}");
 
                 // create a new CTS with our desired timeout. when the timeout expires, the cancellation will fire
-                using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(Options.ConnectTimeout)))
+                using (var timeoutCancellationTokenSource = new CancellationTokenSource(TimeSpan.FromMilliseconds(Options.ConnectTimeout)))
                 {
                     var connectTask = TcpClient.ConnectAsync(IPEndPoint.Address, IPEndPoint.Port);
 
@@ -211,7 +211,7 @@ namespace Soulseek.Network.Tcp
 
                         if (completedTask == timeoutTaskCompletionSource.Task)
                         {
-                            throw new TimeoutException($"Operation timed out after {Options.ConnectTimeout} seconds");
+                            throw new TimeoutException($"Operation timed out after {Options.ConnectTimeout} milliseconds");
                         }
                         else if (completedTask == cancellationTaskCompletionSource.Task)
                         {

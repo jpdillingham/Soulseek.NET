@@ -43,7 +43,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="concurrentDistributedChildrenLimit">The number of allowed distributed children.</param>
-        /// <param name="messageTimeout">The message timeout, in seconds, used when waiting for a response from the server.</param>
+        /// <param name="messageTimeout">The message timeout, in milliseconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
         /// </param>
@@ -76,7 +76,7 @@ namespace Soulseek
         public SoulseekClientOptions(
             int? listenPort = null,
             int concurrentDistributedChildrenLimit = 25,
-            int messageTimeout = 5,
+            int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
             bool autoAcknowledgePrivilegeNotifications = true,
             DiagnosticLevel minimumDiagnosticLevel = DiagnosticLevel.Info,
@@ -165,7 +165,7 @@ namespace Soulseek
         public int? ListenPort { get; }
 
         /// <summary>
-        ///     Gets the message timeout, in seconds, used when waiting for a response from the server or peer. (Default = 5).
+        ///     Gets the message timeout, in milliseconds, used when waiting for a response from the server or peer. (Default = 5000).
         /// </summary>
         public int MessageTimeout { get; }
 

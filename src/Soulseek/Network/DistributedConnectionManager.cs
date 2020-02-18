@@ -60,10 +60,10 @@ namespace Soulseek.Network
             {
                 Enabled = false,
                 AutoReset = false,
-                Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout * 1000,
+                Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout,
             };
 
-            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection?.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} seconds was reached; no broadcastable messages recieved");
+            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection?.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} milliseconds was reached; no broadcastable messages recieved");
         }
 
         /// <summary>
@@ -144,7 +144,7 @@ namespace Soulseek.Network
 
             await ChildConnectionDictionary.GetOrAdd(
                 connectToPeerResponse.Username,
-                key => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection()))).Value.ConfigureAwait(false);
+                key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection()
             {
@@ -202,8 +202,8 @@ namespace Soulseek.Network
 
             await ChildConnectionDictionary.AddOrUpdate(
                 username,
-                new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection())),
-                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => Task.Run(() => GetConnection(cachedConnectionRecord)))).Value.ConfigureAwait(false);
+                new Lazy<Task<IMessageConnection>>(() => GetConnection()),
+                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => GetConnection(cachedConnectionRecord))).Value.ConfigureAwait(false);
 
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
@@ -273,6 +273,7 @@ namespace Soulseek.Network
             }
 
             Diagnostic.Info($"Attempting to establish a new parent connection from {ParentCandidateList.Count} candidates");
+            Diagnostic.Debug($"Parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
 
             using (var cts = new CancellationTokenSource())
             {
@@ -310,6 +311,8 @@ namespace Soulseek.Network
 
                     successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
                     ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
+
+                    Diagnostic.Debug($"Connected parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
 
                     foreach (var connection in successfulConnections)
                     {
@@ -450,49 +453,69 @@ namespace Soulseek.Network
 
         private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentCandidateConnectionAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
-            Diagnostic.Debug($"Attempting simultaneous direct and indirect parent candidate connections to {username} ({ipEndPoint})");
-
-            var direct = GetParentCandidateConnectionDirectAsync(username, ipEndPoint, cancellationToken);
-            var indirect = GetParentCandidateConnectionIndirectAsync(username, cancellationToken);
-
-            var tasks = new[] { direct, indirect };
-
-            try
+            using (var directCts = new CancellationTokenSource())
+            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
+            using (var indirectCts = new CancellationTokenSource())
+            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
             {
-                await Task.WhenAll(tasks).ConfigureAwait(false);
-            }
-            catch
-            {
-                // noop
-            }
+                Diagnostic.Debug($"Attempting simultaneous direct and indirect parent candidate connections to {username} ({ipEndPoint})");
 
-            var successfulConnections = tasks
-                .Where(t => t.Status == TaskStatus.RanToCompletion)
-                .Select(async t => await t.ConfigureAwait(false))
-                .Select(t => t.Result)
-                .ToList();
+                var direct = GetParentCandidateConnectionDirectAsync(username, ipEndPoint, directLinkedCts.Token);
+                var indirect = GetParentCandidateConnectionIndirectAsync(username, indirectLinkedCts.Token);
 
-            if (!successfulConnections.Any())
-            {
-                throw new ConnectionException($"Failed to establish a parent candidate connection to {username} ({ipEndPoint})");
-            }
-            else if (successfulConnections.Count == 1)
-            {
-                return successfulConnections.First();
-            }
-            else
-            {
-                Diagnostic.Debug($"Both direct and indirect parent candidate connections to {username} ({ipEndPoint}) established.  Using direct connection.");
+                var tasks = new[] { direct, indirect }.ToList();
+                Task<IMessageConnection> task;
 
-                var i = successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Direct)).Connection;
-                i.Disconnect("Not selected.");
-                i.Dispose();
+                do
+                {
+                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                    tasks.Remove(task);
+                }
+                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
 
-                return successfulConnections.First(c => c.Connection.Type.HasFlag(ConnectionTypes.Direct));
+                if (task.Status != TaskStatus.RanToCompletion)
+                {
+                    throw new ConnectionException($"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})");
+                }
+
+                var connection = await task.ConfigureAwait(false);
+
+                var isDirect = task == direct;
+
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} parent candidate connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
+                (isDirect ? indirectCts : directCts).Cancel();
+
+                int branchLevel;
+                string branchRoot;
+
+                try
+                {
+                    var initWait = WaitForParentCandidateConnectionInitializationAsync(connection, cancellationToken);
+
+                    if (isDirect)
+                    {
+                        var request = new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray();
+                        await connection.WriteAsync(request, cancellationToken).ConfigureAwait(false);
+                    }
+                    else
+                    {
+                        connection.StartReadingContinuously();
+                    }
+
+                    Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} parent candidate connection to {username} ({ipEndPoint}) initialized.  Waiting for branch information and first search request. (id: {connection.Id})");
+                    (branchLevel, branchRoot) = await initWait.ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    throw new ConnectionException($"Failed to negotiate parent candidate connection to {username} ({ipEndPoint}): {ex.Message} (type: {connection.Type}, id: {connection.Id})", ex);
+                }
+
+                Diagnostic.Debug($"Parent candidate connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                return (connection, branchLevel, branchRoot);
             }
         }
 
-        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentCandidateConnectionDirectAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
+        private async Task<IMessageConnection> GetParentCandidateConnectionDirectAsync(string username, IPEndPoint ipEndPoint, CancellationToken cancellationToken)
         {
             Diagnostic.Debug($"Attempting direct parent candidate connection to {username} ({ipEndPoint})");
 
@@ -504,45 +527,37 @@ namespace Soulseek.Network
             connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
             connection.Disconnected += ParentCandidateConnection_Disconnected;
 
-            int branchLevel;
-            string branchRoot;
-
             try
             {
-                var initWait = WaitForParentCandidateConnectionInitializationAsync(connection, cancellationToken);
-
                 await connection.ConnectAsync(cancellationToken).ConfigureAwait(false);
-                await connection.WriteAsync(new PeerInit(SoulseekClient.Username, Constants.ConnectionType.Distributed, SoulseekClient.GetNextToken()).ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-                Diagnostic.Debug($"Direct parent candidate connection to {username} ({ipEndPoint}) initialized.  Waiting for branch information and first search request. (id: {connection.Id})");
-                (branchLevel, branchRoot) = await initWait.ConfigureAwait(false);
             }
-            catch
+            catch (Exception ex)
             {
+                Diagnostic.Debug($"Failed to establish a direct parent candidate connection to {username} ({ipEndPoint}): {ex.Message}");
                 connection.Dispose();
                 throw;
             }
 
-            Diagnostic.Debug($"Parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-            return (connection, branchLevel, branchRoot);
+            Diagnostic.Debug($"Direct parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+            return connection;
         }
 
-        private async Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)> GetParentCandidateConnectionIndirectAsync(string username, CancellationToken cancellationToken)
+        private async Task<IMessageConnection> GetParentCandidateConnectionIndirectAsync(string username, CancellationToken cancellationToken)
         {
-            var token = SoulseekClient.GetNextToken();
+            var solicitationToken = SoulseekClient.GetNextToken();
 
-            Diagnostic.Debug($"Soliciting indirect parent candidate connection to {username} with token {token}");
+            Diagnostic.Debug($"Soliciting indirect parent candidate connection to {username} with token {solicitationToken}");
 
             try
             {
-                PendingSolicitationDictionary.TryAdd(token, username);
+                PendingSolicitationDictionary.TryAdd(solicitationToken, username);
 
                 await SoulseekClient.ServerConnection
-                    .WriteAsync(new ConnectToPeerRequest(token, username, Constants.ConnectionType.Distributed).ToByteArray(), cancellationToken)
+                    .WriteAsync(new ConnectToPeerRequest(solicitationToken, username, Constants.ConnectionType.Distributed).ToByteArray(), cancellationToken)
                     .ConfigureAwait(false);
 
                 using (var incomingConnection = await SoulseekClient.Waiter
-                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, username, token), null, cancellationToken)
+                    .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedDistributedConnection, username, solicitationToken), SoulseekClient.Options.DistributedConnectionOptions.ConnectTimeout, cancellationToken)
                     .ConfigureAwait(false))
                 {
                     var connection = ConnectionFactory.GetMessageConnection(
@@ -556,31 +571,18 @@ namespace Soulseek.Network
                     connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Indirect;
                     connection.Disconnected += ParentCandidateConnection_Disconnected;
 
-                    int branchLevel;
-                    string branchRoot;
-
-                    try
-                    {
-                        var initWait = WaitForParentCandidateConnectionInitializationAsync(connection, cancellationToken);
-
-                        connection.StartReadingContinuously();
-
-                        Diagnostic.Debug($"Indirect parent candidate connection to {username} ({incomingConnection.IPEndPoint}) initialized.  Waiting for branch information and first search request. (id: {connection.Id})");
-                        (branchLevel, branchRoot) = await initWait.ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        connection.Dispose();
-                        throw;
-                    }
-
-                    Diagnostic.Debug($"Parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                    return (connection, branchLevel, branchRoot);
+                    Diagnostic.Debug($"Indirect parent candidate connection to {username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                    return connection;
                 }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to establish an indirect parent candidate connection to {username} with token {solicitationToken}: {ex.Message}");
+                throw;
             }
             finally
             {
-                PendingSolicitationDictionary.TryRemove(token, out var _);
+                PendingSolicitationDictionary.TryRemove(solicitationToken, out var _);
             }
         }
 

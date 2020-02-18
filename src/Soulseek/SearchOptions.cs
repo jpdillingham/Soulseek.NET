@@ -22,7 +22,7 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="SearchOptions"/> class.
         /// </summary>
-        /// <param name="searchTimeout">The search timeout value, in seconds, used to determine when the search is complete.</param>
+        /// <param name="searchTimeout">The search timeout value, in milliseconds, used to determine when the search is complete.</param>
         /// <param name="responseLimit">The maximum number of search results to accept before the search is considered completed.</param>
         /// <param name="filterResponses">A value indicating whether responses are to be filtered.</param>
         /// <param name="minimumResponseFileCount">The minimum number of files a response must contain in order to be processed.</param>
@@ -41,7 +41,7 @@ namespace Soulseek
         /// <param name="stateChanged">The Action to invoke when the search changes state.</param>
         /// <param name="responseReceived">The Action to invoke when a new search response is received.</param>
         public SearchOptions(
-            int searchTimeout = 15,
+            int searchTimeout = 15000,
             int responseLimit = 100,
             bool filterResponses = true,
             int minimumResponseFileCount = 1,
@@ -120,7 +120,7 @@ namespace Soulseek
         public Action<SearchResponseReceivedEventArgs> ResponseReceived { get; }
 
         /// <summary>
-        ///     Gets the search timeout value, in seconds, used to determine when the search is complete. (Default = 15).
+        ///     Gets the search timeout value, in milliseconds, used to determine when the search is complete. (Default = 15000).
         /// </summary>
         /// <remarks>The timeout duration is from the time of the last response.</remarks>
         public int SearchTimeout { get; }
