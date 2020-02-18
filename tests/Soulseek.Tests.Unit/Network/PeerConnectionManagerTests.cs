@@ -456,8 +456,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
-        [Theory(DisplayName = "GetTransferConnectionAsync connects and pierces firewall"), AutoData]
-        internal async Task GetTransferConnectionAsync_Connects_And_Pierces_Firewall(string username, IPEndPoint endpoint, int token)
+        [Theory(DisplayName = "GetTransferConnectionAsync CTPR connects and pierces firewall"), AutoData]
+        internal async Task GetTransferConnectionAsync_CTPR_Connects_And_Pierces_Firewall(string username, IPEndPoint endpoint, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
             var expectedBytes = new PierceFirewall(token).ToByteArray();
@@ -495,8 +495,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
-        [Theory(DisplayName = "GetTransferConnectionAsync disposes connection if connect fails"), AutoData]
-        internal async Task GetTransferConnectionAsync_Disposes_Connection_If_Connect_Fails(string username, IPEndPoint endpoint, int token)
+        [Theory(DisplayName = "GetTransferConnectionAsync CTPR disposes connection if connect fails"), AutoData]
+        internal async Task GetTransferConnectionAsync_CTPR_Disposes_Connection_If_Connect_Fails(string username, IPEndPoint endpoint, int token)
         {
             var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
             var expectedException = new Exception("foo");
@@ -520,6 +520,53 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync CTPR sets type to inbound indirect"), AutoData]
+        public async Task GetTransferConnectionAsync_CTPR_Sets_Type_To_Inbound_Indirect(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await manager.GetTransferConnectionAsync(ctpr);
+            }
+
+            conn.VerifySet(m => m.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync CTPR produces expected diagnostic on failure"), AutoData]
+        public async Task GetTransferConnectionAsync_CTPR_Produces_Expected_Diagnostic_On_Failure(string username, IPEndPoint endpoint, int token)
+        {
+            var ctpr = new ConnectToPeerResponse(username, "F", endpoint, token);
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(ctpr));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an inbound indirect transfer connection"))), Times.Once);
         }
 
         [Trait("Category", "GetTransferOutboundDirectAsync")]
@@ -877,6 +924,82 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync produces expected diagnostics on connection failure"), AutoData]
+        public async Task GetTransferConnectionAsync_Produces_Expected_Diagnostic_On_Failure(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var dendpoint = new IPEndPoint(ipAddress, directPort);
+            var direct = GetConnectionMock(dendpoint);
+            direct.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            var iendpoint = new IPEndPoint(ipAddress, indirectPort);
+            var indirect = GetConnectionMock(iendpoint);
+            indirect.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct or indirect transfer connection"))), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
+        [Theory(DisplayName = "GetTransferConnectionAsync produces expected diagnostics on negotiation failure"), AutoData]
+        public async Task GetTransferConnectionAsync_Produces_Expected_Diagnostic_On_Negotiation_Failure(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
+        {
+            var dendpoint = new IPEndPoint(ipAddress, directPort);
+            var direct = GetConnectionMock(dendpoint);
+            direct.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+            direct.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask); // succeeds
+            direct.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(new ConnectionException());
+
+            var iendpoint = new IPEndPoint(ipAddress, indirectPort);
+            var indirect = GetConnectionMock(iendpoint);
+            indirect.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(async () => await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to negotiate transfer connection"))), Times.Once);
+        }
+
+        [Trait("Category", "GetTransferConnectionAsync")]
         [Theory(DisplayName = "GetTransferConnectionAsync sends PeerInit on direct connection established"), AutoData]
         internal async Task GetTransferConnectionAsync_Sends_PeerInit_On_Direct_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
         {
@@ -1114,8 +1237,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
-        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync sets context to Direct"), AutoData]
-        internal async Task GetMessageConnectionOutboundDirectAsync_Sets_Context_To_Direct(string username, IPEndPoint endpoint)
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync sets type to Outbound Direct"), AutoData]
+        internal async Task GetMessageConnectionOutboundDirectAsync_Sets_Type_To_Outbound_Direct(string username, IPEndPoint endpoint)
         {
             var conn = GetMessageConnectionMock(username, endpoint);
             var (manager, mocks) = GetFixture();
@@ -1130,6 +1253,29 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             conn.VerifySet(m => m.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundDirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundDirectAsync produces expected diagnostics on failure"), AutoData]
+        public async Task GetMessageConnectionOutboundDirectAsync_Produces_Expected_Diagnostics_On_Failure(string username, IPEndPoint endpoint)
+        {
+            var expectedEx = new Exception("foo");
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundDirectAsync", username, endpoint, CancellationToken.None));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct message connection"))), Times.Once);
         }
 
         [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
@@ -1279,8 +1425,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
-        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync calls StartReadingContinuously"), AutoData]
-        internal async Task GetMessageConnectionOutboundIndirectAsync_Calls_StartReadingContinuously(IPEndPoint endpoint, string username)
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync does not call StartReadingContinuously"), AutoData]
+        internal async Task GetMessageConnectionOutboundIndirectAsync_Does_Not_Call_StartReadingContinuously(IPEndPoint endpoint, string username)
         {
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
@@ -1304,12 +1450,38 @@ namespace Soulseek.Tests.Unit.Network
                 using (var newConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None))
                 {
                     Assert.Equal(msgConn.Object, newConn);
-
-                    Assert.Single(pending);
-                    Assert.Equal(username, pending[0].Value);
-                    Assert.Empty(manager.PendingSolicitations);
                 }
             }
+
+            msgConn.Verify(m => m.StartReadingContinuously(), Times.Never);
+        }
+
+        [Trait("Category", "GetMessageConnectionOutboundIndirectAsync")]
+        [Theory(DisplayName = "GetMessageConnectionOutboundIndirectAsync produces expected diagnostic on failure"), AutoData]
+        public async Task GetMessageConnectionOutboundIndirectAsync_Produces_Expected_Diagnostic_On_Failure(IPEndPoint endpoint, string username)
+        {
+            var expectedException = new Exception("foo");
+
+            var conn = GetConnectionMock(endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var msgConn = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(msgConn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Throws(expectedException);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(async () => await manager.InvokeMethod<Task<IMessageConnection>>("GetMessageConnectionOutboundIndirectAsync", username, CancellationToken.None));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish an indirect message connection"))), Times.Once);
         }
 
         [Trait("Category", "GetOrAddMessageConnectionAsync")]
@@ -2125,54 +2297,6 @@ namespace Soulseek.Tests.Unit.Network
 
                 direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(peerInit)), It.IsAny<CancellationToken?>()), Times.Once);
             }
-        }
-
-        [Fact]
-        public void GetTransferConnectionAsync_CTPR_Sets_Type_To_Inbound_Indirect()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetTransferConnectionAsync_CTPR_Produces_Expected_Diagnostic_On_Failure()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetTransferConnectionAsync_Produces_Expected_Diagnostic_On_Failure()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetTransferConnectionAsync_Produces_Expected_Diagnostic_On_Initialization_Failure()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetMessageConnectionOutboundDirectAsync_Sets_Type_To_Outbound_Direct()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetMessageConnectionOutboundDirectAsync_Produces_Expected_Diagnostic_On_Failure()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetMessageConnectionOutboundIndirectAsync_Sets_Type_To_Outbound_Indirect()
-        {
-            Assert.True(false);
-        }
-
-        [Fact]
-        public void GetMessageConnectionOutboundIndirectAsync_Produces_Expected_Diagnostic_On_Failure()
-        {
-            Assert.True(false);
         }
 
         [Fact]
