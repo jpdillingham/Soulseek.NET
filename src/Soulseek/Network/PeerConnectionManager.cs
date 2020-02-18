@@ -87,6 +87,8 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddMessageConnectionAsync(string username, IConnection incomingConnection)
         {
+            var c = incomingConnection;
+
             try
             {
                 await MessageConnectionDictionary.AddOrUpdate(
@@ -96,30 +98,28 @@ namespace Soulseek.Network
             }
             catch (Exception ex)
             {
-                var msg = $"Failed to establish an inbound message connection to {username} ({incomingConnection.IPEndPoint}): {ex.Message}";
-                Diagnostic.Debug($"{msg} (type: {incomingConnection.Type}, id: {incomingConnection.Id})");
-                Diagnostic.Debug($"Purging message connection cache of failed connection to {username} ({incomingConnection.IPEndPoint}).");
+                var msg = $"Failed to establish an inbound message connection to {username} ({c.IPEndPoint}): {ex.Message}";
+                Diagnostic.Debug($"{msg} (type: {c.Type}, id: {c.Id})");
+                Diagnostic.Debug($"Purging message connection cache of failed connection to {username} ({c.IPEndPoint}).");
                 MessageConnectionDictionary.TryRemove(username, out _);
                 throw new ConnectionException(msg, ex);
             }
 
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
-                Diagnostic.Debug($"Inbound message connection to {username} ({incomingConnection.IPEndPoint}) accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id})");
-
-                var endpoint = incomingConnection.IPEndPoint;
+                Diagnostic.Debug($"Inbound message connection to {username} ({c.IPEndPoint}) accepted. (type: {c.Type}, id: {c.Id})");
 
                 var connection = ConnectionFactory.GetMessageConnection(
                     username,
-                    endpoint,
+                    c.IPEndPoint,
                     SoulseekClient.Options.PeerConnectionOptions,
-                    incomingConnection.HandoffTcpClient());
+                    c.HandoffTcpClient());
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.PeerMessageHandler.HandleMessageRead;
                 connection.Disconnected += MessageConnection_Disconnected;
 
-                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                Diagnostic.Debug($"Inbound message connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
                 if (cachedConnectionRecord != null)
                 {
@@ -196,26 +196,27 @@ namespace Soulseek.Network
         public async Task<IMessageConnection> GetOrAddMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
             bool cached = true;
+            var r = connectToPeerResponse;
 
             try
             {
                 var connection = await MessageConnectionDictionary.GetOrAdd(
-                    connectToPeerResponse.Username,
+                    r.Username,
                     key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
 
                 if (cached)
                 {
-                    Diagnostic.Debug($"Retrieved cached message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint})");
+                    Diagnostic.Debug($"Retrieved cached message connection to {r.Username} ({r.IPEndPoint})");
                 }
 
                 return connection;
             }
             catch (Exception ex)
             {
-                var msg = $"Failed to establish an inbound indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}): {ex.Message}";
+                var msg = $"Failed to establish an inbound indirect message connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
                 Diagnostic.Debug(msg);
-                Diagnostic.Debug($"Purging message connection cache of failed connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}).");
-                MessageConnectionDictionary.TryRemove(connectToPeerResponse.Username, out _);
+                Diagnostic.Debug($"Purging message connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+                MessageConnectionDictionary.TryRemove(r.Username, out _);
                 throw new ConnectionException(msg, ex);
             }
 
@@ -223,11 +224,11 @@ namespace Soulseek.Network
             {
                 cached = false;
 
-                Diagnostic.Debug($"Attempting inbound indirect message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
+                Diagnostic.Debug($"Attempting inbound indirect message connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
 
                 var connection = ConnectionFactory.GetMessageConnection(
-                    connectToPeerResponse.Username,
-                    connectToPeerResponse.IPEndPoint,
+                    r.Username,
+                    r.IPEndPoint,
                     SoulseekClient.Options.PeerConnectionOptions);
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
@@ -239,7 +240,7 @@ namespace Soulseek.Network
                 {
                     await connection.ConnectAsync().ConfigureAwait(false);
 
-                    var request = new PierceFirewall(connectToPeerResponse.Token).ToByteArray();
+                    var request = new PierceFirewall(r.Token).ToByteArray();
                     await connection.WriteAsync(request).ConfigureAwait(false);
                 }
                 catch
@@ -248,7 +249,7 @@ namespace Soulseek.Network
                     throw;
                 }
 
-                Diagnostic.Debug($"Message connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Debug($"Message connection to {r.Username} ({r.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
         }
