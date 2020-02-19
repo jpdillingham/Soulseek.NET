@@ -265,7 +265,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedEx, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -291,7 +292,7 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Attempting indirect child connection to {ctpr.Username}"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Attempting inbound indirect child connection to {ctpr.Username}"))), Times.Once);
             mocks.Diagnostic
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {ctpr.Username}") && s.ContainsInsensitive("established"))), Times.Once);
             mocks.Diagnostic
@@ -380,7 +381,9 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"discarded: foo"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound indirect child connection"))), Times.Once);
+            mocks.Diagnostic
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Purging child connection cache of failed connection"))), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -433,7 +436,8 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
-                Assert.Equal(expectedEx, ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
             }
 
             conn.Verify(m => m.Dispose(), Times.Once);
@@ -619,7 +623,9 @@ namespace Soulseek.Tests.Unit.Network
             }
 
             mocks.Diagnostic
-                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"child connection to {username}") && s.ContainsInsensitive("discarded: foo"))), Times.Once);
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound child connection"))), Times.Once);
+            mocks.Diagnostic
+                .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Purging child connection cache of failed connection"))), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]
@@ -953,7 +959,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var (actualConn, level, root) = await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentCandidateConnectionIndirectAsync", username, CancellationToken.None);
+                var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentCandidateConnectionIndirectAsync", username, CancellationToken.None);
 
                 // todo: assert level, root
                 Assert.Equal(msgConn.Object, actualConn);
@@ -980,7 +986,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentCandidateConnectionIndirectAsync", username, CancellationToken.None);
+                await manager.InvokeMethod<Task<IMessageConnection>>("GetParentCandidateConnectionIndirectAsync", username, CancellationToken.None);
 
                 mocks.Diagnostic.Verify(m =>
                     m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Indirect parent candidate connection to {username}"))));
@@ -1003,7 +1009,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var (actualConn, level, root) = await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentCandidateConnectionDirectAsync", username, endpoint, CancellationToken.None);
+                var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentCandidateConnectionDirectAsync", username, endpoint, CancellationToken.None);
 
                 // todo: assert level, root
                 Assert.Equal(conn.Object, actualConn);
@@ -1035,33 +1041,6 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "GetParentCandidateConnectionDirectAsync")]
-        [Theory(DisplayName = "GetParentCandidateConnectionDirectAsync connects and writes PeerInit"), AutoData]
-        internal async Task GetParentCandidateConnectionDirectAsync_Connects_And_Writes_PeerInit(string localUser, string username, IPEndPoint endpoint, int token)
-        {
-            var expectedMessage = new PeerInit(localUser, Constants.ConnectionType.Distributed, token);
-
-            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions());
-
-            mocks.Client.Setup(m => m.Username)
-                .Returns(localUser);
-            mocks.Client.Setup(m => m.GetNextToken())
-                .Returns(token);
-
-            var conn = GetMessageConnectionMock(username, endpoint);
-
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
-                .Returns(conn.Object);
-
-            using (manager)
-            {
-                await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentCandidateConnectionDirectAsync", username, endpoint, CancellationToken.None);
-            }
-
-            conn.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken?>()), Times.Once);
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedMessage.ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
-        }
-
-        [Trait("Category", "GetParentCandidateConnectionDirectAsync")]
         [Theory(DisplayName = "GetParentCandidateConnectionDirectAsync produces expected diagnostic"), AutoData]
         internal async Task GetParentCandidateConnectionDirectAsync_Produces_Expected_Diagnostic(string localUser, string username, IPEndPoint endpoint)
         {
@@ -1077,7 +1056,7 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                var (actualConn, level, root) = await manager.InvokeMethod<Task<(IMessageConnection Connection, int BranchLevel, string BranchRoot)>>("GetParentCandidateConnectionDirectAsync", username, endpoint, CancellationToken.None);
+                var actualConn = await manager.InvokeMethod<Task<IMessageConnection>>("GetParentCandidateConnectionDirectAsync", username, endpoint, CancellationToken.None);
 
                 // todo: assert level, root
                 Assert.Equal(conn.Object, actualConn);
@@ -1406,7 +1385,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
-                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a parent candidate connection to {username}"));
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to negotiate parent candidate connection to {username}"));
             }
 
             conn.Verify(m => m.Disconnect("One or more required messages was not received.", It.IsAny<Exception>()), Times.Once);
@@ -1460,7 +1439,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Soliciting indirect"))), Times.Once);
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Indirect") && s.ContainsInsensitive($"handed off"))), Times.Once);
             mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Indirect") && s.ContainsInsensitive($"initialized.  Waiting for branch information and first search request"))), Times.Once);
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Indirect") && s.ContainsInsensitive($"established"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Indirect") && s.ContainsInsensitive($"established."))), Times.Once);
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
