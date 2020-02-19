@@ -133,6 +133,7 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddChildConnectionAsync(ConnectToPeerResponse connectToPeerResponse)
         {
+            bool cached = true;
             var r = connectToPeerResponse;
 
             if (!CanAcceptChildren)
@@ -142,13 +143,31 @@ namespace Soulseek.Network
                 return;
             }
 
-            await ChildConnectionDictionary.GetOrAdd(
-                connectToPeerResponse.Username,
-                key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
+            try
+            {
+                await ChildConnectionDictionary.GetOrAdd(
+                    r.Username,
+                    key => new Lazy<Task<IMessageConnection>>(() => GetConnection())).Value.ConfigureAwait(false);
+
+                if (cached)
+                {
+                    Diagnostic.Debug($"Child connection from {r.Username} ({r.IPEndPoint}) for token {r.Token} ignored; connection already exists.");
+                }
+            }
+            catch (Exception ex)
+            {
+                var msg = $"Failed to establish an inbound indirect child connection to {r.Username} ({r.IPEndPoint}): {ex.Message}";
+                Diagnostic.Debug(msg);
+                Diagnostic.Debug($"Purging child connection cache of failed connection to {r.Username} ({r.IPEndPoint}).");
+                ChildConnectionDictionary.TryRemove(r.Username, out _);
+                throw new ConnectionException(msg, ex);
+            }
 
             async Task<IMessageConnection> GetConnection()
             {
-                Diagnostic.Debug($"Attempting indirect child connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
+                cached = false;
+
+                Diagnostic.Debug($"Attempting inbound indirect child connection to {r.Username} ({r.IPEndPoint}) for token {r.Token}");
 
                 var connection = ConnectionFactory.GetMessageConnection(
                     r.Username,
@@ -168,9 +187,8 @@ namespace Soulseek.Network
 
                     await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Diagnostic.Debug($"Indirect child connection to {r.Username} ({r.IPEndPoint}) discarded: {ex.Message}. (id: {connection.Id})");
                     connection.Dispose();
                     throw;
                 }
@@ -190,43 +208,54 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task AddChildConnectionAsync(string username, IConnection incomingConnection)
         {
-            var endpoint = incomingConnection.IPEndPoint;
+            var c = incomingConnection;
 
             if (!CanAcceptChildren)
             {
-                Diagnostic.Debug($"Inbound child connection to {username} ({endpoint}) rejected: limit of {ConcurrentChildLimit} concurrent connections reached.");
-                incomingConnection.Dispose();
+                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) rejected: limit of {ConcurrentChildLimit} concurrent connections reached.");
+                c.Dispose();
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
             }
 
-            await ChildConnectionDictionary.AddOrUpdate(
-                username,
-                new Lazy<Task<IMessageConnection>>(() => GetConnection()),
-                (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => GetConnection(cachedConnectionRecord))).Value.ConfigureAwait(false);
+            try
+            {
+                await ChildConnectionDictionary.AddOrUpdate(
+                    username,
+                    new Lazy<Task<IMessageConnection>>(() => GetConnection()),
+                    (key, cachedConnectionRecord) => new Lazy<Task<IMessageConnection>>(() => GetConnection(cachedConnectionRecord))).Value.ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                var msg = $"Failed to establish an inbound child connection to {username} ({c.IPEndPoint}): {ex.Message}";
+                Diagnostic.Debug($"{msg} (type: {c.Type}, id: {c.Id})");
+                Diagnostic.Debug($"Purging child connection cache of failed connection to {username} ({c.IPEndPoint}).");
+                ChildConnectionDictionary.TryRemove(username, out _);
+                throw new ConnectionException(msg, ex);
+            }
 
             async Task<IMessageConnection> GetConnection(Lazy<Task<IMessageConnection>> cachedConnectionRecord = null)
             {
-                Diagnostic.Debug($"Inbound child connection to {username} ({incomingConnection.IPEndPoint}) accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
+                Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) accepted. (type: {c.Type}, id: {c.Id}");
 
                 var superceded = false;
 
                 var connection = ConnectionFactory.GetMessageConnection(
                     username,
-                    endpoint,
+                    c.IPEndPoint,
                     SoulseekClient.Options.DistributedConnectionOptions,
-                    incomingConnection.HandoffTcpClient());
+                    c.HandoffTcpClient());
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
                 connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
 
-                Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {incomingConnection.Id}, new: {connection.Id})");
+                Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
                 if (cachedConnectionRecord != null)
                 {
                     var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
                     cachedConnection.Disconnected -= ChildConnection_Disconnected;
-                    Diagnostic.Debug($"Superceding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {cachedConnection.Id}, new: {connection.Id}");
+                    Diagnostic.Debug($"Superceding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
                     cachedConnection.Disconnect("Superceded.");
                     cachedConnection.Dispose();
                     superceded = true;
@@ -238,9 +267,8 @@ namespace Soulseek.Network
 
                     await connection.WriteAsync(GetBranchInformation<MessageCode.Peer>()).ConfigureAwait(false);
                 }
-                catch (Exception ex)
+                catch
                 {
-                    Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) discarded: {ex.Message}. (id: {connection.Id})");
                     connection.Dispose();
                     throw;
                 }
@@ -475,7 +503,9 @@ namespace Soulseek.Network
 
                 if (task.Status != TaskStatus.RanToCompletion)
                 {
-                    throw new ConnectionException($"Failed to establish a direct or indirect message connection to {username} ({ipEndPoint})");
+                    var msg = $"Failed to establish a direct or indirect parent candidate connection to {username} ({ipEndPoint})";
+                    Diagnostic.Debug(msg);
+                    throw new ConnectionException(msg);
                 }
 
                 var connection = await task.ConfigureAwait(false);
@@ -507,7 +537,10 @@ namespace Soulseek.Network
                 }
                 catch (Exception ex)
                 {
-                    throw new ConnectionException($"Failed to negotiate parent candidate connection to {username} ({ipEndPoint}): {ex.Message} (type: {connection.Type}, id: {connection.Id})", ex);
+                    var msg = $"Failed to negotiate parent candidate connection to {username} ({ipEndPoint}): {ex.Message}";
+                    Diagnostic.Debug($"{msg} (type: {connection.Type}, id: {connection.Id})");
+                    connection.Dispose();
+                    throw new ConnectionException(msg, ex);
                 }
 
                 Diagnostic.Debug($"Parent candidate connection to {username} ({ipEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
