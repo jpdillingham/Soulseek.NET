@@ -492,11 +492,34 @@ namespace Soulseek.Tests.Unit.Network
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
+
+                conn.Verify(m => m.Dispose(), Times.Once);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync throws expected Exception on throw"), AutoData]
+        internal async Task AddChildConnectionAsync_Throws_Expected_Exception_On_Throw(string username, IPEndPoint endpoint)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+
+                Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
                 Assert.Equal(expectedEx, ex.InnerException);
             }
-
-            conn.Verify(m => m.Dispose(), Times.Once);
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -544,6 +567,29 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(username, child.Username);
                 Assert.Equal(endpoint.Address, child.IPEndPoint.Address);
                 Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
+            }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync purges cache for user on throw"), AutoData]
+        internal async Task AddChildConnectionAsync_Purges_Cache_For_User_On_Throw(string username, IPEndPoint endpoint)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
+
+                Assert.Empty(manager.Children);
             }
         }
 
