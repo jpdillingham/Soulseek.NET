@@ -1186,7 +1186,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
-                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a parent candidate connection to {username}"));
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a direct or indirect parent candidate connection to {username}"));
             }
         }
 
@@ -1265,7 +1265,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
-                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a parent candidate connection to {username}"));
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to negotiate parent candidate connection to {username}"));
             }
         }
 
@@ -1305,7 +1305,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
-                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a parent candidate connection to {username}"));
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to negotiate parent candidate connection to {username}"));
             }
         }
 
@@ -1345,7 +1345,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 Assert.NotNull(ex);
                 Assert.IsType<ConnectionException>(ex);
-                Assert.True(ex.Message.ContainsInsensitive($"Failed to establish a parent candidate connection to {username}"));
+                Assert.True(ex.Message.ContainsInsensitive($"Failed to negotiate parent candidate connection to {username}"));
             }
         }
 
