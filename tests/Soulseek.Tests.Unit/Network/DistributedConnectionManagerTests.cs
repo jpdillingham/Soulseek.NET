@@ -184,7 +184,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR rejects if over child limit"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
@@ -198,7 +198,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR updates status on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
@@ -215,7 +215,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync adds child on successful connection"), AutoData]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR adds child on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Adds_Child_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture();
@@ -243,7 +243,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync disposes connection on throw"), AutoData]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR disposes connection on throw"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Disposes_Connection_On_Throw(ConnectToPeerResponse ctpr)
         {
             var expectedEx = new Exception("foo");
@@ -273,7 +273,35 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync generates expected diagnostics on successful connection"), AutoData]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR purges cache for user throw"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Purges_Cache_On_Throw(ConnectToPeerResponse ctpr)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+
+                Assert.Empty(manager.Children);
+            }
+
+            conn.Verify(m => m.Dispose(), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR generates expected diagnostics on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostics_On_Successful_Connection(ConnectToPeerResponse ctpr)
         {
             var (manager, mocks) = GetFixture();
@@ -358,7 +386,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync generates expected diagnostic on error"), AutoData]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR generates expected diagnostic on error"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostic_On_Error(ConnectToPeerResponse ctpr)
         {
             var expectedEx = new Exception("foo");
@@ -384,6 +412,34 @@ namespace Soulseek.Tests.Unit.Network
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Failed to establish an inbound indirect child connection"))), Times.Once);
             mocks.Diagnostic
                 .Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive($"Purging child connection cache of failed connection"))), Times.Once);
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR throws expected exception on failure"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Throws_Expected_Exception_On_Failure(ConnectToPeerResponse ctpr)
+        {
+            var expectedEx = new Exception("foo");
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken?>()))
+                .Throws(expectedEx);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Equal(expectedEx, ex.InnerException);
+            }
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
@@ -1298,8 +1354,6 @@ namespace Soulseek.Tests.Unit.Network
             var initConn = GetConnectionMock(endpoint);
             initConn.Setup(m => m.HandoffTcpClient())
                 .Returns(mocks.TcpClient.Object);
-
-            var conn = GetMessageConnectionMock(username, endpoint);
 
             // direct fetch fails
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), null))
