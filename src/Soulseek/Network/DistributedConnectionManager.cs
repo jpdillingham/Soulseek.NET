@@ -509,7 +509,6 @@ namespace Soulseek.Network
                 }
 
                 var connection = await task.ConfigureAwait(false);
-
                 var isDirect = task == direct;
 
                 Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} parent candidate connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
@@ -761,10 +760,11 @@ namespace Soulseek.Network
             void ParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
             {
                 var conn = (IMessageConnection)sender;
-                var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
 
                 try
                 {
+                    var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
+
                     switch (code)
                     {
                         case MessageCode.Distributed.ServerSearchRequest:
@@ -786,9 +786,11 @@ namespace Soulseek.Network
                             break;
                     }
                 }
-                catch
+                catch (Exception ex)
                 {
-                    // noop
+                    Diagnostic.Debug($"Failed to handle message from parent candidate: {ex.Message}", ex);
+                    conn.Disconnect(ex.Message);
+                    conn.Dispose();
                 }
             }
         }
