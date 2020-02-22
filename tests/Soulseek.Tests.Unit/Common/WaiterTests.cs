@@ -147,7 +147,7 @@ namespace Soulseek.Tests.Unit
             using (var waiter = new Waiter(0))
             {
                 Task<object> task = waiter.Wait<object>(key);
-                waiter.Wait<object>(key, 30);
+                waiter.Wait<object>(key, 30000);
 
                 object result = null;
 
@@ -241,8 +241,8 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Wait invocation creates valid Wait")]
         [InlineData(MessageCode.Server.Login, null, null)]
         [InlineData(MessageCode.Server.Login, "token", null)]
-        [InlineData(MessageCode.Server.Login, null, 13)]
-        [InlineData(MessageCode.Server.Login, "token", 13)]
+        [InlineData(MessageCode.Server.Login, null, 10000)]
+        [InlineData(MessageCode.Server.Login, "token", 10000)]
         internal void Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
         {
             var key = new WaitKey(code, token);
@@ -283,8 +283,8 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "Non generic Wait invocation creates valid Wait")]
         [InlineData(MessageCode.Server.Login, null, null)]
         [InlineData(MessageCode.Server.Login, "token", null)]
-        [InlineData(MessageCode.Server.Login, null, 13)]
-        [InlineData(MessageCode.Server.Login, "token", 13)]
+        [InlineData(MessageCode.Server.Login, null, 10000)]
+        [InlineData(MessageCode.Server.Login, "token", 10000)]
         internal void Non_Generic_Wait_Invocation_Creates_Valid_Wait(MessageCode.Server code, string token, int? timeout)
         {
             var key = new WaitKey(code, token);
