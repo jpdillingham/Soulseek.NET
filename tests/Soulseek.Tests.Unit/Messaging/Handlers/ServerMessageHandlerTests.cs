@@ -463,12 +463,14 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             var handler = new ServerMessageHandler(
                 mocks.Client.Object);
 
-            var transfer = new TransferInternal(TransferDirection.Download, username, "foo", token)
+            var transfer = new TransferInternal(TransferDirection.Download, username, filename, token)
             {
                 RemoteToken = token,
             };
 
             mocks.Downloads.TryAdd(token, transfer);
+
+            var key = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
 
             var ipBytes = ip.GetAddressBytes();
             Array.Reverse(ipBytes);
@@ -492,6 +494,52 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(null, msg);
 
             mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()), Times.Once);
+            mocks.Waiter.Verify(m => m.Complete(key, conn.Object));
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Ignores and disconnects connection on unexpected ConnectToPeerResponse 'F'"), AutoData]
+        public void Ignores_Connection_On_Unexpected_ConnectToPeerResponse_F(string filename, string username, int token, IPAddress ip, int port)
+        {
+            var active = new ConcurrentDictionary<int, TransferInternal>();
+            active.TryAdd(token, new TransferInternal(TransferDirection.Download, username, filename, token + 1));
+
+            var mocks = new Mocks();
+            var handler = new ServerMessageHandler(
+                mocks.Client.Object);
+
+            var transfer = new TransferInternal(TransferDirection.Download, username, filename, token + 1)
+            {
+                RemoteToken = token + 1,
+            };
+
+            mocks.Downloads.TryAdd(token + 1, transfer); // add a record for this user, but with the wrong token
+
+            var ipBytes = ip.GetAddressBytes();
+            Array.Reverse(ipBytes);
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Server.ConnectToPeer)
+                .WriteString(username)
+                .WriteString("F")
+                .WriteBytes(ipBytes)
+                .WriteInteger(port)
+                .WriteInteger(token)
+                .Build();
+
+            var conn = new Mock<IConnection>();
+            conn.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new byte[] { 0, 0, 0, 0 }));
+
+            mocks.PeerConnectionManager.Setup(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()))
+                .Returns(Task.FromResult((conn.Object, token)));
+
+            handler.HandleMessageRead(null, msg);
+
+            mocks.PeerConnectionManager.Verify(m => m.GetTransferConnectionAsync(It.IsAny<ConnectToPeerResponse>()), Times.Once);
+            mocks.Waiter.Verify(m => m.Complete(It.IsAny<WaitKey>(), conn.Object), Times.Never);
+
+            conn.Verify(m => m.Disconnect("Unknown transfer", It.IsAny<Exception>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
