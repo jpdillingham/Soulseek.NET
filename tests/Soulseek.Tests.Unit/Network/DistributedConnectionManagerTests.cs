@@ -244,6 +244,31 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync CTPR discards CTPR on cached connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Ctpr_Discards_CTPR_On_Cached_Connection(ConnectToPeerResponse ctpr)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                dict.TryAdd(ctpr.Username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
+
+                await manager.AddChildConnectionAsync(ctpr);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("ignored; connection already exists."))));
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync CTPR disposes connection on throw"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Disposes_Connection_On_Throw(ConnectToPeerResponse ctpr)
         {
@@ -569,6 +594,77 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(endpoint.Address, child.IPEndPoint.Address);
                 Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
             }
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync supercedes existing connection on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Supercedes_Existing_Connection_On_Successful_Connection(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var existingConn = GetMessageConnectionMock(username, endpoint);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
+
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+
+                var child = manager.Children.FirstOrDefault();
+
+                Assert.Single(manager.Children);
+                Assert.NotEqual(default((string, IPEndPoint)), child);
+                Assert.Equal(username, child.Username);
+                Assert.Equal(endpoint.Address, child.IPEndPoint.Address);
+                Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
+            }
+
+            existingConn.Verify(m => m.Disconnect("Superceded.", It.IsAny<Exception>()));
+            existingConn.Verify(m => m.Dispose());
+        }
+
+        [Trait("Category", "AddChildConnectionAsync")]
+        [Theory(DisplayName = "AddChildConnectionAsync produces expected diagnostic when superceding connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Produces_Expected_Diagnostic_When_Superceding_Connection(string username, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var existingConn = GetMessageConnectionMock(username, endpoint);
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(1));
+
+            using (manager)
+            {
+                var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
+                dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
+
+                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
+
+                var child = manager.Children.FirstOrDefault();
+
+                Assert.Single(manager.Children);
+                Assert.NotEqual(default((string, IPEndPoint)), child);
+                Assert.Equal(username, child.Username);
+                Assert.Equal(endpoint.Address, child.IPEndPoint.Address);
+                Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Superceding cached child connection"))));
         }
 
         [Trait("Category", "AddChildConnectionAsync")]

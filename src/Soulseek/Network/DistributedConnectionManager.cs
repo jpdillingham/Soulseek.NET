@@ -294,7 +294,7 @@ namespace Soulseek.Network
         {
             ParentCandidateList = parentCandidates.ToList();
 
-            if (HasParent || !ParentCandidateList.Any())
+            if (HasParent || ParentCandidateList.Count == 0)
             {
                 await UpdateStatusAsync().ConfigureAwait(false);
                 return;
@@ -323,7 +323,7 @@ namespace Soulseek.Network
                     .OrderBy(c => c.BranchLevel)
                     .ToList();
 
-                if (successfulConnections.Any())
+                if (successfulConnections.Count > 0)
                 {
                     Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
 

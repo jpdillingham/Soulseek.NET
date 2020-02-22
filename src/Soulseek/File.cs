@@ -25,8 +25,8 @@ namespace Soulseek
         /// </summary>
         /// <param name="code">The file code.</param>
         /// <param name="filename">The file name.</param>
-        /// <param name="extension">The file extension.</param>
         /// <param name="size">The file size in bytes.</param>
+        /// <param name="extension">The file extension.</param>
         /// <param name="attributeCount">The number of file <see cref="FileAttribute"/> s.</param>
         /// <param name="attributeList">The optional list of <see cref="FileAttribute"/> s.</param>
         public File(int code, string filename, long size, string extension, int attributeCount, IEnumerable<FileAttribute> attributeList = null)

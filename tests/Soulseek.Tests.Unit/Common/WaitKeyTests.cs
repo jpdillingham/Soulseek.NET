@@ -118,6 +118,15 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "ToString")]
+        [Fact(DisplayName = "ToString returns Token")]
+        public void ToString_Returns_Token()
+        {
+            var k = new WaitKey(1, "foo", 2, "bar");
+
+            Assert.Equal(k.Token, k.ToString());
+        }
+
         [Trait("Category", "Equals")]
         [Fact(DisplayName = "Equals returns true when equal")]
         public void Equals_Returns_True_When_Equal()

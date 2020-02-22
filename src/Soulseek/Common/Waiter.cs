@@ -230,45 +230,44 @@ namespace Soulseek
                 action(wait);
                 wait.Dispose();
 
-                // a lock should always be available or added prior to a wait; if not we'll take the null ref exception that would
-                // follow. it should be impossible to hit this so a catastrophic failure is appropriate.
-                Locks.TryGetValue(key, out var recordLock);
-
-                // enter a read lock first; TryPeek and TryDequeue are atomic so there's no risky operation until later.
-                recordLock.EnterUpgradeableReadLock();
-
-                try
+                if (Locks.TryGetValue(key, out var recordLock))
                 {
-                    // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty. this is
-                    // tricky, because we don't want to remove a record if another thread is in the process of enqueueing a new wait.
-                    if (queue.IsEmpty)
-                    {
-                        // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits before
-                        // we can delete the dictionary record. it's ok and expected that Wait() might add this record back to the
-                        // dictionary as soon as this unblocks; we're preventing new waits from being discarded if they are added
-                        // by another thread just prior to the TryRemove() operation below.
-                        recordLock.EnterWriteLock();
+                    // enter a read lock first; TryPeek and TryDequeue are atomic so there's no risky operation until later.
+                    recordLock.EnterUpgradeableReadLock();
 
-                        try
+                    try
+                    {
+                        // clean up entries in the Waits and Locks dictionaries if the corresponding ConcurrentQueue is empty. this is
+                        // tricky, because we don't want to remove a record if another thread is in the process of enqueueing a new wait.
+                        if (queue.IsEmpty)
                         {
-                            // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
-                            // entered the write lock. this is guarateed to be safe since we now have exclusive access to the
-                            // record and it should be impossible to remove a record containing a non-empty queue
-                            if (queue.IsEmpty)
+                            // enter the write lock to prevent Wait() (which obtains a read lock) from enqueing any more waits before
+                            // we can delete the dictionary record. it's ok and expected that Wait() might add this record back to the
+                            // dictionary as soon as this unblocks; we're preventing new waits from being discarded if they are added
+                            // by another thread just prior to the TryRemove() operation below.
+                            recordLock.EnterWriteLock();
+
+                            try
                             {
-                                Waits.TryRemove(key, out _);
-                                Locks.TryRemove(key, out _);
+                                // check the queue again to ensure Wait() didn't enqueue anything between the last check and when we
+                                // entered the write lock. this is guarateed to be safe since we now have exclusive access to the
+                                // record and it should be impossible to remove a record containing a non-empty queue
+                                if (queue.IsEmpty)
+                                {
+                                    Waits.TryRemove(key, out _);
+                                    Locks.TryRemove(key, out _);
+                                }
+                            }
+                            finally
+                            {
+                                recordLock.ExitWriteLock();
                             }
                         }
-                        finally
-                        {
-                            recordLock.ExitWriteLock();
-                        }
                     }
-                }
-                finally
-                {
-                    recordLock.ExitUpgradeableReadLock();
+                    finally
+                    {
+                        recordLock.ExitUpgradeableReadLock();
+                    }
                 }
             }
         }

@@ -83,5 +83,14 @@ namespace Soulseek
         {
             return string.IsNullOrEmpty(Token) ? 0 : Token.GetHashCode();
         }
+
+        /// <summary>
+        ///     Returns the string representation of the key.
+        /// </summary>
+        /// <returns>The string representation of the key.</returns>
+        public override string ToString()
+        {
+            return Token;
+        }
     }
 }
