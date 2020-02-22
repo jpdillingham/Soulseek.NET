@@ -133,7 +133,7 @@ namespace Soulseek
         {
             var builder = new StringBuilder();
             builder.Append(Query);
-            builder.Append(Exclusions.Any() ? " " + string.Join(" ", Exclusions.Select(e => $"-{e}")) : string.Empty);
+            builder.Append(Exclusions.Count > 0 ? " " + string.Join(" ", Exclusions.Select(e => $"-{e}")) : string.Empty);
             builder.Append(MinimumBitrate.HasValue ? $" mbr:{MinimumBitrate.Value}" : string.Empty);
             builder.Append(MinimumFileSize.HasValue ? $" mfs:{MinimumFileSize.Value}" : string.Empty);
             builder.Append(MinimumFilesInFolder.HasValue ? $" mfif:{MinimumFilesInFolder.Value}" : string.Empty);
