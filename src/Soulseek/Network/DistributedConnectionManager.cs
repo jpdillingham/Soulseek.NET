@@ -509,7 +509,6 @@ namespace Soulseek.Network
                 }
 
                 var connection = await task.ConfigureAwait(false);
-
                 var isDirect = task == direct;
 
                 Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} parent candidate connection to {username} ({ipEndPoint}) established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
@@ -712,9 +711,46 @@ namespace Soulseek.Network
             }
         }
 
+        private void WaitForParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
+        {
+            var conn = (IMessageConnection)sender;
+
+            try
+            {
+                var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
+
+                switch (code)
+                {
+                    case MessageCode.Distributed.ServerSearchRequest:
+                    case MessageCode.Distributed.SearchRequest:
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Id));
+                        break;
+
+                    case MessageCode.Distributed.BranchLevel:
+                        var branchLevel = DistributedBranchLevel.FromByteArray(e.Message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Id), branchLevel.Level);
+                        break;
+
+                    case MessageCode.Distributed.BranchRoot:
+                        var branchRoot = DistributedBranchRoot.FromByteArray(e.Message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Id), branchRoot.Username);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to handle message from parent candidate: {ex.Message}", ex);
+                conn.Disconnect(ex.Message);
+                conn.Dispose();
+            }
+        }
+
         private async Task<(int BranchLevel, string BranchRoot)> WaitForParentCandidateConnectionInitializationAsync(IMessageConnection connection, CancellationToken cancellationToken)
         {
-            connection.MessageRead += ParentCandidateConnection_MessageRead;
+            connection.MessageRead += WaitForParentCandidateConnection_MessageRead;
 
             var branchLevelWait = SoulseekClient.Waiter.Wait<int>(new WaitKey(Constants.WaitKey.BranchLevelMessage, connection.Id), cancellationToken: cancellationToken);
             var branchRootWait = SoulseekClient.Waiter.Wait<string>(new WaitKey(Constants.WaitKey.BranchRootMessage, connection.Id), cancellationToken: cancellationToken);
@@ -755,41 +791,7 @@ namespace Soulseek.Network
             }
             finally
             {
-                connection.MessageRead -= ParentCandidateConnection_MessageRead;
-            }
-
-            void ParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
-            {
-                var conn = (IMessageConnection)sender;
-                var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
-
-                try
-                {
-                    switch (code)
-                    {
-                        case MessageCode.Distributed.ServerSearchRequest:
-                        case MessageCode.Distributed.SearchRequest:
-                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Id));
-                            break;
-
-                        case MessageCode.Distributed.BranchLevel:
-                            var branchLevel = DistributedBranchLevel.FromByteArray(e.Message);
-                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Id), branchLevel.Level);
-                            break;
-
-                        case MessageCode.Distributed.BranchRoot:
-                            var branchRoot = DistributedBranchRoot.FromByteArray(e.Message);
-                            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Id), branchRoot.Username);
-                            break;
-
-                        default:
-                            break;
-                    }
-                }
-                catch
-                {
-                    // noop
-                }
+                connection.MessageRead -= WaitForParentCandidateConnection_MessageRead;
             }
         }
     }
