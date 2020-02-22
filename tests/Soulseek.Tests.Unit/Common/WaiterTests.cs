@@ -360,49 +360,49 @@ namespace Soulseek.Tests.Unit
             }
         }
 
-        //[Trait("Category", "Wait Cancellation")]
-        //[Fact(DisplayName = "Wait throws and is dequeued when cancelled")]
-        //public void Wait_Throws_And_Is_Dequeued_When_Cancelled()
-        //{
-        //    using (var tcs = new CancellationTokenSource())
-        //    {
-        //        tcs.CancelAfter(100);
+        [Trait("Category", "Wait Cancellation")]
+        [Fact(DisplayName = "Wait throws and is dequeued when cancelled")]
+        public void Wait_Throws_And_Is_Dequeued_When_Cancelled()
+        {
+            using (var tcs = new CancellationTokenSource())
+            {
+                tcs.CancelAfter(100);
 
-        //        var key = new WaitKey(MessageCode.Server.Login);
+                var key = new WaitKey(MessageCode.Server.Login);
 
-        //        using (var waiter = new Waiter(0))
-        //        {
-        //            Task<object> task = waiter.Wait<object>(key, 9999, tcs.Token);
-        //            object result = null;
+                using (var waiter = new Waiter(0))
+                {
+                    Task<object> task = waiter.Wait<object>(key, 9999, tcs.Token);
+                    object result = null;
 
-        //            // stick another wait in the same queue to prevent the disposal logic from removing
-        //            // the dictionary record before we can inspect it
-        //            waiter.Wait<object>(key, 99999, CancellationToken.None);
+                    // stick another wait in the same queue to prevent the disposal logic from removing
+                    // the dictionary record before we can inspect it
+                    waiter.Wait<object>(key, 99999, CancellationToken.None);
 
-        //            var ex = Record.Exception(() => result = task.Result);
+                    var ex = Record.Exception(() => result = task.Result);
 
-        //            var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
-        //            waits.TryGetValue(key, out var queue);
-        //            queue.TryPeek(out var wait);
+                    var waits = waiter.GetProperty<ConcurrentDictionary<WaitKey, ConcurrentQueue<PendingWait>>>("Waits");
+                    waits.TryGetValue(key, out var queue);
+                    queue.TryPeek(out var wait);
 
-        //            try
-        //            {
-        //                Assert.NotNull(ex);
-        //                Assert.IsAssignableFrom<OperationCanceledException>(ex.InnerException);
+                    try
+                    {
+                        Assert.NotNull(ex);
+                        Assert.IsAssignableFrom<OperationCanceledException>(ex.InnerException);
 
-        //                Assert.NotEmpty(waits);
-        //                Assert.Single(waits);
+                        Assert.NotEmpty(waits);
+                        Assert.Single(waits);
 
-        //                Assert.NotNull(queue);
-        //                Assert.Single(queue); // should contain only the dummy wait
-        //            }
-        //            finally
-        //            {
-        //                wait.Dispose();
-        //            }
-        //        }
-        //    }
-        //}
+                        Assert.NotNull(queue);
+                        Assert.Single(queue); // should contain only the dummy wait
+                    }
+                    finally
+                    {
+                        wait.Dispose();
+                    }
+                }
+            }
+        }
 
         [Trait("Category", "Wait Cleanup")]
         [Fact(DisplayName = "Wait dictionary and queue are collected after last wait is dequeued")]
