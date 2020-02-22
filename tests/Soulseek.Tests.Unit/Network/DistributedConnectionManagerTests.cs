@@ -23,6 +23,7 @@ namespace Soulseek.Tests.Unit.Network
     using Moq;
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -2142,46 +2143,149 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s == $"Adopted parent connection to {conn1.Object.Username} ({conn1.Object.IPEndPoint})")), Times.Once);
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead completes search wait on search request"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Search_Request(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead completes search wait on search request"), AutoData]
+        internal void WaitForParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Search_Request(string username, IPEndPoint endpoint, Guid id, int token, string query)
         {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.Id).Returns(id);
+
+            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, id);
+            var args = new MessageReadEventArgs(new DistributedSearchRequest(username, token, query).ToByteArray());
+
+            using (manager)
+            {
+                manager.InvokeMethod("WaitForParentCandidateConnection_MessageRead", conn.Object, args);
+            }
+
+            mocks.Waiter.Verify(m => m.Complete(key));
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead completes search wait on server search request"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Server_Search_Request(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead completes search wait on server search request"), AutoData]
+        internal void WaitForParentCandidateConnection_MessageRead_Completes_Search_Wait_On_Server_Search_Request(string username, IPEndPoint endpoint, Guid id)
         {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.Id).Returns(id);
+
+            var key = new WaitKey(Constants.WaitKey.SearchRequestMessage, id);
+
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Distributed.ServerSearchRequest)
+                .Build();
+
+            var args = new MessageReadEventArgs(msg);
+
+            using (manager)
+            {
+                manager.InvokeMethod("WaitForParentCandidateConnection_MessageRead", conn.Object, args);
+            }
+
+            mocks.Waiter.Verify(m => m.Complete(key));
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead completes branchlevel wait on branchlevel"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Completes_BranchLevel_Wait_On_BranchLevel(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead completes branchlevel wait on branchlevel"), AutoData]
+        internal void ParentCandidateConnection_MessageRead_Completes_BranchLevel_Wait_On_BranchLevel(string username, IPEndPoint endpoint, Guid id, int level)
         {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.Id).Returns(id);
+
+            var key = new WaitKey(Constants.WaitKey.BranchLevelMessage, id);
+            var args = new MessageReadEventArgs(new DistributedBranchLevel(level).ToByteArray());
+
+            using (manager)
+            {
+                manager.InvokeMethod("WaitForParentCandidateConnection_MessageRead", conn.Object, args);
+            }
+
+            mocks.Waiter.Verify(m => m.Complete(key, level));
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead completes branchroot wait on branchroot"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Completes_BranchRoot_Wait_On_BranchRoot(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead completes branchroot wait on branchroot"), AutoData]
+        internal void WaitForParentCandidateConnection_MessageRead_Completes_BranchRoot_Wait_On_BranchRoot(string username, IPEndPoint endpoint, Guid id, string root)
         {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.Id).Returns(id);
+
+            var key = new WaitKey(Constants.WaitKey.BranchRootMessage, id);
+            var args = new MessageReadEventArgs(new DistributedBranchRoot(root).ToByteArray());
+
+            using (manager)
+            {
+                manager.InvokeMethod<string>("WaitForParentCandidateConnection_MessageRead", conn.Object, args);
+            }
+
+            mocks.Waiter.Verify(m => m.Complete(key, root));
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead ignores all other messages"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Ignores_All_Other_Messages(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead ignores all other messages"), AutoData]
+        internal void WaitForParentCandidateConnection_MessageRead_Ignores_All_Other_Messages(string username, IPEndPoint endpoint)
         {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var args = new MessageReadEventArgs(new ServerPing().ToByteArray());
+
+            using (manager)
+            {
+                var ex = Record.Exception(() => manager.InvokeMethod("WaitForParentCandidateConnection_MessageRead", conn.Object, args));
+
+                Assert.Null(ex);
+            }
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead disconnects and disposes on exception"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Disconnects_And_Disposes_On_Exception(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead disconnects and disposes on exception"), AutoData]
+        internal void WaitForParentCandidateConnection_MessageRead_Disconnects_And_Disposes_On_Exception(string username, IPEndPoint endpoint)
         {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var args = new MessageReadEventArgs(null);
+
+            using (manager)
+            {
+                var ex = Record.Exception(() => manager.InvokeMethod("WaitForParentCandidateConnection_MessageRead", conn.Object, args));
+
+                Assert.Null(ex); // should swallow
+            }
+
+            conn.Verify(m => m.Disconnect(It.IsAny<string>(), It.IsAny<Exception>()));
+            conn.Verify(m => m.Dispose());
         }
 
-        [Trait("Category", "ParentCandidateConnection_MessageRead")]
-        [Theory(DisplayName = "ParentCandidateConnection_MessageRead produces expected diagnostic on exception"), AutoData]
-        internal async Task ParentCandidateConnection_MessageRead_Produces_Expected_Diagnostic_On_Exception(string localUser, string username1, IPEndPoint endpoint1, string username2, IPEndPoint endpoint2, Guid id1, Guid id2)
+        [Trait("Category", "WaitForParentCandidateConnection_MessageRead")]
+        [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead produces expected diagnostic on exception"), AutoData]
+        internal void WaitForParentCandidateConnection_MessageRead_Produces_Expected_Diagnostic_On_Exception(string username, IPEndPoint endpoint)
         {
+
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetMessageConnectionMock(username, endpoint);
+
+            var args = new MessageReadEventArgs(null);
+
+            using (manager)
+            {
+                var ex = Record.Exception(() => manager.InvokeMethod("WaitForParentCandidateConnection_MessageRead", conn.Object, args));
+
+                Assert.Null(ex); // should swallow
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to handle message from parent candidate")), It.IsAny<Exception>()));
         }
 
         private (DistributedConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
