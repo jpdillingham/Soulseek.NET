@@ -711,6 +711,43 @@ namespace Soulseek.Network
             }
         }
 
+        private void WaitForParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
+        {
+            var conn = (IMessageConnection)sender;
+
+            try
+            {
+                var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
+
+                switch (code)
+                {
+                    case MessageCode.Distributed.ServerSearchRequest:
+                    case MessageCode.Distributed.SearchRequest:
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Id));
+                        break;
+
+                    case MessageCode.Distributed.BranchLevel:
+                        var branchLevel = DistributedBranchLevel.FromByteArray(e.Message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Id), branchLevel.Level);
+                        break;
+
+                    case MessageCode.Distributed.BranchRoot:
+                        var branchRoot = DistributedBranchRoot.FromByteArray(e.Message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Id), branchRoot.Username);
+                        break;
+
+                    default:
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Debug($"Failed to handle message from parent candidate: {ex.Message}", ex);
+                conn.Disconnect(ex.Message);
+                conn.Dispose();
+            }
+        }
+
         private async Task<(int BranchLevel, string BranchRoot)> WaitForParentCandidateConnectionInitializationAsync(IMessageConnection connection, CancellationToken cancellationToken)
         {
             connection.MessageRead += WaitForParentCandidateConnection_MessageRead;
@@ -755,43 +792,6 @@ namespace Soulseek.Network
             finally
             {
                 connection.MessageRead -= WaitForParentCandidateConnection_MessageRead;
-            }
-        }
-
-        private void WaitForParentCandidateConnection_MessageRead(object sender, MessageReadEventArgs e)
-        {
-            var conn = (IMessageConnection)sender;
-
-            try
-            {
-                var code = new MessageReader<MessageCode.Distributed>(e.Message).ReadCode();
-
-                switch (code)
-                {
-                    case MessageCode.Distributed.ServerSearchRequest:
-                    case MessageCode.Distributed.SearchRequest:
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.SearchRequestMessage, conn.Id));
-                        break;
-
-                    case MessageCode.Distributed.BranchLevel:
-                        var branchLevel = DistributedBranchLevel.FromByteArray(e.Message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchLevelMessage, conn.Id), branchLevel.Level);
-                        break;
-
-                    case MessageCode.Distributed.BranchRoot:
-                        var branchRoot = DistributedBranchRoot.FromByteArray(e.Message);
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.BranchRootMessage, conn.Id), branchRoot.Username);
-                        break;
-
-                    default:
-                        break;
-                }
-            }
-            catch (Exception ex)
-            {
-                Diagnostic.Debug($"Failed to handle message from parent candidate: {ex.Message}", ex);
-                conn.Disconnect(ex.Message);
-                conn.Dispose();
             }
         }
     }
