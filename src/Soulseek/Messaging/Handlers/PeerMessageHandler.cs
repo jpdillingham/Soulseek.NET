@@ -13,6 +13,7 @@
 namespace Soulseek.Messaging.Handlers
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net;
     using System.Threading.Tasks;
@@ -98,8 +99,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.InfoRequest:
-                        var outgoingInfo = await new SoulseekClientOptions()
-                            .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
+                        UserInfo outgoingInfo;
 
                         try
                         {
@@ -108,6 +108,9 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
+                            outgoingInfo = await new SoulseekClientOptions()
+                                .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
+
                             Diagnostic.Warning($"Failed to resolve UserInfoResponse: {ex.Message}", ex);
                         }
 
@@ -115,9 +118,7 @@ namespace Soulseek.Messaging.Handlers
                         break;
 
                     case MessageCode.Peer.BrowseRequest:
-                        // make a default response
-                        var browseResponse = await new SoulseekClientOptions()
-                            .BrowseResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
+                        IEnumerable<Directory> browseResponse;
 
                         try
                         {
@@ -125,6 +126,9 @@ namespace Soulseek.Messaging.Handlers
                         }
                         catch (Exception ex)
                         {
+                            browseResponse = await new SoulseekClientOptions()
+                                .BrowseResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
+
                             Diagnostic.Warning($"Failed to resolve BrowseResponse: {ex.Message}", ex);
                         }
 
