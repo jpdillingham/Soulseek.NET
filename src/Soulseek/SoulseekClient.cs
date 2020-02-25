@@ -2433,7 +2433,7 @@ namespace Soulseek
                 UpdateProgress(upload.StartOffset + inputStream.Position);
                 UpdateState(upload.State);
 
-                if (!upload.State.HasFlag(TransferStates.Succeeded))
+                if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
                 {
                     try
                     {
