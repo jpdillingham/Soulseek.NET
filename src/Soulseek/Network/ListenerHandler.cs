@@ -77,10 +77,12 @@ namespace Soulseek.Network
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Transfer)
                     {
-                        await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
+                        var (transferConnection, remoteToken) = await SoulseekClient.PeerConnectionManager.AddTransferConnectionAsync(
                             peerInit.Username,
                             peerInit.Token,
                             connection).ConfigureAwait(false);
+
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken), connection);
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {

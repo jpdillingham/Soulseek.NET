@@ -82,7 +82,7 @@ namespace Soulseek.Network
         /// <remarks>
         ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message only.  Because this connection is fully established by the time it is passed to this method, it must supercede any cached connection, as it will be the most recently established connection as tracked by the remote user.
         /// </remarks>
-        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
         public async Task AddMessageConnectionAsync(string username, IConnection incomingConnection)
@@ -138,11 +138,11 @@ namespace Soulseek.Network
         /// <summary>
         ///     Adds a new transfer connection from an incoming connection.
         /// </summary>
-        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
         /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
-        public async Task AddTransferConnectionAsync(string username, int token, IConnection incomingConnection)
+        public async Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(string username, int token, IConnection incomingConnection)
         {
             Diagnostic.Debug($"Inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token} accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
 
@@ -172,7 +172,7 @@ namespace Soulseek.Network
             }
 
             Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
-            SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken), connection);
+            return (connection, remoteToken); // todo: add test to check returns
         }
 
         /// <summary>
