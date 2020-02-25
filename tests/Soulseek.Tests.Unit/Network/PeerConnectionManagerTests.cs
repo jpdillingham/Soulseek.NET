@@ -89,8 +89,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddTransferConnectionAsync")]
-        [Theory(DisplayName = "AddTransferConnectionAsync reads token and completes wait"), AutoData]
-        internal async Task AddTransferConnectionAsync_Reads_Token_And_Completes_Wait(string username, IPEndPoint endpoint, int token)
+        [Theory(DisplayName = "AddTransferConnectionAsync reads token and returns connection"), AutoData]
+        internal async Task AddTransferConnectionAsync_Reads_Token_And_Returns_Connection(string username, IPEndPoint endpoint, int token)
         {
             var conn = GetConnectionMock(endpoint);
             conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
@@ -107,10 +107,11 @@ namespace Soulseek.Tests.Unit.Network
 
             using (manager)
             {
-                await manager.AddTransferConnectionAsync(username, token, incomingConn.Object);
-            }
+                var (connection, remoteToken) = await manager.AddTransferConnectionAsync(username, token, incomingConn.Object);
 
-            mocks.Waiter.Verify(m => m.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, username, token), conn.Object));
+                Assert.Equal(conn.Object, connection);
+                Assert.Equal(token, remoteToken);
+            }
         }
 
         [Trait("Category", "AddTransferConnectionAsync")]

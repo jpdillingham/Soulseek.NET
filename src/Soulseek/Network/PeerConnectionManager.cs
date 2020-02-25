@@ -172,7 +172,7 @@ namespace Soulseek.Network
             }
 
             Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) for token {remoteToken} established. (type: {connection.Type}, id: {connection.Id})");
-            return (connection, remoteToken); // todo: add test to check returns
+            return (connection, remoteToken);
         }
 
         /// <summary>
