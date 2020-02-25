@@ -2349,6 +2349,59 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
+        [Trait("Category", "AwaitTransferConnectionAsync")]
+        [Theory(DisplayName = "AwaitTransferConnectionAsync returns indirect when indirect connects"), AutoData]
+        internal async Task AwaitTransferConnectionAsync_Returns_Indirect_When_Indirect_Connects(string username, string filename, int token, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetConnectionMock(endpoint);
+
+            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
+            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            using (manager)
+            using (var actual = await manager.AwaitTransferConnectionAsync(username, filename, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actual);
+            }
+        }
+
+        [Trait("Category", "AwaitTransferConnectionAsync")]
+        [Theory(DisplayName = "AwaitTransferConnectionAsync returns direct when direct connects"), AutoData]
+        internal async Task AwaitTransferConnectionAsync_Returns_Direct_When_Direct_Connects(string username, string filename, int token, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetConnectionMock(endpoint);
+
+            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
+            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var actual = await manager.AwaitTransferConnectionAsync(username, filename, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actual);
+            }
+        }
+
+        // todo: happy path diagnostics
+        // todo: sad path diagnostics
+        // todo: test for throw on fail
+        // todo: test for cancellation of unselected
+
         private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
             var mocks = new Mocks(options);
