@@ -80,7 +80,9 @@ namespace Soulseek.Network
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
         /// <remarks>
-        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message only.  Because this connection is fully established by the time it is passed to this method, it must supercede any cached connection, as it will be the most recently established connection as tracked by the remote user.
+        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message
+        ///     only. Because this connection is fully established by the time it is passed to this method, it must supercede any
+        ///     cached connection, as it will be the most recently established connection as tracked by the remote user.
         /// </remarks>
         /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
@@ -176,31 +178,36 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified <paramref name="filename"/> and <paramref name="token"/>.
+        ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified
+        ///     <paramref name="filename"/> and <paramref name="remoteToken"/>.
         /// </summary>
+        /// <remarks>
+        ///     After this method is invoked, a <see cref="TransferResponse"/> message with the <paramref name="remoteToken"/>
+        ///     must be sent to the <paramref name="username"/> via a message connection to signal the remote peer to initate the connection.
+        /// </remarks>
         /// <param name="username">The username of the user from which the connection is expected.</param>
         /// <param name="filename">The filename associated with the expected transfer.</param>
-        /// <param name="token">The token associated with the expected transfer.</param>
+        /// <param name="remoteToken">The remote token associated with the expected transfer.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context, including the established connection.</returns>
-        public async Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int token, CancellationToken cancellationToken)
+        public async Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int remoteToken, CancellationToken cancellationToken)
         {
             using (var directCts = new CancellationTokenSource())
             using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
             using (var indirectCts = new CancellationTokenSource())
             using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
             {
-                Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {token} for {filename}");
+                Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {remoteToken} for {filename}");
 
                 // completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
                 var indirect = SoulseekClient.Waiter.Wait<IConnection>(
-                    key: new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token),
+                    key: new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, remoteToken),
                     timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
                     cancellationToken: indirectLinkedCts.Token);
 
                 // completed in AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
                 var direct = SoulseekClient.Waiter.Wait<IConnection>(
-                    key: new WaitKey(Constants.WaitKey.DirectTransfer, username, token),
+                    key: new WaitKey(Constants.WaitKey.DirectTransfer, username, remoteToken),
                     timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
                     cancellationToken: directLinkedCts.Token);
 
@@ -216,7 +223,7 @@ namespace Soulseek.Network
 
                 if (task.Status != TaskStatus.RanToCompletion)
                 {
-                    var msg = $"Failed to establish a direct or indirect transfer connection to {username} with remote token {token} for {filename}";
+                    var msg = $"Failed to establish a direct or indirect transfer connection to {username} with remote token {remoteToken} for {filename}";
                     Diagnostic.Debug(msg);
                     throw new ConnectionException(msg);
                 }
@@ -224,10 +231,10 @@ namespace Soulseek.Network
                 var connection = await task.ConfigureAwait(false);
                 var isDirect = task == direct;
 
-                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({connection.IPEndPoint}) with remote token {token} for {filename} established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({connection.IPEndPoint}) with remote token {remoteToken} for {filename} established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
                 (isDirect ? indirectCts : directCts).Cancel();
 
-                Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) with remote token {token} for {filename} established. (type: {connection.Type}, id: {connection.Id})");
+                Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) with remote token {remoteToken} for {filename} established. (type: {connection.Type}, id: {connection.Id})");
                 return connection;
             }
         }
@@ -246,7 +253,9 @@ namespace Soulseek.Network
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
         /// <remarks>
-        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an unsolicited <see cref="ConnectToPeerResponse"/> of type 'P' only. This connection should only be initiated if there is no existing connection; superceding should be avoided if possible.
+        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an
+        ///     unsolicited <see cref="ConnectToPeerResponse"/> of type 'P' only. This connection should only be initiated if
+        ///     there is no existing connection; superceding should be avoided if possible.
         /// </remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new or updated connection.</returns>
