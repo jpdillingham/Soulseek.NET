@@ -1813,44 +1813,12 @@ namespace Soulseek
                         .GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken)
                         .ConfigureAwait(false);
 
-                    //// set up a wait for an indirect connection. this wait is completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
-                    //// this is necessary because the remote peer is responsible for establishing the connection and we can't send a ConnecToPeerResponse to initiate this.
-                    //var indirectTransferConnectionInitialized = Waiter.Wait<IConnection>(
-                    //    key: new WaitKey(Constants.WaitKey.IndirectTransfer, download.Username, download.Filename, download.RemoteToken),
-                    //    timeout: Options.TransferConnectionOptions.ConnectTimeout,
-                    //    cancellationToken: cancellationToken);
-
-                    //// set up a wait for a direct connection. this wait is completed in
-                    //// PeerConnectionManager.AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
-                    //var directTransferConnectionInitialized = Waiter.Wait<IConnection>(
-                    //    key: new WaitKey(Constants.WaitKey.DirectTransfer, download.Username, download.RemoteToken),
-                    //    timeout: Options.TransferConnectionOptions.ConnectTimeout,
-                    //    cancellationToken: cancellationToken);
-
+                    // prepare a wait for the eventual transfer connection
                     var connectionTask = PeerConnectionManager
                         .AwaitTransferConnectionAsync(download.Username, download.Filename, download.RemoteToken.Value, cancellationToken);
 
+                    // initiate the connection
                     await peerConnection.WriteAsync(new TransferResponse(download.RemoteToken.Value, download.Size).ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-                    //var tasks = new[] { directTransferConnectionInitialized, indirectTransferConnectionInitialized }.ToList();
-                    //Task<IConnection> task;
-
-                    //Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {download.RemoteToken} for {download.Filename}");
-
-                    //do
-                    //{
-                    //    task = await Task.WhenAny(tasks).ConfigureAwait(false);
-                    //    tasks.Remove(task);
-                    //}
-                    //while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
-
-                    //if (task.Status != TaskStatus.RanToCompletion)
-                    //{
-                    //    throw new ConnectionException($"Failed to establish a direct or indirect transfer connection to {username}", task.Exception);
-                    //}
-
-                    //var isDirect = task == directTransferConnectionInitialized;
-                    //// todo : cancel
 
                     download.Connection = await connectionTask.ConfigureAwait(false);
                 }
