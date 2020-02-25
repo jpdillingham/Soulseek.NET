@@ -39,7 +39,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
-        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="incomingConnection">The accepted connection.</param>
         /// <returns>The operation context.</returns>
         Task AddMessageConnectionAsync(string username, IConnection incomingConnection);
@@ -47,11 +47,21 @@ namespace Soulseek.Network
         /// <summary>
         ///     Adds a new transfer connection from an incoming connection.
         /// </summary>
-        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddTransferConnectionAsync(string username, int token, IConnection incomingConnection);
+        Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(string username, int token, IConnection incomingConnection);
+
+        /// <summary>
+        ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified <paramref name="filename"/> and <paramref name="token"/>.
+        /// </summary>
+        /// <param name="username">The username of the user from which the connection is expected.</param>
+        /// <param name="filename">The filename associated with the expected transfer.</param>
+        /// <param name="token">The token associated with the expected transfer.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the established connection.</returns>
+        Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int token, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified

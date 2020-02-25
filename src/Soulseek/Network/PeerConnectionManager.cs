@@ -176,6 +176,63 @@ namespace Soulseek.Network
         }
 
         /// <summary>
+        ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified <paramref name="filename"/> and <paramref name="token"/>.
+        /// </summary>
+        /// <param name="username">The username of the user from which the connection is expected.</param>
+        /// <param name="filename">The filename associated with the expected transfer.</param>
+        /// <param name="token">The token associated with the expected transfer.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the established connection.</returns>
+        public async Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int token, CancellationToken cancellationToken)
+        {
+            using (var directCts = new CancellationTokenSource())
+            using (var directLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, directCts.Token))
+            using (var indirectCts = new CancellationTokenSource())
+            using (var indirectLinkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, indirectCts.Token))
+            {
+                Diagnostic.Debug($"Waiting for a direct or indirect connection from {username} with remote token {token} for {filename}");
+
+                // completed in ServerMessageHandler upon receipt of a ConnectToPeerResponse.
+                var indirect = SoulseekClient.Waiter.Wait<IConnection>(
+                    key: new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token),
+                    timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
+                    cancellationToken: indirectLinkedCts.Token);
+
+                // completed in AddTransferConnectionAsync when handling the incoming connection within ListenerHandler.
+                var direct = SoulseekClient.Waiter.Wait<IConnection>(
+                    key: new WaitKey(Constants.WaitKey.DirectTransfer, username, token),
+                    timeout: SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout,
+                    cancellationToken: directLinkedCts.Token);
+
+                var tasks = new[] { direct, indirect }.ToList();
+                Task<IConnection> task;
+
+                do
+                {
+                    task = await Task.WhenAny(tasks).ConfigureAwait(false);
+                    tasks.Remove(task);
+                }
+                while (task.Status != TaskStatus.RanToCompletion && tasks.Count > 0);
+
+                if (task.Status != TaskStatus.RanToCompletion)
+                {
+                    var msg = $"Failed to establish a direct or indirect transfer connection to {username} with remote token {token} for {filename}";
+                    Diagnostic.Debug(msg);
+                    throw new ConnectionException(msg);
+                }
+
+                var connection = await task.ConfigureAwait(false);
+                var isDirect = task == direct;
+
+                Diagnostic.Debug($"{(isDirect ? "Direct" : "Indirect")} transfer connection to {username} ({connection.IPEndPoint}) with remote token {token} for {filename} established first, attempting to cancel {(isDirect ? "indirect" : "direct")} connection.");
+                (isDirect ? indirectCts : directCts).Cancel();
+
+                Diagnostic.Debug($"Transfer connection to {username} ({connection.IPEndPoint}) with remote token {token} for {filename} established. (type: {connection.Type}, id: {connection.Id})");
+                return connection;
+            }
+        }
+
+        /// <summary>
         ///     Releases the managed and unmanaged resources used by the <see cref="IPeerConnectionManager"/>.
         /// </summary>
         public void Dispose()
