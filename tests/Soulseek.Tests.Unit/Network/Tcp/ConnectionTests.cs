@@ -62,7 +62,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             {
                 c.Type = ConnectionTypes.Direct | ConnectionTypes.Outbound;
 
-                Assert.Equal(ConnectionTypes.Direct | ConnectionTypes.Outbound, c.Type)
+                Assert.Equal(ConnectionTypes.Direct | ConnectionTypes.Outbound, c.Type);
             }
         }
 
