@@ -286,7 +286,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 var t = new Mock<ITcpClient>();
                 t.Setup(m => m.Client).Returns(socket);
                 t.Setup(m => m.ConnectAsync(It.IsAny<IPAddress>(), It.IsAny<int>()))
-                    .Returns(Task.Run(() => throw new SocketException()));
+                    .Returns(Task.Run(() => { throw new SocketException(); }));
 
                 using (var c = new Connection(endpoint, tcpClient: t.Object))
                 {
@@ -1276,21 +1276,25 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                 .Returns(Task.Run(() => 1));
 
             var t = new Mock<ITcpClient>();
-            t.Setup(m => m.Client).Returns(new Socket(SocketType.Stream, ProtocolType.IP));
-            t.Setup(m => m.Connected).Returns(true);
-            t.Setup(m => m.GetStream()).Returns(s.Object);
 
-            using (var c = new Connection(endpoint, tcpClient: t.Object))
+            using (var sock = new Socket(SocketType.Stream, ProtocolType.IP))
             {
-                c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 100;
+                t.Setup(m => m.Client).Returns(sock);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
 
-                var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    c.GetProperty<System.Timers.Timer>("InactivityTimer").Interval = 100;
 
-                Assert.NotNull(ex);
-                output(ex.Message);
-                Assert.IsType<ConnectionReadException>(ex);
+                    var ex = await Record.ExceptionAsync(async () => await c.ReadAsync(1));
 
-                Assert.Equal(ConnectionState.Disconnected, c.State);
+                    Assert.NotNull(ex);
+                    output(ex.Message);
+                    Assert.IsType<ConnectionReadException>(ex);
+
+                    Assert.Equal(ConnectionState.Disconnected, c.State);
+                }
             }
         }
 

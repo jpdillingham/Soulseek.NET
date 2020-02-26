@@ -2367,7 +2367,6 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "WaitForParentCandidateConnection_MessageRead produces expected diagnostic on exception"), AutoData]
         internal void WaitForParentCandidateConnection_MessageRead_Produces_Expected_Diagnostic_On_Exception(string username, IPEndPoint endpoint)
         {
-
             var (manager, mocks) = GetFixture();
 
             var conn = GetMessageConnectionMock(username, endpoint);

@@ -511,8 +511,8 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             using (var cts = new CancellationTokenSource(1000))
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
             {
-                var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var task = s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Default, token, options, null);
@@ -540,18 +540,20 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
-            var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object);
-            s.SearchResponseReceived += (sender, e) => fired = true;
-            s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            {
+                s.SearchResponseReceived += (sender, e) => fired = true;
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-            var task = s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Default, token, options, null);
+                var task = s.SearchAsync(SearchQuery.FromText(searchText), SearchScope.Default, token, options, null);
 
-            var search = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches")[token];
-            search.ResponseReceived.Invoke(response);
+                var search = s.GetProperty<ConcurrentDictionary<int, SearchInternal>>("Searches")[token];
+                search.ResponseReceived.Invoke(response);
 
-            await task;
+                await task;
 
-            Assert.True(fired);
+                Assert.True(fired);
+            }
         }
 
         [Trait("Category", "SearchAsync")]
