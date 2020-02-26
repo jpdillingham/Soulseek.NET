@@ -290,7 +290,7 @@ namespace Soulseek.Messaging.Handlers
 
         private async Task TrySendPlaceInQueueAsync(IMessageConnection connection, string filename)
         {
-            int? placeInQueue = default;
+            int? placeInQueue = null;
 
             try
             {
@@ -299,6 +299,7 @@ namespace Soulseek.Messaging.Handlers
             catch (Exception ex)
             {
                 Diagnostic.Warning($"Failed to resolve place in queue for file {filename} from {connection.Username}: {ex.Message}", ex);
+                return;
             }
 
             if (placeInQueue.HasValue)
