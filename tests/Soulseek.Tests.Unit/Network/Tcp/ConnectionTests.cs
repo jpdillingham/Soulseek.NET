@@ -51,6 +51,19 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             Assert.Equal(new ConnectionKey(endpoint), c.Key);
             Assert.Equal(ConnectionState.Pending, c.State);
             Assert.NotEqual(Guid.Empty, c.Id);
+            Assert.Equal(ConnectionTypes.None, c.Type);
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Theory(DisplayName = "Type property sets"), AutoData]
+        public void Type_Property_Sets(IPEndPoint endpoint)
+        {
+            using (var c = new Connection(endpoint))
+            {
+                c.Type = ConnectionTypes.Direct | ConnectionTypes.Outbound;
+
+                Assert.Equal(ConnectionTypes.Direct | ConnectionTypes.Outbound, c.Type);
+            }
         }
 
         [Trait("Category", "Instantiation")]
