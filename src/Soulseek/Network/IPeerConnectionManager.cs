@@ -39,24 +39,49 @@ namespace Soulseek.Network
         /// <summary>
         ///     Adds a new message connection from an incoming connection.
         /// </summary>
-        /// <param name="username">The username from which the connection originated.</param>
-        /// <param name="incomingConnection">The accepted connection.</param>
+        /// <remarks>
+        ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message
+        ///     only. Because this connection is fully established by the time it is passed to this method, it must supercede any
+        ///     cached connection, as it will be the most recently established connection as tracked by the remote user.
+        /// </remarks>
+        /// <param name="username">The username of the user from which the connection originated.</param>
+        /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
         Task AddMessageConnectionAsync(string username, IConnection incomingConnection);
 
         /// <summary>
         ///     Adds a new transfer connection from an incoming connection.
         /// </summary>
-        /// <param name="username">The username from which the connection originated.</param>
+        /// <param name="username">The username of the user from which the connection originated.</param>
         /// <param name="token">The token with which the firewall was pierced.</param>
         /// <param name="incomingConnection">The the accepted connection.</param>
         /// <returns>The operation context.</returns>
-        Task AddTransferConnectionAsync(string username, int token, IConnection incomingConnection);
+        Task<(IConnection Connection, int RemoteToken)> AddTransferConnectionAsync(string username, int token, IConnection incomingConnection);
+
+        /// <summary>
+        ///     Awaits an incoming transfer connection from the specified <paramref name="username"/> for the specified
+        ///     <paramref name="filename"/> and <paramref name="remoteToken"/>.
+        /// </summary>
+        /// <remarks>
+        ///     After this method is invoked, a <see cref="TransferResponse"/> message with the <paramref name="remoteToken"/>
+        ///     must be sent to the <paramref name="username"/> via a message connection to signal the remote peer to initate the connection.
+        /// </remarks>
+        /// <param name="username">The username of the user from which the connection is expected.</param>
+        /// <param name="filename">The filename associated with the expected transfer.</param>
+        /// <param name="remoteToken">The remote token associated with the expected transfer.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The operation context, including the established connection.</returns>
+        Task<IConnection> AwaitTransferConnectionAsync(string username, string filename, int remoteToken, CancellationToken cancellationToken);
 
         /// <summary>
         ///     Returns an existing, or gets a new connection using the details in the specified
         ///     <paramref name="connectToPeerResponse"/> and pierces the remote peer's firewall.
         /// </summary>
+        /// <remarks>
+        ///     This method will be invoked from <see cref="Messaging.Handlers.ServerMessageHandler"/> upon receipt of an
+        ///     unsolicited <see cref="ConnectToPeerResponse"/> of type 'P' only. This connection should only be initiated if
+        ///     there is no existing connection; superceding should be avoided if possible.
+        /// </remarks>
         /// <param name="connectToPeerResponse">The response that solicited the connection.</param>
         /// <returns>The operation context, including the new or updated connection.</returns>
         Task<IMessageConnection> GetOrAddMessageConnectionAsync(ConnectToPeerResponse connectToPeerResponse);

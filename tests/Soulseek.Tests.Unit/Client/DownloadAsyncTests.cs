@@ -550,8 +550,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new OperationCanceledException()));
-            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
@@ -562,6 +560,8 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.AwaitTransferConnectionAsync(username, filename, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
@@ -641,8 +641,6 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
             waiter.Setup(m => m.WaitIndefinitely(It.IsAny<WaitKey>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new TimeoutException()));
-            waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(transferConn.Object));
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
@@ -653,6 +651,8 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.AwaitTransferConnectionAsync(username, filename, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
@@ -996,7 +996,7 @@ namespace Soulseek.Tests.Unit.Client
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
-            connManager.Setup(m => m.GetTransferConnectionAsync(username, endpoint, token, It.IsAny<CancellationToken>()))
+            connManager.Setup(m => m.AwaitTransferConnectionAsync(username, filename, token, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(transferConn.Object));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
@@ -1609,23 +1609,17 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new UserAddressResponse(username, endpoint)));
 
-            // mock a failing indirect connection
-            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
-            waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<IConnection>(new Exception()));
-
-            // mock a failing direct connection
-            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
-            waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromException<IConnection>(new Exception()));
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
+            var expected = new Exception("foo");
+
             var connManager = new Mock<IPeerConnectionManager>();
             connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(conn.Object));
+            connManager.Setup(m => m.AwaitTransferConnectionAsync(username, filename, token, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<IConnection>(expected));
 
             using (var s = new SoulseekClient("127.0.0.1", 1, options: options, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
             {
@@ -1636,9 +1630,8 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.NotNull(ex);
                 Assert.IsType<TransferException>(ex);
-                Assert.IsType<ConnectionException>(ex.InnerException);
-                Assert.IsType<AggregateException>(ex.InnerException.InnerException);
-                Assert.True(ex.InnerException.Message.ContainsInsensitive("Failed to establish a direct or indirect transfer connection to"));
+                Assert.IsType<Exception>(ex.InnerException);
+                Assert.Equal(expected, ex.InnerException);
             }
         }
 
