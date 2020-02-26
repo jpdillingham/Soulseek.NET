@@ -2302,6 +2302,7 @@ namespace Soulseek.Tests.Unit.Network
 
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("MessageConnectionDictionary");
 
+                Assert.NotNull(ex);
                 Assert.Empty(dict);
             }
 
@@ -2397,10 +2398,81 @@ namespace Soulseek.Tests.Unit.Network
             }
         }
 
-        // todo: happy path diagnostics
-        // todo: sad path diagnostics
-        // todo: test for throw on fail
-        // todo: test for cancellation of unselected
+        [Trait("Category", "AwaitTransferConnectionAsync")]
+        [Theory(DisplayName = "AwaitTransferConnectionAsync throws ConnectionException when both fail"), AutoData]
+        internal async Task AwaitTransferConnectionAsync_Throws_ConnectionException_When_Both_Fail(string username, string filename, int token, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
+            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            using (manager)
+            {
+                var ex = await Record.ExceptionAsync(() => manager.AwaitTransferConnectionAsync(username, filename, token, CancellationToken.None));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.Contains("Failed to establish a direct or indirect transfer connection", ex.Message, StringComparison.InvariantCultureIgnoreCase);
+            }
+        }
+
+        [Trait("Category", "AwaitTransferConnectionAsync")]
+        [Theory(DisplayName = "AwaitTransferConnectionAsync produces expected diagnostics on connection"), AutoData]
+        internal async Task AwaitTransferConnectionAsync_Produces_Expected_Diagnostics_On_connection(string username, string filename, int token, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var conn = GetConnectionMock(endpoint);
+
+            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
+            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (manager)
+            using (var actual = await manager.AwaitTransferConnectionAsync(username, filename, token, CancellationToken.None))
+            {
+                Assert.Equal(conn.Object, actual);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Waiting for a direct or indirect connection"))));
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("established first, attempting to cancel"))));
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("established."))));
+        }
+
+        [Trait("Category", "AwaitTransferConnectionAsync")]
+        [Theory(DisplayName = "AwaitTransferConnectionAsync produces expected diagnostics on failure"), AutoData]
+        internal async Task AwaitTransferConnectionAsync_Produces_Expected_Diagnostics_On_Failure(string username, string filename, int token, IPEndPoint endpoint)
+        {
+            var (manager, mocks) = GetFixture();
+
+            var indirectKey = new WaitKey(Constants.WaitKey.IndirectTransfer, username, filename, token);
+            var directKey = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(indirectKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(directKey, It.IsAny<int>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException<IConnection>(new Exception()));
+
+            using (manager)
+            {
+                await Record.ExceptionAsync(() => manager.AwaitTransferConnectionAsync(username, filename, token, CancellationToken.None));
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Failed to establish a direct or indirect transfer connection"))));
+        }
 
         private (PeerConnectionManager Manager, Mocks Mocks) GetFixture(string username = null, IPEndPoint endpoint = null, SoulseekClientOptions options = null)
         {
