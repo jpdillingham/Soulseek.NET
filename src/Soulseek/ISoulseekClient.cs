@@ -241,13 +241,20 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
         /// </summary>
+        /// <param name="username">The username with which to log in.</param>
+        /// <param name="password">The password with which to log in.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
-        Task ConnectAsync(CancellationToken? cancellationToken = null);
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered while establishing the connection.</exception>
+        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
+        /// <exception cref="LoginException">Thrown when an exception is encountered during the login operation.</exception>
+        Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Disconnects the client from the server.
@@ -494,24 +501,6 @@ namespace Soulseek
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
         /// <exception cref="RoomLeaveException">Thrown when an exception is encountered during the operation.</exception>
         Task LeaveRoomAsync(string roomName, CancellationToken? cancellationToken = null);
-
-        /// <summary>
-        ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
-        /// </summary>
-        /// <param name="username">The username with which to log in.</param>
-        /// <param name="password">The password with which to log in.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when a user is already logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="LoginException">Thrown when an exception is encountered during the operation.</exception>
-        Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
         ///     Asynchronously pings the server to check connectivity.
