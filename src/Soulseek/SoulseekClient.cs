@@ -204,14 +204,14 @@ namespace Soulseek
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
         /// <summary>
-        ///     Occurs when a global message is received.
-        /// </summary>
-        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
-
-        /// <summary>
         ///     Occurs when the client disconnects.
         /// </summary>
         public event EventHandler<SoulseekClientDisconnectedEventArgs> Disconnected;
+
+        /// <summary>
+        ///     Occurs when a global message is received.
+        /// </summary>
+        public event EventHandler<GlobalMessageReceivedEventArgs> GlobalMessageReceived;
 
         /// <summary>
         ///     Occurs when the client is forcefully disconnected from the server, probably because another client logged in with
@@ -498,31 +498,40 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
+        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/>
+        ///     properties, then logs in using the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
+        /// <param name="username">The username with which to log in.</param>
+        /// <param name="password">The password with which to log in.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
-        public async Task ConnectAsync(CancellationToken? cancellationToken = null)
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered while establishing the connection.</exception>
+        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
+        /// <exception cref="LoginException">Thrown when an exception is encountered during the login operation.</exception>
+        public Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new ArgumentException("Username may not be null or an empty string", nameof(username));
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                throw new ArgumentException("Password may not be null or an empty string", nameof(password));
+            }
+
             if (State.HasFlag(SoulseekClientStates.Connected))
             {
                 throw new InvalidOperationException($"The client is already connected");
             }
 
-            try
-            {
-                Listener?.Start();
-
-                await ServerConnection.ConnectAsync(cancellationToken ?? CancellationToken.None).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
-            {
-                throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
-            }
+            return ConnectAndLoginAsync(username, password, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -557,7 +566,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="startOffset"/> is less than zero.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
@@ -623,7 +634,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="startOffset"/> is less than zero.
+        /// </exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
@@ -1028,52 +1041,9 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously logs in to the server with the specified <paramref name="username"/> and <paramref name="password"/>.
-        /// </summary>
-        /// <param name="username">The username with which to log in.</param>
-        /// <param name="password">The password with which to log in.</param>
-        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
-        /// <returns>The Task representing the asynchronous operation.</returns>
-        /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
-        /// </exception>
-        /// <exception cref="InvalidOperationException">Thrown when the client is not connected.</exception>
-        /// <exception cref="InvalidOperationException">Thrown when a user is already logged in.</exception>
-        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
-        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="LoginException">Thrown when an exception is encountered during the operation.</exception>
-        public Task LoginAsync(string username, string password, CancellationToken? cancellationToken = null)
-        {
-            if (string.IsNullOrEmpty(username))
-            {
-                throw new ArgumentException("Username may not be null or an empty string", nameof(username));
-            }
-
-            if (string.IsNullOrEmpty(password))
-            {
-                throw new ArgumentException("Password may not be null or an empty string", nameof(password));
-            }
-
-            if (!State.HasFlag(SoulseekClientStates.Connected))
-            {
-                throw new InvalidOperationException($"The client must be connected to log in");
-            }
-
-            if (State.HasFlag(SoulseekClientStates.LoggedIn))
-            {
-                throw new InvalidOperationException($"Already logged in as {Username}.  Disconnect before logging in again");
-            }
-
-            return LoginInternalAsync(username, password, cancellationToken ?? CancellationToken.None);
-        }
-
-        /// <summary>
         ///     Asynchronously pings the server to check connectivity.
         /// </summary>
-        /// <remarks>
-        ///     The server doesn't seem to be responding; this may have been deprecated.
-        /// </remarks>
+        /// <remarks>The server doesn't seem to be responding; this may have been deprecated.</remarks>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
@@ -1673,6 +1643,26 @@ namespace Soulseek
             else if (State == SoulseekClientStates.Disconnected)
             {
                 Disconnected?.Invoke(this, new SoulseekClientDisconnectedEventArgs(message, exception));
+            }
+        }
+
+        private async Task ConnectAndLoginAsync(string username, string password, CancellationToken cancellationToken)
+        {
+            await ConnectInternalAsync(cancellationToken).ConfigureAwait(false);
+            await LoginInternalAsync(username, password, cancellationToken).ConfigureAwait(false);
+        }
+
+        private async Task ConnectInternalAsync(CancellationToken cancellationToken)
+        {
+            try
+            {
+                Listener?.Start();
+
+                await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
+            }
+            catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
+            {
+                throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
             }
         }
 
@@ -2284,7 +2274,7 @@ namespace Soulseek
             UpdateState(TransferStates.Queued);
             await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
 
-            IPEndPoint endpoint = default;
+            IPEndPoint endpoint = null;
 
             try
             {
