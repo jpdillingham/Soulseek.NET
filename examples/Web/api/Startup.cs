@@ -177,12 +177,6 @@
 
             Client.PrivateMessageReceived += (e, args) => Console.WriteLine($"[{args.Timestamp}] [PM]{(args.IsAdmin ? " [ADMIN]" : "")} {args.Username}: {args.Message}");
 
-            async Task ConnectAndLogIn()
-            {
-                await Client.ConnectAsync();
-                await Client.LoginAsync(Username, Password);
-            }
-
             Client.Disconnected += async (e, args) =>
             {
                 Console.WriteLine($"Disconnected from Soulseek server: {args.Message}");
@@ -193,13 +187,13 @@
                 if (!(args.Exception is KickedFromServerException || args.Exception is ObjectDisposedException))
                 {
                     Console.WriteLine($"Attepting to reconnect...");
-                    await ConnectAndLogIn();
+                    await Client.ConnectAsync(Username, Password);
                 }
             };
 
             Task.Run(async () =>
             {
-                await ConnectAndLogIn();
+                await Client.ConnectAsync(Username, Password);
             }).GetAwaiter().GetResult();
 
             Console.WriteLine($"Connected and logged in.");
