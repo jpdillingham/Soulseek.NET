@@ -239,7 +239,8 @@ namespace Soulseek
         Task ChangePasswordAsync(string password, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
+        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/>
+        ///     properties, then logs in using the specified <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
@@ -276,7 +277,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="startOffset"/> is less than zero.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
         /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
         /// <exception cref="DuplicateTransferException">
@@ -305,7 +308,9 @@ namespace Soulseek
         /// <exception cref="ArgumentException">
         ///     Thrown when the <paramref name="username"/> or <paramref name="filename"/> is null, empty, or consists only of whitespace.
         /// </exception>
-        /// <exception cref="ArgumentOutOfRangeException">Thrown when the specified <paramref name="startOffset"/> is less than zero.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the specified <paramref name="startOffset"/> is less than zero.
+        /// </exception>
         /// <exception cref="ArgumentNullException">Thrown when the specified <paramref name="outputStream"/> is null.</exception>
         /// <exception cref="InvalidOperationException">
         ///     Thrown when the specified <paramref name="outputStream"/> is not writeable.
@@ -505,9 +510,7 @@ namespace Soulseek
         /// <summary>
         ///     Asynchronously pings the server to check connectivity.
         /// </summary>
-        /// <remarks>
-        ///     The server doesn't seem to be responding; this may have been deprecated.
-        /// </remarks>
+        /// <remarks>The server doesn't seem to be responding; this may have been deprecated.</remarks>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation, including the response time in miliseconds.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
