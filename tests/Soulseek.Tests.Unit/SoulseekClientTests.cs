@@ -236,7 +236,7 @@ namespace Soulseek.Tests.Unit
         {
             using (var s = new SoulseekClient())
             {
-                var ex = await Record.ExceptionAsync(() => s.LoginAsync(username, password));
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
