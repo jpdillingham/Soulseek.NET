@@ -478,7 +478,7 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
-            (IConnection Connection, int RemoteToken) newConn = default;
+            (IConnection Connection, int RemoteToken) newConn;
 
             using (manager)
             {
@@ -1092,38 +1092,36 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "GetTransferConnectionAsync writes token on connection established"), AutoData]
         internal async Task GetTransferConnectionAsync_Writes_Token_On_Connection_Established(string localUsername, string username, IPAddress ipAddress, int directPort, int indirectPort, int token)
         {
+            var dendpoint = new IPEndPoint(ipAddress, directPort);
+            var direct = GetConnectionMock(dendpoint);
+            direct.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Direct);
+
+            var iendpoint = new IPEndPoint(ipAddress, indirectPort);
+            var indirect = GetConnectionMock(iendpoint);
+            indirect.Setup(m => m.Type)
+                .Returns(ConnectionTypes.Indirect);
+
+            var (manager, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.Username)
+                .Returns(localUsername);
+
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+                .Returns(direct.Object);
+            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(indirect.Object);
+
+            mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
+                .Throws(new Exception());
+
+            using (manager)
+            using (var newConn = await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None))
             {
-                var dendpoint = new IPEndPoint(ipAddress, directPort);
-                var direct = GetConnectionMock(dendpoint);
-                direct.Setup(m => m.Type)
-                    .Returns(ConnectionTypes.Direct);
+                Assert.Equal(direct.Object, newConn);
+                Assert.Equal(ConnectionTypes.Direct, newConn.Type);
 
-                var iendpoint = new IPEndPoint(ipAddress, indirectPort);
-                var indirect = GetConnectionMock(iendpoint);
-                indirect.Setup(m => m.Type)
-                    .Returns(ConnectionTypes.Indirect);
-
-                var (manager, mocks) = GetFixture();
-
-                mocks.Client.Setup(m => m.Username)
-                    .Returns(localUsername);
-
-                mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
-                    .Returns(direct.Object);
-                mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
-                    .Returns(indirect.Object);
-
-                mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
-                    .Throws(new Exception());
-
-                using (manager)
-                using (var newConn = await manager.GetTransferConnectionAsync(username, dendpoint, token, CancellationToken.None))
-                {
-                    Assert.Equal(direct.Object, newConn);
-                    Assert.Equal(ConnectionTypes.Direct, newConn.Type);
-
-                    direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(BitConverter.GetBytes(token))), It.IsAny<CancellationToken?>()), Times.Once);
-                }
+                direct.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(BitConverter.GetBytes(token))), It.IsAny<CancellationToken?>()), Times.Once);
             }
         }
 
@@ -2400,7 +2398,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AwaitTransferConnectionAsync")]
         [Theory(DisplayName = "AwaitTransferConnectionAsync throws ConnectionException when both fail"), AutoData]
-        internal async Task AwaitTransferConnectionAsync_Throws_ConnectionException_When_Both_Fail(string username, string filename, int token, IPEndPoint endpoint)
+        internal async Task AwaitTransferConnectionAsync_Throws_ConnectionException_When_Both_Fail(string username, string filename, int token)
         {
             var (manager, mocks) = GetFixture();
 
@@ -2453,7 +2451,7 @@ namespace Soulseek.Tests.Unit.Network
 
         [Trait("Category", "AwaitTransferConnectionAsync")]
         [Theory(DisplayName = "AwaitTransferConnectionAsync produces expected diagnostics on failure"), AutoData]
-        internal async Task AwaitTransferConnectionAsync_Produces_Expected_Diagnostics_On_Failure(string username, string filename, int token, IPEndPoint endpoint)
+        internal async Task AwaitTransferConnectionAsync_Produces_Expected_Diagnostics_On_Failure(string username, string filename, int token)
         {
             var (manager, mocks) = GetFixture();
 

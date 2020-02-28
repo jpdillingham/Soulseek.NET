@@ -72,9 +72,7 @@
         private static async Task ConnectAndLogin(SoulseekClient client)
         {
             Console.Write("\nConnecting...");
-            await client.ConnectAsync();
-            Console.Write("\rConnected.  Logging in...");
-            await client.LoginAsync(Username, Password);
+            await client.ConnectAsync(Username, Password);
             o("\rConnected and logged in.    \n");
         }
 

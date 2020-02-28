@@ -71,7 +71,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                IReadOnlyCollection<Room> response = default;
+                IReadOnlyCollection<Room> response;
 
                 response = await s.GetRoomListAsync();
 

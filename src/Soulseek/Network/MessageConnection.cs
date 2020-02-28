@@ -118,7 +118,7 @@ namespace Soulseek.Network
             }
 
             ReadingContinuously = true;
-            byte[] codeBytes = default;
+            byte[] codeBytes = null;
 
             void RaiseMessageDataRead(object sender, ConnectionDataEventArgs e)
             {

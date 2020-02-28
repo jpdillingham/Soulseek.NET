@@ -21,6 +21,7 @@ namespace Soulseek.Tests.Unit
     using Moq;
     using Soulseek.Exceptions;
     using Soulseek.Messaging.Handlers;
+    using Soulseek.Messaging.Messages;
     using Soulseek.Network;
     using Soulseek.Network.Tcp;
     using Xunit;
@@ -221,6 +222,60 @@ namespace Soulseek.Tests.Unit
 
                 Assert.True(fired);
             }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
+        [InlineData(null, "a")]
+        [InlineData("", "a")]
+        [InlineData("a", null)]
+        [InlineData("a", "")]
+        [InlineData("", "")]
+        [InlineData(null, null)]
+        public async Task Connect_Throws_ArgumentException_On_Bad_Input(string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws InvalidOperationException_When_Already_Connected"), AutoData]
+        public async Task Connect_Throws_InvalidOperationException_When_Already_Connected(string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect connects and logs in"), AutoData]
+        public async Task Connect_Connects_And_Logs_In(IPAddress ip, int port, string username, string password)
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var w = new Mock<IWaiter>();
+            w.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
+            using (var s = new SoulseekClient(ip.ToString(), port, serverConnection: c.Object, waiter: w.Object))
+            {
+                await s.ConnectAsync(username, password);
+
+                Assert.Equal(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn, s.State);
+            }
+
+            c.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
         }
 
         [Trait("Category", "Instantiation")]

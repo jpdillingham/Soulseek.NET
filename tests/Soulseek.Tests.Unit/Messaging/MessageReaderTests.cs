@@ -13,7 +13,6 @@
 namespace Soulseek.Tests.Unit.Messaging
 {
     using System;
-    using System.Collections.Generic;
     using System.Reflection;
     using System.Text;
     using AutoFixture.Xunit2;

@@ -1083,7 +1083,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
                 mocks.Client.Object);
 
             mocks.Client.Setup(m => m.Options)
-                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => throw new Exception()));
+                .Returns(new SoulseekClientOptions(searchResponseResolver: (a, b, c) => { throw new Exception(); }));
 
             mocks.Diagnostic.Setup(m => m.Debug(It.IsAny<string>()));
 

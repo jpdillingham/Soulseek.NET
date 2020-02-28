@@ -150,7 +150,7 @@ namespace Soulseek.Messaging.Handlers
                 return;
             }
 
-            SearchResponse searchResponse = default;
+            SearchResponse searchResponse = null;
 
             try
             {
@@ -159,9 +159,10 @@ namespace Soulseek.Messaging.Handlers
             catch (Exception ex)
             {
                 Diagnostic.Warning($"Error resolving search response for query '{query}' requested by {username} with token {token}: {ex.Message}", ex);
+                return;
             }
 
-            if (searchResponse != default && searchResponse.FileCount > 0)
+            if (searchResponse?.FileCount > 0)
             {
                 try
                 {

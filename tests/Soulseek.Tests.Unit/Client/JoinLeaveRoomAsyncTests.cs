@@ -91,7 +91,7 @@ namespace Soulseek.Tests.Unit.Client
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
-                RoomData response = default;
+                RoomData response;
 
                 response = await s.JoinRoomAsync(roomName);
 
