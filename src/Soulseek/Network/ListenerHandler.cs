@@ -82,7 +82,7 @@ namespace Soulseek.Network
                             peerInit.Token,
                             connection).ConfigureAwait(false);
 
-                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken), connection);
+                        SoulseekClient.Waiter.Complete(new WaitKey(Constants.WaitKey.DirectTransfer, peerInit.Username, remoteToken), transferConnection);
                     }
                     else if (peerInit.ConnectionType == Constants.ConnectionType.Distributed)
                     {
