@@ -48,8 +48,8 @@ namespace Soulseek.Network
         {
             SoulseekClient = soulseekClient;
 
-            ConcurrentChildLimit = SoulseekClient?.Options?.ConcurrentDistributedChildrenLimit
-                ?? new SoulseekClientOptions().ConcurrentDistributedChildrenLimit;
+            ConcurrentChildLimit = SoulseekClient?.Options?.DistributedChildLimit
+                ?? new SoulseekClientOptions().DistributedChildLimit;
 
             ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
