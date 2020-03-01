@@ -48,6 +48,7 @@ namespace Soulseek.Network
         {
             SoulseekClient = soulseekClient;
 
+            AcceptChildren = SoulseekClient?.Options?.AcceptDistributedChildren ?? new SoulseekClientOptions().AcceptDistributedChildren;
             ConcurrentChildLimit = SoulseekClient?.Options?.DistributedChildLimit
                 ?? new SoulseekClientOptions().DistributedChildLimit;
 
@@ -84,7 +85,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => ChildConnectionDictionary.Count < ConcurrentChildLimit;
+        public bool CanAcceptChildren => AcceptChildren && ChildConnectionDictionary.Count < ConcurrentChildLimit;
 
         /// <summary>
         ///     Gets the current list of child connections.
@@ -114,6 +115,7 @@ namespace Soulseek.Network
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
+        private bool AcceptChildren { get; }
         private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set; } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }

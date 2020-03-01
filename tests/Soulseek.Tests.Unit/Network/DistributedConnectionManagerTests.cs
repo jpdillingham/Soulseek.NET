@@ -53,6 +53,36 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Empty(c.PendingSolicitations);
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "CanAcceptChildren is false if AcceptDistributedChildren is false")]
+        public void CanAcceptChildren_Is_False_If_AcceptDistributedChildren_Is_False()
+        {
+            using (var s = new SoulseekClient("192.168.1.1", 1, new SoulseekClientOptions(
+                acceptDistributedChildren: false,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    Assert.False(c.CanAcceptChildren);
+                }
+            }
+        }
+
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "CanAcceptChildren is true if AcceptDistributedChildren is true")]
+        public void CanAcceptChildren_Is_True_If_AcceptDistributedChildren_Is_True()
+        {
+            using (var s = new SoulseekClient("192.168.1.1", 1, new SoulseekClientOptions(
+                acceptDistributedChildren: true,
+                distributedChildLimit: 10)))
+            {
+                using (var c = new DistributedConnectionManager(s))
+                {
+                    Assert.True(c.CanAcceptChildren);
+                }
+            }
+        }
+
         [Trait("Category", "Dispose")]
         [Fact(DisplayName = "Disposes without throwing")]
         public void Disposes_Without_Throwing()
