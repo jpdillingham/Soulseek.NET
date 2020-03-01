@@ -32,11 +32,11 @@ namespace Soulseek
         private readonly Func<string, IPEndPoint, string, Task> defaultEnqueueDownloadAction =
             (u, i, f) => { return Task.CompletedTask; };
 
-        private readonly Func<string, IPEndPoint, Task<UserInfo>> defaultUserInfoResponse =
-            (u, i) => Task.FromResult(new UserInfo(string.Empty, 0, 0, false));
-
         private readonly Func<string, IPEndPoint, string, Task<int?>> defaultPlaceInQueueResponse =
             (u, i, f) => Task.FromResult<int?>(null);
+
+        private readonly Func<string, IPEndPoint, Task<UserInfo>> defaultUserInfoResponse =
+            (u, i) => Task.FromResult(new UserInfo(string.Empty, 0, 0, false));
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
@@ -45,7 +45,9 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
-        /// <param name="messageTimeout">The message timeout, in milliseconds, used when waiting for a response from the server.</param>
+        /// <param name="messageTimeout">
+        ///     The message timeout, in milliseconds, used when waiting for a response from the server.
+        /// </param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
         /// </param>
@@ -137,7 +139,8 @@ namespace Soulseek
         public bool AutoAcknowledgePrivateMessages { get; }
 
         /// <summary>
-        ///     Gets a value indicating whether to automatically send a privilege notification acknowledgement upon receipt. (Default = true).
+        ///     Gets a value indicating whether to automatically send a privilege notification acknowledgement upon receipt.
+        ///     (Default = true).
         /// </summary>
         public bool AutoAcknowledgePrivilegeNotifications { get; }
 

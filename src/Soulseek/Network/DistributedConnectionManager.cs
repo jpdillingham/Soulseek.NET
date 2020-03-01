@@ -115,6 +115,7 @@ namespace Soulseek.Network
         /// </summary>
         public IReadOnlyDictionary<int, string> PendingSolicitations => new ReadOnlyDictionary<int, string>(PendingSolicitationDictionary);
 
+        private bool AcceptChildren { get; }
         private ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>> ChildConnectionDictionary { get; set; } = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
@@ -125,7 +126,6 @@ namespace Soulseek.Network
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
-        private bool AcceptChildren { get; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
