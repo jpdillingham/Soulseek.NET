@@ -2148,7 +2148,10 @@ namespace Soulseek
                         await ServerConnection.WriteAsync(new SetListenPortCommand(Options.ListenPort.Value).ToByteArray(), cancellationToken).ConfigureAwait(false);
                     }
 
-                    await ServerConnection.WriteAsync(new HaveNoParentsCommand(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    if (Options.EnableDistributedNetwork)
+                    {
+                        await ServerConnection.WriteAsync(new HaveNoParentsCommand(true).ToByteArray(), cancellationToken).ConfigureAwait(false);
+                    }
                 }
                 else
                 {

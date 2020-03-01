@@ -220,6 +220,32 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "PeerInit")]
+        [Theory(DisplayName = "Completes DirectTransfer wait on transfer PeerInit"), AutoData]
+        public void Completes_DirectTransfer_Wait_On_Transfer_PeerInit(IPEndPoint endpoint, string username, int token)
+        {
+            var (handler, mocks) = GetFixture(endpoint);
+
+            var message = new PeerInit(username, Constants.ConnectionType.Transfer, token);
+            var messageBytes = message.ToByteArray().AsSpan().Slice(4).ToArray();
+
+            mocks.Connection.Setup(m => m.ReadAsync(4, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(BitConverter.GetBytes(messageBytes.Length)));
+
+            mocks.Connection.Setup(m => m.ReadAsync(messageBytes.Length, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(messageBytes));
+
+            var newTransfer = new Mock<IConnection>();
+
+            mocks.PeerConnectionManager.Setup(m => m.AddTransferConnectionAsync(username, token, It.IsAny<IConnection>()))
+                .Returns(Task.FromResult((newTransfer.Object, token)));
+
+            handler.HandleConnection(null, mocks.Connection.Object);
+
+            var key = new WaitKey(Constants.WaitKey.DirectTransfer, username, token);
+            mocks.Waiter.Verify(m => m.Complete(key, newTransfer.Object), Times.Once);
+        }
+
+        [Trait("Category", "PeerInit")]
         [Theory(DisplayName = "Adds distributed connection on distributed PeerInit"), AutoData]
         public void Adds_Distributed_Connection_On_Distributed_PeerInit(IPEndPoint endpoint, string username, int token)
         {

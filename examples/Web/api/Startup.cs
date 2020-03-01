@@ -133,7 +133,8 @@
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
                 listenPort: ListenPort,
-                concurrentDistributedChildrenLimit: 10,
+                distributedChildLimit: 10,
+                enableDistributedNetwork: false,
                 minimumDiagnosticLevel: DiagnosticLevel.Debug,
                 serverConnectionOptions: new ConnectionOptions(connectTimeout: 5000, inactivityTimeout: 15000),
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: 5000, inactivityTimeout: 15000),

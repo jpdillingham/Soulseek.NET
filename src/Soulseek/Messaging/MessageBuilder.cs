@@ -190,8 +190,10 @@ namespace Soulseek.Messaging
         /// </exception>
         public MessageBuilder WriteString(string value)
         {
-            return WriteBytes(BitConverter.GetBytes(value.Length))
-                .WriteBytes(Encoding.UTF8.GetBytes(value));
+            var bytes = Encoding.UTF8.GetBytes(value);
+
+            return WriteBytes(BitConverter.GetBytes(bytes.Length))
+                .WriteBytes(bytes);
         }
 
         private void Compress(byte[] inData, out byte[] outData)

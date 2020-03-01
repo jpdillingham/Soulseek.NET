@@ -42,7 +42,8 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
-        /// <param name="concurrentDistributedChildrenLimit">The number of allowed distributed children.</param>
+        /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
+        /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
         /// <param name="messageTimeout">The message timeout, in milliseconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
         ///     A value indicating whether to automatically send a private message acknowledgement upon receipt.
@@ -71,11 +72,12 @@ namespace Soulseek
         ///     The delegate used to resolve the <see cref="PlaceInQueueResponse"/> for an incoming request.
         /// </param>
         /// <exception cref="ArgumentOutOfRangeException">
-        ///     Thrown when the value supplied for <paramref name="concurrentDistributedChildrenLimit"/> is less than zero.
+        ///     Thrown when the value supplied for <paramref name="distributedChildLimit"/> is less than zero.
         /// </exception>
         public SoulseekClientOptions(
             int? listenPort = null,
-            int concurrentDistributedChildrenLimit = 25,
+            bool enableDistributedNetwork = true,
+            int distributedChildLimit = 25,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
             bool autoAcknowledgePrivilegeNotifications = true,
@@ -94,11 +96,12 @@ namespace Soulseek
         {
             ListenPort = listenPort;
 
-            ConcurrentDistributedChildrenLimit = concurrentDistributedChildrenLimit;
+            EnableDistributedNetwork = enableDistributedNetwork;
+            DistributedChildLimit = distributedChildLimit;
 
-            if (ConcurrentDistributedChildrenLimit < 0)
+            if (DistributedChildLimit < 0)
             {
-                throw new ArgumentOutOfRangeException(nameof(concurrentDistributedChildrenLimit), "Must be greater than or equal to zero");
+                throw new ArgumentOutOfRangeException(nameof(distributedChildLimit), "Must be greater than or equal to zero");
             }
 
             MessageTimeout = messageTimeout;
@@ -138,12 +141,17 @@ namespace Soulseek
         /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).
         /// </summary>
-        public int ConcurrentDistributedChildrenLimit { get; }
+        public int DistributedChildLimit { get; }
 
         /// <summary>
         ///     Gets the options for distributed message connections.
         /// </summary>
         public ConnectionOptions DistributedConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether to establish distributed network connections. (Default = enabled).
+        /// </summary>
+        public bool EnableDistributedNetwork { get; }
 
         /// <summary>
         ///     Gets the delegate invoked upon an receipt of an incoming <see cref="EnqueueDownloadRequest"/>. (Default = do nothing).

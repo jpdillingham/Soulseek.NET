@@ -72,7 +72,7 @@ namespace Soulseek.Tests.Unit
         public void Throws_If_Distributed_Child_Limit_Is_Less_Than_Zero()
         {
             SoulseekClientOptions x;
-            var ex = Record.Exception(() => x = new SoulseekClientOptions(concurrentDistributedChildrenLimit: -1));
+            var ex = Record.Exception(() => x = new SoulseekClientOptions(distributedChildLimit: -1));
 
             Assert.NotNull(ex);
             Assert.IsType<ArgumentOutOfRangeException>(ex);

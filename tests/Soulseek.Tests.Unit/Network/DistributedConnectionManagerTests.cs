@@ -47,7 +47,7 @@ namespace Soulseek.Tests.Unit.Network
             Assert.Equal(string.Empty, c.BranchRoot);
             Assert.True(c.CanAcceptChildren);
             Assert.Empty(c.Children);
-            Assert.Equal(new SoulseekClientOptions().ConcurrentDistributedChildrenLimit, c.ConcurrentChildLimit);
+            Assert.Equal(new SoulseekClientOptions().DistributedChildLimit, c.ConcurrentChildLimit);
             Assert.False(c.HasParent);
             Assert.Equal((string.Empty, default(IPEndPoint)), c.Parent);
             Assert.Empty(c.PendingSolicitations);
@@ -188,7 +188,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync CTPR rejects if over child limit"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Rejects_If_Over_Child_Limit(ConnectToPeerResponse ctpr)
         {
-            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(distributedChildLimit: 0));
 
             using (manager)
             {
@@ -202,7 +202,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync CTPR updates status on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Updates_Status_On_Rejection(ConnectToPeerResponse ctpr)
         {
-            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(distributedChildLimit: 0));
 
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -472,7 +472,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync rejects if over child limit"), AutoData]
         internal async Task AddChildConnectionAsync_Rejects_If_Over_Child_Limit(string username, IPEndPoint endpoint)
         {
-            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(distributedChildLimit: 0));
 
             using (manager)
             {
@@ -486,7 +486,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync disposes TcpClient on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Disposes_TcpClient_On_Rejection(string username, IPEndPoint endpoint)
         {
-            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(distributedChildLimit: 0));
             var conn = GetMessageConnectionMock(username, endpoint);
 
             using (manager)
@@ -552,7 +552,7 @@ namespace Soulseek.Tests.Unit.Network
         [Theory(DisplayName = "AddChildConnectionAsync updates status on rejection"), AutoData]
         internal async Task AddChildConnectionAsync_Updates_Status_On_Rejection(string username, IPEndPoint endpoint)
         {
-            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(concurrentDistributedChildrenLimit: 0));
+            var (manager, mocks) = GetFixture(options: new SoulseekClientOptions(distributedChildLimit: 0));
 
             mocks.Client.Setup(m => m.State)
                 .Returns(SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);

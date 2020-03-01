@@ -302,10 +302,24 @@ namespace Soulseek.Tests.Unit.Messaging
 
             var expectedBytes = new List<byte>();
             expectedBytes.AddRange(BitConverter.GetBytes(data.Length));
-            expectedBytes.AddRange(Encoding.ASCII.GetBytes(data));
+            expectedBytes.AddRange(Encoding.UTF8.GetBytes(data));
 
             Assert.Equal(expectedBytes.Count, payload.Count);
             Assert.Equal(expectedBytes, payload);
+        }
+
+        [Trait("Category", "WriteBytes")]
+        [Fact(DisplayName = "WriteString writes correct length for strings containing UTF16")]
+        public void WriteString_Writes_Correct_Length_For_Strings_Containing_UTF16()
+        {
+            var builder = new MessageBuilder();
+            builder.WriteString("ǔ");
+
+            var payload = builder.GetProperty<List<byte>>("PayloadBytes");
+            var expectedBytes = Encoding.UTF8.GetBytes("ǔ");
+
+            Assert.Equal(6, payload.Count);
+            Assert.Equal(expectedBytes, payload.Skip(4).Take(2));
         }
     }
 }
