@@ -48,6 +48,7 @@ namespace Soulseek.Network
         {
             SoulseekClient = soulseekClient;
 
+            AcceptChildren = SoulseekClient?.Options?.AcceptDistributedChildren ?? new SoulseekClientOptions().AcceptDistributedChildren;
             ConcurrentChildLimit = SoulseekClient?.Options?.DistributedChildLimit
                 ?? new SoulseekClientOptions().DistributedChildLimit;
 
@@ -84,7 +85,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => ChildConnectionDictionary.Count < ConcurrentChildLimit;
+        public bool CanAcceptChildren => AcceptChildren && ChildConnectionDictionary.Count < ConcurrentChildLimit;
 
         /// <summary>
         ///     Gets the current list of child connections.
@@ -124,6 +125,7 @@ namespace Soulseek.Network
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
+        private bool AcceptChildren { get; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and

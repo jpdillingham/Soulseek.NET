@@ -43,6 +43,7 @@ namespace Soulseek
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
+        /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
         /// <param name="messageTimeout">The message timeout, in milliseconds, used when waiting for a response from the server.</param>
         /// <param name="autoAcknowledgePrivateMessages">
@@ -77,6 +78,7 @@ namespace Soulseek
         public SoulseekClientOptions(
             int? listenPort = null,
             bool enableDistributedNetwork = true,
+            bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
@@ -97,6 +99,7 @@ namespace Soulseek
             ListenPort = listenPort;
 
             EnableDistributedNetwork = enableDistributedNetwork;
+            AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
 
             if (DistributedChildLimit < 0)
@@ -122,6 +125,11 @@ namespace Soulseek
             EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
             PlaceInQueueResponseResolver = placeInQueueResponseResolver ?? defaultPlaceInQueueResponse;
         }
+
+        /// <summary>
+        ///     Gets a value indicating whether to accept distributed child connections. (Default = accept).
+        /// </summary>
+        public bool AcceptDistributedChildren { get; }
 
         /// <summary>
         ///     Gets a value indicating whether to automatically send a private message acknowledgement upon receipt. (Default = true).
