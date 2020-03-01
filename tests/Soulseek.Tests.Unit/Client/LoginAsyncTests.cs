@@ -136,6 +136,48 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync writes HaveNoParent on success if enabled"), AutoData]
+        public async Task LoginAsync_Writes_HaveNoParent_On_Success_If_Enabled(string user, string password, int port)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                await s.LoginAsync(user, password);
+            }
+
+            var expectedBytes = new HaveNoParentsCommand(true).ToByteArray();
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()));
+        }
+
+        [Trait("Category", "LoginAsync")]
+        [Theory(DisplayName = "LoginAsync does not write HaveNoParent on success if disabled"), AutoData]
+        public async Task LoginAsync_Does_Not_Write_HaveNoParent_On_Success_If_Disabled(string user, string password, int port)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
+
+            var conn = new Mock<IMessageConnection>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(enableDistributedNetwork: false, listenPort: port)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                await s.LoginAsync(user, password);
+            }
+
+            var expectedBytes = new HaveNoParentsCommand(true).ToByteArray();
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expectedBytes)), It.IsAny<CancellationToken?>()), Times.Never);
+        }
+
+        [Trait("Category", "LoginAsync")]
         [Theory(DisplayName = "LoginAsync disconnects and throws LoginRejectedException on failure"), AutoData]
         public async Task LoginAsync_Disconnects_And_Throws_LoginException_On_Failure(string user, string password)
         {
