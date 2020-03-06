@@ -2488,7 +2488,7 @@ namespace Soulseek
 
                 if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
                 {
-                    try
+                    Task.Run(async () =>
                     {
                         // if the upload failed, send a message to the user informing them.
                         var messageConnection = await PeerConnectionManager
@@ -2496,11 +2496,7 @@ namespace Soulseek
                             .ConfigureAwait(false);
 
                         await messageConnection.WriteAsync(new UploadFailed(filename).ToByteArray()).ConfigureAwait(false);
-                    }
-                    catch
-                    {
-                        // swallow any exceptions here
-                    }
+                    }).Forget();
                 }
 
                 if (options.DisposeInputStreamOnCompletion)
