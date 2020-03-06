@@ -92,43 +92,42 @@
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
             var stream = GetLocalFileStream(filename, OutputDirectory);
 
-            using (var cts = new CancellationTokenSource())
+            var cts = new CancellationTokenSource();
+
+            var downloadTask = Client.DownloadAsync(username, filename, stream, 0, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
             {
-                var downloadTask = Client.DownloadAsync(username, filename, stream, 0, token, new TransferOptions(disposeOutputStreamOnCompletion: true, stateChanged: (e) =>
+                Tracker.AddOrUpdate(e, cts);
+
+                if (e.Transfer.State == TransferStates.Queued)
                 {
-                    Tracker.AddOrUpdate(e, cts);
+                    waitUntilEnqueue.SetResult(true);
+                }
+            }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
 
-                    if (e.Transfer.State == TransferStates.Queued)
-                    {
-                        waitUntilEnqueue.SetResult(true);
-                    }
-                }, progressUpdated: (e) => Tracker.AddOrUpdate(e, cts)), cts.Token);
+            try
+            {
+                // wait until either the waitUntilEnqueue task completes because the download was successfully queued, or the
+                // downloadTask throws due to an error prior to successfully queueing.
+                var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
 
-                try
+                if (task == downloadTask)
                 {
-                    // wait until either the waitUntilEnqueue task completes because the download was successfully queued, or the
-                    // downloadTask throws due to an error prior to successfully queueing.
-                    var task = await Task.WhenAny(waitUntilEnqueue.Task, downloadTask);
+                    var rejected = downloadTask.Exception.InnerExceptions.Where(e => e is TransferRejectedException);
 
-                    if (task == downloadTask)
+                    if (rejected.Any())
                     {
-                        var rejected = downloadTask.Exception.InnerExceptions.Where(e => e is TransferRejectedException);
-
-                        if (rejected.Any())
-                        {
-                            return StatusCode(403, rejected.First().Message);
-                        }
-
-                        return StatusCode(500, downloadTask.Exception.Message);
+                        return StatusCode(403, rejected.First().Message);
                     }
 
-                    // if it didn't throw, just return ok. the download will continue waiting in the background.
-                    return StatusCode(201);
+                    return StatusCode(500, downloadTask.Exception.Message);
                 }
-                catch (Exception ex)
-                {
-                    return StatusCode(500, ex);
-                }
+
+                // if it didn't throw, just return ok. the download will continue waiting in the background.
+                return StatusCode(201);
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex);
             }
         }
 

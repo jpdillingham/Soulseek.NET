@@ -169,7 +169,15 @@ namespace Soulseek.Messaging.Handlers
 
                         if (transferRequest.Direction == TransferDirection.Upload)
                         {
-                            SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                            if (!SoulseekClient.Downloads.IsEmpty && SoulseekClient.Downloads.Values.Any(d => d.Username == connection.Username && d.Filename == transferRequest.Filename))
+                            {
+                                SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.TransferRequest, connection.Username, transferRequest.Filename), transferRequest);
+                            }
+                            else
+                            {
+                                // reject the transfer with an empty reason.  it was probably cancelled, but we can't be sure.
+                                await connection.WriteAsync(new TransferResponse(transferRequest.Token, string.Empty).ToByteArray()).ConfigureAwait(false);
+                            }
                         }
                         else
                         {
