@@ -642,8 +642,28 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Completes TransferRequest wait on upload request"), AutoData]
-        public void Completes_TransferRequest_Wait_On_Upload_Request(string username, IPEndPoint endpoint, int token, string filename)
+        [Theory(DisplayName = "Completes TransferRequest wait on upload request if transfer is tracked"), AutoData]
+        public void Completes_TransferRequest_Wait_On_Upload_Request_If_Transfer_Is_Tracked(string username, IPEndPoint endpoint, int token, string filename)
+        {
+            var (handler, mocks) = GetFixture(username, endpoint);
+
+            var downloads = new ConcurrentDictionary<int, TransferInternal>();
+            downloads.TryAdd(1, new TransferInternal(TransferDirection.Download, username, filename, token));
+
+            mocks.Client.Setup(m => m.Downloads)
+                .Returns(downloads);
+
+            var request = new TransferRequest(TransferDirection.Upload, token, filename);
+            var message = request.ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.Is<TransferRequest>(t => t.Direction == request.Direction && t.Token == request.Token && t.Filename == request.Filename)), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not complete TransferRequest wait on upload request if transfer is not tracked"), AutoData]
+        public void Does_Not_Complete_TransferRequest_Wait_On_Upload_Request_If_Transfer_Is_Not_Tracked(string username, IPEndPoint endpoint, int token, string filename)
         {
             var (handler, mocks) = GetFixture(username, endpoint);
 
@@ -652,7 +672,23 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.Is<TransferRequest>(t => t.Direction == request.Direction && t.Token == request.Token && t.Filename == request.Filename)), Times.Once);
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.TransferRequest, username, filename), It.Is<TransferRequest>(t => t.Direction == request.Direction && t.Token == request.Token && t.Filename == request.Filename)), Times.Never);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Rejects TransferRequest upload request if transfer is not tracked"), AutoData]
+        public void Rejects_TransferRequest_Upload_Request_If_Transfer_Is_Not_Tracked(string username, IPEndPoint endpoint, int token, string filename)
+        {
+            var (handler, mocks) = GetFixture(username, endpoint);
+
+            var request = new TransferRequest(TransferDirection.Upload, token, filename);
+            var message = request.ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            var expected = new TransferResponse(token, string.Empty).ToByteArray();
+
+            mocks.PeerConnection.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected)), It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "HandleMessageReceived")]
