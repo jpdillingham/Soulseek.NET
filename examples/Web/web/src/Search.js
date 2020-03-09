@@ -14,7 +14,7 @@ import {
 
 const initialState = { 
     searchPhrase: '', 
-    searchState: 'complete', 
+    searchState: 'idle', 
     searchStatus: { 
         responseCount: 0, 
         fileCount: 0 
@@ -31,20 +31,18 @@ class Search extends Component {
         let searchPhrase = this.inputtext.inputRef.current.value;
 
         this.setState({ searchPhrase: searchPhrase, searchState: 'pending' }, () => {
-            localStorage.setItem('searchPhrase', searchPhrase);
-
             axios.post(BASE_URL + '/searches', JSON.stringify({ searchText: searchPhrase }), { 
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
-            .then(response => this.setState({ results: response.data }, () => localStorage.setItem('results', JSON.stringify(response.data))))
-            .then(() => this.setState({ searchState: 'complete' }))
+            .then(response => this.setState({ results: response.data }))
+            .then(() => this.setState({ searchState: 'complete' }, () => this.saveState()))
         });
     }
 
     clear = () => {
         this.setState(initialState, () => {
-            localStorage.removeItem('results');
-            localStorage.removeItem('searchPhrase');
+            this.saveState();
+            this.setSearchText();
         });
     }
 
@@ -52,16 +50,25 @@ class Search extends Component {
         this.setState({ searchPhrase: data.value });
     }
 
+    saveState = () => {
+        localStorage.setItem('soulseek-example-state', JSON.stringify(this.state));
+    }
+
+    loadState = () => {
+        this.setState(JSON.parse(localStorage.getItem('soulseek-example-state')) || initialState);
+    }
+
     componentDidMount = () => {
         this.fetch();
+        this.loadState();
         this.setState({ 
-            interval: window.setInterval(this.fetch, 500), 
-            results: JSON.parse(localStorage.getItem('results')) || [],
-            searchPhrase: localStorage.getItem('searchPhrase')
-        }, () => {
-            this.inputtext.inputRef.current.value = this.state.searchPhrase;
-            this.inputtext.inputRef.current.disabled = true;
-        });
+            interval: window.setInterval(this.fetch, 500)
+        }, () => this.setSearchText());
+    }
+
+    setSearchText = () => {
+        this.inputtext.inputRef.current.value = this.state.searchPhrase;
+        this.inputtext.inputRef.current.disabled = this.state.searchState !== 'idle';
     }
 
     componentWillUnmount = () => {
@@ -79,7 +86,7 @@ class Search extends Component {
     }
 
     showMore = () => {
-        this.setState({ displayCount: this.state.displayCount + 5 });
+        this.setState({ displayCount: this.state.displayCount + 5 }, () => this.saveState());
     }
     
     render = () => {
@@ -99,7 +106,7 @@ class Search extends Component {
                         disabled={pending}
                         className='search-input'
                         placeholder="Enter search phrase..."
-                        action={!pending && { content: 'Search', onClick: this.search}}
+                        action={!pending && (searchState === 'idle' ? { content: 'Search', onClick: this.search } : { content: 'Clear Results', color: 'red', onClick: this.clear })} 
                     />
                 </Segment>
                 {pending ? 
