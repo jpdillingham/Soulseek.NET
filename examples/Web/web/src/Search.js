@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import axios from 'axios';
+import data from './data';
 
 import { BASE_URL } from './constants';
 
@@ -8,7 +9,8 @@ import Response from './Response';
 import { 
     Segment, 
     Input, 
-    Loader
+    Loader,
+    Button
 } from 'semantic-ui-react';
 
 class Search extends Component {
@@ -20,7 +22,8 @@ class Search extends Component {
             fileCount: 0 
         }, 
         results: [], 
-        interval: undefined 
+        interval: undefined,
+        displayCount: 5,
     }
 
     search = () => {
@@ -30,7 +33,7 @@ class Search extends Component {
             axios.post(BASE_URL + '/searches', JSON.stringify({ searchText: searchPhrase }), { 
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
-            .then(response => this.setState({ results: response.data }))
+            .then(response => this.setState({ results: response.data }, () => localStorage.setItem('results', JSON.stringify(response.data))))
             .then(() => this.setState({ searchState: 'complete' }))
         });
     }
@@ -41,7 +44,7 @@ class Search extends Component {
 
     componentDidMount = () => {
         this.fetch();
-        this.setState({ interval: window.setInterval(this.fetch, 500) });
+        this.setState({ interval: window.setInterval(this.fetch, 500), results: JSON.parse(localStorage.getItem('results')) });
     }
 
     componentWillUnmount = () => {
@@ -57,9 +60,14 @@ class Search extends Component {
             }));
         }
     }
+
+    showMore = () => {
+        console.log('showing more', this.state.displayCount);
+        this.setState({ displayCount: this.state.displayCount + 5 });
+    }
     
     render = () => {
-        let { searchState, searchStatus, results } = this.state;
+        let { searchState, searchStatus, results, displayCount } = this.state;
         let pending = searchState === 'pending';
 
         return (
@@ -86,13 +94,14 @@ class Search extends Component {
                     </Loader>
                 : 
                     <div>
-                        {results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map((r, i) =>
+                        {results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).slice(0, displayCount).map((r, i) =>
                             <Response 
                                 key={i} 
                                 response={r} 
                                 onDownload={this.props.onDownload}
                             />
                         )}
+                        <Button className='showmore-button' size='large' fluid primary onClick={() => this.showMore()}>Show 5 More Results</Button>
                     </div>}
                 <div>&nbsp;</div>
             </div>
