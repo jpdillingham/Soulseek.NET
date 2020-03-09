@@ -8,20 +8,24 @@ import Response from './Response';
 import { 
     Segment, 
     Input, 
-    Loader
+    Loader,
+    Button
 } from 'semantic-ui-react';
 
+const initialState = { 
+    searchPhrase: '', 
+    searchState: 'idle', 
+    searchStatus: { 
+        responseCount: 0, 
+        fileCount: 0 
+    }, 
+    results: [], 
+    interval: undefined,
+    displayCount: 5,
+};
+
 class Search extends Component {
-    state = { 
-        searchPhrase: '', 
-        searchState: 'complete', 
-        searchStatus: { 
-            responseCount: 0, 
-            fileCount: 0 
-        }, 
-        results: [], 
-        interval: undefined 
-    }
+    state = initialState;
 
     search = () => {
         let searchPhrase = this.inputtext.inputRef.current.value;
@@ -31,7 +35,14 @@ class Search extends Component {
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
             .then(response => this.setState({ results: response.data }))
-            .then(() => this.setState({ searchState: 'complete' }))
+            .then(() => this.setState({ searchState: 'complete' }, () => this.saveState()))
+        });
+    }
+
+    clear = () => {
+        this.setState(initialState, () => {
+            this.saveState();
+            this.setSearchText();
         });
     }
 
@@ -39,9 +50,25 @@ class Search extends Component {
         this.setState({ searchPhrase: data.value });
     }
 
+    saveState = () => {
+        localStorage.setItem('soulseek-example-state', JSON.stringify(this.state));
+    }
+
+    loadState = () => {
+        this.setState(JSON.parse(localStorage.getItem('soulseek-example-state')) || initialState);
+    }
+
     componentDidMount = () => {
         this.fetch();
-        this.setState({ interval: window.setInterval(this.fetch, 500) });
+        this.loadState();
+        this.setState({ 
+            interval: window.setInterval(this.fetch, 500)
+        }, () => this.setSearchText());
+    }
+
+    setSearchText = () => {
+        this.inputtext.inputRef.current.value = this.state.searchPhrase;
+        this.inputtext.inputRef.current.disabled = this.state.searchState !== 'idle';
     }
 
     componentWillUnmount = () => {
@@ -57,10 +84,17 @@ class Search extends Component {
             }));
         }
     }
+
+    showMore = () => {
+        this.setState({ displayCount: this.state.displayCount + 5 }, () => this.saveState());
+    }
     
     render = () => {
-        let { searchState, searchStatus, results } = this.state;
+        let { searchState, searchStatus, results, displayCount } = this.state;
         let pending = searchState === 'pending';
+
+        const remainingCount = results.length - displayCount;
+        const showMoreCount = remainingCount >= 5 ? 5 : remainingCount;
 
         return (
             <div>
@@ -72,7 +106,7 @@ class Search extends Component {
                         disabled={pending}
                         className='search-input'
                         placeholder="Enter search phrase..."
-                        action={!pending && { content: 'Search', onClick: this.search}}
+                        action={!pending && (searchState === 'idle' ? { content: 'Search', onClick: this.search } : { content: 'Clear Results', color: 'red', onClick: this.clear })} 
                     />
                 </Segment>
                 {pending ? 
@@ -86,13 +120,23 @@ class Search extends Component {
                     </Loader>
                 : 
                     <div>
-                        {results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).map((r, i) =>
+                        {results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).slice(0, displayCount).map((r, i) =>
                             <Response 
                                 key={i} 
                                 response={r} 
                                 onDownload={this.props.onDownload}
                             />
                         )}
+                        {remainingCount > 0 ? 
+                            <Button 
+                                className='showmore-button' 
+                                size='large' 
+                                fluid 
+                                primary 
+                                onClick={() => this.showMore()}>
+                                    Show {showMoreCount} More Results {remainingCount > 5 ? `(${remainingCount} more hidden)` : ''}
+                            </Button> 
+                            : ''}
                     </div>}
                 <div>&nbsp;</div>
             </div>
