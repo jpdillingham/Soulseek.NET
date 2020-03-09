@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import axios from 'axios';
-import data from './data';
 
 import { BASE_URL } from './constants';
 
@@ -13,28 +12,39 @@ import {
     Button
 } from 'semantic-ui-react';
 
+const initialState = { 
+    searchPhrase: '', 
+    searchState: 'complete', 
+    searchStatus: { 
+        responseCount: 0, 
+        fileCount: 0 
+    }, 
+    results: [], 
+    interval: undefined,
+    displayCount: 5,
+};
+
 class Search extends Component {
-    state = { 
-        searchPhrase: '', 
-        searchState: 'complete', 
-        searchStatus: { 
-            responseCount: 0, 
-            fileCount: 0 
-        }, 
-        results: [], 
-        interval: undefined,
-        displayCount: 5,
-    }
+    state = initialState;
 
     search = () => {
         let searchPhrase = this.inputtext.inputRef.current.value;
 
         this.setState({ searchPhrase: searchPhrase, searchState: 'pending' }, () => {
+            localStorage.setItem('searchPhrase', searchPhrase);
+
             axios.post(BASE_URL + '/searches', JSON.stringify({ searchText: searchPhrase }), { 
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
             .then(response => this.setState({ results: response.data }, () => localStorage.setItem('results', JSON.stringify(response.data))))
             .then(() => this.setState({ searchState: 'complete' }))
+        });
+    }
+
+    clear = () => {
+        this.setState(initialState, () => {
+            localStorage.removeItem('results');
+            localStorage.removeItem('searchPhrase');
         });
     }
 
@@ -44,7 +54,14 @@ class Search extends Component {
 
     componentDidMount = () => {
         this.fetch();
-        this.setState({ interval: window.setInterval(this.fetch, 500), results: JSON.parse(localStorage.getItem('results')) });
+        this.setState({ 
+            interval: window.setInterval(this.fetch, 500), 
+            results: JSON.parse(localStorage.getItem('results')) || [],
+            searchPhrase: localStorage.getItem('searchPhrase')
+        }, () => {
+            this.inputtext.inputRef.current.value = this.state.searchPhrase;
+            this.inputtext.inputRef.current.disabled = true;
+        });
     }
 
     componentWillUnmount = () => {
@@ -62,13 +79,15 @@ class Search extends Component {
     }
 
     showMore = () => {
-        console.log('showing more', this.state.displayCount);
         this.setState({ displayCount: this.state.displayCount + 5 });
     }
     
     render = () => {
         let { searchState, searchStatus, results, displayCount } = this.state;
         let pending = searchState === 'pending';
+
+        const remainingCount = results.length - displayCount;
+        const showMoreCount = remainingCount >= 5 ? 5 : remainingCount;
 
         return (
             <div>
@@ -101,7 +120,16 @@ class Search extends Component {
                                 onDownload={this.props.onDownload}
                             />
                         )}
-                        <Button className='showmore-button' size='large' fluid primary onClick={() => this.showMore()}>Show 5 More Results</Button>
+                        {remainingCount > 0 ? 
+                            <Button 
+                                className='showmore-button' 
+                                size='large' 
+                                fluid 
+                                primary 
+                                onClick={() => this.showMore()}>
+                                    Show {showMoreCount} More Results {remainingCount > 5 ? `(${remainingCount} more hidden)` : ''}
+                            </Button> 
+                            : ''}
                     </div>}
                 <div>&nbsp;</div>
             </div>
