@@ -37,6 +37,16 @@ body {
     margin-top: 15px !important;
 }
 
+.search-options {
+    width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.search-options-hide-no-slots {
+    margin-left: 20px;
+}
+
 .search-input {
     width: 100%;
 }
