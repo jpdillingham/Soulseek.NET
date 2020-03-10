@@ -9,7 +9,9 @@ import {
     Segment, 
     Input, 
     Loader,
-    Button
+    Button,
+    Dropdown,
+    Checkbox
 } from 'semantic-ui-react';
 
 const initialState = { 
@@ -22,7 +24,19 @@ const initialState = {
     results: [], 
     interval: undefined,
     displayCount: 5,
+    resultSort: 'uploadSpeed',
+    hideNoFreeSlots: true
 };
+
+const sortOptions = {
+    uploadSpeed: { field: 'uploadSpeed', order: 'desc' },
+    queueLength: { field: 'queueLength', order: 'asc' }
+}
+
+const sortDropdownOptions = [
+    { key: 'uploadSpeed', text: 'Upload Speed (Fastest to Slowest)', value: 'uploadSpeed' },
+    { key: 'queueLength', text: 'Queue Depth (Least to Most)', value: 'queueLength' }
+];
 
 class Search extends Component {
     state = initialState;
@@ -35,7 +49,10 @@ class Search extends Component {
                 headers: {'Content-Type': 'application/json; charset=utf-8'} 
             })
             .then(response => this.setState({ results: response.data }))
-            .then(() => this.setState({ searchState: 'complete' }, () => this.saveState()))
+            .then(() => this.setState({ searchState: 'complete' }, () => {
+                this.saveState();
+                this.setSearchText();
+            }))
         });
     }
 
@@ -88,13 +105,31 @@ class Search extends Component {
     showMore = () => {
         this.setState({ displayCount: this.state.displayCount + 5 }, () => this.saveState());
     }
+
+    sortAndFilterResults = (results) => {
+        const { hideNoFreeSlots, resultSort } = this.state;
+        const { field, order } = sortOptions[resultSort];
+
+        console.log(hideNoFreeSlots)
+
+        return results.filter(r => !(hideNoFreeSlots && r.freeUploadSlots === 0)).sort((a, b) => {
+            if (order === 'asc') {
+                return a[field] - b[field];
+            }
+
+            return b[field] - a[field];
+        });
+    }
     
     render = () => {
-        let { searchState, searchStatus, results, displayCount } = this.state;
+        let { searchState, searchStatus, results, displayCount, resultSort, hideNoFreeSlots } = this.state;
         let pending = searchState === 'pending';
 
-        const remainingCount = results.length - displayCount;
+        const sortedAndFilteredResults = this.sortAndFilterResults(results);
+
+        const remainingCount = sortedAndFilteredResults.length - displayCount;
         const showMoreCount = remainingCount >= 5 ? 5 : remainingCount;
+        const hiddenCount = results.length - sortedAndFilteredResults.length;
 
         return (
             <div>
@@ -120,7 +155,26 @@ class Search extends Component {
                     </Loader>
                 : 
                     <div>
-                        {results.sort((a, b) => b.freeUploadSlots - a.freeUploadSlots).slice(0, displayCount).map((r, i) =>
+                        {sortedAndFilteredResults && sortedAndFilteredResults.length > 0 && <Segment className='search-options' raised>
+                            <Dropdown
+                                button
+                                className='icon'
+                                floating
+                                labeled
+                                icon='sort'
+                                options={sortDropdownOptions}
+                                onChange={(e, { value }) => this.setState({ resultSort: value }, () => this.saveState())}
+                                text={sortDropdownOptions.find(o => o.value === resultSort).text}
+                            />
+                            <Checkbox
+                                className='search-options-hide-no-slots'
+                                toggle
+                                onChange={() => this.setState({ hideNoFreeSlots: !hideNoFreeSlots }, () => this.saveState())}
+                                checked={hideNoFreeSlots}
+                                label='Hide Results with No Free Slots' 
+                            />
+                        </Segment>}
+                        {sortedAndFilteredResults.slice(0, displayCount).map((r, i) =>
                             <Response 
                                 key={i} 
                                 response={r} 
@@ -134,7 +188,7 @@ class Search extends Component {
                                 fluid 
                                 primary 
                                 onClick={() => this.showMore()}>
-                                    Show {showMoreCount} More Results {remainingCount > 5 ? `(${remainingCount} more hidden)` : ''}
+                                    Show {showMoreCount} More Results {remainingCount > 5 ? `(${remainingCount} remaining, ${hiddenCount} hidden by filter(s))` : ''}
                             </Button> 
                             : ''}
                     </div>}
