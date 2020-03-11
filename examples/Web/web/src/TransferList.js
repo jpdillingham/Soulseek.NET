@@ -38,10 +38,6 @@ const isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Ini
 const isStateRemovable = (state) => state.includes('Completed');
 
 class TransferList extends Component {
-    state = {
-        selections: {}
-    }
-    
     downloadOne = (username, file) => {
         return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
     }
@@ -54,17 +50,8 @@ class TransferList extends Component {
         return axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`);
     }
 
-    onSelectionChange = (file, selected) => {
-        const { selections } = this.state;
-        selections[file.filename] = selected;
-        this.setState({ selections });
-    }
-
     render = () => {
-        const { directoryName, direction, username } = this.props;
-        const { selections } = this.state;
-
-        const files = (this.props.files || []).map(f => ({ ...f, selected: selections[f.filename] || false }));
+        const { directoryName, direction, username, onSelectionChange, files } = this.props;
 
         return (
             <div>
@@ -83,7 +70,7 @@ class TransferList extends Component {
                                     <Checkbox 
                                         fitted 
                                         checked={files.filter(f => !f.selected).length === 0}
-                                        onChange={(event, data) => files.map(file => this.onSelectionChange(file, data.checked))}
+                                        onChange={(event, data) => files.map(file => onSelectionChange(directoryName, file, data.checked))}
                                     />
                                 </Table.HeaderCell>
                                 <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
@@ -99,7 +86,7 @@ class TransferList extends Component {
                                         <Checkbox 
                                             fitted 
                                             checked={f.selected}
-                                            onChange={(event, data) => this.onSelectionChange(f, data.checked)}
+                                            onChange={(event, data) => onSelectionChange(directoryName, f, data.checked)}
                                         />
                                     </Table.Cell>
                                     <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>

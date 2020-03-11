@@ -1,12 +1,8 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import {
-    Card
-} from 'semantic-ui-react';
-
 import { BASE_URL } from './constants';
-import TransferList from './TransferList';
+import TransferGroup from './TransferGroup';
 
 class Transfers extends Component {
     state = { fetchState: '', downloads: [], interval: undefined }
@@ -37,21 +33,8 @@ class Transfers extends Component {
         return (
             downloads.length === 0 ? <span>No downloads.</span> :
             <div className='transfer-segment'>
-                {downloads.map((user, index) => 
-                    <Card key={index} className='transfer-card' raised>
-                        <Card.Content>
-                            <Card.Header>{user.username}</Card.Header>
-                            {user.directories && user.directories.map((dir, index) => 
-                                <TransferList 
-                                    key={index} 
-                                    username={user.username} 
-                                    directoryName={dir.directory}
-                                    files={dir.files}
-                                    direction={this.props.direction}
-                                />
-                            )}
-                        </Card.Content>
-                    </Card>
+                {downloads.map((user) => 
+                    <TransferGroup user={user}/>
                 )}
                 <div>&nbsp;</div>
             </div>
