@@ -34,15 +34,16 @@ class TransferGroup extends Component {
     isStateRetryable = (state) => state.includes('Completed') && state !== 'Completed, Succeeded';
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
-
-    anySelectedRetryable = () => this.getSelectedFiles().filter(f => this.isStateRetryable(f.state)).length > 0;
-    anySelectedCancellable = () => this.getSelectedFiles().filter(f => this.isStateCancellable(f.state)).length > 0;
-    anySelectedRemovable = () => this.getSelectedFiles().filter(f => this.isStateRemovable(f.state)).length > 0;
     
     render = () => {
         const { user } = this.props;
 
         const selected = this.getSelectedFiles();
+        const all = selected.length > 1 ? ' All' : '';
+        
+        const anyRetryable = selected.filter(f => this.isStateRetryable(f.state)).length > 0;
+        const anyCancellable = selected.filter(f => this.isStateCancellable(f.state)).length > 0;
+        const anyRemovable = selected.filter(f => this.isStateRemovable(f.state)).length > 0;
 
         return (
             <Card key={user.username} className='transfer-card' raised>
@@ -60,16 +61,33 @@ class TransferGroup extends Component {
                         />
                     )}
                 </Card.Content>
+                {selected && selected.length > 0 && 
                 <Card.Content extra>
-                    {<div>
-                        {this.anySelectedRetryable() && <Button onClick={() => console.log(this.getSelectedFiles())}>Retry
-                        </Button>}
-                        {this.anySelectedCancellable() && <Button onClick={() => console.log(this.getSelectedFiles())}>Cancel
-                        </Button>}
-                        {this.anySelectedRemovable() && <Button onClick={() => console.log(this.getSelectedFiles())}>Remove
-                        </Button>}
-                    </div>}
-                </Card.Content>
+                    {<Button.Group>
+                        {anyRetryable && 
+                        <Button 
+                            icon='redo' 
+                            color='green' 
+                            content={`Retry${all}`} 
+                            onClick={() => console.log(this.groupSelectedByState(selected))}
+                        />}
+                        {anyRetryable && anyCancellable && <Button.Or/>}
+                        {anyCancellable && 
+                        <Button 
+                            icon='x'
+                            color='red'
+                            content={`Cancel${all}`}
+                            onClick={() => console.log(this.getSelectedFiles())}
+                        />}
+                        {(anyRetryable || anyCancellable) && anyRemovable && <Button.Or/>}
+                        {anyRemovable && 
+                        <Button 
+                            icon='delete'
+                            content={`${anyCancellable ? 'Cancel and ' : ''}Remove${all}`}
+                            onClick={() => console.log(this.getSelectedFiles())}
+                        />}
+                    </Button.Group>}
+                </Card.Content>}
             </Card>
         );
     }
