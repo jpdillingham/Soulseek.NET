@@ -20,16 +20,16 @@ import {
 const getColor = (state) => {
     switch(state) {
         case 'InProgress':
-            return 'blue'; 
+            return { color: 'blue' }; 
         case 'Completed, Succeeded':
-            return 'green';
+            return { color: 'green' };
         case 'Requested':
         case 'Queued':
             return '';
         case 'Initializing':
-            return 'teal';
+            return { color: 'teal' };
         default:
-            return 'red';
+            return { color: 'red' };
     }
 }
 
@@ -95,8 +95,8 @@ class TransferList extends Component {
                                         {f.state === 'InProgress' ? <Progress 
                                             style={{ margin: 0 }}
                                             percent={Math.round(f.percentComplete)} 
-                                            progress color={getColor(f.state)}
-                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} color={getColor(f.state)}>{f.state}</Button>}
+                                            progress color={getColor(f.state).color}
+                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} {...getColor(f.state)}>{f.state}</Button>}
                                     </Table.Cell>
                                     {direction === 'download' && isStateRetryable(f.state) && <Table.Cell className='transferlist-retry'><Button size='mini' style={{ padding: 8, width: 60 }} onClick={() => this.downloadOne(username, f)}>Retry</Button></Table.Cell>}
                                     {isStateCancellable(f.state) && <Table.Cell className='transferlist-cancel'><Button size='mini' style={{ padding: 8, width: 60 }} onClick={() => this.cancel(direction, username, f)}>Cancel</Button></Table.Cell>}
