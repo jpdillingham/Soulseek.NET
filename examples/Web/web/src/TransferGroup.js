@@ -34,6 +34,18 @@ class TransferGroup extends Component {
     isStateRetryable = (state) => state.includes('Completed') && state !== 'Completed, Succeeded';
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
+
+    retryAll = (selected) => {
+        console.log(selected);
+    }
+
+    cancelAll = (selected) => {
+        console.log(selected);
+    }
+
+    removeAll = (selected) => {
+        console.log(selected);
+    }
     
     render = () => {
         const { user } = this.props;
@@ -69,7 +81,7 @@ class TransferGroup extends Component {
                             icon='redo' 
                             color='green' 
                             content={`Retry${all}`} 
-                            onClick={() => console.log(this.groupSelectedByState(selected))}
+                            onClick={() => this.retryAll(selected)}
                         />}
                         {anyRetryable && anyCancellable && <Button.Or/>}
                         {anyCancellable && 
@@ -77,14 +89,14 @@ class TransferGroup extends Component {
                             icon='x'
                             color='red'
                             content={`Cancel${all}`}
-                            onClick={() => console.log(this.getSelectedFiles())}
+                            onClick={() => this.cancelAll(selected)}
                         />}
                         {(anyRetryable || anyCancellable) && anyRemovable && <Button.Or/>}
                         {anyRemovable && 
                         <Button 
                             icon='delete'
                             content={`${anyCancellable ? 'Cancel and ' : ''}Remove${all}`}
-                            onClick={() => console.log(this.getSelectedFiles())}
+                            onClick={() => this.removeAll(selected)}
                         />}
                     </Button.Group>}
                 </Card.Content>}
