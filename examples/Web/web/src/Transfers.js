@@ -33,8 +33,8 @@ class Transfers extends Component {
         return (
             downloads.length === 0 ? <span>No downloads.</span> :
             <div className='transfer-segment'>
-                {downloads.map((user) => 
-                    <TransferGroup user={user}/>
+                {downloads.map((user, index) => 
+                    <TransferGroup key={index} user={user}/>
                 )}
                 <div>&nbsp;</div>
             </div>
