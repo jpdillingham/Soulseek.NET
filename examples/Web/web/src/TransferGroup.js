@@ -34,6 +34,19 @@ class TransferGroup extends Component {
             ).filter(s => s !== undefined);
     }
 
+    removeFileSelection = (file) => {
+        const { selections } = this.state;
+
+        const match = Array.from(selections)
+            .map(s => JSON.parse(s))
+            .find(s => s.filename === file.filename);
+
+        if (match) {
+            selections.delete(JSON.stringify(match));
+            this.setState({ selections });
+        }
+    }
+
     isStateRetryable = (state) => state.includes('Completed') && state !== 'Completed, Succeeded';
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
@@ -47,7 +60,9 @@ class TransferGroup extends Component {
     }
 
     removeAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`)));
+        await Promise.all(selected.map(file => 
+                axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`)
+                    .then(() => this.removeFileSelection(file))));
     }
     
     render = () => {
