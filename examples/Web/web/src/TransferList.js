@@ -1,6 +1,4 @@
 import React, { Component } from 'react';
-import axios from 'axios';
-import { BASE_URL } from './constants';
 
 import {
     Checkbox
@@ -34,18 +32,6 @@ const getColor = (state) => {
 }
 
 class TransferList extends Component {
-    downloadOne = (username, file) => {
-        return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
-    }
-    
-    cancel = (direction, username, file) => {
-        return axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`);
-    }
-    
-    remove = (direction, username, file) => {
-        return axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`);
-    }
-
     render = () => {
         const { directoryName, onSelectionChange, files } = this.props;
 
