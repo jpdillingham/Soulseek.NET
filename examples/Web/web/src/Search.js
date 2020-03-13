@@ -110,8 +110,6 @@ class Search extends Component {
         const { hideNoFreeSlots, resultSort } = this.state;
         const { field, order } = sortOptions[resultSort];
 
-        console.log(hideNoFreeSlots)
-
         return results.filter(r => !(hideNoFreeSlots && r.freeUploadSlots === 0)).sort((a, b) => {
             if (order === 'asc') {
                 return a[field] - b[field];

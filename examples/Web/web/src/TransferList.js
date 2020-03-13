@@ -33,10 +33,6 @@ const getColor = (state) => {
     }
 }
 
-const isStateRetryable = (state) => state.includes('Completed') && state !== 'Completed, Succeeded';
-const isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
-const isStateRemovable = (state) => state.includes('Completed');
-
 class TransferList extends Component {
     downloadOne = (username, file) => {
         return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
@@ -51,7 +47,7 @@ class TransferList extends Component {
     }
 
     render = () => {
-        const { directoryName, direction, username, onSelectionChange, files } = this.props;
+        const { directoryName, onSelectionChange, files } = this.props;
 
         return (
             <div>
@@ -76,7 +72,6 @@ class TransferList extends Component {
                                 <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
                                 <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
                                 <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
-                                <Table.HeaderCell className='transferlist-cancel'></Table.HeaderCell>
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
@@ -98,9 +93,6 @@ class TransferList extends Component {
                                             progress color={getColor(f.state).color}
                                         /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} {...getColor(f.state)}>{f.state}</Button>}
                                     </Table.Cell>
-                                    {direction === 'download' && isStateRetryable(f.state) && <Table.Cell className='transferlist-retry'><Button size='mini' style={{ padding: 8, width: 60 }} onClick={() => this.downloadOne(username, f)}>Retry</Button></Table.Cell>}
-                                    {isStateCancellable(f.state) && <Table.Cell className='transferlist-cancel'><Button size='mini' style={{ padding: 8, width: 60 }} onClick={() => this.cancel(direction, username, f)}>Cancel</Button></Table.Cell>}
-                                    {isStateRemovable(f.state) && <Table.Cell><Button size='mini' style={{ padding: 8, width: 60 }} onClick={() => this.remove(direction, username, f)}>Remove</Button></Table.Cell>}
                                 </Table.Row>
                             )}
                         </Table.Body>
