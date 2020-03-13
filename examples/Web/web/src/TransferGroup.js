@@ -30,7 +30,8 @@ class TransferGroup extends Component {
             .map(s => JSON.parse(s))
             .map(s => user.directories
                 .find(d => d.directory === s.directory)
-                .files.find(f => f.filename === s.filename))
+                .files.find(f => f.filename === s.filename)
+            ).filter(s => s !== undefined);
     }
 
     isStateRetryable = (state) => state.includes('Completed') && state !== 'Completed, Succeeded';
