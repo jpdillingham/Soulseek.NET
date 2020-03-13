@@ -37,27 +37,27 @@ class TransferGroup extends Component {
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
 
-    retryAll = (direction, username, selected) => {
-        selected.map(file => axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`));
+    retryAll = async (direction, username, selected) => {
+        await Promise.all(selected.map(file => axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`)));
     }
 
-    cancelAll = (direction, username, selected) => {
-        selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`));
+    cancelAll = async (direction, username, selected) => {
+        await Promise.all(selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`)));
     }
 
-    removeAll = (direction, username, selected) => {
-        selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`));
+    removeAll = async (direction, username, selected) => {
+        await Promise.all(selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`)));
     }
     
     render = () => {
         const { user, direction } = this.props;
 
         const selected = this.getSelectedFiles();
-        const all = selected.length > 1 ? ' All' : '';
+        const all = selected.length > 1 ? ' Selected' : '';
         
-        const anyRetryable = selected.filter(f => this.isStateRetryable(f.state)).length > 0;
+        const allRetryable = selected.filter(f => this.isStateRetryable(f.state)).length === selected.length;
         const anyCancellable = selected.filter(f => this.isStateCancellable(f.state)).length > 0;
-        const anyRemovable = selected.filter(f => this.isStateRemovable(f.state)).length > 0;
+        const allRemovable = selected.filter(f => this.isStateRemovable(f.state)).length === selected.length;
 
         return (
             <Card key={user.username} className='transfer-card' raised>
@@ -78,14 +78,14 @@ class TransferGroup extends Component {
                 {selected && selected.length > 0 && 
                 <Card.Content extra>
                     {<Button.Group>
-                        {anyRetryable && 
+                        {allRetryable && 
                         <Button 
                             icon='redo' 
                             color='green' 
                             content={`Retry${all}`} 
                             onClick={() => this.retryAll(direction, user.username, selected)}
                         />}
-                        {anyRetryable && anyCancellable && <Button.Or/>}
+                        {allRetryable && anyCancellable && <Button.Or/>}
                         {anyCancellable && 
                         <Button 
                             icon='x'
@@ -93,11 +93,11 @@ class TransferGroup extends Component {
                             content={`Cancel${all}`}
                             onClick={() => this.cancelAll(direction, user.username, selected)}
                         />}
-                        {(anyRetryable || anyCancellable) && anyRemovable && <Button.Or/>}
-                        {anyRemovable && 
+                        {(allRetryable || anyCancellable) && allRemovable && <Button.Or/>}
+                        {allRemovable && 
                         <Button 
                             icon='delete'
-                            content={`${anyCancellable ? 'Cancel and ' : ''}Remove${all}`}
+                            content={`Remove${all}`}
                             onClick={() => this.removeAll(direction, user.username, selected)}
                         />}
                     </Button.Group>}
