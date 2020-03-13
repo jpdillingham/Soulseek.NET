@@ -1,4 +1,6 @@
 import React, { Component } from 'react';
+import axios from 'axios';
+import { BASE_URL } from './constants';
 
 import {
     Card,
@@ -35,20 +37,20 @@ class TransferGroup extends Component {
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
 
-    retryAll = (selected) => {
-        console.log(selected);
+    retryAll = (direction, username, selected) => {
+        selected.map(file => axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`));
     }
 
-    cancelAll = (selected) => {
-        console.log(selected);
+    cancelAll = (direction, username, selected) => {
+        selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`));
     }
 
-    removeAll = (selected) => {
-        console.log(selected);
+    removeAll = (direction, username, selected) => {
+        selected.map(file => axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`));
     }
     
     render = () => {
-        const { user } = this.props;
+        const { user, direction } = this.props;
 
         const selected = this.getSelectedFiles();
         const all = selected.length > 1 ? ' All' : '';
@@ -81,7 +83,7 @@ class TransferGroup extends Component {
                             icon='redo' 
                             color='green' 
                             content={`Retry${all}`} 
-                            onClick={() => this.retryAll(selected)}
+                            onClick={() => this.retryAll(direction, user.username, selected)}
                         />}
                         {anyRetryable && anyCancellable && <Button.Or/>}
                         {anyCancellable && 
@@ -89,14 +91,14 @@ class TransferGroup extends Component {
                             icon='x'
                             color='red'
                             content={`Cancel${all}`}
-                            onClick={() => this.cancelAll(selected)}
+                            onClick={() => this.cancelAll(direction, user.username, selected)}
                         />}
                         {(anyRetryable || anyCancellable) && anyRemovable && <Button.Or/>}
                         {anyRemovable && 
                         <Button 
                             icon='delete'
                             content={`${anyCancellable ? 'Cancel and ' : ''}Remove${all}`}
-                            onClick={() => this.removeAll(selected)}
+                            onClick={() => this.removeAll(direction, user.username, selected)}
                         />}
                     </Button.Group>}
                 </Card.Content>}
