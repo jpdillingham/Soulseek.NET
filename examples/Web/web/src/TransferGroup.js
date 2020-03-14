@@ -47,7 +47,7 @@ class TransferGroup extends Component {
         }
     }
 
-    isStateRetryable = (state) => state.includes('Completed') && state !== 'Completed, Succeeded';
+    isStateRetryable = (state) => this.props.direction === 'download' && state.includes('Completed') && state !== 'Completed, Succeeded';
     isStateCancellable = (state) => ['InProgress', 'Requested', 'Queued', 'Initializing'].find(s => s === state);
     isStateRemovable = (state) => state.includes('Completed');
 
