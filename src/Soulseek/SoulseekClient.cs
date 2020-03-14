@@ -2334,13 +2334,15 @@ namespace Soulseek
             var semaphore = UploadSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
 #pragma warning restore IDE0067, CA2000 // Dispose objects before losing scope
 
-            UpdateState(TransferStates.Queued);
-            await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
-
             IPEndPoint endpoint = null;
+            bool semaphoreAcquired = false;
 
             try
             {
+                UpdateState(TransferStates.Queued);
+                await semaphore.WaitAsync(cancellationToken).ConfigureAwait(false);
+                semaphoreAcquired = true;
+
                 // in case the upload record was removed via cleanup while we were waiting, add it back.
                 semaphore = UploadSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
 
@@ -2409,7 +2411,7 @@ namespace Soulseek
                     UpdateState(TransferStates.InProgress);
                     UpdateProgress(startOffset);
 
-                    await upload.Connection.WriteAsync(length, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
+                    await upload.Connection.WriteAsync(length - startOffset, inputStream, (cancelToken) => options.Governor(new Transfer(upload), cancelToken), cancellationToken).ConfigureAwait(false);
 
                     upload.State = TransferStates.Succeeded;
 
@@ -2475,9 +2477,15 @@ namespace Soulseek
                 // clean up the wait in case the code threw before it was awaited.
                 Waiter.Complete(upload.WaitKey);
 
-                // release the semaphore and remove the record to prevent dangling records. the semaphore object is retained if
+                // make sure we successfully obtained the semaphore before releasing it
+                // this will be false if the semaphore wait threw due to cancellation
+                if (semaphoreAcquired)
+                {
+                    semaphore.Release();
+                }
+
+                // remove the semaphore record to prevent dangling records. the semaphore object is retained if
                 // there are other threads waiting on it, and it is added back after it is awaited above.
-                semaphore.Release();
                 UploadSemaphores.TryRemove(username, out var _);
 
                 upload.Connection?.Dispose();
