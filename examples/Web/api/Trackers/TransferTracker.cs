@@ -129,12 +129,17 @@
 
             if (string.IsNullOrEmpty(filename))
             {
-                directionDict.TryRemove(username, out var _);
+                directionDict.TryRemove(username, out _);
             }
             else
             {
                 directionDict.TryGetValue(username, out var userDict);
-                userDict.TryRemove(filename, out var _);
+                userDict.TryRemove(filename, out _);
+
+                if (userDict.IsEmpty)
+                {
+                    directionDict.TryRemove(username, out _);
+                }
             }
         }
 

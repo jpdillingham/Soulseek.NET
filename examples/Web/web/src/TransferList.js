@@ -1,6 +1,4 @@
-import React from 'react';
-import axios from 'axios';
-import { BASE_URL } from './constants';
+import React, { Component } from 'react';
 
 import {
     Checkbox
@@ -20,80 +18,76 @@ import {
 const getColor = (state) => {
     switch(state) {
         case 'InProgress':
-            return 'blue'; 
+            return { color: 'blue' }; 
         case 'Completed, Succeeded':
-            return 'green';
+            return { color: 'green' };
         case 'Requested':
         case 'Queued':
             return '';
         case 'Initializing':
-            return 'teal';
+            return { color: 'teal' };
         default:
-            return 'red';
+            return { color: 'red' };
     }
 }
 
-const downloadOne = (username, file) => {
-    return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
-}
+class TransferList extends Component {
+    render = () => {
+        const { directoryName, onSelectionChange, files } = this.props;
 
-const cancel = (direction, username, file) => {
-    return axios.delete(`${BASE_URL}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`);
-}
-
-const TransferList = ({ username, directoryName, files, direction }) => (
-    <div>
-        <Header 
-            size='small' 
-            className='filelist-header'
-        >
-            <Icon name='folder'/>{directoryName}
-        </Header>
-        <List>
-            <List.Item>
-            <Table>
-                <Table.Header>
-                    <Table.Row>
-                        <Table.HeaderCell className='transferlist-selector'>
-                            <Checkbox 
-                                fitted 
-                                checked={false}
-                            />
-                        </Table.HeaderCell>
-                        <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
-                        <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
-                        <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
-                        {direction === 'download' && <Table.HeaderCell className='transferlist-retry'>Retry</Table.HeaderCell>}
-                        <Table.HeaderCell className='transferlist-cancel'>Cancel</Table.HeaderCell>
-                    </Table.Row>
-                </Table.Header>                                
-                <Table.Body>
-                    {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
-                        <Table.Row key={i}>
-                            <Table.Cell className='transferlist-selector'>
-                                <Checkbox 
-                                    fitted 
-                                    checked={f.selected}
-                                />
-                            </Table.Cell>
-                            <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
-                            <Table.Cell className='transferlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
-                            <Table.Cell className='transferlist-progress'>
-                                {f.state === 'InProgress' ? <Progress 
-                                    style={{ margin: 0 }}
-                                    percent={Math.round(f.percentComplete)} 
-                                    progress color={getColor(f.state)}
-                                /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} color={getColor(f.state)}>{f.state}</Button>}
-                            </Table.Cell>
-                            {direction === 'download' && <Table.Cell className='transferlist-retry'><Button size='mini' style={{ padding: 8 }} onClick={() => downloadOne(username, f)}>Retry</Button></Table.Cell>}
-                            <Table.Cell className='transferlist-cancel'><Button size='mini' style={{ padding: 8 }} onClick={() => cancel(direction, username, f)}>Cancel</Button></Table.Cell>
-                        </Table.Row>
-                    )}
-                </Table.Body>
-            </Table>
-            </List.Item>
-        </List>
-    </div>
-);
+        return (
+            <div>
+                <Header 
+                    size='small' 
+                    className='filelist-header'
+                >
+                    <Icon name='folder'/>{directoryName}
+                </Header>
+                <List>
+                    <List.Item>
+                    <Table>
+                        <Table.Header>
+                            <Table.Row>
+                                <Table.HeaderCell className='transferlist-selector'>
+                                    <Checkbox 
+                                        fitted 
+                                        checked={files.filter(f => !f.selected).length === 0}
+                                        onChange={(event, data) => files.map(file => onSelectionChange(directoryName, file, data.checked))}
+                                    />
+                                </Table.HeaderCell>
+                                <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
+                                <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
+                                <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
+                            </Table.Row>
+                        </Table.Header>
+                        <Table.Body>
+                            {files.sort((a, b) => getFileName(a.filename).localeCompare(getFileName(b.filename))).map((f, i) => 
+                                <Table.Row key={i}>
+                                    <Table.Cell className='transferlist-selector'>
+                                        <Checkbox 
+                                            fitted 
+                                            checked={f.selected}
+                                            onChange={(event, data) => onSelectionChange(directoryName, f, data.checked)}
+                                        />
+                                    </Table.Cell>
+                                    <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
+                                    <Table.Cell className='transferlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
+                                    <Table.Cell className='transferlist-progress'>
+                                        {f.state === 'InProgress' ? <Progress 
+                                            style={{ margin: 0 }}
+                                            percent={Math.round(f.percentComplete)} 
+                                            progress color={getColor(f.state).color}
+                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} {...getColor(f.state)}>{f.state}</Button>}
+                                    </Table.Cell>
+                                </Table.Row>
+                            )}
+                        </Table.Body>
+                    </Table>
+                    </List.Item>
+                </List>
+            </div>
+        )
+    }
+};
 
 export default TransferList;
