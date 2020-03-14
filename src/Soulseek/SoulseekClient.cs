@@ -2491,7 +2491,7 @@ namespace Soulseek
                 upload.Connection?.Dispose();
 
                 upload.State = TransferStates.Completed | upload.State;
-                UpdateProgress(upload.StartOffset + inputStream.Position);
+                UpdateProgress(inputStream.Position);
                 UpdateState(upload.State);
 
                 if (!upload.State.HasFlag(TransferStates.Succeeded) && endpoint != default)
