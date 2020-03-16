@@ -76,10 +76,10 @@ class Search extends Component {
     }
 
     componentDidMount = () => {
-        this.fetch();
+        this.fetchStatus();
         this.loadState();
         this.setState({ 
-            interval: window.setInterval(this.fetch, 500)
+            interval: window.setInterval(this.fetchStatus, 500)
         }, () => this.setSearchText());
     }
 
@@ -93,7 +93,7 @@ class Search extends Component {
         this.setState({ interval: undefined });
     }
 
-    fetch = () => {
+    fetchStatus = () => {
         if (this.state.searchState === 'pending') {
             axios.get(BASE_URL + '/searches/' + encodeURI(this.state.searchPhrase))
             .then(response => this.setState({
