@@ -95,6 +95,15 @@ body {
     margin-top: 16px;
 }
 
+.transfer-placeholder {
+    width: 1200px !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    font-weight: 100;
+    text-align: center;
+    margin-top: 50px !important;
+}
+
 .transferlist-size {
     width: 130px;
     min-width: 130px;

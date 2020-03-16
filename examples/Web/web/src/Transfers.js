@@ -31,7 +31,10 @@ class Transfers extends Component {
         let { downloads } = this.state;
 
         return (
-            downloads.length === 0 ? <span>No downloads.</span> :
+            downloads.length === 0 ? 
+            <h3 className='transfer-placeholder'>
+                No {this.props.direction}s.
+            </h3> :
             <div className='transfer-segment'>
                 {downloads.map((user, index) => 
                     <TransferGroup key={index} direction={this.props.direction} user={user}/>
