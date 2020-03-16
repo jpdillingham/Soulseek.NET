@@ -68,11 +68,11 @@ class Search extends Component {
     }
 
     saveState = () => {
-        localStorage.setItem('soulseek-example-state', JSON.stringify(this.state));
+        localStorage.setItem('soulseek-example-search-state', JSON.stringify(this.state));
     }
 
     loadState = () => {
-        this.setState(JSON.parse(localStorage.getItem('soulseek-example-state')) || initialState);
+        this.setState(JSON.parse(localStorage.getItem('soulseek-example-search-state')) || initialState);
     }
 
     componentDidMount = () => {
