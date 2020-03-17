@@ -1,23 +1,24 @@
 ﻿namespace WebAPI.Trackers
 {
+    using Soulseek;
     using System.Collections.Concurrent;
 
     /// <summary>
     ///     Tracks browse operations.
     /// </summary>
-    interface IBrowseTracker
+    public interface IBrowseTracker
     {
         /// <summary>
         ///     Tracked browse operations.
         /// </summary>
-        ConcurrentDictionary<string, decimal> Browses { get; }
+        ConcurrentDictionary<string, BrowseProgressUpdatedEventArgs> Browses { get; }
 
         /// <summary>
         ///     Adds or updates a tracked browse operation.
         /// </summary>
         /// <param name="username"></param>
         /// <param name="progress"></param>
-        void AddOrUpdate(string username, decimal progress);
+        void AddOrUpdate(string username, BrowseProgressUpdatedEventArgs progress);
 
         /// <summary>
         ///     Removes a tracked browse operation for the specified user.
@@ -31,6 +32,6 @@
         /// <param name="username"></param>
         /// <param name="progress"></param>
         /// <returns></returns>
-        bool TryGet(string username, out decimal progress);
+        bool TryGet(string username, out BrowseProgressUpdatedEventArgs progress);
     }
 }

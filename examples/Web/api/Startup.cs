@@ -85,7 +85,7 @@
             services.AddSingleton<IBrowseTracker, BrowseTracker>();
         }
 
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker, IBrowseTracker browseTracker)
         {
             if (!env.IsDevelopment())
             {
@@ -172,7 +172,11 @@
 
             // bind BrowseProgressUpdated to track progress of browse response payload transfers.  
             // these can take a while depending on number of files shared.
-            Client.BrowseProgressUpdated += (e, args) => Console.WriteLine($"[BROWSE] {args.Username}: {args.BytesTransferred} of {args.Size} ({args.PercentComplete}%)");
+            Client.BrowseProgressUpdated += (e, args) =>
+            {
+                browseTracker.AddOrUpdate(args.Username, args);
+                Console.WriteLine($"[BROWSE] {args.Username}: {args.BytesTransferred} of {args.Size} ({args.PercentComplete}%)");
+            };
 
             // bind UserStatusChanged to monitor the status of users added via AddUserAsync().
             Client.UserStatusChanged += (e, args) => Console.WriteLine($"[USER] {args.Username}: {args.Status}");

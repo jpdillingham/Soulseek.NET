@@ -1,5 +1,6 @@
 ﻿namespace WebAPI.Trackers
 {
+    using Soulseek;
     using System.Collections.Concurrent;
 
     public class BrowseTracker : IBrowseTracker
@@ -7,14 +8,14 @@
         /// <summary>
         ///     Tracked browse operations.
         /// </summary>
-        public ConcurrentDictionary<string, decimal> Browses { get; } = new ConcurrentDictionary<string, decimal>();
+        public ConcurrentDictionary<string, BrowseProgressUpdatedEventArgs> Browses { get; } = new ConcurrentDictionary<string, BrowseProgressUpdatedEventArgs>();
 
         /// <summary>
         ///     Adds or updates a tracked browse operation.
         /// </summary>
         /// <param name="username"></param>
         /// <param name="progress"></param>
-        public void AddOrUpdate(string username, decimal progress)
+        public void AddOrUpdate(string username, BrowseProgressUpdatedEventArgs progress)
             => Browses.AddOrUpdate(username, progress, (user, oldprogress) => progress);
 
         /// <summary>
@@ -30,7 +31,7 @@
         /// <param name="username"></param>
         /// <param name="progress"></param>
         /// <returns></returns>
-        public bool TryGet(string username, out decimal progress)
+        public bool TryGet(string username, out BrowseProgressUpdatedEventArgs progress)
             => Browses.TryGetValue(username, out progress);
     }
 }
