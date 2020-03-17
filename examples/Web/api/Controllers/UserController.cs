@@ -7,6 +7,7 @@
     using Soulseek;
     using Soulseek.Exceptions;
     using WebAPI.DTO;
+    using WebAPI.Trackers;
 
     /// <summary>
     ///     Users
@@ -22,12 +23,14 @@
         ///     Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
         /// <param name="client"></param>
-        public UserController(ISoulseekClient client)
+        public UserController(ISoulseekClient client, IBrowseTracker browseTracker)
         {
             Client = client;
+            BrowseTracker = browseTracker;
         }
 
         private ISoulseekClient Client { get; }
+        private IBrowseTracker BrowseTracker { get; }
 
         /// <summary>
         ///     Retrieves the address of the specified <paramref name="username"/>.
@@ -64,12 +67,32 @@
             try
             {
                 var result = await Client.BrowseAsync(username);
+                BrowseTracker.TryRemove(username);
+
                 return Ok(result);
             }
             catch (UserOfflineException ex)
             {
                 return NotFound(ex.Message);
             }
+        }
+
+        /// <summary>
+        ///     Retrieves the status of the current browse operation for the specified <paramref name="username"/>, if any.
+        /// </summary>
+        /// <param name="username">The username of the user.</param>
+        /// <returns></returns>
+        [HttpGet("{username}/browse/status")]
+        [ProducesResponseType(typeof(decimal), 200)]
+        [ProducesResponseType(404)]
+        public IActionResult BrowseStatus([FromRoute, Required]string username)
+        {
+            if (BrowseTracker.TryGet(username, out var progress))
+            {
+                return Ok(progress);
+            }
+
+            return NotFound();
         }
 
         /// <summary>
