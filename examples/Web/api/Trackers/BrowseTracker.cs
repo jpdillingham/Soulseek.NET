@@ -2,7 +2,7 @@
 {
     using System.Collections.Concurrent;
 
-    public class BrowseTracker
+    public class BrowseTracker : IBrowseTracker
     {
         /// <summary>
         ///     Tracked browse operations.

@@ -82,6 +82,7 @@
             services.AddSingleton<ISoulseekClient, SoulseekClient>(serviceProvider => Client);
             services.AddSingleton<ITransferTracker, TransferTracker>();
             services.AddSingleton<ISearchTracker, SearchTracker>();
+            services.AddSingleton<IBrowseTracker, BrowseTracker>();
         }
 
         public void Configure(IApplicationBuilder app, IHostingEnvironment env, IApiVersionDescriptionProvider provider, ITransferTracker tracker)
