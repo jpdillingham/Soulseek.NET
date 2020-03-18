@@ -25,7 +25,7 @@ namespace Soulseek.Tests.Unit
         {
             var d = new Directory(directoryname, fileCount);
 
-            Assert.Equal(directoryname, d.Directoryname);
+            Assert.Equal(directoryname, d.DirectoryName);
             Assert.Equal(fileCount, d.FileCount);
         }
 
