@@ -67,7 +67,12 @@
             try
             {
                 var result = await Client.BrowseAsync(username);
-                BrowseTracker.TryRemove(username);
+
+                _ = Task.Run(async () =>
+                {
+                    await Task.Delay(5000);
+                    BrowseTracker.TryRemove(username);
+                });
 
                 return Ok(result);
             }
