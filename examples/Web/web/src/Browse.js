@@ -71,7 +71,7 @@ class Browse extends Component {
     }
 
     fetchStatus = () => {
-        if (this.state.searchState === 'pending') {
+        if (this.state.browseState === 'pending') {
             axios.get(BASE_URL + `/user/${this.state.username}/browse/status`)
                 .then(response => this.setState({
                     browseStatus: response.data
@@ -103,7 +103,7 @@ class Browse extends Component {
                         inline='centered' 
                         size='big'
                     >
-                        browse progress here
+                        {JSON.stringify(browseStatus)}
                     </Loader>
                 : 
                     <div>
