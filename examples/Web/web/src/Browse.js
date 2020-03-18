@@ -79,9 +79,43 @@ class Browse extends Component {
         }
     }
 
+    getDirectoryTree = (directories) => {
+        if (directories.length === 0 || directories[0].directoryName === undefined) {
+            return [];
+        }
+
+        // determine separator
+        const sep = directories[0].directoryName.includes('\\') ? '\\' : '/';
+        console.log(`using path separator ${sep}`);
+
+        // find the depth of the topmost result
+        const depth = Math.min.apply(null, directories.map(d => d.directoryName.split(sep).length));
+        console.log(`minimum root depth ${depth}`);
+
+        // find top level directories
+        const topLevelDirs = directories
+            .filter(d => d.directoryName.split(sep).length === depth);
+
+        return topLevelDirs.map(d => this.getChildDirectories(directories, d, depth));
+    }
+
+    getChildDirectories = (directories, root, depth) => {
+        console.log(`fetching children`, directories, root, depth);
+        const sep = directories[0].directoryName.includes('\\') ? '\\' : '/';
+
+        const children = directories
+            .filter(d => d.directoryName !== root.directoryName)
+            .filter(d => d.directoryName.split(sep).length === depth + 1)
+            .filter(d => d.directoryName.startsWith(root.directoryName));
+
+        return { ...root, children: children.map(c => this.getChildDirectories(directories, c, depth + 1)) };
+    }
+
     render = () => {
         let { browseState, browseStatus, response } = this.state;
         let pending = browseState === 'pending';
+
+        let tree = this.getDirectoryTree(response);
 
         return (
             <div>
@@ -107,7 +141,7 @@ class Browse extends Component {
                     </Loader>
                 : 
                     <div>
-                        <pre>{JSON.stringify(response, null, 2)}</pre>
+                        <pre>{JSON.stringify(tree, null, 2)}</pre>
                     </div>}
                 <div>&nbsp;</div>
             </div>
