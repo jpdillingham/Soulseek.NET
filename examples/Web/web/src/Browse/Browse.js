@@ -145,12 +145,12 @@ class Browse extends Component {
                         </Grid.Row>
                         <Grid.Row className='browse-results-row'>
                             {selectedEmptyDirectory ? <span>Empty Directory.</span> : <Card className='browse-filelist' raised>
-                                    <FileList                             
+                                    <div style={{marginTop: -20}}><FileList
                                         directoryName={selected.directoryName} 
                                         files={selected.files}
                                         disabled={false}
                                         onSelectionChange={this.onFileSelectionChange}
-                                    />
+                                    /></div>
                             </Card>}
                         </Grid.Row>
                     </Grid>}
