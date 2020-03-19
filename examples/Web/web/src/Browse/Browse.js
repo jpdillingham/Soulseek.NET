@@ -66,11 +66,6 @@ class Browse extends Component {
         }, () => this.saveState());
     }
 
-    // setUsername = () => {
-    //     this.inputtext.inputRef.current.value = this.state.username;
-    //     this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
-    // }
-
     componentWillUnmount = () => {
         clearInterval(this.state.interval);
         this.setState({ interval: undefined });
