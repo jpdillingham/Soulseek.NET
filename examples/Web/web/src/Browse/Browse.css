@@ -1,0 +1,33 @@
+.browse-results {
+  width: 1200px !important;
+  margin: auto !important;
+}
+
+.browse-results-row {
+  padding-top: 0px !important;
+}
+
+.browse-folderlist {
+  width: 100% !important;
+  white-space: pre;
+  overflow: auto !important;
+  max-height: calc(50vh - 100px);
+}
+
+.browse-folderlist-list {
+  padding: 1em !important;
+}
+
+.browse-filelist {
+  width: 100% !important;
+}
+
+.ui.list .list, ol.ui.list ol, ul.ui.list ul {
+  padding-left: 0px !important;
+  padding-top: 3px !important;
+  padding-bottom: 0px !important;
+}
+
+.ui.list .list>.item>.icon+.content, .ui.list .list>.item>.image+.content, .ui.list>.item>.icon+.content, .ui.list>.item>.image+.content {
+  padding-left: 0px !important;
+}

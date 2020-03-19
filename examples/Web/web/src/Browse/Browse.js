@@ -1,7 +1,10 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import { BASE_URL } from './constants';
+import './Browse.css';
+import { BASE_URL } from '../constants';
+
+import DirectoryTree from './DirectoryTree';
 
 import { 
     Segment, 
@@ -17,7 +20,6 @@ const initialState = {
     username: '', 
     browseState: 'idle', 
     browseStatus: 0, 
-    response: [], 
     interval: undefined,
     selected: {},
     tree: []
@@ -31,10 +33,9 @@ class Browse extends Component {
 
         this.setState({ username , browseState: 'pending' }, () => {
             axios.get(BASE_URL + `/user/${this.state.username}/browse`)
-                .then(response => this.setState({ response: response.data, tree: this.getDirectoryTree(response.data) }))
+                .then(response => this.setState({ tree: this.getDirectoryTree(response.data) }))
                 .then(() => this.setState({ browseState: 'complete' }, () => {
                     this.saveState();
-                    this.setUsername();
                 }))
         });
     }
@@ -42,7 +43,6 @@ class Browse extends Component {
     clear = () => {
         this.setState(initialState, () => {
             this.saveState();
-            this.setUsername();
         });
     }
 
@@ -51,6 +51,8 @@ class Browse extends Component {
     }
 
     saveState = () => {
+        this.inputtext.inputRef.current.value = this.state.username;
+        this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
         localStorage.setItem('soulseek-example-browse-state', JSON.stringify(this.state));
     }
 
@@ -63,13 +65,13 @@ class Browse extends Component {
         this.loadState();
         this.setState({ 
             interval: window.setInterval(this.fetchStatus, 500)
-        }, () => this.setUsername());
+        }, () => this.saveState());
     }
 
-    setUsername = () => {
-        this.inputtext.inputRef.current.value = this.state.username;
-        this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
-    }
+    // setUsername = () => {
+    //     this.inputtext.inputRef.current.value = this.state.username;
+    //     this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
+    // }
 
     componentWillUnmount = () => {
         clearInterval(this.state.interval);
@@ -90,58 +92,33 @@ class Browse extends Component {
             return [];
         }
 
-        // determine separator
-        const sep = directories[0].directoryName.includes('\\') ? '\\' : '/';
-        console.log(`using path separator ${sep}`);
+        const separator = directories[0].directoryName.includes('\\') ? '\\' : '/';
+        const depth = Math.min.apply(null, directories.map(d => d.directoryName.split(separator).length));
 
-        // find the depth of the topmost result
-        const depth = Math.min.apply(null, directories.map(d => d.directoryName.split(sep).length));
-        console.log(`minimum root depth ${depth}`);
-
-        // find top level directories
         const topLevelDirs = directories
-            .filter(d => d.directoryName.split(sep).length === depth);
+            .filter(d => d.directoryName.split(separator).length === depth);
 
-        return topLevelDirs.map(d => this.getChildDirectories(directories, d, depth));
+        return topLevelDirs.map(directory => this.getChildDirectories(directories, directory, separator, depth));
     }
 
-    getChildDirectories = (directories, root, depth) => {
-        console.log(`fetching children`, directories, root, depth);
-        const sep = directories[0].directoryName.includes('\\') ? '\\' : '/';
-
+    getChildDirectories = (directories, root, separator, depth) => {
         const children = directories
             .filter(d => d.directoryName !== root.directoryName)
-            .filter(d => d.directoryName.split(sep).length === depth + 1)
+            .filter(d => d.directoryName.split(separator).length === depth + 1)
             .filter(d => d.directoryName.startsWith(root.directoryName));
 
-        return { ...root, children: children.map(c => this.getChildDirectories(directories, c, depth + 1)) };
+        return { ...root, children: children.map(c => this.getChildDirectories(directories, c, separator, depth + 1)) };
     }
 
-    selectDirectory = (event, value) => {
-        this.setState({ selected: value }, () => this.saveState())
-    }
-
-    renderDirectoryTree = (directoryTree) => {
-        return (directoryTree || []).map(d => (
-            <List className='browse-folderlist-list'>
-                <List.Item>
-                    <List.Icon name='folder'/>
-                    <List.Content>
-                        <List.Header onClick={(event) => this.selectDirectory(event, d)}>{d.directoryName.split('\\').pop().split('/').pop()}</List.Header>
-                        <List.List>
-                            {this.renderDirectoryTree(d.children)}
-                        </List.List>
-                    </List.Content>
-                </List.Item>
-            </List>
-        ))
+    onDirectorySelectionChange = (event, value) => {
+        this.setState({ selected: { ...value, children: [] }}, () => this.saveState())
     }
 
     render = () => {
-        let { browseState, browseStatus, response, tree } = this.state;
-        let pending = browseState === 'pending';
+        const { browseState, browseStatus, tree, selected } = this.state;
+        const pending = browseState === 'pending';
 
-        //let tree = this.getDirectoryTree(response);
+        const selectedEmptyDirectory = !(selected && selected.files && selected.files.length > 0);
 
         return (
             <div>
@@ -167,19 +144,15 @@ class Browse extends Component {
                     </Loader>
                 : 
                     <Grid className='browse-results'>
-                        <Grid.Row>
-                            <Grid.Column width={16} style={{paddingLeft: 0}}>
-                                <Card className='browse-folderlist' raised>
-                                    {this.renderDirectoryTree(tree)}
-                                </Card>
-                            </Grid.Column>
+                        <Grid.Row className='browse-results-row'>
+                            <Card className='browse-folderlist' raised>
+                                <DirectoryTree tree={tree} onSelect={this.onDirectorySelectionChange}/>
+                            </Card>
                         </Grid.Row>
-                        <Grid.Row>
-                            <Grid.Column width={16} style={{paddingRight: 0}}>
-                                <Card className='browse-filelist' raised>
-                                    {(this.state.selected.files|| []).map(f => (<li>{f.filename}</li>))}
-                                </Card>
-                            </Grid.Column>
+                        <Grid.Row className='browse-results-row'>
+                            {selectedEmptyDirectory ? <span>Empty Directory.</span> : <Card className='browse-filelist' raised>
+                                    {(selected.files || []).map(f => (<li>{f.filename}</li>))}
+                            </Card>}
                         </Grid.Row>
                     </Grid>}
             </div>

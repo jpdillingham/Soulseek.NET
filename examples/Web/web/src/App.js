@@ -3,7 +3,7 @@ import { Route, Link, Switch } from "react-router-dom";
 
 import './App.css';
 import Search from './Search';
-import Browse from './Browse';
+import Browse from './Browse/Browse';
 import Transfers from './Transfers';
 
 import { 
