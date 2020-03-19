@@ -5,8 +5,8 @@ import {
 } from 'semantic-ui-react';
 
 const subtree = (root, onSelect) => {
-  return (root || []).map(d => (
-      <List className='browse-folderlist-list'>
+  return (root || []).map((d, index) => (
+      <List key={index} className='browse-folderlist-list'>
           <List.Item>
               <List.Icon name='folder'/>
               <List.Content>

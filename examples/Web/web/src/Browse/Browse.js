@@ -151,7 +151,7 @@ class Browse extends Component {
                         </Grid.Row>
                         <Grid.Row className='browse-results-row'>
                             {selectedEmptyDirectory ? <span>Empty Directory.</span> : <Card className='browse-filelist' raised>
-                                    {(selected.files || []).map(f => (<li>{f.filename}</li>))}
+                                    {(selected.files || []).map((f, index) => (<li key={index}>{f.filename}</li>))}
                             </Card>}
                         </Grid.Row>
                     </Grid>}
