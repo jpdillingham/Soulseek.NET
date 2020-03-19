@@ -28,6 +28,7 @@ body {
 
 .result-meta {
     margin-top: 5px;
+    padding-bottom: 20px;
 }
 
 .search-segment {
@@ -56,7 +57,7 @@ body {
 }
 
 .filelist-header {
-    margin-top: 20px !important;
+    margin-top: 0px !important;
 }
 
 .filelist-selector, .transferlist-selector {

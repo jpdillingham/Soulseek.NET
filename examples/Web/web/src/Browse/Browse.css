@@ -11,7 +11,7 @@
   width: 100% !important;
   white-space: pre;
   overflow: auto !important;
-  max-height: calc(50vh - 100px);
+  max-height: 400px;
 }
 
 .browse-folderlist-list {
@@ -20,6 +20,7 @@
 
 .browse-filelist {
   width: 100% !important;
+  padding: 1em !important;
 }
 
 .ui.list .list, ol.ui.list ol, ul.ui.list ul {
