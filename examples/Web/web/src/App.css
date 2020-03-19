@@ -136,7 +136,7 @@ body {
     padding-left: 0px !important;
     white-space: pre;
     overflow: auto !important;
-    max-height: calc(100vh - 225px);
+    max-height: calc(50vh - 100px);
 }
 
 .browse-folderlist-list {

@@ -168,12 +168,14 @@ class Browse extends Component {
                 : 
                     <Grid className='browse-results'>
                         <Grid.Row>
-                            <Grid.Column width={6} style={{paddingLeft: 0}}>
+                            <Grid.Column width={16} style={{paddingLeft: 0}}>
                                 <Card className='browse-folderlist' raised>
                                     {this.renderDirectoryTree(tree)}
                                 </Card>
                             </Grid.Column>
-                            <Grid.Column width={10} style={{paddingRight: 0}}>
+                        </Grid.Row>
+                        <Grid.Row>
+                            <Grid.Column width={16} style={{paddingRight: 0}}>
                                 <Card className='browse-filelist' raised>
                                     {(this.state.selected.files|| []).map(f => (<li>{f.filename}</li>))}
                                 </Card>
