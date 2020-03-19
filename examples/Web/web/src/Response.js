@@ -89,8 +89,7 @@ class Response extends Component {
                         />
                     )}
                 </Card.Content>
-                <Card.Content extra>
-                    {selectedFiles.length > 0 && 
+                {selectedFiles.length > 0 && <Card.Content extra>
                         <span>
                             <Button 
                                 color='green' 
@@ -111,8 +110,8 @@ class Response extends Component {
                                 <Icon name='x' color='red' size='large'/>
                                 <Label>{downloadError.data + ` (HTTP ${downloadError.status} ${downloadError.statusText})`}</Label>
                             </span>}
-                        </span>}
-                </Card.Content>
+                        </span>
+                </Card.Content>}
             </Card>
         )
     }
