@@ -11,9 +11,7 @@ import {
     Input, 
     Loader,
     Card,
-    Container,
     Grid,
-    List
 } from 'semantic-ui-react';
 
 const initialState = { 
