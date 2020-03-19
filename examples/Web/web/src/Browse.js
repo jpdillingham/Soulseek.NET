@@ -7,6 +7,10 @@ import {
     Segment, 
     Input, 
     Loader,
+    Card,
+    Container,
+    Grid,
+    List
 } from 'semantic-ui-react';
 
 const initialState = { 
@@ -15,6 +19,8 @@ const initialState = {
     browseStatus: 0, 
     response: [], 
     interval: undefined,
+    selected: {},
+    tree: []
 };
 
 class Browse extends Component {
@@ -25,7 +31,7 @@ class Browse extends Component {
 
         this.setState({ username , browseState: 'pending' }, () => {
             axios.get(BASE_URL + `/user/${this.state.username}/browse`)
-                .then(response => this.setState({ response: response.data }))
+                .then(response => this.setState({ response: response.data, tree: this.getDirectoryTree(response.data) }))
                 .then(() => this.setState({ browseState: 'complete' }, () => {
                     this.saveState();
                     this.setUsername();
@@ -111,11 +117,31 @@ class Browse extends Component {
         return { ...root, children: children.map(c => this.getChildDirectories(directories, c, depth + 1)) };
     }
 
+    selectDirectory = (event, value) => {
+        this.setState({ selected: value }, () => this.saveState())
+    }
+
+    renderDirectoryTree = (directoryTree) => {
+        return (directoryTree || []).map(d => (
+            <List className='browse-folderlist-list'>
+                <List.Item>
+                    <List.Icon name='folder'/>
+                    <List.Content>
+                        <List.Header onClick={(event) => this.selectDirectory(event, d)}>{d.directoryName.split('\\').pop().split('/').pop()}</List.Header>
+                        <List.List>
+                            {this.renderDirectoryTree(d.children)}
+                        </List.List>
+                    </List.Content>
+                </List.Item>
+            </List>
+        ))
+    }
+
     render = () => {
-        let { browseState, browseStatus, response } = this.state;
+        let { browseState, browseStatus, response, tree } = this.state;
         let pending = browseState === 'pending';
 
-        let tree = this.getDirectoryTree(response);
+        //let tree = this.getDirectoryTree(response);
 
         return (
             <div>
@@ -140,10 +166,20 @@ class Browse extends Component {
                         {JSON.stringify(browseStatus)}
                     </Loader>
                 : 
-                    <div>
-                        <pre>{JSON.stringify(tree, null, 2)}</pre>
-                    </div>}
-                <div>&nbsp;</div>
+                    <Grid className='browse-results'>
+                        <Grid.Row>
+                            <Grid.Column width={6} style={{paddingLeft: 0}}>
+                                <Card className='browse-folderlist' raised>
+                                    {this.renderDirectoryTree(tree)}
+                                </Card>
+                            </Grid.Column>
+                            <Grid.Column width={10} style={{paddingRight: 0}}>
+                                <Card className='browse-filelist' raised>
+                                    {(this.state.selected.files|| []).map(f => (<li>{f.filename}</li>))}
+                                </Card>
+                            </Grid.Column>
+                        </Grid.Row>
+                    </Grid>}
             </div>
         )
     }
