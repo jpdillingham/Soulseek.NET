@@ -56,8 +56,8 @@ class TransferList extends Component {
                                     />
                                 </Table.HeaderCell>
                                 <Table.HeaderCell className='transferlist-filename'>File</Table.HeaderCell>
-                                <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
                                 <Table.HeaderCell className='transferlist-progress'>Progress</Table.HeaderCell>
+                                <Table.HeaderCell className='transferlist-size'>Size</Table.HeaderCell>
                             </Table.Row>
                         </Table.Header>
                         <Table.Body>
@@ -71,13 +71,15 @@ class TransferList extends Component {
                                         />
                                     </Table.Cell>
                                     <Table.Cell className='transferlist-filename'>{getFileName(f.filename)}</Table.Cell>
-                                    <Table.Cell className='transferlist-size'>{formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size)}</Table.Cell>
                                     <Table.Cell className='transferlist-progress'>
                                         {f.state === 'InProgress' ? <Progress 
                                             style={{ margin: 0 }}
                                             percent={Math.round(f.percentComplete)} 
                                             progress color={getColor(f.state).color}
                                         /> : <Button fluid size='mini' style={{ margin: 0, padding: 7 }} {...getColor(f.state)}>{f.state}</Button>}
+                                    </Table.Cell>
+                                    <Table.Cell className='transferlist-size'>
+                                        {f.bytesTransferred > 0 ? formatBytes(f.bytesTransferred).split(' ', 1) + '/' + formatBytes(f.size) : ''}
                                     </Table.Cell>
                                 </Table.Row>
                             )}
