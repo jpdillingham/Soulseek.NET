@@ -13,6 +13,7 @@ import {
   Card,
   Grid,
 } from 'semantic-ui-react';
+
 import Directory from './Directory';
 
 const initialState = { 
@@ -138,7 +139,7 @@ class Browse extends Component {
             inline='centered' 
             size='big'
           >
-            {JSON.stringify(browseStatus)}
+            Downloaded {Math.round(browseStatus.percentComplete || 0)}% of Response
           </Loader>
         : 
           <div>
