@@ -112,7 +112,7 @@ class Browse extends Component {
         const { browseState, browseStatus, tree, selected } = this.state;
         const pending = browseState === 'pending';
 
-        const selectedEmptyDirectory = !(selected && selected.files && selected.files.length > 0);
+        const emptyTree = !(tree && tree.length > 0);
 
         return (
             <div>
@@ -137,23 +137,29 @@ class Browse extends Component {
                         {JSON.stringify(browseStatus)}
                     </Loader>
                 : 
-                    <Grid className='browse-results'>
-                        <Grid.Row className='browse-results-row'>
-                            <Card className='browse-folderlist' raised>
-                                <DirectoryTree tree={tree} onSelect={this.onDirectorySelectionChange}/>
-                            </Card>
-                        </Grid.Row>
-                        <Grid.Row className='browse-results-row'>
-                            {selectedEmptyDirectory ? <span>Empty Directory.</span> : <Card className='browse-filelist' raised>
+                    <div>
+                        {!emptyTree && <Grid className='browse-results'>
+                            <Grid.Row className='browse-results-row'>
+                                <Card className='browse-folderlist' raised>
+                                    <DirectoryTree 
+                                        tree={tree} 
+                                        selectedDirectoryName={selected.directoryName}
+                                        onSelect={this.onDirectorySelectionChange}
+                                    />
+                                </Card>
+                            </Grid.Row>
+                            {selected.directoryName && <Grid.Row className='browse-results-row'>
+                                <Card className='browse-filelist' raised>
                                     <div style={{marginTop: -20}}><FileList
                                         directoryName={selected.directoryName} 
                                         files={selected.files}
                                         disabled={false}
                                         onSelectionChange={this.onFileSelectionChange}
                                     /></div>
-                            </Card>}
-                        </Grid.Row>
-                    </Grid>}
+                                </Card>
+                            </Grid.Row>}
+                        </Grid>}
+                    </div>}
             </div>
         )
     }

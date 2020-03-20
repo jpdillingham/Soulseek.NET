@@ -22,7 +22,7 @@ class FileList extends Component {
                 >
                     <Icon name='folder'/>{directoryName}
                 </Header>
-                <List>
+                {files && files.length > 0 && <List>
                     <List.Item>
                         <Table>
                             <Table.Header>
@@ -61,7 +61,7 @@ class FileList extends Component {
                             </Table.Body>
                         </Table>
                     </List.Item>
-                </List>
+                </List>}
             </div>
         );
     }

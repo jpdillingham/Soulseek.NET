@@ -18,6 +18,10 @@
   padding: 1em !important;
 }
 
+.browse-folderlist-header {
+  cursor: pointer;
+}
+
 .browse-filelist {
   width: 100% !important;
   padding: 1em !important;

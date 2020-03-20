@@ -4,22 +4,26 @@ import {
   List
 } from 'semantic-ui-react';
 
-const subtree = (root, onSelect) => {
-  return (root || []).map((d, index) => (
-      <List key={index} className='browse-folderlist-list'>
+const subtree = (root, selectedDirectoryName, onSelect) => {
+  return (root || []).map((d, index) => {
+      const selected = d.directoryName === selectedDirectoryName;
+      return (
+        <List key={index} className='browse-folderlist-list'>
           <List.Item>
-              <List.Icon name='folder'/>
+              <List.Icon 
+                name={selected ? 'folder open' : 'folder'} 
+              />
               <List.Content>
-                  <List.Header onClick={(event) => onSelect(event, d)}>{d.directoryName.split('\\').pop().split('/').pop()}</List.Header>
+                  <List.Header className='browse-folderlist-header' onClick={(event) => onSelect(event, d)}>{d.directoryName.split('\\').pop().split('/').pop()}</List.Header>
                   <List.List>
-                      {subtree(d.children, onSelect)}
+                      {subtree(d.children, selectedDirectoryName, onSelect)}
                   </List.List>
               </List.Content>
           </List.Item>
-      </List>
-  ))
+      </List>)
+    })
 }
 
-const DirectoryTree = ({ tree, onSelect }) => subtree(tree, onSelect);
+const DirectoryTree = ({ tree, selectedDirectoryName, onSelect }) => subtree(tree, selectedDirectoryName, onSelect);
 
 export default DirectoryTree;
