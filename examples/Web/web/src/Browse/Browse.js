@@ -20,7 +20,8 @@ const initialState = {
     browseState: 'idle', 
     browseStatus: 0, 
     interval: undefined,
-    selected: {},
+    selectedDirectory: {},
+    selectedFiles: [],
     tree: []
 };
 
@@ -105,11 +106,22 @@ class Browse extends Component {
     }
 
     onDirectorySelectionChange = (event, value) => {
-        this.setState({ selected: { ...value, children: [] }}, () => this.saveState())
+        this.setState({ selectedDirectory: { ...value, children: [] }}, () => this.saveState())
+    }
+
+    onFileSelectionChange = (file, state) => {
+        console.log(file, state);
+        if (state) {
+            console.log(this.state.selectedFiles.concat(file));
+            const f = { ...file, selected: true }
+            this.setState({ selectedFiles: this.state.selectedFiles.concat(f)}, () => this.saveState());
+        }
+
+        this.setState({ selectedFiles: this.state.selectedFiles.filter(f => f.filename !== file.filename)}, () => this.saveState());
     }
 
     render = () => {
-        const { browseState, browseStatus, tree, selected } = this.state;
+        const { browseState, browseStatus, tree, selectedDirectory } = this.state;
         const pending = browseState === 'pending';
 
         const emptyTree = !(tree && tree.length > 0);
@@ -143,16 +155,16 @@ class Browse extends Component {
                                 <Card className='browse-folderlist' raised>
                                     <DirectoryTree 
                                         tree={tree} 
-                                        selectedDirectoryName={selected.directoryName}
+                                        selectedDirectoryName={selectedDirectory.directoryName}
                                         onSelect={this.onDirectorySelectionChange}
                                     />
                                 </Card>
                             </Grid.Row>
-                            {selected.directoryName && <Grid.Row className='browse-results-row'>
+                            {selectedDirectory.directoryName && <Grid.Row className='browse-results-row'>
                                 <Card className='browse-filelist' raised>
                                     <div style={{marginTop: -20}}><FileList
-                                        directoryName={selected.directoryName} 
-                                        files={selected.files}
+                                        directoryName={selectedDirectory.directoryName} 
+                                        files={selectedDirectory.files}
                                         disabled={false}
                                         onSelectionChange={this.onFileSelectionChange}
                                     /></div>
