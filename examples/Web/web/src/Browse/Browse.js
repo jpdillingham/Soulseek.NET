@@ -5,176 +5,166 @@ import './Browse.css';
 import { BASE_URL } from '../constants';
 
 import DirectoryTree from './DirectoryTree';
-import FileList from '../FileList';
 
 import { 
-    Segment, 
-    Input, 
-    Loader,
-    Card,
-    Grid,
+  Segment, 
+  Input, 
+  Loader,
+  Card,
+  Grid,
 } from 'semantic-ui-react';
+import Directory from './Directory';
 
 const initialState = { 
-    username: '', 
-    browseState: 'idle', 
-    browseStatus: 0, 
-    interval: undefined,
-    selectedDirectory: {},
-    selectedFiles: [],
-    tree: []
+  username: '', 
+  browseState: 'idle', 
+  browseStatus: 0, 
+  interval: undefined,
+  selectedDirectory: {},
+  selectedFiles: [],
+  tree: []
 };
 
 class Browse extends Component {
-    state = initialState;
+  state = initialState;
 
-    browse = () => {
-        let username = this.inputtext.inputRef.current.value;
+  browse = () => {
+    let username = this.inputtext.inputRef.current.value;
 
-        this.setState({ username , browseState: 'pending' }, () => {
-            axios.get(BASE_URL + `/user/${this.state.username}/browse`)
-                .then(response => this.setState({ tree: this.getDirectoryTree(response.data) }))
-                .then(() => this.setState({ browseState: 'complete' }, () => {
-                    this.saveState();
-                }))
-        });
+    this.setState({ username , browseState: 'pending' }, () => {
+      axios.get(BASE_URL + `/user/${this.state.username}/browse`)
+        .then(response => this.setState({ tree: this.getDirectoryTree(response.data) }))
+        .then(() => this.setState({ browseState: 'complete' }, () => {
+          this.saveState();
+        }))
+    });
+  }
+
+  clear = () => {
+    this.setState(initialState, () => {
+      this.saveState();
+    });
+  }
+
+  onUsernameChange = (event, data) => {
+    this.setState({ username: data.value });
+  }
+
+  saveState = () => {
+    this.inputtext.inputRef.current.value = this.state.username;
+    this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
+    localStorage.setItem('soulseek-example-browse-state', JSON.stringify(this.state));
+  }
+
+  loadState = () => {
+    this.setState(JSON.parse(localStorage.getItem('soulseek-example-browse-state')) || initialState);
+  }
+
+  componentDidMount = () => {
+    this.fetchStatus();
+    this.loadState();
+    this.setState({ 
+        interval: window.setInterval(this.fetchStatus, 500)
+    }, () => this.saveState());
+  }
+
+  componentWillUnmount = () => {
+    clearInterval(this.state.interval);
+    this.setState({ interval: undefined });
+  }
+
+  fetchStatus = () => {
+    if (this.state.browseState === 'pending') {
+      axios.get(BASE_URL + `/user/${this.state.username}/browse/status`)
+        .then(response => this.setState({
+          browseStatus: response.data
+        }));
+    }
+  }
+
+  getDirectoryTree = (directories) => {
+    if (directories.length === 0 || directories[0].directoryName === undefined) {
+      return [];
     }
 
-    clear = () => {
-        this.setState(initialState, () => {
-            this.saveState();
-        });
-    }
+    const separator = directories[0].directoryName.includes('\\') ? '\\' : '/';
+    const depth = Math.min.apply(null, directories.map(d => d.directoryName.split(separator).length));
 
-    onUsernameChange = (event, data) => {
-        this.setState({ username: data.value });
-    }
+    const topLevelDirs = directories
+      .filter(d => d.directoryName.split(separator).length === depth);
 
-    saveState = () => {
-        this.inputtext.inputRef.current.value = this.state.username;
-        this.inputtext.inputRef.current.disabled = this.state.browseState !== 'idle';
-        localStorage.setItem('soulseek-example-browse-state', JSON.stringify(this.state));
-    }
+    return topLevelDirs.map(directory => this.getChildDirectories(directories, directory, separator, depth));
+  }
 
-    loadState = () => {
-        this.setState(JSON.parse(localStorage.getItem('soulseek-example-browse-state')) || initialState);
-    }
+  getChildDirectories = (directories, root, separator, depth) => {
+    const children = directories
+      .filter(d => d.directoryName !== root.directoryName)
+      .filter(d => d.directoryName.split(separator).length === depth + 1)
+      .filter(d => d.directoryName.startsWith(root.directoryName));
 
-    componentDidMount = () => {
-        this.fetchStatus();
-        this.loadState();
-        this.setState({ 
-            interval: window.setInterval(this.fetchStatus, 500)
-        }, () => this.saveState());
-    }
+    return { ...root, children: children.map(c => this.getChildDirectories(directories, c, separator, depth + 1)) };
+  }
 
-    componentWillUnmount = () => {
-        clearInterval(this.state.interval);
-        this.setState({ interval: undefined });
-    }
+  onDirectorySelectionChange = (event, value) => {
+    this.setState({ selectedDirectory: { ...value, children: [] }}, () => this.saveState());
+  }
 
-    fetchStatus = () => {
-        if (this.state.browseState === 'pending') {
-            axios.get(BASE_URL + `/user/${this.state.username}/browse/status`)
-                .then(response => this.setState({
-                    browseStatus: response.data
-                }));
-        }
-    }
+  render = () => {
+    const { browseState, browseStatus, tree, selectedDirectory, username } = this.state;
+    const pending = browseState === 'pending';
 
-    getDirectoryTree = (directories) => {
-        if (directories.length === 0 || directories[0].directoryName === undefined) {
-            return [];
-        }
+    const emptyTree = !(tree && tree.length > 0);
 
-        const separator = directories[0].directoryName.includes('\\') ? '\\' : '/';
-        const depth = Math.min.apply(null, directories.map(d => d.directoryName.split(separator).length));
+    const directoryName = selectedDirectory.directoryName;
+    const files = (selectedDirectory.files || []).map(f => ({ ...f, filename: `${directoryName}\\${f.filename}`}));
 
-        const topLevelDirs = directories
-            .filter(d => d.directoryName.split(separator).length === depth);
-
-        return topLevelDirs.map(directory => this.getChildDirectories(directories, directory, separator, depth));
-    }
-
-    getChildDirectories = (directories, root, separator, depth) => {
-        const children = directories
-            .filter(d => d.directoryName !== root.directoryName)
-            .filter(d => d.directoryName.split(separator).length === depth + 1)
-            .filter(d => d.directoryName.startsWith(root.directoryName));
-
-        return { ...root, children: children.map(c => this.getChildDirectories(directories, c, separator, depth + 1)) };
-    }
-
-    onDirectorySelectionChange = (event, value) => {
-        this.setState({ selectedDirectory: { ...value, children: [] }}, () => this.saveState())
-    }
-
-    onFileSelectionChange = (file, state) => {
-        console.log(file, state);
-        if (state) {
-            console.log(this.state.selectedFiles.concat(file));
-            const f = { ...file, selected: true }
-            this.setState({ selectedFiles: this.state.selectedFiles.concat(f)}, () => this.saveState());
-        }
-
-        this.setState({ selectedFiles: this.state.selectedFiles.filter(f => f.filename !== file.filename)}, () => this.saveState());
-    }
-
-    render = () => {
-        const { browseState, browseStatus, tree, selectedDirectory } = this.state;
-        const pending = browseState === 'pending';
-
-        const emptyTree = !(tree && tree.length > 0);
-
-        return (
-            <div>
-                <Segment className='search-segment' raised>
-                    <Input 
-                        size='big'
-                        ref={input => this.inputtext = input}
-                        loading={pending}
-                        disabled={pending}
-                        className='search-input'
-                        placeholder="Enter username to browse..."
-                        action={!pending && (browseState === 'idle' ? { content: 'Browse', onClick: this.browse } : { content: 'Clear Results', color: 'red', onClick: this.clear })} 
-                    />
-                </Segment>
-                {pending ? 
-                    <Loader 
-                        className='search-loader'
-                        active 
-                        inline='centered' 
-                        size='big'
-                    >
-                        {JSON.stringify(browseStatus)}
-                    </Loader>
-                : 
-                    <div>
-                        {!emptyTree && <Grid className='browse-results'>
-                            <Grid.Row className='browse-results-row'>
-                                <Card className='browse-folderlist' raised>
-                                    <DirectoryTree 
-                                        tree={tree} 
-                                        selectedDirectoryName={selectedDirectory.directoryName}
-                                        onSelect={this.onDirectorySelectionChange}
-                                    />
-                                </Card>
-                            </Grid.Row>
-                            {selectedDirectory.directoryName && <Grid.Row className='browse-results-row'>
-                                <Card className='browse-filelist' raised>
-                                    <div style={{marginTop: -20}}><FileList
-                                        directoryName={selectedDirectory.directoryName} 
-                                        files={selectedDirectory.files}
-                                        disabled={false}
-                                        onSelectionChange={this.onFileSelectionChange}
-                                    /></div>
-                                </Card>
-                            </Grid.Row>}
-                        </Grid>}
-                    </div>}
-            </div>
-        )
-    }
+    return (
+      <div>
+        <Segment className='search-segment' raised>
+          <Input 
+            size='big'
+            ref={input => this.inputtext = input}
+            loading={pending}
+            disabled={pending}
+            className='search-input'
+            placeholder="Enter username to browse..."
+            action={!pending && (browseState === 'idle' ? { content: 'Browse', onClick: this.browse } : { content: 'Clear Results', color: 'red', onClick: this.clear })} 
+          />
+        </Segment>
+        {pending ? 
+          <Loader 
+            className='search-loader'
+            active 
+            inline='centered' 
+            size='big'
+          >
+            {JSON.stringify(browseStatus)}
+          </Loader>
+        : 
+          <div>
+            {!emptyTree && <Grid className='browse-results'>
+              <Grid.Row className='browse-results-row'>
+                <Card className='browse-folderlist' raised>
+                  <DirectoryTree 
+                    tree={tree} 
+                    selectedDirectoryName={directoryName}
+                    onSelect={this.onDirectorySelectionChange}
+                  />
+                </Card>
+              </Grid.Row>
+              {directoryName && <Grid.Row className='browse-results-row'>
+                <Directory
+                  marginTop={-20}
+                  name={directoryName}
+                  files={files}
+                  username={username}
+                />
+              </Grid.Row>}
+            </Grid>}
+          </div>}
+      </div>
+    )
+  }
 }
 
 export default Browse;
