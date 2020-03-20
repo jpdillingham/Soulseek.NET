@@ -77,7 +77,7 @@ class TransferList extends Component {
                                             style={{ margin: 0 }}
                                             percent={Math.round(f.percentComplete)} 
                                             progress color={getColor(f.state).color}
-                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 8 }} {...getColor(f.state)}>{f.state}</Button>}
+                                        /> : <Button fluid size='mini' style={{ margin: 0, padding: 7 }} {...getColor(f.state)}>{f.state}</Button>}
                                     </Table.Cell>
                                 </Table.Row>
                             )}
