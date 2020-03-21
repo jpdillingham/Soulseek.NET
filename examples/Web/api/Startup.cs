@@ -130,7 +130,11 @@
 
             // if we made it this far and the route still wasn't matched, return the index
             app.Use(async (context, next) => {
-                context.Request.Path = "/index.html";
+                if (!context.Request.Path.StartsWithSegments("/api"))
+                {
+                    context.Request.Path = "/";
+                }
+
                 await next();
             });
 
