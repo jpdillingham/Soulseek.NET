@@ -3,6 +3,7 @@
     using Microsoft.AspNetCore;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.Extensions.Configuration;
+    using Microsoft.Extensions.Logging;
 
     public class Program
     {
@@ -16,6 +17,10 @@
                 .ConfigureAppConfiguration((hostingContext, config) =>
                 {
                     config.AddEnvironmentVariables(prefix: "SLSK_");
+                })
+                .ConfigureLogging((context, logging) =>
+                {
+                    logging.ClearProviders();
                 })
                 .UseStartup<Startup>();
     }
