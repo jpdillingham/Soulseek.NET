@@ -3,6 +3,7 @@ import { Route, Link, Switch } from "react-router-dom";
 
 import './App.css';
 import Search from './Search';
+import Browse from './Browse/Browse';
 import Transfers from './Transfers';
 
 import { 
@@ -30,6 +31,11 @@ class App extends Component {
                             <Icon name='search'/>Search
                         </Menu.Item>
                     </Link>
+                    <Link to='/browse'>
+                        <Menu.Item>
+                            <Icon name='folder open'/>Browse
+                        </Menu.Item>
+                    </Link>
                     <Link to='/downloads'>
                         <Menu.Item>
                             <Icon name='download'/>Downloads
@@ -44,6 +50,7 @@ class App extends Component {
                 <Sidebar.Pusher className='app-content'>
                     <Switch>
                         <Route exact path='/' component={Search}/>
+                        <Route path='/browse/' component={Browse}/>
                         <Route path='/downloads/' render={(props) => <Transfers {...props} direction='download'/>}/>
                         <Route path='/uploads/' render={(props) => <Transfers {...props} direction='upload'/>}/>
                     </Switch>

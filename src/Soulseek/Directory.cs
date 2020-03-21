@@ -23,11 +23,11 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="Directory"/> class.
         /// </summary>
-        /// <param name="directoryname">The directory name.</param>
+        /// <param name="directoryName">The directory name.</param>
         /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
-        public Directory(string directoryname, IEnumerable<File> fileList = null)
+        public Directory(string directoryName, IEnumerable<File> fileList = null)
         {
-            Directoryname = directoryname;
+            DirectoryName = directoryName;
 
             FileList = fileList ?? Enumerable.Empty<File>();
             FileCount = FileList.Count();
@@ -36,12 +36,12 @@ namespace Soulseek
         /// <summary>
         ///     Initializes a new instance of the <see cref="Directory"/> class.
         /// </summary>
-        /// <param name="directoryname">The directory name.</param>
+        /// <param name="directoryName">The directory name.</param>
         /// <param name="fileCount">The number of files.</param>
         /// <param name="fileList">The optional list of <see cref="File"/> s.</param>
-        public Directory(string directoryname, int fileCount, IEnumerable<File> fileList = null)
+        public Directory(string directoryName, int fileCount, IEnumerable<File> fileList = null)
         {
-            Directoryname = directoryname;
+            DirectoryName = directoryName;
             FileCount = fileCount;
 
             FileList = fileList ?? Enumerable.Empty<File>();
@@ -50,7 +50,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the directory name.
         /// </summary>
-        public string Directoryname { get; }
+        public string DirectoryName { get; }
 
         /// <summary>
         ///     Gets the number of files within the directory.

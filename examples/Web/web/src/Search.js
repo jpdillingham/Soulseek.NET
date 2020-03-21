@@ -68,18 +68,18 @@ class Search extends Component {
     }
 
     saveState = () => {
-        localStorage.setItem('soulseek-example-state', JSON.stringify(this.state));
+        localStorage.setItem('soulseek-example-search-state', JSON.stringify(this.state));
     }
 
     loadState = () => {
-        this.setState(JSON.parse(localStorage.getItem('soulseek-example-state')) || initialState);
+        this.setState(JSON.parse(localStorage.getItem('soulseek-example-search-state')) || initialState);
     }
 
     componentDidMount = () => {
-        this.fetch();
+        this.fetchStatus();
         this.loadState();
         this.setState({ 
-            interval: window.setInterval(this.fetch, 500)
+            interval: window.setInterval(this.fetchStatus, 500)
         }, () => this.setSearchText());
     }
 
@@ -93,7 +93,7 @@ class Search extends Component {
         this.setState({ interval: undefined });
     }
 
-    fetch = () => {
+    fetchStatus = () => {
         if (this.state.searchState === 'pending') {
             axios.get(BASE_URL + '/searches/' + encodeURI(this.state.searchPhrase))
             .then(response => this.setState({

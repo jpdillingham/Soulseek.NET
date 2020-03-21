@@ -67,7 +67,7 @@ namespace Soulseek.Messaging.Messages
             for (int i = 0; i < directoryCount; i++)
             {
                 var dir = new Directory(
-                    directoryname: reader.ReadString(),
+                    directoryName: reader.ReadString(),
                     fileCount: reader.ReadInteger());
 
                 var fileList = new List<File>();
@@ -102,7 +102,7 @@ namespace Soulseek.Messaging.Messages
                 }
 
                 directoryList.Add(new Directory(
-                    directoryname: dir.Directoryname,
+                    directoryName: dir.DirectoryName,
                     fileCount: dir.FileCount,
                     fileList: fileList));
             }
@@ -123,7 +123,7 @@ namespace Soulseek.Messaging.Messages
             foreach (var directory in Directories)
             {
                 builder
-                    .WriteString(directory.Directoryname)
+                    .WriteString(directory.DirectoryName)
                     .WriteInteger(directory.FileCount);
 
                 foreach (var file in directory.Files)
