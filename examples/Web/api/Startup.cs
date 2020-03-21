@@ -97,13 +97,15 @@
             WebRoot = WebRoot ?? Path.Combine(Path.GetDirectoryName(new Uri(Assembly.GetExecutingAssembly().GetName().CodeBase).AbsolutePath), "wwwroot");
             Console.WriteLine($"Serving static content from {WebRoot}");
 
-            app.UseFileServer(new FileServerOptions
+            var fileServerOptions = new FileServerOptions
             {
                 FileProvider = new PhysicalFileProvider(WebRoot),
                 RequestPath = "",
                 EnableDirectoryBrowsing = false,
                 EnableDefaultFiles = true
-            });
+            };
+
+            app.UseFileServer(fileServerOptions);
 
             app.UseMvc();
 
@@ -125,6 +127,14 @@
 
             app.UseSwaggerUI(options => provider.ApiVersionDescriptions.ToList()
                 .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
+
+            // if we made it this far and the route still wasn't matched, return the index
+            app.Use(async (context, next) => {
+                context.Request.Path = "/index.html";
+                await next();
+            });
+
+            app.UseFileServer(fileServerOptions);
 
             // ---------------------------------------------------------------------------------------------------------------------------------------------
             // begin SoulseekClient implementation
