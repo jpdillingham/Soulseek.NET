@@ -19,7 +19,8 @@ import Directory from './Directory';
 const initialState = { 
   username: '', 
   browseState: 'idle', 
-  browseStatus: 0, 
+  browseStatus: 0,
+  browseError: undefined,
   interval: undefined,
   selectedDirectory: {},
   selectedFiles: [],
@@ -32,12 +33,13 @@ class Browse extends Component {
   browse = () => {
     let username = this.inputtext.inputRef.current.value;
 
-    this.setState({ username , browseState: 'pending' }, () => {
+    this.setState({ username , browseState: 'pending', browseError: undefined }, () => {
       axios.get(BASE_URL + `/user/${this.state.username}/browse`)
         .then(response => this.setState({ tree: this.getDirectoryTree(response.data) }))
-        .then(() => this.setState({ browseState: 'complete' }, () => {
+        .then(() => this.setState({ browseState: 'complete', browseError: undefined }, () => {
           this.saveState();
         }))
+        .catch(err => this.setState({ browseState: 'error', browseError: err }))
     });
   }
 
@@ -111,7 +113,7 @@ class Browse extends Component {
   }
 
   render = () => {
-    const { browseState, browseStatus, tree, selectedDirectory, username } = this.state;
+    const { browseState, browseStatus, browseError, tree, selectedDirectory, username } = this.state;
     const pending = browseState === 'pending';
 
     const emptyTree = !(tree && tree.length > 0);
@@ -143,26 +145,31 @@ class Browse extends Component {
           </Loader>
         : 
           <div>
-            {!emptyTree && <Grid className='browse-results'>
-              <Grid.Row className='browse-results-row'>
-                <Card className='browse-folderlist' raised>
-                  <DirectoryTree 
-                    tree={tree} 
-                    selectedDirectoryName={directoryName}
-                    onSelect={this.onDirectorySelectionChange}
-                  />
-                </Card>
-              </Grid.Row>
-              {directoryName && <Grid.Row className='browse-results-row'>
-                <Directory
-                  marginTop={-20}
-                  name={directoryName}
-                  files={files}
-                  username={username}
-                />
-              </Grid.Row>}
-            </Grid>}
-          </div>}
+            {browseError ? 
+              <span className='browse-error'>Failed to browse {username}</span> :
+              <div>
+                {!emptyTree && <Grid className='browse-results'>
+                  <Grid.Row className='browse-results-row'>
+                    <Card className='browse-folderlist' raised>
+                      <DirectoryTree 
+                        tree={tree} 
+                        selectedDirectoryName={directoryName}
+                        onSelect={this.onDirectorySelectionChange}
+                      />
+                    </Card>
+                  </Grid.Row>
+                  {directoryName && <Grid.Row className='browse-results-row'>
+                    <Directory
+                      marginTop={-20}
+                      name={directoryName}
+                      files={files}
+                      username={username}
+                    />
+                  </Grid.Row>}
+                </Grid>}
+              </div>
+            }
+        </div>}
       </div>
     )
   }

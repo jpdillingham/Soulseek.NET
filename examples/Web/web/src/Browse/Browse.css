@@ -3,6 +3,13 @@
   margin: auto !important;
 }
 
+.browse-error {
+  display: block;
+  text-align: center;
+  font-size: 18px;
+  margin-top: 50px;
+}
+
 .browse-results-row {
   padding-top: 0px !important;
 }
