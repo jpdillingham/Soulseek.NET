@@ -325,41 +325,44 @@ namespace Soulseek.Network
                     .OrderBy(c => c.BranchLevel)
                     .ToList();
 
-                if (successfulConnections.Count > 0)
+                try
                 {
-                    Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
-
-                    (ParentConnection, BranchLevel, BranchRoot) = successfulConnections.First();
-                    Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {BranchRoot}, branch level: {BranchLevel}");
-
-                    ParentConnection.Disconnected += ParentConnection_Disconnected;
-                    ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
-                    ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
-
-                    Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
-                    Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
-
-                    successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
-                    ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
-
-                    Diagnostic.Debug($"Connected parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
-
-                    foreach (var connection in successfulConnections)
+                    if (successfulConnections.Count > 0)
                     {
-                        var c = connection.Connection;
-                        Diagnostic.Debug($"Disconnecting parent candidate connection to {c.Username} ({c.IPEndPoint})");
-                        c.Disconnect("Not selected.");
-                        c.Dispose();
+                        Diagnostic.Debug($"Successfully established {successfulConnections.Count} connections.");
+
+                        (ParentConnection, BranchLevel, BranchRoot) = successfulConnections.First();
+                        Diagnostic.Debug($"Selected {ParentConnection.Username} as the best connection; branch root: {BranchRoot}, branch level: {BranchLevel}");
+
+                        ParentConnection.Disconnected += ParentConnection_Disconnected;
+                        ParentConnection.Disconnected -= ParentCandidateConnection_Disconnected;
+                        ParentConnection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+
+                        Diagnostic.Debug($"Parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint}) established. (type: {ParentConnection.Id}, id: {ParentConnection.Id})");
+                        Diagnostic.Info($"Adopted parent connection to {ParentConnection.Username} ({ParentConnection.IPEndPoint})");
+
+                        successfulConnections.Remove((ParentConnection, BranchLevel, BranchRoot));
+                        ParentCandidateList = successfulConnections.Select(c => (c.Connection.Username, c.Connection.IPEndPoint)).ToList();
+
+                        Diagnostic.Debug($"Connected parent candidates: {string.Join(", ", ParentCandidateList.Select(p => p.Username))}");
+
+                        foreach (var connection in successfulConnections)
+                        {
+                            var c = connection.Connection;
+                            Diagnostic.Debug($"Disconnecting parent candidate connection to {c.Username} ({c.IPEndPoint})");
+                            c.Disconnect("Not selected.");
+                            c.Dispose();
+                        }
+                    }
+                    else
+                    {
+                        Diagnostic.Warning("Failed to connect to any of the available parent candidates");
                     }
                 }
-                else
+                finally
                 {
-                    var msg = "Failed to connect to any of the available parent candidates";
-                    Diagnostic.Warning(msg);
-                    throw new ConnectionException(msg);
+                    await UpdateStatusAsync().ConfigureAwait(false);
                 }
-
-                await UpdateStatusAsync().ConfigureAwait(false);
             }
         }
 
@@ -642,7 +645,14 @@ namespace Soulseek.Network
 
             connection.Dispose();
 
-            await AddParentConnectionAsync(ParentCandidateList).ConfigureAwait(false);
+            try
+            {
+                await AddParentConnectionAsync(ParentCandidateList).ConfigureAwait(false);
+            }
+            catch (Exception)
+            {
+                // noop
+            }
         }
 
         private async Task UpdateStatusAsync()
