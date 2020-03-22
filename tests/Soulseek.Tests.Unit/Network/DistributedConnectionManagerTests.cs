@@ -1999,8 +1999,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
-        [Fact(DisplayName = "AddParentConnectionAsync produces warning diagnostic and updates status if no candidates connect")]
-        internal async Task AddParentConnectionAsync_Produces_Warning_Diagnostic_And_Updates_Status_If_No_Candidates_Connect()
+        [Fact(DisplayName = "AddParentConnectionAsync produces warning diagnostic, does not throw, and updates status if no candidates connect")]
+        internal async Task AddParentConnectionAsync_Produces_Warning_Diagnostic_Does_Not_Throw_And_Updates_Status_If_No_Candidates_Connect()
         {
             var (manager, mocks) = GetFixture();
 
@@ -2014,11 +2014,11 @@ namespace Soulseek.Tests.Unit.Network
             {
                 var ex = await Record.ExceptionAsync(() => manager.AddParentConnectionAsync(candidates));
 
-                Assert.NotNull(ex);
-                Assert.IsType<ConnectionException>(ex);
+                Assert.Null(ex);
             }
 
             mocks.Diagnostic.Verify(m => m.Warning("Failed to connect to any of the available parent candidates", It.IsAny<Exception>()), Times.Once);
+            mocks.ServerConnection.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()));
         }
 
         [Trait("Category", "AddParentConnectionAsync")]
