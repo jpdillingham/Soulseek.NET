@@ -5,4 +5,9 @@ docker run -i \
     -e "SLSK_USERNAME=$SLSK_USERNAME" \
     -e "SLSK_PASSWORD=$SLSK_PASSWORD" \
     -e "SLSK_LISTEN_PORT=$SLSK_LISTEN_PORT" \
-    slsk-web:latest
+    -e "SLSK_ENABLE_DNET=true" \
+    -e "SLSK_DNET_CHILD_LIMIT=10" \
+    -e "SLSK_DIAGNOSTIC=Info" \
+    -e "SLSK_CONNECT_TIMEOUT=5000" \
+    -e "SLSK_INACTIVITY_TIMEOUT=15000" \
+    slsk-web-example:latest
