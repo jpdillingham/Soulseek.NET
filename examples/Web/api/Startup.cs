@@ -29,8 +29,13 @@
         private static string Password { get; set; }
         private static string WebRoot { get; set; }
         private static int ListenPort { get; set; }
-        public static string OutputDirectory { get; private set; }
+        private static string OutputDirectory { get; set; }
         private static string SharedDirectory { get; set; }
+        private static bool EnableDistributedNetwork { get; set; } 
+        private static int DistributedChildLimit { get; set; }
+        private static DiagnosticLevel DiagnosticLevel { get; set; }
+        private static int ConnectTimeout { get; set; }
+        private static int InactivityTimeout { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
@@ -45,6 +50,11 @@
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT");
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
+            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", false);
+            DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
+            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
+            ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
+            InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
         }
 
         public IConfiguration Configuration { get; }
@@ -129,7 +139,8 @@
                 .ForEach(description => options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", description.GroupName)));
 
             // if we made it this far and the route still wasn't matched, return the index
-            app.Use(async (context, next) => {
+            app.Use(async (context, next) => 
+            {
                 if (!context.Request.Path.StartsWithSegments("/api"))
                 {
                     context.Request.Path = "/";
@@ -148,12 +159,12 @@
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
                 listenPort: ListenPort,
-                distributedChildLimit: 10,
-                enableDistributedNetwork: false,
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
-                serverConnectionOptions: new ConnectionOptions(connectTimeout: 5000, inactivityTimeout: 15000),
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: 5000, inactivityTimeout: 15000),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: 5000, inactivityTimeout: 15000),
+                distributedChildLimit: DistributedChildLimit,
+                enableDistributedNetwork: EnableDistributedNetwork,
+                minimumDiagnosticLevel: DiagnosticLevel,
+                serverConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
                 enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
