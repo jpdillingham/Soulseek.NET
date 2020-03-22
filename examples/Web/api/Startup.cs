@@ -240,7 +240,7 @@
         {
             var info = new UserInfo(
                 description: $"Soulseek.NET Web Example! also, your username is {username}, and IP endpoint is {endpoint}",
-                picture: System.IO.File.ReadAllBytes(@"etc/slsk_bird.jpg"),
+                picture: System.IO.File.ReadAllBytes(@"slsk_bird.jpg"),
                 uploadSlots: 1,
                 queueLength: 0,
                 hasFreeUploadSlot: false);
