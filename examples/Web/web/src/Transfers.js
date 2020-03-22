@@ -33,7 +33,7 @@ class Transfers extends Component {
         return (
             downloads.length === 0 ? 
             <h3 className='transfer-placeholder'>
-                No {this.props.direction}s.
+                No {this.props.direction}s
             </h3> :
             <div className='transfer-segment'>
                 {downloads.map((user, index) => 
