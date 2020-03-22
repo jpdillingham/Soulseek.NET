@@ -193,7 +193,7 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "ParentConnection_Disconnected")]
-        [Theory(DisplayName = "ParentConnection_Disconnected_Cleans_Up"), AutoData]
+        [Theory(DisplayName = "ParentConnection_Disconnected cleans up"), AutoData]
         public void ParentConnection_Disconnected_Cleans_Up(string username, IPEndPoint endpoint, string message)
         {
             var c = GetMessageConnectionMock(username, endpoint);
@@ -211,6 +211,24 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Null(manager.GetProperty<IMessageConnection>("ParentConnection"));
                 Assert.Equal(0, manager.BranchLevel);
                 Assert.Equal(string.Empty, manager.BranchRoot);
+            }
+        }
+
+        [Trait("Category", "ParentConnection_Disconnected")]
+        [Theory(DisplayName = "ParentConnection_Disconnected does not throw if AddParentConnectionAsync throws"), AutoData]
+        public void ParentConnection_Disconnected_Does_Not_Throw_If_AddParentConnectionAsync_Throws(string username, IPEndPoint endpoint, string message)
+        {
+            var c = GetMessageConnectionMock(username, endpoint);
+
+            var (manager, _) = GetFixture();
+
+            using (manager)
+            {
+                manager.SetProperty("ParentCandidateList", null); // force a null ref
+
+                var ex = Record.Exception(() => manager.InvokeMethod("ParentConnection_Disconnected", c.Object, new ConnectionDisconnectedEventArgs(message)));
+
+                Assert.Null(ex);
             }
         }
 
