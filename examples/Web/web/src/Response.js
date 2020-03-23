@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import { BASE_URL } from './constants';
+import { baseUrl } from './config';
 import { formatBytes, getDirectoryName, downloadFile, getFileName } from './util';
 
 import FileList from './FileList'
@@ -46,7 +46,7 @@ class Response extends Component {
         if (toBrowser) {
             return axios.request({
                 method: 'GET',
-                url: `${BASE_URL}/files/${username}/${encodeURI(file.filename)}`,
+                url: `${baseUrl}/files/${username}/${encodeURIComponent(file.filename)}`,
                 responseType: 'arraybuffer',
                 responseEncoding: 'binary'
             })
@@ -57,7 +57,7 @@ class Response extends Component {
             });
         }
 
-        return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
+        return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
     }
 
     render = () => {
