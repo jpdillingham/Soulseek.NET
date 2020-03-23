@@ -95,7 +95,7 @@ class Search extends Component {
 
     fetchStatus = () => {
         if (this.state.searchState === 'pending') {
-            axios.get(baseUrl + '/searches/' + encodeURI(this.state.searchPhrase))
+            axios.get(baseUrl + '/searches/' + encodeURIComponent(this.state.searchPhrase))
             .then(response => this.setState({
                 searchStatus: response.data
             }));

@@ -52,16 +52,16 @@ class TransferGroup extends Component {
     isStateRemovable = (state) => state.includes('Completed');
 
     retryAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURI(file.filename)}`)));
+        await Promise.all(selected.map(file => axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`)));
     }
 
     cancelAll = async (direction, username, selected) => {
-        await Promise.all(selected.map(file => axios.delete(`${baseUrl}/transfers/${direction}s/${username}/${encodeURI(file.filename)}`)));
+        await Promise.all(selected.map(file => axios.delete(`${baseUrl}/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}`)));
     }
 
     removeAll = async (direction, username, selected) => {
         await Promise.all(selected.map(file => 
-                axios.delete(`${baseUrl}/transfers/${direction}s/${username}/${encodeURI(file.filename)}?remove=true`)
+                axios.delete(`${baseUrl}/transfers/${direction}s/${username}/${encodeURIComponent(file.filename)}?remove=true`)
                     .then(() => this.removeFileSelection(file))));
     }
     

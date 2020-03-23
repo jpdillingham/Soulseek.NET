@@ -46,7 +46,7 @@ class Response extends Component {
         if (toBrowser) {
             return axios.request({
                 method: 'GET',
-                url: `${baseUrl}/files/${username}/${encodeURI(file.filename)}`,
+                url: `${baseUrl}/files/${username}/${encodeURIComponent(file.filename)}`,
                 responseType: 'arraybuffer',
                 responseEncoding: 'binary'
             })
@@ -57,7 +57,7 @@ class Response extends Component {
             });
         }
 
-        return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
+        return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
     }
 
     render = () => {

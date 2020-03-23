@@ -44,7 +44,7 @@ class Directory extends Component {
   }
 
   downloadOne = (username, file) => {
-    return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
+    return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURIComponent(file.filename)}`);
   }
 
   render = () => {
