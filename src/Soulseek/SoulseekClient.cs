@@ -1642,17 +1642,17 @@ namespace Soulseek
                         Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
 
                     responseConnection.MessageDataRead += UpdateProgress;
-
-                    // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
-                    // we've already read the first 4k or whatever the read buffer size is)
-                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength));
                 }
                 catch (Exception ex)
                 {
                     // if anything in the try block above threw, throw the wait for the browse.  because it is indefinite, it needs to be removed before
-                    // this code exits.
+                    // this code exits.  once the response connection is returned and the disconnected event bound the risk is mitigated.
                     Waiter.Throw(browseWaitKey, ex);
                 }
+
+                // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
+                // we've already read the first 4k or whatever the read buffer size is)
+                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength));
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -1974,7 +1974,7 @@ namespace Soulseek
             }
             finally
             {
-                // clean up the wait in case the code threw before it was awaited.
+                // clean up the waits in case the code threw before they were awaited.
                 Waiter.Complete(download.WaitKey);
                 Waiter.Complete(transferStartRequestedWaitKey);
 
