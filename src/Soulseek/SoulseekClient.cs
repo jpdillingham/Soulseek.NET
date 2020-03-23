@@ -1648,6 +1648,7 @@ namespace Soulseek
                     // if anything in the try block above threw, throw the wait for the browse.  because it is indefinite, it needs to be removed before
                     // this code exits.  once the response connection is returned and the disconnected event bound the risk is mitigated.
                     Waiter.Throw(browseWaitKey, ex);
+                    throw;
                 }
 
                 // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
