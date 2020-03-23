@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import axios from 'axios';
 
-import { BASE_URL } from '../constants';
+import { baseUrl } from '../config';
 import { formatBytes } from '../util';
 
 import FileList from '../FileList'
@@ -44,7 +44,7 @@ class Directory extends Component {
   }
 
   downloadOne = (username, file) => {
-    return axios.post(`${BASE_URL}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
+    return axios.post(`${baseUrl}/transfers/downloads/${username}/${encodeURI(file.filename)}`);
   }
 
   render = () => {
