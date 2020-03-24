@@ -1613,6 +1613,10 @@ namespace Soulseek
 
             try
             {
+                MessageReceivedEventArgs responseReceivedEventArgs;
+                IMessageConnection responseConnection;
+                long? responseLength;
+
                 // prepare an indefinite wait for the operation. this is completed by either successful completion of the message
                 // transfer, or by the receiving connection being disconnected.
                 var browseWait = Waiter.WaitIndefinitely<BrowseResponse>(browseWaitKey, cancellationToken);
@@ -1623,23 +1627,33 @@ namespace Soulseek
                 var responseConnectionKey = new WaitKey(Constants.WaitKey.BrowseResponseConnection, username);
                 var responseConnectionWait = Waiter.Wait<(MessageReceivedEventArgs, IMessageConnection)>(responseConnectionKey, options.ResponseTimeout, cancellationToken);
 
-                // fetch the user's address and a connection and write the browse request to the remote user
-                var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
-                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
-                await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
+                try
+                {
+                    // fetch the user's address and a connection and write the browse request to the remote user
+                    var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
+                    var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
+                    await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                // wait for the receipt of the response message
-                var (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
-                var responseLength = responseReceivedEventArgs.Length - 4;
+                    // wait for the receipt of the response message.  this may come back on a connection different from the one which made the request.
+                    (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
+                    responseLength = responseReceivedEventArgs?.Length - 4;
 
-                responseConnection.Disconnected += (sender, args) =>
-                    Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
+                    responseConnection.Disconnected += (sender, args) =>
+                        Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
 
-                responseConnection.MessageDataRead += UpdateProgress;
+                    responseConnection.MessageDataRead += UpdateProgress;
+                }
+                catch (Exception ex)
+                {
+                    // if anything in the try block above threw, throw the wait for the browse.  because it is indefinite, it needs to be removed before
+                    // this code exits.  once the response connection is returned and the disconnected event bound the risk is mitigated.
+                    Waiter.Throw(browseWaitKey, ex);
+                    throw;
+                }
 
                 // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
                 // we've already read the first 4k or whatever the read buffer size is)
-                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength));
+                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, 0, responseLength.Value));
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -1649,7 +1663,7 @@ namespace Soulseek
                 // case, fake it
                 if (!completionEventFired)
                 {
-                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, responseLength, responseLength));
+                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, responseLength.Value, responseLength.Value));
                 }
 
                 return response.Directories;
@@ -1802,6 +1816,8 @@ namespace Soulseek
                 TransferProgressUpdated?.Invoke(this, eventArgs);
             }
 
+            var transferStartRequestedWaitKey = new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename);
+
             try
             {
                 var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
@@ -1812,8 +1828,7 @@ namespace Soulseek
                 // returned immediately, while the request will be sent only when we've reached the front of the remote queue.
                 var transferRequestAcknowledged = Waiter.Wait<TransferResponse>(
                     new WaitKey(MessageCode.Peer.TransferResponse, download.Username, download.Token), null, cancellationToken);
-                var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(
-                    new WaitKey(MessageCode.Peer.TransferRequest, download.Username, download.Filename), cancellationToken);
+                var transferStartRequested = Waiter.WaitIndefinitely<TransferRequest>(transferStartRequestedWaitKey, cancellationToken);
 
                 // request the file
                 await peerConnection.WriteAsync(new TransferRequest(TransferDirection.Download, token, filename).ToByteArray(), cancellationToken).ConfigureAwait(false);
@@ -1960,8 +1975,9 @@ namespace Soulseek
             }
             finally
             {
-                // clean up the wait in case the code threw before it was awaited.
+                // clean up the waits in case the code threw before they were awaited.
                 Waiter.Complete(download.WaitKey);
+                Waiter.Complete(transferStartRequestedWaitKey);
 
                 download.Connection?.Dispose();
 
