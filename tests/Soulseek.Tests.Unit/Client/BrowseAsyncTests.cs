@@ -292,6 +292,35 @@ namespace Soulseek.Tests.Unit.Client
         }
 
         [Trait("Category", "BrowseAsync")]
+        [Theory(DisplayName = "BrowseAsync throws wait on Exception"), AutoData]
+        public async Task BrowseAsync_Throws_Wait_On_Exception(string username, IPEndPoint endpoint, string localUsername)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.Is<byte[]>(n => new MessageReader<MessageCode.Peer>(n).ReadCode() == MessageCode.Peer.BrowseRequest), It.IsAny<CancellationToken>()))
+                .Throws(new ConnectionWriteException());
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: conn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("Username", localUsername);
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.BrowseAsync(username));
+
+                Assert.NotNull(ex);
+            }
+
+            waiter.Verify(m => m.Throw(new WaitKey(MessageCode.Peer.BrowseResponse, username), It.IsAny<Exception>()));
+        }
+
+        [Trait("Category", "BrowseAsync")]
         [Theory(DisplayName = "BrowseAsync throws UserOfflineException on user not found"), AutoData]
         public async Task BrowseAsync_Throws_UserOfflineException_On_User_Not_Found(string username, IPEndPoint endpoint, string localUsername)
         {
