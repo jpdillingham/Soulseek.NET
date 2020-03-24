@@ -1613,9 +1613,9 @@ namespace Soulseek
 
             try
             {
-                MessageReceivedEventArgs responseReceivedEventArgs = default;
-                IMessageConnection responseConnection = default;
-                long responseLength = 0;
+                MessageReceivedEventArgs responseReceivedEventArgs;
+                IMessageConnection responseConnection;
+                long? responseLength;
 
                 // prepare an indefinite wait for the operation. this is completed by either successful completion of the message
                 // transfer, or by the receiving connection being disconnected.
@@ -1636,7 +1636,7 @@ namespace Soulseek
 
                     // wait for the receipt of the response message.  this may come back on a connection different from the one which made the request.
                     (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
-                    responseLength = responseReceivedEventArgs.Length - 4;
+                    responseLength = responseReceivedEventArgs?.Length - 4;
 
                     responseConnection.Disconnected += (sender, args) =>
                         Waiter.Throw(browseWaitKey, new ConnectionException($"Peer connection disconnected unexpectedly: {args.Message}", args.Exception));
@@ -1653,7 +1653,7 @@ namespace Soulseek
 
                 // fake a progress update since we'll always miss the first packet (this is what fires the received event, so
                 // we've already read the first 4k or whatever the read buffer size is)
-                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, 0, responseLength));
+                UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, 0, responseLength.Value));
 
                 var response = await browseWait.ConfigureAwait(false);
 
@@ -1663,7 +1663,7 @@ namespace Soulseek
                 // case, fake it
                 if (!completionEventFired)
                 {
-                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs.Code, responseLength, responseLength));
+                    UpdateProgress(responseConnection, new MessageDataReadEventArgs(responseReceivedEventArgs?.Code, responseLength.Value, responseLength.Value));
                 }
 
                 return response.Directories;
