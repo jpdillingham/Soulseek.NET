@@ -89,6 +89,8 @@
         [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {
+            filename = Uri.UnescapeDataString(filename);
+
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
             var stream = GetLocalFileStream(filename, OutputDirectory);
 
