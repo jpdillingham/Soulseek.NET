@@ -354,6 +354,37 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync does not throw if fetch of cached throws"), AutoData]
+        internal async Task AddMessageConnectionAsync_Does_Not_Throw_If_Fetch_Of_Cached_Throws(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            // set the dictionary up with an entry that will throw when fetched
+            var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromException<IMessageConnection>(new Exception())));
+
+            using (manager)
+            {
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync throws expected exception on failure"), AutoData]
         internal async Task AddMessageConnectionAsync_Throws_Expected_Exception_Failure(string username, IPEndPoint endpoint)
         {
