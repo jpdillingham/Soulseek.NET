@@ -240,7 +240,7 @@ namespace Soulseek.Network
             {
                 Diagnostic.Debug($"Inbound child connection to {username} ({c.IPEndPoint}) accepted. (type: {c.Type}, id: {c.Id}");
 
-                var superceded = false;
+                var superseded = false;
 
                 var connection = ConnectionFactory.GetMessageConnection(
                     username,
@@ -258,9 +258,9 @@ namespace Soulseek.Network
                     var cachedConnection = await cachedConnectionRecord.Value.ConfigureAwait(false);
                     cachedConnection.Disconnected -= ChildConnection_Disconnected;
                     Diagnostic.Debug($"Superceding cached child connection to {username} ({cachedConnection.IPEndPoint}) (old: {c.Id}, new: {connection.Id}");
-                    cachedConnection.Disconnect("Superceded.");
+                    cachedConnection.Disconnect("Superseded.");
                     cachedConnection.Dispose();
-                    superceded = true;
+                    superseded = true;
                 }
 
                 try
@@ -276,7 +276,7 @@ namespace Soulseek.Network
                 }
 
                 Diagnostic.Debug($"Child connection to {connection.Username} ({connection.IPEndPoint}) established. (type: {connection.Type}, id: {connection.Id})");
-                Diagnostic.Info($"{(superceded ? "Updated" : "Added")} child connection to {connection.Username} ({connection.IPEndPoint})");
+                Diagnostic.Info($"{(superseded ? "Updated" : "Added")} child connection to {connection.Username} ({connection.IPEndPoint})");
 
                 return connection;
             }

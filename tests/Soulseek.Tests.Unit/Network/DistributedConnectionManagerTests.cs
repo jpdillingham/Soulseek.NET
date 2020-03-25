@@ -645,8 +645,8 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync supercedes existing connection on successful connection"), AutoData]
-        internal async Task AddChildConnectionAsync_Supercedes_Existing_Connection_On_Successful_Connection(string username, IPEndPoint endpoint)
+        [Theory(DisplayName = "AddChildConnectionAsync supersedes existing connection on successful connection"), AutoData]
+        internal async Task AddChildConnectionAsync_Supersedes_Existing_Connection_On_Successful_Connection(string username, IPEndPoint endpoint)
         {
             var (manager, mocks) = GetFixture();
 
@@ -676,7 +676,7 @@ namespace Soulseek.Tests.Unit.Network
                 Assert.Equal(endpoint.Port, child.IPEndPoint.Port);
             }
 
-            existingConn.Verify(m => m.Disconnect("Superceded.", It.IsAny<Exception>()));
+            existingConn.Verify(m => m.Disconnect("Superseded.", It.IsAny<Exception>()));
             existingConn.Verify(m => m.Dispose());
         }
 

@@ -53,7 +53,7 @@
         [ProducesResponseType(404)]
         public IActionResult CancelDownload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
         {
-            return CancelTransfer(TransferDirection.Download, username, filename, remove);
+            return CancelTransfer(TransferDirection.Download, username, Uri.UnescapeDataString(filename), remove);
         }
 
         /// <summary>
@@ -70,7 +70,7 @@
         [ProducesResponseType(404)]
         public IActionResult CancelUpload([FromRoute, Required] string username, [FromRoute, Required]string filename, [FromQuery]bool remove = false)
         {
-            return CancelTransfer(TransferDirection.Upload, username, filename, remove);
+            return CancelTransfer(TransferDirection.Upload, username, Uri.UnescapeDataString(filename), remove);
         }
 
         /// <summary>
@@ -89,6 +89,8 @@
         [ProducesResponseType(typeof(string), 500)]
         public async Task<IActionResult> Enqueue([FromRoute, Required]string username, [FromRoute, Required]string filename, [FromQuery]int? token)
         {
+            filename = Uri.UnescapeDataString(filename);
+
             var waitUntilEnqueue = new TaskCompletionSource<bool>();
             var stream = GetLocalFileStream(filename, OutputDirectory);
 
@@ -175,7 +177,7 @@
             return Ok(Tracker.Transfers
                 .WithDirection(TransferDirection.Download)
                 .FromUser(username)
-                .WithFilename(filename).Transfer);
+                .WithFilename(Uri.UnescapeDataString(filename)).Transfer);
         }
 
         /// <summary>
@@ -189,7 +191,7 @@
         [ProducesResponseType(typeof(int), 200)]
         public async Task<IActionResult> GetPlaceInQueue([FromRoute, Required]string username, [FromRoute, Required]string filename)
         {
-            return Ok(await Client.GetDownloadPlaceInQueueAsync(username, filename));
+            return Ok(await Client.GetDownloadPlaceInQueueAsync(username, Uri.UnescapeDataString(filename)));
         }
 
         /// <summary>
@@ -236,7 +238,7 @@
             return Ok(Tracker.Transfers
                 .WithDirection(TransferDirection.Upload)
                 .FromUser(username)
-                .WithFilename(filename).Transfer);
+                .WithFilename(Uri.UnescapeDataString(filename)).Transfer);
         }
 
         private static FileStream GetLocalFileStream(string remoteFilename, string saveDirectory)

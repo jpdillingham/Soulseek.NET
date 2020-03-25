@@ -354,6 +354,75 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync does not throw if fetch of cached throws"), AutoData]
+        internal async Task AddMessageConnectionAsync_Does_Not_Throw_If_Fetch_Of_Cached_Throws(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            // set the dictionary up with an entry that will throw when fetched
+            var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromException<IMessageConnection>(new Exception())));
+
+            using (manager)
+            {
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                var ex = await Record.ExceptionAsync(() => manager.AddMessageConnectionAsync(username, incomingConn.Object));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
+        [Theory(DisplayName = "AddMessageConnectionAsync cancels pending indirect connection"), AutoData]
+        internal async Task AddMessageConnectionAsync_Cancels_Pending_Indirect_Connection(string username, IPEndPoint endpoint, int token)
+        {
+            var conn = GetMessageConnectionMock(username, endpoint);
+            conn.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            conn.Setup(m => m.ReadAsync(4, null))
+                .Returns(Task.FromResult(BitConverter.GetBytes(token)));
+
+            var (manager, mocks) = GetFixture();
+
+            var incomingConn = GetConnectionMock(endpoint);
+
+            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+                .Returns(conn.Object);
+
+            var dict = new ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>();
+            dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(GetMessageConnectionMock(username, endpoint).Object)));
+
+            using (manager)
+            using (var cts = new CancellationTokenSource())
+            {
+                manager.SetProperty("MessageConnectionDictionary", dict);
+
+                var pendingDict = new ConcurrentDictionary<string, CancellationTokenSource>();
+                pendingDict.TryAdd(username, cts);
+
+                manager.SetProperty("PendingInboundIndirectConnectionDictionary", pendingDict);
+
+                await manager.AddMessageConnectionAsync(username, incomingConn.Object);
+
+                Assert.True(cts.IsCancellationRequested);
+            }
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Cancelling pending inbound indirect"))));
+        }
+
+        [Trait("Category", "AddMessageConnectionAsync")]
         [Theory(DisplayName = "AddMessageConnectionAsync throws expected exception on failure"), AutoData]
         internal async Task AddMessageConnectionAsync_Throws_Expected_Exception_Failure(string username, IPEndPoint endpoint)
         {

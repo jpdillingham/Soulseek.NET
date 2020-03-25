@@ -41,7 +41,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <remarks>
         ///     This method will be invoked from <see cref="ListenerHandler"/> upon receipt of an incoming unsolicited message
-        ///     only. Because this connection is fully established by the time it is passed to this method, it must supercede any
+        ///     only. Because this connection is fully established by the time it is passed to this method, it must supersede any
         ///     cached connection, as it will be the most recently established connection as tracked by the remote user.
         /// </remarks>
         /// <param name="username">The username of the user from which the connection originated.</param>
