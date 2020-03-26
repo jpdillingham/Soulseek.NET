@@ -90,7 +90,7 @@ class Browse extends Component {
       return [];
     }
 
-    const separator = directories[0].directoryName.includes('\\') ? '\\' : '/';
+    const separator = this.sep(directories[0].directoryName);
     const depth = Math.min.apply(null, directories.map(d => d.directoryName.split(separator).length));
 
     const topLevelDirs = directories
@@ -112,6 +112,8 @@ class Browse extends Component {
     this.setState({ selectedDirectory: { ...value, children: [] }}, () => this.saveState());
   }
 
+  sep = (directoryName) => directoryName.includes('\\') ? '\\' : '/';
+
   render = () => {
     const { browseState, browseStatus, browseError, tree, selectedDirectory, username } = this.state;
     const pending = browseState === 'pending';
@@ -119,7 +121,7 @@ class Browse extends Component {
     const emptyTree = !(tree && tree.length > 0);
 
     const directoryName = selectedDirectory.directoryName;
-    const files = (selectedDirectory.files || []).map(f => ({ ...f, filename: `${directoryName}\\${f.filename}`}));
+    const files = (selectedDirectory.files || []).map(f => ({ ...f, filename: `${directoryName}${this.sep(directoryName)}${f.filename}`}));
 
     return (
       <div>
