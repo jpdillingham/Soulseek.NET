@@ -38,7 +38,7 @@ const FileList = ({ directoryName, files, onSelectionChange, disabled }) => (
             </Table.Row>
           </Table.Header>
           <Table.Body>
-            {files.map((f, i) => 
+            {files.sort((a, b) => a.filename > b.filename ? 1 : -1).map((f, i) => 
               <Table.Row key={i}>
                 <Table.Cell className='filelist-selector'>
                   <Checkbox 
