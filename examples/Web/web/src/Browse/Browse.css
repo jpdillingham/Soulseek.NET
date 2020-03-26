@@ -19,14 +19,21 @@
   white-space: pre;
   overflow: auto !important;
   max-height: 400px;
+  padding: 1em !important;
 }
 
 .browse-folderlist-list {
-  padding: 1em !important;
+  margin: 0px !important;
+  margin-bottom: 1px !important;
 }
 
 .browse-folderlist-header {
   cursor: pointer;
+  margin-left: 3px !important;
+}
+
+.browse-folderlist-icon {
+  float: left;
 }
 
 .browse-filelist {
