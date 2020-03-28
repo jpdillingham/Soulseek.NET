@@ -153,7 +153,7 @@ class Search extends Component {
                     </Loader>
                 : 
                     <div>
-                        {sortedAndFilteredResults && sortedAndFilteredResults.length > 0 && <Segment className='search-options' raised>
+                        {results && results.length > 0 && <Segment className='search-options' raised>
                             <Dropdown
                                 button
                                 className='icon'
