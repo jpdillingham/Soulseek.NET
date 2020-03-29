@@ -339,6 +339,26 @@ namespace Soulseek
         Task DownloadAsync(string username, string filename, Stream outputStream, long startOffset = 0, int? token = null, TransferOptions options = null, CancellationToken? cancellationToken = null);
 
         /// <summary>
+        ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user from which to fetch the directory contents.</param>
+        /// <param name="directoryName">The name of the directory to fetch.</param>
+        /// <param name="token">The unique token for the operation.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the directory contents.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="directoryName"/> is null, empty, or consists only
+        ///     of whitespace.
+        /// </exception>
+        /// <exception cref="DuplicateTokenException">Thrown when the specified or generated token is already in use.</exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="DirectoryContentsException">Thrown when an exception is encountered during the operation.</exception>
+        Task<Directory> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null);
+
+        /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the
         ///     specified <paramref name="username"/>.
         /// </summary>
