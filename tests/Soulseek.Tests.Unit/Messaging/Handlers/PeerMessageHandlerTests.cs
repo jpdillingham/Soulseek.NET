@@ -376,7 +376,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            Assert.Contains(messages, m => m.IndexOf("Failed to resolve UserInfoResponse", StringComparison.InvariantCultureIgnoreCase) > -1);
+            Assert.Contains(messages, m => m.IndexOf("Failed to resolve user info response", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
         [Trait("Category", "Message")]
@@ -424,7 +424,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
-            Assert.Contains(messages, m => m.IndexOf("Failed to resolve BrowseResponse", StringComparison.InvariantCultureIgnoreCase) > -1);
+            Assert.Contains(messages, m => m.IndexOf("Failed to resolve browse response", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
         [Trait("Category", "Diagnostic")]
