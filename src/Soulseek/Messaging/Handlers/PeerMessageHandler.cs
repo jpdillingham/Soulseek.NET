@@ -111,7 +111,7 @@ namespace Soulseek.Messaging.Handlers
                             outgoingInfo = await new SoulseekClientOptions()
                                 .UserInfoResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 
-                            Diagnostic.Warning($"Failed to resolve UserInfoResponse: {ex.Message}", ex);
+                            Diagnostic.Warning($"Failed to resolve user info response: {ex.Message}", ex);
                         }
 
                         await connection.WriteAsync(outgoingInfo.ToByteArray()).ConfigureAwait(false);
@@ -129,12 +129,43 @@ namespace Soulseek.Messaging.Handlers
                             browseResponse = await new SoulseekClientOptions()
                                 .BrowseResponseResolver(connection.Username, connection.IPEndPoint).ConfigureAwait(false);
 
-                            Diagnostic.Warning($"Failed to resolve BrowseResponse: {ex.Message}", ex);
+                            Diagnostic.Warning($"Failed to resolve browse response: {ex.Message}", ex);
                         }
 
                         var browseResponseMessage = new BrowseResponse(browseResponse.Count(), browseResponse);
 
                         await connection.WriteAsync(browseResponseMessage.ToByteArray()).ConfigureAwait(false);
+                        break;
+
+                    case MessageCode.Peer.FolderContentsRequest:
+                        var folderContentsRequest = FolderContentsRequest.FromByteArray(message);
+                        Directory outgoingFolderContents = null;
+
+                        try
+                        {
+                            outgoingFolderContents = await SoulseekClient.Options.DirectoryContentsResolver(
+                                connection.Username,
+                                connection.IPEndPoint,
+                                folderContentsRequest.Token,
+                                folderContentsRequest.DirectoryName).ConfigureAwait(false);
+                        }
+                        catch (Exception ex)
+                        {
+                            Diagnostic.Warning($"Failed to resolve directory contents response: {ex.Message}", ex);
+                        }
+
+                        if (outgoingFolderContents != null)
+                        {
+                            var folderContentsResponseMessage = new FolderContentsResponse(folderContentsRequest.Token, outgoingFolderContents);
+
+                            await connection.WriteAsync(folderContentsResponseMessage.ToByteArray()).ConfigureAwait(false);
+                        }
+
+                        break;
+
+                    case MessageCode.Peer.FolderContentsResponse:
+                        var folderContentsResponse = FolderContentsResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Peer.FolderContentsResponse, connection.Username, folderContentsResponse.Token), folderContentsResponse.Directory);
                         break;
 
                     case MessageCode.Peer.InfoResponse:
