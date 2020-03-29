@@ -720,6 +720,45 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Asynchronously fetches the contents of the specified <paramref name="directoryName"/> from the specified <paramref name="username"/>.
+        /// </summary>
+        /// <param name="username">The user from which to fetch the directory contents.</param>
+        /// <param name="directoryName">The name of the directory to fetch.</param>
+        /// <param name="token">The unique token for the operation.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation, including the directory contents.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="directoryName"/> is null, empty, or consists only
+        ///     of whitespace.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is not connected or logged in.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="UserOfflineException">Thrown when the specified user is offline.</exception>
+        /// <exception cref="DirectoryContentsException">Thrown when an exception is encountered during the operation.</exception>
+        public Task<Directory> GetDirectoryContentsAsync(string username, string directoryName, int? token = null, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(username))
+            {
+                throw new ArgumentException($"The username must not be a null or empty string, or one consisting only of whitespace", nameof(username));
+            }
+
+            if (string.IsNullOrWhiteSpace(directoryName))
+            {
+                throw new ArgumentException($"The directory name must not be a null or empty string, or one consisting only of whitespace", nameof(directoryName));
+            }
+
+            if (!State.HasFlag(SoulseekClientStates.Connected) || !State.HasFlag(SoulseekClientStates.LoggedIn))
+            {
+                throw new InvalidOperationException($"The server connection must be connected and logged in to fetch directory contents (currently: {State})");
+            }
+
+            token = token ?? GetNextToken();
+
+            return GetDirectoryContentsInternalAsync(username, directoryName, token.Value, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
         ///     Asynchronously fetches the current place of the specified <paramref name="filename"/> in the queue of the
         ///     specified <paramref name="username"/>.
         /// </summary>
@@ -1634,7 +1673,8 @@ namespace Soulseek
                     var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
                     await connection.WriteAsync(new BrowseRequest().ToByteArray(), cancellationToken).ConfigureAwait(false);
 
-                    // wait for the receipt of the response message.  this may come back on a connection different from the one which made the request.
+                    // wait for the receipt of the response message. this may come back on a connection different from the one
+                    // which made the request.
                     (responseReceivedEventArgs, responseConnection) = await responseConnectionWait.ConfigureAwait(false);
                     responseLength = responseReceivedEventArgs?.Length - 4;
 
@@ -1645,8 +1685,9 @@ namespace Soulseek
                 }
                 catch (Exception ex)
                 {
-                    // if anything in the try block above threw, throw the wait for the browse.  because it is indefinite, it needs to be removed before
-                    // this code exits.  once the response connection is returned and the disconnected event bound the risk is mitigated.
+                    // if anything in the try block above threw, throw the wait for the browse. because it is indefinite, it needs
+                    // to be removed before this code exits. once the response connection is returned and the disconnected event
+                    // bound the risk is mitigated.
                     Waiter.Throw(browseWaitKey, ex);
                     throw;
                 }
@@ -1994,6 +2035,28 @@ namespace Soulseek
                 }
 
                 Downloads.TryRemove(download.Token, out _);
+            }
+        }
+
+        private async Task<Directory> GetDirectoryContentsInternalAsync(string username, string directoryName, int token, CancellationToken cancellationToken)
+        {
+            try
+            {
+                var waitKey = new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token);
+                var contentsWait = Waiter.Wait<Directory>(waitKey, cancellationToken: cancellationToken);
+
+                var endpoint = await GetUserEndPointAsync(username, cancellationToken).ConfigureAwait(false);
+
+                var connection = await PeerConnectionManager.GetOrAddMessageConnectionAsync(username, endpoint, cancellationToken).ConfigureAwait(false);
+                await connection.WriteAsync(new FolderContentsRequest(token, directoryName).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                var response = await contentsWait.ConfigureAwait(false);
+
+                return response;
+            }
+            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+            {
+                throw new DirectoryContentsException($"Failed to retrieve directory contents for {directoryName} from {username}: {ex.Message}", ex);
             }
         }
 
@@ -2493,15 +2556,15 @@ namespace Soulseek
                 // clean up the wait in case the code threw before it was awaited.
                 Waiter.Complete(upload.WaitKey);
 
-                // make sure we successfully obtained the semaphore before releasing it
-                // this will be false if the semaphore wait threw due to cancellation
+                // make sure we successfully obtained the semaphore before releasing it this will be false if the semaphore wait
+                // threw due to cancellation
                 if (semaphoreAcquired)
                 {
                     semaphore.Release();
                 }
 
-                // remove the semaphore record to prevent dangling records. the semaphore object is retained if
-                // there are other threads waiting on it, and it is added back after it is awaited above.
+                // remove the semaphore record to prevent dangling records. the semaphore object is retained if there are other
+                // threads waiting on it, and it is added back after it is awaited above.
                 UploadSemaphores.TryRemove(username, out var _);
 
                 upload.Connection?.Dispose();
