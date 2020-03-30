@@ -143,7 +143,7 @@ namespace Soulseek.Messaging.Handlers
 
                         try
                         {
-                            outgoingFolderContents = await SoulseekClient.Options.DirectoryContentsResolver(
+                            outgoingFolderContents = await SoulseekClient.Options.DirectoryContentsResponseResolver(
                                 connection.Username,
                                 connection.IPEndPoint,
                                 folderContentsRequest.Token,
