@@ -67,7 +67,7 @@ namespace Soulseek
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
-        /// <param name="directoryContentsResponver">
+        /// <param name="directoryContentsResponseResolver">
         ///     The delegate used to resolve the <see cref="FolderContentsResponse"/> for an incoming <see cref="FolderContentsRequest"/>.
         /// </param>
         /// <param name="userInfoResponseResolver">
@@ -97,7 +97,7 @@ namespace Soulseek
             ConnectionOptions distributedConnectionOptions = null,
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPEndPoint, Task<IEnumerable<Directory>>> browseResponseResolver = null,
-            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponver = null,
+            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
@@ -127,7 +127,7 @@ namespace Soulseek
 
             SearchResponseResolver = searchResponseResolver;
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
-            DirectoryContentsResolver = directoryContentsResponver;
+            DirectoryContentsResponseResolver = directoryContentsResponseResolver;
 
             UserInfoResponseResolver = userInfoResponseResolver ?? defaultUserInfoResponse;
             EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
@@ -160,7 +160,7 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the response for an incoming directory contents request. (Default = a response
         ///     with an empty directory).
         /// </summary>
-        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResolver { get; }
+        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResponseResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).
