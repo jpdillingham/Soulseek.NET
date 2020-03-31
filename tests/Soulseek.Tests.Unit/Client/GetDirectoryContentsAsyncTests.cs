@@ -79,6 +79,23 @@ namespace Soulseek.Tests.Unit.Client
         [Theory(DisplayName = "GetDirectoryContentsAsync throws UserOfflineException on user offline"), AutoData]
         public async Task GetDirectoryContentsAsync_Throws_UserOfflineException_On_User_Offline(string username, string directory)
         {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromException<UserAddressResponse>(new UserOfflineException()));
+
+            var serverConn = new Mock<IMessageConnection>();
+            var connManager = new Mock<IPeerConnectionManager>();
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                Directory dir = null;
+                var ex = await Record.ExceptionAsync(async () => dir = await s.GetDirectoryContentsAsync(username, directory));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserOfflineException>(ex);
+            }
         }
 
         [Trait("Category", "GetDirectoryContentsAsync")]
