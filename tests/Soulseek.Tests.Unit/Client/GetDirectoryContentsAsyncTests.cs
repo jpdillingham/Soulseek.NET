@@ -31,13 +31,32 @@ namespace Soulseek.Tests.Unit.Client
         [InlineData(" ")]
         [InlineData("\t")]
         [InlineData("")]
-        public async Task GetDirectoryContentsAsync_Throws_ArgumentException_On_Null_Username(string username)
+        public async Task GetDirectoryContentsAsync_Throws_ArgumentException_On_Bad_Username(string username)
         {
             using (var s = new SoulseekClient())
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
                 var ex = await Record.ExceptionAsync(async () => await s.GetDirectoryContentsAsync(username, "foo"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "GetDirectoryContentsAsync")]
+        [Theory(DisplayName = "GetDirectoryContentsAsync throws ArgumentException on bad directory")]
+        [InlineData(null)]
+        [InlineData(" ")]
+        [InlineData("\t")]
+        [InlineData("")]
+        public async Task GetDirectoryContentsAsync_Throws_ArgumentException_On_Bad_Directory(string directory)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(async () => await s.GetDirectoryContentsAsync("foo", directory));
 
                 Assert.NotNull(ex);
                 Assert.IsType<ArgumentException>(ex);
@@ -192,6 +211,38 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.NotNull(ex);
                 Assert.IsType<DirectoryContentsException>(ex);
                 Assert.IsType<NullReferenceException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "GetDirectoryContentsAsync")]
+        [Theory(DisplayName = "GetDirectoryContentsAsync returns expected Directory"), AutoData]
+        public async Task GetDirectoryContentsAsync_Returns_Expected_Directory(string username, string directory)
+        {
+            var result = new Directory(directory);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<Directory>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(result));
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, IPAddress.Parse("127.0.0.1"), 1)));
+
+            var serverConn = new Mock<IMessageConnection>();
+            serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+
+            var conn = new Mock<IMessageConnection>();
+
+            var connManager = new Mock<IPeerConnectionManager>();
+            connManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, It.IsAny<IPEndPoint>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(conn.Object));
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, waiter: waiter.Object, serverConnection: serverConn.Object, peerConnectionManager: connManager.Object))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var dir = await s.GetDirectoryContentsAsync(username, directory);
+
+                Assert.Equal(result, dir);
             }
         }
     }
