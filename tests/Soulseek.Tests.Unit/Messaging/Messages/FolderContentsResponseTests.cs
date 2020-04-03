@@ -115,112 +115,97 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
             Assert.IsType<MessageReadException>(ex);
         }
 
-        //[Trait("Category", "Parse")]
-        //[Trait("Response", "FolderContentsResponse")]
-        //[Fact(DisplayName = "Parse handles files with no attributes")]
-        //public void Parse_Handles_Files_With_No_Attributes()
-        //{
-        //    var name = Guid.NewGuid().ToString();
+        [Trait("Category", "Parse")]
+        [Trait("Response", "FolderContentsResponse")]
+        [Theory(DisplayName = "Parse handles files with no attributes"), AutoData]
+        public void Parse_Handles_Files_With_No_Attributes(int token, string dirname)
+        {
+            var msg = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.FolderContentsResponse)
+                .WriteInteger(token)
+                .WriteString(dirname)
+                .WriteInteger(1)
+                .WriteString(dirname)
+                .WriteInteger(1) // first directory file count
+                .WriteByte(0x0) // file code
+                .WriteString("foo") // name
+                .WriteLong(12) // size
+                .WriteString("bar") // extension
+                .WriteInteger(0) // attribute count
+                .Compress()
+                .Build();
 
-        //    var msg = new MessageBuilder()
-        //        .WriteCode(MessageCode.Peer.BrowseResponse)
-        //        .WriteInteger(1) // directory count
-        //        .WriteString(name) // first directory name
-        //        .WriteInteger(1) // first directory file count
-        //        .WriteByte(0x0) // file code
-        //        .WriteString("foo") // name
-        //        .WriteLong(12) // size
-        //        .WriteString("bar") // extension
-        //        .WriteInteger(0) // attribute count
-        //        .Compress()
-        //        .Build();
+            FolderContentsResponse r = default;
 
-        //    BrowseResponse r = default;
+            var ex = Record.Exception(() => r = FolderContentsResponse.FromByteArray(msg));
 
-        //    var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
+            Assert.Null(ex);
 
-        //    Assert.Null(ex);
-        //    Assert.Equal(1, r.DirectoryCount);
-        //    Assert.Single(r.Directories);
+            Assert.Equal(dirname, r.Directory.DirectoryName);
+            Assert.Equal(1, r.Directory.FileCount);
+            Assert.Single(r.Directory.Files);
 
-        //    var d = r.Directories.ToList();
+            var f = r.Directory.Files.ToList();
 
-        //    Assert.Equal(name, d[0].DirectoryName);
-        //    Assert.Equal(1, d[0].FileCount);
-        //    Assert.Single(d[0].Files);
+            Assert.Equal(0x0, f[0].Code);
+            Assert.Equal("foo", f[0].Filename);
+            Assert.Equal(12, f[0].Size);
+            Assert.Equal("bar", f[0].Extension);
+            Assert.Equal(0, f[0].AttributeCount);
+            Assert.Empty(f[0].Attributes);
+        }
 
-        //    var f = d[0].Files.ToList();
+        [Trait("Category", "Parse")]
+        [Trait("Response", "FolderContentsResponse")]
+        [Theory(DisplayName = "Parse handles a complete response"), AutoData]
+        public void Parse_Handles_A_Complete_Response(int token)
+        {
+            var dir = GetRandomDirectory(2);
 
-        //    Assert.Equal(0x0, f[0].Code);
-        //    Assert.Equal("foo", f[0].Filename);
-        //    Assert.Equal(12, f[0].Size);
-        //    Assert.Equal("bar", f[0].Extension);
-        //    Assert.Equal(0, f[0].AttributeCount);
-        //    Assert.Empty(f[0].Attributes);
-        //}
+            var builder = new MessageBuilder()
+                .WriteCode(MessageCode.Peer.FolderContentsResponse)
+                .WriteInteger(token)
+                .WriteString(dir.DirectoryName)
+                .WriteInteger(1);
 
-        //[Trait("Category", "Parse")]
-        //[Trait("Response", "FolderContentsResponse")]
-        //[Fact(DisplayName = "Parse handles a complete response")]
-        //public void Parse_Handles_A_Complete_Response()
-        //{
-        //    var dirs = new List<Directory>();
+            BuildDirectory(builder, dir);
 
-        //    for (int i = 0; i < 5; i++)
-        //    {
-        //        dirs.Add(GetRandomDirectory(i));
-        //    }
+            var msg = builder
+                .Compress()
+                .Build();
 
-        //    var builder = new MessageBuilder()
-        //        .WriteCode(MessageCode.Peer.BrowseResponse)
-        //        .WriteInteger(dirs.Count);
+            FolderContentsResponse r = default;
 
-        //    foreach (var dir in dirs)
-        //    {
-        //        BuildDirectory(builder, dir);
-        //    }
+            var ex = Record.Exception(() => r = FolderContentsResponse.FromByteArray(msg));
 
-        //    var msg = builder
-        //        .Compress()
-        //        .Build();
+            Assert.Null(ex);
 
-        //    BrowseResponse r = default;
+            var d = r.Directory;
 
-        //    var ex = Record.Exception(() => r = BrowseResponse.FromByteArray(msg));
+            Assert.Equal(dir.DirectoryName, d.DirectoryName);
+            Assert.Equal(dir.FileCount, d.FileCount);
 
-        //    Assert.Null(ex);
-        //    Assert.Equal(dirs.Count, r.DirectoryCount);
-        //    Assert.Equal(dirs.Count, r.Directories.Count);
+            var files = d.Files.ToList();
+            var msgFiles = d.Files.ToList();
 
-        //    var msgDirs = r.Directories.ToList();
+            for (int j = 0; j < d.FileCount; j++)
+            {
+                Assert.Equal(files[j].Code, msgFiles[j].Code);
+                Assert.Equal(files[j].Filename, msgFiles[j].Filename);
+                Assert.Equal(files[j].Size, msgFiles[j].Size);
+                Assert.Equal(files[j].Extension, msgFiles[j].Extension);
+                Assert.Equal(files[j].AttributeCount, msgFiles[j].AttributeCount);
 
-        //    for (int i = 0; i < msgDirs.Count; i++)
-        //    {
-        //        Assert.Equal(dirs[i].DirectoryName, msgDirs[i].DirectoryName);
-        //        Assert.Equal(dirs[i].FileCount, msgDirs[i].FileCount);
+                var attr = files[j].Attributes.ToList();
+                var msgAttr = files[j].Attributes.ToList();
 
-        //        var files = dirs[i].Files.ToList();
-        //        var msgFiles = msgDirs[i].Files.ToList();
-
-        //        for (int j = 0; j < msgDirs[i].FileCount; j++)
-        //        {
-        //            Assert.Equal(files[j].Code, msgFiles[j].Code);
-        //            Assert.Equal(files[j].Filename, msgFiles[j].Filename);
-        //            Assert.Equal(files[j].Size, msgFiles[j].Size);
-        //            Assert.Equal(files[j].Extension, msgFiles[j].Extension);
-        //            Assert.Equal(files[j].AttributeCount, msgFiles[j].AttributeCount);
-
-        //            var attr = files[j].Attributes.ToList();
-        //            var msgAttr = files[j].Attributes.ToList();
-
-        //            for (int k = 0; k < msgFiles[j].AttributeCount; k++)
-        //            {
-        //                Assert.Equal(attr[k].Type, msgAttr[k].Type);
-        //                Assert.Equal(attr[k].Value, msgAttr[k].Value);
-        //            }
-        //        }
-        //    }
-        //}
+                for (int k = 0; k < msgFiles[j].AttributeCount; k++)
+                {
+                    Assert.Equal(attr[k].Type, msgAttr[k].Type);
+                    Assert.Equal(attr[k].Value, msgAttr[k].Value);
+                }
+            }
+        }
 
         //[Trait("Category", "ToByteArray")]
         //[Fact(DisplayName = "ToByteArray returns the expected data")]
