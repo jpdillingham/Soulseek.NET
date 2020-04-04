@@ -30,7 +30,7 @@ namespace Soulseek
             (u, i) => Task.FromResult(Enumerable.Empty<Directory>());
 
         private readonly Func<string, IPEndPoint, string, Task> defaultEnqueueDownloadAction =
-            (u, i, f) => { return Task.CompletedTask; };
+            (u, i, f) => Task.CompletedTask;
 
         private readonly Func<string, IPEndPoint, string, Task<int?>> defaultPlaceInQueueResponse =
             (u, i, f) => Task.FromResult<int?>(null);
@@ -67,6 +67,9 @@ namespace Soulseek
         /// <param name="browseResponseResolver">
         ///     The delegate used to resolve the <see cref="BrowseResponse"/> for an incoming <see cref="BrowseRequest"/>.
         /// </param>
+        /// <param name="directoryContentsResponseResolver">
+        ///     The delegate used to resolve the <see cref="FolderContentsResponse"/> for an incoming <see cref="FolderContentsRequest"/>.
+        /// </param>
         /// <param name="userInfoResponseResolver">
         ///     The delegate used to resolve the <see cref="UserInfo"/> for an incoming <see cref="UserInfoRequest"/>.
         /// </param>
@@ -94,6 +97,7 @@ namespace Soulseek
             ConnectionOptions distributedConnectionOptions = null,
             Func<string, int, SearchQuery, Task<SearchResponse>> searchResponseResolver = null,
             Func<string, IPEndPoint, Task<IEnumerable<Directory>>> browseResponseResolver = null,
+            Func<string, IPEndPoint, int, string, Task<Directory>> directoryContentsResponseResolver = null,
             Func<string, IPEndPoint, Task<UserInfo>> userInfoResponseResolver = null,
             Func<string, IPEndPoint, string, Task> enqueueDownloadAction = null,
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
@@ -123,6 +127,8 @@ namespace Soulseek
 
             SearchResponseResolver = searchResponseResolver;
             BrowseResponseResolver = browseResponseResolver ?? defaultBrowseResponse;
+            DirectoryContentsResponseResolver = directoryContentsResponseResolver;
+
             UserInfoResponseResolver = userInfoResponseResolver ?? defaultUserInfoResponse;
             EnqueueDownloadAction = enqueueDownloadAction ?? defaultEnqueueDownloadAction;
             PlaceInQueueResponseResolver = placeInQueueResponseResolver ?? defaultPlaceInQueueResponse;
@@ -145,9 +151,16 @@ namespace Soulseek
         public bool AutoAcknowledgePrivilegeNotifications { get; }
 
         /// <summary>
-        ///     Gets the delegate used to resolve the response for an incoming request. (Default = a response with no files or directories).
+        ///     Gets the delegate used to resolve the response for an incoming browse request. (Default = a response with no files
+        ///     or directories).
         /// </summary>
         public Func<string, IPEndPoint, Task<IEnumerable<Directory>>> BrowseResponseResolver { get; }
+
+        /// <summary>
+        ///     Gets the delegate used to resolve the response for an incoming directory contents request. (Default = a response
+        ///     with an empty directory).
+        /// </summary>
+        public Func<string, IPEndPoint, int, string, Task<Directory>> DirectoryContentsResponseResolver { get; }
 
         /// <summary>
         ///     Gets the number of allowed distributed children. (Default = 100).

@@ -167,6 +167,7 @@
                 transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
+                directoryContentsResponseResolver: DirectoryContentsResponseResolver,
                 enqueueDownloadAction: (username, endpoint, filename) => EnqueueDownloadAction(username, endpoint, filename, tracker),
                 searchResponseResolver: SearchResponseResolver);
 
@@ -260,6 +261,22 @@
                 .GetDirectories(SharedDirectory, "*", SearchOption.AllDirectories)
                 .Select(dir => new Soulseek.Directory(dir, System.IO.Directory.GetFiles(dir)
                     .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0))));
+
+            return Task.FromResult(result);
+        }
+
+        /// <summary>
+        ///     Creates and returns a <see cref="Soulseek.Directory"/> in response to a remote request.
+        /// </summary>
+        /// <param name="username">The username of the requesting user.</param>
+        /// <param name="endpoint">The IP endpoint of the requesting user.</param>
+        /// <param name="token">The unique token for the request, supplied by the requesting user.</param>
+        /// <param name="directory">The requested directory.</param>
+        /// <returns>A Task resolving an instance of Soulseek.Directory containing the contents of the requested directory.</returns>
+        private Task<Soulseek.Directory> DirectoryContentsResponseResolver(string username, IPEndPoint endpoint, int token, string directory)
+        {
+            var result = new Soulseek.Directory(directory, System.IO.Directory.GetFiles(directory)
+                    .Select(f => new Soulseek.File(1, Path.GetFileName(f), new FileInfo(f).Length, Path.GetExtension(f), 0)));
 
             return Task.FromResult(result);
         }

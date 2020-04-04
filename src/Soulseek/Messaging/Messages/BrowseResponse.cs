@@ -66,45 +66,7 @@ namespace Soulseek.Messaging.Messages
 
             for (int i = 0; i < directoryCount; i++)
             {
-                var dir = new Directory(
-                    directoryName: reader.ReadString(),
-                    fileCount: reader.ReadInteger());
-
-                var fileList = new List<File>();
-
-                for (int j = 0; j < dir.FileCount; j++)
-                {
-                    var file = new File(
-                        code: reader.ReadByte(),
-                        filename: reader.ReadString(),
-                        size: reader.ReadLong(),
-                        extension: reader.ReadString(),
-                        attributeCount: reader.ReadInteger());
-
-                    var attributeList = new List<FileAttribute>();
-
-                    for (int k = 0; k < file.AttributeCount; k++)
-                    {
-                        var attribute = new FileAttribute(
-                            type: (FileAttributeType)reader.ReadInteger(),
-                            value: reader.ReadInteger());
-
-                        attributeList.Add(attribute);
-                    }
-
-                    fileList.Add(new File(
-                        code: file.Code,
-                        filename: file.Filename,
-                        size: file.Size,
-                        extension: file.Extension,
-                        attributeCount: file.AttributeCount,
-                        attributeList: attributeList));
-                }
-
-                directoryList.Add(new Directory(
-                    directoryName: dir.DirectoryName,
-                    fileCount: dir.FileCount,
-                    fileList: fileList));
+                directoryList.Add(reader.ReadDirectory());
             }
 
             return new BrowseResponse(directoryCount, directoryList);
@@ -122,26 +84,7 @@ namespace Soulseek.Messaging.Messages
 
             foreach (var directory in Directories)
             {
-                builder
-                    .WriteString(directory.DirectoryName)
-                    .WriteInteger(directory.FileCount);
-
-                foreach (var file in directory.Files)
-                {
-                    builder
-                        .WriteByte((byte)file.Code)
-                        .WriteString(file.Filename)
-                        .WriteLong(file.Size)
-                        .WriteString(file.Extension)
-                        .WriteInteger(file.AttributeCount);
-
-                    foreach (var attribute in file.Attributes)
-                    {
-                        builder
-                            .WriteInteger((int)attribute.Type)
-                            .WriteInteger(attribute.Value);
-                    }
-                }
+                builder.WriteDirectory(directory);
             }
 
             builder.Compress();
