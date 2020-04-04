@@ -182,6 +182,19 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Completes wait for folderContentsResponse"), AutoData]
+        public void Completes_Wait_For_FolderContentsResponse(string username, IPEndPoint endpoint, int token, string dirname)
+        {
+            var (handler, mocks) = GetFixture(username, endpoint);
+
+            var msg = new FolderContentsResponse(token, new Directory(dirname)).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
+
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Peer.FolderContentsResponse, username, token), It.IsAny<Directory>()), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Completes wait for PeerPlaceInQueueResponse"), AutoData]
         public void Completes_Wait_For_PeerPlaceInQueueResponse(string username, IPEndPoint endpoint, string filename, int placeInQueue)
         {
@@ -425,6 +438,50 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(mocks.PeerConnection.Object, message);
 
             Assert.Contains(messages, m => m.IndexOf("Failed to resolve browse response", StringComparison.InvariantCultureIgnoreCase) > -1);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Sends resolved FolderContentsResponse"), AutoData]
+        public void Sends_Resolved_FolderContentsResponse(int token, string dirname)
+        {
+            var files = new List<File>()
+            {
+                new File(1, "1", 1, "1", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitDepth, 1) }),
+                new File(2, "2", 2, "2", 1, new List<FileAttribute>() { new FileAttribute(FileAttributeType.BitRate, 2) }),
+            };
+
+            var dir = new Directory(dirname, 2, files);
+
+            var response = new FolderContentsResponse(token, dir);
+            var options = new SoulseekClientOptions(directoryContentsResponseResolver: (u, i, t, d) => Task.FromResult(dir));
+
+            var (handler, mocks) = GetFixture(options: options);
+
+            var msg = new FolderContentsRequest(token, dirname).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, msg);
+
+            mocks.PeerConnection.Verify(
+                m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
+
+        [Trait("Category", "Diagnostic")]
+        [Theory(DisplayName = "Creates diagnostic on failed FolderContentsResponse resolution"), AutoData]
+        public void Creates_Diagnostic_On_Failed_FolderContentsResponse_Resolution(string username, IPEndPoint endpoint, int token, string dirname)
+        {
+            var options = new SoulseekClientOptions(directoryContentsResponseResolver: (u, i, t, d) => { throw new Exception(); });
+            List<string> messages = new List<string>();
+
+            var (handler, mocks) = GetFixture(username, endpoint, options);
+
+            mocks.Diagnostic.Setup(m => m.Warning(It.IsAny<string>(), It.IsAny<Exception>()))
+                .Callback<string, Exception>((msg, ex) => messages.Add(msg));
+
+            var message = new FolderContentsRequest(token, dirname).ToByteArray();
+
+            handler.HandleMessageRead(mocks.PeerConnection.Object, message);
+
+            Assert.Contains(messages, m => m.IndexOf("Failed to resolve directory contents response", StringComparison.InvariantCultureIgnoreCase) > -1);
         }
 
         [Trait("Category", "Diagnostic")]
