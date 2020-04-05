@@ -37,7 +37,7 @@
             {
                 Username = u.Key,
                 Directories = u.Value.Values
-                     .GroupBy(f => Path.GetDirectoryName(f.Transfer.Filename))
+                     .GroupBy(f => f.Transfer.Filename.DirectoryName())
                      .Select(d => new { Directory = d.Key, Files = d.Select(r => r.Transfer)})
             });
         }
@@ -64,7 +64,7 @@
             this ConcurrentDictionary<string, (Transfer Transfer, CancellationTokenSource CancellationTokenSource)> userTransfers)
         {
             return userTransfers.Values
-                .GroupBy(f => Path.GetDirectoryName(f.Transfer.Filename))
+                .GroupBy(f => f.Transfer.Filename.DirectoryName())
                 .Select(d => new { Directory = d.Key, Files = d.Select(r => r.Transfer)});
         }
 

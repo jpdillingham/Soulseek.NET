@@ -2018,7 +2018,7 @@ namespace Soulseek
             {
                 // clean up the waits in case the code threw before they were awaited.
                 Waiter.Complete(download.WaitKey);
-                Waiter.Complete(transferStartRequestedWaitKey);
+                Waiter.Cancel(transferStartRequestedWaitKey);
 
                 download.Connection?.Dispose();
 
