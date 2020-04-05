@@ -28,7 +28,7 @@
 
   <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <Version>0.9.7-beta</Version>
+    <Version>0.9.9-beta</Version>
     <Authors>JP Dillingham</Authors>
     <Product>Soulseek.NET</Product>
     <PackageProjectUrl>https://github.com/jpdillingham/Soulseek.NET</PackageProjectUrl>
@@ -55,7 +55,7 @@
     </PackageReference>
     <PackageReference Include="Microsoft.CSharp" Version="4.7.0" />
     <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.0.0" PrivateAssets="All" />
-    <PackageReference Include="SonarAnalyzer.CSharp" Version="8.4.0.15306">
+    <PackageReference Include="SonarAnalyzer.CSharp" Version="8.6.0.16497">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
@@ -63,7 +63,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="System.Memory" Version="4.5.3" />
+    <PackageReference Include="System.Memory" Version="4.5.4" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Update="Microsoft.CodeQuality.Analyzers" Version="2.6.3">
