@@ -23,4 +23,4 @@ dotnet publish --configuration Release
 # build docker
 cd ..
 pwd
-docker build -t slsk-web-example .
+docker build -t jpdillingham/slsk-web-example:latest .
