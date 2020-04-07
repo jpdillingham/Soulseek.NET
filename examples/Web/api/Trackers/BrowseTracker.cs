@@ -3,6 +3,9 @@
     using Soulseek;
     using System.Collections.Concurrent;
 
+    /// <summary>
+    ///     Tracks browse operations.
+    /// </summary>
     public class BrowseTracker : IBrowseTracker
     {
         /// <summary>

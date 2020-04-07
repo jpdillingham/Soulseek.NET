@@ -3,13 +3,26 @@
     using System.IO;
     using System.Linq;
 
+    /// <summary>
+    ///     Extensions.
+    /// </summary>
     public static class Extensions
     {
+        /// <summary>
+        ///     Converts the given path to the local format (normalizes path separators).
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public static string ToLocalOSPath(this string path)
         {
             return path.Replace('\\', Path.DirectorySeparatorChar).Replace('/', Path.DirectorySeparatorChar);
         }
 
+        /// <summary>
+        ///     Returns the directory from the given path, regardless of separator format.
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public static string DirectoryName(this string path)
         {
             var separator = path.Contains('\\') ? '\\' : '/';

@@ -47,7 +47,7 @@
             Username = Configuration.GetValue<string>("USERNAME");
             Password = Configuration.GetValue<string>("PASSWORD");
             WebRoot = Configuration.GetValue<string>("WEBROOT");
-            ListenPort = Configuration.GetValue<int>("LISTEN_PORT");
+            ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
             EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", false);

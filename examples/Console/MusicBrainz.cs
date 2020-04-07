@@ -34,7 +34,7 @@
             else return DateTime.Parse(s);
         }
 
-        private static HttpClient Http = new HttpClient();
+        private static readonly HttpClient Http = new HttpClient();
         private static readonly Uri API_ROOT = new Uri("https://musicbrainz.org/ws/2");
 
         static MusicBrainz()
@@ -61,7 +61,7 @@
         public static async Task<IEnumerable<ReleaseGroup>> GetArtistReleaseGroups(Guid artistId)
         {
             var limit = 100;
-            var releaseGroupCount = 0;
+            int releaseGroupCount;
             var releaseGroups = new List<ReleaseGroup>();
 
             do
@@ -82,7 +82,7 @@
         public static async Task<IEnumerable<Release>> GetReleaseGroupReleases(Guid releaseGroupId)
         {
             var limit = 100;
-            var releaseCount = 0;
+            int releaseCount;
             var releases = new List<Release>();
 
             do

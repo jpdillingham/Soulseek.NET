@@ -23,6 +23,7 @@
         ///     Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
         /// <param name="client"></param>
+        /// <param name="browseTracker"></param>
         public UserController(ISoulseekClient client, IBrowseTracker browseTracker)
         {
             Client = client;
