@@ -21,7 +21,7 @@
                 .Select(f => f.GetMethod())
                 .FirstOrDefault(m => m.Name == caller);
 
-            if (callingMethod == default(MethodBase))
+            if (callingMethod == default)
             {
                 throw new InvalidOperationException($"Unable to determine the containing type of the calling method '{caller}'.  Explicitly specify the originating Type.");
             }
@@ -38,7 +38,7 @@
             }
         }
 
-        public static void Populate([CallerMemberName] string caller = default(string))
+        public static void Populate([CallerMemberName] string caller = default)
         {
             Populate(GetCallingType(caller));
         }
