@@ -1,22 +1,17 @@
 ﻿namespace Console
 {
     using global::Utility.CommandLine;
-    using Newtonsoft.Json;
     using Soulseek;
     using Soulseek.Diagnostics;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
-    using System.Globalization;
     using System.IO;
     using System.Linq;
     using System.Text;
     using System.Threading.Tasks;
     using System.Timers;
 
-    /// <summary>
-    ///     This is kind of a mess, and is really more of a test harness than an example to follow.
-    /// </summary>
     public static class Program
     {
         private static readonly Action<string> o = (s) => Console.WriteLine(s);
@@ -27,31 +22,13 @@
         [Argument('a', "artist")]
         private static string Artist { get; set; }
 
-        [Argument('b', "browse")]
-        private static string Browse { get; set; }
-
         [EnvironmentVariable("SLSK_OUTPUT_DIR")]
         [Argument('o', "output-directory")]
         private static string OutputDirectory { get; set; }
 
-        [Argument('d', "download")]
-        private static string Download { get; set; }
-
-        [Argument('f', "file")]
-        private static List<string> Files { get; set; } = new List<string>();
-
         [Argument('p', "password")]
         [EnvironmentVariable("SLSK_PASSWORD")]
         private static string Password { get; set; }
-
-        [Argument('i', "peer-info")]
-        private static string Info { get; set; }
-
-        [Argument('t', "test-add-user")]
-        private static string TestAddUser { get; set; }
-
-        [Argument('z', "get-user-status")]
-        private static string GetUserStatus { get; set; }
 
         private static ConcurrentDictionary<(string Username, string Filename, int Token), (TransferStates State, Spinner Spinner, ProgressBar ProgressBar)> Downloads { get; set; } 
             = new ConcurrentDictionary<(string Username, string Filename, int Token), (TransferStates State, Spinner Spinner, ProgressBar ProgressBar)>();
@@ -62,12 +39,6 @@
         [Argument('u', "username")]
         [EnvironmentVariable("SLSK_USERNAME")]
         private static string Username { get; set; } = "foo";
-
-        [Argument('r', "room-list")]
-        private static bool RoomList { get; set; }
-
-        [Argument('j', "join-room")]
-        private static string RoomToJoin { get; set; }
 
         private static async Task ConnectAndLogin(SoulseekClient client)
         {
@@ -84,69 +55,15 @@
             Arguments.Populate(clearExistingValues: false);
 
             var options = new SoulseekClientOptions(
-                minimumDiagnosticLevel: DiagnosticLevel.Debug,
-                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 15),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30, inactivityTimeout: 5)
+                minimumDiagnosticLevel: DiagnosticLevel.None,
+                peerConnectionOptions: new ConnectionOptions(connectTimeout: 30000, inactivityTimeout: 15000),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: 30000, inactivityTimeout: 15000)
             );
 
             using (var client = new SoulseekClient(options))
             {
                 client.StateChanged += Client_ServerStateChanged;
-                client.DiagnosticGenerated += Client_DiagnosticMessageGenerated;
-                client.PrivateMessageReceived += Client_PrivateMessageReceived;
-                client.RoomMessageReceived += Client_RoomMessageReceived;
-                client.RoomJoined += Client_RoomJoined;
-                client.RoomLeft += Client_RoomLeft;
 
-                if (!string.IsNullOrEmpty(RoomToJoin))
-                {
-                    await ConnectAndLogin(client);
-
-                    var joinResponse = await client.JoinRoomAsync(RoomToJoin);
-
-                    Console.WriteLine(JsonConvert.SerializeObject(joinResponse));
-
-                    Console.WriteLine($"Type to send messages to {RoomToJoin}, ctrl+c to exit.");
-                    while (true)
-                    {
-                        var msg = Console.ReadLine();
-
-                        if (msg == "/leave")
-                        {
-                            await client.LeaveRoomAsync(RoomToJoin);
-                            break;
-                        }
-                        else 
-                        { 
-                            await client.SendRoomMessageAsync(RoomToJoin, msg);
-                        }
-                    }
-                }
-
-                if (RoomList)
-                {
-                    await ConnectAndLogin(client);
-                    var rooms = await client.GetRoomListAsync();
-                    
-                    foreach (var room in rooms)
-                    {
-                        Console.WriteLine($"{room.Name} [{room.UserCount}]");
-                    }
-                }
-                if (!string.IsNullOrEmpty(GetUserStatus))
-                {
-                    await ConnectAndLogin(client);
-
-                    var response = await client.GetUserStatusAsync(GetUserStatus);
-                    Console.WriteLine(JsonConvert.SerializeObject(response));
-                }
-                if (!string.IsNullOrEmpty(TestAddUser))
-                {
-                    await ConnectAndLogin(client);
-
-                    var response = await client.AddUserAsync(TestAddUser);
-                    Console.WriteLine(JsonConvert.SerializeObject(response));
-                }
                 if (!string.IsNullOrEmpty(Search))
                 {
                     await ConnectAndLogin(client);
@@ -164,36 +81,6 @@
                     await DownloadFilesAsync(client, response.Username, response.Files.Select(f => f.Filename).ToList()).ConfigureAwait(false);
 
                     o($"\nDownload{(response.Files.Count() > 1 ? "s" : string.Empty)} complete.");
-                }
-                if (!string.IsNullOrEmpty(Info))
-                {
-                    await ConnectAndLogin(client);
-                    o($"\nFetching peer info for {Info}...\n");
-
-                    var response = await client.GetUserInfoAsync(Info);
-
-                    o(JsonConvert.SerializeObject(response));
-                }
-                if (!string.IsNullOrEmpty(Download) && Files != null && Files.Count > 0)
-                {
-                    await ConnectAndLogin(client);
-
-                    o($"\nDownloading {Files.Count()} file{(Files.Count() > 1 ? "s" : string.Empty)} from {Download}...\n");
-
-                    await DownloadFilesAsync(client, Download, Files);
-
-                    o($"\nDownload{(Files.Count() > 1 ? "s" : string.Empty)} complete.");
-                }
-                else if (!string.IsNullOrEmpty(Browse))
-                {
-                    await ConnectAndLogin(client);
-
-                    o($"Browsing user {Browse}...");
-                    var results = await client.BrowseAsync(Browse);
-
-                    var file = new FileInfo(Path.Combine(OutputDirectory, "browse", $"{Browse}-{DateTime.Now.ToString().ToSafeFilename()}.json"));
-                    file.Directory.Create();
-                    System.IO.File.WriteAllText(file.FullName, JsonConvert.SerializeObject(results));
                 }
                 else if (!string.IsNullOrEmpty(Artist))
                 {
@@ -221,34 +108,7 @@
                 }
 
                 client.StateChanged -= Client_ServerStateChanged;
-                client.DiagnosticGenerated -= Client_DiagnosticMessageGenerated;
-                client.PrivateMessageReceived -= Client_PrivateMessageReceived;
             }
-        }
-
-        private static void Client_RoomLeft(object sender, RoomLeftEventArgs e)
-        {
-            Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} left room.");
-        }
-
-        private static void Client_RoomJoined(object sender, RoomJoinedEventArgs e)
-        {
-            Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] {e.Username} joined room.");
-        }
-
-        private static void Client_RoomMessageReceived(object sender, RoomMessageReceivedEventArgs e)
-        {
-            Console.WriteLine($"[{DateTime.Now}] [{e.RoomName}] [{e.Username}]: {e.Message}");
-        }
-
-        private static void Client_DiagnosticMessageGenerated(object sender, DiagnosticEventArgs e)
-        {
-            Console.WriteLine($"[DIAGNOSTICS] [{e.Timestamp.ToString("yyyy-MM-dd HH:mm:ss.fff", CultureInfo.InvariantCulture)}] [{e.Level}]: {e.Message}");
-        }
-
-        private static void Client_PrivateMessageReceived(object sender, PrivateMessageReceivedEventArgs e)
-        {
-            Console.WriteLine($"[{e.Timestamp}] [{e.Username}]: {e.Message}");
         }
 
         private static void Client_ServerStateChanged(object sender, SoulseekClientStateChangedEventArgs e)
@@ -388,7 +248,7 @@
                     options: new SearchOptions(
                         filterResponses: true,
                         minimumResponseFileCount: minimumFileCount,
-                        searchTimeout: 5,
+                        searchTimeout: 10000,
                         stateChanged: (e) => state = e.Search.State,
                         responseReceived: (e) =>
                         {
