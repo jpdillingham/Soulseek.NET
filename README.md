@@ -88,7 +88,7 @@ docker run -i \
     -v <path/to/shared>:/var/slsk/shared \
     -e "SLSK_USERNAME=<your username>" \
     -e "SLSK_PASSWORD=<your password>" \
-    slsk-web-example:latest
+    jpdillingham/slsk-web-example:latest
 ```
 
 The application will then be accessible on port 5000 (e.g. http://localhost:5000).  With this configuration the application won't be able to accept incoming connections and won't connect to the distributed network.  You may receive limited search results and users won't find your files via search.  Other users may have difficulty browsing your shares.
@@ -109,7 +109,7 @@ docker run -i \
     -e "SLSK_DIAGNOSTIC=Info" \
     -e "SLSK_CONNECT_TIMEOUT=5000" \
     -e "SLSK_INACTIVITY_TIMEOUT=15000" \
-    slsk-web-example:latest
+    jpdillingham/slsk-web-example:latest
 ```
 
 With this configuration the application will listen on port 50000 and will connect to the distributed network, allowing up to 10 child connections.  The application shouldn't have any trouble connecting provided you've forwarded port 50000 properly, and will receive and respond to distributed search requests.
