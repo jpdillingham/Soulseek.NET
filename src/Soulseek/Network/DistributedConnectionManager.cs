@@ -57,6 +57,23 @@ namespace Soulseek.Network
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
+            StatusWatchdogTimer = new SystemTimer()
+            {
+                Enabled = true,
+                AutoReset = true,
+                Interval = 300000,
+            };
+
+            StatusWatchdogTimer.Elapsed += (sender, e) =>
+            {
+                Diagnostic.Info($"[{DateTime.Now}] Parent: {HasParent}, last distributed message: {LastSearchRequest}");
+                if (!HasParent)
+                {
+                    Diagnostic.Warning($"No parent connection.");
+                    //_ = UpdateStatusAsync();
+                }
+            };
+
             ParentWatchdogTimer = new SystemTimer()
             {
                 Enabled = false,
@@ -102,7 +119,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether a parent connection is established.
         /// </summary>
-        public bool HasParent => ParentConnection != null && ParentConnection?.State == ConnectionState.Connected;
+        public bool HasParent => ParentConnection != null && ParentConnection.State == ConnectionState.Connected;
 
         /// <summary>
         ///     Gets the current parent connection.
@@ -126,6 +143,8 @@ namespace Soulseek.Network
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
+        private SystemTimer StatusWatchdogTimer { get; }
+        private DateTime LastSearchRequest { get; set; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
@@ -367,6 +386,18 @@ namespace Soulseek.Network
         }
 
         /// <summary>
+        ///     Asynchronously forwards received search requests to each of the connected child connections.
+        /// </summary>
+        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
+        /// <returns>The operation context.</returns>
+        public Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest)
+        {
+            ParentWatchdogTimer?.Reset();
+            LastSearchRequest = DateTime.Now;
+            return BroadcastMessageAsync(distributedSearchRequest.ToByteArray());
+        }
+
+        /// <summary>
         ///     Asynchronously writes the specified bytes to each of the connected child connections.
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
@@ -374,8 +405,6 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
-            ParentWatchdogTimer?.Reset();
-
             var tasks = ChildConnectionDictionary.Values.Select(async c =>
             {
                 IMessageConnection connection = default;
@@ -666,7 +695,7 @@ namespace Soulseek.Network
             var payload = new List<byte>();
 
             var haveNoParents = !HasParent;
-            var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address ?? IPAddress.None : IPAddress.None;
+            var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address ?? IPAddress.Any : IPAddress.Any;
             var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
@@ -706,7 +735,7 @@ namespace Soulseek.Network
                     .Append($"BranchLevel: {branchLevel}, BranchRoot: {branchRoot}, ")
                     .Append($"ChildDepth: {ChildConnectionDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
 
-                Diagnostic.Debug(sb.ToString());
+                Diagnostic.Info(sb.ToString());
             }
             catch (Exception ex)
             {
