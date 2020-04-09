@@ -2092,7 +2092,7 @@ namespace Soulseek
 
                 var response = await addressWait.ConfigureAwait(false);
 
-                if (response.IPAddress.Equals(IPAddress.Parse("0.0.0.0")))
+                if (response.IPAddress.Equals(IPAddress.Any))
                 {
                     throw new UserOfflineException($"User {username} appears to be offline");
                 }
