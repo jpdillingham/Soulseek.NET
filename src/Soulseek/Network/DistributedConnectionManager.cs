@@ -137,6 +137,7 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
+        private DateTime LastSearchRequest { get; set; }
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
         private SystemTimer ParentWatchdogTimer { get; }
@@ -144,7 +145,6 @@ namespace Soulseek.Network
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
         private SystemTimer StatusWatchdogTimer { get; }
-        private DateTime LastSearchRequest { get; set; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
@@ -386,18 +386,6 @@ namespace Soulseek.Network
         }
 
         /// <summary>
-        ///     Asynchronously forwards received search requests to each of the connected child connections.
-        /// </summary>
-        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
-        /// <returns>The operation context.</returns>
-        public Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest)
-        {
-            ParentWatchdogTimer?.Reset();
-            LastSearchRequest = DateTime.Now;
-            return BroadcastMessageAsync(distributedSearchRequest.ToByteArray());
-        }
-
-        /// <summary>
         ///     Asynchronously writes the specified bytes to each of the connected child connections.
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
@@ -429,6 +417,18 @@ namespace Soulseek.Network
         {
             Dispose(true);
             GC.SuppressFinalize(this);
+        }
+
+        /// <summary>
+        ///     Asynchronously forwards received search requests to each of the connected child connections.
+        /// </summary>
+        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
+        /// <returns>The operation context.</returns>
+        public Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest)
+        {
+            ParentWatchdogTimer?.Reset();
+            LastSearchRequest = DateTime.Now;
+            return BroadcastMessageAsync(distributedSearchRequest.ToByteArray());
         }
 
         /// <summary>

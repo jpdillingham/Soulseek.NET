@@ -90,19 +90,19 @@ namespace Soulseek.Network
         Task AddParentConnectionAsync(IEnumerable<(string Username, IPEndPoint IPEndPoint)> parentCandidates);
 
         /// <summary>
-        ///     Asynchronously forwards received search requests to each of the connected child connections.
-        /// </summary>
-        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
-        /// <returns>The operation context.</returns>
-        Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest);
-
-        /// <summary>
         ///     Asynchronously writes the specified bytes to each of the connected child connections.
         /// </summary>
         /// <param name="bytes">The bytes to write.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The operation context.</returns>
         Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
+
+        /// <summary>
+        ///     Asynchronously forwards received search requests to each of the connected child connections.
+        /// </summary>
+        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
+        /// <returns>The operation context.</returns>
+        Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest);
 
         /// <summary>
         ///     Removes and disposes the parent and all child connections.
