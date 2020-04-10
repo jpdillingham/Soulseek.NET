@@ -12,10 +12,25 @@
 
 namespace Soulseek.Messaging.Handlers
 {
+    using Soulseek.Network;
+
     /// <summary>
     ///     Handles incoming messages from distributed connections.
     /// </summary>
     internal interface IDistributedMessageHandler : IMessageHandler
     {
+        /// <summary>
+        ///     Handles incoming messages from distributed children.
+        /// </summary>
+        /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
+        /// <param name="args">The message event args.</param>
+        void HandleChildMessageRead(object sender, MessageReadEventArgs args);
+
+        /// <summary>
+        ///     Handles incoming messages from distributed children.
+        /// </summary>
+        /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
+        /// <param name="message">The message.</param>
+        void HandleChildMessageRead(object sender, byte[] message);
     }
 }
