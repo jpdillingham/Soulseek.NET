@@ -699,11 +699,11 @@ namespace Soulseek.Network
             var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
-            payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
             payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
             payload.AddRange(GetBranchInformation<MessageCode.Server>());
-            payload.AddRange(new ChildDepthCommand(ChildConnectionDictionary.Count).ToByteArray());
             payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
+            payload.AddRange(new ChildDepthCommand(ChildConnectionDictionary.Count).ToByteArray());
+            payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
 
             var statusHash = Convert.ToBase64String(payload.ToArray());
 
