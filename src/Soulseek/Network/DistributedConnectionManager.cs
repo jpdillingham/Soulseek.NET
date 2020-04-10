@@ -102,7 +102,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => AcceptChildren && ChildConnectionDictionary.Count < ConcurrentChildLimit;
+        public bool CanAcceptChildren => AcceptChildren && HasParent && ChildConnectionDictionary.Count < ConcurrentChildLimit;
 
         /// <summary>
         ///     Gets the current list of child connections.
