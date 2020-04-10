@@ -114,6 +114,11 @@ namespace Soulseek.Network.Tcp
         public Guid Id { get; }
 
         /// <summary>
+        ///     Gets the amount of time since the last activity.
+        /// </summary>
+        public TimeSpan InactiveTime => DateTime.UtcNow - LastActivityTime;
+
+        /// <summary>
         ///     Gets or sets the remote IP endpoint of the connection.
         /// </summary>
         public IPEndPoint IPEndPoint { get; protected set; }
@@ -162,6 +167,11 @@ namespace Soulseek.Network.Tcp
         ///     Gets or sets the timer used to monitor the status of the TcpClient.
         /// </summary>
         protected SystemTimer WatchdogTimer { get; set; }
+
+        /// <summary>
+        ///     Gets or sets the time at which the last activity took place.
+        /// </summary>
+        protected DateTime LastActivityTime { get; set; }
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -514,7 +524,7 @@ namespace Soulseek.Network.Tcp
 
         private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
         {
-            InactivityTimer?.Reset();
+            ResetInactivityTime();
 
             var buffer = new byte[TcpClient.Client.ReceiveBufferSize];
             var totalBytesRead = 0;
@@ -542,7 +552,7 @@ namespace Soulseek.Network.Tcp
                     Interlocked.CompareExchange(ref DataRead, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesRead, length));
 
-                    InactivityTimer?.Reset();
+                    ResetInactivityTime();
                 }
 
                 await outputStream.FlushAsync(cancellationToken).ConfigureAwait(false);
@@ -560,6 +570,12 @@ namespace Soulseek.Network.Tcp
             }
         }
 
+        private void ResetInactivityTime()
+        {
+            InactivityTimer?.Reset();
+            LastActivityTime = DateTime.UtcNow;
+        }
+
         private async Task WriteInternalAsync(byte[] bytes, CancellationToken cancellationToken)
         {
             using (var stream = new MemoryStream(bytes))
@@ -570,7 +586,7 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
         {
-            InactivityTimer?.Reset();
+            ResetInactivityTime();
 
             var sendBufferSize = TcpClient.Client.SendBufferSize;
             var inputBuffer = new byte[TcpClient.Client.SendBufferSize];
@@ -594,7 +610,7 @@ namespace Soulseek.Network.Tcp
                     Interlocked.CompareExchange(ref DataWritten, null, null)?
                         .Invoke(this, new ConnectionDataEventArgs(totalBytesWritten, length));
 
-                    InactivityTimer?.Reset();
+                    ResetInactivityTime();
                 }
             }
             catch (Exception ex)
