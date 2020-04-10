@@ -1,4 +1,4 @@
-﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
+// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -196,7 +196,7 @@ namespace Soulseek.Network
                     SoulseekClient.Options.DistributedConnectionOptions);
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.Disconnected += ChildConnection_Disconnected;
 
                 try
@@ -268,7 +268,7 @@ namespace Soulseek.Network
                     c.HandoffTcpClient());
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
 
                 Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
