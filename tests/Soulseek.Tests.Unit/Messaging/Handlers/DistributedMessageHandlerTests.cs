@@ -175,31 +175,30 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Fact(DisplayName = "Handles Ping")]
-        public void Handles_Ping()
+        [Theory(DisplayName = "Handles Ping"), AutoData]
+        public void Handles_Ping(string username, int token)
         {
             var (handler, mocks) = GetFixture();
 
             byte[] msg = null;
 
             var conn = new Mock<IMessageConnection>();
-            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
-                .Callback<byte[], CancellationToken?>((b, c) => msg = b);
+            conn.Setup(m => m.Username)
+                .Returns(username);
 
             var message = new MessageBuilder()
                 .WriteCode(MessageCode.Distributed.Ping)
+                .WriteInteger(token)
                 .Build();
 
             handler.HandleMessageRead(conn.Object, message);
 
-            var reader = new MessageReader<MessageCode.Distributed>(msg);
-
-            Assert.Equal(MessageCode.Distributed.Ping, reader.ReadCode());
+            mocks.Waiter.Verify(m => m.Complete(new WaitKey(MessageCode.Distributed.Ping, username), It.Is<DistributedPingResponse>(r => r.Token == token)), Times.Once);
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Broadcasts SearchRequest"), AutoData]
-        public void Broadcasts_SearchRequest(string username, int token, string query)
+        [Theory(DisplayName = "Forwards SearchRequest"), AutoData]
+        public void Forwards_SearchRequest(string username, int token, string query)
         {
             var (handler, mocks) = GetFixture();
 
@@ -209,12 +208,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.ForwardSearchRequestAsync(It.IsAny<DistributedSearchRequest>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Broadcasts ServerSearchRequest as SearchRequest"), AutoData]
-        public void Broadcasts_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
+        [Theory(DisplayName = "Forwards ServerSearchRequest as SearchRequest"), AutoData]
+        public void Forwards_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
         {
             var (handler, mocks) = GetFixture();
 
@@ -233,7 +232,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(conn.Object, message);
 
             mocks.DistributedConnectionManager
-                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
+                .Verify(m => m.ForwardSearchRequestAsync(It.Is<DistributedSearchRequest>(r => r.ToByteArray().Matches(forwardedMessage))), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]

@@ -421,7 +421,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
         /// <returns>The operation context.</returns>
-        public Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest)
+        public Task ForwardSearchRequestAsync(DistributedSearchRequest distributedSearchRequest)
         {
             LastSearchRequest = DateTime.UtcNow;
             return BroadcastMessageAsync(distributedSearchRequest.ToByteArray());

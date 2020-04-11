@@ -127,7 +127,7 @@ namespace Soulseek.Messaging.Handlers
                         var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
 
                         var forwardedSearchRequest = new DistributedSearchRequest(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query);
-                        SoulseekClient.DistributedConnectionManager.ForwardSearchRequest(forwardedSearchRequest).Forget();
+                        _ = SoulseekClient.DistributedConnectionManager.ForwardSearchRequestAsync(forwardedSearchRequest).ConfigureAwait(false);
 
                         await TrySendSearchResults(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query).ConfigureAwait(false);
 
@@ -138,7 +138,7 @@ namespace Soulseek.Messaging.Handlers
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
-                        SoulseekClient.DistributedConnectionManager.ForwardSearchRequest(searchRequest).Forget();
+                        _ = SoulseekClient.DistributedConnectionManager.ForwardSearchRequestAsync(searchRequest).ConfigureAwait(false);
 
                         await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 

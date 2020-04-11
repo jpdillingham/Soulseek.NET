@@ -102,7 +102,7 @@ namespace Soulseek.Network
         /// </summary>
         /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
         /// <returns>The operation context.</returns>
-        Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest);
+        Task ForwardSearchRequestAsync(DistributedSearchRequest distributedSearchRequest);
 
         /// <summary>
         ///     Removes and disposes the parent and all child connections.
