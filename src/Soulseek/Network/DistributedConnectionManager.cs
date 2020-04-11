@@ -1,4 +1,4 @@
-// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
+﻿// <copyright file="DistributedConnectionManager.cs" company="JP Dillingham">
 //     Copyright (c) JP Dillingham. All rights reserved.
 //
 //     This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License
@@ -57,31 +57,29 @@ namespace Soulseek.Network
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            StatusWatchdogTimer = new SystemTimer()
+            WatchdogTimer = new SystemTimer()
             {
-                Enabled = true,
+                Enabled = SoulseekClient.Options.EnableDistributedNetwork,
                 AutoReset = true,
                 Interval = 300000,
             };
 
-            StatusWatchdogTimer.Elapsed += (sender, e) =>
+            WatchdogTimer.Elapsed += (sender, e) =>
             {
-                Diagnostic.Info($"[{DateTime.Now}] Parent: {HasParent}, last distributed message: {LastSearchRequest}");
+                var timeSinceLastSearchRequest = DateTime.UtcNow - LastSearchRequest;
+
+                if (HasParent && timeSinceLastSearchRequest >= TimeSpan.FromMilliseconds(WatchdogTimer.Interval / 2D))
+                {
+                    Diagnostic.Warning($"No distributed search requests since {LastSearchRequest} ({DateTime.UtcNow - LastSearchRequest} ago). Pinging parent.");
+                    _ = ParentConnection.WriteAsync(new DistributedPingRequest().ToByteArray()).ConfigureAwait(false);
+                }
+
                 if (!HasParent)
                 {
-                    Diagnostic.Warning($"No parent connection.");
-                    //_ = UpdateStatusAsync();
+                    Diagnostic.Warning($"No distributed parent connected.  Requesting a list of candidates.");
+                    _ = UpdateStatusAsync();
                 }
             };
-
-            ParentWatchdogTimer = new SystemTimer()
-            {
-                Enabled = false,
-                AutoReset = false,
-                Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout,
-            };
-
-            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection?.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} milliseconds was reached; no broadcastable messages recieved");
         }
 
         /// <summary>
@@ -140,11 +138,10 @@ namespace Soulseek.Network
         private DateTime LastSearchRequest { get; set; }
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
-        private SystemTimer ParentWatchdogTimer { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
-        private SystemTimer StatusWatchdogTimer { get; }
+        private SystemTimer WatchdogTimer { get; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
@@ -426,8 +423,7 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public Task ForwardSearchRequest(DistributedSearchRequest distributedSearchRequest)
         {
-            ParentWatchdogTimer?.Reset();
-            LastSearchRequest = DateTime.Now;
+            LastSearchRequest = DateTime.UtcNow;
             return BroadcastMessageAsync(distributedSearchRequest.ToByteArray());
         }
 
@@ -485,7 +481,7 @@ namespace Soulseek.Network
             {
                 if (disposing)
                 {
-                    ParentWatchdogTimer?.Dispose();
+                    WatchdogTimer?.Dispose();
                     RemoveAndDisposeAll();
                 }
 
