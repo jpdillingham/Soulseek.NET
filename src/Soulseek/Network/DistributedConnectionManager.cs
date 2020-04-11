@@ -66,14 +66,6 @@ namespace Soulseek.Network
 
             WatchdogTimer.Elapsed += (sender, e) =>
             {
-                var timeSinceLastSearchRequest = DateTime.UtcNow - LastSearchRequest;
-
-                if (HasParent && timeSinceLastSearchRequest >= TimeSpan.FromMilliseconds(WatchdogTimer.Interval / 2D))
-                {
-                    Diagnostic.Warning($"No distributed search requests since {LastSearchRequest} ({DateTime.UtcNow - LastSearchRequest} ago). Pinging parent.");
-                    _ = ParentConnection.WriteAsync(new DistributedPingRequest().ToByteArray()).ConfigureAwait(false);
-                }
-
                 if (!HasParent)
                 {
                     Diagnostic.Warning($"No distributed parent connected.  Requesting a list of candidates.");
@@ -135,7 +127,6 @@ namespace Soulseek.Network
         private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; }
-        private DateTime LastSearchRequest { get; set; }
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
@@ -414,17 +405,6 @@ namespace Soulseek.Network
         {
             Dispose(true);
             GC.SuppressFinalize(this);
-        }
-
-        /// <summary>
-        ///     Asynchronously forwards received search requests to each of the connected child connections.
-        /// </summary>
-        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
-        /// <returns>The operation context.</returns>
-        public Task ForwardSearchRequestAsync(DistributedSearchRequest distributedSearchRequest)
-        {
-            LastSearchRequest = DateTime.UtcNow;
-            return BroadcastMessageAsync(distributedSearchRequest.ToByteArray());
         }
 
         /// <summary>

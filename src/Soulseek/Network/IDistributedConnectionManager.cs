@@ -98,13 +98,6 @@ namespace Soulseek.Network
         Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null);
 
         /// <summary>
-        ///     Asynchronously forwards received search requests to each of the connected child connections.
-        /// </summary>
-        /// <param name="distributedSearchRequest">The distributed search request to forward.</param>
-        /// <returns>The operation context.</returns>
-        Task ForwardSearchRequestAsync(DistributedSearchRequest distributedSearchRequest);
-
-        /// <summary>
         ///     Removes and disposes the parent and all child connections.
         /// </summary>
         void RemoveAndDisposeAll();
