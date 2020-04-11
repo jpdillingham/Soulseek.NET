@@ -180,8 +180,6 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         {
             var (handler, mocks) = GetFixture();
 
-            byte[] msg = null;
-
             var conn = new Mock<IMessageConnection>();
             conn.Setup(m => m.Username)
                 .Returns(username);
@@ -197,8 +195,8 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Forwards SearchRequest"), AutoData]
-        public void Forwards_SearchRequest(string username, int token, string query)
+        [Theory(DisplayName = "Broadcasts SearchRequest"), AutoData]
+        public void Broadcasts_SearchRequest(string username, int token, string query)
         {
             var (handler, mocks) = GetFixture();
 
@@ -208,12 +206,12 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
 
             handler.HandleMessageRead(conn.Object, message);
 
-            mocks.DistributedConnectionManager.Verify(m => m.ForwardSearchRequestAsync(It.IsAny<DistributedSearchRequest>()), Times.Once);
+            mocks.DistributedConnectionManager.Verify(m => m.BroadcastMessageAsync(message, It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "Message")]
-        [Theory(DisplayName = "Forwards ServerSearchRequest as SearchRequest"), AutoData]
-        public void Forwards_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
+        [Theory(DisplayName = "Broadcasts ServerSearchRequest as SearchRequest"), AutoData]
+        public void Broadcasts_ServerSearchRequest_As_SearchRequest(string username, int token, string query)
         {
             var (handler, mocks) = GetFixture();
 
@@ -232,7 +230,7 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             handler.HandleMessageRead(conn.Object, message);
 
             mocks.DistributedConnectionManager
-                .Verify(m => m.ForwardSearchRequestAsync(It.Is<DistributedSearchRequest>(r => r.ToByteArray().Matches(forwardedMessage))), Times.Once);
+                .Verify(m => m.BroadcastMessageAsync(forwardedMessage, It.IsAny<CancellationToken?>()), Times.Once);
         }
 
         [Trait("Category", "Diagnostic")]
