@@ -23,8 +23,8 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="ParentsIPCommand"/> class.
         /// </summary>
-        /// <param name="ipAddress">The IP address of the current distributed parent.</param>
-        public ParentsIPCommand(IPAddress ipAddress)
+        /// <param name="ipAddress">The IP address of the current distributed parent, or null if none is connected.</param>
+        public ParentsIPCommand(IPAddress ipAddress = null)
         {
             IPAddress = ipAddress;
         }
@@ -40,8 +40,13 @@ namespace Soulseek.Messaging.Messages
         /// <returns>The constructed byte array.</returns>
         public byte[] ToByteArray()
         {
-            var ipBytes = IPAddress.GetAddressBytes();
-            Array.Reverse(ipBytes);
+            byte[] ipBytes = Array.Empty<byte>();
+
+            if (IPAddress != default)
+            {
+                ipBytes = IPAddress.GetAddressBytes();
+                Array.Reverse(ipBytes);
+            }
 
             return new MessageBuilder()
                 .WriteCode(MessageCode.Server.ParentsIP)
