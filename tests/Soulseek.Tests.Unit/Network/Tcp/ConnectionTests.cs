@@ -52,6 +52,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             Assert.Equal(ConnectionState.Pending, c.State);
             Assert.NotEqual(Guid.Empty, c.Id);
             Assert.Equal(ConnectionTypes.None, c.Type);
+            Assert.NotNull(c.InactiveTime);
         }
 
         [Trait("Category", "Instantiation")]
@@ -702,6 +703,33 @@ namespace Soulseek.Tests.Unit.Network.Tcp
         }
 
         [Trait("Category", "Write")]
+        [Theory(DisplayName = "Write resets LastActivityTime"), AutoData]
+        public async Task Write_Resets_LastActivityTime(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await Task.Delay(100);
+                    var time = c.InactiveTime;
+
+                    await c.WriteAsync(new byte[] { 0x0, 0x1 });
+
+                    var time2 = c.InactiveTime;
+
+                    Assert.True(time2 < time);
+                }
+            }
+        }
+
+        [Trait("Category", "Write")]
         [Theory(DisplayName = "Write from stream does not throw given good input and if Stream does not throw"), AutoData]
         public async Task Write_From_Stream_Does_Not_Throw_Given_Good_Input_And_If_Stream_Does_Not_Throw(IPEndPoint endpoint)
         {
@@ -1263,6 +1291,36 @@ namespace Soulseek.Tests.Unit.Network.Tcp
                     Assert.Equal(3, eventArgs[2].TotalLength);
 
                     s.Verify(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+                }
+            }
+        }
+
+        [Trait("Category", "Read")]
+        [Theory(DisplayName = "Read resets LastActivityTime"), AutoData]
+        public async Task Read_Resets_LastActivityTime(IPEndPoint endpoint)
+        {
+            var s = new Mock<INetworkStream>();
+            s.Setup(m => m.ReadAsync(It.IsAny<byte[]>(), It.IsAny<int>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.Run(() => 1));
+
+            var t = new Mock<ITcpClient>();
+
+            using (var socket = new Socket(SocketType.Stream, ProtocolType.IP))
+            {
+                t.Setup(m => m.Client).Returns(socket);
+                t.Setup(m => m.Connected).Returns(true);
+                t.Setup(m => m.GetStream()).Returns(s.Object);
+
+                using (var c = new Connection(endpoint, tcpClient: t.Object))
+                {
+                    await Task.Delay(100);
+                    var time = c.InactiveTime;
+
+                    await c.ReadAsync(3);
+
+                    var time2 = c.InactiveTime;
+
+                    Assert.True(time2 < time);
                 }
             }
         }
