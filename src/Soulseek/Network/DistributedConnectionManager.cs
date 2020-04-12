@@ -57,14 +57,21 @@ namespace Soulseek.Network
             Diagnostic = diagnosticFactory ??
                 new DiagnosticFactory(this, SoulseekClient?.Options?.MinimumDiagnosticLevel ?? new SoulseekClientOptions().MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
 
-            ParentWatchdogTimer = new SystemTimer()
+            WatchdogTimer = new SystemTimer()
             {
-                Enabled = false,
-                AutoReset = false,
-                Interval = SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout,
+                Enabled = SoulseekClient.Options.EnableDistributedNetwork,
+                AutoReset = true,
+                Interval = 300000,
             };
 
-            ParentWatchdogTimer.Elapsed += (sender, e) => ParentConnection?.Disconnect($"Inactivity timeout of {SoulseekClient.Options.DistributedConnectionOptions.InactivityTimeout} milliseconds was reached; no broadcastable messages recieved");
+            WatchdogTimer.Elapsed += (sender, e) =>
+            {
+                if (!HasParent)
+                {
+                    Diagnostic.Warning($"No distributed parent connected.  Requesting a list of candidates.");
+                    _ = UpdateStatusAsync();
+                }
+            };
         }
 
         /// <summary>
@@ -85,7 +92,7 @@ namespace Soulseek.Network
         /// <summary>
         ///     Gets a value indicating whether child connections can be accepted.
         /// </summary>
-        public bool CanAcceptChildren => AcceptChildren && ChildConnectionDictionary.Count < ConcurrentChildLimit;
+        public bool CanAcceptChildren => AcceptChildren && HasParent && ChildConnectionDictionary.Count < ConcurrentChildLimit;
 
         /// <summary>
         ///     Gets the current list of child connections.
@@ -122,10 +129,10 @@ namespace Soulseek.Network
         private bool Disposed { get; set; }
         private List<(string Username, IPEndPoint IPEndPoint)> ParentCandidateList { get; set; } = new List<(string Username, IPEndPoint iPEndPoint)>();
         private IMessageConnection ParentConnection { get; set; }
-        private SystemTimer ParentWatchdogTimer { get; }
         private ConcurrentDictionary<int, string> PendingSolicitationDictionary { get; } = new ConcurrentDictionary<int, string>();
         private SoulseekClient SoulseekClient { get; }
         private string StatusHash { get; set; }
+        private SystemTimer WatchdogTimer { get; }
 
         /// <summary>
         ///     Adds a new child connection using the details in the specified <paramref name="connectToPeerResponse"/> and
@@ -177,7 +184,7 @@ namespace Soulseek.Network
                     SoulseekClient.Options.DistributedConnectionOptions);
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Indirect;
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
                 connection.Disconnected += ChildConnection_Disconnected;
 
                 try
@@ -249,7 +256,7 @@ namespace Soulseek.Network
                     c.HandoffTcpClient());
 
                 connection.Type = ConnectionTypes.Inbound | ConnectionTypes.Direct;
-                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleMessageRead;
+                connection.MessageRead += SoulseekClient.DistributedMessageHandler.HandleChildMessageRead;
 
                 Diagnostic.Debug($"Inbound child connection to {username} ({connection.IPEndPoint}) handed off. (old: {c.Id}, new: {connection.Id})");
 
@@ -374,8 +381,6 @@ namespace Soulseek.Network
         /// <returns>The operation context.</returns>
         public async Task BroadcastMessageAsync(byte[] bytes, CancellationToken? cancellationToken = null)
         {
-            ParentWatchdogTimer?.Reset();
-
             var tasks = ChildConnectionDictionary.Values.Select(async c =>
             {
                 IMessageConnection connection = default;
@@ -456,7 +461,7 @@ namespace Soulseek.Network
             {
                 if (disposing)
                 {
-                    ParentWatchdogTimer?.Dispose();
+                    WatchdogTimer?.Dispose();
                     RemoveAndDisposeAll();
                 }
 
@@ -666,15 +671,16 @@ namespace Soulseek.Network
             var payload = new List<byte>();
 
             var haveNoParents = !HasParent;
-            var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address ?? IPAddress.None : IPAddress.None;
+            var parentsIp = HasParent ? ParentConnection?.IPEndPoint?.Address : null;
             var branchLevel = HasParent ? BranchLevel : 0;
             var branchRoot = HasParent ? BranchRoot : string.Empty;
 
-            payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
             payload.AddRange(new ParentsIPCommand(parentsIp).ToByteArray());
-            payload.AddRange(GetBranchInformation<MessageCode.Server>());
+            payload.AddRange(new BranchLevelCommand(branchLevel).ToByteArray());
+            payload.AddRange(new BranchRootCommand(branchRoot).ToByteArray());
             payload.AddRange(new ChildDepthCommand(ChildConnectionDictionary.Count).ToByteArray());
             payload.AddRange(new AcceptChildrenCommand(CanAcceptChildren).ToByteArray());
+            payload.AddRange(new HaveNoParentsCommand(haveNoParents).ToByteArray());
 
             var statusHash = Convert.ToBase64String(payload.ToArray());
 
@@ -706,7 +712,7 @@ namespace Soulseek.Network
                     .Append($"BranchLevel: {branchLevel}, BranchRoot: {branchRoot}, ")
                     .Append($"ChildDepth: {ChildConnectionDictionary.Count}, AcceptChildren: {CanAcceptChildren}");
 
-                Diagnostic.Debug(sb.ToString());
+                Diagnostic.Info(sb.ToString());
             }
             catch (Exception ex)
             {

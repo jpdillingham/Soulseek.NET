@@ -47,6 +47,50 @@ namespace Soulseek.Messaging.Handlers
         private SoulseekClient SoulseekClient { get; }
 
         /// <summary>
+        ///     Handles incoming messages from distributed children.
+        /// </summary>
+        /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
+        /// <param name="args">The message event args.</param>
+        public void HandleChildMessageRead(object sender, MessageReadEventArgs args)
+        {
+            HandleChildMessageRead(sender, args.Message);
+        }
+
+        /// <summary>
+        ///     Handles incoming messages from distributed children.
+        /// </summary>
+        /// <param name="sender">The child <see cref="IMessageConnection"/> from which the message originated.</param>
+        /// <param name="message">The message.</param>
+        public async void HandleChildMessageRead(object sender, byte[] message)
+        {
+            var connection = (IMessageConnection)sender;
+            var code = new MessageReader<MessageCode.Distributed>(message).ReadCode();
+
+            Diagnostic.Debug($"Distributed child message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+
+            try
+            {
+                switch (code)
+                {
+                    case MessageCode.Distributed.Ping:
+                        Diagnostic.Debug($"PING?");
+                        var pingResponse = new DistributedPingResponse(SoulseekClient.GetNextToken());
+                        await connection.WriteAsync(pingResponse.ToByteArray()).ConfigureAwait(false);
+                        Diagnostic.Debug($"PONG!");
+                        break;
+
+                    default:
+                        Diagnostic.Debug($"Unhandled distributed child message: {code} from {connection.Username} ({connection.IPEndPoint}); {message.Length} bytes");
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                Diagnostic.Warning($"Error handling distributed child message: {code} from {connection.Username} ({connection.IPEndPoint}); {ex.Message}", ex);
+            }
+        }
+
+        /// <summary>
         ///     Handles incoming messages.
         /// </summary>
         /// <param name="sender">The <see cref="IMessageConnection"/> instance from which the message originated.</param>
@@ -75,36 +119,35 @@ namespace Soulseek.Messaging.Handlers
             {
                 switch (code)
                 {
-                    // if we are connected to a branch root, we get search requests with code DistributedServerSearchRequest.  convert this
-                    // message to a normal DistributedSearchRequest before forwarding. not sure if this is correct, but it would match the
-                    // observed behavior.  these messages may also be forwarded from the server message handler if we haven't connected to
-                    // a distributed parent in a timely manner.
+                    // if we are connected to a branch root, we get search requests with code DistributedServerSearchRequest.
+                    // convert this message to a normal DistributedSearchRequest before forwarding. not sure if this is correct,
+                    // but it would match the observed behavior. these messages may also be forwarded from the server message
+                    // handler if we haven't connected to a distributed parent in a timely manner.
                     case MessageCode.Distributed.ServerSearchRequest:
                         var serverSearchRequest = DistributedServerSearchRequest.FromByteArray(message);
 
-                        var forwardedMessage = new DistributedSearchRequest(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query);
-                        SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(forwardedMessage.ToByteArray()).Forget();
+                        var forwardedSearchRequest = new DistributedSearchRequest(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query);
+                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(forwardedSearchRequest.ToByteArray()).ConfigureAwait(false);
 
                         await TrySendSearchResults(serverSearchRequest.Username, serverSearchRequest.Token, serverSearchRequest.Query).ConfigureAwait(false);
 
                         break;
 
-                    // if we are connected to anyone other than a branch root, we should get search requests with code SearchRequest.
-                    // forward these requests as is.
+                    // if we are connected to anyone other than a branch root, we should get search requests with code
+                    // SearchRequest. forward these requests as is.
                     case MessageCode.Distributed.SearchRequest:
                         var searchRequest = DistributedSearchRequest.FromByteArray(message);
 
-                        SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(message).Forget();
+                        _ = SoulseekClient.DistributedConnectionManager.BroadcastMessageAsync(searchRequest.ToByteArray()).ConfigureAwait(false);
 
                         await TrySendSearchResults(searchRequest.Username, searchRequest.Token, searchRequest.Query).ConfigureAwait(false);
 
                         break;
 
                     case MessageCode.Distributed.Ping:
-                        Diagnostic.Debug($"PING?");
-                        var pingResponse = new DistributedPingResponse(SoulseekClient.GetNextToken());
-                        await connection.WriteAsync(pingResponse.ToByteArray()).ConfigureAwait(false);
-                        Diagnostic.Debug($"PONG!");
+                        var pingResponse = DistributedPingResponse.FromByteArray(message);
+                        SoulseekClient.Waiter.Complete(new WaitKey(MessageCode.Distributed.Ping, connection.Username), pingResponse);
+
                         break;
 
                     case MessageCode.Distributed.BranchLevel:

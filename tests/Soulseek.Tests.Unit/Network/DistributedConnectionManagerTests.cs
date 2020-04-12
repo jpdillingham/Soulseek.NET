@@ -45,7 +45,7 @@ namespace Soulseek.Tests.Unit.Network
 
             Assert.Equal(0, c.BranchLevel);
             Assert.Equal(string.Empty, c.BranchRoot);
-            Assert.True(c.CanAcceptChildren);
+            Assert.False(c.CanAcceptChildren);
             Assert.Empty(c.Children);
             Assert.Equal(new SoulseekClientOptions().DistributedChildLimit, c.ConcurrentChildLimit);
             Assert.False(c.HasParent);
@@ -72,12 +72,18 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "CanAcceptChildren is true if AcceptDistributedChildren is true")]
         public void CanAcceptChildren_Is_True_If_AcceptDistributedChildren_Is_True()
         {
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (var s = new SoulseekClient("192.168.1.1", 1, new SoulseekClientOptions(
                 acceptDistributedChildren: true,
                 distributedChildLimit: 10)))
             {
                 using (var c = new DistributedConnectionManager(s))
                 {
+                    c.SetProperty("ParentConnection", parent.Object);
+
                     Assert.True(c.CanAcceptChildren);
                 }
             }
@@ -123,24 +129,6 @@ namespace Soulseek.Tests.Unit.Network
                 manager.SetBranchRoot(branchRoot);
 
                 Assert.Equal(branchRoot, manager.BranchRoot);
-            }
-        }
-
-        [Trait("Category", "BroadcastMessageAsync")]
-        [Theory(DisplayName = "BroadcastMessageAsync resets watchdog timer"), AutoData]
-        public async Task BroadcastMessageAsync_Resets_Watchdog_Timer(byte[] bytes)
-        {
-            var (manager, _) = GetFixture();
-
-            var timer = manager.GetProperty<System.Timers.Timer>("ParentWatchdogTimer");
-            timer.Stop();
-
-            using (timer)
-            using (manager)
-            {
-                await manager.BroadcastMessageAsync(bytes, CancellationToken.None);
-
-                Assert.True(timer.Enabled);
             }
         }
 
@@ -277,8 +265,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await manager.AddChildConnectionAsync(ctpr);
 
                 var child = manager.Children.FirstOrDefault();
@@ -305,8 +299,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
                 dict.TryAdd(ctpr.Username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(conn.Object)));
 
@@ -334,8 +334,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
@@ -364,8 +370,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
 
                 Assert.Empty(manager.Children);
@@ -388,8 +400,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await manager.AddChildConnectionAsync(ctpr);
             }
 
@@ -433,33 +451,6 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync CTPR sends blank branch information on connection when not connected to parent"), AutoData]
-        internal async Task AddChildConnectionAsync_Ctpr_Sends_Blank_Branch_Information_On_Connection_When_Not_Connected_To_Parent(ConnectToPeerResponse ctpr)
-        {
-            var (manager, mocks) = GetFixture();
-
-            var conn = GetMessageConnectionMock(ctpr.Username, ctpr.IPEndPoint);
-            conn.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
-
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(ctpr.Username, ctpr.IPEndPoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
-                .Returns(conn.Object);
-
-            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(1));
-
-            using (manager)
-            {
-                await manager.AddChildConnectionAsync(ctpr);
-            }
-
-            var expected = new List<byte>();
-            expected.AddRange(new DistributedBranchLevel(0).ToByteArray());
-
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
-        }
-
-        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync CTPR generates expected diagnostic on error"), AutoData]
         internal async Task AddChildConnectionAsync_Ctpr_Generates_Expected_Diagnostic_On_Error(ConnectToPeerResponse ctpr)
         {
@@ -477,8 +468,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
             }
 
@@ -506,8 +503,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(ctpr));
 
                 Assert.NotNull(ex);
@@ -561,8 +564,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
@@ -586,8 +595,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var ex = await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
 
                 Assert.NotNull(ex);
@@ -630,8 +645,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
 
                 var child = manager.Children.FirstOrDefault();
@@ -660,8 +681,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
                 dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
 
@@ -696,8 +723,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 var dict = manager.GetProperty<ConcurrentDictionary<string, Lazy<Task<IMessageConnection>>>>("ChildConnectionDictionary");
                 dict.TryAdd(username, new Lazy<Task<IMessageConnection>>(() => Task.FromResult(existingConn.Object)));
 
@@ -770,33 +803,6 @@ namespace Soulseek.Tests.Unit.Network
         }
 
         [Trait("Category", "AddChildConnectionAsync")]
-        [Theory(DisplayName = "AddChildConnectionAsync sends expected branch info when not connected to parent"), AutoData]
-        internal async Task AddChildConnectionAsync_Sends_Expected_Branch_Info_When_Not_Connected_To_Parent(string username, IPEndPoint endpoint)
-        {
-            var (manager, mocks) = GetFixture();
-
-            var conn = GetMessageConnectionMock(username, endpoint);
-            conn.Setup(m => m.State)
-                .Returns(ConnectionState.Connected);
-
-            mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
-                .Returns(conn.Object);
-
-            mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
-                .Returns(Task.FromResult(1));
-
-            using (manager)
-            {
-                await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
-            }
-
-            var expected = new List<byte>();
-            expected.AddRange(new DistributedBranchLevel(0).ToByteArray());
-
-            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(expected.ToArray())), It.IsAny<CancellationToken?>()), Times.Once);
-        }
-
-        [Trait("Category", "AddChildConnectionAsync")]
         [Theory(DisplayName = "AddChildConnectionAsync invokes StartReadingContinuously on successful connection"), AutoData]
         internal async Task AddChildConnectionAsync_Invokes_StartReadingContinuously_On_Successful_Connection(string username, IPEndPoint endpoint)
         {
@@ -810,8 +816,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
@@ -835,8 +847,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Waiter.Setup(m => m.Wait<int>(It.IsAny<WaitKey>(), It.IsAny<int?>(), It.IsAny<CancellationToken?>()))
                 .Returns(Task.FromResult(1));
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object);
             }
 
@@ -864,8 +882,14 @@ namespace Soulseek.Tests.Unit.Network
             mocks.ConnectionFactory.Setup(m => m.GetMessageConnection(username, endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
+            var parent = new Mock<IMessageConnection>();
+            parent.Setup(m => m.State)
+                .Returns(ConnectionState.Connected);
+
             using (manager)
             {
+                manager.SetProperty("ParentConnection", parent.Object);
+
                 await Record.ExceptionAsync(() => manager.AddChildConnectionAsync(username, GetMessageConnectionMock(username, endpoint).Object));
             }
 
@@ -908,7 +932,7 @@ namespace Soulseek.Tests.Unit.Network
             using (manager)
             {
                 // bit of a hack here, but this is the expected hash on an uninitialized instance
-                manager.SetProperty("StatusHash", "BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAABAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
+                manager.SetProperty("StatusHash", "CAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
                 manager.SetProperty("ParentConnection", conn.Object);
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
@@ -920,7 +944,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "UpdateStatusAsync writes payload to server")]
         internal async Task UpdateStatusAsync_Writes_Payload_To_Server()
         {
-            var expectedPayload = Convert.FromBase64String("BQAAAEcAAAAACAAAAEkAAAD/////CAAAAH4AAAABAAAACAAAAIEAAAAAAAAABQAAAGQAAAAB");
+            var expectedPayload = Convert.FromBase64String("CAAAAEkAAAD/////CAAAAH4AAAAAAAAACAAAAH8AAAAAAAAACAAAAIEAAAAAAAAABQAAAGQAAAABBQAAAEcAAAAA");
 
             var (manager, mocks) = GetFixture();
 
@@ -1016,7 +1040,7 @@ namespace Soulseek.Tests.Unit.Network
                 await manager.InvokeMethod<Task>("UpdateStatusAsync");
             }
 
-            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("Updated distributed status"))), Times.Once);
+            mocks.Diagnostic.Verify(m => m.Info(It.Is<string>(s => s.ContainsInsensitive("Updated distributed status"))), Times.Once);
         }
 
         [Trait("Category", "UpdateStatusAsync")]

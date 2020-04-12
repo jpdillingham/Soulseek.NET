@@ -55,6 +55,11 @@ namespace Soulseek.Network.Tcp
         Guid Id { get; }
 
         /// <summary>
+        ///     Gets the amount of time since the last activity.
+        /// </summary>
+        TimeSpan InactiveTime { get; }
+
+        /// <summary>
         ///     Gets the remote IP endpoint of the connection.
         /// </summary>
         IPEndPoint IPEndPoint { get; }

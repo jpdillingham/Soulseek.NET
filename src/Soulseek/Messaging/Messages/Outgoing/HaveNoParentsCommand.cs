@@ -20,16 +20,16 @@ namespace Soulseek.Messaging.Messages
         /// <summary>
         ///     Initializes a new instance of the <see cref="HaveNoParentsCommand"/> class.
         /// </summary>
-        /// <param name="haveParents">A value indicating whether a distributed parent connections is needed.</param>
-        public HaveNoParentsCommand(bool haveParents)
+        /// <param name="haveNoParents">A value indicating whether a distributed parent connection is needed.</param>
+        public HaveNoParentsCommand(bool haveNoParents)
         {
-            HaveParents = haveParents;
+            HaveNoParents = haveNoParents;
         }
 
         /// <summary>
         ///     Gets a value indicating whether a distributed parent connections is needed.
         /// </summary>
-        public bool HaveParents { get; }
+        public bool HaveNoParents { get; }
 
         /// <summary>
         ///     Constructs a <see cref="byte"/> array from this message.
@@ -39,7 +39,7 @@ namespace Soulseek.Messaging.Messages
         {
             return new MessageBuilder()
                 .WriteCode(MessageCode.Server.HaveNoParents)
-                .WriteByte((byte)(HaveParents ? 1 : 0))
+                .WriteByte((byte)(HaveNoParents ? 1 : 0))
                 .Build();
         }
     }
