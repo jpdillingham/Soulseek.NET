@@ -415,6 +415,77 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
             peerConn.Verify(m => m.WriteAsync(It.IsAny<byte[]>(), null), Times.Never);
         }
 
+        [Trait("Category", "HandleChildMessageRead")]
+        [Theory(DisplayName = "HandleChildMessageRead responts to ping"), AutoData]
+        public void HandleChildMessageRead_Responds_To_Ping(int token)
+        {
+            var (handler, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedPingRequest().ToByteArray();
+
+            handler.HandleChildMessageRead(conn.Object, message);
+
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "HandleChildMessageRead")]
+        [Theory(DisplayName = "HandleChildMessageRead responts to ping from EventArgs"), AutoData]
+        public void HandleChildMessageRead_Responds_To_Ping_From_EventArgs(int token)
+        {
+            var (handler, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedPingRequest().ToByteArray();
+
+            handler.HandleChildMessageRead(conn.Object, new MessageReadEventArgs(message));
+
+            conn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => b.Matches(new DistributedPingResponse(token).ToByteArray())), It.IsAny<CancellationToken?>()), Times.Once);
+        }
+
+        [Trait("Category", "HandleChildMessageRead")]
+        [Theory(DisplayName = "HandleChildMessageRead produces warning on Exception"), AutoData]
+        public void HandleChildMessageRead_Produces_Warning_On_Exception(int token)
+        {
+            var (handler, mocks) = GetFixture();
+
+            mocks.Client.Setup(m => m.GetNextToken())
+                .Returns(token);
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromException(new Exception()));
+
+            var message = new DistributedPingRequest().ToByteArray();
+
+            handler.HandleChildMessageRead(conn.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Warning(It.Is<string>(s => s.ContainsInsensitive("error handling distributed child message")), It.IsAny<Exception>()), Times.Once);
+        }
+
+        [Trait("Category", "HandleChildMessageRead")]
+        [Fact(DisplayName = "HandleChildMessageRead produces debug on unhandled message")]
+        public void HandleChildMessageRead_Produces_Debug_On_Unhandled_Message()
+        {
+            var (handler, mocks) = GetFixture();
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedBranchLevel(1).ToByteArray();
+
+            handler.HandleChildMessageRead(conn.Object, message);
+
+            mocks.Diagnostic.Verify(m => m.Debug(It.Is<string>(s => s.ContainsInsensitive("unhandled distributed child message"))), Times.Once);
+        }
+
         private (DistributedMessageHandler Handler, Mocks Mocks) GetFixture(SoulseekClientOptions clientOptions = null)
         {
             var mocks = new Mocks(clientOptions);

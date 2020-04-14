@@ -171,7 +171,7 @@ namespace Soulseek.Network.Tcp
         /// <summary>
         ///     Gets or sets the time at which the last activity took place.
         /// </summary>
-        protected DateTime LastActivityTime { get; set; }
+        protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
