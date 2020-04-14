@@ -42,6 +42,7 @@ namespace Soulseek
         ///     Initializes a new instance of the <see cref="SoulseekClientOptions"/> class.
         /// </summary>
         /// <param name="listenPort">The port on which to listen for incoming connections.</param>
+        /// <param name="userEndPointCache">The user endpoint cache to use when resolving user endpoints.</param>
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
@@ -85,6 +86,7 @@ namespace Soulseek
         /// </exception>
         public SoulseekClientOptions(
             int? listenPort = null,
+            IUserEndPointCache userEndPointCache = null,
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
@@ -107,6 +109,8 @@ namespace Soulseek
             Func<string, IPEndPoint, string, Task<int?>> placeInQueueResponseResolver = null)
         {
             ListenPort = listenPort;
+
+            UserEndPointCache = userEndPointCache;
 
             EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
@@ -245,6 +249,11 @@ namespace Soulseek
         ///     Gets the options for peer transfer connections.
         /// </summary>
         public ConnectionOptions TransferConnectionOptions { get; }
+
+        /// <summary>
+        ///     Gets the user endpoint cache to use when resolving user endpoints.
+        /// </summary>
+        public IUserEndPointCache UserEndPointCache { get; }
 
         /// <summary>
         ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
