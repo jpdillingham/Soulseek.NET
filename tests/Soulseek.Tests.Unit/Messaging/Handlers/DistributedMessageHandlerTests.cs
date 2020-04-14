@@ -294,6 +294,62 @@ namespace Soulseek.Tests.Unit.Messaging.Handlers
         }
 
         [Trait("Category", "Message")]
+        [Theory(DisplayName = "Deduplicates SearchRequest when deduplicate option is set"), AutoData]
+        public void Deduplicates_SearchRequest_When_Deduplicate_Option_Is_Set(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response), deduplicateSearchRequests: true);
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
+
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Once);
+        }
+
+        [Trait("Category", "Message")]
+        [Theory(DisplayName = "Does not deduplicate SearchRequest when deduplicate option is unset"), AutoData]
+        public void Does_Not_Deduplicate_SearchRequest_When_Deduplicate_Option_Is_Unset(string username, int token, string query)
+        {
+            var response = new SearchResponse("foo", token, 1, 1, 1, 1, new List<File>() { new File(1, "1", 1, "1", 0) });
+            var options = new SoulseekClientOptions(searchResponseResolver: (u, t, q) => Task.FromResult(response), deduplicateSearchRequests: false);
+            var (handler, mocks) = GetFixture(options);
+
+            mocks.Client.Setup(m => m.GetUserEndPointAsync(username, It.IsAny<CancellationToken?>()))
+                .Returns(Task.FromResult(new IPEndPoint(IPAddress.None, 0)));
+
+            var endpoint = new IPEndPoint(IPAddress.None, 0);
+
+            var peerConn = new Mock<IMessageConnection>();
+            mocks.PeerConnectionManager.Setup(m => m.GetOrAddMessageConnectionAsync(username, endpoint, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(peerConn.Object));
+
+            var conn = new Mock<IMessageConnection>();
+
+            var message = new DistributedSearchRequest(username, token, query).ToByteArray();
+
+            handler.HandleMessageRead(conn.Object, message);
+            handler.HandleMessageRead(conn.Object, message);
+
+            // cheap hack here to compare the contents of the resulting byte arrays, since they are distinct arrays but contain the same bytes
+            peerConn.Verify(m => m.WriteAsync(It.Is<byte[]>(b => Encoding.UTF8.GetString(b) == Encoding.UTF8.GetString(response.ToByteArray())), null), Times.Exactly(2));
+        }
+
+        [Trait("Category", "Message")]
         [Theory(DisplayName = "Generates diagnostic on failure to send search results"), AutoData]
         public void Generates_Diagnostic_On_Failure_To_Send_Search_Results(string username, int token, string query)
         {

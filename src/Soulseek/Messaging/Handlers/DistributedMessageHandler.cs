@@ -43,6 +43,7 @@ namespace Soulseek.Messaging.Handlers
         /// </summary>
         public event EventHandler<DiagnosticEventArgs> DiagnosticGenerated;
 
+        private string DeduplicationHash { get; set; }
         private IDiagnosticFactory Diagnostic { get; }
         private SoulseekClient SoulseekClient { get; }
 
@@ -113,6 +114,17 @@ namespace Soulseek.Messaging.Handlers
             if (code != MessageCode.Distributed.SearchRequest && code != MessageCode.Distributed.ServerSearchRequest)
             {
                 Diagnostic.Debug($"Distributed message received: {code} from {connection.Username} ({connection.IPEndPoint}) (id: {connection.Id})");
+            }
+            else if (SoulseekClient.Options.DeduplicateSearchRequests)
+            {
+                var current = Convert.ToBase64String(message);
+
+                if (DeduplicationHash == current)
+                {
+                    return;
+                }
+
+                DeduplicationHash = current;
             }
 
             try
@@ -209,7 +221,7 @@ namespace Soulseek.Messaging.Handlers
             {
                 try
                 {
-                    Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}'");
+                    Diagnostic.Debug($"Resolved {searchResponse.FileCount} files for query '{query}' with token {token} from {username}");
 
                     var endpoint = await SoulseekClient.GetUserEndPointAsync(username).ConfigureAwait(false);
 
