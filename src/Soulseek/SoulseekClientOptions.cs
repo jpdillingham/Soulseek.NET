@@ -45,6 +45,9 @@ namespace Soulseek
         /// <param name="enableDistributedNetwork">A value indicating whether to establish distributed network connections.</param>
         /// <param name="acceptDistributedChildren">A value indicating whether to accept distributed child connections.</param>
         /// <param name="distributedChildLimit">The number of allowed distributed children.</param>
+        /// <param name="deduplicateSearchRequests">
+        ///     A value indicating whether duplicated distributed search requests should be discarded.
+        /// </param>
         /// <param name="messageTimeout">
         ///     The message timeout, in milliseconds, used when waiting for a response from the server.
         /// </param>
@@ -85,6 +88,7 @@ namespace Soulseek
             bool enableDistributedNetwork = true,
             bool acceptDistributedChildren = true,
             int distributedChildLimit = 25,
+            bool deduplicateSearchRequests = true,
             int messageTimeout = 5000,
             bool autoAcknowledgePrivateMessages = true,
             bool autoAcknowledgePrivilegeNotifications = true,
@@ -107,6 +111,7 @@ namespace Soulseek
             EnableDistributedNetwork = enableDistributedNetwork;
             AcceptDistributedChildren = acceptDistributedChildren;
             DistributedChildLimit = distributedChildLimit;
+            DeduplicateSearchRequests = deduplicateSearchRequests;
 
             if (DistributedChildLimit < 0)
             {
@@ -155,6 +160,11 @@ namespace Soulseek
         ///     or directories).
         /// </summary>
         public Func<string, IPEndPoint, Task<IEnumerable<Directory>>> BrowseResponseResolver { get; }
+
+        /// <summary>
+        ///     Gets a value indicating whether duplicated distributed search requests should be discarded. (Default = discard duplicates).
+        /// </summary>
+        public bool DeduplicateSearchRequests { get; }
 
         /// <summary>
         ///     Gets the delegate used to resolve the response for an incoming directory contents request. (Default = a response
