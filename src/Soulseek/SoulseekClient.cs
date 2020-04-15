@@ -2122,7 +2122,6 @@ namespace Soulseek
                 }
             }
 
-            Console.WriteLine($"CACHE DISABLED");
             return await GetEndPoint().ConfigureAwait(false);
 
             async Task<IPEndPoint> GetEndPoint()
