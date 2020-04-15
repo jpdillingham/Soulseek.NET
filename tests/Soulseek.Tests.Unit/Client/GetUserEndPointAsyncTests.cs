@@ -165,5 +165,24 @@ namespace Soulseek.Tests.Unit.Client
                 Assert.Equal(port, addr.Port);
             }
         }
+
+        [Trait("Category", "GetUserEndPointAsync")]
+        [Theory(DisplayName = "GetUserEndPointAsync returns cached endpoint if cached"), AutoData]
+        public async Task GetUserEndPointAsync_Returns_Cached_Endpoint_If_Cached(string username, IPEndPoint endpoint)
+        {
+            var cache = new Mock<IUserEndPointCache>();
+            cache.Setup(m => m.TryGet(username, out endpoint))
+                .Returns(true);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var addr = await s.GetUserEndPointAsync(username);
+
+                Assert.Equal(endpoint.Address, addr.Address);
+                Assert.Equal(endpoint.Port, addr.Port);
+            }
+        }
     }
 }
