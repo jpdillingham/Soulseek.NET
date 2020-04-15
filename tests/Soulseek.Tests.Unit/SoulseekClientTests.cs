@@ -29,9 +29,11 @@ namespace Soulseek.Tests.Unit
     public class SoulseekClientTests
     {
         [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with with given options"), AutoData]
-        public void Instantiates_With_Given_Options(SoulseekClientOptions options)
+        [Fact(DisplayName = "Instantiates with with given options")]
+        public void Instantiates_With_Given_Options()
         {
+            var options = new SoulseekClientOptions();
+
             using (var s = new SoulseekClient(options))
             {
                 Assert.Equal(options, s.Options);
