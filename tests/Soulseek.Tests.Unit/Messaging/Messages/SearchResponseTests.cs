@@ -39,9 +39,9 @@ namespace Soulseek.Tests.Unit.Messaging.Messages
 
         [Trait("Category", "Instantiation")]
         [Theory(DisplayName = "Instantiates with given response and list, replacing filecount with list length"), AutoData]
-        public void Instantiates_With_Given_Response_And_List(string username, int token, int fileCount, int freeUploadSlots, int uploadSpeed, long queueLength)
+        public void Instantiates_With_Given_Response_And_List(string username, int token, int freeUploadSlots, int uploadSpeed, long queueLength)
         {
-            var r1 = new SearchResponse(username, token, fileCount, freeUploadSlots, uploadSpeed, queueLength);
+            var r1 = new SearchResponse(username, token, freeUploadSlots, uploadSpeed, queueLength);
 
             var r2 = new SearchResponse(r1, new List<File>() { new File(1, "foo", 2, "ext", 0) });
 
