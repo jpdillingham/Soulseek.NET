@@ -344,7 +344,7 @@ namespace Soulseek
         private bool Disposed { get; set; } = false;
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
-        private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -2088,37 +2088,44 @@ namespace Soulseek
 
             if (cache != default)
             {
-                if (cache.TryGet(username, out var endPoint))
-                {
-                    Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
-                    return endPoint;
-                }
-
-#pragma warning disable CA2000 // Dispose objects before losing scope
-                var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-#pragma warning restore CA2000 // Dispose objects before losing scope
-                await semaphore.WaitAsync().ConfigureAwait(false);
-
                 try
                 {
-                    UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
-
-                    if (cache.TryGet(username, out endPoint))
+                    if (cache.TryGet(username, out var endPoint))
                     {
                         Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
                         return endPoint;
                     }
 
-                    endPoint = await GetEndPoint().ConfigureAwait(false);
-                    cache.AddOrUpdate(username, endPoint);
-                    Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
+    #pragma warning disable CA2000 // Dispose objects before losing scope
+                    var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
+    #pragma warning restore CA2000 // Dispose objects before losing scope
+                    await semaphore.WaitAsync().ConfigureAwait(false);
 
-                    return endPoint;
+                    try
+                    {
+                        UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+                        if (cache.TryGet(username, out endPoint))
+                        {
+                            Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
+                            return endPoint;
+                        }
+
+                        endPoint = await GetEndPoint().ConfigureAwait(false);
+                        cache.AddOrUpdate(username, endPoint);
+                        Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
+
+                        return endPoint;
+                    }
+                    finally
+                    {
+                        UserEndPointSemaphores.TryRemove(username, out var _);
+                        semaphore.Release();
+                    }
                 }
-                finally
+                catch (Exception ex) when (!(ex is UserEndPointException) && !(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
                 {
-                    UserEndPointSemaphores.TryRemove(username, out var _);
-                    semaphore.Release();
+                    throw new UserEndPointCacheException($"Exception retrieving or updating user endpoint cache: {ex.Message}", ex);
                 }
             }
 
