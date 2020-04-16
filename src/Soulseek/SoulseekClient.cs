@@ -344,6 +344,7 @@ namespace Soulseek
         private bool Disposed { get; set; } = false;
         private ITokenFactory TokenFactory { get; }
         private ConcurrentDictionary<string, SemaphoreSlim> UploadSemaphores { get; } = new ConcurrentDictionary<string, SemaphoreSlim>();
+        private ConcurrentDictionary<string, SemaphoreSlim> UserEndPointSemaphores { get; set; } = new ConcurrentDictionary<string, SemaphoreSlim>();
 
         /// <summary>
         ///     Asynchronously sends a private message acknowledgement for the specified <paramref name="privateMessageId"/>.
@@ -2083,25 +2084,75 @@ namespace Soulseek
 
         private async Task<IPEndPoint> GetUserEndPointInternalAsync(string username, CancellationToken cancellationToken)
         {
-            try
+            var cache = Options.UserEndPointCache;
+
+            if (cache != default)
             {
-                var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
-                var addressWait = Waiter.Wait<UserAddressResponse>(waitKey, cancellationToken: cancellationToken);
-
-                await ServerConnection.WriteAsync(new UserAddressRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
-
-                var response = await addressWait.ConfigureAwait(false);
-
-                if (response.IPAddress.Equals(IPAddress.Any))
+                try
                 {
-                    throw new UserOfflineException($"User {username} appears to be offline");
-                }
+                    if (cache.TryGet(username, out var endPoint))
+                    {
+                        Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
+                        return endPoint;
+                    }
 
-                return new IPEndPoint(response.IPAddress, response.Port);
+    #pragma warning disable CA2000 // Dispose objects before losing scope
+                    var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
+    #pragma warning restore CA2000 // Dispose objects before losing scope
+                    await semaphore.WaitAsync().ConfigureAwait(false);
+
+                    try
+                    {
+                        UserEndPointSemaphores.AddOrUpdate(username, semaphore, (k, v) => semaphore);
+
+                        if (cache.TryGet(username, out endPoint))
+                        {
+                            Diagnostic.Debug($"EndPoint cache HIT for {username}: {endPoint}");
+                            return endPoint;
+                        }
+
+                        endPoint = await GetEndPoint().ConfigureAwait(false);
+                        cache.AddOrUpdate(username, endPoint);
+                        Diagnostic.Debug($"EndPoint cache MISS for {username}: {endPoint}");
+
+                        return endPoint;
+                    }
+                    finally
+                    {
+                        UserEndPointSemaphores.TryRemove(username, out var _);
+                        semaphore.Release();
+                    }
+                }
+                catch (Exception ex) when (!(ex is UserEndPointException) && !(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+                {
+                    throw new UserEndPointCacheException($"Exception retrieving or updating user endpoint cache: {ex.Message}", ex);
+                }
             }
-            catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+
+            return await GetEndPoint().ConfigureAwait(false);
+
+            async Task<IPEndPoint> GetEndPoint()
             {
-                throw new UserEndPointException($"Failed to retrieve endpoint for user {username}: {ex.Message}", ex);
+                try
+                {
+                    var waitKey = new WaitKey(MessageCode.Server.GetPeerAddress, username);
+                    var addressWait = Waiter.Wait<UserAddressResponse>(waitKey, cancellationToken: cancellationToken);
+
+                    await ServerConnection.WriteAsync(new UserAddressRequest(username).ToByteArray(), cancellationToken).ConfigureAwait(false);
+
+                    var response = await addressWait.ConfigureAwait(false);
+
+                    if (response.IPAddress.Equals(IPAddress.Any))
+                    {
+                        throw new UserOfflineException($"User {username} appears to be offline");
+                    }
+
+                    return new IPEndPoint(response.IPAddress, response.Port);
+                }
+                catch (Exception ex) when (!(ex is UserOfflineException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
+                {
+                    throw new UserEndPointException($"Failed to retrieve endpoint for user {username}: {ex.Message}", ex);
+                }
             }
         }
 
@@ -2556,16 +2607,16 @@ namespace Soulseek
                 // clean up the wait in case the code threw before it was awaited.
                 Waiter.Complete(upload.WaitKey);
 
+                // remove the semaphore record to prevent dangling records. the semaphore object is retained if there are other
+                // threads waiting on it, and it is added back after it is awaited above.
+                UploadSemaphores.TryRemove(username, out var _);
+
                 // make sure we successfully obtained the semaphore before releasing it this will be false if the semaphore wait
                 // threw due to cancellation
                 if (semaphoreAcquired)
                 {
                     semaphore.Release();
                 }
-
-                // remove the semaphore record to prevent dangling records. the semaphore object is retained if there are other
-                // threads waiting on it, and it is added back after it is awaited above.
-                UploadSemaphores.TryRemove(username, out var _);
 
                 upload.Connection?.Dispose();
 

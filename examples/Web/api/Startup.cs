@@ -12,6 +12,7 @@
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.AspNetCore.Mvc.ApiExplorer;
+    using Microsoft.Extensions.Caching.Memory;
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.FileProviders;
@@ -159,6 +160,7 @@
             // see the implementation of Func<> and Action<> options for detailed info.
             var clientOptions = new SoulseekClientOptions(
                 listenPort: ListenPort,
+                userEndPointCache: new UserEndPointCache(),
                 distributedChildLimit: DistributedChildLimit,
                 enableDistributedNetwork: EnableDistributedNetwork,
                 minimumDiagnosticLevel: DiagnosticLevel,
@@ -406,6 +408,26 @@
             public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
             {
                 return IPAddress.Parse((string)reader.Value);
+            }
+        }
+
+        class UserEndPointCache : IUserEndPointCache
+        {
+            public UserEndPointCache()
+            {
+                Cache = new MemoryCache(new MemoryCacheOptions());
+            }
+
+            private IMemoryCache Cache { get; }
+
+            public void AddOrUpdate(string username, IPEndPoint endPoint)
+            {
+                Cache.Set(username, endPoint, TimeSpan.FromSeconds(60));
+            }
+
+            public bool TryGet(string username, out IPEndPoint endPoint)
+            {
+                return Cache.TryGetValue(username, out endPoint);
             }
         }
     }

@@ -13,6 +13,7 @@
 namespace Soulseek.Tests.Unit.Client
 {
     using System;
+    using System.Collections.Concurrent;
     using System.Net;
     using System.Threading;
     using System.Threading.Tasks;
@@ -163,6 +164,115 @@ namespace Soulseek.Tests.Unit.Client
 
                 Assert.Equal(ip, addr.Address);
                 Assert.Equal(port, addr.Port);
+            }
+        }
+
+        [Trait("Category", "GetUserEndPointAsync")]
+        [Theory(DisplayName = "GetUserEndPointAsync returns cached endpoint if cached"), AutoData]
+        public async Task GetUserEndPointAsync_Returns_Cached_Endpoint_If_Cached(string username, IPEndPoint endpoint)
+        {
+            var cache = new Mock<IUserEndPointCache>();
+            cache.Setup(m => m.TryGet(username, out endpoint))
+                .Returns(true);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var addr = await s.GetUserEndPointAsync(username);
+
+                Assert.Equal(endpoint.Address, addr.Address);
+                Assert.Equal(endpoint.Port, addr.Port);
+            }
+        }
+
+        [Trait("Category", "GetUserEndPointAsync")]
+        [Theory(DisplayName = "GetUserEndPointAsync returns cached endpoint if cached by previous thread"), AutoData]
+        public async Task GetUserEndPointAsync_Returns_Cached_Endpoint_If_Cached_By_Previous_Thread(string username, IPEndPoint endpoint)
+        {
+            var cache = new Mock<IUserEndPointCache>();
+            cache.Setup(m => m.TryGet(username, out endpoint))
+                .Returns(false);
+
+            using (var sem = new SemaphoreSlim(1, 1))
+            {
+                var semaphores = new ConcurrentDictionary<string, SemaphoreSlim>();
+                semaphores.TryAdd(username, sem);
+
+                // wait the sempahore to make the test code wait
+                var wait = sem.WaitAsync();
+
+                using (var s = new SoulseekClient("127.0.0.1", 1, new SoulseekClientOptions(userEndPointCache: cache.Object)))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+                    s.SetProperty("UserEndPointSemaphores", semaphores);
+
+                    // invoke, but dont await.  this will wait the semaphore
+                    var addrWait = s.GetUserEndPointAsync(username);
+
+                    // simulate a cache update while we were waiting
+                    cache.Setup(m => m.TryGet(username, out endpoint))
+                        .Returns(true);
+
+                    // release the semaphore to cause the code above to enter the critical section
+                    sem.Release();
+                    await wait;
+
+                    // cache hit and return
+                    var addr = await addrWait;
+
+                    Assert.Equal(endpoint.Address, addr.Address);
+                    Assert.Equal(endpoint.Port, addr.Port);
+                }
+            }
+        }
+
+        [Trait("Category", "GetUserEndPointAsync")]
+        [Theory(DisplayName = "GetUserEndPointAsync returns expected values on cache miss"), AutoData]
+        public async Task GetUserEndPointAsync_Returns_Expected_Values_On_Cache_Miss(string username, IPEndPoint endpoint)
+        {
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<UserAddressResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new UserAddressResponse(username, endpoint.Address, endpoint.Port)));
+
+            var conn = new Mock<IMessageConnection>();
+            conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
+                .Returns(Task.CompletedTask);
+
+            var cache = new Mock<IUserEndPointCache>();
+            cache.Setup(m => m.TryGet(username, out endpoint))
+                .Returns(false);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var addr = await s.GetUserEndPointAsync(username);
+
+                Assert.Equal(endpoint.Address, addr.Address);
+                Assert.Equal(endpoint.Port, addr.Port);
+            }
+        }
+
+        [Trait("Category", "GetUserEndPointAsync")]
+        [Theory(DisplayName = "GetUserEndPointAsync throws UserEndPointCacheException when cache operation throws"), AutoData]
+        public async Task GetUserEndPointAsync_Throws_UserEndPointCacheException_When_Cache_Operation_Throws(string username, IPEndPoint endpoint)
+        {
+            var exception = new Exception();
+
+            var cache = new Mock<IUserEndPointCache>();
+            cache.Setup(m => m.TryGet(username, out endpoint))
+                .Throws(exception);
+
+            using (var s = new SoulseekClient("127.0.0.1", 1, new SoulseekClientOptions(userEndPointCache: cache.Object)))
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
+
+                var ex = await Record.ExceptionAsync(() => s.GetUserEndPointAsync(username));
+
+                Assert.NotNull(ex);
+                Assert.IsType<UserEndPointCacheException>(ex);
+                Assert.Equal(exception, ex.InnerException);
             }
         }
     }
