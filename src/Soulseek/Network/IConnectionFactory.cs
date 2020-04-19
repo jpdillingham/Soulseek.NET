@@ -12,6 +12,7 @@
 
 namespace Soulseek.Network
 {
+    using System;
     using System.Net;
     using Soulseek.Network.Tcp;
 
@@ -21,15 +22,6 @@ namespace Soulseek.Network
     internal interface IConnectionFactory
     {
         /// <summary>
-        ///     Gets a <see cref="IConnection"/> with the specified parameters.
-        /// </summary>
-        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
-        /// <param name="options">The optional options for the connection.</param>
-        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
-        /// <returns>The created connection.</returns>
-        IConnection GetConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
-
-        /// <summary>
         ///     Gets a <see cref="IMessageConnection"/> with the specified parameters.
         /// </summary>
         /// <param name="username">The username of the peer associated with the connection, if applicable.</param>
@@ -38,5 +30,33 @@ namespace Soulseek.Network
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
         IMessageConnection GetMessageConnection(string username, IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
+
+        /// <summary>
+        ///     Gets a <see cref="IMessageConnection"/> for use with a server connection and binds the specified event handlers
+        ///     before returning.
+        /// </summary>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
+        /// <param name="connectedEventHandler">The event handler for <see cref="IConnection.Connected"/>.</param>
+        /// <param name="disconnectedEventHandler">The handler for <see cref="IConnection.Disconnected"/>.</param>
+        /// <param name="messageReadEventHandler">The handler for <see cref="IMessageConnection.MessageRead"/>.</param>
+        /// <param name="options">The options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
+        /// <returns>The created connection with event handlers bound.</returns>
+        IMessageConnection GetServerConnection(
+            IPEndPoint ipEndPoint,
+            EventHandler connectedEventHandler,
+            EventHandler<ConnectionDisconnectedEventArgs> disconnectedEventHandler,
+            EventHandler<MessageReadEventArgs> messageReadEventHandler,
+            ConnectionOptions options = null,
+            ITcpClient tcpClient = null);
+
+        /// <summary>
+        ///     Gets a <see cref="IConnection"/> for use with transfer connections with the specified parameters.
+        /// </summary>
+        /// <param name="ipEndPoint">The remote IP endpoint of the connection.</param>
+        /// <param name="options">The optional options for the connection.</param>
+        /// <param name="tcpClient">The optional TcpClient instance to use.</param>
+        /// <returns>The created connection.</returns>
+        IConnection GetTransferConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null);
     }
 }
