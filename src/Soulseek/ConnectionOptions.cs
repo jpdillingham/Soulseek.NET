@@ -70,5 +70,14 @@ namespace Soulseek
             connectTimeout = ConnectTimeout;
             inactivityTimeout = InactivityTimeout;
         }
+
+        /// <summary>
+        ///     Returns this instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
+        /// </summary>
+        /// <returns>This instance with InactivityTimeout disabled.</returns>
+        public ConnectionOptions WithoutInactivityTimeout()
+        {
+            return new ConnectionOptions(ReadBufferSize, WriteBufferSize, ConnectTimeout, inactivityTimeout: -1);
+        }
     }
 }

@@ -51,7 +51,7 @@ namespace Soulseek.Network
             ConnectionOptions options = null,
             ITcpClient tcpClient = null)
         {
-            var connection = new MessageConnection(ipEndPoint, GetOptionsWithoutInactivityTimeout(options ?? new ConnectionOptions()), tcpClient);
+            var connection = new MessageConnection(ipEndPoint, (options ?? new ConnectionOptions()).WithoutInactivityTimeout(), tcpClient);
             connection.Connected += connectedEventHandler;
             connection.Disconnected += disconnectedEventHandler;
             connection.MessageRead += messageReadEventHandler;
@@ -67,12 +67,6 @@ namespace Soulseek.Network
         /// <param name="tcpClient">The optional TcpClient instance to use.</param>
         /// <returns>The created connection.</returns>
         public IConnection GetTransferConnection(IPEndPoint ipEndPoint, ConnectionOptions options = null, ITcpClient tcpClient = null) =>
-            new Connection(ipEndPoint, GetOptionsWithoutInactivityTimeout(options ?? new ConnectionOptions()), tcpClient);
-
-        private ConnectionOptions GetOptionsWithoutInactivityTimeout(ConnectionOptions options = null)
-        {
-            var (readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, _) = options ?? new ConnectionOptions();
-            return new ConnectionOptions(readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, inactivityTimeout: -1);
-        }
+            new Connection(ipEndPoint, (options ?? new ConnectionOptions()).WithoutInactivityTimeout(), tcpClient);
     }
 }
