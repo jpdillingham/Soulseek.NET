@@ -128,9 +128,9 @@ namespace Soulseek
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
             StartingToken = startingToken;
 
-            ServerConnectionOptions = serverConnectionOptions ?? new ConnectionOptions();
+            ServerConnectionOptions = WithoutInactivityTimeout(serverConnectionOptions ?? new ConnectionOptions());
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
-            TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
+            TransferConnectionOptions = WithoutInactivityTimeout(transferConnectionOptions ?? new ConnectionOptions());
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
             DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
 
@@ -259,5 +259,12 @@ namespace Soulseek
         ///     Gets the delegate used to resolve the <see cref="UserInfo"/> for an incoming request. (Default = a blank/zeroed response).
         /// </summary>
         public Func<string, IPEndPoint, Task<UserInfo>> UserInfoResponseResolver { get; }
+
+        private ConnectionOptions WithoutInactivityTimeout(ConnectionOptions options = null)
+        {
+            options = options ?? new ConnectionOptions();
+            var (readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, _) = options;
+            return new ConnectionOptions(readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, inactivityTimeout: -1);
+        }
     }
 }
