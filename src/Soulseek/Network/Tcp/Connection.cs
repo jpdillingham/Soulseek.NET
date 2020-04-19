@@ -41,9 +41,7 @@ namespace Soulseek.Network.Tcp
 
             TcpClient = tcpClient ?? new TcpClientAdapter(new TcpClient());
             TcpClient.Client.ReceiveBufferSize = Options.ReadBufferSize;
-            TcpClient.Client.ReceiveTimeout = Options.ReadTimeout;
             TcpClient.Client.SendBufferSize = Options.WriteBufferSize;
-            TcpClient.Client.SendTimeout = Options.WriteTimeout;
 
             if (Options.InactivityTimeout > 0)
             {
@@ -56,15 +54,8 @@ namespace Soulseek.Network.Tcp
 
                 InactivityTimer.Elapsed += (sender, e) =>
                 {
-                    if (ReadInProgress && WriteInProgress)
-                    {
-                        ResetInactivityTime();
-                    }
-                    else
-                    {
-                        var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} milliseconds was reached");
-                        Disconnect(ex.Message, ex);
-                    }
+                    var ex = new TimeoutException($"Inactivity timeout of {Options.InactivityTimeout} milliseconds was reached");
+                    Disconnect(ex.Message, ex);
                 };
             }
 
@@ -181,9 +172,6 @@ namespace Soulseek.Network.Tcp
         ///     Gets or sets the time at which the last activity took place.
         /// </summary>
         protected DateTime LastActivityTime { get; set; } = DateTime.UtcNow;
-
-        private bool WriteInProgress { get; set; }
-        private bool ReadInProgress { get; set; }
 
         /// <summary>
         ///     Asynchronously connects the client to the configured <see cref="IPEndPoint"/>.
@@ -536,7 +524,6 @@ namespace Soulseek.Network.Tcp
 
         private async Task ReadInternalAsync(long length, Stream outputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
         {
-            ReadInProgress = true;
             ResetInactivityTime();
 
             var buffer = new byte[TcpClient.Client.ReceiveBufferSize];
@@ -581,11 +568,6 @@ namespace Soulseek.Network.Tcp
 
                 throw new ConnectionReadException($"Failed to read {length} bytes from {IPEndPoint}: {ex.Message}", ex);
             }
-            finally
-            {
-                ResetInactivityTime();
-                ReadInProgress = false;
-            }
         }
 
         private void ResetInactivityTime()
@@ -604,7 +586,6 @@ namespace Soulseek.Network.Tcp
 
         private async Task WriteInternalAsync(long length, Stream inputStream, Func<CancellationToken, Task> governor, CancellationToken cancellationToken)
         {
-            WriteInProgress = true;
             ResetInactivityTime();
 
             var sendBufferSize = TcpClient.Client.SendBufferSize;
@@ -642,11 +623,6 @@ namespace Soulseek.Network.Tcp
                 }
 
                 throw new ConnectionWriteException($"Failed to write {length} bytes to {IPEndPoint}: {ex.Message}", ex);
-            }
-            finally
-            {
-                ResetInactivityTime();
-                WriteInProgress = false;
             }
         }
     }
