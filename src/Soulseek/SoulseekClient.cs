@@ -75,10 +75,12 @@ namespace Soulseek
         /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
+        /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
         /// <param name="peerConnectionManager">The IPeerConnectionManager instance to use.</param>
         /// <param name="distributedConnectionManager">The IDistributedConnectionManager instance to use.</param>
         /// <param name="serverMessageHandler">The IServerMessageHandler instance to use.</param>
         /// <param name="peerMessageHandler">The IPeerMessageHandler instance to use.</param>
+        /// <param name="distributedMessageHandler">The IDistributedMessageHandler instance to use.</param>
         /// <param name="listener">The IListener instance to use.</param>
         /// <param name="listenerHandler">The IListenerHandler instance to use.</param>
         /// <param name="waiter">The IWaiter instance to use.</param>
@@ -89,10 +91,12 @@ namespace Soulseek
             int port,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
+            IConnectionFactory connectionFactory = null,
             IPeerConnectionManager peerConnectionManager = null,
             IDistributedConnectionManager distributedConnectionManager = null,
             IServerMessageHandler serverMessageHandler = null,
             IPeerMessageHandler peerMessageHandler = null,
+            IDistributedMessageHandler distributedMessageHandler = null,
             IListener listener = null,
             IListenerHandler listenerHandler = null,
             IWaiter waiter = null,
@@ -132,8 +136,10 @@ namespace Soulseek
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
             PeerMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
 
-            DistributedMessageHandler = DistributedMessageHandler ?? new DistributedMessageHandler(this);
+            DistributedMessageHandler = distributedMessageHandler ?? new DistributedMessageHandler(this);
             DistributedMessageHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
+
+            ConnectionFactory = connectionFactory ?? new ConnectionFactory();
 
             PeerConnectionManager = peerConnectionManager ?? new PeerConnectionManager(this);
             PeerConnectionManager.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -160,7 +166,12 @@ namespace Soulseek
                 KickedFromServer?.Invoke(this, e);
             };
 
-            ServerConnection = serverConnection ?? GetServerConnection(IPEndPoint, Options, ServerMessageHandler);
+            ServerConnection = serverConnection ?? ConnectionFactory.GetServerConnection(
+                IPEndPoint,
+                ServerConnection_Connected,
+                ServerConnection_Disconnected,
+                ServerConnection_MessageRead,
+                Options.ServerConnectionOptions);
         }
 
         /// <summary>
@@ -315,6 +326,7 @@ namespace Soulseek
         internal virtual IWaiter Waiter { get; }
 #pragma warning restore SA1600 // Elements should be documented
 
+        private IConnectionFactory ConnectionFactory { get; }
         private IDiagnosticFactory Diagnostic { get; }
         private bool Disposed { get; set; } = false;
         private ITokenFactory TokenFactory { get; }
@@ -2057,20 +2069,6 @@ namespace Soulseek
             }
         }
 
-        private IMessageConnection GetServerConnection(IPEndPoint endpoint, SoulseekClientOptions options, IServerMessageHandler serverMessageHandler)
-        {
-            // substitute the existing inactivity value with -1 to keep the connection open indefinitely
-            var (readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, _) = options.ServerConnectionOptions;
-            var connectionOptions = new ConnectionOptions(readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, inactivityTimeout: -1);
-
-            var serverConnection = new MessageConnection(endpoint, connectionOptions);
-            serverConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
-            serverConnection.Disconnected += ServerConnection_Disconnected;
-            serverConnection.MessageRead += serverMessageHandler.HandleMessageRead;
-
-            return serverConnection;
-        }
-
         private async Task<IPEndPoint> GetUserEndPointInternalAsync(string username, CancellationToken cancellationToken)
         {
             var cache = Options.UserEndPointCache;
@@ -2415,9 +2413,19 @@ namespace Soulseek
             }
         }
 
+        private void ServerConnection_Connected(object sender, EventArgs e)
+        {
+            ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
+        }
+
         private void ServerConnection_Disconnected(object sender, ConnectionDisconnectedEventArgs e)
         {
             Disconnect(e.Message, e.Exception);
+        }
+
+        private void ServerConnection_MessageRead(object sender, MessageReadEventArgs e)
+        {
+            ServerMessageHandler.HandleMessageRead(sender, e);
         }
 
         private async Task UploadFromByteArrayAsync(string username, string filename, byte[] data, int token, TransferOptions options, CancellationToken cancellationToken)

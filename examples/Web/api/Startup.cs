@@ -184,7 +184,7 @@
                     if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
                     if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
 
-                    Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
                     Console.ResetColor();
                 }
             };
@@ -295,6 +295,7 @@
         /// <exception cref="Exception">Thrown on any other Exception other than a rejection.  A generic message will be passed to the remote user for security reasons.</exception>
         private Task EnqueueDownloadAction(string username, IPEndPoint endpoint, string filename, ITransferTracker tracker)
         {
+            _ = endpoint;
             filename = filename.ToLocalOSPath();
             var fileInfo = new FileInfo(filename);
 

@@ -164,7 +164,7 @@ namespace Soulseek.Network
         {
             Diagnostic.Debug($"Inbound transfer connection to {username} ({incomingConnection.IPEndPoint}) for token {token} accepted. (type: {incomingConnection.Type}, id: {incomingConnection.Id}");
 
-            var connection = ConnectionFactory.GetConnection(
+            var connection = ConnectionFactory.GetTransferConnection(
                 incomingConnection.IPEndPoint,
                 SoulseekClient.Options.TransferConnectionOptions,
                 incomingConnection.HandoffTcpClient());
@@ -455,7 +455,7 @@ namespace Soulseek.Network
         {
             Diagnostic.Debug($"Attempting inbound indirect transfer connection to {connectToPeerResponse.Username} ({connectToPeerResponse.IPEndPoint}) for token {connectToPeerResponse.Token}");
 
-            var connection = ConnectionFactory.GetConnection(
+            var connection = ConnectionFactory.GetTransferConnection(
                 connectToPeerResponse.IPEndPoint,
                 SoulseekClient.Options.TransferConnectionOptions);
 
@@ -659,7 +659,7 @@ namespace Soulseek.Network
         {
             Diagnostic.Debug($"Attempting direct transfer connection for token {token} to {ipEndPoint}");
 
-            var connection = ConnectionFactory.GetConnection(ipEndPoint, SoulseekClient.Options.TransferConnectionOptions);
+            var connection = ConnectionFactory.GetTransferConnection(ipEndPoint, SoulseekClient.Options.TransferConnectionOptions);
 
             connection.Type = ConnectionTypes.Outbound | ConnectionTypes.Direct;
             connection.Disconnected += (sender, e) => Diagnostic.Debug($"Transfer connection for token {token} to {ipEndPoint} disconnected. (type: {connection.Type}, id: {connection.Id})");
@@ -697,7 +697,7 @@ namespace Soulseek.Network
                     .Wait<IConnection>(new WaitKey(Constants.WaitKey.SolicitedPeerConnection, username, solicitationToken), SoulseekClient.Options.TransferConnectionOptions.ConnectTimeout, cancellationToken)
                     .ConfigureAwait(false))
                 {
-                    var connection = ConnectionFactory.GetConnection(
+                    var connection = ConnectionFactory.GetTransferConnection(
                         incomingConnection.IPEndPoint,
                         SoulseekClient.Options.TransferConnectionOptions,
                         incomingConnection.HandoffTcpClient());

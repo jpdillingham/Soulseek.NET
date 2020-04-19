@@ -23,7 +23,7 @@ namespace Soulseek.Tests.Unit
         [Theory(DisplayName = "GetConnection returns the expected connection"), AutoData]
         internal void GetConneciton_Returns_The_Expected_Connection(IPEndPoint endpoint, ConnectionOptions options)
         {
-            var c = new ConnectionFactory().GetConnection(endpoint, options);
+            var c = new ConnectionFactory().GetTransferConnection(endpoint, options);
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
             Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
