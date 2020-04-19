@@ -2060,8 +2060,8 @@ namespace Soulseek
         private IMessageConnection GetServerConnection(IPEndPoint endpoint, SoulseekClientOptions options, IServerMessageHandler serverMessageHandler)
         {
             // substitute the existing inactivity value with -1 to keep the connection open indefinitely
-            var (readBufferSize, writeBufferSize, connectTimeout, _) = options.ServerConnectionOptions;
-            var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
+            var (readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, _) = options.ServerConnectionOptions;
+            var connectionOptions = new ConnectionOptions(readBufferSize, readTimeout, writeBufferSize, writeTimeout, connectTimeout, inactivityTimeout: -1);
 
             var serverConnection = new MessageConnection(endpoint, connectionOptions);
             serverConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
