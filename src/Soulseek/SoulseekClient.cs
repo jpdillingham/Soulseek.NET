@@ -105,39 +105,14 @@ namespace Soulseek
             }
 
             Address = address;
-            IPEndPoint = new IPEndPoint(IPAddress.None, port);
+            var ipAddress = ResolveIPAddress(Address);
+            IPEndPoint = new IPEndPoint(ipAddress, port);
 
             Options = options ?? new SoulseekClientOptions();
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
             Diagnostic = diagnosticFactory ?? new DiagnosticFactory(this, Options.MinimumDiagnosticLevel, (e) => DiagnosticGenerated?.Invoke(this, e));
-
-            ServerConnection = serverConnection;
-
-            if (ServerConnection == null)
-            {
-                IPAddress ipAddress;
-
-                try
-                {
-                    ipAddress = address.ResolveIPAddress();
-                }
-                catch (SocketException ex)
-                {
-                    throw new SoulseekClientException($"Failed to resolve address '{address}': {ex.Message}", ex);
-                }
-
-                // substitute the existing inactivity value with -1 to keep the connection open indefinitely
-                var (readBufferSize, writeBufferSize, connectTimeout, _) = Options.ServerConnectionOptions;
-                var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
-
-                IPEndPoint = new IPEndPoint(ipAddress, port);
-                ServerConnection = new MessageConnection(IPEndPoint, connectionOptions);
-            }
-
-            ServerConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
-            ServerConnection.Disconnected += ServerConnection_Disconnected;
 
             ListenerHandler = listenerHandler ?? new ListenerHandler(this);
             ListenerHandler.DiagnosticGenerated += (sender, e) => DiagnosticGenerated?.Invoke(sender, e);
@@ -185,7 +160,7 @@ namespace Soulseek
                 KickedFromServer?.Invoke(this, e);
             };
 
-            ServerConnection.MessageRead += ServerMessageHandler.HandleMessageRead;
+            ServerConnection = serverConnection ?? GetServerConnection(IPEndPoint, Options, ServerMessageHandler);
         }
 
         /// <summary>
@@ -2082,6 +2057,20 @@ namespace Soulseek
             }
         }
 
+        private IMessageConnection GetServerConnection(IPEndPoint endpoint, SoulseekClientOptions options, IServerMessageHandler serverMessageHandler)
+        {
+            // substitute the existing inactivity value with -1 to keep the connection open indefinitely
+            var (readBufferSize, writeBufferSize, connectTimeout, _) = options.ServerConnectionOptions;
+            var connectionOptions = new ConnectionOptions(readBufferSize, writeBufferSize, connectTimeout, inactivityTimeout: -1);
+
+            var serverConnection = new MessageConnection(endpoint, connectionOptions);
+            serverConnection.Connected += (sender, e) => ChangeState(SoulseekClientStates.Connected, $"Connected to {IPEndPoint}");
+            serverConnection.Disconnected += ServerConnection_Disconnected;
+            serverConnection.MessageRead += serverMessageHandler.HandleMessageRead;
+
+            return serverConnection;
+        }
+
         private async Task<IPEndPoint> GetUserEndPointInternalAsync(string username, CancellationToken cancellationToken)
         {
             var cache = Options.UserEndPointCache;
@@ -2096,9 +2085,9 @@ namespace Soulseek
                         return endPoint;
                     }
 
-    #pragma warning disable CA2000 // Dispose objects before losing scope
+#pragma warning disable CA2000 // Dispose objects before losing scope
                     var semaphore = UserEndPointSemaphores.GetOrAdd(username, new SemaphoreSlim(1, 1));
-    #pragma warning restore CA2000 // Dispose objects before losing scope
+#pragma warning restore CA2000 // Dispose objects before losing scope
                     await semaphore.WaitAsync().ConfigureAwait(false);
 
                     try
@@ -2293,6 +2282,25 @@ namespace Soulseek
             catch (Exception ex) when (!(ex is LoginRejectedException) && !(ex is OperationCanceledException) && !(ex is TimeoutException))
             {
                 throw new LoginException($"Failed to log in as {username}: {ex.Message}", ex);
+            }
+        }
+
+        private IPAddress ResolveIPAddress(string address)
+        {
+            if (IPAddress.TryParse(address, out IPAddress ip))
+            {
+                return ip;
+            }
+            else
+            {
+                try
+                {
+                    return Dns.GetHostEntry(address).AddressList[0];
+                }
+                catch (SocketException ex)
+                {
+                    throw new SoulseekClientException($"Failed to resolve address '{Address}': {ex.Message}", ex);
+                }
             }
         }
 
