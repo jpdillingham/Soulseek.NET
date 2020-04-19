@@ -166,7 +166,7 @@
                 minimumDiagnosticLevel: DiagnosticLevel,
                 serverConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: 0),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
