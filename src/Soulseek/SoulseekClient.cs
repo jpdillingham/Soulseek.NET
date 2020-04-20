@@ -43,36 +43,13 @@ namespace Soulseek
         /// </summary>
         /// <param name="options">The client options.</param>
         public SoulseekClient(SoulseekClientOptions options)
-            : this(DefaultAddress, DefaultPort, options)
+            : this(options, serverConnection: null)
         {
         }
 
         /// <summary>
         ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
         /// </summary>
-        /// <param name="address">The address of the server to which to connect.</param>
-        /// <param name="port">The port to which to connect.</param>
-        /// <param name="options">The client options.</param>
-        public SoulseekClient(string address = DefaultAddress, int port = DefaultPort, SoulseekClientOptions options = null)
-            : this(address, port, options, null)
-        {
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
-        /// </summary>
-        /// <param name="endpoint">The IP endpoint of the server to which to connect.</param>
-        /// <param name="options">The client options.</param>
-        public SoulseekClient(IPEndPoint endpoint, SoulseekClientOptions options = null)
-            : this(endpoint?.Address.ToString(), endpoint?.Port ?? DefaultPort, options, null)
-        {
-        }
-
-        /// <summary>
-        ///     Initializes a new instance of the <see cref="SoulseekClient"/> class.
-        /// </summary>
-        /// <param name="address">The address of the server to which to connect.</param>
-        /// <param name="port">The port to which to connect.</param>
         /// <param name="options">The client options.</param>
         /// <param name="serverConnection">The IMessageConnection instance to use.</param>
         /// <param name="connectionFactory">The IConnectionFactory instance to use.</param>
@@ -87,8 +64,6 @@ namespace Soulseek
         /// <param name="tokenFactory">The ITokenFactory instance to use.</param>
         /// <param name="diagnosticFactory">The IDiagnosticFactory instance to use.</param>
         internal SoulseekClient(
-            string address,
-            int port,
             SoulseekClientOptions options = null,
             IMessageConnection serverConnection = null,
             IConnectionFactory connectionFactory = null,
@@ -103,16 +78,8 @@ namespace Soulseek
             ITokenFactory tokenFactory = null,
             IDiagnosticFactory diagnosticFactory = null)
         {
-            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
-            {
-                throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
-            }
-
-            Address = address;
-            var ipAddress = ResolveIPAddress(Address);
-            IPEndPoint = new IPEndPoint(ipAddress, port);
-
             Options = options ?? new SoulseekClientOptions();
+            ServerConnection = serverConnection;
 
             Waiter = waiter ?? new Waiter(Options.MessageTimeout);
             TokenFactory = tokenFactory ?? new TokenFactory(Options.StartingToken);
@@ -165,13 +132,6 @@ namespace Soulseek
                 Disconnect("Kicked from server", new KickedFromServerException());
                 KickedFromServer?.Invoke(this, e);
             };
-
-            ServerConnection = serverConnection ?? ConnectionFactory.GetServerConnection(
-                IPEndPoint,
-                ServerConnection_Connected,
-                ServerConnection_Disconnected,
-                ServerConnection_MessageRead,
-                Options.ServerConnectionOptions);
         }
 
         /// <summary>
@@ -279,7 +239,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the unresolved server address.
         /// </summary>
-        public string Address { get; }
+        public string Address { get; private set; }
 
         /// <summary>
         ///     Gets the resolved server address.
@@ -289,7 +249,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server endpoint.
         /// </summary>
-        public IPEndPoint IPEndPoint { get; }
+        public IPEndPoint IPEndPoint { get; private set; }
 
         /// <summary>
         ///     Gets the resolved server address.
@@ -320,7 +280,7 @@ namespace Soulseek
         internal virtual IPeerConnectionManager PeerConnectionManager { get; }
         internal virtual IPeerMessageHandler PeerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, SearchInternal> Searches { get; set; } = new ConcurrentDictionary<int, SearchInternal>();
-        internal virtual IMessageConnection ServerConnection { get; }
+        internal virtual IMessageConnection ServerConnection { get; private set; }
         internal virtual IServerMessageHandler ServerMessageHandler { get; }
         internal virtual ConcurrentDictionary<int, TransferInternal> Uploads { get; set; } = new ConcurrentDictionary<int, TransferInternal>();
         internal virtual IWaiter Waiter { get; }
@@ -486,8 +446,11 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/> properties.
+        ///     Asynchronously connects the client to default server, but does not log in.
         /// </summary>
+        /// <remarks>
+        ///     To fully establish a connection, <see cref="LoginAsync(string, string, CancellationToken?)"/> must be invoked.
+        /// </remarks>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
@@ -501,26 +464,65 @@ namespace Soulseek
                 throw new InvalidOperationException($"The client is already connected");
             }
 
-            return ConnectInternalAsync(cancellationToken ?? CancellationToken.None);
+            return ConnectInternalAsync(DefaultAddress, DefaultPort, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
-        ///     Asynchronously connects the client to the server specified in the <see cref="Address"/> and <see cref="Port"/>
-        ///     properties, then logs in using the specified <paramref name="username"/> and <paramref name="password"/>.
+        ///     Asynchronously connects the client to the specified server <paramref name="address"/> and <paramref name="port"/>,
+        ///     but does not log in.
+        /// </summary>
+        /// <remarks>
+        ///     To fully establish a connection, <see cref="LoginAsync(string, string, CancellationToken?)"/> must be invoked.
+        /// </remarks>
+        /// <param name="address">The address of the server to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="address"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the <paramref name="port"/> is not within the valid port range 0-65535.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
+        public Task ConnectAsync(string address, int port, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentException("Address must not be a null or empty string, or one consisting only of whitespace", nameof(address));
+            }
+
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+            {
+                throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
+            }
+
+            if (State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The client is already connected");
+            }
+
+            return ConnectInternalAsync(address, port, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously connects the client to the default server and logs in using the specified
+        ///     <paramref name="username"/> and <paramref name="password"/>.
         /// </summary>
         /// <param name="username">The username with which to log in.</param>
         /// <param name="password">The password with which to log in.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
         /// <exception cref="ArgumentException">
-        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null, empty, or consists only of whitespace.
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
         /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
-        /// <exception cref="ConnectionException">Thrown when an exception is encountered while establishing the connection.</exception>
-        /// <exception cref="LoginRejectedException">Thrown when the login is rejected by the remote server.</exception>
-        /// <exception cref="LoginException">Thrown when an exception is encountered during the login operation.</exception>
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
         public Task ConnectAsync(string username, string password, CancellationToken? cancellationToken = null)
         {
             if (string.IsNullOrEmpty(username))
@@ -538,7 +540,60 @@ namespace Soulseek
                 throw new InvalidOperationException($"The client is already connected");
             }
 
-            return ConnectAndLoginAsync(username, password, cancellationToken ?? CancellationToken.None);
+            return ConnectAndLoginAsync(DefaultAddress, DefaultPort, username, password, cancellationToken ?? CancellationToken.None);
+        }
+
+        /// <summary>
+        ///     Asynchronously connects the client to the specified server <paramref name="address"/> and <paramref name="port"/>
+        ///     and logs in using the specified <paramref name="username"/> and <paramref name="password"/>.
+        /// </summary>
+        /// <param name="address">The address of the server to which to connect.</param>
+        /// <param name="port">The port to which to connect.</param>
+        /// <param name="username">The username with which to log in.</param>
+        /// <param name="password">The password with which to log in.</param>
+        /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
+        /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="address"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the <paramref name="port"/> is not within the valid port range 0-65535.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
+        /// </exception>
+        /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
+        /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
+        /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
+        /// <exception cref="ConnectionException">Thrown when an exception is encountered during the operation.</exception>
+        public Task ConnectAsync(string address, int port, string username, string password, CancellationToken? cancellationToken = null)
+        {
+            if (string.IsNullOrWhiteSpace(address))
+            {
+                throw new ArgumentException("Address must not be a null or empty string, or one consisting only of whitespace", nameof(address));
+            }
+
+            if (port < IPEndPoint.MinPort || port > IPEndPoint.MaxPort)
+            {
+                throw new ArgumentOutOfRangeException(nameof(port), $"The port must be within the range {IPEndPoint.MinPort}-{IPEndPoint.MaxPort} (specified: {port})");
+            }
+
+            if (string.IsNullOrEmpty(username))
+            {
+                throw new ArgumentException("Username may not be null or an empty string", nameof(username));
+            }
+
+            if (string.IsNullOrEmpty(password))
+            {
+                throw new ArgumentException("Password may not be null or an empty string", nameof(password));
+            }
+
+            if (State.HasFlag(SoulseekClientStates.Connected))
+            {
+                throw new InvalidOperationException($"The client is already connected");
+            }
+
+            return ConnectAndLoginAsync(address, port, username, password, cancellationToken ?? CancellationToken.None);
         }
 
         /// <summary>
@@ -1749,22 +1804,34 @@ namespace Soulseek
             }
         }
 
-        private async Task ConnectAndLoginAsync(string username, string password, CancellationToken cancellationToken)
+        private async Task ConnectAndLoginAsync(string address, int port, string username, string password, CancellationToken cancellationToken)
         {
-            await ConnectInternalAsync(cancellationToken).ConfigureAwait(false);
+            await ConnectInternalAsync(address, port, cancellationToken).ConfigureAwait(false);
             await LoginInternalAsync(username, password, cancellationToken).ConfigureAwait(false);
         }
 
-        private async Task ConnectInternalAsync(CancellationToken cancellationToken)
+        private async Task ConnectInternalAsync(string address, int port, CancellationToken cancellationToken)
         {
             try
             {
+                Address = address;
+                var ipAddress = ResolveIPAddress(address);
+                IPEndPoint = new IPEndPoint(ipAddress, port);
+
+                ServerConnection = ConnectionFactory.GetServerConnection(
+                    IPEndPoint,
+                    ServerConnection_Connected,
+                    ServerConnection_Disconnected,
+                    ServerConnection_MessageRead,
+                    Options.ServerConnectionOptions);
+
                 Listener?.Start();
 
                 await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
+                Listener?.Stop();
                 throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
             }
         }
