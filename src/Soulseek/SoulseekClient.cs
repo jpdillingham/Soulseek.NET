@@ -1842,7 +1842,11 @@ namespace Soulseek
             {
                 message = message ?? exception?.Message ?? "Client disconnected";
 
-                ServerConnection.Disconnected -= ServerConnection_Disconnected;
+                if (ServerConnection != default)
+                {
+                    ServerConnection.Disconnected -= ServerConnection_Disconnected;
+                }
+
                 ServerConnection?.Disconnect(message, exception);
 
                 Listener?.Stop();
