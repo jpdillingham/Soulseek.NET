@@ -263,6 +263,12 @@ namespace Soulseek
         /// <param name="port">The port to which to connect.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="address"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the <paramref name="port"/> is not within the valid port range 0-65535.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -277,6 +283,9 @@ namespace Soulseek
         /// <param name="password">The password with which to log in.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
@@ -293,6 +302,15 @@ namespace Soulseek
         /// <param name="password">The password with which to log in.</param>
         /// <param name="cancellationToken">The token to monitor for cancellation requests.</param>
         /// <returns>The Task representing the asynchronous operation.</returns>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="address"/> is null, empty, or consists only of whitespace.
+        /// </exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     Thrown when the <paramref name="port"/> is not within the valid port range 0-65535.
+        /// </exception>
+        /// <exception cref="ArgumentException">
+        ///     Thrown when the <paramref name="username"/> or <paramref name="password"/> is null or empty.
+        /// </exception>
         /// <exception cref="InvalidOperationException">Thrown when the client is already connected.</exception>
         /// <exception cref="TimeoutException">Thrown when the operation has timed out.</exception>
         /// <exception cref="OperationCanceledException">Thrown when the operation has been cancelled.</exception>
