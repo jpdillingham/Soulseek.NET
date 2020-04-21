@@ -27,7 +27,7 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
             Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
-            Assert.Equal(options, c.Options);
+            Assert.Equal(options.WithoutInactivityTimeout(), c.Options);
         }
 
         [Trait("Category", "GetMessageConnection")]
