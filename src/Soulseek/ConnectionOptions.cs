@@ -57,52 +57,6 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Deconstructs this instance.
-        /// </summary>
-        /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
-        /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
-        /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
-        /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
-        public void Deconstruct(out int readBufferSize, out int writeBufferSize, out int connectTimeout, out int inactivityTimeout)
-        {
-            readBufferSize = ReadBufferSize;
-            writeBufferSize = WriteBufferSize;
-            connectTimeout = ConnectTimeout;
-            inactivityTimeout = InactivityTimeout;
-        }
-
-        /// <summary>
-        ///     Returns true if the specified instance is equal to this instance, false otherwise.
-        /// </summary>
-        /// <param name="obj">The instance to which to compare this one.</param>
-        /// <returns>A value indicating whether the instances are equal.</returns>
-        public override bool Equals(object obj)
-        {
-            try
-            {
-                var right = (ConnectionOptions)obj;
-
-                return ReadBufferSize == right?.ReadBufferSize
-                    && WriteBufferSize == right?.WriteBufferSize
-                    && ConnectTimeout == right?.ConnectTimeout
-                    && InactivityTimeout == right?.InactivityTimeout;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        /// <summary>
-        ///     Returns the hash code for this instance.
-        /// </summary>
-        /// <returns>The hash code for this instance.</returns>
-        public override int GetHashCode()
-        {
-            return ReadBufferSize.GetHashCode() + WriteBufferSize.GetHashCode() + ConnectTimeout.GetHashCode() + InactivityTimeout.GetHashCode();
-        }
-
-        /// <summary>
         ///     Returns this instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
         /// </summary>
         /// <returns>This instance with InactivityTimeout disabled.</returns>

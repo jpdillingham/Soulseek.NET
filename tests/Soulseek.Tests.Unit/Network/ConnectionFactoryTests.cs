@@ -27,7 +27,11 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
             Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
-            Assert.Equal(options.WithoutInactivityTimeout(), c.Options);
+
+            Assert.Equal(options.ReadBufferSize, c.Options.ReadBufferSize);
+            Assert.Equal(options.WriteBufferSize, c.Options.WriteBufferSize);
+            Assert.Equal(options.ConnectTimeout, c.Options.ConnectTimeout);
+            Assert.Equal(-1, c.Options.InactivityTimeout);
         }
 
         [Trait("Category", "GetMessageConnection")]
@@ -38,7 +42,11 @@ namespace Soulseek.Tests.Unit
 
             Assert.Equal(endpoint.Address, c.IPEndPoint.Address);
             Assert.Equal(endpoint.Port, c.IPEndPoint.Port);
-            Assert.Equal(options, c.Options);
+
+            Assert.Equal(options.ReadBufferSize, c.Options.ReadBufferSize);
+            Assert.Equal(options.WriteBufferSize, c.Options.WriteBufferSize);
+            Assert.Equal(options.ConnectTimeout, c.Options.ConnectTimeout);
+            Assert.Equal(options.InactivityTimeout, c.Options.InactivityTimeout);
         }
     }
 }

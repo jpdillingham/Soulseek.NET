@@ -43,9 +43,17 @@ namespace Soulseek.Tests.Unit
             Assert.Equal(autoAcknowledgePrivateMessages, o.AutoAcknowledgePrivateMessages);
             Assert.Equal(minimumDiagnosticLevel, o.MinimumDiagnosticLevel);
             Assert.Equal(startingToken, o.StartingToken);
-            Assert.Equal(serverConnectionOptions.WithoutInactivityTimeout(), o.ServerConnectionOptions);
             Assert.Equal(peerConnectionOptions, o.PeerConnectionOptions);
-            Assert.Equal(transferConnectionOptions.WithoutInactivityTimeout(), o.TransferConnectionOptions);
+
+            Assert.Equal(serverConnectionOptions.ReadBufferSize, o.ServerConnectionOptions.ReadBufferSize);
+            Assert.Equal(serverConnectionOptions.WriteBufferSize, o.ServerConnectionOptions.WriteBufferSize);
+            Assert.Equal(serverConnectionOptions.ConnectTimeout, o.ServerConnectionOptions.ConnectTimeout);
+            Assert.Equal(-1, o.ServerConnectionOptions.InactivityTimeout);
+
+            Assert.Equal(transferConnectionOptions.ReadBufferSize, o.TransferConnectionOptions.ReadBufferSize);
+            Assert.Equal(transferConnectionOptions.WriteBufferSize, o.TransferConnectionOptions.WriteBufferSize);
+            Assert.Equal(transferConnectionOptions.ConnectTimeout, o.TransferConnectionOptions.ConnectTimeout);
+            Assert.Equal(-1, o.TransferConnectionOptions.InactivityTimeout);
         }
 
         [Trait("Category", "Instantiation")]
