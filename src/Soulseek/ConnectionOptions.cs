@@ -72,6 +72,37 @@ namespace Soulseek
         }
 
         /// <summary>
+        ///     Returns true if the specified instance is equal to this instance, false otherwise.
+        /// </summary>
+        /// <param name="obj">The instance to which to compare this one.</param>
+        /// <returns>A value indicating whether the instances are equal.</returns>
+        public override bool Equals(object obj)
+        {
+            try
+            {
+                var right = (ConnectionOptions)obj;
+
+                return ReadBufferSize == right?.ReadBufferSize
+                    && WriteBufferSize == right?.WriteBufferSize
+                    && ConnectTimeout == right?.ConnectTimeout
+                    && InactivityTimeout == right?.InactivityTimeout;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
+        ///     Returns the hash code for this instance.
+        /// </summary>
+        /// <returns>The hash code for this instance.</returns>
+        public override int GetHashCode()
+        {
+            return ReadBufferSize.GetHashCode() + WriteBufferSize.GetHashCode() + ConnectTimeout.GetHashCode() + InactivityTimeout.GetHashCode();
+        }
+
+        /// <summary>
         ///     Returns this instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
         /// </summary>
         /// <returns>This instance with InactivityTimeout disabled.</returns>

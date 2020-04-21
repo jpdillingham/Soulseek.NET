@@ -94,7 +94,17 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new ConnectionException());
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -110,7 +120,17 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -126,7 +146,17 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new OperationCanceledException());
 
-            using (var s = new SoulseekClient(serverConnection: c.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -214,7 +244,17 @@ namespace Soulseek.Tests.Unit
             w.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
 
-            using (var s = new SoulseekClient(serverConnection: c.Object, waiter: w.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: w.Object))
             {
                 await s.ConnectAsync(username, password);
 
@@ -222,16 +262,6 @@ namespace Soulseek.Tests.Unit
             }
 
             c.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiation throws on a bad address")]
-        public void Instantiation_Throws_On_A_Bad_Address()
-        {
-            var ex = Record.Exception(() => new SoulseekClient(options: new SoulseekClientOptions()));
-
-            Assert.NotNull(ex);
-            Assert.IsType<SoulseekClientException>(ex);
         }
 
         [Trait("Category", "Disconnect")]
