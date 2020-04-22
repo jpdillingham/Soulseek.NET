@@ -745,5 +745,20 @@ namespace Soulseek.Tests.Unit
                 Assert.Equal(msg, args.Message);
             }
         }
+
+        [Trait("Category", "MessageRead")]
+        [Fact(DisplayName = "MessageRead invokes HandleMessageRead")]
+        public void MessageRead_Invokes_HandleMessageRead()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+            var args = new MessageReadEventArgs(Array.Empty<byte>());
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", this, args);
+            }
+
+            handlerMock.Verify(m => m.HandleMessageRead(It.IsAny<object>(), args), Times.Once);
+        }
     }
 }
