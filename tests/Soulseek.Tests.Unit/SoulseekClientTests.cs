@@ -100,6 +100,51 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected"), AutoData]
+        public async Task Connect_Address_Fails_If_Connected(IPAddress address, int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(address.ToString(), port));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected"), AutoData]
+        public async Task Connect_Credentials_Fails_If_Connected(string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected"), AutoData]
+        public async Task Connect_Address_Credentials_Fails_If_Connected(IPAddress address, int port, string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(address.ToString(), port, username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect throws when TcpConnection throws")]
         public async Task Connect_Throws_When_TcpConnection_Throws()
         {
@@ -248,7 +293,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect connects and logs in"), AutoData]
-        public async Task Connect_Connects_And_Logs_In(IPAddress ip, int port, string username, string password)
+        public async Task Connect_Connects_And_Logs_In(string username, string password)
         {
             var c = new Mock<IMessageConnection>();
 
