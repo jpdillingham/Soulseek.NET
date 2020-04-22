@@ -277,6 +277,58 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
+        [InlineData("127.0.0.1", 1, null, "a")]
+        [InlineData("127.0.0.1", 1, "", "a")]
+        [InlineData("127.0.0.1", 1, "a", null)]
+        [InlineData("127.0.0.1", 1, "a", "")]
+        [InlineData("127.0.0.1", 1, "", "")]
+        [InlineData("127.0.0.1", 1, null, null)]
+        [InlineData(null, 1, "user", "pass")]
+        [InlineData("", 1, "user", "pass")]
+        [InlineData(" ", 1, "user", "pass")]
+        public async Task Connect_Address_Credentials_Throws_ArgumentException_On_Bad_Input(string address, int port, string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, port, username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentOutOfRangeException on bad port")]
+        [InlineData(-1)]
+        [InlineData(65536)]
+        public async Task Connect_Address_Throws_ArgumentException_On_Bad_Port(int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentOutOfRangeException on bad port")]
+        [InlineData(-1)]
+        [InlineData(65536)]
+        public async Task Connect_Address_Credentials_Throws_ArgumentException_On_Bad_Port(int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port, "user", "pass"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect throws InvalidOperationException_When_Already_Connected"), AutoData]
         public async Task Connect_Throws_InvalidOperationException_When_Already_Connected(string username, string password)
         {
