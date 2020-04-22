@@ -57,18 +57,12 @@ namespace Soulseek
         public int WriteBufferSize { get; }
 
         /// <summary>
-        ///     Deconstructs this instance.
+        ///     Returns this instance with <see cref="InactivityTimeout"/> fixed to -1, disabling it.
         /// </summary>
-        /// <param name="readBufferSize">The read buffer size for underlying TCP connections.</param>
-        /// <param name="writeBufferSize">The write buffer size for underlying TCP connections.</param>
-        /// <param name="connectTimeout">The connection timeout, in milliseconds, for client and peer TCP connections.</param>
-        /// <param name="inactivityTimeout">The inactivity timeout, in milliseconds, for peer TCP connections.</param>
-        public void Deconstruct(out int readBufferSize, out int writeBufferSize, out int connectTimeout, out int inactivityTimeout)
+        /// <returns>This instance with InactivityTimeout disabled.</returns>
+        public ConnectionOptions WithoutInactivityTimeout()
         {
-            readBufferSize = ReadBufferSize;
-            writeBufferSize = WriteBufferSize;
-            connectTimeout = ConnectTimeout;
-            inactivityTimeout = InactivityTimeout;
+            return new ConnectionOptions(ReadBufferSize, WriteBufferSize, ConnectTimeout, inactivityTimeout: -1);
         }
     }
 }

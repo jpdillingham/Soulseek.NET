@@ -128,9 +128,9 @@ namespace Soulseek
             MinimumDiagnosticLevel = minimumDiagnosticLevel;
             StartingToken = startingToken;
 
-            ServerConnectionOptions = serverConnectionOptions ?? new ConnectionOptions();
+            ServerConnectionOptions = (serverConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
             PeerConnectionOptions = peerConnectionOptions ?? new ConnectionOptions();
-            TransferConnectionOptions = transferConnectionOptions ?? new ConnectionOptions();
+            TransferConnectionOptions = (transferConnectionOptions ?? new ConnectionOptions()).WithoutInactivityTimeout();
             IncomingConnectionOptions = incomingConnectionOptions ?? new ConnectionOptions();
             DistributedConnectionOptions = distributedConnectionOptions ?? new ConnectionOptions();
 

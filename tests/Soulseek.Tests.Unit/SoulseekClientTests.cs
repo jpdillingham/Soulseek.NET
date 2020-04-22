@@ -20,6 +20,7 @@ namespace Soulseek.Tests.Unit
     using AutoFixture.Xunit2;
     using Moq;
     using Soulseek.Exceptions;
+    using Soulseek.Messaging;
     using Soulseek.Messaging.Handlers;
     using Soulseek.Messaging.Messages;
     using Soulseek.Network;
@@ -41,47 +42,6 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with defaults for minimal constructor")]
-        public void Instantiates_With_Defaults_For_Minimal_Constructor()
-        {
-            using (var s = new SoulseekClient())
-            {
-                var defaultServer = s.GetField<string>("DefaultAddress");
-                var defaultPort = s.GetField<int>("DefaultPort");
-
-                Assert.Equal(defaultServer, s.Address);
-                Assert.Equal(defaultPort, s.Port);
-                Assert.NotEqual(IPAddress.None, s.IPAddress);
-            }
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiates with defaults given a null IPEndPoint or address")]
-        public void Instantiates_With_Defaults_Given_A_Null_IPEndPoint_Or_Address()
-        {
-            using (var s = new SoulseekClient(null))
-            {
-                var defaultServer = s.GetField<string>("DefaultAddress");
-                var defaultPort = s.GetField<int>("DefaultPort");
-
-                Assert.Equal(defaultServer, s.Address);
-                Assert.Equal(defaultPort, s.Port);
-            }
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Instantiates with given IPEndPoint"), AutoData]
-        public void Instantiates_With_Given_IPEndPoint(IPEndPoint endpoint)
-        {
-            using (var s = new SoulseekClient(endpoint))
-            {
-                Assert.Equal(endpoint.Address.ToString(), s.Address);
-                Assert.Equal(endpoint.Address, s.IPAddress);
-                Assert.Equal(endpoint.Port, s.Port);
-            }
-        }
-
-        [Trait("Category", "Instantiation")]
         [Fact(DisplayName = "Instantiates without exception")]
         public void Instantiates_Without_Exception()
         {
@@ -91,21 +51,6 @@ namespace Soulseek.Tests.Unit
 
             Assert.Null(ex);
             Assert.NotNull(s);
-        }
-
-        [Trait("Category", "Instantiation")]
-        [Theory(DisplayName = "Throws given a port not in range")]
-        [InlineData(-1)]
-        [InlineData(123423523)]
-        public void Throws_Given_A_Port_Not_In_Range(int port)
-        {
-            SoulseekClient s = null;
-
-            var ex = Record.Exception(() => s = new SoulseekClient("127.0.0.1", port, new SoulseekClientOptions()));
-
-            Assert.NotNull(ex);
-            Assert.IsType<ArgumentOutOfRangeException>(ex);
-            Assert.Equal("port", ((ArgumentOutOfRangeException)ex).ParamName);
         }
 
         [Trait("Category", "Instantiation")]
@@ -128,6 +73,18 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "IPEndPoint is null initially")]
+        public void IPEndPoint_Is_Null_Initially()
+        {
+            using (var s = new SoulseekClient())
+            {
+                Assert.Null(s.IPEndPoint);
+                Assert.Null(s.IPAddress);
+                Assert.Null(s.Port);
+            }
+        }
+
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect fails if connected")]
         public async Task Connect_Fails_If_Connected()
@@ -144,13 +101,68 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected"), AutoData]
+        public async Task Connect_Address_Fails_If_Connected(IPEndPoint endpoint)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected"), AutoData]
+        public async Task Connect_Credentials_Fails_If_Connected(string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect fails if connected"), AutoData]
+        public async Task Connect_Address_Credentials_Fails_If_Connected(IPEndPoint endpoint, string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                s.SetProperty("State", SoulseekClientStates.Connected);
+
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<InvalidOperationException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect throws when TcpConnection throws")]
         public async Task Connect_Throws_When_TcpConnection_Throws()
         {
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new ConnectionException());
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -166,7 +178,17 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -182,7 +204,17 @@ namespace Soulseek.Tests.Unit
             var c = new Mock<IMessageConnection>();
             c.Setup(m => m.ConnectAsync(It.IsAny<CancellationToken>())).Throws(new OperationCanceledException());
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
@@ -197,12 +229,68 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object))
             {
                 var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync());
 
                 Assert.Null(ex);
             }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect address succeeds when TcpConnection succeeds"), AutoData]
+        public async Task Connect_Address_Succeeds_When_TcpConnection_Succeeds(IPEndPoint endpoint)
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object))
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port));
+
+                Assert.Null(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect address credentials succeeds when TcpConnection succeeds"), AutoData]
+        public async Task Connect_Address_Credentials_Succeeds_When_TcpConnection_Succeeds(IPEndPoint endpoint, string username, string password)
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            var key = new WaitKey(MessageCode.Server.Login);
+
+            var waiter = new Mock<IWaiter>();
+            waiter.Setup(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.FromResult(new LoginResponse(succeeded: true, string.Empty)));
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: waiter.Object))
+            {
+                var ex = await Record.ExceptionAsync(async () => await s.ConnectAsync(endpoint.Address.ToString(), endpoint.Port, username, password));
+
+                Assert.Null(ex);
+            }
+
+            waiter.Verify(m => m.Wait<LoginResponse>(key, It.IsAny<int?>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Trait("Category", "Connect")]
@@ -246,6 +334,88 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentException on bad input"), AutoData]
+        public async Task Connect_Throws_ArgumentException_On_Bad_Address(string address)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.IsType<AddressException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
+        [InlineData("127.0.0.1", 1, null, "a")]
+        [InlineData("127.0.0.1", 1, "", "a")]
+        [InlineData("127.0.0.1", 1, "a", null)]
+        [InlineData("127.0.0.1", 1, "a", "")]
+        [InlineData("127.0.0.1", 1, "", "")]
+        [InlineData("127.0.0.1", 1, null, null)]
+        [InlineData(null, 1, "user", "pass")]
+        [InlineData("", 1, "user", "pass")]
+        [InlineData(" ", 1, "user", "pass")]
+        public async Task Connect_Address_Credentials_Throws_ArgumentException_On_Bad_Input(string address, int port, string username, string password)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, port, username, password));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData(" ")]
+        public async Task Connect_Address_Throws_ArgumentException_On_Bad_Input(string address)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentOutOfRangeException on bad port")]
+        [InlineData(-1)]
+        [InlineData(65536)]
+        public async Task Connect_Address_Throws_ArgumentException_On_Bad_Port(int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentOutOfRangeException on bad port")]
+        [InlineData(-1)]
+        [InlineData(65536)]
+        public async Task Connect_Address_Credentials_Throws_ArgumentException_On_Bad_Port(int port)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync("127.0.0.01", port, "user", "pass"));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ArgumentOutOfRangeException>(ex);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect throws InvalidOperationException_When_Already_Connected"), AutoData]
         public async Task Connect_Throws_InvalidOperationException_When_Already_Connected(string username, string password)
         {
@@ -262,7 +432,7 @@ namespace Soulseek.Tests.Unit
 
         [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect connects and logs in"), AutoData]
-        public async Task Connect_Connects_And_Logs_In(IPAddress ip, int port, string username, string password)
+        public async Task Connect_Connects_And_Logs_In(string username, string password)
         {
             var c = new Mock<IMessageConnection>();
 
@@ -270,7 +440,17 @@ namespace Soulseek.Tests.Unit
             w.Setup(m => m.Wait<LoginResponse>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.FromResult(new LoginResponse(true, string.Empty)));
 
-            using (var s = new SoulseekClient(ip.ToString(), port, serverConnection: c.Object, waiter: w.Object))
+            var factory = new Mock<IConnectionFactory>();
+            factory.Setup(m => m.GetServerConnection(
+                It.IsAny<IPEndPoint>(),
+                It.IsAny<EventHandler>(),
+                It.IsAny<EventHandler<ConnectionDisconnectedEventArgs>>(),
+                It.IsAny<EventHandler<MessageReadEventArgs>>(),
+                It.IsAny<ConnectionOptions>(),
+                It.IsAny<ITcpClient>()))
+                .Returns(c.Object);
+
+            using (var s = new SoulseekClient(connectionFactory: factory.Object, waiter: w.Object))
             {
                 await s.ConnectAsync(username, password);
 
@@ -280,23 +460,13 @@ namespace Soulseek.Tests.Unit
             c.Verify(m => m.ConnectAsync(It.IsAny<CancellationToken>()));
         }
 
-        [Trait("Category", "Instantiation")]
-        [Fact(DisplayName = "Instantiation throws on a bad address")]
-        public void Instantiation_Throws_On_A_Bad_Address()
-        {
-            var ex = Record.Exception(() => new SoulseekClient(address: Guid.NewGuid().ToString(), port: new Random().Next(65535), options: new SoulseekClientOptions()));
-
-            Assert.NotNull(ex);
-            Assert.IsType<SoulseekClientException>(ex);
-        }
-
         [Trait("Category", "Disconnect")]
         [Fact(DisplayName = "Disconnect handler disconnects")]
         public async Task Disconnect_Handler_Disconnects()
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object))
             {
                 await s.ConnectAsync();
 
@@ -312,7 +482,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object))
             {
                 await s.ConnectAsync();
 
@@ -331,7 +501,7 @@ namespace Soulseek.Tests.Unit
 
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object))
             {
                 s.StateChanged += (sender, e) => fired = true;
 
@@ -352,7 +522,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -380,7 +550,7 @@ namespace Soulseek.Tests.Unit
         {
             var c = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -406,7 +576,7 @@ namespace Soulseek.Tests.Unit
 
             var p = new Mock<IPeerConnectionManager>();
 
-            using (var s = new SoulseekClient(Guid.NewGuid().ToString(), new Random().Next(65535), serverConnection: c.Object, peerConnectionManager: p.Object))
+            using (var s = new SoulseekClient(serverConnection: c.Object, peerConnectionManager: p.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -513,7 +683,7 @@ namespace Soulseek.Tests.Unit
             f.Setup(m => m.NextToken())
                 .Returns(token);
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, tokenFactory: f.Object))
+            using (var s = new SoulseekClient(tokenFactory: f.Object))
             {
                 var t = s.GetNextToken();
 
@@ -529,7 +699,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
                 bool fired = false;
                 s.KickedFromServer += (sender, args) => fired = true;
@@ -546,7 +716,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
                 SoulseekClientDisconnectedEventArgs e = null;
@@ -564,7 +734,7 @@ namespace Soulseek.Tests.Unit
         {
             var handlerMock = new Mock<IServerMessageHandler>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverMessageHandler: handlerMock.Object))
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
             {
                 GlobalMessageReceivedEventArgs args = default;
                 s.GlobalMessageReceived += (sender, e) => args = e;
@@ -574,6 +744,21 @@ namespace Soulseek.Tests.Unit
                 Assert.NotNull(args);
                 Assert.Equal(msg, args.Message);
             }
+        }
+
+        [Trait("Category", "MessageRead")]
+        [Fact(DisplayName = "MessageRead invokes HandleMessageRead")]
+        public void MessageRead_Invokes_HandleMessageRead()
+        {
+            var handlerMock = new Mock<IServerMessageHandler>();
+            var args = new MessageReadEventArgs(Array.Empty<byte>());
+
+            using (var s = new SoulseekClient(serverMessageHandler: handlerMock.Object))
+            {
+                s.InvokeMethod("ServerConnection_MessageRead", this, args);
+            }
+
+            handlerMock.Verify(m => m.HandleMessageRead(It.IsAny<object>(), args), Times.Once);
         }
     }
 }

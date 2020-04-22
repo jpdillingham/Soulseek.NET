@@ -100,7 +100,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -121,7 +121,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -145,7 +145,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(listenPort: port)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -166,7 +166,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(enableDistributedNetwork: false, listenPort: port)))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object, options: new SoulseekClientOptions(enableDistributedNetwork: false, listenPort: port)))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -187,7 +187,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -210,7 +210,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -231,7 +231,7 @@ namespace Soulseek.Tests.Unit.Client
 
             var conn = new Mock<IMessageConnection>();
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 
@@ -252,7 +252,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException<Exception>(new ConnectionWriteException()));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected);
 

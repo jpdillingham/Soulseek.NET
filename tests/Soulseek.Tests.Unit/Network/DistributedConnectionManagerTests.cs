@@ -57,7 +57,7 @@ namespace Soulseek.Tests.Unit.Network
         [Fact(DisplayName = "CanAcceptChildren is false if AcceptDistributedChildren is false")]
         public void CanAcceptChildren_Is_False_If_AcceptDistributedChildren_Is_False()
         {
-            using (var s = new SoulseekClient("192.168.1.1", 1, new SoulseekClientOptions(
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
                 acceptDistributedChildren: false,
                 distributedChildLimit: 10)))
             {
@@ -76,7 +76,7 @@ namespace Soulseek.Tests.Unit.Network
             parent.Setup(m => m.State)
                 .Returns(ConnectionState.Connected);
 
-            using (var s = new SoulseekClient("192.168.1.1", 1, new SoulseekClientOptions(
+            using (var s = new SoulseekClient(new SoulseekClientOptions(
                 acceptDistributedChildren: true,
                 distributedChildLimit: 10)))
             {

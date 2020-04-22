@@ -89,7 +89,7 @@ namespace Soulseek.Tests.Unit.Client
             serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object))
+            using (var s = new SoulseekClient(serverConnection: serverConn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -108,7 +108,7 @@ namespace Soulseek.Tests.Unit.Client
             serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new OperationCanceledException());
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object))
+            using (var s = new SoulseekClient(serverConnection: serverConn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -127,7 +127,7 @@ namespace Soulseek.Tests.Unit.Client
             serverConn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Throws(new Exception());
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object))
+            using (var s = new SoulseekClient(serverConnection: serverConn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -150,7 +150,7 @@ namespace Soulseek.Tests.Unit.Client
             waiter.Setup(m => m.Wait(It.Is<WaitKey>(k => k == new WaitKey(MessageCode.Server.GivePrivileges)), null, It.IsAny<CancellationToken>()))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: serverConn.Object, waiter: waiter.Object))
+            using (var s = new SoulseekClient(serverConnection: serverConn.Object, waiter: waiter.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 

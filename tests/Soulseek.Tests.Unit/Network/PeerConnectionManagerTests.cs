@@ -100,7 +100,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             var incomingConn = GetConnectionMock(endpoint);
@@ -128,7 +128,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             var incomingConn = GetConnectionMock(endpoint);
@@ -160,7 +160,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             var incomingConn = GetConnectionMock(endpoint);
@@ -190,7 +190,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             var incomingConn = GetConnectionMock(endpoint);
@@ -213,7 +213,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             var incomingConn = GetConnectionMock(endpoint);
@@ -238,7 +238,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(endpoint, It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             var incomingConn = GetConnectionMock(endpoint);
@@ -544,7 +544,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             (IConnection Connection, int RemoteToken) newConn;
@@ -577,7 +577,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -604,7 +604,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -628,7 +628,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -651,7 +651,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -675,7 +675,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -699,7 +699,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -723,7 +723,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), null))
                 .Returns(conn.Object);
 
             using (manager)
@@ -744,7 +744,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
@@ -771,7 +771,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
@@ -796,7 +796,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
@@ -821,7 +821,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
@@ -846,7 +846,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             using (manager)
@@ -882,7 +882,7 @@ namespace Soulseek.Tests.Unit.Network
 
             var (manager, mocks) = GetFixture();
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.IsAny<IPEndPoint>(), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(conn.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
@@ -915,9 +915,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
@@ -952,9 +952,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), It.IsAny<int>(), It.IsAny<CancellationToken?>()))
@@ -989,9 +989,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
@@ -1025,9 +1025,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
@@ -1063,9 +1063,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
@@ -1102,9 +1102,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
@@ -1139,9 +1139,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))
@@ -1176,9 +1176,9 @@ namespace Soulseek.Tests.Unit.Network
             mocks.Client.Setup(m => m.Username)
                 .Returns(localUsername);
 
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == directPort), It.IsAny<ConnectionOptions>(), null))
                 .Returns(direct.Object);
-            mocks.ConnectionFactory.Setup(m => m.GetConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
+            mocks.ConnectionFactory.Setup(m => m.GetTransferConnection(It.Is<IPEndPoint>(e => e.Port == indirectPort), It.IsAny<ConnectionOptions>(), It.IsAny<ITcpClient>()))
                 .Returns(indirect.Object);
 
             mocks.Waiter.Setup(m => m.Wait<IConnection>(It.IsAny<WaitKey>(), null, It.IsAny<CancellationToken?>()))

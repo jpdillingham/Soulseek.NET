@@ -17,7 +17,6 @@ namespace Soulseek
     using System.Diagnostics.CodeAnalysis;
     using System.Globalization;
     using System.Linq;
-    using System.Net;
     using System.Security.Cryptography;
     using System.Text;
     using System.Threading.Tasks;
@@ -105,23 +104,6 @@ namespace Soulseek
         {
             timer.Stop();
             timer.Start();
-        }
-
-        /// <summary>
-        ///     Resolves the IP address in the given string to an instance of <see cref="IPAddress"/>.
-        /// </summary>
-        /// <param name="address">The IP address string to resolve.</param>
-        /// <returns>The resolved IPAddress.</returns>
-        public static IPAddress ResolveIPAddress(this string address)
-        {
-            if (IPAddress.TryParse(address, out IPAddress ip))
-            {
-                return ip;
-            }
-            else
-            {
-                return Dns.GetHostEntry(address).AddressList[0];
-            }
         }
 
         /// <summary>

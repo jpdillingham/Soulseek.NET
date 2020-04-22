@@ -52,7 +52,7 @@ namespace Soulseek.Tests.Unit.Network.Tcp
             Assert.Equal(ConnectionState.Pending, c.State);
             Assert.NotEqual(Guid.Empty, c.Id);
             Assert.Equal(ConnectionTypes.None, c.Type);
-            Assert.NotNull(c.InactiveTime);
+            Assert.NotEqual(new TimeSpan(), c.InactiveTime);
         }
 
         [Trait("Category", "Instantiation")]

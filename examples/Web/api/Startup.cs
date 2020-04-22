@@ -51,7 +51,7 @@
             ListenPort = Configuration.GetValue<int>("LISTEN_PORT", 50000);
             OutputDirectory = Configuration.GetValue<string>("OUTPUT_DIR");
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
-            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", true);
+            EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", false);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
@@ -166,7 +166,7 @@
                 minimumDiagnosticLevel: DiagnosticLevel,
                 serverConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
                 peerConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
-                transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: InactivityTimeout),
+                transferConnectionOptions: new ConnectionOptions(connectTimeout: ConnectTimeout, inactivityTimeout: 0),
                 userInfoResponseResolver: UserInfoResponseResolver,
                 browseResponseResolver: BrowseResponseResolver,
                 directoryContentsResponseResolver: DirectoryContentsResponseResolver,
@@ -184,7 +184,7 @@
                     if (args.Level == DiagnosticLevel.Debug) Console.ForegroundColor = ConsoleColor.DarkGray;
                     if (args.Level == DiagnosticLevel.Warning) Console.ForegroundColor = ConsoleColor.Yellow;
 
-                    Console.WriteLine($"[{DateTime.Now.ToString("HH:mm:ss.fff")}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
+                    Console.WriteLine($"[{DateTime.Now:HH:mm:ss.fff}] [DIAGNOSTIC:{e.GetType().Name}] [{args.Level}] {args.Message}");
                     Console.ResetColor();
                 }
             };
@@ -295,6 +295,7 @@
         /// <exception cref="Exception">Thrown on any other Exception other than a rejection.  A generic message will be passed to the remote user for security reasons.</exception>
         private Task EnqueueDownloadAction(string username, IPEndPoint endpoint, string filename, ITransferTracker tracker)
         {
+            _ = endpoint;
             filename = filename.ToLocalOSPath();
             var fileInfo = new FileInfo(filename);
 

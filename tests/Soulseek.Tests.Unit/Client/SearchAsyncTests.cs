@@ -248,7 +248,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -295,7 +295,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -330,7 +330,7 @@ namespace Soulseek.Tests.Unit.Client
                     .Returns(Task.CompletedTask);
 
                 using (var cts = new CancellationTokenSource(1000))
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -357,7 +357,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             using (var cts = new CancellationTokenSource(1000))
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -384,7 +384,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -407,7 +407,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                 .Throws(new TimeoutException());
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -428,7 +428,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken>()))
                 .Returns(Task.FromException(new Exception("foo")));
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -455,7 +455,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                     .Returns(Task.CompletedTask);
 
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -484,7 +484,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                     .Returns(Task.CompletedTask);
 
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SearchStateChanged += (sender, e) => fired = true;
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -511,7 +511,7 @@ namespace Soulseek.Tests.Unit.Client
                 .Returns(Task.CompletedTask);
 
             using (var cts = new CancellationTokenSource(1000))
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -540,7 +540,7 @@ namespace Soulseek.Tests.Unit.Client
             conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), null))
                 .Returns(Task.CompletedTask);
 
-            using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+            using (var s = new SoulseekClient(serverConnection: conn.Object))
             {
                 s.SearchResponseReceived += (sender, e) => fired = true;
                 s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
@@ -568,7 +568,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                     .Callback(() => cts.Cancel());
 
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -592,7 +592,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                     .Callback(() => cts.Cancel());
 
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -616,7 +616,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                     .Callback(() => cts.Cancel());
 
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
@@ -647,7 +647,7 @@ namespace Soulseek.Tests.Unit.Client
                 conn.Setup(m => m.WriteAsync(It.IsAny<byte[]>(), It.IsAny<CancellationToken?>()))
                     .Callback(() => cts.Cancel());
 
-                using (var s = new SoulseekClient("127.0.0.1", 1, serverConnection: conn.Object))
+                using (var s = new SoulseekClient(serverConnection: conn.Object))
                 {
                     s.SetProperty("State", SoulseekClientStates.Connected | SoulseekClientStates.LoggedIn);
 
