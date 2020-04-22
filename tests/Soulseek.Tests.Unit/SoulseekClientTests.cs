@@ -334,6 +334,20 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Connect")]
+        [Theory(DisplayName = "Connect throws ArgumentException on bad input"), AutoData]
+        public async Task Connect_Throws_ArgumentException_On_Bad_Address(string address)
+        {
+            using (var s = new SoulseekClient())
+            {
+                var ex = await Record.ExceptionAsync(() => s.ConnectAsync(address, 1));
+
+                Assert.NotNull(ex);
+                Assert.IsType<ConnectionException>(ex);
+                Assert.IsType<AddressException>(ex.InnerException);
+            }
+        }
+
+        [Trait("Category", "Connect")]
         [Theory(DisplayName = "Connect throws ArgumentException on bad input")]
         [InlineData("127.0.0.1", 1, null, "a")]
         [InlineData("127.0.0.1", 1, "", "a")]
