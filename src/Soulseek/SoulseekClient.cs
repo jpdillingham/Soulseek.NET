@@ -244,7 +244,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the resolved server address.
         /// </summary>
-        public IPAddress IPAddress => IPEndPoint.Address;
+        public IPAddress IPAddress => IPEndPoint?.Address;
 
         /// <summary>
         ///     Gets the resolved server endpoint.
@@ -259,7 +259,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets server port.
         /// </summary>
-        public int Port => IPEndPoint.Port;
+        public int? Port => IPEndPoint?.Port;
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.

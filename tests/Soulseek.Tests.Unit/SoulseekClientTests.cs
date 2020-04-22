@@ -72,6 +72,18 @@ namespace Soulseek.Tests.Unit
             }
         }
 
+        [Trait("Category", "Instantiation")]
+        [Fact(DisplayName = "IPEndPoint is null initially")]
+        public void IPEndPoint_Is_Null_Initially()
+        {
+            using (var s = new SoulseekClient())
+            {
+                Assert.Null(s.IPEndPoint);
+                Assert.Null(s.IPAddress);
+                Assert.Null(s.Port);
+            }
+        }
+
         [Trait("Category", "Connect")]
         [Fact(DisplayName = "Connect fails if connected")]
         public async Task Connect_Fails_If_Connected()

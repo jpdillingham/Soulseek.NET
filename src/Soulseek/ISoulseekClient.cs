@@ -141,7 +141,7 @@ namespace Soulseek
         /// <summary>
         ///     Gets the server port.
         /// </summary>
-        int Port { get; }
+        int? Port { get; }
 
         /// <summary>
         ///     Gets the current state of the underlying TCP connection.
