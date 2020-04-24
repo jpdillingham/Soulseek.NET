@@ -1850,7 +1850,13 @@ namespace Soulseek
 
                 DistributedConnectionManager?.RemoveAndDisposeAll();
 
-                Searches?.RemoveAndDisposeAll();
+                Searches?.Values.ToList().ForEach(search =>
+                {
+                    search.Cancel();
+                });
+
+                Searches.RemoveAndDisposeAll();
+
                 Downloads?.RemoveAll();
 
                 UploadSemaphores?.RemoveAndDisposeAll();
