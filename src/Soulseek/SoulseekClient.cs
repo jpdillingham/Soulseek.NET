@@ -1831,7 +1831,6 @@ namespace Soulseek
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                Listener?.Stop();
                 throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
             }
         }
