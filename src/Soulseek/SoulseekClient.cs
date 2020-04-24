@@ -1857,8 +1857,6 @@ namespace Soulseek
 
                 Searches.RemoveAndDisposeAll();
 
-                Downloads?.RemoveAll();
-
                 UploadSemaphores?.RemoveAndDisposeAll();
                 Uploads?.RemoveAll();
 
