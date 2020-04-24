@@ -1857,9 +1857,6 @@ namespace Soulseek
 
                 Searches.RemoveAndDisposeAll();
 
-                UploadSemaphores?.RemoveAndDisposeAll();
-                Uploads?.RemoveAll();
-
                 Waiter?.CancelAll();
 
                 Username = null;
