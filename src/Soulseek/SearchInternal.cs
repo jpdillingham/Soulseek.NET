@@ -91,6 +91,14 @@ namespace Soulseek
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
         /// <summary>
+        ///     Cancels the search.
+        /// </summary>
+        public void Cancel()
+        {
+            TaskCompletionSource.TrySetException(new OperationCanceledException());
+        }
+
+        /// <summary>
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
