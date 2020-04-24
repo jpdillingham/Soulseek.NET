@@ -1857,8 +1857,6 @@ namespace Soulseek
 
                 Searches.RemoveAndDisposeAll();
 
-                Waiter?.CancelAll();
-
                 Username = null;
 
                 ChangeState(SoulseekClientStates.Disconnected, message, exception);
