@@ -98,6 +98,7 @@ namespace Soulseek
             if (Listener != null)
             {
                 Listener.Accepted += ListenerHandler.HandleConnection;
+                Listener.Start();
             }
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
@@ -1620,6 +1621,7 @@ namespace Soulseek
                 if (disposing)
                 {
                     Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
+                    Listener.Stop();
                     PeerConnectionManager?.Dispose();
                     DistributedConnectionManager?.Dispose();
                     Waiter?.Dispose();
@@ -1825,8 +1827,6 @@ namespace Soulseek
                     ServerConnection_MessageRead,
                     Options.ServerConnectionOptions);
 
-                Listener?.Start();
-
                 await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
@@ -1851,13 +1851,13 @@ namespace Soulseek
 
                 Listener?.Stop();
 
-                UploadSemaphores?.RemoveAndDisposeAll();
-
                 PeerConnectionManager?.RemoveAndDisposeAll();
                 DistributedConnectionManager?.RemoveAndDisposeAll();
 
                 Searches?.RemoveAndDisposeAll();
                 Downloads?.RemoveAll();
+
+                UploadSemaphores?.RemoveAndDisposeAll();
                 Uploads?.RemoveAll();
 
                 Waiter?.CancelAll();
