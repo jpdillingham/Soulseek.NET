@@ -1849,8 +1849,6 @@ namespace Soulseek
 
                 ServerConnection?.Disconnect(message, exception);
 
-                Listener?.Stop();
-
                 PeerConnectionManager?.RemoveAndDisposeAll();
                 DistributedConnectionManager?.RemoveAndDisposeAll();
 
