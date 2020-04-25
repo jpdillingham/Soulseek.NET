@@ -1621,10 +1621,16 @@ namespace Soulseek
                 if (disposing)
                 {
                     Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
-                    Listener.Stop();
+                    Listener?.Stop();
+
+                    PeerConnectionManager?.RemoveAndDisposeAll();
                     PeerConnectionManager?.Dispose();
+
                     DistributedConnectionManager?.Dispose();
+
+                    Waiter?.CancelAll();
                     Waiter?.Dispose();
+
                     ServerConnection?.Dispose();
                 }
 
@@ -1855,7 +1861,7 @@ namespace Soulseek
                     search.Cancel();
                 });
 
-                Searches.RemoveAndDisposeAll();
+                Searches?.RemoveAndDisposeAll();
 
                 Username = null;
 

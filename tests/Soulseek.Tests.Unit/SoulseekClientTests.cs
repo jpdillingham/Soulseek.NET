@@ -545,7 +545,7 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Disconnect")]
-        [Fact(DisplayName = "Disconnect clears downloads")]
+        [Fact(DisplayName = "Disconnect does not clear downloads")]
         public void Disconnect_Clears_Downloads()
         {
             var c = new Mock<IMessageConnection>();
@@ -564,12 +564,12 @@ namespace Soulseek.Tests.Unit
 
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-                Assert.Empty(downloads);
+                Assert.NotEmpty(downloads);
             }
         }
 
         [Trait("Category", "Disconnect")]
-        [Fact(DisplayName = "Disconnect clears peer queue")]
+        [Fact(DisplayName = "Disconnect does not clears peer queue")]
         public void Disconnect_Clears_Peer_Queue()
         {
             var c = new Mock<IMessageConnection>();
@@ -585,7 +585,7 @@ namespace Soulseek.Tests.Unit
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-                p.Verify(m => m.RemoveAndDisposeAll(), Times.AtLeastOnce);
+                p.Verify(m => m.RemoveAndDisposeAll(), Times.Never);
             }
         }
 
