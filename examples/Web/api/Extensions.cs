@@ -1,7 +1,9 @@
 ﻿namespace WebAPI
 {
+    using System;
     using System.IO;
     using System.Linq;
+    using System.Security.Cryptography;
 
     /// <summary>
     ///     Extensions.
@@ -28,6 +30,18 @@
             var separator = path.Contains('\\') ? '\\' : '/';
             var parts = path.Split(separator);
             return string.Join(separator, parts.Take(parts.Length - 1));
+        }
+
+        /// <summary>
+        ///     Generates a random 32 byte array and returns it as a base 64 string.
+        /// </summary>
+        /// <param name="rng"></param>
+        /// <returns></returns>
+        public static string GenerateRandomJwtSigningKey(this RNGCryptoServiceProvider rng)
+        {
+            byte[] bytes = new byte[32];
+            rng.GetBytes(bytes);
+            return Convert.ToBase64String(bytes);
         }
     }
 }

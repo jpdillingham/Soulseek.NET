@@ -6,8 +6,11 @@
     using System.Linq;
     using System.Net;
     using System.Reflection;
+    using System.Security.Cryptography;
+    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authentication.JwtBearer;
     using Microsoft.AspNetCore.Builder;
     using Microsoft.AspNetCore.Hosting;
     using Microsoft.AspNetCore.Mvc;
@@ -16,6 +19,7 @@
     using Microsoft.Extensions.Configuration;
     using Microsoft.Extensions.DependencyInjection;
     using Microsoft.Extensions.FileProviders;
+    using Microsoft.IdentityModel.Tokens;
     using Newtonsoft.Json;
     using Newtonsoft.Json.Converters;
     using Soulseek;
@@ -37,9 +41,11 @@
         private static DiagnosticLevel DiagnosticLevel { get; set; }
         private static int ConnectTimeout { get; set; }
         private static int InactivityTimeout { get; set; }
+        private static string JwtSigningKey { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
+        private RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
 
         public Startup(IConfiguration configuration)
         {
@@ -56,6 +62,7 @@
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Debug);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
+            JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", RNG.GenerateRandomJwtSigningKey());
         }
 
         public IConfiguration Configuration { get; }
@@ -63,6 +70,23 @@
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
+
+
+            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                .AddJwtBearer(options =>
+                {
+                    options.TokenValidationParameters = new TokenValidationParameters
+                    {
+                        ClockSkew = TimeSpan.FromMinutes(5),
+                        RequireSignedTokens = true,
+                        RequireExpirationTime = true,
+                        ValidateLifetime = true,
+                        ValidIssuer = "slsk-web-example",
+                        ValidateIssuer = true,
+                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSigningKey)), // todo: RFC 2898
+                        ValidateIssuerSigningKey = true,
+                    };
+                });
 
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
