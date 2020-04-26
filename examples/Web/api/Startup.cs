@@ -305,6 +305,14 @@
                 throw new DownloadEnqueueException($"File not found.");
             }
 
+            if (tracker.TryGet(TransferDirection.Upload, username, filename, out _))
+            {
+                // in this case, a re-requested file is a no-op.  normally we'd want to respond with a 
+                // PlaceInQueueResponse
+                Console.WriteLine($"[UPLOAD RE-REQUESTED] [{username}/{filename}]");
+                return Task.CompletedTask;
+            }
+
             // create a new cancellation token source so that we can cancel the upload from the UI.
             var cts = new CancellationTokenSource();
             var topts = new TransferOptions(stateChanged: (e) => tracker.AddOrUpdate(e, cts), progressUpdated: (e) => tracker.AddOrUpdate(e, cts));
