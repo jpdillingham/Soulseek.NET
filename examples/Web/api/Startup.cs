@@ -53,7 +53,7 @@
             SharedDirectory = Configuration.GetValue<string>("SHARED_DIR");
             EnableDistributedNetwork = Configuration.GetValue<bool>("ENABLE_DNET", false);
             DistributedChildLimit = Configuration.GetValue<int>("DNET_CHILD_LIMIT", 10);
-            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Info);
+            DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Debug);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
         }
@@ -191,7 +191,7 @@
 
             // bind transfer events.  see TransferStateChangedEventArgs and TransferProgressEventArgs.
             Client.TransferStateChanged += (e, args) =>
-                Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}");
+                Console.WriteLine($"[{args.Transfer.Direction.ToString().ToUpper()}] [{args.Transfer.Username}/{Path.GetFileName(args.Transfer.Filename)}] {args.PreviousState} => {args.Transfer.State}{(args.Transfer.State.HasFlag(TransferStates.Completed) ? $" ({args.Transfer.BytesTransferred}/{args.Transfer.Size} = {args.Transfer.PercentComplete}%)" : string.Empty)}");
             Client.TransferProgressUpdated += (e, args) =>
             {
                 // this is really verbose.

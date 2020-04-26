@@ -3,7 +3,6 @@
     using Soulseek;
     using System.Collections.Concurrent;
     using System.Threading;
-    using System.IO;
     using System.Linq;
 
     /// <summary>
