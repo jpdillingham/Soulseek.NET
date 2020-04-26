@@ -545,7 +545,7 @@ namespace Soulseek.Tests.Unit
         }
 
         [Trait("Category", "Disconnect")]
-        [Fact(DisplayName = "Disconnect clears downloads")]
+        [Fact(DisplayName = "Disconnect does not clear downloads")]
         public void Disconnect_Clears_Downloads()
         {
             var c = new Mock<IMessageConnection>();
@@ -564,12 +564,12 @@ namespace Soulseek.Tests.Unit
 
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
-                Assert.Empty(downloads);
+                Assert.NotEmpty(downloads);
             }
         }
 
         [Trait("Category", "Disconnect")]
-        [Fact(DisplayName = "Disconnect clears peer queue")]
+        [Fact(DisplayName = "Disconnect does not clear peer queue")]
         public void Disconnect_Clears_Peer_Queue()
         {
             var c = new Mock<IMessageConnection>();
@@ -585,7 +585,37 @@ namespace Soulseek.Tests.Unit
                 Assert.Null(ex);
                 Assert.Equal(SoulseekClientStates.Disconnected, s.State);
 
-                p.Verify(m => m.RemoveAndDisposeAll(), Times.AtLeastOnce);
+                p.Verify(m => m.RemoveAndDisposeAll(), Times.Never);
+            }
+        }
+
+        [Trait("Category", "Disconnect")]
+        [Fact(DisplayName = "Disconnect cancels searches")]
+        public async Task Disconnect_Cancels_Searches()
+        {
+            var c = new Mock<IMessageConnection>();
+
+            var p = new Mock<IPeerConnectionManager>();
+
+            using (var search = new SearchInternal("foo", 1))
+            {
+                var searches = new ConcurrentDictionary<int, SearchInternal>();
+                searches.TryAdd(1, search);
+
+                using (var s = new SoulseekClient(serverConnection: c.Object, peerConnectionManager: p.Object))
+                {
+                    s.SetProperty("State", SoulseekClientStates.Connected);
+                    s.SetProperty("Searches", searches);
+
+                    var searchWait = search.WaitForCompletion(CancellationToken.None);
+
+                    s.Disconnect();
+
+                    var ex = await Record.ExceptionAsync(() => searchWait);
+
+                    Assert.NotNull(ex);
+                    Assert.IsType<OperationCanceledException>(ex);
+                }
             }
         }
 

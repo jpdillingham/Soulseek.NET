@@ -98,6 +98,7 @@ namespace Soulseek
             if (Listener != null)
             {
                 Listener.Accepted += ListenerHandler.HandleConnection;
+                Listener.Start();
             }
 
             PeerMessageHandler = peerMessageHandler ?? new PeerMessageHandler(this);
@@ -1620,9 +1621,16 @@ namespace Soulseek
                 if (disposing)
                 {
                     Disconnect("Client is being disposed", new ObjectDisposedException(GetType().Name));
+                    Listener?.Stop();
+
+                    PeerConnectionManager?.RemoveAndDisposeAll();
                     PeerConnectionManager?.Dispose();
+
                     DistributedConnectionManager?.Dispose();
+
+                    Waiter?.CancelAll();
                     Waiter?.Dispose();
+
                     ServerConnection?.Dispose();
                 }
 
@@ -1825,13 +1833,10 @@ namespace Soulseek
                     ServerConnection_MessageRead,
                     Options.ServerConnectionOptions);
 
-                Listener?.Start();
-
                 await ServerConnection.ConnectAsync(cancellationToken).ConfigureAwait(false);
             }
             catch (Exception ex) when (!(ex is TimeoutException) && !(ex is OperationCanceledException))
             {
-                Listener?.Stop();
                 throw new ConnectionException($"Failed to connect: {ex.Message}", ex);
             }
         }
@@ -1849,18 +1854,14 @@ namespace Soulseek
 
                 ServerConnection?.Disconnect(message, exception);
 
-                Listener?.Stop();
-
-                UploadSemaphores?.RemoveAndDisposeAll();
-
-                PeerConnectionManager?.RemoveAndDisposeAll();
                 DistributedConnectionManager?.RemoveAndDisposeAll();
 
-                Searches?.RemoveAndDisposeAll();
-                Downloads?.RemoveAll();
-                Uploads?.RemoveAll();
+                Searches?.Values.ToList().ForEach(search =>
+                {
+                    search.Cancel();
+                });
 
-                Waiter?.CancelAll();
+                Searches?.RemoveAndDisposeAll();
 
                 Username = null;
 

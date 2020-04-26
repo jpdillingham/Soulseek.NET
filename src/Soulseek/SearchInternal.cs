@@ -91,6 +91,14 @@ namespace Soulseek
         private TaskCompletionSource<int> TaskCompletionSource { get; set; } = new TaskCompletionSource<int>();
 
         /// <summary>
+        ///     Cancels the search.
+        /// </summary>
+        public void Cancel()
+        {
+            TaskCompletionSource.TrySetException(new OperationCanceledException());
+        }
+
+        /// <summary>
         ///     Completes the search with the specified <paramref name="state"/>.
         /// </summary>
         /// <param name="state">The terminal state of the search.</param>
@@ -157,16 +165,12 @@ namespace Soulseek
         /// <returns>The collection of received search responses.</returns>
         public async Task WaitForCompletion(CancellationToken cancellationToken)
         {
-            var cancellationTaskCompletionSource = new TaskCompletionSource<bool>();
+            var cancellationTaskCompletionSource = new TaskCompletionSource<object>();
 
-            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetResult(true)))
+            using (cancellationToken.Register(() => cancellationTaskCompletionSource.TrySetException(new OperationCanceledException("Operation cancelled"))))
             {
                 var completedTask = await Task.WhenAny(TaskCompletionSource.Task, cancellationTaskCompletionSource.Task).ConfigureAwait(false);
-
-                if (completedTask == cancellationTaskCompletionSource.Task)
-                {
-                    throw new OperationCanceledException("Operation cancelled");
-                }
+                await completedTask.ConfigureAwait(false);
             }
         }
 

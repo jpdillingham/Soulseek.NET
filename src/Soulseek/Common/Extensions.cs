@@ -65,20 +65,6 @@ namespace Soulseek
         }
 
         /// <summary>
-        ///     Removes all instances within the specified <see cref="ConcurrentDictionary{TKey, TValue}"/>.
-        /// </summary>
-        /// <typeparam name="TKey">The type of the dictionary key.</typeparam>
-        /// <typeparam name="TValue">The type of the dictionary value.</typeparam>
-        /// <param name="concurrentDictionary">The dictionary from which to remove.</param>
-        public static void RemoveAll<TKey, TValue>(this ConcurrentDictionary<TKey, TValue> concurrentDictionary)
-        {
-            while (!concurrentDictionary.IsEmpty)
-            {
-                concurrentDictionary.TryRemove(concurrentDictionary.Keys.First(), out var _);
-            }
-        }
-
-        /// <summary>
         ///     Removes and disposes of all instances within the specified <see cref="ConcurrentDictionary{TKey, TValue}"/>.
         /// </summary>
         /// <typeparam name="TKey">The type of the dictionary key.</typeparam>
