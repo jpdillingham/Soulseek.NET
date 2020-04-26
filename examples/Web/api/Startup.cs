@@ -7,7 +7,6 @@
     using System.Net;
     using System.Reflection;
     using System.Security.Cryptography;
-    using System.Text;
     using System.Threading;
     using System.Threading.Tasks;
     using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -45,7 +44,7 @@
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
-        private RNGCryptoServiceProvider RNG = new RNGCryptoServiceProvider();
+        private RNGCryptoServiceProvider RNG { get; } = new RNGCryptoServiceProvider();
 
         public Startup(IConfiguration configuration)
         {
@@ -63,6 +62,15 @@
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
             JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", RNG.GenerateRandomJwtSigningKey());
+
+            try
+            {
+                Convert.FromBase64String(JwtSigningKey);
+            } 
+            catch
+            {
+                throw new Exception($"JWT_SIGNING_KEY must be a valid base64 string.");
+            }
         }
 
         public IConfiguration Configuration { get; }
@@ -83,7 +91,7 @@
                         ValidateLifetime = true,
                         ValidIssuer = "slsk-web-example",
                         ValidateIssuer = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(JwtSigningKey)), // todo: RFC 2898
+                        IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(JwtSigningKey)), // todo: RFC 2898
                         ValidateIssuerSigningKey = true,
                     };
                 });
