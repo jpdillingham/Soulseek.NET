@@ -3,6 +3,7 @@
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations;
     using System.Threading.Tasks;
+    using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Soulseek;
     using Soulseek.Exceptions;
@@ -40,6 +41,7 @@
         /// <returns></returns>
         /// <response code="200">The request completed successfully.</response>
         [HttpGet("{username}/address")]
+        [Authorize]
         [ProducesResponseType(typeof(UserAddress), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Address([FromRoute, Required]string username)
@@ -61,6 +63,7 @@
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
         [HttpGet("{username}/browse")]
+        [Authorize]
         [ProducesResponseType(typeof(IEnumerable<Directory>), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Browse([FromRoute, Required]string username)
@@ -89,6 +92,7 @@
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
         [HttpGet("{username}/browse/status")]
+        [Authorize]
         [ProducesResponseType(typeof(decimal), 200)]
         [ProducesResponseType(404)]
         public IActionResult BrowseStatus([FromRoute, Required]string username)
@@ -107,6 +111,7 @@
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
         [HttpGet("{username}/info")]
+        [Authorize]
         [ProducesResponseType(typeof(UserInfo), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Info([FromRoute, Required]string username)
@@ -128,6 +133,7 @@
         /// <param name="username">The username of the user.</param>
         /// <returns></returns>
         [HttpGet("{username}/status")]
+        [Authorize]
         [ProducesResponseType(typeof(UserStatus), 200)]
         [ProducesResponseType(404)]
         public async Task<IActionResult> Status([FromRoute, Required]string username)
