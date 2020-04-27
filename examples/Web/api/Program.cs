@@ -20,7 +20,10 @@
                 })
                 .ConfigureLogging((context, logging) =>
                 {
-                    logging.ClearProviders();
+                    if (!System.Diagnostics.Debugger.IsAttached)
+                    {
+                        logging.ClearProviders();
+                    }
                 })
                 .UseStartup<Startup>();
     }
