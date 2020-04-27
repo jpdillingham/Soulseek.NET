@@ -25,6 +25,7 @@
     using Soulseek.Diagnostics;
     using Soulseek.Exceptions;
     using Swashbuckle.AspNetCore.Swagger;
+    using WebAPI.Security;
     using WebAPI.Trackers;
 
     public class Startup
@@ -40,7 +41,9 @@
         private static DiagnosticLevel DiagnosticLevel { get; set; }
         private static int ConnectTimeout { get; set; }
         private static int InactivityTimeout { get; set; }
+        private static bool EnableSecurity { get; set; }
         private static string JwtSigningKey { get; set; }
+        private static int JwtTTL { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
@@ -61,7 +64,9 @@
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Debug);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
+            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", false);
             JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", RNG.GenerateRandomJwtSigningKey());
+            JwtTTL = Configuration.GetValue<int>("JWT_TTL", 86400000);
 
             try
             {
@@ -79,22 +84,32 @@
         {
             services.AddCors(options => options.AddPolicy("AllowAll", builder => builder.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader()));
 
-
-            services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-                .AddJwtBearer(options =>
-                {
-                    options.TokenValidationParameters = new TokenValidationParameters
+            if (EnableSecurity)
+            {
+                services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+                    .AddJwtBearer(options =>
                     {
-                        ClockSkew = TimeSpan.FromMinutes(5),
-                        RequireSignedTokens = true,
-                        RequireExpirationTime = true,
-                        ValidateLifetime = true,
-                        ValidIssuer = "slsk-web-example",
-                        ValidateIssuer = true,
-                        IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(JwtSigningKey)), // todo: RFC 2898
-                        ValidateIssuerSigningKey = true,
-                    };
-                });
+                        options.TokenValidationParameters = new TokenValidationParameters
+                        {
+                            ClockSkew = TimeSpan.FromMinutes(5),
+                            RequireSignedTokens = true,
+                            RequireExpirationTime = true,
+                            ValidateLifetime = true,
+                            ValidIssuer = "slsk-web-example",
+                            ValidateIssuer = true,
+                            IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(JwtSigningKey)), // todo: RFC 2898
+                            ValidateIssuerSigningKey = true,
+                        };
+                    });
+            }
+            else
+            {
+                services.AddAuthentication(PassthroughAuthentication.AuthenticationScheme)
+                    .AddScheme<PassthroughAuthenticationOptions, PassthroughAuthenticationHandler>(PassthroughAuthentication.AuthenticationScheme, options =>
+                    {
+                        options.Username = Username;
+                    });
+            }
 
             services.AddMvc()
                 .SetCompatibilityVersion(CompatibilityVersion.Latest)
@@ -150,6 +165,7 @@
 
             app.UseFileServer(fileServerOptions);
 
+            app.UseAuthentication();
             app.UseMvc();
 
             app.UseSwagger(options =>
