@@ -3,7 +3,6 @@
     using Microsoft.AspNetCore.Authorization;
     using Microsoft.AspNetCore.Mvc;
     using Microsoft.Extensions.Configuration;
-    using System.Threading.Tasks;
     using WebAPI.DTO;
 
     /// <summary>
@@ -23,9 +22,14 @@
             Configuration = configuration;
         }
 
+        /// <summary>
+        ///     Logs in.
+        /// </summary>
+        /// <param name="login"></param>
+        /// <returns></returns>
         [HttpPost]
         [AllowAnonymous]
-        public async Task<IActionResult> Login([FromBody]Login login)
+        public IActionResult Login([FromBody]Login login)
         {
             if (login == default)
             {
