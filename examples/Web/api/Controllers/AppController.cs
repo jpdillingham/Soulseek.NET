@@ -54,7 +54,7 @@
         private JwtSecurityToken GetJwtSecurityToken()
         {
             var issuedUtc = DateTime.UtcNow;
-            var expiresUtc = DateTime.UtcNow.AddMilliseconds(Startup.JwtTTL);
+            var expiresUtc = DateTime.UtcNow.AddMilliseconds(Startup.TokenTTL);
 
             var claims = new List<Claim>()
             {
@@ -65,7 +65,8 @@
                 new Claim("iat", ((DateTimeOffset)issuedUtc).ToUnixTimeSeconds().ToString())
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Startup.JwtSigningKey));
+            var keyBytes = Convert.FromBase64String(Startup.JwtSigningKey);
+            var key = new SymmetricSecurityKey(keyBytes);
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512);
 
             var token = new JwtSecurityToken(

@@ -43,7 +43,7 @@
         private static int InactivityTimeout { get; set; }
         private static bool EnableSecurity { get; set; }
         public static string JwtSigningKey { get; set; }
-        public static int JwtTTL { get; set; }
+        public static int TokenTTL { get; set; }
 
         private SoulseekClient Client { get; set; }
         private object ConsoleSyncRoot { get; } = new object();
@@ -64,9 +64,9 @@
             DiagnosticLevel = Configuration.GetValue<DiagnosticLevel>("DIAGNOSTIC", DiagnosticLevel.Debug);
             ConnectTimeout = Configuration.GetValue<int>("CONNECT_TIMEOUT", 5000);
             InactivityTimeout = Configuration.GetValue<int>("INACTIVITY_TIMEOUT", 15000);
-            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", false);
-            JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", RNG.GenerateRandomJwtSigningKey());
-            JwtTTL = Configuration.GetValue<int>("JWT_TTL", 86400000);
+            EnableSecurity = Configuration.GetValue<bool>("ENABLE_SECURITY", true);
+            JwtSigningKey = Configuration.GetValue<string>("JWT_SIGNING_KEY", "ie5cSFF1GyIJdNNVs7ltzzBW8AJVwUc7X5rK9NfUwPM=");
+            TokenTTL = Configuration.GetValue<int>("TOKEN_TTL", 86400000);
 
             try
             {
@@ -97,6 +97,7 @@
                             ValidateLifetime = true,
                             ValidIssuer = "slsk-web-example",
                             ValidateIssuer = true,
+                            ValidateAudience = false,
                             IssuerSigningKey = new SymmetricSecurityKey(Convert.FromBase64String(JwtSigningKey)), // todo: RFC 2898
                             ValidateIssuerSigningKey = true,
                         };
